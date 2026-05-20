@@ -22,7 +22,7 @@ describe('public-presence-studio.catalog', () => {
     );
 
     expect(screen.getAllByText('Template Center').length).toBeGreaterThan(0);
-    expect(screen.getAllByRole('link', { name: 'Add Template' }).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole('link', { name: 'Add new template' }).length).toBeGreaterThan(0);
     expect(screen.queryByText(/Inspect section order, compare launch use cases/i)).not.toBeInTheDocument();
     expect(container.textContent).not.toMatch(
       /registry|policy coverage|props schema|AI allowlist|renderer|Visual Mode|code-owned|governance/i,
@@ -35,7 +35,7 @@ describe('public-presence-studio.catalog', () => {
     );
 
     expect(screen.getAllByText('Component Store').length).toBeGreaterThan(0);
-    expect(screen.getAllByRole('link', { name: 'Add Component' }).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole('link', { name: 'Add new component' }).length).toBeGreaterThan(0);
     expect(screen.queryByText(/Browse fan-facing building blocks, compare their preview roles/i)).not.toBeInTheDocument();
     expect(container.textContent).not.toMatch(
       /registry|policy coverage|props schema|AI allowlist|renderer|Visual Mode|code-owned|governance/i,
@@ -48,6 +48,7 @@ describe('public-presence-studio.catalog', () => {
     fireEvent.click(screen.getByRole('button', { name: /Inspect: Social Links/i }));
     expect(screen.getByTestId('component-inspect-drawer')).toBeInTheDocument();
     expect(container.textContent).not.toMatch(blockedComponentStoreTerms);
+    expect(screen.getAllByRole('link', { name: /Use as starting point/i }).length).toBeGreaterThan(0);
   });
 
   it('keeps homepage surface switching compact so catalog content stays first-viewport oriented', () => {
@@ -59,5 +60,33 @@ describe('public-presence-studio.catalog', () => {
     expect(screen.getByRole('link', { name: 'Template Center' })).toBeInTheDocument();
     expect(toolbar).toHaveClass('sticky');
     expect(toolbar.textContent).not.toMatch(/Inspect section order, compare launch use cases/i);
+  });
+
+  it('keeps template inspect creator-readable and browse-first', () => {
+    const { container } = render(
+      <TemplateCenterScreen talentId="talent-1" tenantId="tenant-1" />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /Inspect: Active Talent Hub/i }));
+
+    const drawer = screen.getByTestId('template-inspect-drawer');
+    expect(drawer.className).toContain('xl:max-h-[34rem]');
+    expect(screen.getAllByRole('link', { name: /Use as starting point/i }).length).toBeGreaterThan(0);
+    expect(screen.getByText('Opens the full Template IDE with this layout loaded as your starting point.')).toBeInTheDocument();
+    expect(container.textContent).not.toMatch(/requiresOfficialChannels|requiresFirstEncounter|accentTone|campaignLabel/i);
+  });
+
+  it('keeps component inspect creator-readable and browse-first', () => {
+    const { container } = render(
+      <ComponentStoreScreen talentId="talent-1" tenantId="tenant-1" />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /Inspect: Social Links/i }));
+
+    const drawer = screen.getByTestId('component-inspect-drawer');
+    expect(drawer.className).toContain('xl:max-h-[34rem]');
+    expect(screen.getAllByRole('link', { name: /Use as starting point/i }).length).toBeGreaterThan(0);
+    expect(screen.getByText('Opens the full Component IDE with this block loaded as your starting point.')).toBeInTheDocument();
+    expect(container.textContent).not.toMatch(/componentType|validationRules|templateId/i);
   });
 });

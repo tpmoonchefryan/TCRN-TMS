@@ -52,6 +52,7 @@ type AuthoringTarget = 'template' | 'component' | 'advanced';
 type PreviewViewport = 'desktop' | 'mobile';
 type FixtureMode = 'default' | 'unsafeFallback';
 type MobileAuthoringSurface = 'editor' | 'preview';
+type MobileIdeOverlay = 'actions' | 'previewOptions' | 'files' | 'checks' | null;
 type AdvancedPageMode = 'page-source' | 'custom-html' | 'registry-snippets';
 type MonacoDisposableLike = {
   dispose: () => void;
@@ -103,6 +104,24 @@ const CUSTOM_HTML_EXTERNAL_ASSET_PATTERN =
   /^(?:https?:|data:|\/\/|\/\\|%2f%2f|%5c%5c)/i;
 const CUSTOM_HTML_CSS_ASSET_PATTERN =
   /@import|url\s*\(\s*['"]?\s*(?:https?:|data:|\/\/|\/\\|%2f%2f|%5c%5c)/i;
+const FOCUSABLE_SELECTOR = [
+  'a[href]',
+  'button:not([disabled])',
+  'input:not([disabled])',
+  'select:not([disabled])',
+  'textarea:not([disabled])',
+  '[tabindex]:not([tabindex="-1"])',
+].join(', ');
+
+function getFocusableElements(container: HTMLElement) {
+  return Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter((element) => {
+    if (element.hasAttribute('disabled') || element.hidden) {
+      return false;
+    }
+
+    return element.getAttribute('aria-hidden') !== 'true';
+  });
+}
 
 const MonacoEditor = dynamic<MonacoEditorProps>(
   async () => {
@@ -1375,9 +1394,8 @@ export function PublicPresenceAuthoringIdeScreen({
   const [fixtureMode, setFixtureMode] = useState<FixtureMode>('default');
   const [previewPhase, setPreviewPhase] = useState<PublicPresencePhaseVisibility>('always');
   const [mobileSurface, setMobileSurface] = useState<MobileAuthoringSurface>('editor');
-  const [mobileActionsOpen, setMobileActionsOpen] = useState(false);
-  const [mobilePreviewOptionsOpen, setMobilePreviewOptionsOpen] = useState(false);
-  const [utilityPanel, setUtilityPanel] = useState<'files' | 'checks' | null>(null);
+  const [mobileOverlay, setMobileOverlay] = useState<MobileIdeOverlay>(null);
+  const [desktopUtilityPanel, setDesktopUtilityPanel] = useState<'files' | 'checks' | null>(null);
   const mobileActionsSheetId = useId();
   const mobilePreviewOptionsSheetId = useId();
   const fileDrawerId = useId();
@@ -1406,28 +1424,43 @@ export function PublicPresenceAuthoringIdeScreen({
   const [isWideDesktop, setIsWideDesktop] = useState(false);
   const activePathRef = useRef(activePath);
   const filesRef = useRef(files);
+  const workbenchShellRef = useRef<HTMLDivElement | null>(null);
   const editorHostRef = useRef<HTMLDivElement | null>(null);
+  const mobileActionsSheetPanelRef = useRef<HTMLDivElement | null>(null);
+  const mobileUtilitySheetPanelRef = useRef<HTMLDivElement | null>(null);
   const monacoEditorRef = useRef<MonacoEditorLike | null>(null);
   const monacoModelListenerRef = useRef<MonacoDisposableLike | null>(null);
   const skipNextInitialFilesResetRef = useRef(false);
   const syncEditorContentsRef = useRef<(path: string | undefined, value: string | undefined) => void>(
     () => undefined,
   );
+  const mobileActionsOpen = mobileOverlay === 'actions';
+  const activeMobileUtilityOverlay = mobileOverlay === 'previewOptions'
+    || mobileOverlay === 'files'
+    || mobileOverlay === 'checks'
+    ? mobileOverlay
+    : null;
+  const mobilePreviewOptionsOpen = activeMobileUtilityOverlay === 'previewOptions';
   const mobileActionsOverlay = useOverlayFocusManager({
-    onClose: () => setMobileActionsOpen(false),
+    onClose: () => setMobileOverlay((current) => (current === 'actions' ? null : current)),
     open: mobileActionsOpen,
   });
-  const mobilePreviewOptionsOverlay = useOverlayFocusManager({
-    onClose: () => setMobilePreviewOptionsOpen(false),
-    open: mobilePreviewOptionsOpen,
+  const mobileUtilityOverlay = useOverlayFocusManager({
+    onClose: () =>
+      setMobileOverlay((current) =>
+        current === 'previewOptions' || current === 'files' || current === 'checks'
+          ? null
+          : current,
+      ),
+    open: activeMobileUtilityOverlay !== null,
   });
   const filesDrawerOverlay = useOverlayFocusManager({
-    onClose: () => setUtilityPanel(null),
-    open: utilityPanel === 'files',
+    onClose: () => setDesktopUtilityPanel(null),
+    open: desktopUtilityPanel === 'files',
   });
   const validationDrawerOverlay = useOverlayFocusManager({
-    onClose: () => setUtilityPanel(null),
-    open: utilityPanel === 'checks',
+    onClose: () => setDesktopUtilityPanel(null),
+    open: desktopUtilityPanel === 'checks',
   });
 
   const advancedModeOptions: AdvancedPageMode[] = ['page-source', 'custom-html', 'registry-snippets'];
@@ -1586,6 +1619,99 @@ export function PublicPresenceAuthoringIdeScreen({
     monacoModelListenerRef.current = null;
   }, []);
 
+  const mobileModalOpen = !isWideDesktop && mobileOverlay !== null;
+
+  useEffect(() => {
+    const workbench = workbenchShellRef.current;
+
+    if (!workbench) {
+      return;
+    }
+
+    const scopedElements = Array.from(
+      workbench.querySelectorAll<HTMLElement>('[data-overlay-scope="true"]'),
+    );
+
+    if (!mobileModalOpen) {
+      scopedElements.forEach((element) => {
+        element.removeAttribute('aria-hidden');
+        element.removeAttribute('data-overlay-inert');
+        element.removeAttribute('inert');
+      });
+      return;
+    }
+
+    scopedElements.forEach((element) => {
+      element.setAttribute('aria-hidden', 'true');
+      element.setAttribute('data-overlay-inert', 'true');
+      element.setAttribute('inert', '');
+    });
+
+    return () => {
+      scopedElements.forEach((element) => {
+        element.removeAttribute('aria-hidden');
+        element.removeAttribute('data-overlay-inert');
+        element.removeAttribute('inert');
+      });
+    };
+  }, [mobileModalOpen]);
+
+  useEffect(() => {
+    if (!mobileModalOpen) {
+      return;
+    }
+
+    const panel = mobileOverlay === 'actions'
+      ? mobileActionsSheetPanelRef.current
+      : mobileUtilitySheetPanelRef.current;
+
+    if (!panel) {
+      return;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Tab') {
+        return;
+      }
+
+      const focusableElements = getFocusableElements(panel);
+
+      if (focusableElements.length === 0) {
+        event.preventDefault();
+        panel.focus();
+        return;
+      }
+
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
+      const activeElement = document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
+
+      if (!activeElement || !panel.contains(activeElement)) {
+        event.preventDefault();
+        (event.shiftKey ? lastElement : firstElement).focus();
+        return;
+      }
+
+      if (!event.shiftKey && activeElement === lastElement) {
+        event.preventDefault();
+        firstElement.focus();
+      }
+
+      if (event.shiftKey && activeElement === firstElement) {
+        event.preventDefault();
+        lastElement.focus();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [mobileModalOpen, mobileOverlay]);
+
   useEffect(() => {
     const editor = monacoEditorRef.current;
 
@@ -1739,7 +1865,7 @@ export function PublicPresenceAuthoringIdeScreen({
         .filter((group) => group.files.length > 0),
     [files],
   );
-  const showDesktopUtilityPanel = isWideDesktop && utilityPanel !== null;
+  const showDesktopUtilityPanel = isWideDesktop && desktopUtilityPanel !== null;
   const ideGridClass = showDesktopUtilityPanel
     ? 'xl:grid-cols-[3.5rem_minmax(16rem,18rem)_minmax(0,0.88fr)_minmax(30rem,1.12fr)] 2xl:grid-cols-[3.5rem_minmax(18rem,20rem)_minmax(0,0.92fr)_minmax(34rem,1.08fr)]'
     : 'xl:grid-cols-[3.5rem_minmax(0,0.95fr)_minmax(34rem,1.05fr)] 2xl:grid-cols-[3.5rem_minmax(0,1.05fr)_minmax(38rem,1fr)]';
@@ -1750,20 +1876,66 @@ export function PublicPresenceAuthoringIdeScreen({
     setSubmitStatus('idle');
   };
 
+  const openValidationSurface = () => {
+    if (isWideDesktop) {
+      setDesktopUtilityPanel('checks');
+      return;
+    }
+
+    setMobileOverlay('checks');
+  };
+
   const handleValidate = () => {
     setLastValidatedAt(new Date().toISOString());
-    setUtilityPanel('checks');
+    openValidationSurface();
     setSubmitStatus('idle');
   };
 
   const handleSubmit = () => {
     if (!lastValidatedAt || editorDirty) {
-      setUtilityPanel('checks');
+      openValidationSurface();
       return;
     }
 
     setSubmitStatus('ready');
   };
+
+  const mobileUtilitySheetId = activeMobileUtilityOverlay === 'files'
+    ? fileDrawerId
+    : activeMobileUtilityOverlay === 'checks'
+      ? validationDrawerId
+      : mobilePreviewOptionsSheetId;
+  const mobileUtilitySheetLabel = activeMobileUtilityOverlay === 'files'
+    ? pickLocaleText(locale, {
+        en: 'Files sheet',
+        zh_HANS: '文件抽屉',
+        zh_HANT: '檔案抽屜',
+        ja: 'ファイルシート',
+        ko: '파일 시트',
+        fr: 'Feuille fichiers',
+      })
+    : activeMobileUtilityOverlay === 'checks'
+      ? pickLocaleText(locale, {
+          en: 'Validation checks sheet',
+          zh_HANS: '校验检查抽屉',
+          zh_HANT: '驗證檢查抽屜',
+          ja: '検証チェックシート',
+          ko: '검증 점검 시트',
+          fr: 'Feuille contrôles',
+        })
+      : pickLocaleText(locale, {
+          en: 'Preview options sheet',
+          zh_HANS: '预览选项抽屉',
+          zh_HANT: '預覽選項抽屜',
+          ja: 'プレビュー設定シート',
+          ko: '미리보기 옵션 시트',
+          fr: 'Feuille options aperçu',
+        });
+  const mobileUtilitySheetTestId = activeMobileUtilityOverlay === 'files'
+    ? 'ide-file-drawer'
+    : activeMobileUtilityOverlay === 'checks'
+      ? 'ide-validation-drawer'
+      : 'ide-mobile-preview-options-sheet';
 
   const ideBadgeLabel = pickLocaleText(locale, {
     en: target === 'template' ? 'Template IDE' : target === 'component' ? 'Component IDE' : 'Advanced IDE',
@@ -1871,9 +2043,10 @@ export function PublicPresenceAuthoringIdeScreen({
       contentClassName="max-w-none"
       decorationDensity="calm"
     >
-      <div className="space-y-2" data-testid="ide-workbench">
+      <div className="space-y-2" data-testid="ide-workbench" data-workbench-shell="true" ref={workbenchShellRef}>
         <PublicPresenceSurface
           className="sticky top-2 z-20 px-3 py-2 sm:px-3 sm:py-2 lg:px-3 lg:py-2 shadow-sm backdrop-blur"
+          data-overlay-scope="true"
           data-testid="ide-topbar"
         >
           <div className="space-y-2 xl:hidden">
@@ -1904,7 +2077,7 @@ export function PublicPresenceAuthoringIdeScreen({
                 ref={mobileActionsOverlay.fallbackTriggerRef}
                 onClick={(event) => {
                   mobileActionsOverlay.registerTrigger(event.currentTarget);
-                  setMobileActionsOpen(true);
+                  setMobileOverlay((current) => (current === 'actions' ? null : 'actions'));
                 }}
                 className="inline-flex shrink-0 items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
               >
@@ -1924,7 +2097,7 @@ export function PublicPresenceAuthoringIdeScreen({
                 aria-pressed={mobileSurface === 'editor'}
                 onClick={() => {
                   setMobileSurface('editor');
-                  setMobilePreviewOptionsOpen(false);
+                  setMobileOverlay(null);
                 }}
                 className={`inline-flex items-center justify-center gap-2 rounded-full border px-3 py-1.5 text-sm font-semibold transition ${
                   mobileSurface === 'editor'
@@ -1945,7 +2118,10 @@ export function PublicPresenceAuthoringIdeScreen({
               <button
                 type="button"
                 aria-pressed={mobileSurface === 'preview'}
-                onClick={() => setMobileSurface('preview')}
+                onClick={() => {
+                  setMobileSurface('preview');
+                  setMobileOverlay(null);
+                }}
                 className={`inline-flex items-center justify-center gap-2 rounded-full border px-3 py-1.5 text-sm font-semibold transition ${
                   mobileSurface === 'preview'
                     ? 'border-rose-300 bg-rose-50 text-rose-700'
@@ -2073,6 +2249,7 @@ export function PublicPresenceAuthoringIdeScreen({
             role="dialog"
             variant="inset"
           >
+            <div ref={mobileActionsSheetPanelRef} tabIndex={-1}>
             <div className="mb-4 flex items-center justify-between gap-3">
               <div className="space-y-1">
                 <h2 className="text-base font-semibold text-slate-950">
@@ -2098,7 +2275,7 @@ export function PublicPresenceAuthoringIdeScreen({
               </div>
               <button
                 type="button"
-                onClick={() => setMobileActionsOpen(false)}
+                onClick={() => setMobileOverlay(null)}
                 ref={mobileActionsOverlay.mobileInitialFocusRef}
                 className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
               >
@@ -2143,7 +2320,7 @@ export function PublicPresenceAuthoringIdeScreen({
                         handleSubmit();
                       }
 
-                      setMobileActionsOpen(false);
+                      setMobileOverlay((current) => (current === 'actions' ? null : current));
                     }}
                     className="inline-flex min-h-14 flex-col items-center justify-center gap-1 rounded-2xl border border-slate-200 bg-white px-2 py-2 text-center text-[11px] font-semibold leading-tight text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
                   >
@@ -2166,12 +2343,14 @@ export function PublicPresenceAuthoringIdeScreen({
                 ),
               )}
             </div>
+            </div>
           </PublicPresenceSurface>
         ) : null}
 
         <div className={`relative grid min-h-[calc(100vh-4.75rem)] gap-2 ${ideGridClass}`}>
           <PublicPresenceSurface
             className="!fixed bottom-4 left-1/2 z-30 flex -translate-x-1/2 flex-row items-center gap-2 rounded-full border border-slate-200/90 bg-white/97 px-2 py-2 shadow-lg backdrop-blur md:!static md:bottom-auto md:left-auto md:z-auto md:h-full md:translate-x-0 md:flex-col md:rounded-[2rem] md:border-transparent md:bg-white md:px-1 md:py-2 md:shadow-none md:backdrop-blur-0"
+            data-overlay-scope="true"
             data-testid="ide-file-rail"
             variant="inset"
           >
@@ -2201,7 +2380,9 @@ export function PublicPresenceAuthoringIdeScreen({
                 icon: <CheckCircle2 className="h-4 w-4" aria-hidden="true" />,
               },
             ].map((item) => {
-              const isActive = utilityPanel === item.key;
+              const isActive = isWideDesktop
+                ? desktopUtilityPanel === item.key
+                : mobileOverlay === item.key;
 
               return (
                 <button
@@ -2212,18 +2393,30 @@ export function PublicPresenceAuthoringIdeScreen({
                   aria-label={item.label}
                   aria-pressed={isActive}
                   ref={isActive
-                    ? item.key === 'files'
-                      ? filesDrawerOverlay.fallbackTriggerRef
-                      : validationDrawerOverlay.fallbackTriggerRef
+                    ? isWideDesktop
+                      ? item.key === 'files'
+                        ? filesDrawerOverlay.fallbackTriggerRef
+                        : validationDrawerOverlay.fallbackTriggerRef
+                      : mobileUtilityOverlay.fallbackTriggerRef
                     : undefined}
                   onClick={(event) => {
-                    if (item.key === 'files') {
-                      filesDrawerOverlay.registerTrigger(event.currentTarget);
-                    } else {
-                      validationDrawerOverlay.registerTrigger(event.currentTarget);
+                    if (isWideDesktop) {
+                      if (item.key === 'files') {
+                        filesDrawerOverlay.registerTrigger(event.currentTarget);
+                      } else {
+                        validationDrawerOverlay.registerTrigger(event.currentTarget);
+                      }
+
+                      setDesktopUtilityPanel((current) =>
+                        current === item.key ? null : item.key as 'files' | 'checks',
+                      );
+                      return;
                     }
 
-                    setUtilityPanel((current) => (current === item.key ? null : item.key as 'files' | 'checks'));
+                    mobileUtilityOverlay.registerTrigger(event.currentTarget);
+                    setMobileOverlay((current) =>
+                      current === item.key ? null : item.key as 'files' | 'checks',
+                    );
                   }}
                   className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl border px-3 transition md:h-11 md:w-11 md:px-0 ${
                     isActive
@@ -2239,7 +2432,7 @@ export function PublicPresenceAuthoringIdeScreen({
             })}
           </PublicPresenceSurface>
 
-          {showDesktopUtilityPanel && utilityPanel === 'files' ? (
+          {showDesktopUtilityPanel && desktopUtilityPanel === 'files' ? (
             <div
               aria-label={pickLocaleText(locale, {
                 en: 'Files panel',
@@ -2250,6 +2443,7 @@ export function PublicPresenceAuthoringIdeScreen({
                 fr: 'Panneau fichiers',
               })}
               className="hidden min-h-0 overflow-hidden xl:block"
+              data-overlay-scope="true"
               data-testid="ide-file-drawer"
               id={fileDrawerId}
               role="region"
@@ -2280,7 +2474,7 @@ export function PublicPresenceAuthoringIdeScreen({
                   </div>
                   <button
                     type="button"
-                    onClick={() => setUtilityPanel(null)}
+                    onClick={() => setDesktopUtilityPanel(null)}
                     ref={filesDrawerOverlay.desktopInitialFocusRef}
                     className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
                   >
@@ -2310,7 +2504,7 @@ export function PublicPresenceAuthoringIdeScreen({
                               data-testid={`ide-file-${file.path}`}
                               onClick={() => {
                                 setActivePath(file.path);
-                                setUtilityPanel(null);
+                                setDesktopUtilityPanel(null);
                               }}
                               className={`flex w-full items-center gap-3 rounded-2xl border px-3 py-3 text-left text-sm font-medium transition ${
                                 activePath === file.path
@@ -2331,7 +2525,7 @@ export function PublicPresenceAuthoringIdeScreen({
             </div>
           ) : null}
 
-          {showDesktopUtilityPanel && utilityPanel === 'checks' ? (
+          {showDesktopUtilityPanel && desktopUtilityPanel === 'checks' ? (
             <div
               aria-label={pickLocaleText(locale, {
                 en: 'Validation panel',
@@ -2342,6 +2536,7 @@ export function PublicPresenceAuthoringIdeScreen({
                 fr: 'Panneau validation',
               })}
               className="hidden min-h-0 overflow-hidden xl:block"
+              data-overlay-scope="true"
               data-testid="ide-validation-drawer"
               id={validationDrawerId}
               role="region"
@@ -2372,7 +2567,7 @@ export function PublicPresenceAuthoringIdeScreen({
                   </div>
                   <button
                     type="button"
-                    onClick={() => setUtilityPanel(null)}
+                    onClick={() => setDesktopUtilityPanel(null)}
                     ref={validationDrawerOverlay.desktopInitialFocusRef}
                     className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
                   >
@@ -2425,6 +2620,7 @@ export function PublicPresenceAuthoringIdeScreen({
               className={`relative h-full min-h-[calc(100vh-4.75rem)] flex-col border border-slate-200/80 bg-white/95 p-0 sm:p-0 lg:p-0 ${
                 mobileSurface === 'editor' ? 'flex' : 'hidden'
               } xl:flex`}
+              data-overlay-scope="true"
               data-testid="ide-editor-surface"
             >
               <div className="pointer-events-none absolute inset-x-3 top-3 z-10 flex justify-start sm:inset-x-4">
@@ -2537,6 +2733,7 @@ export function PublicPresenceAuthoringIdeScreen({
             className={`relative h-full min-h-[calc(100vh-4.75rem)] flex-col border border-slate-200/80 bg-white/95 p-0 sm:p-0 lg:p-0 xl:min-w-[28rem] ${
               mobileSurface === 'preview' ? 'flex' : 'hidden'
             } xl:flex`}
+            data-overlay-scope="true"
             data-testid="ide-preview-surface"
           >
             <div className="pointer-events-none absolute inset-x-3 top-3 z-10 flex justify-start sm:inset-x-4">
@@ -2552,10 +2749,12 @@ export function PublicPresenceAuthoringIdeScreen({
                       aria-controls={mobilePreviewOptionsSheetId}
                       aria-expanded={mobilePreviewOptionsOpen}
                       aria-haspopup="dialog"
-                      ref={mobilePreviewOptionsOverlay.fallbackTriggerRef}
+                      ref={mobileUtilityOverlay.fallbackTriggerRef}
                       onClick={(event) => {
-                        mobilePreviewOptionsOverlay.registerTrigger(event.currentTarget);
-                        setMobilePreviewOptionsOpen(true);
+                        mobileUtilityOverlay.registerTrigger(event.currentTarget);
+                        setMobileOverlay((current) =>
+                          current === 'previewOptions' ? null : 'previewOptions',
+                        );
                       }}
                       className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
                     >
@@ -2783,319 +2982,312 @@ export function PublicPresenceAuthoringIdeScreen({
             </div>
           </PublicPresenceSurface>
 
-          {mobilePreviewOptionsOpen ? (
+          {activeMobileUtilityOverlay ? (
             <PublicPresenceSurface
-              aria-label={pickLocaleText(locale, {
-                en: 'Preview options sheet',
-                zh_HANS: '预览选项抽屉',
-                zh_HANT: '預覽選項抽屜',
-                ja: 'プレビュー設定シート',
-                ko: '미리보기 옵션 시트',
-                fr: 'Feuille options aperçu',
-              })}
+              aria-label={mobileUtilitySheetLabel}
               aria-modal
               className="!fixed inset-x-3 bottom-3 z-40 max-h-[72vh] overflow-auto rounded-[2rem] border border-slate-200/90 bg-white/97 p-4 shadow-xl xl:hidden"
-              data-testid="ide-mobile-preview-options-sheet"
-              id={mobilePreviewOptionsSheetId}
+              data-testid={mobileUtilitySheetTestId}
+              id={mobileUtilitySheetId}
               role="dialog"
               variant="inset"
             >
-              <div className="mb-4 flex items-center justify-between gap-3">
-                <div className="space-y-1">
-                  <h2 className="text-base font-semibold text-slate-950">
-                    {pickLocaleText(locale, {
-                      en: 'Preview options',
-                      zh_HANS: '预览选项',
-                      zh_HANT: '預覽選項',
-                      ja: 'プレビュー設定',
-                      ko: '미리보기 옵션',
-                      fr: 'Options aperçu',
-                    })}
-                  </h2>
-                  <p className="text-sm text-slate-600">
-                    {pickLocaleText(locale, {
-                      en: 'Choose the sample content and reveal state you want to review here.',
-                      zh_HANS: '在这里选择要检查的样例内容与揭晓状态。',
-                      zh_HANT: '在這裡選擇要檢查的樣例內容與揭曉狀態。',
-                      ja: 'ここで確認したいサンプル内容と公開状態を選びます。',
-                      ko: '여기에서 확인할 샘플 콘텐츠와 공개 상태를 고릅니다.',
-                      fr: 'Choisissez ici le contenu d’exemple et l’état de reveal à vérifier.',
-                    })}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setMobilePreviewOptionsOpen(false)}
-                  ref={mobilePreviewOptionsOverlay.mobileInitialFocusRef}
-                  className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
-                >
-                  <ChevronLeft className="h-4 w-4" aria-hidden="true" />
-                  {pickLocaleText(locale, {
-                    en: 'Close',
-                    zh_HANS: '关闭',
-                    zh_HANT: '關閉',
-                    ja: '閉じる',
-                    ko: '닫기',
-                    fr: 'Fermer',
-                  })}
-                </button>
-              </div>
-              <div className="grid gap-3">
-                <label className="text-sm">
-                  <span className="mb-2 block font-medium text-slate-700">
-                    {getSampleContentLabel(locale)}
-                  </span>
-                  <select
-                    value={fixtureMode}
-                    onChange={(event) => setFixtureMode(event.target.value as FixtureMode)}
-                    className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-900"
-                  >
-                    <option value="default">{getFixtureModeLabel(locale, 'default')}</option>
-                    <option value="unsafeFallback">{getFixtureModeLabel(locale, 'unsafeFallback')}</option>
-                  </select>
-                </label>
-                <label className="text-sm">
-                  <span className="mb-2 block font-medium text-slate-700">
-                    {getRevealStateLabel(locale)}
-                  </span>
-                  <select
-                    value={previewPhase}
-                    onChange={(event) =>
-                      setPreviewPhase(event.target.value as PublicPresencePhaseVisibility)
-                    }
-                    className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-900"
-                  >
-                    {[
-                      'always',
-                      'teaser',
-                      'countdown',
-                      'preRevealHold',
-                      'revealed',
-                      'liveLaunch',
-                      'postLaunch',
-                      'expiredFallback',
-                    ].map((phase) => (
-                      <option key={phase} value={phase}>
-                        {getAuthoringPhaseLabel(
-                          locale,
-                          phase as PublicPresencePhaseVisibility,
-                        )}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              </div>
-            </PublicPresenceSurface>
-          ) : null}
-
-          {!showDesktopUtilityPanel && utilityPanel === 'files' ? (
-            <PublicPresenceSurface
-              aria-label={pickLocaleText(locale, {
-                en: 'Files drawer',
-                zh_HANS: '文件抽屉',
-                zh_HANT: '檔案抽屜',
-                ja: 'ファイルドロワー',
-                ko: '파일 드로어',
-                fr: 'Tiroir fichiers',
-              })}
-              aria-modal={false}
-              className="!fixed inset-x-3 bottom-3 z-40 max-h-[70vh] overflow-auto rounded-[2rem] border border-slate-200/90 bg-white/97 p-4 shadow-xl lg:!absolute lg:inset-y-3 lg:left-[4.5rem] lg:right-auto lg:w-[20rem]"
-              data-testid="ide-file-drawer"
-              id={fileDrawerId}
-              role="dialog"
-              variant="inset"
-            >
-              <div className="mb-4 flex items-center justify-between gap-3">
-                <div className="space-y-1">
-                  <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">
-                    {pickLocaleText(locale, {
-                      en: 'Files',
-                      zh_HANS: '文件',
-                      zh_HANT: '檔案',
-                      ja: 'ファイル',
-                      ko: '파일',
-                      fr: 'Fichiers',
-                    })}
-                  </h2>
-                  <p className="text-sm leading-6 text-slate-600">
-                    {pickLocaleText(locale, {
-                      en: 'Browse the source bundle, sample content, and sidecars for this draft.',
-                      zh_HANS: '在这里浏览当前草稿的源文件、样例内容和侧车文件。',
-                      zh_HANT: '在這裡瀏覽目前草稿的源檔案、樣例內容與側車檔案。',
-                      ja: 'このドラフトのソース、サンプル内容、サイドカーをここで確認します。',
-                      ko: '이 초안의 소스, 샘플 콘텐츠, 사이드카 파일을 여기에서 살펴봅니다.',
-                      fr: 'Parcourez ici les sources, le contenu d’exemple et les fichiers annexes de ce brouillon.',
-                    })}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setUtilityPanel(null)}
-                  ref={filesDrawerOverlay.desktopInitialFocusRef}
-                  className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
-                >
-                  <ChevronLeft className="h-4 w-4" aria-hidden="true" />
-                  {pickLocaleText(locale, {
-                    en: 'Close',
-                    zh_HANS: '关闭',
-                    zh_HANT: '關閉',
-                    ja: '閉じる',
-                    ko: '닫기',
-                    fr: 'Fermer',
-                  })}
-                </button>
-              </div>
-              <div className="space-y-4 overflow-auto pr-1">
-                {groupedFiles.map((group) => (
-                  <div key={group.groupId} className="space-y-2">
-                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
-                      {getVirtualFileGroupLabel(locale, group.groupId)}
+              <div ref={mobileUtilitySheetPanelRef} tabIndex={-1}>
+                <div className="mb-4 flex items-center justify-between gap-3">
+                  <div className="space-y-1">
+                    <h2 className="text-base font-semibold text-slate-950">
+                      {activeMobileUtilityOverlay === 'files'
+                        ? pickLocaleText(locale, {
+                            en: 'Files',
+                            zh_HANS: '文件',
+                            zh_HANT: '檔案',
+                            ja: 'ファイル',
+                            ko: '파일',
+                            fr: 'Fichiers',
+                          })
+                        : activeMobileUtilityOverlay === 'checks'
+                          ? pickLocaleText(locale, {
+                              en: 'Validation checks',
+                              zh_HANS: '校验检查',
+                              zh_HANT: '驗證檢查',
+                              ja: '検証チェック',
+                              ko: '검증 점검',
+                              fr: 'Contrôles',
+                            })
+                          : pickLocaleText(locale, {
+                              en: 'Preview options',
+                              zh_HANS: '预览选项',
+                              zh_HANT: '預覽選項',
+                              ja: 'プレビュー設定',
+                              ko: '미리보기 옵션',
+                              fr: 'Options aperçu',
+                            })}
+                    </h2>
+                    <p className="text-sm text-slate-600">
+                      {activeMobileUtilityOverlay === 'files'
+                        ? pickLocaleText(locale, {
+                            en: 'Browse the source bundle, sample content, and sidecars for this draft.',
+                            zh_HANS: '在这里浏览当前草稿的源文件、样例内容和侧车文件。',
+                            zh_HANT: '在這裡瀏覽目前草稿的源檔案、樣例內容與側車檔案。',
+                            ja: 'このドラフトのソース、サンプル内容、サイドカーをここで確認します。',
+                            ko: '이 초안의 소스, 샘플 콘텐츠, 사이드카 파일을 여기에서 살펴봅니다.',
+                            fr: 'Parcourez ici les sources, le contenu d’exemple et les fichiers annexes de ce brouillon.',
+                          })
+                        : activeMobileUtilityOverlay === 'checks'
+                          ? pickLocaleText(locale, {
+                              en: 'Review save state, last validation time, and open checks for this draft.',
+                              zh_HANS: '在这里查看当前草稿的保存状态、最近校验时间和待处理检查项。',
+                              zh_HANT: '在這裡查看目前草稿的儲存狀態、最近驗證時間與待處理檢查項。',
+                              ja: 'このドラフトの保存状態、直近の検証時刻、未解決チェックをここで確認します。',
+                              ko: '이 초안의 저장 상태, 최근 검증 시각, 열린 확인 항목을 여기에서 검토합니다.',
+                              fr: 'Vérifiez ici l’état d’enregistrement, la dernière validation et les contrôles ouverts de ce brouillon.',
+                            })
+                          : pickLocaleText(locale, {
+                              en: 'Choose the sample content and reveal state you want to review here.',
+                              zh_HANS: '在这里选择要检查的样例内容与揭晓状态。',
+                              zh_HANT: '在這裡選擇要檢查的樣例內容與揭曉狀態。',
+                              ja: 'ここで確認したいサンプル内容と公開状態を選びます。',
+                              ko: '여기에서 확인할 샘플 콘텐츠와 공개 상태를 고릅니다.',
+                              fr: 'Choisissez ici le contenu d’exemple et l’état de reveal à vérifier.',
+                            })}
                     </p>
-                    <div className="space-y-2">
-                      {group.files.map((file) => (
-                        <button
-                          key={file.path}
-                          type="button"
-                          data-testid={`ide-file-${file.path}`}
-                          onClick={() => {
-                            setActivePath(file.path);
-                            setUtilityPanel(null);
-                          }}
-                          className={`flex w-full items-center gap-3 rounded-2xl border px-3 py-3 text-left text-sm font-medium transition ${
-                            activePath === file.path
-                              ? 'border-rose-300 bg-rose-50 text-rose-800'
-                              : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setMobileOverlay(null)}
+                    ref={mobileUtilityOverlay.mobileInitialFocusRef}
+                    className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+                  >
+                    <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+                    {pickLocaleText(locale, {
+                      en: 'Close',
+                      zh_HANS: '关闭',
+                      zh_HANT: '關閉',
+                      ja: '閉じる',
+                      ko: '닫기',
+                      fr: 'Fermer',
+                    })}
+                  </button>
+                </div>
+                <div className="mb-4 grid grid-cols-3 gap-2">
+                  {[
+                    {
+                      key: 'previewOptions',
+                      label: pickLocaleText(locale, {
+                        en: 'Preview options',
+                        zh_HANS: '预览选项',
+                        zh_HANT: '預覽選項',
+                        ja: 'プレビュー設定',
+                        ko: '미리보기 옵션',
+                        fr: 'Options aperçu',
+                      }),
+                    },
+                    {
+                      key: 'files',
+                      label: pickLocaleText(locale, {
+                        en: 'Files',
+                        zh_HANS: '文件',
+                        zh_HANT: '檔案',
+                        ja: 'ファイル',
+                        ko: '파일',
+                        fr: 'Fichiers',
+                      }),
+                    },
+                    {
+                      key: 'checks',
+                      label: pickLocaleText(locale, {
+                        en: 'Validation checks',
+                        zh_HANS: '校验检查',
+                        zh_HANT: '驗證檢查',
+                        ja: '検証チェック',
+                        ko: '검증 점검',
+                        fr: 'Contrôles',
+                      }),
+                    },
+                  ].map((item) => (
+                    <button
+                      key={item.key}
+                      type="button"
+                      aria-controls={item.key === 'previewOptions'
+                        ? mobilePreviewOptionsSheetId
+                        : item.key === 'files'
+                          ? fileDrawerId
+                          : validationDrawerId}
+                      aria-expanded={activeMobileUtilityOverlay === item.key}
+                      aria-pressed={activeMobileUtilityOverlay === item.key}
+                      onClick={(event) => {
+                        mobileUtilityOverlay.registerTrigger(event.currentTarget);
+                        setMobileOverlay(item.key as Exclude<MobileIdeOverlay, 'actions' | null>);
+                      }}
+                      className={`inline-flex min-h-12 items-center justify-center rounded-2xl border px-3 py-2 text-center text-xs font-semibold leading-tight transition ${
+                        activeMobileUtilityOverlay === item.key
+                          ? 'border-rose-300 bg-rose-50 text-rose-700'
+                          : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'
+                      }`}
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
+                {activeMobileUtilityOverlay === 'previewOptions' ? (
+                  <div className="grid gap-3">
+                    <label className="text-sm">
+                      <span className="mb-2 block font-medium text-slate-700">
+                        {getSampleContentLabel(locale)}
+                      </span>
+                      <select
+                        value={fixtureMode}
+                        onChange={(event) => setFixtureMode(event.target.value as FixtureMode)}
+                        className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-900"
+                      >
+                        <option value="default">{getFixtureModeLabel(locale, 'default')}</option>
+                        <option value="unsafeFallback">{getFixtureModeLabel(locale, 'unsafeFallback')}</option>
+                      </select>
+                    </label>
+                    <label className="text-sm">
+                      <span className="mb-2 block font-medium text-slate-700">
+                        {getRevealStateLabel(locale)}
+                      </span>
+                      <select
+                        value={previewPhase}
+                        onChange={(event) =>
+                          setPreviewPhase(event.target.value as PublicPresencePhaseVisibility)
+                        }
+                        className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-900"
+                      >
+                        {[
+                          'always',
+                          'teaser',
+                          'countdown',
+                          'preRevealHold',
+                          'revealed',
+                          'liveLaunch',
+                          'postLaunch',
+                          'expiredFallback',
+                        ].map((phase) => (
+                          <option key={phase} value={phase}>
+                            {getAuthoringPhaseLabel(
+                              locale,
+                              phase as PublicPresencePhaseVisibility,
+                            )}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
+                ) : activeMobileUtilityOverlay === 'files' ? (
+                  <div className="space-y-4 overflow-auto pr-1">
+                    {groupedFiles.map((group) => (
+                      <div key={group.groupId} className="space-y-2">
+                        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+                          {getVirtualFileGroupLabel(locale, group.groupId)}
+                        </p>
+                        <div className="space-y-2">
+                          {group.files.map((file) => (
+                            <button
+                              key={file.path}
+                              type="button"
+                              data-testid={`ide-file-${file.path}`}
+                              onClick={() => {
+                                setActivePath(file.path);
+                                setMobileOverlay(null);
+                              }}
+                              className={`flex w-full items-center gap-3 rounded-2xl border px-3 py-3 text-left text-sm font-medium transition ${
+                                activePath === file.path
+                                  ? 'border-rose-300 bg-rose-50 text-rose-800'
+                                  : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'
+                              }`}
+                            >
+                              {resolveFileIcon(file)}
+                              <span className="truncate">{file.path}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <>
+                    <div className="mb-4 grid gap-2" data-testid="ide-validation-status">
+                      <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+                        <p className="font-semibold text-slate-900">{saveStatusLabel}</p>
+                        <p className="mt-1">{formattedSavedAt}</p>
+                      </div>
+                      <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+                        <p className="font-semibold text-slate-900">{validationStatusLabel}</p>
+                        <p className="mt-1">{formattedValidatedAt}</p>
+                      </div>
+                      <div
+                        className={`rounded-2xl border px-4 py-3 text-sm ${
+                          submitStatus === 'ready'
+                            ? 'border-emerald-200 bg-emerald-50 text-emerald-900'
+                            : 'border-slate-200 bg-slate-50 text-slate-700'
+                        }`}
+                      >
+                        <p className="font-semibold">
+                          {submitStatus === 'ready'
+                            ? pickLocaleText(locale, {
+                                en: 'Ready to submit',
+                                zh_HANS: '可提交审核',
+                                zh_HANT: '可提交審核',
+                                ja: 'レビュー提出の準備完了',
+                                ko: '검토 제출 준비 완료',
+                                fr: 'Prêt à soumettre',
+                              })
+                            : pickLocaleText(locale, {
+                                en: 'Validate after each edit before submit',
+                                zh_HANS: '每次编辑后先验证，再提交审核',
+                                zh_HANT: '每次編輯後先驗證，再提交審核',
+                                ja: '提出前に編集ごとに検証してください',
+                                ko: '제출 전에는 편집마다 먼저 검증하세요',
+                                fr: 'Validez après chaque modification avant de soumettre',
+                              })}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      {validationItems.map((item) => (
+                        <div
+                          key={item.message}
+                          className={`rounded-2xl border px-4 py-3 text-sm ${
+                            item.level === 'warn'
+                              ? 'border-amber-200 bg-amber-50 text-amber-900'
+                              : 'border-emerald-200 bg-emerald-50 text-emerald-900'
                           }`}
                         >
-                          {resolveFileIcon(file)}
-                          <span className="truncate">{file.path}</span>
-                        </button>
+                          <div className="flex items-start gap-2">
+                            {item.level === 'warn' ? (
+                              <AlertCircle className="mt-0.5 h-4 w-4" aria-hidden="true" />
+                            ) : (
+                              <CheckCircle2 className="mt-0.5 h-4 w-4" aria-hidden="true" />
+                            )}
+                            <span>{item.message}</span>
+                          </div>
+                        </div>
                       ))}
                     </div>
-                  </div>
-                ))}
-              </div>
-            </PublicPresenceSurface>
-          ) : null}
-
-          {!showDesktopUtilityPanel && utilityPanel === 'checks' ? (
-            <PublicPresenceSurface
-              aria-label={pickLocaleText(locale, {
-                en: 'Validation checks drawer',
-                zh_HANS: '校验检查抽屉',
-                zh_HANT: '驗證檢查抽屜',
-                ja: '検証チェックドロワー',
-                ko: '검증 점검 드로어',
-                fr: 'Tiroir contrôles',
-              })}
-              aria-modal={false}
-              className="!fixed inset-x-3 bottom-3 z-40 max-h-[70vh] overflow-auto rounded-[2rem] border border-slate-200/90 bg-white/97 p-4 shadow-xl lg:!absolute lg:inset-y-3 lg:left-[4.5rem] lg:right-auto lg:w-[22rem]"
-              data-testid="ide-validation-drawer"
-              id={validationDrawerId}
-              role="dialog"
-              variant="inset"
-            >
-              <div className="mb-4 flex items-center justify-between gap-3">
-                <div className="space-y-1">
-                  <h2 className="text-base font-semibold text-slate-950">
-                    {pickLocaleText(locale, {
-                      en: 'Validation',
-                      zh_HANS: '校验',
-                      zh_HANT: '驗證',
-                      ja: '検証',
-                      ko: '검증',
-                      fr: 'Validation',
-                    })}
-                  </h2>
-                  <p className="text-sm text-slate-600">
-                    {pickLocaleText(locale, {
-                      en: 'Review save state, last validation time, and open checks for this draft.',
-                      zh_HANS: '在这里查看当前草稿的保存状态、最近校验时间和待处理检查项。',
-                      zh_HANT: '在這裡查看目前草稿的儲存狀態、最近驗證時間與待處理檢查項。',
-                      ja: 'このドラフトの保存状態、直近の検証時刻、未解決チェックをここで確認します。',
-                      ko: '이 초안의 저장 상태, 최근 검증 시각, 열린 확인 항목을 여기에서 검토합니다.',
-                      fr: 'Vérifiez ici l’état d’enregistrement, la dernière validation et les contrôles ouverts de ce brouillon.',
-                    })}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setUtilityPanel(null)}
-                  ref={validationDrawerOverlay.desktopInitialFocusRef}
-                  className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
-                >
-                  <ChevronLeft className="h-4 w-4" aria-hidden="true" />
-                  {pickLocaleText(locale, {
-                    en: 'Close',
-                    zh_HANS: '关闭',
-                    zh_HANT: '關閉',
-                    ja: '閉じる',
-                    ko: '닫기',
-                    fr: 'Fermer',
-                  })}
-                </button>
-              </div>
-              <div className="mb-4 grid gap-2" data-testid="ide-validation-status">
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
-                  <p className="font-semibold text-slate-900">{saveStatusLabel}</p>
-                  <p className="mt-1">{formattedSavedAt}</p>
-                </div>
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
-                  <p className="font-semibold text-slate-900">{validationStatusLabel}</p>
-                  <p className="mt-1">{formattedValidatedAt}</p>
-                </div>
-                <div
-                  className={`rounded-2xl border px-4 py-3 text-sm ${
-                    submitStatus === 'ready'
-                      ? 'border-emerald-200 bg-emerald-50 text-emerald-900'
-                      : 'border-slate-200 bg-slate-50 text-slate-700'
-                  }`}
-                >
-                  <p className="font-semibold">
-                    {submitStatus === 'ready'
-                      ? pickLocaleText(locale, {
-                          en: 'Ready to submit',
-                          zh_HANS: '可提交审核',
-                          zh_HANT: '可提交審核',
-                          ja: 'レビュー提出の準備完了',
-                          ko: '검토 제출 준비 완료',
-                          fr: 'Prêt à soumettre',
-                        })
-                      : pickLocaleText(locale, {
-                          en: 'Validate after each edit before submit',
-                          zh_HANS: '每次编辑后先验证，再提交审核',
-                          zh_HANT: '每次編輯後先驗證，再提交審核',
-                          ja: '提出前に編集ごとに検証してください',
-                          ko: '제출 전에는 편집마다 먼저 검증하세요',
-                          fr: 'Validez après chaque modification avant de soumettre',
-                        })}
-                  </p>
-                </div>
-              </div>
-              <div className="space-y-3">
-                {validationItems.map((item) => (
-                  <div
-                    key={item.message}
-                    className={`rounded-2xl border px-4 py-3 text-sm ${
-                      item.level === 'warn'
-                        ? 'border-amber-200 bg-amber-50 text-amber-900'
-                        : 'border-emerald-200 bg-emerald-50 text-emerald-900'
-                    }`}
-                  >
-                    <div className="flex items-start gap-2">
-                      {item.level === 'warn' ? (
-                        <AlertCircle className="mt-0.5 h-4 w-4" aria-hidden="true" />
-                      ) : (
-                        <CheckCircle2 className="mt-0.5 h-4 w-4" aria-hidden="true" />
-                      )}
-                      <span>{item.message}</span>
-                    </div>
-                  </div>
-                ))}
+                  </>
+                )}
               </div>
             </PublicPresenceSurface>
           ) : null}
         </div>
+        {mobileModalOpen ? (
+          <button
+            type="button"
+            aria-label={pickLocaleText(locale, {
+              en: 'Close active sheet',
+              zh_HANS: '关闭当前抽屉',
+              zh_HANT: '關閉目前抽屜',
+              ja: '現在のシートを閉じる',
+              ko: '현재 시트 닫기',
+              fr: 'Fermer la feuille active',
+            })}
+            className="fixed inset-0 z-30 cursor-default bg-slate-950/10 backdrop-blur-[1px] xl:hidden"
+            data-testid="ide-mobile-overlay-backdrop"
+            onClick={() => setMobileOverlay(null)}
+          />
+        ) : null}
       </div>
     </PublicPresenceShell>
   );

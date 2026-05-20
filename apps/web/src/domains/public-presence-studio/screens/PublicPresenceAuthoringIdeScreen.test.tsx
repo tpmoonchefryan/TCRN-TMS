@@ -131,9 +131,10 @@ describe('PublicPresenceAuthoringIdeScreen', () => {
     expect(screen.getByTestId('monaco-editor-host')).toBeInTheDocument();
     expect(screen.getByTestId('monaco-editor-stub')).toBeInTheDocument();
     fireEvent.click(screen.getAllByRole('button', { name: 'Files' })[0]);
+    const fileDrawer = screen.getByTestId('ide-file-drawer');
     expect(screen.getByTestId('ide-file-src/template.tsx')).toBeInTheDocument();
     expect(screen.getByTestId('ide-live-preview')).toBeInTheDocument();
-    expect(screen.getAllByRole('button', { name: 'Validation checks' })[0]).toBeInTheDocument();
+    expect(within(fileDrawer).getByRole('button', { name: 'Validation checks' })).toBeInTheDocument();
     expect(screen.queryByText(/codemirror-wrapper/i)).not.toBeInTheDocument();
     expect(container.textContent).not.toMatch(/Monaco|CodeMirror|runtime/i);
     expect(container.textContent).not.toMatch(ORDINARY_COPY_BOUNDARY_PATTERN);
@@ -152,10 +153,10 @@ describe('PublicPresenceAuthoringIdeScreen', () => {
 
     expect(screen.getAllByText('Component IDE')[0]).toBeInTheDocument();
     expect(screen.getByTestId('ide-topbar')).toBeInTheDocument();
-    fireEvent.click(screen.getAllByRole('button', { name: 'Files' })[0]);
-    expect(screen.getByTestId('ide-file-src/component.tsx')).toBeInTheDocument();
     expect(screen.getAllByRole('button', { name: 'Desktop' })[0]).toBeInTheDocument();
     expect(screen.getAllByRole('button', { name: 'Mobile' })[0]).toBeInTheDocument();
+    fireEvent.click(screen.getAllByRole('button', { name: 'Files' })[0]);
+    expect(screen.getByTestId('ide-file-src/component.tsx')).toBeInTheDocument();
     expect(screen.getAllByText('Editor')[0]).toBeInTheDocument();
   });
 
@@ -213,6 +214,50 @@ describe('PublicPresenceAuthoringIdeScreen', () => {
 
     const filesClose = within(filesDrawer).getByRole('button', { name: 'Close' });
     expect(filesClose).toBeInTheDocument();
+  });
+
+  it('keeps one mobile utility sheet active at a time and traps focus inside it', async () => {
+    setWindowWidth(390);
+
+    render(
+      <PublicPresenceAuthoringIdeScreen
+        target="template"
+        talentId="talent-1"
+        tenantId="tenant-1"
+        templateId="activeTalentHub"
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Preview view' }));
+    fireEvent.click(screen.getByTestId('ide-mobile-preview-options-button'));
+
+    expect(screen.getByTestId('ide-mobile-preview-options-sheet')).toBeInTheDocument();
+    expect(screen.getAllByRole('dialog')).toHaveLength(1);
+    expect(screen.getByTestId('ide-topbar')).toHaveAttribute('data-overlay-inert', 'true');
+    expect(screen.getByTestId('ide-mobile-overlay-backdrop')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Files' }));
+    expect(screen.queryByTestId('ide-mobile-preview-options-sheet')).not.toBeInTheDocument();
+    expect(screen.getByTestId('ide-file-drawer')).toBeInTheDocument();
+    expect(screen.getAllByRole('dialog')).toHaveLength(1);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Validation checks' }));
+    expect(screen.queryByTestId('ide-file-drawer')).not.toBeInTheDocument();
+    const validationDrawer = screen.getByTestId('ide-validation-drawer');
+    expect(validationDrawer).toBeInTheDocument();
+    expect(screen.getAllByRole('dialog')).toHaveLength(1);
+
+    const validationClose = within(validationDrawer).getByRole('button', { name: 'Close' });
+    await waitFor(() => {
+      expect(document.activeElement).toBe(validationClose);
+    });
+
+    const backgroundTrigger = screen.getByTestId('ide-mobile-actions-button');
+    backgroundTrigger.focus();
+    fireEvent.keyDown(document, { key: 'Tab' });
+    await waitFor(() => {
+      expect(validationDrawer.contains(document.activeElement)).toBe(true);
+    });
   });
 
   it('docks desktop utility panels and keeps implementation copy out of ordinary UI', async () => {

@@ -288,6 +288,94 @@ function getComponentNextStepCopy(
       });
 }
 
+const TEMPLATE_READINESS_RULE_COPY: Record<string, LocalizedText> = {
+  requiresOfficialChannels: buildExactText(
+    'Official channels need at least one trusted destination before launch.',
+    '上线前需要至少一个可信的官方渠道入口。',
+    '上線前需要至少一個可信的官方渠道入口。',
+    '公開前に、信頼できる公式導線を少なくとも一つ用意します。',
+    '런치 전에 신뢰할 수 있는 공식 채널 연결이 최소 하나 필요합니다.',
+    'Au moins un canal officiel fiable doit être prêt avant le lancement.',
+  ),
+  requiresFirstEncounter: buildExactText(
+    'First encounter needs the opening headline and intro moment ready.',
+    '首屏相遇区需要准备好开场标题与简介内容。',
+    '首屏相遇區需要準備好開場標題與簡介內容。',
+    'ファーストビューには、導入見出しと紹介要素が必要です。',
+    '첫 만남 구역에는 도입 헤드라인과 소개 장면이 준비되어야 합니다.',
+    'La première impression doit inclure un titre d’ouverture et une introduction prêtes.',
+  ),
+  requiresCountdownReveal: buildExactText(
+    'Countdown and reveal moments need a complete launch sequence.',
+    '倒计时与揭晓场景需要完整的上线节奏。',
+    '倒數與揭曉場景需要完整的上線節奏。',
+    'カウントダウンと公開演出には、完成した公開シーケンスが必要です。',
+    '카운트다운과 공개 장면에는 완성된 런치 시퀀스가 필요합니다.',
+    'Le compte à rebours et le reveal ont besoin d’une séquence de lancement complète.',
+  ),
+  requiresRevealSafeNaming: buildExactText(
+    'Reveal naming needs the fan-facing display name locked in.',
+    '揭晓页命名需要先确定面向粉丝的展示名称。',
+    '揭曉頁命名需要先確定面向粉絲的展示名稱。',
+    '公開ページの名称には、ファン向け表示名の確定が必要です。',
+    '공개 페이지 명칭에는 팬이 보는 표시 이름 확정이 필요합니다.',
+    'Le nom du reveal doit être finalisé avec l’intitulé visible par les fans.',
+  ),
+};
+
+function getTemplatePersonaFieldLabels(
+  locale: SupportedUiLocale,
+  template: (typeof PUBLIC_PRESENCE_TEMPLATE_DEFINITIONS)[PublicPresenceTemplateId],
+) {
+  return template.personaKitFields.map((fieldKey) => getPublicPresenceFieldLabel(locale, fieldKey));
+}
+
+function getTemplateReadinessRuleLabel(locale: SupportedUiLocale, rule: string) {
+  const localizedRule = TEMPLATE_READINESS_RULE_COPY[rule];
+
+  if (localizedRule) {
+    return resolveText(locale, localizedRule);
+  }
+
+  return pickLocaleText(locale, {
+    en: 'One launch-readiness checkpoint needs a closer IDE review.',
+    zh_HANS: '有一项上线前检查需要在 IDE 中进一步确认。',
+    zh_HANT: '有一項上線前檢查需要在 IDE 中進一步確認。',
+    ja: '公開準備の確認項目のうち一つは、IDE で詳しく見直す必要があります。',
+    ko: '런치 전 점검 항목 중 하나는 IDE에서 더 자세히 확인해야 합니다.',
+    fr: 'Un point de readiness demande un contrôle plus poussé dans l’IDE.',
+  });
+}
+
+function getTemplateReadinessRuleLabels(
+  locale: SupportedUiLocale,
+  template: (typeof PUBLIC_PRESENCE_TEMPLATE_DEFINITIONS)[PublicPresenceTemplateId],
+) {
+  return template.validationRules.map((rule) => getTemplateReadinessRuleLabel(locale, rule));
+}
+
+function getTemplateIdeHint(locale: SupportedUiLocale) {
+  return pickLocaleText(locale, {
+    en: 'Opens the full Template IDE with this layout loaded as your starting point.',
+    zh_HANS: '会打开完整的模板 IDE，并把这个布局作为起始方案载入。',
+    zh_HANT: '會打開完整的模板 IDE，並把這個版型作為起始方案載入。',
+    ja: 'このレイアウトを出発点として、フルサイズの Template IDE を開きます。',
+    ko: '이 레이아웃을 시작점으로 불러온 전체 Template IDE를 엽니다.',
+    fr: 'Ouvre l’IDE Template complet avec ce layout chargé comme point de départ.',
+  });
+}
+
+function getComponentIdeHint(locale: SupportedUiLocale) {
+  return pickLocaleText(locale, {
+    en: 'Opens the full Component IDE with this block loaded as your starting point.',
+    zh_HANS: '会打开完整的组件 IDE，并把这个模块作为起始方案载入。',
+    zh_HANT: '會打開完整的元件 IDE，並把這個模組作為起始方案載入。',
+    ja: 'このブロックを出発点として、フルサイズの Component IDE を開きます。',
+    ko: '이 블록을 시작점으로 불러온 전체 Component IDE를 엽니다.',
+    fr: 'Ouvre l’IDE Component complet avec ce bloc chargé comme point de départ.',
+  });
+}
+
 function SurfaceCommandLink({
   href,
   icon,
@@ -394,7 +482,7 @@ export function HomepageSurfaceMenu({
   const items = useHomepageSurfaceNavigation(tenantId, talentId);
 
   return (
-    <PublicPresenceSurface className="space-y-3 px-4 py-3" data-testid="homepage-surface-menu">
+    <PublicPresenceSurface className="px-4 py-3" data-testid="homepage-surface-menu">
       <div className="flex flex-wrap items-center gap-2">
         <PublicPresenceBadge icon={<LayoutTemplate className="h-4 w-4" aria-hidden="true" />} tone="rose">
           {pickLocaleText(locale, {
@@ -406,8 +494,6 @@ export function HomepageSurfaceMenu({
             fr: 'Homepage',
           })}
         </PublicPresenceBadge>
-      </div>
-      <div className="flex flex-wrap items-center gap-2">
         {items.map((item) => (
           <Link
             key={item.id}
@@ -457,15 +543,15 @@ export function TemplateCenterScreen({
           className="sticky top-4 z-20 px-4 py-3"
           data-testid="template-center-topbar"
         >
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex min-w-0 flex-wrap items-center gap-2">
+          <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+            <div className="flex min-w-0 flex-wrap items-center gap-2 lg:flex-nowrap">
               <PublicPresenceBadge icon={<LayoutTemplate className="h-4 w-4" aria-hidden="true" />} tone="rose">
                 {getHomepageSurfaceLabel(locale, 'templates')}
               </PublicPresenceBadge>
               <PublicPresenceBadge tone="slate" variant="outline">
                 {getLocaleCoverageLabel(locale)}
               </PublicPresenceBadge>
-              <p className="text-sm font-medium text-slate-600">
+              <p className="min-w-0 text-sm font-medium text-slate-600 lg:flex-1">
                 {pickLocaleText(locale, {
                   en: 'Curated layouts for launch and always-on fan pages.',
                   zh_HANS: '面向上线与常驻粉丝主页的精选布局。',
@@ -485,8 +571,8 @@ export function TemplateCenterScreen({
           </div>
         </PublicPresenceSurface>
 
-        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_22rem]">
-          <div className="grid gap-4 lg:grid-cols-2" data-testid="template-center-catalog">
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_16rem] 2xl:grid-cols-[minmax(0,1fr)_17rem]">
+          <div className="grid gap-4 lg:grid-cols-2 2xl:grid-cols-3" data-testid="template-center-catalog">
             {templates.map((template) => (
               <PublicPresenceSurface
                 key={template.templateId}
@@ -612,7 +698,7 @@ export function TemplateCenterScreen({
             <PublicPresenceSurface
               aria-label={getHomepageSurfaceActionLabel(locale, 'inspectTemplate')}
               aria-modal={false}
-              className="fixed inset-x-3 bottom-3 z-40 max-h-[72vh] overflow-auto rounded-[2rem] border border-slate-200/90 bg-white/97 p-4 shadow-xl xl:sticky xl:top-24 xl:z-10 xl:max-h-[calc(100vh-7rem)] xl:w-full"
+              className="fixed inset-x-3 bottom-3 z-40 max-h-[72vh] overflow-auto rounded-[2rem] border border-slate-200/90 bg-white/97 p-4 shadow-xl xl:sticky xl:top-24 xl:z-10 xl:max-h-[34rem] xl:w-full xl:self-start"
               data-testid="template-inspect-drawer"
               id={inspectTemplateDrawerId}
               role="dialog"
@@ -661,50 +747,84 @@ export function TemplateCenterScreen({
                     })}
                   </PublicPresenceBadge>
                 </div>
-                <div className="space-y-3 text-sm text-slate-600">
-                  <p>
-                    <span className="font-semibold text-slate-900">
-                      {pickLocaleText(locale, {
-                        en: 'Section order:',
-                        zh_HANS: '分区顺序：',
-                        zh_HANT: '分區順序：',
-                        ja: 'セクション順:',
-                        ko: '섹션 순서:',
-                        fr: 'Ordre des sections :',
-                      })}
-                    </span>{' '}
-                    {inspectTemplate.defaultSectionOrder
-                      .map((section) =>
-                        getPublicPresenceStageSectionLabel(locale, { kind: section }),
-                      )
-                      .join(' -> ')}
+                <div className="rounded-3xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-600">
+                  <p className="font-semibold text-slate-900">
+                    {pickLocaleText(locale, {
+                      en: 'Section flow',
+                      zh_HANS: '分区流程',
+                      zh_HANT: '分區流程',
+                      ja: 'セクションの流れ',
+                      ko: '섹션 흐름',
+                      fr: 'Flux des sections',
+                    })}
                   </p>
-                  <p>
-                    <span className="font-semibold text-slate-900">
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {inspectTemplate.defaultSectionOrder.map((section) => (
+                      <PublicPresenceBadge key={section} tone="slate" variant="outline">
+                        {getPublicPresenceStageSectionLabel(locale, { kind: section })}
+                      </PublicPresenceBadge>
+                    ))}
+                  </div>
+                </div>
+                <div className="grid gap-3 text-sm text-slate-600">
+                  <div className="rounded-3xl border border-slate-200 bg-white px-4 py-4">
+                    <p className="font-semibold text-slate-900">
                       {pickLocaleText(locale, {
-                        en: 'Persona Kit fields:',
-                        zh_HANS: '人设字段：',
-                        zh_HANT: '人設欄位：',
-                        ja: 'Persona Kit 項目:',
-                        ko: 'Persona Kit 필드:',
-                        fr: 'Champs Persona Kit :',
+                        en: 'Persona Kit focus',
+                        zh_HANS: '人设聚焦',
+                        zh_HANT: '人設聚焦',
+                        ja: 'Persona Kit の要点',
+                        ko: 'Persona Kit 초점',
+                        fr: 'Focus Persona Kit',
                       })}
-                    </span>{' '}
-                    {inspectTemplate.personaKitFields.join(', ')}
-                  </p>
-                  <p>
-                    <span className="font-semibold text-slate-900">
+                    </p>
+                    <p className="mt-2">
+                      {getTemplatePersonaFieldLabels(locale, inspectTemplate).join(' · ')}
+                    </p>
+                  </div>
+                  <div className="rounded-3xl border border-slate-200 bg-white px-4 py-4">
+                    <p className="font-semibold text-slate-900">
                       {pickLocaleText(locale, {
-                        en: 'Readiness rules:',
-                        zh_HANS: '就绪规则：',
-                        zh_HANT: '就緒規則：',
-                        ja: '準備ルール:',
-                        ko: '준비 규칙:',
-                        fr: 'Regles de readiness :',
+                        en: 'Launch-readiness checkpoints',
+                        zh_HANS: '上线前检查点',
+                        zh_HANT: '上線前檢查點',
+                        ja: '公開前チェック',
+                        ko: '런치 전 점검',
+                        fr: 'Points de readiness',
                       })}
-                    </span>{' '}
-                    {inspectTemplate.validationRules.join(', ')}
-                  </p>
+                    </p>
+                    <div className="mt-2 space-y-2">
+                      {getTemplateReadinessRuleLabels(locale, inspectTemplate).map((ruleLabel) => (
+                        <p key={ruleLabel}>{ruleLabel}</p>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="rounded-3xl border border-slate-200 bg-white px-4 py-4">
+                    <p className="font-semibold text-slate-900">
+                      {pickLocaleText(locale, {
+                        en: 'Use this layout',
+                        zh_HANS: '使用这个布局',
+                        zh_HANT: '使用這個版型',
+                        ja: 'このレイアウトを使う',
+                        ko: '이 레이아웃 사용',
+                        fr: 'Utiliser ce layout',
+                      })}
+                    </p>
+                    <p className="mt-2">{getTemplateIdeHint(locale)}</p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <SurfaceCommandLink
+                        href={buildPublicPresenceStudioPreviewPath(tenantId, talentId, inspectTemplate.templateId)}
+                        icon={<Eye className="h-4 w-4" aria-hidden="true" />}
+                        label={getHomepageSurfaceActionLabel(locale, 'viewPreview')}
+                      />
+                      <SurfaceCommandLink
+                        href={buildPublicPresenceTemplateAuthoringPath(tenantId, talentId, inspectTemplate.templateId)}
+                        icon={<Code2 className="h-4 w-4" aria-hidden="true" />}
+                        label={getHomepageSurfaceActionLabel(locale, 'openTemplateIde')}
+                        tone="primary"
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
             </PublicPresenceSurface>
@@ -716,12 +836,12 @@ export function TemplateCenterScreen({
                 </h2>
                 <p className="text-sm leading-6 text-slate-600">
                   {pickLocaleText(locale, {
-                    en: 'Choose a template card to inspect section order, editable persona kit fields, and readiness rules.',
-                    zh_HANS: '选择一个模板卡片，检查分区顺序、可编辑的人设字段与就绪规则。',
-                    zh_HANT: '選擇一個模板卡片，檢查分區順序、可編輯的人設欄位與就緒規則。',
-                    ja: 'テンプレートカードを選択すると、セクション順、編集可能な Persona Kit 項目、準備ルールを確認できます。',
-                    ko: '템플릿 카드를 선택하면 섹션 순서, 편집 가능한 Persona Kit 필드, 준비 규칙을 확인할 수 있습니다.',
-                    fr: 'Choisissez une carte de template pour inspecter l’ordre des sections, les champs Persona Kit modifiables et les regles de readiness.',
+                    en: 'Choose a template card to compare section flow, Persona Kit focus, and launch-readiness checkpoints.',
+                    zh_HANS: '选择一个模板卡片，比较分区流程、人设聚焦与上线前检查点。',
+                    zh_HANT: '選擇一個模板卡片，比較分區流程、人設聚焦與上線前檢查點。',
+                    ja: 'テンプレートカードを選ぶと、セクションの流れ、Persona Kit の要点、公開前チェックを比較できます。',
+                    ko: '템플릿 카드를 선택하면 섹션 흐름, Persona Kit 초점, 런치 전 점검을 비교할 수 있습니다.',
+                    fr: 'Choisissez une carte pour comparer le flux des sections, le focus Persona Kit et les points de readiness.',
                   })}
                 </p>
               </div>
@@ -762,15 +882,15 @@ export function ComponentStoreScreen({
           className="sticky top-4 z-20 px-4 py-3"
           data-testid="component-store-topbar"
         >
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex min-w-0 flex-wrap items-center gap-2">
+          <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+            <div className="flex min-w-0 flex-wrap items-center gap-2 lg:flex-nowrap">
               <PublicPresenceBadge icon={<Package2 className="h-4 w-4" aria-hidden="true" />} tone="rose">
                 {getHomepageSurfaceLabel(locale, 'components')}
               </PublicPresenceBadge>
               <PublicPresenceBadge tone="slate" variant="outline">
                 {getLocaleCoverageLabel(locale)}
               </PublicPresenceBadge>
-              <p className="text-sm font-medium text-slate-600">
+              <p className="min-w-0 text-sm font-medium text-slate-600 lg:flex-1">
                 {pickLocaleText(locale, {
                   en: 'Homepage building blocks for everyday visits, launches, and special fan moments.',
                   zh_HANS: '面向日常访问、上线时刻与特殊粉丝场景的主页构件。',
@@ -790,8 +910,8 @@ export function ComponentStoreScreen({
           </div>
         </PublicPresenceSurface>
 
-        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_22rem]">
-          <div className="grid gap-4 lg:grid-cols-2" data-testid="component-store-catalog">
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_18rem] 2xl:grid-cols-[minmax(0,1fr)_19rem]">
+          <div className="grid gap-4 lg:grid-cols-2 2xl:grid-cols-3" data-testid="component-store-catalog">
             {components.map((component) => (
               <PublicPresenceSurface
                 key={component.componentType}
@@ -872,6 +992,12 @@ export function ComponentStoreScreen({
                     ref={inspectComponentType === component.componentType ? inspectComponentOverlay.fallbackTriggerRef : undefined}
                     onClick={(event) => {
                       inspectComponentOverlay.registerTrigger(event.currentTarget);
+                      const card = event.currentTarget.closest('[data-testid^="component-card-"]');
+
+                      if (card instanceof HTMLElement && typeof card.scrollIntoView === 'function') {
+                        card.scrollIntoView({ block: 'center', inline: 'nearest' });
+                      }
+
                       setInspectComponentType(component.componentType);
                     }}
                     className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
@@ -902,7 +1028,7 @@ export function ComponentStoreScreen({
             <PublicPresenceSurface
               aria-label={getHomepageSurfaceActionLabel(locale, 'inspectComponent')}
               aria-modal={false}
-              className="fixed inset-x-3 bottom-3 z-40 max-h-[72vh] overflow-auto rounded-[2rem] border border-slate-200/90 bg-white/97 p-4 shadow-xl xl:sticky xl:top-24 xl:z-10 xl:max-h-[calc(100vh-7rem)] xl:w-full"
+              className="fixed inset-x-3 bottom-3 z-40 max-h-[72vh] overflow-auto rounded-[2rem] border border-slate-200/90 bg-white/97 p-4 shadow-xl xl:sticky xl:top-24 xl:z-10 xl:max-h-[34rem] xl:w-full xl:self-start"
               data-testid="component-inspect-drawer"
               id={inspectComponentDrawerId}
               role="dialog"
@@ -944,59 +1070,72 @@ export function ComponentStoreScreen({
                     {getComponentSupportBadgeLabel(locale, inspectComponent.visualSupport)}
                   </PublicPresenceBadge>
                 </div>
-                <div className="space-y-3 text-sm text-slate-600">
-                  <p>
-                    <span className="font-semibold text-slate-900">
+                <div className="grid gap-3 text-sm text-slate-600">
+                  <div className="rounded-3xl border border-slate-200 bg-slate-50 px-4 py-4">
+                    <p className="font-semibold text-slate-900">
                       {pickLocaleText(locale, {
-                        en: 'What fans notice:',
-                        zh_HANS: '粉丝会看到：',
-                        zh_HANT: '粉絲會看到：',
-                        ja: 'ファンに届く印象:',
-                        ko: '팬이 보게 되는 모습:',
-                        fr: 'Ce que les fans verront :',
+                        en: 'What fans notice',
+                        zh_HANS: '粉丝首先会注意到',
+                        zh_HANT: '粉絲首先會注意到',
+                        ja: 'ファンが最初に受け取る印象',
+                        ko: '팬이 먼저 느끼는 요소',
+                        fr: 'Ce que les fans remarquent',
                       })}
-                    </span>{' '}
-                    {resolveText(locale, COMPONENT_PREVIEW_COPY[inspectComponent.componentType])}
-                  </p>
-                  <p>
-                    <span className="font-semibold text-slate-900">
+                    </p>
+                    <p className="mt-2">{resolveText(locale, COMPONENT_PREVIEW_COPY[inspectComponent.componentType])}</p>
+                  </div>
+                  <div className="rounded-3xl border border-slate-200 bg-white px-4 py-4">
+                    <p className="font-semibold text-slate-900">
                       {pickLocaleText(locale, {
-                        en: 'Best for:',
-                        zh_HANS: '适合用于：',
-                        zh_HANT: '適合用於：',
-                        ja: '向いている使い方:',
-                        ko: '잘 맞는 상황:',
-                        fr: 'Idéal pour :',
+                        en: 'Best for',
+                        zh_HANS: '适合场景',
+                        zh_HANT: '適合場景',
+                        ja: '向いている場面',
+                        ko: '잘 맞는 장면',
+                        fr: 'Idéal pour',
                       })}
-                    </span>{' '}
-                    {getComponentFanMomentCopy(locale, inspectComponent.visualSupport)}
-                  </p>
-                  <p>
-                    <span className="font-semibold text-slate-900">
+                    </p>
+                    <p className="mt-2">{getComponentFanMomentCopy(locale, inspectComponent.visualSupport)}</p>
+                  </div>
+                  <div className="rounded-3xl border border-slate-200 bg-white px-4 py-4">
+                    <p className="font-semibold text-slate-900">
                       {pickLocaleText(locale, {
-                        en: 'Creators can adjust:',
-                        zh_HANS: '创作者可调整：',
-                        zh_HANT: '創作者可調整：',
-                        ja: '調整できる内容:',
-                        ko: '조정할 수 있는 내용:',
-                        fr: 'Les créateurs peuvent ajuster :',
+                        en: 'Creator controls',
+                        zh_HANS: '创作者可控项',
+                        zh_HANT: '創作者可控項',
+                        ja: 'クリエイターが調整できる内容',
+                        ko: '크리에이터가 조정할 수 있는 항목',
+                        fr: 'Réglages créateur',
                       })}
-                    </span>{' '}
-                    {getComponentAdjustmentCopy(locale, inspectComponent)}
-                  </p>
-                  <p>
-                    <span className="font-semibold text-slate-900">
+                    </p>
+                    <p className="mt-2">{getComponentAdjustmentCopy(locale, inspectComponent)}</p>
+                  </div>
+                  <div className="rounded-3xl border border-slate-200 bg-white px-4 py-4">
+                    <p className="font-semibold text-slate-900">
                       {pickLocaleText(locale, {
-                        en: 'Next step:',
-                        zh_HANS: '下一步：',
-                        zh_HANT: '下一步：',
-                        ja: '次の一歩:',
-                        ko: '다음 단계:',
-                        fr: 'Étape suivante :',
+                        en: 'Use this block',
+                        zh_HANS: '使用这个模块',
+                        zh_HANT: '使用這個模組',
+                        ja: 'このブロックを使う',
+                        ko: '이 블록 사용',
+                        fr: 'Utiliser ce bloc',
                       })}
-                    </span>{' '}
-                    {getComponentNextStepCopy(locale, inspectComponent)}
-                  </p>
+                    </p>
+                    <p className="mt-2">{getComponentIdeHint(locale)}</p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <SurfaceCommandLink
+                        href={buildPublicPresenceStudioPreviewPath(tenantId, talentId)}
+                        icon={<Eye className="h-4 w-4" aria-hidden="true" />}
+                        label={getHomepageSurfaceActionLabel(locale, 'viewPreview')}
+                      />
+                      <SurfaceCommandLink
+                        href={buildPublicPresenceComponentAuthoringPath(tenantId, talentId, inspectComponent.componentType)}
+                        icon={<Code2 className="h-4 w-4" aria-hidden="true" />}
+                        label={getHomepageSurfaceActionLabel(locale, 'openComponentIde')}
+                        tone="primary"
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
             </PublicPresenceSurface>
