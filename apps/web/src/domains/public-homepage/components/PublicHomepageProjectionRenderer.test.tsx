@@ -199,6 +199,37 @@ describe('PublicHomepageProjectionRenderer', () => {
           ...baseProjection,
           sections: [
             {
+              id: 'hero',
+              kind: 'firstEncounter',
+              sectionType: 'hero',
+              visibility: 'visible',
+              fallbackBehavior: 'safePlaceholder',
+              validationIssueIds: [],
+              title: 'Debut preview',
+              description: 'Countdown updates, reveal moments, and launch links for fans.',
+              timezone: 'Asia/Tokyo',
+              avatar: {
+                id: 'media-1',
+                kind: 'avatar',
+                providerId: null,
+                assetId: null,
+                url: 'https://cdn.example.com/suisei.png',
+                alt: 'Hoshimachi Suisei avatar',
+                phaseVisibility: 'always',
+                fallbackBehavior: 'safePlaceholder',
+              },
+              primaryAction: {
+                id: 'action-1',
+                slot: 'officialChannel',
+                label: 'YouTube',
+                href: 'https://www.youtube.com/@suisei',
+                providerId: 'youtube',
+                category: 'officialChannelUrl',
+                phaseVisibility: 'always',
+                fallbackBehavior: 'safePlaceholder',
+              },
+            },
+            {
               id: 'cta-1',
               kind: 'legacyCompatibility',
               sectionType: 'linkButton',
@@ -241,13 +272,16 @@ describe('PublicHomepageProjectionRenderer', () => {
       />,
     );
 
+    expect(screen.getByRole('heading', { level: 1, name: '出道预告' })).toBeInTheDocument();
+    expect(screen.getByText('在这里查看倒计时动态、揭晓时刻和面向粉丝的上线入口。')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: '打开链接' })).toHaveAttribute(
       'href',
       'https://example.com/join',
     );
     expect(screen.getByRole('heading', { level: 2, name: '社交链接' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { level: 2, name: '揭晓倒计时' })).toBeInTheDocument();
-    expect(screen.getByText(/倒计时 · 2099-05-15T10:00:00.000Z · Asia\/Tokyo/)).toBeInTheDocument();
+    expect(screen.getByText(/揭晓将于 .* 开始/)).toBeInTheDocument();
+    expect(screen.queryByText(/2099-05-15T10:00:00.000Z|倒计时 ·/)).not.toBeInTheDocument();
   });
 
   it('forces compact hero layout when preview surfaces request mobile mode', () => {

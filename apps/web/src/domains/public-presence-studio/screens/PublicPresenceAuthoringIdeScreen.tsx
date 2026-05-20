@@ -53,11 +53,24 @@ type PreviewViewport = 'desktop' | 'mobile';
 type FixtureMode = 'default' | 'unsafeFallback';
 type MobileAuthoringSurface = 'editor' | 'preview';
 type AdvancedPageMode = 'page-source' | 'custom-html' | 'registry-snippets';
+type MonacoDisposableLike = {
+  dispose: () => void;
+};
+type MonacoTextModelLike = {
+  getValue: () => string;
+  onDidChangeContent: (listener: () => void) => MonacoDisposableLike;
+};
+type MonacoEditorLike = {
+  focus?: () => void;
+  getModel: () => MonacoTextModelLike | null;
+  onDidChangeModelContent?: (listener: () => void) => MonacoDisposableLike;
+};
 type MonacoEditorProps = {
   defaultLanguage?: string;
   height?: string | number;
   loading?: React.ReactNode;
   onChange?: (value: string | undefined) => void;
+  onMount?: (editor: MonacoEditorLike, monaco: unknown) => void;
   options?: Record<string, unknown>;
   path?: string;
   theme?: string;
@@ -75,6 +88,8 @@ interface ValidationItem {
   level: 'pass' | 'warn';
   message: string;
 }
+
+type VirtualFileGroupId = 'docs' | 'sidecars' | 'source' | 'styles' | 'tests';
 
 interface CustomHtmlPreviewState {
   excerpt: string;
@@ -711,6 +726,79 @@ function getVirtualFileKindLabel(
   }
 }
 
+function resolveVirtualFileGroupId(file: VirtualFile): VirtualFileGroupId {
+  if (file.path.startsWith('tests/')) {
+    return 'tests';
+  }
+
+  if (file.path.endsWith('.css') || file.path.includes('/styles')) {
+    return 'styles';
+  }
+
+  if (file.kind === 'schema' || file.kind === 'fixture' || file.path.endsWith('.json')) {
+    return 'sidecars';
+  }
+
+  if (file.kind === 'doc' || file.path.startsWith('docs/') || file.path.startsWith('safety/')) {
+    return 'docs';
+  }
+
+  return 'source';
+}
+
+function getVirtualFileGroupLabel(
+  locale: string,
+  groupId: VirtualFileGroupId,
+) {
+  switch (groupId) {
+    case 'source':
+      return pickLocaleText(locale, {
+        en: 'Source',
+        zh_HANS: '源文件',
+        zh_HANT: '源檔案',
+        ja: 'ソース',
+        ko: '소스',
+        fr: 'Source',
+      });
+    case 'styles':
+      return pickLocaleText(locale, {
+        en: 'Styles',
+        zh_HANS: '样式',
+        zh_HANT: '樣式',
+        ja: 'スタイル',
+        ko: '스타일',
+        fr: 'Styles',
+      });
+    case 'docs':
+      return pickLocaleText(locale, {
+        en: 'Docs',
+        zh_HANS: '说明',
+        zh_HANT: '說明',
+        ja: 'ドキュメント',
+        ko: '문서',
+        fr: 'Docs',
+      });
+    case 'tests':
+      return pickLocaleText(locale, {
+        en: 'Tests',
+        zh_HANS: '测试',
+        zh_HANT: '測試',
+        ja: 'テスト',
+        ko: '테스트',
+        fr: 'Tests',
+      });
+    case 'sidecars':
+      return pickLocaleText(locale, {
+        en: 'Sidecars',
+        zh_HANS: '侧车文件',
+        zh_HANT: '側車檔案',
+        ja: 'サイドカー',
+        ko: '사이드카',
+        fr: 'Fichiers annexes',
+      });
+  }
+}
+
 function getAuthoringSubjectLabel(
   locale: string,
   target: AuthoringTarget,
@@ -1316,6 +1404,15 @@ export function PublicPresenceAuthoringIdeScreen({
   const [lastValidatedAt, setLastValidatedAt] = useState<string | null>(null);
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'ready'>('idle');
   const [isWideDesktop, setIsWideDesktop] = useState(false);
+  const activePathRef = useRef(activePath);
+  const filesRef = useRef(files);
+  const editorHostRef = useRef<HTMLDivElement | null>(null);
+  const monacoEditorRef = useRef<MonacoEditorLike | null>(null);
+  const monacoModelListenerRef = useRef<MonacoDisposableLike | null>(null);
+  const skipNextInitialFilesResetRef = useRef(false);
+  const syncEditorContentsRef = useRef<(path: string | undefined, value: string | undefined) => void>(
+    () => undefined,
+  );
   const mobileActionsOverlay = useOverlayFocusManager({
     onClose: () => setMobileActionsOpen(false),
     open: mobileActionsOpen,
@@ -1375,6 +1472,76 @@ export function PublicPresenceAuthoringIdeScreen({
     [fixtureMode, locale, previewPhase, target, viewport],
   );
 
+  filesRef.current = files;
+  activePathRef.current = activePath;
+  syncEditorContentsRef.current = (path, value) => {
+    if (!path) {
+      return;
+    }
+
+    const nextContents = value ?? '';
+    const currentFile = filesRef.current.find((file) => file.path === path);
+
+    if (!currentFile || currentFile.contents === nextContents) {
+      return;
+    }
+
+    startTransition(() => {
+      setFiles((current) =>
+        current.map((file) =>
+          file.path === path
+            ? { ...file, contents: nextContents }
+            : file,
+        ),
+      );
+    });
+    setEditorDirty(true);
+    setSubmitStatus('idle');
+  };
+
+  const syncMonacoModelContents = (fallbackValue?: string) => {
+    const modelValue = monacoEditorRef.current?.getModel()?.getValue();
+
+    syncEditorContentsRef.current(
+      activePathRef.current,
+      modelValue ?? fallbackValue,
+    );
+  };
+
+  const registerMonacoModelListener = (editor: MonacoEditorLike | null) => {
+    monacoModelListenerRef.current?.dispose();
+    monacoModelListenerRef.current = null;
+
+    if (!editor) {
+      return;
+    }
+
+    if (editor.onDidChangeModelContent) {
+      monacoModelListenerRef.current = editor.onDidChangeModelContent(() => {
+        const model = editor.getModel();
+
+        if (!model) {
+          return;
+        }
+
+        syncEditorContentsRef.current(
+          activePathRef.current,
+          model.getValue(),
+        );
+      });
+      return;
+    }
+
+    const model = editor.getModel();
+
+    monacoModelListenerRef.current = model?.onDidChangeContent(() => {
+      syncEditorContentsRef.current(
+        activePathRef.current,
+        model.getValue(),
+      );
+    }) ?? null;
+  };
+
   useEffect(() => {
     if (typeof window === 'undefined' || window.innerWidth >= 768) {
       return;
@@ -1401,6 +1568,11 @@ export function PublicPresenceAuthoringIdeScreen({
   }, []);
 
   useEffect(() => {
+    if (skipNextInitialFilesResetRef.current) {
+      skipNextInitialFilesResetRef.current = false;
+      return;
+    }
+
     setFiles(initialFiles);
     setActivePath(initialFiles[0]?.path ?? '');
     setEditorDirty(false);
@@ -1408,6 +1580,80 @@ export function PublicPresenceAuthoringIdeScreen({
     setLastValidatedAt(null);
     setSubmitStatus('idle');
   }, [initialFiles]);
+
+  useEffect(() => () => {
+    monacoModelListenerRef.current?.dispose();
+    monacoModelListenerRef.current = null;
+  }, []);
+
+  useEffect(() => {
+    const editor = monacoEditorRef.current;
+
+    if (!editor || typeof window === 'undefined') {
+      return undefined;
+    }
+
+    const frame = window.requestAnimationFrame(() => {
+      registerMonacoModelListener(editor);
+    });
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+    };
+  }, [activeFile?.path]);
+
+  useEffect(() => {
+    const host = editorHostRef.current;
+
+    if (!host || typeof window === 'undefined') {
+      return undefined;
+    }
+
+    let animationFrame: number | null = null;
+
+    const scheduleModelSync = (fallbackValue?: string) => {
+      if (animationFrame !== null) {
+        window.cancelAnimationFrame(animationFrame);
+      }
+
+      animationFrame = window.requestAnimationFrame(() => {
+        animationFrame = null;
+        syncMonacoModelContents(fallbackValue);
+      });
+    };
+
+    const handleEditorEvent = (event: Event) => {
+      if (event.target instanceof HTMLTextAreaElement) {
+        scheduleModelSync(event.target.value);
+        return;
+      }
+
+      scheduleModelSync();
+    };
+
+    const events: Array<keyof HTMLElementEventMap> = [
+      'beforeinput',
+      'input',
+      'keyup',
+      'paste',
+      'cut',
+      'compositionend',
+    ];
+
+    events.forEach((eventName) => {
+      host.addEventListener(eventName, handleEditorEvent, true);
+    });
+
+    return () => {
+      if (animationFrame !== null) {
+        window.cancelAnimationFrame(animationFrame);
+      }
+
+      events.forEach((eventName) => {
+        host.removeEventListener(eventName, handleEditorEvent, true);
+      });
+    };
+  }, [activeFile?.path]);
 
   const exitHref =
     target === 'template'
@@ -1483,6 +1729,20 @@ export function PublicPresenceAuthoringIdeScreen({
     ko: '아직 검증을 실행하지 않았습니다',
     fr: 'La validation n’a pas encore été lancée',
   }));
+  const groupedFiles = useMemo(
+    () =>
+      (['source', 'styles', 'docs', 'tests', 'sidecars'] as const)
+        .map((groupId) => ({
+          files: files.filter((file) => resolveVirtualFileGroupId(file) === groupId),
+          groupId,
+        }))
+        .filter((group) => group.files.length > 0),
+    [files],
+  );
+  const showDesktopUtilityPanel = isWideDesktop && utilityPanel !== null;
+  const ideGridClass = showDesktopUtilityPanel
+    ? 'xl:grid-cols-[3.5rem_minmax(16rem,18rem)_minmax(0,0.88fr)_minmax(30rem,1.12fr)] 2xl:grid-cols-[3.5rem_minmax(18rem,20rem)_minmax(0,0.92fr)_minmax(34rem,1.08fr)]'
+    : 'xl:grid-cols-[3.5rem_minmax(0,0.95fr)_minmax(34rem,1.05fr)] 2xl:grid-cols-[3.5rem_minmax(0,1.05fr)_minmax(38rem,1fr)]';
 
   const handleSaveDraft = () => {
     setLastSavedAt(new Date().toISOString());
@@ -1909,7 +2169,7 @@ export function PublicPresenceAuthoringIdeScreen({
           </PublicPresenceSurface>
         ) : null}
 
-        <div className="relative grid min-h-[calc(100vh-4.75rem)] gap-2 xl:grid-cols-[3.5rem_minmax(0,0.95fr)_minmax(34rem,1.05fr)] 2xl:grid-cols-[3.5rem_minmax(0,1.05fr)_minmax(38rem,1fr)]">
+        <div className={`relative grid min-h-[calc(100vh-4.75rem)] gap-2 ${ideGridClass}`}>
           <PublicPresenceSurface
             className="!fixed bottom-4 left-1/2 z-30 flex -translate-x-1/2 flex-row items-center gap-2 rounded-full border border-slate-200/90 bg-white/97 px-2 py-2 shadow-lg backdrop-blur md:!static md:bottom-auto md:left-auto md:z-auto md:h-full md:translate-x-0 md:flex-col md:rounded-[2rem] md:border-transparent md:bg-white md:px-1 md:py-2 md:shadow-none md:backdrop-blur-0"
             data-testid="ide-file-rail"
@@ -1979,6 +2239,187 @@ export function PublicPresenceAuthoringIdeScreen({
             })}
           </PublicPresenceSurface>
 
+          {showDesktopUtilityPanel && utilityPanel === 'files' ? (
+            <div
+              aria-label={pickLocaleText(locale, {
+                en: 'Files panel',
+                zh_HANS: '文件面板',
+                zh_HANT: '檔案面板',
+                ja: 'ファイルパネル',
+                ko: '파일 패널',
+                fr: 'Panneau fichiers',
+              })}
+              className="hidden min-h-0 overflow-hidden xl:block"
+              data-testid="ide-file-drawer"
+              id={fileDrawerId}
+              role="region"
+            >
+              <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm">
+                <div className="flex items-start justify-between gap-3 border-b border-slate-200 px-4 py-4">
+                  <div className="space-y-1">
+                    <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">
+                      {pickLocaleText(locale, {
+                        en: 'Files',
+                        zh_HANS: '文件',
+                        zh_HANT: '檔案',
+                        ja: 'ファイル',
+                        ko: '파일',
+                        fr: 'Fichiers',
+                      })}
+                    </h2>
+                    <p className="text-sm leading-6 text-slate-600">
+                      {pickLocaleText(locale, {
+                        en: 'Browse the source bundle, sample content, and sidecars for this draft.',
+                        zh_HANS: '在这里浏览当前草稿的源文件、样例内容和侧车文件。',
+                        zh_HANT: '在這裡瀏覽目前草稿的源檔案、樣例內容與側車檔案。',
+                        ja: 'このドラフトのソース、サンプル内容、サイドカーをここで確認します。',
+                        ko: '이 초안의 소스, 샘플 콘텐츠, 사이드카 파일을 여기에서 살펴봅니다.',
+                        fr: 'Parcourez ici les sources, le contenu d’exemple et les fichiers annexes de ce brouillon.',
+                      })}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setUtilityPanel(null)}
+                    ref={filesDrawerOverlay.desktopInitialFocusRef}
+                    className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+                  >
+                    <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+                    {pickLocaleText(locale, {
+                      en: 'Close',
+                      zh_HANS: '关闭',
+                      zh_HANT: '關閉',
+                      ja: '閉じる',
+                      ko: '닫기',
+                      fr: 'Fermer',
+                    })}
+                  </button>
+                </div>
+                <div className="min-h-0 flex-1 overflow-auto px-4 py-4">
+                  <div className="space-y-4">
+                    {groupedFiles.map((group) => (
+                      <div key={group.groupId} className="space-y-2">
+                        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+                          {getVirtualFileGroupLabel(locale, group.groupId)}
+                        </p>
+                        <div className="space-y-2">
+                          {group.files.map((file) => (
+                            <button
+                              key={file.path}
+                              type="button"
+                              data-testid={`ide-file-${file.path}`}
+                              onClick={() => {
+                                setActivePath(file.path);
+                                setUtilityPanel(null);
+                              }}
+                              className={`flex w-full items-center gap-3 rounded-2xl border px-3 py-3 text-left text-sm font-medium transition ${
+                                activePath === file.path
+                                  ? 'border-rose-300 bg-rose-50 text-rose-800'
+                                  : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'
+                              }`}
+                            >
+                              {resolveFileIcon(file)}
+                              <span className="truncate">{file.path}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : null}
+
+          {showDesktopUtilityPanel && utilityPanel === 'checks' ? (
+            <div
+              aria-label={pickLocaleText(locale, {
+                en: 'Validation panel',
+                zh_HANS: '校验面板',
+                zh_HANT: '驗證面板',
+                ja: '検証パネル',
+                ko: '검증 패널',
+                fr: 'Panneau validation',
+              })}
+              className="hidden min-h-0 overflow-hidden xl:block"
+              data-testid="ide-validation-drawer"
+              id={validationDrawerId}
+              role="region"
+            >
+              <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm">
+                <div className="flex items-start justify-between gap-3 border-b border-slate-200 px-4 py-4">
+                  <div className="space-y-1">
+                    <h2 className="text-base font-semibold text-slate-950">
+                      {pickLocaleText(locale, {
+                        en: 'Validation',
+                        zh_HANS: '校验',
+                        zh_HANT: '驗證',
+                        ja: '検証',
+                        ko: '검증',
+                        fr: 'Validation',
+                      })}
+                    </h2>
+                    <p className="text-sm text-slate-600">
+                      {pickLocaleText(locale, {
+                        en: 'Review save state, last validation time, and open checks for this draft.',
+                        zh_HANS: '在这里查看当前草稿的保存状态、最近校验时间和待处理检查项。',
+                        zh_HANT: '在這裡查看目前草稿的儲存狀態、最近驗證時間與待處理檢查項。',
+                        ja: 'このドラフトの保存状態、直近の検証時刻、未解決チェックをここで確認します。',
+                        ko: '이 초안의 저장 상태, 최근 검증 시각, 열린 확인 항목을 여기에서 검토합니다.',
+                        fr: 'Vérifiez ici l’état d’enregistrement, la dernière validation et les contrôles ouverts de ce brouillon.',
+                      })}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setUtilityPanel(null)}
+                    ref={validationDrawerOverlay.desktopInitialFocusRef}
+                    className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+                  >
+                    <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+                    {pickLocaleText(locale, {
+                      en: 'Close',
+                      zh_HANS: '关闭',
+                      zh_HANT: '關閉',
+                      ja: '閉じる',
+                      ko: '닫기',
+                      fr: 'Fermer',
+                    })}
+                  </button>
+                </div>
+                <div className="min-h-0 flex-1 overflow-auto px-4 py-4">
+                  <div className="mb-4 grid gap-2" data-testid="ide-validation-status">
+                    <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+                      <p className="font-semibold text-slate-900">{saveStatusLabel}</p>
+                      <p className="mt-1">{formattedSavedAt}</p>
+                    </div>
+                    <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+                      <p className="font-semibold text-slate-900">{validationStatusLabel}</p>
+                      <p className="mt-1">{formattedValidatedAt}</p>
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    {validationItems.map((item) => (
+                      <div
+                        key={`${item.level}-${item.message}`}
+                        className="rounded-2xl border border-slate-200 bg-white px-4 py-3"
+                      >
+                        <div className="flex items-start gap-3">
+                          {item.level === 'pass' ? (
+                            <CheckCircle2 className="mt-0.5 h-4 w-4 text-emerald-600" aria-hidden="true" />
+                          ) : (
+                            <AlertCircle className="mt-0.5 h-4 w-4 text-amber-600" aria-hidden="true" />
+                          )}
+                          <p className="text-sm leading-6 text-slate-700">{item.message}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : null}
+
           <div className="flex h-full flex-col">
             <PublicPresenceSurface
               className={`relative h-full min-h-[calc(100vh-4.75rem)] flex-col border border-slate-200/80 bg-white/95 p-0 sm:p-0 lg:p-0 ${
@@ -2027,6 +2468,7 @@ export function PublicPresenceAuthoringIdeScreen({
                                 templateId: effectiveTemplateId,
                               },
                             );
+                            skipNextInitialFilesResetRef.current = true;
                             window.history.replaceState({}, '', nextHref);
                             setSelectedAdvancedMode(mode);
                             setFiles(nextFiles);
@@ -2052,11 +2494,26 @@ export function PublicPresenceAuthoringIdeScreen({
               <div className="min-h-0 flex-1 px-3 pb-3 pt-14 sm:px-4 sm:pb-4 sm:pt-16">
                 <div
                   data-testid="monaco-editor-host"
+                  ref={editorHostRef}
+                  onMouseDownCapture={() => {
+                    monacoEditorRef.current?.focus?.();
+                  }}
                   className="h-full overflow-hidden rounded-[1.75rem] border border-slate-200"
                 >
                   <MonacoEditor
+                    key={`${target}:${selectedAdvancedMode}:${activeFile?.path ?? 'none'}`}
                     defaultLanguage={activeFile?.language}
                     height="100%"
+                    onMount={(editor) => {
+                      monacoEditorRef.current = editor;
+                      registerMonacoModelListener(editor);
+
+                      const model = editor.getModel();
+
+                      if (model) {
+                        syncEditorContentsRef.current(activeFile?.path, model.getValue());
+                      }
+                    }}
                     options={{
                       automaticLayout: true,
                       fontSize: 13,
@@ -2068,17 +2525,7 @@ export function PublicPresenceAuthoringIdeScreen({
                     theme="vs-dark"
                     value={activeFile?.contents ?? ''}
                     onChange={(value) => {
-                      startTransition(() => {
-                        setFiles((current) =>
-                          current.map((file) =>
-                            file.path === activeFile?.path
-                              ? { ...file, contents: value ?? '' }
-                              : file,
-                          ),
-                        );
-                      });
-                      setEditorDirty(true);
-                      setSubmitStatus('idle');
+                      syncEditorContentsRef.current(activeFile?.path, value);
                     }}
                   />
                 </div>
@@ -2441,7 +2888,7 @@ export function PublicPresenceAuthoringIdeScreen({
             </PublicPresenceSurface>
           ) : null}
 
-          {utilityPanel === 'files' ? (
+          {!showDesktopUtilityPanel && utilityPanel === 'files' ? (
             <PublicPresenceSurface
               aria-label={pickLocaleText(locale, {
                 en: 'Files drawer',
@@ -2472,12 +2919,12 @@ export function PublicPresenceAuthoringIdeScreen({
                   </h2>
                   <p className="text-sm leading-6 text-slate-600">
                     {pickLocaleText(locale, {
-                      en: 'Open the working files for this draft, its sample content, and the launch checklist here.',
-                      zh_HANS: '这里汇总了这个草稿的工作文件、样例内容与上线检查清单。',
-                      zh_HANT: '這裡彙整了這個草稿的工作檔案、樣例內容與上線檢查清單。',
-                      ja: 'この草稿の作業ファイル、サンプル内容、公開前チェックをここにまとめています。',
-                      ko: '이 초안의 작업 파일, 샘플 콘텐츠, 런치 체크리스트를 여기에서 확인합니다.',
-                      fr: 'Retrouvez ici les fichiers de travail du brouillon, son contenu d’exemple et la checklist de lancement.',
+                      en: 'Browse the source bundle, sample content, and sidecars for this draft.',
+                      zh_HANS: '在这里浏览当前草稿的源文件、样例内容和侧车文件。',
+                      zh_HANT: '在這裡瀏覽目前草稿的源檔案、樣例內容與側車檔案。',
+                      ja: 'このドラフトのソース、サンプル内容、サイドカーをここで確認します。',
+                      ko: '이 초안의 소스, 샘플 콘텐츠, 사이드카 파일을 여기에서 살펴봅니다.',
+                      fr: 'Parcourez ici les sources, le contenu d’exemple et les fichiers annexes de ce brouillon.',
                     })}
                   </p>
                 </div>
@@ -2498,31 +2945,40 @@ export function PublicPresenceAuthoringIdeScreen({
                   })}
                 </button>
               </div>
-              <div className="space-y-2 overflow-auto pr-1">
-                {files.map((file) => (
-                  <button
-                    key={file.path}
-                    type="button"
-                    data-testid={`ide-file-${file.path}`}
-                    onClick={() => {
-                      setActivePath(file.path);
-                      setUtilityPanel(null);
-                    }}
-                    className={`flex w-full items-center gap-3 rounded-2xl border px-3 py-3 text-left text-sm font-medium transition ${
-                      activePath === file.path
-                        ? 'border-rose-300 bg-rose-50 text-rose-800'
-                        : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'
-                    }`}
-                  >
-                    {resolveFileIcon(file)}
-                    <span className="truncate">{file.path}</span>
-                  </button>
+              <div className="space-y-4 overflow-auto pr-1">
+                {groupedFiles.map((group) => (
+                  <div key={group.groupId} className="space-y-2">
+                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+                      {getVirtualFileGroupLabel(locale, group.groupId)}
+                    </p>
+                    <div className="space-y-2">
+                      {group.files.map((file) => (
+                        <button
+                          key={file.path}
+                          type="button"
+                          data-testid={`ide-file-${file.path}`}
+                          onClick={() => {
+                            setActivePath(file.path);
+                            setUtilityPanel(null);
+                          }}
+                          className={`flex w-full items-center gap-3 rounded-2xl border px-3 py-3 text-left text-sm font-medium transition ${
+                            activePath === file.path
+                              ? 'border-rose-300 bg-rose-50 text-rose-800'
+                              : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'
+                          }`}
+                        >
+                          {resolveFileIcon(file)}
+                          <span className="truncate">{file.path}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 ))}
               </div>
             </PublicPresenceSurface>
           ) : null}
 
-          {utilityPanel === 'checks' ? (
+          {!showDesktopUtilityPanel && utilityPanel === 'checks' ? (
             <PublicPresenceSurface
               aria-label={pickLocaleText(locale, {
                 en: 'Validation checks drawer',
@@ -2543,22 +2999,22 @@ export function PublicPresenceAuthoringIdeScreen({
                 <div className="space-y-1">
                   <h2 className="text-base font-semibold text-slate-950">
                     {pickLocaleText(locale, {
-                      en: 'Validation checks',
-                      zh_HANS: '校验检查',
-                      zh_HANT: '驗證檢查',
-                      ja: '検証チェック',
-                      ko: '검증 점검',
-                      fr: 'Contrôles de validation',
+                      en: 'Validation',
+                      zh_HANS: '校验',
+                      zh_HANT: '驗證',
+                      ja: '検証',
+                      ko: '검증',
+                      fr: 'Validation',
                     })}
                   </h2>
                   <p className="text-sm text-slate-600">
                     {pickLocaleText(locale, {
-                      en: 'Keep this drawer lightweight so the editor and preview stay in charge.',
-                      zh_HANS: '这里只保留轻量校验，让编辑器和预览保持主工作面。',
-                      zh_HANT: '此處只保留輕量檢查，讓編輯器與預覽保持主工作面。',
-                      ja: 'この引き出しは軽量に保ち、エディタとプレビューを主作業面にします。',
-                      ko: '이 패널은 가볍게 유지해 편집기와 미리보기가 주 작업면이 되도록 합니다.',
-                      fr: 'Ce panneau reste léger pour laisser l’éditeur et l’aperçu au premier plan.',
+                      en: 'Review save state, last validation time, and open checks for this draft.',
+                      zh_HANS: '在这里查看当前草稿的保存状态、最近校验时间和待处理检查项。',
+                      zh_HANT: '在這裡查看目前草稿的儲存狀態、最近驗證時間與待處理檢查項。',
+                      ja: 'このドラフトの保存状態、直近の検証時刻、未解決チェックをここで確認します。',
+                      ko: '이 초안의 저장 상태, 최근 검증 시각, 열린 확인 항목을 여기에서 검토합니다.',
+                      fr: 'Vérifiez ici l’état d’enregistrement, la dernière validation et les contrôles ouverts de ce brouillon.',
                     })}
                   </p>
                 </div>

@@ -151,19 +151,30 @@ function createFieldValue<T>(
 function buildStarterSection(
   kind: string,
   index: number,
-  talentCode: string,
+  talent: {
+    code: string;
+    displayName: string;
+    timezone: string | null;
+  },
   templateId: PublicPresenceTemplateId,
 ): PublicPresenceDocument['sections'][number] {
+  const displayName = talent.displayName.trim() || talent.code;
+
   if (kind === 'firstEncounter') {
     return {
       id: `${kind}-${index + 1}`,
       kind,
       fields: {
-        displayName: createFieldValue(talentCode),
+        displayName: createFieldValue(displayName),
         headline: createFieldValue(
           templateId === 'debutReveal'
-            ? `${talentCode} debut campaign`
-            : `${talentCode} official public presence`,
+            ? 'Countdown updates, reveal moments, and launch links for fans.'
+            : 'Official streams, updates, and fan links in one place.',
+        ),
+        intro: createFieldValue(
+          templateId === 'debutReveal'
+            ? `Follow ${displayName}'s countdown and join the debut reveal.`
+            : `Welcome to ${displayName}'s official fan hub.`,
         ),
       },
       phaseVisibility: 'always',
@@ -176,10 +187,13 @@ function buildStarterSection(
       id: `${kind}-${index + 1}`,
       kind,
       fields: {
-        phase: createFieldValue('teaser'),
-        timezone: createFieldValue('UTC'),
+        phase: createFieldValue('countdown'),
+        revealAtUtc: createFieldValue('2030-05-15T10:00:00.000Z'),
+        revealName: createFieldValue(displayName),
+        teaserName: createFieldValue(displayName),
+        timezone: createFieldValue(talent.timezone?.trim() || 'Asia/Tokyo'),
       },
-      phaseVisibility: 'teaser',
+      phaseVisibility: 'countdown',
       title: 'Countdown / Reveal',
     };
   }
@@ -227,8 +241,13 @@ function buildStarterSection(
 
 function buildStarterDocument(
   template: PublicPresenceTemplateDefinition,
-  talentCode: string,
+  talent: {
+    code: string;
+    displayName: string;
+    timezone: string | null;
+  },
 ): PublicPresenceDocument {
+  const displayName = talent.displayName.trim() || talent.code;
   const sectionKinds = Array.from(
     new Set([
       ...template.requiredSections,
@@ -240,18 +259,18 @@ function buildStarterDocument(
 
   return {
     metadata: {
-      title: talentCode,
+      title: displayName,
     },
     personaKit: {
       campaignLabel: template.label,
       tagline:
         template.templateId === 'debutReveal'
-          ? 'Build reveal-safe public storytelling.'
-          : 'Build the official always-on public presence.',
+          ? 'Countdown updates, reveal moments, and launch links for fans.'
+          : 'Official streams, updates, and fan links in one place.',
     },
     schemaVersion: PUBLIC_PRESENCE_DOCUMENT_SCHEMA_VERSION,
     sections: sectionKinds.map((kind, index) =>
-      buildStarterSection(kind, index, talentCode, template.templateId),
+      buildStarterSection(kind, index, talent, template.templateId),
     ),
     templateId: template.templateId,
   };
@@ -695,7 +714,11 @@ export class PublicPresenceStudioService {
 
     const template =
       PUBLIC_PRESENCE_TEMPLATE_DEFINITIONS[templateIdResult.data];
-    const starterDocument = buildStarterDocument(template, talent.code);
+    const starterDocument = buildStarterDocument(template, {
+      code: talent.code,
+      displayName: talent.displayName,
+      timezone: talent.timezone,
+    });
 
     await this.publicPresenceFoundationService.saveDraft(
       talentId,

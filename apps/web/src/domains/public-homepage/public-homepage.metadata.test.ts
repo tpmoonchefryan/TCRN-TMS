@@ -143,6 +143,54 @@ describe('buildPublicHomepageMetadata', () => {
     expect(headers.get(BROWSER_PUBLIC_CONSUMER_HEADER)).toBe(BROWSER_PUBLIC_CONSUMER_CODE);
   });
 
+  it('localizes known public fallback metadata copy when the projection locale is provided', async () => {
+    mockFetch.mockResolvedValue(
+      jsonResponse({
+        success: true,
+        data: {
+          projectionSchemaVersion: '1.0',
+          resolvedRevealPhase: 'teaser',
+          route: {
+            canonicalPath: '/tenant-a/sakura/homepage',
+            legacyPath: null,
+            tenantCode: 'tenant-a',
+            talentCode: 'sakura',
+            domainHostname: null,
+          },
+          metadata: {
+            title: 'Debut preview',
+            description: 'Countdown updates, reveal moments, and launch links for fans.',
+            canonicalPath: '/tenant-a/sakura/homepage',
+            ogImage: null,
+            ogImageAlt: null,
+            locale: 'zh_HANS',
+          },
+          appearance: {
+            theme: null,
+          },
+          sections: [],
+          actions: [],
+          media: [],
+        },
+      }),
+    );
+
+    const metadata = await buildPublicHomepageMetadata('tenant-a/sakura');
+
+    expect(metadata).toMatchObject({
+      title: '出道预告',
+      description: '在这里查看倒计时动态、揭晓时刻和面向粉丝的上线入口。',
+      openGraph: {
+        title: '出道预告',
+        description: '在这里查看倒计时动态、揭晓时刻和面向粉丝的上线入口。',
+      },
+      twitter: {
+        title: '出道预告',
+        description: '在这里查看倒计时动态、揭晓时刻和面向粉丝的上线入口。',
+      },
+    });
+  });
+
   it('falls back to inherited site metadata when the SEO fetch fails', async () => {
     mockFetch.mockRejectedValue(new Error('network unavailable'));
 

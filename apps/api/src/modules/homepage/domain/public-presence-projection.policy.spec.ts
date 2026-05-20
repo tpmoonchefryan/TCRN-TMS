@@ -389,4 +389,81 @@ describe('public presence projection policy', () => {
       'publicPresenceDocument',
     );
   });
+
+  it('replaces raw internal debut draft identity with safe public fallback titles', () => {
+    const document: PublicPresenceDocument = {
+      schemaVersion: '1.0',
+      templateId: 'debutReveal',
+      metadata: {
+        title: 'TALENT_SAKURA homepage',
+        description: 'Reveal metadata',
+      },
+      sections: [
+        {
+          id: 'first-1',
+          kind: 'firstEncounter',
+          fields: {
+            displayName: { provenance: 'publicPresence', value: 'TALENT_SAKURA' },
+            teaserName: { provenance: 'publicPresence', value: 'TALENT_SAKURA' },
+            revealName: { provenance: 'publicPresence', value: 'TALENT_SAKURA' },
+            headline: { provenance: 'publicPresence', value: 'A new stage begins.' },
+          },
+          phaseVisibility: 'always',
+        },
+        {
+          id: 'countdown-1',
+          kind: 'countdownReveal',
+          fields: {
+            phase: { provenance: 'publicPresence', value: 'countdown' },
+            revealAtUtc: { provenance: 'publicPresence', value: '2099-05-15T10:00:00.000Z' },
+            teaserName: { provenance: 'publicPresence', value: 'TALENT_SAKURA' },
+            revealName: { provenance: 'publicPresence', value: 'TALENT_SAKURA' },
+          },
+          phaseVisibility: 'countdown',
+        },
+      ],
+    };
+
+    const teaserProjection = buildPublicPresenceProjectionFromDocument({
+      createdAt: '2026-05-15T10:00:00.000Z',
+      document,
+      documentVersionId: 'version-raw',
+      portalId: 'portal-1',
+      revealPhaseOverride: 'countdown',
+      route: {
+        canonicalPath: '/tenant-a/sakura/homepage',
+        talentCode: 'sakura',
+        tenantCode: 'tenant-a',
+      },
+      source: 'publicPresenceDocument',
+      validationSnapshotId: 'snapshot-raw',
+    });
+
+    const revealedProjection = buildPublicPresenceProjectionFromDocument({
+      createdAt: '2026-05-15T10:00:00.000Z',
+      document,
+      documentVersionId: 'version-raw',
+      portalId: 'portal-1',
+      revealPhaseOverride: 'revealed',
+      route: {
+        canonicalPath: '/tenant-a/sakura/homepage',
+        talentCode: 'sakura',
+        tenantCode: 'tenant-a',
+      },
+      source: 'publicPresenceDocument',
+      validationSnapshotId: 'snapshot-raw',
+    });
+
+    expect(teaserProjection.metadata.title).toBe('Debut preview');
+    expect(teaserProjection.sections[0]).toMatchObject({
+      sectionType: 'hero',
+      title: 'Debut preview',
+    });
+    expect(revealedProjection.metadata.title).toBe('Debut reveal');
+    expect(revealedProjection.sections[0]).toMatchObject({
+      sectionType: 'hero',
+      title: 'Debut reveal',
+    });
+    expect(JSON.stringify(revealedProjection)).not.toContain('TALENT_SAKURA');
+  });
 });

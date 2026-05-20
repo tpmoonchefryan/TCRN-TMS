@@ -20,8 +20,15 @@ import {
   PublicPresenceHero,
   PublicPresenceSurface,
 } from '@/domains/public-presence';
+import {
+  resolvePublicHomepageFallbackDescription,
+  resolvePublicHomepageFallbackTitle,
+} from '@/domains/public-homepage/public-homepage-fallback-copy';
 import { useUiLocale } from '@/platform/runtime/locale/locale-provider';
-import { pickLocaleText } from '@/platform/runtime/locale/locale-text';
+import {
+  formatLocaleDateTime,
+  pickLocaleText,
+} from '@/platform/runtime/locale/locale-text';
 
 type PublicHomepageCopy = ReturnType<typeof useUiLocale>['copy']['publicHomepage'];
 type PublicHomepageResponsiveMode = 'auto' | 'desktop' | 'mobile';
@@ -183,62 +190,7 @@ function resolveCountdownTitle(
   locale: string,
   title: string,
 ) {
-  if (title === '__debutPreview__') {
-    return pickLocaleText(locale, {
-      en: 'Debut preview',
-      zh_HANS: '出道预告',
-      zh_HANT: '出道預告',
-      ja: 'デビュー予告',
-      ko: '데뷔 프리뷰',
-      fr: 'Apercu des debuts',
-    });
-  }
-
-  if (title === '__debutReveal__') {
-    return pickLocaleText(locale, {
-      en: 'Debut reveal',
-      zh_HANS: '出道揭晓',
-      zh_HANT: '出道揭曉',
-      ja: 'デビュー公開',
-      ko: '데뷔 공개',
-      fr: 'Revelation des debuts',
-    });
-  }
-
-  if (title === '__publicPresence__') {
-    return pickLocaleText(locale, {
-      en: 'Public Presence',
-      zh_HANS: '公开形象页',
-      zh_HANT: '公開形象頁',
-      ja: '公開プレゼンス',
-      ko: '퍼블릭 프레즌스',
-      fr: 'Presence publique',
-    });
-  }
-
-  if (title === 'Reveal is live' || title === '__revealLive__') {
-    return pickLocaleText(locale, {
-      en: 'Reveal is live',
-      zh_HANS: '揭晓已上线',
-      zh_HANT: '揭曉已上線',
-      ja: '公開中',
-      ko: '리빌이 시작되었습니다',
-      fr: 'La revelation est en ligne',
-    });
-  }
-
-  if (title === 'Reveal countdown' || title === '__revealCountdown__') {
-    return pickLocaleText(locale, {
-      en: 'Reveal countdown',
-      zh_HANS: '揭晓倒计时',
-      zh_HANT: '揭曉倒數計時',
-      ja: '公開カウントダウン',
-      ko: '리빌 카운트다운',
-      fr: 'Compte a rebours avant la revelation',
-    });
-  }
-
-  return title;
+  return resolvePublicHomepageFallbackTitle(locale, title);
 }
 
 function resolveCountdownDescription(
@@ -249,87 +201,54 @@ function resolveCountdownDescription(
     return null;
   }
 
-  const [phase, ...rest] = description.split(' · ');
-  const normalizedPhase = (() => {
-    switch (phase) {
-      case 'always':
-        return pickLocaleText(locale, {
-          en: 'Always',
-          zh_HANS: '始终',
-          zh_HANT: '始終',
-          ja: '常時',
-          ko: '항상',
-          fr: 'Toujours',
-        });
-      case 'teaser':
-        return pickLocaleText(locale, {
-          en: 'Teaser',
-          zh_HANS: '预热',
-          zh_HANT: '預熱',
-          ja: 'ティーザー',
-          ko: '티저',
-          fr: 'Teaser',
-        });
-      case 'countdown':
-        return pickLocaleText(locale, {
-          en: 'Countdown',
-          zh_HANS: '倒计时',
-          zh_HANT: '倒數計時',
-          ja: 'カウントダウン',
-          ko: '카운트다운',
-          fr: 'Compte a rebours',
-        });
-      case 'preRevealHold':
-        return pickLocaleText(locale, {
-          en: 'Pre-reveal hold',
-          zh_HANS: '揭晓前保持',
-          zh_HANT: '揭曉前保持',
-          ja: '公開前ホールド',
-          ko: '리빌 전 대기',
-          fr: 'Attente avant revelation',
-        });
-      case 'revealed':
-        return pickLocaleText(locale, {
-          en: 'Revealed',
-          zh_HANS: '已揭晓',
-          zh_HANT: '已揭曉',
-          ja: '公開済み',
-          ko: '공개됨',
-          fr: 'Revele',
-        });
-      case 'liveLaunch':
-        return pickLocaleText(locale, {
-          en: 'Live launch',
-          zh_HANS: '正式上线',
-          zh_HANT: '正式上線',
-          ja: '本番公開',
-          ko: '라이브 공개',
-          fr: 'Mise en ligne',
-        });
-      case 'postLaunch':
-        return pickLocaleText(locale, {
-          en: 'Post launch',
-          zh_HANS: '上线后',
-          zh_HANT: '上線後',
-          ja: '公開後',
-          ko: '공개 후',
-          fr: 'Apres lancement',
-        });
-      case 'expiredFallback':
-        return pickLocaleText(locale, {
-          en: 'Expired fallback',
-          zh_HANS: '过期回退',
-          zh_HANT: '過期回退',
-          ja: '期限切れフォールバック',
-          ko: '만료 후 대체 상태',
-          fr: 'Repli apres expiration',
-        });
-      default:
-        return phase;
-    }
-  })();
+  const [phase, revealAt] = description.split(' · ');
+  const formattedRevealAt = formatLocaleDateTime(locale, revealAt ?? null, '');
 
-  return [normalizedPhase, ...rest].join(' · ');
+  switch (phase) {
+    case 'teaser':
+    case 'countdown':
+    case 'preRevealHold':
+      return formattedRevealAt
+        ? pickLocaleText(locale, {
+            en: `Reveal starts ${formattedRevealAt}`,
+            zh_HANS: `揭晓将于 ${formattedRevealAt} 开始`,
+            zh_HANT: `揭曉將於 ${formattedRevealAt} 開始`,
+            ja: `${formattedRevealAt} に公開予定です`,
+            ko: `${formattedRevealAt}에 공개됩니다`,
+            fr: `Reveal prevu le ${formattedRevealAt}`,
+          })
+        : pickLocaleText(locale, {
+            en: 'Reveal countdown is active.',
+            zh_HANS: '揭晓倒计时正在进行中。',
+            zh_HANT: '揭曉倒數正在進行中。',
+            ja: '公開カウントダウン中です。',
+            ko: '리빌 카운트다운이 진행 중입니다.',
+            fr: 'Le compte a rebours du reveal est en cours.',
+          });
+    case 'revealed':
+    case 'liveLaunch':
+    case 'postLaunch':
+    case 'expiredFallback':
+      return pickLocaleText(locale, {
+        en: 'The reveal is live for fans right now.',
+        zh_HANS: '粉丝现在已经可以进入揭晓页。',
+        zh_HANT: '粉絲現在已經可以進入揭曉頁。',
+        ja: 'ファンは今すぐ公開ページを確認できます。',
+        ko: '팬들이 지금 바로 공개 페이지에 들어올 수 있습니다.',
+        fr: 'Les fans peuvent voir la page de reveal des maintenant.',
+      });
+    case 'always':
+      return pickLocaleText(locale, {
+        en: 'This page is ready for fans at any time.',
+        zh_HANS: '这个页面会随时向粉丝开放。',
+        zh_HANT: '這個頁面會隨時向粉絲開放。',
+        ja: 'このページはいつでもファンに公開できます。',
+        ko: '이 페이지는 언제든 팬에게 공개할 수 있습니다.',
+        fr: 'Cette page peut etre ouverte aux fans a tout moment.',
+      });
+    default:
+      return description;
+  }
 }
 
 function resolveSectionTitle(
@@ -420,6 +339,8 @@ function resolveSectionDescription(
   locale: string,
 ) {
   switch (section.sectionType) {
+    case 'hero':
+      return resolvePublicHomepageFallbackDescription(locale, section.description);
     case 'marshmallow':
       return !section.description
         || section.description === 'Public messages remain available on the dedicated marshmallow page.'
@@ -478,7 +399,9 @@ function renderSection(
   const useMobileLayout = responsiveMode === 'mobile';
 
   switch (section.sectionType) {
-    case 'hero':
+    case 'hero': {
+      const heroTitle = resolveCountdownTitle(locale, section.title);
+      const heroDescription = resolveSectionDescription(section, copy, locale);
       return (
         <SectionSurface
           key={section.id}
@@ -492,10 +415,10 @@ function renderSection(
               </PublicPresenceBadge>
             )}
             responsiveMode={responsiveMode}
-            title={section.title}
+            title={heroTitle}
             titleStyle={primaryText}
-            description={section.description ? (
-              <p style={secondaryText}>{section.description}</p>
+            description={heroDescription ? (
+              <p style={secondaryText}>{heroDescription}</p>
             ) : null}
             meta={section.timezone ? (
               <PublicPresenceBadge tone="slate" variant="outline">
@@ -524,13 +447,14 @@ function renderSection(
                 />
               ) : (
                 <div className="flex h-full w-full items-center justify-center bg-slate-100 text-6xl font-semibold text-slate-500">
-                  {section.title.charAt(0).toUpperCase()}
+                  {heroTitle.charAt(0).toUpperCase()}
                 </div>
               )
             }
           />
         </SectionSurface>
       );
+    }
     case 'profileCard':
       return (
         <SectionSurface key={section.id} theme={theme} className="p-6">

@@ -10,6 +10,10 @@ import {
   buildPublicHomepageEndpoint,
   type PublicHomepageResponse,
 } from '@/domains/public-homepage/api/public-homepage.api';
+import {
+  resolvePublicHomepageFallbackDescription,
+  resolvePublicHomepageFallbackTitle,
+} from '@/domains/public-homepage/public-homepage-fallback-copy';
 import { readApiData } from '@/platform/http/api';
 import { pickLocaleText } from '@/platform/runtime/locale/locale-text';
 
@@ -43,15 +47,20 @@ export async function buildPublicHomepageMetadata(path: string): Promise<Metadat
   }
 
   const locale = data.metadata.locale || 'en';
-  const title = data.metadata.title?.trim() || pickLocaleText(locale, {
-    en: 'TCRN TMS',
-    zh_HANS: 'TCRN TMS',
-    zh_HANT: 'TCRN TMS',
-    ja: 'TCRN TMS',
-    ko: 'TCRN TMS',
-    fr: 'TCRN TMS',
-  });
-  const description =
+  const title = resolvePublicHomepageFallbackTitle(
+    locale,
+    data.metadata.title?.trim()
+    || pickLocaleText(locale, {
+      en: 'TCRN TMS',
+      zh_HANS: 'TCRN TMS',
+      zh_HANT: 'TCRN TMS',
+      ja: 'TCRN TMS',
+      ko: 'TCRN TMS',
+      fr: 'TCRN TMS',
+    }),
+  );
+  const description = resolvePublicHomepageFallbackDescription(
+    locale,
     data.metadata.description?.trim()
     || pickLocaleText(locale, {
       en: 'Official fan page',
@@ -60,7 +69,8 @@ export async function buildPublicHomepageMetadata(path: string): Promise<Metadat
       ja: '公式ファンページ',
       ko: '공식 팬 페이지',
       fr: 'Page fan officielle',
-    });
+    }),
+  ) || '';
   const imageUrl = data.metadata.ogImage?.url?.trim() || DEFAULT_OG_IMAGE_PATH;
   const imageAlt = data.metadata.ogImageAlt?.trim() || DEFAULT_OG_IMAGE_ALT;
 

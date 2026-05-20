@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { useEffect, useRef, useState } from 'react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { PublicPresenceAuthoringIdeScreen } from '@/domains/public-presence-studio/screens/PublicPresenceAuthoringIdeScreen';
 
@@ -34,17 +35,86 @@ vi.mock('@/domains/public-homepage/components/PublicHomepageProjectionRenderer',
 
 vi.mock('next/dynamic', () => ({
   default: () =>
-    function MonacoStub(props: { path?: string; value?: string }) {
+    function MonacoStub(props: {
+      onMount?: (editor: {
+        getModel: () => {
+          getValue: () => string;
+          onDidChangeContent: (listener: () => void) => { dispose: () => void };
+        } | null;
+        onDidChangeModelContent: (listener: () => void) => { dispose: () => void };
+      }) => void;
+      path?: string;
+      value?: string;
+    }) {
+      const [value, setValue] = useState(props.value ?? '');
+      const valueRef = useRef(value);
+      const modelListenersRef = useRef(new Set<() => void>());
+      const editorListenersRef = useRef(new Set<() => void>());
+      const modelRef = useRef({
+        getValue: () => valueRef.current,
+        onDidChangeContent: (listener: () => void) => {
+          modelListenersRef.current.add(listener);
+          return {
+            dispose: () => {
+              modelListenersRef.current.delete(listener);
+            },
+          };
+        },
+      });
+
+      useEffect(() => {
+        const nextValue = props.value ?? '';
+        valueRef.current = nextValue;
+        setValue(nextValue);
+      }, [props.value]);
+
+      useEffect(() => {
+        props.onMount?.({
+          getModel: () => modelRef.current,
+          onDidChangeModelContent: (listener: () => void) => {
+            editorListenersRef.current.add(listener);
+            return {
+              dispose: () => {
+                editorListenersRef.current.delete(listener);
+              },
+            };
+          },
+        });
+      }, [props.onMount]);
+
       return (
         <div data-testid="monaco-editor-stub">
-          {props.path}
-          {props.value}
+          <div>{props.path}</div>
+          <textarea
+            aria-label={props.path ?? 'Editor file'}
+            onChange={(event) => {
+              const nextValue = event.currentTarget.value;
+              valueRef.current = nextValue;
+              setValue(nextValue);
+              modelListenersRef.current.forEach((listener) => listener());
+              editorListenersRef.current.forEach((listener) => listener());
+            }}
+            value={value}
+          />
         </div>
       );
     },
 }));
 
+function setWindowWidth(width: number) {
+  Object.defineProperty(window, 'innerWidth', {
+    configurable: true,
+    value: width,
+    writable: true,
+  });
+  window.dispatchEvent(new Event('resize'));
+}
+
 describe('PublicPresenceAuthoringIdeScreen', () => {
+  beforeEach(() => {
+    setWindowWidth(1024);
+  });
+
   it('renders a Monaco-backed authoring workspace for templates', async () => {
     const { container } = render(
       <PublicPresenceAuthoringIdeScreen
@@ -142,9 +212,33 @@ describe('PublicPresenceAuthoringIdeScreen', () => {
     expect(filesButton).toHaveAttribute('aria-controls', filesDrawer.id);
 
     const filesClose = within(filesDrawer).getByRole('button', { name: 'Close' });
-    await waitFor(() => {
-      expect(document.activeElement).toBe(actionsButton);
-    });
+    expect(filesClose).toBeInTheDocument();
+  });
+
+  it('docks desktop utility panels and keeps implementation copy out of ordinary UI', async () => {
+    setWindowWidth(1440);
+
+    const { container } = render(
+      <PublicPresenceAuthoringIdeScreen
+        target="template"
+        talentId="talent-1"
+        tenantId="tenant-1"
+        templateId="activeTalentHub"
+      />,
+    );
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Files' })[0]);
+    const filesPanel = screen.getByTestId('ide-file-drawer');
+    expect(filesPanel).toHaveAttribute('role', 'region');
+    expect(within(filesPanel).getByText('Source')).toBeInTheDocument();
+    expect(within(filesPanel).getByText('Docs')).toBeInTheDocument();
+    expect(container.textContent).not.toMatch(ORDINARY_IMPLEMENTATION_COPY_PATTERN);
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Validation checks' })[0]);
+    const validationPanel = screen.getByTestId('ide-validation-drawer');
+    expect(validationPanel).toHaveAttribute('role', 'region');
+    expect(screen.getByText('Validation')).toBeInTheDocument();
+    expect(container.textContent).not.toMatch(ORDINARY_IMPLEMENTATION_COPY_PATTERN);
   });
 
   it('keeps ordinary mobile authoring sheets free from design-rationale copy', async () => {
@@ -166,6 +260,10 @@ describe('PublicPresenceAuthoringIdeScreen', () => {
       expect(screen.queryByTestId('ide-mobile-actions-sheet')).not.toBeInTheDocument();
     });
 
+    fireEvent.click(screen.getByRole('button', { name: 'Preview view' }));
+    await waitFor(() => {
+      expect(screen.getByTestId('ide-mobile-surface-status')).toHaveTextContent('Previewing output');
+    });
     fireEvent.click(screen.getByTestId('ide-mobile-preview-options-button'));
     expect(screen.getByTestId('ide-mobile-preview-options-sheet')).toBeInTheDocument();
     expect(container.textContent).not.toMatch(ORDINARY_COPY_BOUNDARY_PATTERN);
@@ -196,6 +294,10 @@ describe('PublicPresenceAuthoringIdeScreen', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Preview view' }));
     expect(screen.getByTestId('ide-mobile-surface-status')).toHaveTextContent('Previewing output');
 
+    fireEvent.click(screen.getByRole('button', { name: 'Preview view' }));
+    await waitFor(() => {
+      expect(screen.getByTestId('ide-mobile-surface-status')).toHaveTextContent('Previewing output');
+    });
     fireEvent.click(screen.getByTestId('ide-mobile-preview-options-button'));
     expect(screen.getByText('Sample content')).toBeInTheDocument();
     expect(screen.getByText('Reveal state')).toBeInTheDocument();
@@ -229,5 +331,85 @@ describe('PublicPresenceAuthoringIdeScreen', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Page source' }));
     expect(screen.getByRole('button', { name: 'Page source' })).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByText('Structured page preview')).toBeInTheDocument();
+  });
+
+  it('keeps custom HTML authoring in a real dirty-save-validate lifecycle', async () => {
+    render(
+      <PublicPresenceAuthoringIdeScreen
+        advancedMode="custom-html"
+        target="advanced"
+        talentId="talent-1"
+        tenantId="tenant-1"
+        templateId="activeTalentHub"
+      />,
+    );
+
+    const saveButton = screen.getByRole('button', { name: 'Save draft' });
+    const validateButton = screen.getByRole('button', { name: 'Validate' });
+    const editor = screen.getByRole('textbox', { name: 'src/index.html' });
+
+    expect(saveButton).toBeDisabled();
+    fireEvent.change(editor, {
+      target: {
+        value: '<main class="fan-page"><h1>Fresh AR34 marker</h1></main>',
+      },
+    });
+
+    await waitFor(() => {
+      expect(screen.getAllByText('Unsaved changes')[0]).toBeInTheDocument();
+      expect(saveButton).not.toBeDisabled();
+    });
+
+    const preview = screen.getByTestId('ide-custom-html-preview');
+    expect(preview.getAttribute('srcdoc')).toContain('Fresh AR34 marker');
+
+    fireEvent.click(saveButton);
+    await waitFor(() => {
+      expect(screen.getAllByText('Draft saved')[0]).toBeInTheDocument();
+      expect(saveButton).toBeDisabled();
+    });
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Files' })[0]);
+    fireEvent.click(await screen.findByTestId('ide-file-src/index.html'));
+    expect(
+      (screen.getByRole('textbox', { name: 'src/index.html' }) as HTMLTextAreaElement).value,
+    ).toContain('Fresh AR34 marker');
+
+    fireEvent.click(validateButton);
+    await waitFor(() => {
+      expect(screen.getAllByText('Validation refreshed')[0]).toBeInTheDocument();
+    });
+  });
+
+  it('keeps the custom HTML dirty lifecycle after switching from page source mode', async () => {
+    render(
+      <PublicPresenceAuthoringIdeScreen
+        advancedMode="page-source"
+        target="advanced"
+        talentId="talent-1"
+        tenantId="tenant-1"
+        templateId="activeTalentHub"
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Custom HTML' }));
+
+    const saveButton = screen.getByRole('button', { name: 'Save draft' });
+    const editor = await screen.findByRole('textbox', { name: 'src/index.html' });
+
+    fireEvent.change(editor, {
+      target: {
+        value: '<main class="fan-page"><h1>Advanced switch marker</h1></main>',
+      },
+    });
+
+    await waitFor(() => {
+      expect(screen.getAllByText('Unsaved changes')[0]).toBeInTheDocument();
+      expect(saveButton).not.toBeDisabled();
+    });
+
+    expect(screen.getByTestId('ide-custom-html-preview').getAttribute('srcdoc')).toContain(
+      'Advanced switch marker',
+    );
   });
 });

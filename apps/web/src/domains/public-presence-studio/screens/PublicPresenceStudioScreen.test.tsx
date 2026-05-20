@@ -626,6 +626,39 @@ describe('PublicPresenceStudioScreen', () => {
     expect(leftDrawerClose).toHaveAccessibleName('Close panel');
   });
 
+  it('keeps desktop editing to one active side panel so the canvas stays dominant', async () => {
+    Object.defineProperty(window, 'innerWidth', {
+      configurable: true,
+      value: 1440,
+      writable: true,
+    });
+
+    mockRequest.mockImplementation(async (path: string) => {
+      if (isWorkspaceRequest(path)) {
+        return buildWorkspace();
+      }
+
+      if (isPreviewRequest(path)) {
+        return buildPreview();
+      }
+
+      throw new Error(`Unhandled request: ${path}`);
+    });
+
+    render(<PublicPresenceStudioScreen tenantId="tenant-1" talentId="talent-1" />);
+    await screen.findByTestId('canvas-stage', {}, { timeout: STUDIO_RENDER_TIMEOUT });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Stage Sections' }));
+    expect(screen.getByTestId('studio-left-drawer-desktop')).toBeInTheDocument();
+
+    fireEvent.click(screen.getAllByTestId('stage-row-firstEncounter')[0]);
+
+    await waitFor(() => {
+      expect(screen.queryByTestId('studio-left-drawer-desktop')).not.toBeInTheDocument();
+      expect(screen.getByTestId('studio-right-drawer-desktop')).toBeInTheDocument();
+    });
+  });
+
   it('keeps mobile preview context in a dedicated tools sheet', async () => {
     mockRequest.mockImplementation(async (path: string) => {
       if (isWorkspaceRequest(path)) {

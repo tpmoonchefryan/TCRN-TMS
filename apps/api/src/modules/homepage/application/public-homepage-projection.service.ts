@@ -177,6 +177,7 @@ export class PublicHomepageProjectionService {
         tenantCode,
       },
       source: 'publicPresenceDocument',
+      talentDisplayName: talent.displayName,
       validationSnapshotId: version.lastValidationSnapshotId,
     });
   }
@@ -257,6 +258,7 @@ export class PublicHomepageProjectionService {
         talentCode: route.talentCode ?? talent.code,
       },
       source: 'publicPresenceDocument',
+      talentDisplayName: talent.displayName,
       validationSnapshotId: liveVersion.lastValidationSnapshotId,
     });
   }

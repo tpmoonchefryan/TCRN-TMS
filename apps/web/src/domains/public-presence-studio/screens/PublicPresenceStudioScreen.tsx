@@ -293,6 +293,58 @@ function moveCollectionItem<T>(
   return next;
 }
 
+function summarizeInspectValue(
+  locale: string,
+  value: unknown,
+) {
+  if (value === null || value === undefined || value === '') {
+    return pickLocaleText(locale, {
+      en: 'Not set yet',
+      zh_HANS: '尚未设置',
+      zh_HANT: '尚未設定',
+      ja: 'まだ設定されていません',
+      ko: '아직 설정되지 않았습니다',
+      fr: 'Pas encore defini',
+    });
+  }
+
+  if (Array.isArray(value)) {
+    return pickLocaleText(locale, {
+      en: `${value.length} item(s)`,
+      zh_HANS: `${value.length} 项`,
+      zh_HANT: `${value.length} 項`,
+      ja: `${value.length} 件`,
+      ko: `${value.length}개 항목`,
+      fr: `${value.length} element(s)`,
+    });
+  }
+
+  if (typeof value === 'boolean') {
+    return pickLocaleText(locale, {
+      en: value ? 'Enabled' : 'Disabled',
+      zh_HANS: value ? '已启用' : '已关闭',
+      zh_HANT: value ? '已啟用' : '已關閉',
+      ja: value ? '有効' : '無効',
+      ko: value ? '사용 중' : '사용 안 함',
+      fr: value ? 'Actif' : 'Inactif',
+    });
+  }
+
+  if (typeof value === 'object') {
+    return pickLocaleText(locale, {
+      en: 'Configured value',
+      zh_HANS: '已配置值',
+      zh_HANT: '已配置值',
+      ja: '設定済みの値',
+      ko: '구성된 값',
+      fr: 'Valeur configuree',
+    });
+  }
+
+  const text = String(value).trim();
+  return text.length > 96 ? `${text.slice(0, 93)}...` : text;
+}
+
 function buildSectionDocument(
   document: PublicPresenceDocument,
   sectionKind: string,
@@ -1218,12 +1270,10 @@ function PublicPresenceStudioScreenInner({
 
   const openWorkbenchDrawer = useCallback((mode: LeftDrawerMode) => {
     closeMobileWorkbenchSheets();
-    if (!isDesktopWorkbench) {
-      closeStageWorkbenchPanel();
-    }
+    closeStageWorkbenchPanel();
     setLeftDrawerMode(mode);
     setLeftDrawerOpen(true);
-  }, [closeMobileWorkbenchSheets, closeStageWorkbenchPanel, isDesktopWorkbench]);
+  }, [closeMobileWorkbenchSheets, closeStageWorkbenchPanel]);
 
   const openStageWorkbenchPanel = useCallback((nextPanel: StagePanelState) => {
     closeMobileWorkbenchSheets();
@@ -1440,36 +1490,6 @@ function PublicPresenceStudioScreenInner({
     updateDocument(buildSectionDocument(editorDocument, sectionKind, fieldKey, value));
   };
 
-  const resetFieldValue = (sectionKind: string, fieldKey: string) => {
-    if (!editorDocument) {
-      return;
-    }
-
-    const section = editorDocument.sections.find((entry) => entry.kind === sectionKind);
-    if (!section?.fields?.[fieldKey]) {
-      return;
-    }
-
-    const nextSections = editorDocument.sections.map((entry) => {
-      if (entry.kind !== sectionKind) {
-        return entry;
-      }
-
-      const nextFields = { ...(entry.fields ?? {}) };
-      delete nextFields[fieldKey];
-
-      return {
-        ...entry,
-        fields: Object.keys(nextFields).length > 0 ? nextFields : undefined,
-      };
-    });
-
-    updateDocument({
-      ...editorDocument,
-      sections: nextSections,
-    });
-  };
-
   const updateSectionComponent = (
     sectionKind: string,
     componentIndex: number,
@@ -1550,47 +1570,36 @@ function PublicPresenceStudioScreenInner({
   };
 
   const renderFieldFooter = (
-    sectionKind: string,
-    fieldKey: string,
+    _sectionKind: string,
+    _fieldKey: string,
     definition: PublicPresenceStudioStageSectionSummary['fieldDefinitions'][number] | undefined,
   ) => {
-    const provenance = readFieldProvenance(editorDocument, sectionKind, fieldKey);
-    const canReset = Boolean(readFieldEntry(editorDocument, sectionKind, fieldKey))
-      && provenance !== 'locked'
-      && provenance !== 'sourceOwned';
+    if (!definition?.sourceOnly && definition?.visualEditable !== false) {
+      return null;
+    }
 
     return (
-      <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
-        <PublicPresenceBadge tone="slate" variant="outline">
-          {getPublicPresenceProvenanceLabel(locale, provenance)}
-        </PublicPresenceBadge>
+      <p className="text-xs leading-5 text-slate-500">
         {definition?.sourceOnly ? (
-          <PublicPresenceBadge tone="warning" variant="outline">
-            {pickLocaleText(locale, {
-              en: 'Edit elsewhere',
-              zh_HANS: '需在其他位置编辑',
-              zh_HANT: '需在其他位置編輯',
-              ja: '別の場所で編集',
-              ko: '다른 작업면에서 편집',
-              fr: 'Modifier ailleurs',
-            })}
-          </PublicPresenceBadge>
-        ) : null}
-        {definition && !definition.visualEditable ? (
-          <PublicPresenceBadge tone="warning" variant="outline">
-            {copy.common.locked}
-          </PublicPresenceBadge>
-        ) : null}
-        {canReset ? (
-          <button
-            type="button"
-            onClick={() => resetFieldValue(sectionKind, fieldKey)}
-            className="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1 font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
-          >
-            {copy.stageSections.resetField}
-          </button>
-        ) : null}
-      </div>
+          pickLocaleText(locale, {
+            en: 'This field stays with the page setup. Review it in Configure or Inspect when you need more detail.',
+            zh_HANS: '这个字段跟随页面设置保留。如需更多细节，请到配置或查看页处理。',
+            zh_HANT: '這個欄位會跟隨頁面設定保留。如需更多細節，請到配置或查看頁處理。',
+            ja: 'この項目はページ設定に合わせて保持されます。詳しく確認するときは設定または確認を開いてください。',
+            ko: '이 필드는 페이지 설정에 맞춰 유지됩니다. 더 자세한 내용은 구성 또는 확인에서 살펴보세요.',
+            fr: 'Ce champ reste lie a la configuration de la page. Ouvrez Configuration ou Inspection pour plus de details.',
+          })
+        ) : (
+          pickLocaleText(locale, {
+            en: 'This field is fixed in the current page setup.',
+            zh_HANS: '这个字段在当前页面设置中保持固定。',
+            zh_HANT: '這個欄位在目前頁面設定中保持固定。',
+            ja: 'この項目は現在のページ設定で固定されています。',
+            ko: '이 필드는 현재 페이지 설정에 고정되어 있습니다.',
+            fr: 'Ce champ est fixe dans la configuration actuelle de la page.',
+          })
+        )}
+      </p>
     );
   };
 
@@ -1643,39 +1652,8 @@ function PublicPresenceStudioScreenInner({
     }
 
     if (section.kind === 'countdownReveal') {
-      const countdownPhaseOptions = PUBLIC_PRESENCE_PREVIEW_PHASES
-        .filter((value) => value !== 'current' && value !== 'always')
-        .map((value) => ({
-          label: getPublicPresencePreviewPhaseLabel(locale, value),
-          value,
-        }));
-
       return (
         <div className="grid gap-4">
-          <ControlledSelect
-            disabled={!isFieldEditable('phase')}
-            label={getPublicPresenceFieldLabel(locale, 'phase')}
-            onChange={(value) => setFieldValue(section.kind, 'phase', value)}
-            options={countdownPhaseOptions}
-            value={String(readFieldValue(editorDocument, section.kind, 'phase') || 'teaser')}
-            footer={renderFieldFooter(section.kind, 'phase', fieldDefinitions.get('phase'))}
-          />
-          <ControlledTextInput
-            disabled={!isFieldEditable('revealAtUtc')}
-            label={getPublicPresenceFieldLabel(locale, 'revealAtUtc')}
-            onChange={(value) => setFieldValue(section.kind, 'revealAtUtc', value)}
-            placeholder={copy.stageSections.revealTimeExample}
-            value={String(readFieldValue(editorDocument, section.kind, 'revealAtUtc') ?? '')}
-            footer={renderFieldFooter(section.kind, 'revealAtUtc', fieldDefinitions.get('revealAtUtc'))}
-          />
-          <ControlledTextInput
-            disabled={!isFieldEditable('timezone')}
-            label={getPublicPresenceFieldLabel(locale, 'timezone')}
-            onChange={(value) => setFieldValue(section.kind, 'timezone', value)}
-            placeholder={copy.stageSections.timezoneExample}
-            value={String(readFieldValue(editorDocument, section.kind, 'timezone') ?? '')}
-            footer={renderFieldFooter(section.kind, 'timezone', fieldDefinitions.get('timezone'))}
-          />
           <ControlledTextInput
             disabled={!isFieldEditable('teaserName')}
             label={getPublicPresenceFieldLabel(locale, 'teaserName')}
@@ -2771,6 +2749,69 @@ function PublicPresenceStudioScreenInner({
     );
   };
 
+  const renderInspectFieldSummary = (section: PublicPresenceStudioStageSectionSummary) => {
+    if (section.fieldDefinitions.length === 0) {
+      return null;
+    }
+
+    return (
+      <PublicPresenceSurface className="space-y-3" variant="inset">
+        <p className="text-sm font-semibold text-slate-900">
+          {pickLocaleText(locale, {
+            en: 'Field access',
+            zh_HANS: '字段访问',
+            zh_HANT: '欄位存取',
+            ja: '項目アクセス',
+            ko: '필드 접근',
+            fr: 'Acces aux champs',
+          })}
+        </p>
+        <div className="space-y-2">
+          {section.fieldDefinitions.map((field) => {
+            const entry = readFieldEntry(editorDocument, section.kind, field.fieldKey);
+            const provenance = readFieldProvenance(editorDocument, section.kind, field.fieldKey);
+
+            return (
+              <div
+                key={`${section.kind}-${field.fieldKey}`}
+                className="rounded-2xl border border-slate-200 bg-white px-4 py-3"
+              >
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="text-sm font-semibold text-slate-900">
+                    {getPublicPresenceFieldLabel(locale, field.fieldKey)}
+                  </p>
+                  <PublicPresenceBadge tone="slate" variant="outline">
+                    {getPublicPresenceProvenanceLabel(locale, provenance)}
+                  </PublicPresenceBadge>
+                  {field.sourceOnly ? (
+                    <PublicPresenceBadge tone="warning" variant="outline">
+                      {pickLocaleText(locale, {
+                        en: 'Advanced or source-owned',
+                        zh_HANS: '高级或源侧维护',
+                        zh_HANT: '進階或來源維護',
+                        ja: '詳細またはソース側で管理',
+                        ko: '고급 또는 소스 측 관리',
+                        fr: 'Avance ou gere par la source',
+                      })}
+                    </PublicPresenceBadge>
+                  ) : null}
+                  {!field.visualEditable ? (
+                    <PublicPresenceBadge tone="warning" variant="outline">
+                      {copy.common.locked}
+                    </PublicPresenceBadge>
+                  ) : null}
+                </div>
+                <p className="mt-2 text-sm leading-6 text-slate-600">
+                  {summarizeInspectValue(locale, entry?.value)}
+                </p>
+              </div>
+            );
+          })}
+        </div>
+      </PublicPresenceSurface>
+    );
+  };
+
   const renderStagePanel = () => {
     if (!selectedStageSection || !stagePanel) {
       return null;
@@ -2789,6 +2830,18 @@ function PublicPresenceStudioScreenInner({
       workspace?.draftVersion?.document ?? null,
       selectedStageSection.kind,
     );
+    const selectedFieldDefinitions = new Map(
+      selectedStageSection.fieldDefinitions.map((definition) => [definition.fieldKey, definition]),
+    );
+    const canEditSelectedSection =
+      selectedStageSection.editabilityState === 'validEditable'
+      && selectedStageSection.sourcePolicy === 'registryOwned';
+    const countdownPhaseOptions = PUBLIC_PRESENCE_PREVIEW_PHASES
+      .filter((value) => value !== 'current' && value !== 'always')
+      .map((value) => ({
+        label: getPublicPresencePreviewPhaseLabel(locale, value),
+        value,
+      }));
 
     return (
       <PublicPresenceSurface
@@ -2912,6 +2965,7 @@ function PublicPresenceStudioScreenInner({
                 </PublicPresenceBadge>
               ) : null}
             </PublicPresenceSurface>
+            {renderInspectFieldSummary(selectedStageSection)}
             {sectionIssues.length > 0 ? (
               <PublicPresenceSurface className="space-y-3" variant="inset">
                 <p className="text-sm font-semibold text-slate-900">
@@ -2939,6 +2993,31 @@ function PublicPresenceStudioScreenInner({
 
         {stagePanel.mode === 'configure' ? (
           <div className="space-y-4 px-4 pb-4">
+            {selectedStageSection.kind === 'countdownReveal' ? (
+              <>
+                <ControlledSelect
+                  disabled={!resolveFieldEditability(selectedFieldDefinitions.get('phase'), canEditSelectedSection)}
+                  label={getPublicPresenceFieldLabel(locale, 'phase')}
+                  onChange={(value) => setFieldValue(selectedStageSection.kind, 'phase', value)}
+                  options={countdownPhaseOptions}
+                  value={String(readFieldValue(editorDocument, selectedStageSection.kind, 'phase') || 'countdown')}
+                />
+                <ControlledTextInput
+                  disabled={!resolveFieldEditability(selectedFieldDefinitions.get('revealAtUtc'), canEditSelectedSection)}
+                  label={getPublicPresenceFieldLabel(locale, 'revealAtUtc')}
+                  onChange={(value) => setFieldValue(selectedStageSection.kind, 'revealAtUtc', value)}
+                  placeholder={copy.stageSections.revealTimeExample}
+                  value={String(readFieldValue(editorDocument, selectedStageSection.kind, 'revealAtUtc') ?? '')}
+                />
+                <ControlledTextInput
+                  disabled={!resolveFieldEditability(selectedFieldDefinitions.get('timezone'), canEditSelectedSection)}
+                  label={getPublicPresenceFieldLabel(locale, 'timezone')}
+                  onChange={(value) => setFieldValue(selectedStageSection.kind, 'timezone', value)}
+                  placeholder={copy.stageSections.timezoneExample}
+                  value={String(readFieldValue(editorDocument, selectedStageSection.kind, 'timezone') ?? '')}
+                />
+              </>
+            ) : null}
             <ControlledSelect
               disabled={selectedStageSection.phaseVisibility.length <= 1}
               label={copy.stageSections.phasePrefix}
@@ -3513,7 +3592,7 @@ function PublicPresenceStudioScreenInner({
     locale,
     currentSnapshot?.issueCounts ?? null,
   );
-  const showLeftDrawer = !previewFocus && leftDrawerOpen && (isDesktopWorkbench || !stagePanel);
+  const showLeftDrawer = !previewFocus && leftDrawerOpen && !stagePanel;
   const showRightDrawer = !previewFocus && Boolean(stagePanel);
   const leftDrawerOverlay = useOverlayFocusManager({
     desktopBreakpoint: 1280,
@@ -3606,20 +3685,27 @@ function PublicPresenceStudioScreenInner({
   });
   const workbenchGridClass = previewFocus
     ? 'xl:grid-cols-[minmax(0,1fr)]'
-    : leftDrawerOpen && stagePanel
+    : showLeftDrawer && showRightDrawer
       ? 'xl:grid-cols-[3.5rem_20rem_minmax(0,1fr)_24rem]'
-      : leftDrawerOpen
+      : showLeftDrawer
         ? 'xl:grid-cols-[3.5rem_20rem_minmax(0,1fr)]'
-        : stagePanel
+        : showRightDrawer
           ? 'xl:grid-cols-[3.5rem_minmax(0,1fr)_24rem]'
           : 'xl:grid-cols-[3.5rem_minmax(0,1fr)]';
+  const effectiveStagePanel = stagePanel
+    ?? (
+      queryState.stagePanel
+      && orderedSections.some((section) => section.kind === queryState.stagePanel?.sectionKind)
+        ? queryState.stagePanel
+        : null
+    );
 
   useLayoutEffect(() => {
     if (!workspace?.draftVersion || !editorDocument) {
       return;
     }
 
-    const syncedLeftPanel = leftDrawerOpen && (isDesktopWorkbench || !stagePanel)
+    const syncedLeftPanel = leftDrawerOpen && (isDesktopWorkbench || !effectiveStagePanel)
       ? leftDrawerMode
       : null;
 
@@ -3633,7 +3719,7 @@ function PublicPresenceStudioScreenInner({
         : mobilePreviewToolsOpen
           ? 'preview-tools'
           : null,
-      stagePanel: serializeStagePanelSearchParam(stagePanel),
+      stagePanel: serializeStagePanelSearchParam(effectiveStagePanel),
       templateId: persistTemplateQuery ? selectedTemplateId : null,
       viewport: previewViewport === 'desktop' ? null : previewViewport,
     }).toString();
@@ -3647,6 +3733,7 @@ function PublicPresenceStudioScreenInner({
     });
   }, [
     editorDocument,
+    effectiveStagePanel,
     leftDrawerMode,
     leftDrawerOpen,
     isDesktopWorkbench,
@@ -3660,7 +3747,6 @@ function PublicPresenceStudioScreenInner({
     searchKey,
     searchParams,
     selectedTemplateId,
-    stagePanel,
     persistTemplateQuery,
     workspace?.draftVersion,
   ]);
@@ -4363,9 +4449,6 @@ function PublicPresenceStudioScreenInner({
                       {getPublicPresenceStageSectionLabel(locale, selectedStageSection)}
                     </PublicPresenceBadge>
                   ) : null}
-                  <PublicPresenceBadge className="hidden sm:inline-flex" tone="slate" variant="outline">
-                    {copy.fanPreview.sharedPathBadge}
-                  </PublicPresenceBadge>
                 </div>
                 <PublicPresenceBadge tone={visualDraftDirty ? 'warning' : 'success'} variant="outline">
                   {visualDraftDirty ? copy.common.unsaved : copy.common.saved}

@@ -13,9 +13,11 @@ import type {
 export interface HomepageAdminTalentRecord {
   id: string;
   code: string;
+  displayName: string;
   homepagePath: string | null;
   customDomain: string | null;
   customDomainVerified: boolean;
+  timezone: string | null;
 }
 
 export interface HomepageAdminRecord {

@@ -195,9 +195,12 @@ describe('PublicHomepageProjectionService', () => {
     vi.mocked(homepageAdminRepository.findTalentById).mockResolvedValue({
       id: 'talent-1',
       code: 'sora',
+      displayName: 'Tokino Sora',
+      avatarUrl: 'https://cdn.example.com/sora.png',
       homepagePath: 'tokino-sora',
       customDomain: null,
       customDomainVerified: false,
+      timezone: 'Asia/Tokyo',
     });
     vi.mocked(homepageAdminRepository.findTenantCodeBySchema).mockResolvedValue(
       'tenant-a',
@@ -247,5 +250,98 @@ describe('PublicHomepageProjectionService', () => {
     });
     expect(projection.resolvedRevealPhase).toBe('revealed');
     expect(projection.metadata.title).toBe('Sora reveal');
+  });
+
+  it('uses the talent display name when an existing debut draft still stores raw internal identity copy', async () => {
+    const {
+      service,
+      homepageAdminRepository,
+      publicPresenceFoundationRepository,
+    } = createService();
+
+    vi.mocked(homepageAdminRepository.findTalentById).mockResolvedValue({
+      id: 'talent-1',
+      code: 'talent_sakura',
+      displayName: 'Sakura Ch.',
+      avatarUrl: 'https://cdn.example.com/sakura.png',
+      homepagePath: 'sakura-home',
+      customDomain: null,
+      customDomainVerified: false,
+      timezone: 'Asia/Tokyo',
+    });
+    vi.mocked(homepageAdminRepository.findTenantCodeBySchema).mockResolvedValue(
+      'tenant-a',
+    );
+    vi.mocked(publicPresenceFoundationRepository.findPortalByTalentId).mockResolvedValue({
+      id: 'portal-1',
+      talentId: 'talent-1',
+      draftVersionId: 'draft-raw',
+      liveVersionId: null,
+      latestVersionNumber: 15,
+      latestValidationState: 'validEditable',
+      lastValidatedAt: new Date('2026-05-15T10:00:00.000Z'),
+      createdAt: new Date('2026-05-15T08:00:00.000Z'),
+      updatedAt: new Date('2026-05-15T10:00:00.000Z'),
+      version: 1,
+    });
+    vi.mocked(publicPresenceFoundationRepository.findDocumentVersionById).mockResolvedValue({
+      id: 'draft-raw',
+      portalId: 'portal-1',
+      versionNumber: 15,
+      documentSchemaVersion: '1.0',
+      templateId: 'debutReveal',
+      document: {
+        schemaVersion: '1.0',
+        templateId: 'debutReveal',
+        metadata: {
+          title: 'TALENT_SAKURA',
+        },
+        sections: [
+          {
+            id: 'firstEncounter-1',
+            kind: 'firstEncounter',
+            fields: {
+              headline: { provenance: 'publicPresence', value: 'TALENT_SAKURA debut campaign' },
+              displayName: { provenance: 'publicPresence', value: 'TALENT_SAKURA' },
+            },
+            phaseVisibility: 'always',
+          },
+          {
+            id: 'countdownReveal-2',
+            kind: 'countdownReveal',
+            fields: {
+              phase: { provenance: 'publicPresence', value: 'teaser' },
+              timezone: { provenance: 'publicPresence', value: 'UTC' },
+            },
+            phaseVisibility: 'teaser',
+          },
+        ],
+      } as unknown as Record<string, unknown>,
+      documentState: 'draft',
+      contentHashAlgorithm: 'sha256',
+      contentHash: 'draft-raw-hash',
+      lastValidationSnapshotId: 'snapshot-raw',
+      scheduledFor: null,
+      publishedAt: null,
+      publishedBy: null,
+      createdAt: new Date('2026-05-15T09:00:00.000Z'),
+      updatedAt: new Date('2026-05-15T10:00:00.000Z'),
+      createdBy: 'user-1',
+    });
+
+    const projection = await service.getDraftPreviewProjectionOrThrow(
+      'talent-1',
+      'tenant_alpha',
+      'teaser',
+    );
+
+    expect(projection.metadata.title).toBe('Sakura Ch.');
+    expect(projection.sections[0]).toMatchObject({
+      sectionType: 'hero',
+      title: 'Sakura Ch.',
+      description: 'Countdown updates, reveal moments, and launch links for fans.',
+      timezone: null,
+    });
+    expect(JSON.stringify(projection)).not.toContain('TALENT_SAKURA');
   });
 });

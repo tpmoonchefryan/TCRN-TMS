@@ -164,8 +164,10 @@ describe('PublicPresenceStudioService', () => {
       code: 'aki-rosenthal',
       customDomain: null,
       customDomainVerified: false,
+      displayName: 'Aki Rosenthal',
       homepagePath: 'aki-home',
       id: 'talent-1',
+      timezone: 'Asia/Tokyo',
     } as never);
     vi.mocked(
       publicPresenceFoundationRepository.findPortalByTalentId,
@@ -205,8 +207,10 @@ describe('PublicPresenceStudioService', () => {
       code: 'aki-rosenthal',
       customDomain: null,
       customDomainVerified: false,
+      displayName: 'Aki Rosenthal',
       homepagePath: 'aki-home',
       id: 'talent-1',
+      timezone: 'Asia/Tokyo',
     } as never);
     vi.mocked(
       publicPresenceFoundationRepository.findPortalByTalentId,
@@ -245,5 +249,68 @@ describe('PublicPresenceStudioService', () => {
       tenantCode: 'tenant_test',
     });
     expect(result.draftVersion?.document.templateId).toBe('activeTalentHub');
+  });
+
+  it('builds creator-readable debut defaults instead of raw talent-code copy', async () => {
+    vi.mocked(homepageAdminRepository.findTalentById).mockResolvedValue({
+      code: 'talent_sakura',
+      customDomain: null,
+      customDomainVerified: false,
+      displayName: 'Sakura Kaze',
+      homepagePath: 'sakura-home',
+      id: 'talent-1',
+      timezone: 'Asia/Tokyo',
+    } as never);
+    vi.mocked(
+      publicPresenceFoundationRepository.findPortalByTalentId,
+    )
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(createPortalRecord());
+    vi.mocked(
+      publicPresenceFoundationRepository.findDraftVersion,
+    ).mockResolvedValue(createVersionRecord());
+    vi.mocked(
+      publicPresenceFoundationRepository.findDocumentVersionById,
+    ).mockResolvedValue(null);
+    vi.mocked(
+      publicPresenceFoundationRepository.findValidationSnapshotById,
+    ).mockResolvedValue(createSnapshotRecord());
+
+    await service.bootstrapDraft('talent-1', 'debutReveal', context);
+
+    expect(publicPresenceFoundationService.saveDraft).toHaveBeenCalledWith(
+      'talent-1',
+      expect.objectContaining({
+        metadata: expect.objectContaining({
+          title: 'Sakura Kaze',
+        }),
+        personaKit: expect.objectContaining({
+          tagline: 'Countdown updates, reveal moments, and launch links for fans.',
+        }),
+        sections: expect.arrayContaining([
+          expect.objectContaining({
+            kind: 'firstEncounter',
+            fields: expect.objectContaining({
+              displayName: expect.objectContaining({ value: 'Sakura Kaze' }),
+              headline: expect.objectContaining({
+                value: 'Countdown updates, reveal moments, and launch links for fans.',
+              }),
+            }),
+          }),
+          expect.objectContaining({
+            kind: 'countdownReveal',
+            fields: expect.objectContaining({
+              phase: expect.objectContaining({ value: 'countdown' }),
+              revealAtUtc: expect.objectContaining({ value: '2030-05-15T10:00:00.000Z' }),
+              teaserName: expect.objectContaining({ value: 'Sakura Kaze' }),
+              timezone: expect.objectContaining({ value: 'Asia/Tokyo' }),
+            }),
+          }),
+        ]),
+        templateId: 'debutReveal',
+      }),
+      context,
+      { expectedCurrentContentHash: null },
+    );
   });
 });

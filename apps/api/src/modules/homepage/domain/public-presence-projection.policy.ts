@@ -62,6 +62,7 @@ export interface BuildPublicPresenceProjectionFromDocumentInput {
   revealPhaseOverride?: PublicPresencePhaseVisibility | 'current' | null;
   route: BuildPublicHomepageProjectionRouteInput;
   source?: 'legacyHomepageCompatibility' | 'publicPresenceDocument';
+  talentDisplayName?: string | null;
   theme?: ThemeConfig | Record<string, unknown> | null;
   validationSnapshotId?: string | null;
 }
@@ -89,6 +90,7 @@ interface PublicPresenceProjectionDraftContext {
   route: BuildPublicHomepageProjectionRouteInput;
   runtime: ProjectionRuntimeState;
   snapshot: PublicPresenceValidationSnapshot;
+  talentDisplayName: string | null;
 }
 
 const PRIVATE_HOST_PATTERNS = [
@@ -101,6 +103,14 @@ const PRIVATE_HOST_PATTERNS = [
 
 const TRACKING_QUERY_PARAM_PATTERN = /^(utm_|fbclid$|gclid$|igshid$|mc_[ce]id$)/i;
 const ENCODED_PROTOCOL_RELATIVE_PATTERN = /%2f|%5c/i;
+const INTERNAL_ORDINARY_LABEL_PATTERN = /\b(?:[A-Z0-9]+(?:_[A-Z0-9]+)+|[a-z0-9]+(?:_[a-z0-9]+)+)\b/;
+
+const DEFAULT_DEBUT_PREVIEW_TITLE = 'Debut preview';
+const DEFAULT_DEBUT_REVEAL_TITLE = 'Debut reveal';
+const DEFAULT_PUBLIC_PRESENCE_TITLE = 'Public Presence';
+const DEFAULT_ACTIVE_HUB_DESCRIPTION = 'Official streams, updates, and fan links in one place.';
+const DEFAULT_DEBUT_DESCRIPTION = 'Countdown updates, reveal moments, and launch links for fans.';
+const DEFAULT_PUBLIC_HOMEPAGE_DESCRIPTION = 'Public talent homepage';
 
 const REVEAL_PHASE_SEQUENCE: PublicPresenceRevealPhase[] = [
   'teaser',
@@ -184,6 +194,47 @@ function asFieldString(
   return value && typeof value === 'object' && 'value' in value
     ? asString((value as { value: unknown }).value)
     : null;
+}
+
+function sanitizeOrdinaryLabel(value: unknown): string | null {
+  const label = asString(value);
+
+  if (!label) {
+    return null;
+  }
+
+  return INTERNAL_ORDINARY_LABEL_PATTERN.test(label) ? null : label;
+}
+
+function resolveSafeOrdinaryLabel(
+  candidates: readonly unknown[],
+  fallback: string,
+): string {
+  for (const candidate of candidates) {
+    const safeLabel = sanitizeOrdinaryLabel(candidate);
+
+    if (safeLabel) {
+      return safeLabel;
+    }
+  }
+
+  return fallback;
+}
+
+function sanitizeOrdinaryTimezone(value: unknown): string | null {
+  const timezone = asString(value);
+
+  if (!timezone) {
+    return null;
+  }
+
+  return timezone.toUpperCase() === 'UTC' ? null : timezone;
+}
+
+function getDefaultHeroDescription(templateId: PublicPresenceDocument['templateId']) {
+  return templateId === 'debutReveal'
+    ? DEFAULT_DEBUT_DESCRIPTION
+    : DEFAULT_ACTIVE_HUB_DESCRIPTION;
 }
 
 function asFieldArray<T>(
@@ -1522,6 +1573,7 @@ function resolveDocumentRevealPhase(
 function resolveHeroTitle(
   document: PublicPresenceDocument,
   resolvedRevealPhase: PublicPresencePhaseVisibility,
+  talentDisplayName: string | null,
 ) {
   const firstEncounter = document.sections.find(
     (section) => section.kind === 'firstEncounter',
@@ -1529,26 +1581,38 @@ function resolveHeroTitle(
   const countdownSection = document.sections.find(
     (section) => section.kind === 'countdownReveal',
   );
+  const safeMetadataTitle = sanitizeOrdinaryLabel(document.metadata?.title);
 
   if (document.templateId === 'debutReveal' && countdownSection) {
     if (isPreRevealPhase(resolvedRevealPhase)) {
-      return (
-        asFieldString(countdownSection, 'teaserName')
-        ?? asFieldString(firstEncounter, 'teaserName')
-        ?? asFieldString(firstEncounter, 'displayName')
-        ?? '__debutPreview__'
+      return resolveSafeOrdinaryLabel(
+        [
+          asFieldString(countdownSection, 'teaserName'),
+          asFieldString(firstEncounter, 'teaserName'),
+          asFieldString(firstEncounter, 'displayName'),
+          talentDisplayName,
+          safeMetadataTitle,
+        ],
+        DEFAULT_DEBUT_PREVIEW_TITLE,
       );
     }
 
-    return (
-      asFieldString(countdownSection, 'revealName')
-      ?? asFieldString(firstEncounter, 'revealName')
-      ?? asFieldString(firstEncounter, 'displayName')
-      ?? '__debutReveal__'
+    return resolveSafeOrdinaryLabel(
+      [
+        asFieldString(countdownSection, 'revealName'),
+        asFieldString(firstEncounter, 'revealName'),
+        asFieldString(firstEncounter, 'displayName'),
+        talentDisplayName,
+        safeMetadataTitle,
+      ],
+      DEFAULT_DEBUT_REVEAL_TITLE,
     );
   }
 
-  return asFieldString(firstEncounter, 'displayName') ?? '__publicPresence__';
+  return resolveSafeOrdinaryLabel(
+    [asFieldString(firstEncounter, 'displayName'), talentDisplayName, safeMetadataTitle],
+    DEFAULT_PUBLIC_PRESENCE_TITLE,
+  );
 }
 
 function buildDocumentHeroSection(
@@ -1560,16 +1624,21 @@ function buildDocumentHeroSection(
   const countdownSection = context.document.sections.find(
     (section) => section.kind === 'countdownReveal',
   );
-  const title = resolveHeroTitle(context.document, context.resolvedRevealPhase);
-  const description =
-    asFieldString(firstEncounter, 'headline')
-    ?? asFieldString(firstEncounter, 'intro')
-    ?? asString(context.document.personaKit?.tagline)
-    ?? asString(context.document.metadata?.description)
-    ?? null;
-  const timezone =
-    asFieldString(countdownSection, 'timezone')
-    ?? null;
+  const title = resolveHeroTitle(
+    context.document,
+    context.resolvedRevealPhase,
+    context.talentDisplayName,
+  );
+  const description = resolveSafeOrdinaryLabel(
+    [
+      asFieldString(firstEncounter, 'headline'),
+      asFieldString(firstEncounter, 'intro'),
+      asString(context.document.metadata?.description),
+      asString(context.document.personaKit?.tagline),
+    ],
+    getDefaultHeroDescription(context.document.templateId),
+  );
+  const timezone = sanitizeOrdinaryTimezone(asFieldString(countdownSection, 'timezone'));
   const avatar = buildAvatarMedia(
     context.runtime,
     asFieldString(firstEncounter, 'avatarUrl') ?? asFieldString(firstEncounter, 'heroMediaUrl'),
@@ -1918,15 +1987,18 @@ function buildDocumentMetadata(
     );
   }
 
+  const safeMetadataTitle = sanitizeOrdinaryLabel(context.document.metadata?.title);
   const title = revealSafeMetadata
     ? hero.title
-    : asString(context.document.metadata?.title) ?? hero.title ?? 'TCRN TMS';
+    : safeMetadataTitle ?? hero.title ?? 'TCRN TMS';
+  const safeMetadataDescription = sanitizeOrdinaryLabel(context.document.metadata?.description);
+  const safePersonaTagline = sanitizeOrdinaryLabel(context.document.personaKit?.tagline);
   const description = revealSafeMetadata
-    ? hero.description ?? asString(context.document.personaKit?.tagline) ?? 'Public talent homepage'
-    : asString(context.document.metadata?.description)
+    ? hero.description ?? safePersonaTagline ?? DEFAULT_PUBLIC_HOMEPAGE_DESCRIPTION
+    : safeMetadataDescription
       ?? hero.description
-      ?? asString(context.document.personaKit?.tagline)
-      ?? 'Public talent homepage';
+      ?? safePersonaTagline
+      ?? DEFAULT_PUBLIC_HOMEPAGE_DESCRIPTION;
   const ogImage = safeOgImage.value
     ? createMedia(context.runtime, {
         kind: 'ogImage',
@@ -1976,6 +2048,7 @@ export function buildPublicPresenceProjectionFromDocument(
     route: input.route,
     runtime,
     snapshot,
+    talentDisplayName: sanitizeOrdinaryLabel(input.talentDisplayName),
   };
   const hero = buildDocumentHeroSection(context);
   const primaryCta = buildDocumentPrimaryCtaSection(context);

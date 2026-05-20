@@ -26,8 +26,10 @@ export class HomepageAdminRepository {
     const prisma = this.databaseService.getPrisma();
     const talents = await prisma.$queryRawUnsafe<HomepageAdminTalentRecord[]>(
       `
-        SELECT id, code, homepage_path as "homepagePath",
+        SELECT id, code, display_name as "displayName",
+               homepage_path as "homepagePath",
                custom_domain as "customDomain", custom_domain_verified as "customDomainVerified"
+               , timezone
         FROM "${schema}".talent
         WHERE id = $1::uuid
       `,
