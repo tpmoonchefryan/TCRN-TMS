@@ -19,9 +19,14 @@ import {
   X,
 } from 'lucide-react';
 import Link from 'next/link';
-import { useId, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useState } from 'react';
 
 import { PublicPresenceBadge, PublicPresenceShell, PublicPresenceSurface } from '@/domains/public-presence';
+import {
+  listPublicPresenceAuthoringDrafts,
+  type PublicPresenceAuthoringArtifactKind,
+  type PublicPresenceAuthoringDraftSummary,
+} from '@/domains/public-presence-studio/api/public-presence-studio.api';
 import { useOverlayFocusManager } from '@/domains/public-presence-studio/screens/public-presence-studio-overlay';
 import {
   getHomepageSurfaceActionLabel,
@@ -38,8 +43,9 @@ import {
   buildPublicPresenceStudioPreviewPath,
   buildPublicPresenceTemplateAuthoringPath,
 } from '@/platform/routing/workspace-paths';
-import { pickLocaleText } from '@/platform/runtime/locale/locale-text';
+import { formatLocaleDateTime, pickLocaleText } from '@/platform/runtime/locale/locale-text';
 import { useUiLocale } from '@/platform/runtime/locale/locale-provider';
+import { useSession } from '@/platform/runtime/session/session-provider';
 
 type HomepageSurfaceId = 'management' | 'templates' | 'components';
 
@@ -188,6 +194,109 @@ function getLocaleCoverageLabel(locale: SupportedUiLocale) {
     ko: `${SUPPORTED_UI_LOCALES.length}개 UI 언어 지원`,
     fr: `${SUPPORTED_UI_LOCALES.length} langues prises en charge`,
   });
+}
+
+function getAuthoringDraftStatusTone(
+  status: PublicPresenceAuthoringDraftSummary['artifactStatus'],
+) {
+  return status === 'submitted'
+    ? 'rose'
+    : status === 'validated'
+      ? 'success'
+      : 'warning';
+}
+
+function getAuthoringDraftStatusLabel(
+  locale: SupportedUiLocale,
+  status: PublicPresenceAuthoringDraftSummary['artifactStatus'],
+) {
+  if (status === 'submitted') {
+    return pickLocaleText(locale, {
+      en: 'Submitted for review',
+      zh_HANS: '已提交审核',
+      zh_HANT: '已提交審核',
+      ja: 'レビュー提出済み',
+      ko: '검토 제출됨',
+      fr: 'Soumis pour revue',
+    });
+  }
+
+  if (status === 'validated') {
+    return pickLocaleText(locale, {
+      en: 'Validated draft',
+      zh_HANS: '已完成校验',
+      zh_HANT: '已完成驗證',
+      ja: '検証済みドラフト',
+      ko: '검증된 드래프트',
+      fr: 'Brouillon validé',
+    });
+  }
+
+  return pickLocaleText(locale, {
+    en: 'Draft in progress',
+    zh_HANS: '草稿进行中',
+    zh_HANT: '草稿進行中',
+    ja: '作成中のドラフト',
+    ko: '작성 중인 드래프트',
+    fr: 'Brouillon en cours',
+  });
+}
+
+function getAuthoringDraftSubjectLabel(
+  locale: SupportedUiLocale,
+  artifactKind: PublicPresenceAuthoringArtifactKind,
+  subjectKey: string,
+) {
+  if (artifactKind === 'template') {
+    if (subjectKey in PUBLIC_PRESENCE_TEMPLATE_DEFINITIONS) {
+      return getPublicPresenceTemplateLabel(
+        locale,
+        PUBLIC_PRESENCE_TEMPLATE_DEFINITIONS[subjectKey as PublicPresenceTemplateId],
+      );
+    }
+
+    return subjectKey === 'new'
+      ? pickLocaleText(locale, {
+          en: 'New template draft',
+          zh_HANS: '新模板草稿',
+          zh_HANT: '新模板草稿',
+          ja: '新規テンプレートドラフト',
+          ko: '새 템플릿 드래프트',
+          fr: 'Nouveau brouillon de template',
+        })
+      : subjectKey;
+  }
+
+  if (subjectKey in PUBLIC_PRESENCE_COMPONENT_DEFINITIONS) {
+    return getComponentDisplayName(locale, subjectKey as HomepageComponentType);
+  }
+
+  return subjectKey === 'new'
+    ? pickLocaleText(locale, {
+        en: 'New component draft',
+        zh_HANS: '新组件草稿',
+        zh_HANT: '新元件草稿',
+        ja: '新規コンポーネントドラフト',
+        ko: '새 컴포넌트 드래프트',
+        fr: 'Nouveau brouillon de composant',
+      })
+    : subjectKey;
+}
+
+function buildAuthoringDraftHref(
+  tenantId: string,
+  talentId: string,
+  draft: PublicPresenceAuthoringDraftSummary,
+) {
+  if (draft.artifactKind === 'template') {
+    return draft.subjectKey in PUBLIC_PRESENCE_TEMPLATE_DEFINITIONS
+      ? buildPublicPresenceTemplateAuthoringPath(tenantId, talentId, draft.subjectKey)
+      : buildPublicPresenceTemplateAuthoringPath(tenantId, talentId);
+  }
+
+  return draft.subjectKey in PUBLIC_PRESENCE_COMPONENT_DEFINITIONS
+    ? buildPublicPresenceComponentAuthoringPath(tenantId, talentId, draft.subjectKey)
+    : buildPublicPresenceComponentAuthoringPath(tenantId, talentId);
 }
 
 function getComponentSupportBadgeLabel(
@@ -514,6 +623,106 @@ export function HomepageSurfaceMenu({
   );
 }
 
+function AuthoringDraftActivityPanel({
+  artifactKind,
+  drafts,
+  locale,
+  talentId,
+  tenantId,
+}: Readonly<{
+  artifactKind: PublicPresenceAuthoringArtifactKind;
+  drafts: PublicPresenceAuthoringDraftSummary[];
+  locale: SupportedUiLocale;
+  talentId: string;
+  tenantId: string;
+}>) {
+  if (drafts.length === 0) {
+    return null;
+  }
+
+  return (
+    <PublicPresenceSurface className="space-y-4" variant="inset">
+      <div className="space-y-2">
+        <h2 className="text-lg font-semibold text-slate-950">
+          {pickLocaleText(locale, {
+            en: 'Recent draft activity',
+            zh_HANS: '最近草稿动态',
+            zh_HANT: '最近草稿動態',
+            ja: '最近のドラフト状況',
+            ko: '최근 드래프트 활동',
+            fr: 'Activité récente des brouillons',
+          })}
+        </h2>
+        <p className="text-sm leading-6 text-slate-600">
+          {artifactKind === 'template'
+            ? pickLocaleText(locale, {
+                en: 'Return to saved template work without losing the latest draft state.',
+                zh_HANS: '可以从这里回到已保存的模板创作，不会丢失最近一次草稿状态。',
+                zh_HANT: '可以從這裡回到已儲存的模板創作，不會遺失最近一次草稿狀態。',
+                ja: '保存済みのテンプレート作業に戻り、最新ドラフト状態をそのまま引き継げます。',
+                ko: '저장한 템플릿 작업으로 돌아가 최신 드래프트 상태를 그대로 이어갈 수 있습니다.',
+                fr: 'Reprenez un travail de template déjà enregistré sans perdre le dernier état du brouillon.',
+              })
+            : pickLocaleText(locale, {
+                en: 'Return to saved component work without losing the latest draft state.',
+                zh_HANS: '可以从这里回到已保存的组件创作，不会丢失最近一次草稿状态。',
+                zh_HANT: '可以從這裡回到已儲存的元件創作，不會遺失最近一次草稿狀態。',
+                ja: '保存済みのコンポーネント作業に戻り、最新ドラフト状態をそのまま引き継げます。',
+                ko: '저장한 컴포넌트 작업으로 돌아가 최신 드래프트 상태를 그대로 이어갈 수 있습니다.',
+                fr: 'Reprenez un travail de composant déjà enregistré sans perdre le dernier état du brouillon.',
+              })}
+        </p>
+      </div>
+      <div className="space-y-3">
+        {drafts.map((draft) => (
+          <div
+            key={draft.id}
+            className="rounded-3xl border border-slate-200 bg-white px-4 py-4"
+          >
+            <div className="flex flex-wrap items-center gap-2">
+              <PublicPresenceBadge tone="slate" variant="outline">
+                {getAuthoringDraftSubjectLabel(locale, draft.artifactKind, draft.subjectKey)}
+              </PublicPresenceBadge>
+              <PublicPresenceBadge
+                tone={getAuthoringDraftStatusTone(draft.artifactStatus)}
+                variant="outline"
+              >
+                {getAuthoringDraftStatusLabel(locale, draft.artifactStatus)}
+              </PublicPresenceBadge>
+            </div>
+            <p className="mt-3 text-sm leading-6 text-slate-600">
+              {pickLocaleText(locale, {
+                en: 'Last saved',
+                zh_HANS: '最近保存',
+                zh_HANT: '最近儲存',
+                ja: '最終保存',
+                ko: '마지막 저장',
+                fr: 'Dernière sauvegarde',
+              })}{' '}
+              {formatLocaleDateTime(locale, draft.lastSavedAt, draft.lastSavedAt)}
+            </p>
+            <div className="mt-3">
+              <SurfaceCommandLink
+                href={buildAuthoringDraftHref(tenantId, talentId, draft)}
+                icon={<Code2 className="h-4 w-4" aria-hidden="true" />}
+                label={pickLocaleText(locale, {
+                  en: 'Open saved draft',
+                  zh_HANS: '打开已保存草稿',
+                  zh_HANT: '打開已儲存草稿',
+                  ja: '保存済みドラフトを開く',
+                  ko: '저장된 드래프트 열기',
+                  fr: 'Ouvrir le brouillon enregistré',
+                })}
+                tone="primary"
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+    </PublicPresenceSurface>
+  );
+}
+
 export function TemplateCenterScreen({
   talentId,
   tenantId,
@@ -522,7 +731,9 @@ export function TemplateCenterScreen({
   tenantId: string;
 }>) {
   const { locale } = useUiLocale();
+  const { request } = useSession();
   const [inspectTemplateId, setInspectTemplateId] = useState<PublicPresenceTemplateId | null>(null);
+  const [templateDrafts, setTemplateDrafts] = useState<PublicPresenceAuthoringDraftSummary[]>([]);
   const inspectTemplateDrawerId = useId();
   const templates = Object.values(PUBLIC_PRESENCE_TEMPLATE_DEFINITIONS);
   const inspectTemplate = inspectTemplateId
@@ -533,6 +744,33 @@ export function TemplateCenterScreen({
     onClose: () => setInspectTemplateId(null),
     open: inspectTemplateOpen,
   });
+  const templateDraftsBySubject = useMemo(
+    () => new Map(templateDrafts.map((draft) => [draft.subjectKey, draft])),
+    [templateDrafts],
+  );
+  const unmatchedTemplateDrafts = useMemo(
+    () =>
+      templateDrafts.filter(
+        (draft) => !(draft.subjectKey in PUBLIC_PRESENCE_TEMPLATE_DEFINITIONS),
+      ),
+    [templateDrafts],
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+
+    void listPublicPresenceAuthoringDrafts(request, talentId, 'template')
+      .then((drafts) => {
+        if (!cancelled && drafts.length > 0) {
+          setTemplateDrafts(drafts);
+        }
+      })
+      .catch(() => undefined);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [request, talentId]);
 
   return (
     <PublicPresenceShell decorationDensity="calm">
@@ -579,6 +817,10 @@ export function TemplateCenterScreen({
                 className="space-y-4"
                 data-testid={`template-card-${template.templateId}`}
               >
+                {(() => {
+                  const templateDraft = templateDraftsBySubject.get(template.templateId);
+
+                  return (
                 <div className="space-y-3">
                   <div className="flex flex-wrap items-center gap-2">
                     <PublicPresenceBadge tone="rose" variant="outline">
@@ -594,6 +836,14 @@ export function TemplateCenterScreen({
                         fr: 'Enregistre',
                       })}
                     </PublicPresenceBadge>
+                    {templateDraft ? (
+                      <PublicPresenceBadge
+                        tone={getAuthoringDraftStatusTone(templateDraft.artifactStatus)}
+                        variant="outline"
+                      >
+                        {getAuthoringDraftStatusLabel(locale, templateDraft.artifactStatus)}
+                      </PublicPresenceBadge>
+                    ) : null}
                   </div>
                   <h2 className="text-xl font-semibold text-slate-950">
                     {getPublicPresenceTemplateUseCase(locale, template)}
@@ -651,6 +901,8 @@ export function TemplateCenterScreen({
                     </p>
                   </div>
                 </div>
+                  );
+                })()}
                 <div className="flex flex-wrap items-center gap-2">
                   <SurfaceCommandLink
                     href={buildPublicPresenceStudioPreviewPath(tenantId, talentId, template.templateId)}
@@ -829,23 +1081,32 @@ export function TemplateCenterScreen({
               </div>
             </PublicPresenceSurface>
           ) : (
-            <PublicPresenceSurface className="space-y-4" variant="inset">
-              <div className="space-y-2">
-                <h2 className="text-lg font-semibold text-slate-950">
-                  {getHomepageSurfaceActionLabel(locale, 'inspectTemplate')}
-                </h2>
-                <p className="text-sm leading-6 text-slate-600">
-                  {pickLocaleText(locale, {
-                    en: 'Choose a template card to compare section flow, Persona Kit focus, and launch-readiness checkpoints.',
-                    zh_HANS: '选择一个模板卡片，比较分区流程、人设聚焦与上线前检查点。',
-                    zh_HANT: '選擇一個模板卡片，比較分區流程、人設聚焦與上線前檢查點。',
-                    ja: 'テンプレートカードを選ぶと、セクションの流れ、Persona Kit の要点、公開前チェックを比較できます。',
-                    ko: '템플릿 카드를 선택하면 섹션 흐름, Persona Kit 초점, 런치 전 점검을 비교할 수 있습니다.',
-                    fr: 'Choisissez une carte pour comparer le flux des sections, le focus Persona Kit et les points de readiness.',
-                  })}
-                </p>
-              </div>
-            </PublicPresenceSurface>
+            <div className="space-y-4">
+              <AuthoringDraftActivityPanel
+                artifactKind="template"
+                drafts={unmatchedTemplateDrafts}
+                locale={locale}
+                talentId={talentId}
+                tenantId={tenantId}
+              />
+              <PublicPresenceSurface className="space-y-4" variant="inset">
+                <div className="space-y-2">
+                  <h2 className="text-lg font-semibold text-slate-950">
+                    {getHomepageSurfaceActionLabel(locale, 'inspectTemplate')}
+                  </h2>
+                  <p className="text-sm leading-6 text-slate-600">
+                    {pickLocaleText(locale, {
+                      en: 'Choose a template card to compare section flow, Persona Kit focus, and launch-readiness checkpoints.',
+                      zh_HANS: '选择一个模板卡片，比较分区流程、人设聚焦与上线前检查点。',
+                      zh_HANT: '選擇一個模板卡片，比較分區流程、人設聚焦與上線前檢查點。',
+                      ja: 'テンプレートカードを選ぶと、セクションの流れ、Persona Kit の要点、公開前チェックを比較できます。',
+                      ko: '템플릿 카드를 선택하면 섹션 흐름, Persona Kit 초점, 런치 전 점검을 비교할 수 있습니다.',
+                      fr: 'Choisissez une carte pour comparer le flux des sections, le focus Persona Kit et les points de readiness.',
+                    })}
+                  </p>
+                </div>
+              </PublicPresenceSurface>
+            </div>
           )}
         </div>
       </div>
@@ -861,7 +1122,9 @@ export function ComponentStoreScreen({
   tenantId: string;
 }>) {
   const { locale } = useUiLocale();
+  const { request } = useSession();
   const [inspectComponentType, setInspectComponentType] = useState<HomepageComponentType | null>(null);
+  const [componentDrafts, setComponentDrafts] = useState<PublicPresenceAuthoringDraftSummary[]>([]);
   const inspectComponentDrawerId = useId();
   const components = Object.values(PUBLIC_PRESENCE_COMPONENT_DEFINITIONS);
   const inspectComponent = inspectComponentType
@@ -872,6 +1135,33 @@ export function ComponentStoreScreen({
     onClose: () => setInspectComponentType(null),
     open: inspectComponentOpen,
   });
+  const componentDraftsBySubject = useMemo(
+    () => new Map(componentDrafts.map((draft) => [draft.subjectKey, draft])),
+    [componentDrafts],
+  );
+  const unmatchedComponentDrafts = useMemo(
+    () =>
+      componentDrafts.filter(
+        (draft) => !(draft.subjectKey in PUBLIC_PRESENCE_COMPONENT_DEFINITIONS),
+      ),
+    [componentDrafts],
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+
+    void listPublicPresenceAuthoringDrafts(request, talentId, 'component')
+      .then((drafts) => {
+        if (!cancelled && drafts.length > 0) {
+          setComponentDrafts(drafts);
+        }
+      })
+      .catch(() => undefined);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [request, talentId]);
 
   return (
     <PublicPresenceShell decorationDensity="calm">
@@ -918,6 +1208,10 @@ export function ComponentStoreScreen({
                 className="space-y-4"
                 data-testid={`component-card-${component.componentType}`}
               >
+                {(() => {
+                  const componentDraft = componentDraftsBySubject.get(component.componentType);
+
+                  return (
                 <div className="space-y-3">
                   <div className="flex flex-wrap items-center gap-2">
                     <PublicPresenceBadge tone="rose" variant="outline">
@@ -939,9 +1233,17 @@ export function ComponentStoreScreen({
                             zh_HANT: '特殊場景元件',
                             ja: '特別な場面向け',
                             ko: '특수 장면용',
-                            fr: 'Composant pour moment special',
-                          })}
+                          fr: 'Composant pour moment special',
+                        })}
                     </PublicPresenceBadge>
+                    {componentDraft ? (
+                      <PublicPresenceBadge
+                        tone={getAuthoringDraftStatusTone(componentDraft.artifactStatus)}
+                        variant="outline"
+                      >
+                        {getAuthoringDraftStatusLabel(locale, componentDraft.artifactStatus)}
+                      </PublicPresenceBadge>
+                    ) : null}
                   </div>
                   <h2 className="text-xl font-semibold text-slate-950">
                     {resolveText(locale, COMPONENT_PREVIEW_COPY[component.componentType])}
@@ -975,6 +1277,8 @@ export function ComponentStoreScreen({
                     </p>
                   </div>
                 </div>
+                  );
+                })()}
                 <div className="flex flex-wrap items-center gap-2">
                   <SurfaceCommandLink
                     href={buildPublicPresenceStudioPreviewPath(tenantId, talentId)}
@@ -1140,23 +1444,32 @@ export function ComponentStoreScreen({
               </div>
             </PublicPresenceSurface>
           ) : (
-            <PublicPresenceSurface className="space-y-4" variant="inset">
-              <div className="space-y-2">
-                <h2 className="text-lg font-semibold text-slate-950">
-                  {getHomepageSurfaceActionLabel(locale, 'inspectComponent')}
-                </h2>
-                <p className="text-sm leading-6 text-slate-600">
-                  {pickLocaleText(locale, {
-                    en: 'Choose a component card to see what fans notice first, when to use it, and what creators can tailor.',
-                    zh_HANS: '选择一个组件卡片，查看粉丝首先会看到什么、适合什么场景，以及创作者能调整什么。',
-                    zh_HANT: '選擇一個元件卡片，查看粉絲首先會看到什麼、適合什麼場景，以及創作者能調整什麼。',
-                    ja: 'コンポーネントカードを選ぶと、ファンが最初に受け取る印象、向いている使い方、調整できる内容を確認できます。',
-                    ko: '컴포넌트 카드를 선택하면 팬이 먼저 보게 될 모습, 잘 맞는 장면, 조정할 수 있는 내용을 확인할 수 있습니다.',
-                    fr: 'Choisissez une carte pour voir ce que les fans remarquent d’abord, quand l’utiliser et ce que le créateur peut ajuster.',
-                  })}
-                </p>
-              </div>
-            </PublicPresenceSurface>
+            <div className="space-y-4">
+              <AuthoringDraftActivityPanel
+                artifactKind="component"
+                drafts={unmatchedComponentDrafts}
+                locale={locale}
+                talentId={talentId}
+                tenantId={tenantId}
+              />
+              <PublicPresenceSurface className="space-y-4" variant="inset">
+                <div className="space-y-2">
+                  <h2 className="text-lg font-semibold text-slate-950">
+                    {getHomepageSurfaceActionLabel(locale, 'inspectComponent')}
+                  </h2>
+                  <p className="text-sm leading-6 text-slate-600">
+                    {pickLocaleText(locale, {
+                      en: 'Choose a component card to see what fans notice first, when to use it, and what creators can tailor.',
+                      zh_HANS: '选择一个组件卡片，查看粉丝首先会看到什么、适合什么场景，以及创作者能调整什么。',
+                      zh_HANT: '選擇一個元件卡片，查看粉絲首先會看到什麼、適合什麼場景，以及創作者能調整什麼。',
+                      ja: 'コンポーネントカードを選ぶと、ファンが最初に受け取る印象、向いている使い方、調整できる内容を確認できます。',
+                      ko: '컴포넌트 카드를 선택하면 팬이 먼저 보게 될 모습, 잘 맞는 장면, 조정할 수 있는 내용을 확인할 수 있습니다.',
+                      fr: 'Choisissez une carte pour voir ce que les fans remarquent d’abord, quand l’utiliser et ce que le créateur peut ajuster.',
+                    })}
+                  </p>
+                </div>
+              </PublicPresenceSurface>
+            </div>
           )}
         </div>
       </div>

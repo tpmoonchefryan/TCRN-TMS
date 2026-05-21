@@ -62,6 +62,9 @@ const profileStoresResponse = {
   },
 };
 
+const manageableLifecycleMaintenance = { canManage: true } as const;
+const unavailableLifecycleMaintenance = { canManage: false } as const;
+
 function getTreeCallCount() {
   return mockRequest.mock.calls.filter(([path]) => String(path).startsWith('/api/v1/organization/tree?')).length;
 }
@@ -135,6 +138,7 @@ describe('OrganizationStructureScreen', () => {
                   lifecycleStatus: 'draft',
                   publishedAt: null,
                   isActive: false,
+                  lifecycleMaintenance: manageableLifecycleMaintenance,
                 },
               ],
               children: [
@@ -158,6 +162,7 @@ describe('OrganizationStructureScreen', () => {
                       lifecycleStatus: 'published',
                       publishedAt: '2026-04-17T12:00:00.000Z',
                       isActive: true,
+                      lifecycleMaintenance: manageableLifecycleMaintenance,
                     },
                   ],
                   children: [],
@@ -178,6 +183,7 @@ describe('OrganizationStructureScreen', () => {
               lifecycleStatus: 'published',
               publishedAt: '2026-04-17T12:00:00.000Z',
               isActive: true,
+              lifecycleMaintenance: manageableLifecycleMaintenance,
             },
           ],
         });
@@ -263,6 +269,7 @@ describe('OrganizationStructureScreen', () => {
                   lifecycleStatus: 'draft',
                   publishedAt: null,
                   isActive: false,
+                  lifecycleMaintenance: manageableLifecycleMaintenance,
                 },
               ],
               children: [],
@@ -421,6 +428,7 @@ describe('OrganizationStructureScreen', () => {
               lifecycleStatus: 'draft',
               publishedAt: null,
               isActive: false,
+              lifecycleMaintenance: manageableLifecycleMaintenance,
             },
           ],
         });
@@ -443,6 +451,7 @@ describe('OrganizationStructureScreen', () => {
           publishedAt: null,
           publishedBy: null,
           isActive: false,
+          lifecycleMaintenance: manageableLifecycleMaintenance,
           createdAt: '2026-04-17T12:00:00.000Z',
           version: 1,
         });
@@ -518,6 +527,7 @@ describe('OrganizationStructureScreen', () => {
                     lifecycleStatus: lifecycleState === 'reenabled' ? 'published' : 'draft',
                     publishedAt: lifecycleState === 'reenabled' ? '2026-04-17T12:00:00.000Z' : null,
                     isActive: lifecycleState === 'reenabled',
+                    lifecycleMaintenance: manageableLifecycleMaintenance,
                   },
                 ],
         });
@@ -545,6 +555,7 @@ describe('OrganizationStructureScreen', () => {
                     : 'draft',
               publishedAt: lifecycleState === 'reenabled' ? '2026-04-17T12:00:00.000Z' : null,
               isActive: lifecycleState === 'reenabled',
+              lifecycleMaintenance: manageableLifecycleMaintenance,
             },
           ],
         });
@@ -579,6 +590,7 @@ describe('OrganizationStructureScreen', () => {
           publishedAt: lifecycleState === 'reenabled' ? '2026-04-17T12:00:00.000Z' : null,
           publishedBy: null,
           isActive: lifecycleState === 'reenabled',
+          lifecycleMaintenance: manageableLifecycleMaintenance,
           settings: {},
           stats: {
             customerCount: 0,
@@ -633,16 +645,137 @@ describe('OrganizationStructureScreen', () => {
       expect(mockRequest).toHaveBeenCalledWith('/api/v1/organization/tree?includeInactive=true');
     });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Disable talent' }));
-    fireEvent.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Disable talent' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Disable workspace' }));
+    fireEvent.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Disable workspace' }));
 
     await screen.findByText('Disabled');
-    fireEvent.click(screen.getByRole('button', { name: 'Re-enable talent' }));
-    fireEvent.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Re-enable talent' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Re-enable workspace' }));
+    fireEvent.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Re-enable workspace' }));
 
     await waitFor(() => {
       expect(screen.getByText('Published')).toBeInTheDocument();
     });
+  });
+
+  it('renders lifecycle maintenance actions only when the tree grants workspace access', async () => {
+    mockRequest.mockImplementation((path: string) => {
+      if (path === '/api/v1/profile-stores?page=1&pageSize=20') {
+        return Promise.resolve(profileStoresResponse);
+      }
+
+      if (path === '/api/v1/organization/tree?includeInactive=false') {
+        return Promise.resolve({
+          tenantId: 'tenant-1',
+          subsidiaries: [],
+          directTalents: [
+            {
+              id: 'talent-1',
+              code: 'SORA',
+              name: 'Tokino Sora',
+              displayName: 'Sora',
+              avatarUrl: null,
+              subsidiaryId: null,
+              path: '/SORA/',
+              homepagePath: 'sora',
+              lifecycleStatus: 'published',
+              publishedAt: '2026-04-17T12:00:00.000Z',
+              isActive: true,
+              lifecycleMaintenance: unavailableLifecycleMaintenance,
+            },
+          ],
+        });
+      }
+
+      throw new Error(`Unexpected request: ${path}`);
+    });
+
+    render(<OrganizationStructureScreen tenantId="tenant-1" />);
+
+    expect(await screen.findByText('Sora')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Disable workspace' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Re-enable workspace' })).not.toBeInTheDocument();
+  });
+
+  it('uses workspace wording for zh lifecycle controls', async () => {
+    localeState.locale = 'zh_HANS';
+
+    mockRequest.mockImplementation((path: string) => {
+      if (path === '/api/v1/profile-stores?page=1&pageSize=20') {
+        return Promise.resolve(profileStoresResponse);
+      }
+
+      if (path === '/api/v1/organization/tree?includeInactive=false') {
+        return Promise.resolve({
+          tenantId: 'tenant-1',
+          subsidiaries: [],
+          directTalents: [
+            {
+              id: 'talent-1',
+              code: 'SORA',
+              name: '时乃空',
+              displayName: '空',
+              avatarUrl: null,
+              subsidiaryId: null,
+              path: '/SORA/',
+              homepagePath: 'sora',
+              lifecycleStatus: 'published',
+              publishedAt: '2026-04-17T12:00:00.000Z',
+              isActive: true,
+              lifecycleMaintenance: manageableLifecycleMaintenance,
+            },
+          ],
+        });
+      }
+
+      if (path === '/api/v1/talents/talent-1') {
+        return Promise.resolve({
+          id: 'talent-1',
+          subsidiaryId: null,
+          profileStoreId: 'store-1',
+          profileStore: {
+            id: 'store-1',
+            code: 'DEFAULT_STORE',
+            name: localizedFixture('Default Store'),
+            isDefault: true,
+          },
+          code: 'SORA',
+          path: '/SORA/',
+          name: localizedFixture('时乃空'),
+          localizedName: '时乃空',
+          displayName: '空',
+          description: localizedFixture(''),
+          avatarUrl: null,
+          homepagePath: 'sora',
+          timezone: 'Asia/Shanghai',
+          lifecycleStatus: 'published',
+          publishedAt: '2026-04-17T12:00:00.000Z',
+          publishedBy: null,
+          isActive: true,
+          settings: {},
+          stats: {
+            customerCount: 0,
+            homepageVersionCount: 0,
+            marshmallowMessageCount: 0,
+          },
+          externalPagesDomain: {},
+          createdAt: '2026-04-17T00:00:00.000Z',
+          updatedAt: '2026-04-17T00:00:00.000Z',
+          version: 1,
+        });
+      }
+
+      throw new Error(`Unexpected request: ${path}`);
+    });
+
+    render(<OrganizationStructureScreen tenantId="tenant-1" />);
+
+    expect(await screen.findByRole('button', { name: '停用工作区' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: '停用工作区' }));
+
+    expect(
+      within(await screen.findByRole('dialog')).getByRole('button', { name: '停用工作区' }),
+    ).toBeInTheDocument();
   });
 
   it('switches structural controls and inventory copy to zh at runtime', async () => {
@@ -670,6 +803,7 @@ describe('OrganizationStructureScreen', () => {
               lifecycleStatus: 'draft',
               publishedAt: null,
               isActive: false,
+              lifecycleMaintenance: manageableLifecycleMaintenance,
             },
           ],
         });
@@ -712,6 +846,7 @@ describe('OrganizationStructureScreen', () => {
             lifecycleStatus: 'published' as const,
             publishedAt: '2026-04-17T12:00:00.000Z',
             isActive: true,
+            lifecycleMaintenance: manageableLifecycleMaintenance,
           })),
         });
       }
@@ -768,6 +903,7 @@ describe('OrganizationStructureScreen', () => {
                 lifecycleStatus: 'published' as const,
                 publishedAt: '2026-04-17T12:00:00.000Z',
                 isActive: true,
+                lifecycleMaintenance: manageableLifecycleMaintenance,
               })),
             },
           ],

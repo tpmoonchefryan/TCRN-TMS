@@ -31,6 +31,15 @@ import { startTransition, useEffect, useId, useMemo, useRef, useState } from 're
 
 import { PublicPresenceBadge, PublicPresenceShell, PublicPresenceSurface } from '@/domains/public-presence';
 import { PublicHomepageProjectionRenderer } from '@/domains/public-homepage/components/PublicHomepageProjectionRenderer';
+import {
+  readPublicPresenceAuthoringDraft,
+  savePublicPresenceAuthoringDraft,
+  submitPublicPresenceAuthoringDraft,
+  type PublicPresenceAuthoringDraftResponse,
+  type PublicPresenceAuthoringFile,
+  type PublicPresenceAuthoringValidationSummary,
+  validatePublicPresenceAuthoringDraft,
+} from '@/domains/public-presence-studio/api/public-presence-studio.api';
 import { useOverlayFocusManager } from '@/domains/public-presence-studio/screens/public-presence-studio-overlay';
 import {
   getHomepageSurfaceActionLabel,
@@ -47,6 +56,7 @@ import {
 } from '@/platform/routing/workspace-paths';
 import { formatLocaleDateTime, pickLocaleText } from '@/platform/runtime/locale/locale-text';
 import { useUiLocale } from '@/platform/runtime/locale/locale-provider';
+import { useSession } from '@/platform/runtime/session/session-provider';
 
 type AuthoringTarget = 'template' | 'component' | 'advanced';
 type PreviewViewport = 'desktop' | 'mobile';
@@ -96,6 +106,43 @@ interface CustomHtmlPreviewState {
   excerpt: string;
   issues: string[];
   srcDoc: string | null;
+}
+
+function normalizeAuthoringFileKind(
+  kind: string,
+): VirtualFile['kind'] {
+  return kind === 'doc' || kind === 'fixture' || kind === 'schema'
+    ? kind
+    : 'code';
+}
+
+function normalizeAuthoringFiles(
+  draft: PublicPresenceAuthoringDraftResponse | null,
+  fallbackFiles: VirtualFile[],
+): VirtualFile[] {
+  if (!draft?.sourceBundle?.length) {
+    return fallbackFiles;
+  }
+
+  return draft.sourceBundle.map((file) => ({
+    contents: file.contents,
+    kind: normalizeAuthoringFileKind(file.kind),
+    language: file.language,
+    path: file.path,
+  }));
+}
+
+function buildAuthoringValidationSummary(
+  validationItems: readonly ValidationItem[],
+): PublicPresenceAuthoringValidationSummary {
+  const warnCount = validationItems.filter((item) => item.level === 'warn').length;
+  const passCount = validationItems.filter((item) => item.level === 'pass').length;
+
+  return {
+    issueCount: warnCount,
+    passCount,
+    warnCount,
+  };
 }
 
 const CUSTOM_HTML_URL_BYPASS_PATTERN =
@@ -1390,6 +1437,7 @@ export function PublicPresenceAuthoringIdeScreen({
   tenantId: string;
 }>) {
   const { locale } = useUiLocale();
+  const { request } = useSession();
   const [viewport, setViewport] = useState<PreviewViewport>('desktop');
   const [fixtureMode, setFixtureMode] = useState<FixtureMode>('default');
   const [previewPhase, setPreviewPhase] = useState<PublicPresencePhaseVisibility>('always');
@@ -1420,10 +1468,15 @@ export function PublicPresenceAuthoringIdeScreen({
   const [editorDirty, setEditorDirty] = useState(false);
   const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
   const [lastValidatedAt, setLastValidatedAt] = useState<string | null>(null);
+  const [authoringAction, setAuthoringAction] = useState<'idle' | 'save' | 'submit' | 'validate'>('idle');
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'ready'>('idle');
   const [isWideDesktop, setIsWideDesktop] = useState(false);
+  const [hydratedAuthoringKey, setHydratedAuthoringKey] = useState<string | null>(
+    target === 'advanced' ? 'advanced' : null,
+  );
   const activePathRef = useRef(activePath);
   const filesRef = useRef(files);
+  const editorDirtyRef = useRef(editorDirty);
   const workbenchShellRef = useRef<HTMLDivElement | null>(null);
   const editorHostRef = useRef<HTMLDivElement | null>(null);
   const mobileActionsSheetPanelRef = useRef<HTMLDivElement | null>(null);
@@ -1464,6 +1517,14 @@ export function PublicPresenceAuthoringIdeScreen({
   });
 
   const advancedModeOptions: AdvancedPageMode[] = ['page-source', 'custom-html', 'registry-snippets'];
+  const authoringSubjectKey = target === 'template'
+    ? templateId?.trim() || 'new'
+    : target === 'component'
+      ? componentType?.trim() || 'new'
+      : null;
+  const authoringDraftKey = target === 'advanced'
+    ? 'advanced'
+    : `${target}:${authoringSubjectKey ?? 'new'}`;
 
   const activeFile = files.find((file) => file.path === activePath) ?? files[0];
   const desktopPreviewFit = usePreviewFit(720);
@@ -1507,6 +1568,7 @@ export function PublicPresenceAuthoringIdeScreen({
 
   filesRef.current = files;
   activePathRef.current = activePath;
+  editorDirtyRef.current = editorDirty;
   syncEditorContentsRef.current = (path, value) => {
     if (!path) {
       return;
@@ -1606,13 +1668,70 @@ export function PublicPresenceAuthoringIdeScreen({
       return;
     }
 
+    if (target !== 'advanced' && hydratedAuthoringKey === authoringDraftKey) {
+      return;
+    }
+
     setFiles(initialFiles);
     setActivePath(initialFiles[0]?.path ?? '');
     setEditorDirty(false);
     setLastSavedAt(null);
     setLastValidatedAt(null);
     setSubmitStatus('idle');
-  }, [initialFiles]);
+  }, [authoringDraftKey, hydratedAuthoringKey, initialFiles, target]);
+
+  useEffect(() => {
+    if (target === 'advanced') {
+      setHydratedAuthoringKey('advanced');
+      return;
+    }
+
+    if (!authoringSubjectKey) {
+      return;
+    }
+
+    let cancelled = false;
+
+    void readPublicPresenceAuthoringDraft(
+      request,
+      talentId,
+      target,
+      authoringSubjectKey,
+    )
+      .then((draft) => {
+        if (cancelled) {
+          return;
+        }
+
+        if (!draft || editorDirtyRef.current) {
+          return;
+        }
+
+        setHydratedAuthoringKey(authoringDraftKey);
+        const nextFiles = normalizeAuthoringFiles(draft, initialFiles);
+        setFiles(nextFiles);
+        setActivePath((current) =>
+          nextFiles.some((file) => file.path === current)
+            ? current
+            : (nextFiles[0]?.path ?? ''),
+        );
+        setEditorDirty(false);
+        setLastSavedAt(draft?.lastSavedAt ?? null);
+        setLastValidatedAt(draft?.lastValidatedAt ?? null);
+        setSubmitStatus(
+          draft?.artifactStatus === 'validated' || draft?.artifactStatus === 'submitted'
+            ? 'ready'
+            : 'idle',
+        );
+      })
+      .catch(() => {
+        return;
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [authoringDraftKey, authoringSubjectKey, initialFiles, request, talentId, target]);
 
   useEffect(() => () => {
     monacoModelListenerRef.current?.dispose();
@@ -1781,6 +1900,37 @@ export function PublicPresenceAuthoringIdeScreen({
     };
   }, [activeFile?.path]);
 
+  const buildAuthoringSourceBundle = (): PublicPresenceAuthoringFile[] => {
+    const activeEditorContents = monacoEditorRef.current?.getModel()?.getValue();
+
+    return filesRef.current.map((file) => ({
+      contents:
+        file.path === activePathRef.current && activeEditorContents !== undefined
+          ? activeEditorContents
+          : file.contents,
+      kind: file.kind,
+      language: file.language,
+      path: file.path,
+    }));
+  };
+
+  const applyPersistedAuthoringDraft = (
+    result: PublicPresenceAuthoringDraftResponse,
+    nextSubmitStatus: 'idle' | 'ready',
+  ) => {
+    const nextFiles = normalizeAuthoringFiles(result, initialFiles);
+    setFiles(nextFiles);
+    setActivePath((current) =>
+      nextFiles.some((file) => file.path === current)
+        ? current
+        : (nextFiles[0]?.path ?? '')
+    );
+    setEditorDirty(false);
+    setLastSavedAt(result.lastSavedAt);
+    setLastValidatedAt(result.lastValidatedAt);
+    setSubmitStatus(nextSubmitStatus);
+  };
+
   const exitHref =
     target === 'template'
       ? buildPublicPresenceHomepageSurfacePath(tenantId, talentId, 'templates')
@@ -1870,10 +2020,32 @@ export function PublicPresenceAuthoringIdeScreen({
     ? 'xl:grid-cols-[3.5rem_minmax(16rem,18rem)_minmax(0,0.88fr)_minmax(30rem,1.12fr)] 2xl:grid-cols-[3.5rem_minmax(18rem,20rem)_minmax(0,0.92fr)_minmax(34rem,1.08fr)]'
     : 'xl:grid-cols-[3.5rem_minmax(0,0.95fr)_minmax(34rem,1.05fr)] 2xl:grid-cols-[3.5rem_minmax(0,1.05fr)_minmax(38rem,1fr)]';
 
-  const handleSaveDraft = () => {
-    setLastSavedAt(new Date().toISOString());
-    setEditorDirty(false);
-    setSubmitStatus('idle');
+  const handleSaveDraft = async () => {
+    if (target === 'advanced' || !authoringSubjectKey) {
+      setLastSavedAt(new Date().toISOString());
+      setEditorDirty(false);
+      setSubmitStatus('idle');
+      return;
+    }
+
+    setAuthoringAction('save');
+
+    try {
+      const result = await savePublicPresenceAuthoringDraft(
+        request,
+        talentId,
+        target,
+        {
+          sourceBundle: buildAuthoringSourceBundle(),
+          subjectKey: authoringSubjectKey,
+        },
+      );
+      applyPersistedAuthoringDraft(result, 'idle');
+    } catch {
+      return;
+    } finally {
+      setAuthoringAction('idle');
+    }
   };
 
   const openValidationSurface = () => {
@@ -1885,19 +2057,67 @@ export function PublicPresenceAuthoringIdeScreen({
     setMobileOverlay('checks');
   };
 
-  const handleValidate = () => {
-    setLastValidatedAt(new Date().toISOString());
-    openValidationSurface();
-    setSubmitStatus('idle');
+  const handleValidate = async () => {
+    if (target === 'advanced' || !authoringSubjectKey) {
+      setLastValidatedAt(new Date().toISOString());
+      openValidationSurface();
+      setSubmitStatus('idle');
+      return;
+    }
+
+    setAuthoringAction('validate');
+
+    try {
+      const result = await validatePublicPresenceAuthoringDraft(
+        request,
+        talentId,
+        target,
+        {
+          sourceBundle: buildAuthoringSourceBundle(),
+          subjectKey: authoringSubjectKey,
+          validationSummary: buildAuthoringValidationSummary(validationItems),
+        },
+      );
+      applyPersistedAuthoringDraft(result, 'ready');
+      openValidationSurface();
+    } catch {
+      return;
+    } finally {
+      setAuthoringAction('idle');
+    }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!lastValidatedAt || editorDirty) {
       openValidationSurface();
       return;
     }
 
-    setSubmitStatus('ready');
+    if (target === 'advanced' || !authoringSubjectKey) {
+      setSubmitStatus('ready');
+      return;
+    }
+
+    setAuthoringAction('submit');
+
+    try {
+      const result = await submitPublicPresenceAuthoringDraft(
+        request,
+        talentId,
+        target,
+        {
+          sourceBundle: buildAuthoringSourceBundle(),
+          subjectKey: authoringSubjectKey,
+          validationSummary: buildAuthoringValidationSummary(validationItems),
+        },
+      );
+      applyPersistedAuthoringDraft(result, 'ready');
+      setSubmitStatus('ready');
+    } catch {
+      return;
+    } finally {
+      setAuthoringAction('idle');
+    }
   };
 
   const mobileUtilitySheetId = activeMobileUtilityOverlay === 'files'
@@ -2194,19 +2414,20 @@ export function PublicPresenceAuthoringIdeScreen({
                   key={action.key}
                   type="button"
                   disabled={
-                    action.key === 'save'
+                    authoringAction !== 'idle'
+                    || (action.key === 'save'
                       ? !editorDirty
                       : action.key === 'submit'
                         ? editorDirty || !lastValidatedAt
-                        : false
+                        : false)
                   }
                   onClick={() => {
                     if (action.key === 'save') {
-                      handleSaveDraft();
+                      void handleSaveDraft();
                     } else if (action.key === 'validate') {
-                      handleValidate();
+                      void handleValidate();
                     } else if (action.key === 'submit') {
-                      handleSubmit();
+                      void handleSubmit();
                     }
                   }}
                   className="inline-flex shrink-0 items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
@@ -2305,19 +2526,20 @@ export function PublicPresenceAuthoringIdeScreen({
                     key={action.key}
                     type="button"
                     disabled={
-                      action.key === 'save'
+                      authoringAction !== 'idle'
+                      || (action.key === 'save'
                         ? !editorDirty
                         : action.key === 'submit'
                           ? editorDirty || !lastValidatedAt
-                          : false
+                          : false)
                     }
                     onClick={() => {
                       if (action.key === 'save') {
-                        handleSaveDraft();
+                        void handleSaveDraft();
                       } else if (action.key === 'validate') {
-                        handleValidate();
+                        void handleValidate();
                       } else if (action.key === 'submit') {
-                        handleSubmit();
+                        void handleSubmit();
                       }
 
                       setMobileOverlay((current) => (current === 'actions' ? null : current));

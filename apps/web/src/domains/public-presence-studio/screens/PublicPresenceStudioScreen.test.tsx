@@ -330,6 +330,10 @@ function buildWorkspace(overrides?: Record<string, unknown>) {
       talentCode: 'aki',
       tenantCode: 'tenant-1',
     },
+    releaseReadiness: {
+      blockingDependencyCount: 0,
+      dependencies: [],
+    },
     selectedTemplateId: 'activeTalentHub',
     stageSections: [
       {
@@ -1138,6 +1142,207 @@ describe('PublicPresenceStudioScreen', () => {
 
     await waitFor(() => {
       expect(screen.getByTestId('mock-public-preview')).toBeInTheDocument();
+    });
+  });
+
+  it('lets Publish now call the atomic publish endpoint for a draft workspace', async () => {
+    const readyWorkspace = buildWorkspace({
+      draftVersion: {
+        ...buildWorkspace().draftVersion,
+        validationSnapshot: {
+          ...buildWorkspace().draftVersion.validationSnapshot,
+          blockerIds: [],
+          issueCounts: {
+            blocker: 0,
+            fatal: 0,
+            info: 0,
+            warning: 0,
+          },
+          issues: [],
+        },
+      },
+    });
+    const publishedWorkspace = buildWorkspace({
+      draftVersion: {
+        ...readyWorkspace.draftVersion,
+        documentState: 'published',
+        publishedAt: '2026-05-21T01:10:00.000Z',
+      },
+      liveVersion: {
+        ...readyWorkspace.draftVersion,
+        documentState: 'published',
+        publishedAt: '2026-05-21T01:10:00.000Z',
+      },
+    });
+
+    mockRequest.mockImplementation(async (path: string, init?: RequestInit) => {
+      if (isWorkspaceRequest(path)) {
+        return readyWorkspace;
+      }
+
+      if (isPreviewRequest(path)) {
+        return buildPreview();
+      }
+
+      if (path === '/api/v1/talents/talent-1/public-presence/publish' && init?.method === 'POST') {
+        return publishedWorkspace;
+      }
+
+      throw new Error(`Unhandled request: ${path}`);
+    });
+
+    const user = userEvent.setup();
+
+    render(
+      <PublicPresenceStudioScreen
+        initialFocus="release"
+        initialTemplateId="activeTalentHub"
+        talentId="talent-1"
+        tenantId="tenant-1"
+      />,
+    );
+
+    await screen.findByTestId('canvas-stage', {}, { timeout: STUDIO_RENDER_TIMEOUT });
+    await user.click(screen.getByRole('button', { name: 'Open readiness panel' }));
+
+    const publishButton = screen.getByRole('button', { name: 'Publish now' });
+    expect(publishButton).toBeEnabled();
+
+    await user.click(publishButton);
+
+    await waitFor(() => {
+      expect(mockRequest).toHaveBeenCalledWith(
+        '/api/v1/talents/talent-1/public-presence/publish',
+        expect.objectContaining({ method: 'POST' }),
+      );
+    });
+    expect(mockRequest).not.toHaveBeenCalledWith(
+      '/api/v1/talents/talent-1/public-presence/review/submit',
+      expect.anything(),
+    );
+    expect(mockRequest).not.toHaveBeenCalledWith(
+      '/api/v1/talents/talent-1/public-presence/review/approve',
+      expect.anything(),
+    );
+  });
+
+  it('shows the Debut dependency blocker and routes the operator to the always-on hub draft before publish', async () => {
+    const debutWorkspace = buildWorkspace({
+      draftVersion: {
+        ...buildWorkspace().draftVersion,
+        documentState: 'draft',
+        document: {
+          ...buildWorkspace().draftVersion.document,
+          sections: [
+            {
+              id: 'first-encounter-1',
+              kind: 'firstEncounter',
+              fields: {
+                displayName: {
+                  provenance: 'override',
+                  value: 'Aki Rosenthal',
+                },
+              },
+            },
+            {
+              id: 'countdown-1',
+              kind: 'countdownReveal',
+              fields: {
+                phase: {
+                  provenance: 'publicPresence',
+                  value: 'countdown',
+                },
+                revealAtUtc: {
+                  provenance: 'publicPresence',
+                  value: '2030-05-15T10:00:00.000Z',
+                },
+              },
+            },
+          ],
+          templateId: 'debutReveal',
+        },
+        templateId: 'debutReveal',
+        validationSnapshot: {
+          ...buildWorkspace().draftVersion.validationSnapshot,
+          blockerIds: [],
+          issueCounts: {
+            blocker: 0,
+            fatal: 0,
+            info: 0,
+            warning: 0,
+          },
+          issues: [],
+          templateId: 'debutReveal',
+        },
+      },
+      releaseReadiness: {
+        blockingDependencyCount: 1,
+        dependencies: [
+          {
+            blocksPublish: true,
+            id: 'publicPresence.release.debutReveal.activeTalentHubAutoSwitch',
+            messageKey: 'publicPresence.validation.debutRevealRequiresApprovedActiveHub',
+            nextAction: 'openActiveTalentHubDraft',
+            revealAutoSwitchAt: '2030-05-15T10:00:00.000Z',
+            severity: 'blocker',
+            status: 'blocked',
+            suggestedFix: 'Approve the always-on hub before scheduling the debut switch.',
+            targetTemplateId: 'activeTalentHub',
+            targetVersionId: 'active-hub-draft-1',
+            targetVersionState: 'draft',
+            templateId: 'debutReveal',
+          },
+        ],
+      },
+      selectedTemplateId: 'debutReveal',
+    });
+    const activeHubWorkspace = buildWorkspace({
+      selectedTemplateId: 'activeTalentHub',
+    });
+
+    mockRequest.mockImplementation(async (path: string) => {
+      if (path === '/api/v1/talents/talent-1/public-presence?templateId=debutReveal') {
+        return debutWorkspace;
+      }
+
+      if (path === '/api/v1/talents/talent-1/public-presence?templateId=activeTalentHub') {
+        return activeHubWorkspace;
+      }
+
+      if (isPreviewRequest(path)) {
+        return buildPreview();
+      }
+
+      throw new Error(`Unhandled request: ${path}`);
+    });
+
+    const user = userEvent.setup();
+
+    render(
+      <PublicPresenceStudioScreen
+        initialFocus="release"
+        initialTemplateId="debutReveal"
+        talentId="talent-1"
+        tenantId="tenant-1"
+      />,
+    );
+
+    await screen.findByTestId('canvas-stage', {}, { timeout: STUDIO_RENDER_TIMEOUT });
+    await user.click(screen.getByRole('button', { name: 'Open readiness panel' }));
+
+    expect(
+      screen.getByText('Approve the always-on hub before scheduling the debut switch.'),
+    ).toBeInTheDocument();
+
+    const publishButton = screen.getByRole('button', { name: 'Publish now' });
+    expect(publishButton).toBeDisabled();
+
+    await user.click(screen.getByRole('button', { name: 'Open the always-on hub draft' }));
+
+    await waitFor(() => {
+      expect(mockRequest).toHaveBeenCalledWith(
+        '/api/v1/talents/talent-1/public-presence?templateId=activeTalentHub',
+      );
     });
   });
 });

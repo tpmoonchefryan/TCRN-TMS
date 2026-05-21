@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { PublicPresenceAuthoringIdeScreen } from '@/domains/public-presence-studio/screens/PublicPresenceAuthoringIdeScreen';
 
+const mockRequest = vi.fn();
 const ORDINARY_COPY_BOUNDARY_PATTERN =
   /\bcanvas\b|admin chrome|topbar compact|first work surface|first surface/i;
 const ORDINARY_IMPLEMENTATION_COPY_PATTERN =
@@ -16,6 +17,12 @@ vi.setConfig({
 vi.mock('@/platform/runtime/locale/locale-provider', () => ({
   useUiLocale: () => ({
     locale: 'en',
+  }),
+}));
+
+vi.mock('@/platform/runtime/session/session-provider', () => ({
+  useSession: () => ({
+    request: mockRequest,
   }),
 }));
 
@@ -113,6 +120,68 @@ function setWindowWidth(width: number) {
 describe('PublicPresenceAuthoringIdeScreen', () => {
   beforeEach(() => {
     setWindowWidth(1024);
+    mockRequest.mockReset();
+    mockRequest.mockImplementation(async (path: string, init?: RequestInit) => {
+      if (
+        path.includes('/authoring/templates/current')
+        || path.includes('/authoring/components/current')
+      ) {
+        if (init?.method === 'PUT' || init?.method === 'POST') {
+          const payload = JSON.parse(String(init.body ?? '{}')) as {
+            sourceBundle: Array<{
+              contents: string;
+              kind: string;
+              language: string;
+              path: string;
+            }>;
+            subjectKey?: string;
+            validationSummary?: {
+              issueCount?: number;
+              passCount?: number;
+              warnCount?: number;
+            };
+          };
+          const artifactKind = path.includes('/templates/')
+            ? 'template'
+            : 'component';
+          const artifactStatus = path.endsWith('/submit')
+            ? 'submitted'
+            : path.endsWith('/validate')
+              ? 'validated'
+              : 'draft';
+
+          return {
+            artifactKind,
+            artifactStatus,
+            id: `${artifactKind}-draft-1`,
+            lastSavedAt: '2026-05-21T01:05:00.000Z',
+            lastValidatedAt:
+              artifactStatus === 'validated' || artifactStatus === 'submitted'
+                ? '2026-05-21T01:06:00.000Z'
+                : null,
+            sourceBundle: payload.sourceBundle,
+            subjectKey: payload.subjectKey ?? 'new',
+            submittedAt:
+              artifactStatus === 'submitted'
+                ? '2026-05-21T01:07:00.000Z'
+                : null,
+            updatedAt: '2026-05-21T01:07:00.000Z',
+            validationState:
+              (payload.validationSummary?.warnCount ?? 0) > 0 ? 'warning' : 'ready',
+            validationSummary: payload.validationSummary ?? {
+              issueCount: 0,
+              passCount: 0,
+              warnCount: 0,
+            },
+            version: 1,
+          };
+        }
+
+        return null;
+      }
+
+      throw new Error(`Unhandled request: ${path}`);
+    });
   });
 
   it('renders a Monaco-backed authoring workspace for templates', async () => {
@@ -456,5 +525,56 @@ describe('PublicPresenceAuthoringIdeScreen', () => {
     expect(screen.getByTestId('ide-custom-html-preview').getAttribute('srcdoc')).toContain(
       'Advanced switch marker',
     );
+  });
+
+  it('persists template drafts through durable authoring endpoints', async () => {
+    setWindowWidth(1440);
+
+    render(
+      <PublicPresenceAuthoringIdeScreen
+        target="template"
+        talentId="talent-1"
+        tenantId="tenant-1"
+        templateId="activeTalentHub"
+      />,
+    );
+
+    const editor = await screen.findByRole('textbox', { name: 'src/template.tsx' });
+    fireEvent.change(editor, {
+      target: {
+        value: 'export const templateMarker = "AR37";\n',
+      },
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Save draft' }));
+    await waitFor(() => {
+      expect(mockRequest).toHaveBeenCalledWith(
+        '/api/v1/talents/talent-1/public-presence/authoring/templates/current',
+        expect.objectContaining({
+          method: 'PUT',
+        }),
+      );
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Validate' }));
+    await waitFor(() => {
+      expect(mockRequest).toHaveBeenCalledWith(
+        '/api/v1/talents/talent-1/public-presence/authoring/templates/current/validate',
+        expect.objectContaining({
+          method: 'POST',
+        }),
+      );
+      expect(screen.getAllByText('Validation refreshed')[0]).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Submit' }));
+    await waitFor(() => {
+      expect(mockRequest).toHaveBeenCalledWith(
+        '/api/v1/talents/talent-1/public-presence/authoring/templates/current/submit',
+        expect.objectContaining({
+          method: 'POST',
+        }),
+      );
+    });
   });
 });

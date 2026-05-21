@@ -2,6 +2,7 @@
 
 import { Module } from '@nestjs/common';
 
+import { PermissionModule } from '../permission/permission.module';
 import { SubsidiaryModule } from '../subsidiary';
 import { TalentModule } from '../talent';
 import { OrganizationReadService } from './application/organization-read.service';
@@ -12,7 +13,7 @@ import { OrganizationController } from './organization.controller';
 import { OrganizationService } from './organization.service';
 
 @Module({
-  imports: [SubsidiaryModule, TalentModule],
+  imports: [PermissionModule, SubsidiaryModule, TalentModule],
   controllers: [OrganizationController],
   providers: [
     OrganizationReadRepository,

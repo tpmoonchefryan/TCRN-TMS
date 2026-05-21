@@ -93,6 +93,59 @@ function createVersionRecord(): PublicPresenceDocumentVersionRecord {
   };
 }
 
+function createDebutRevealVersionRecord(
+  documentState: string = 'draft',
+): PublicPresenceDocumentVersionRecord {
+  const debutDocument: PublicPresenceDocument = {
+    metadata: {
+      title: 'Sakura Kaze',
+    },
+    personaKit: {
+      accentTone: 'rose',
+      campaignLabel: 'Debut Reveal',
+      tagline: 'Countdown updates, reveal moments, and launch links for fans.',
+    },
+    schemaVersion: '1.0',
+    sections: [
+      {
+        fields: {
+          displayName: {
+            provenance: 'publicPresence',
+            value: 'Sakura Kaze',
+          },
+        },
+        id: 'first-encounter-1',
+        kind: 'firstEncounter',
+        phaseVisibility: 'always',
+      },
+      {
+        fields: {
+          phase: {
+            provenance: 'publicPresence',
+            value: 'countdown',
+          },
+          revealAtUtc: {
+            provenance: 'publicPresence',
+            value: '2030-05-15T10:00:00.000Z',
+          },
+        },
+        id: 'countdown-1',
+        kind: 'countdownReveal',
+        phaseVisibility: 'countdown',
+      },
+    ],
+    templateId: 'debutReveal',
+  };
+
+  return {
+    ...createVersionRecord(),
+    document: debutDocument as unknown as Record<string, unknown>,
+    documentState,
+    id: 'debut-version-1',
+    templateId: 'debutReveal',
+  };
+}
+
 function createSnapshotRecord(): PublicPresenceValidationSnapshotRecord {
   return {
     acknowledgementIds: [],
@@ -193,6 +246,10 @@ describe('PublicPresenceStudioService', () => {
     });
     expect(result.draftVersion?.document.templateId).toBe('activeTalentHub');
     expect(result.draftVersion?.validationSnapshot?.issueCounts.fatal).toBe(0);
+    expect(result.releaseReadiness).toEqual({
+      blockingDependencyCount: 0,
+      dependencies: [],
+    });
     expect(result.templates.map((template) => template.templateId)).toEqual(
       expect.arrayContaining(['activeTalentHub', 'debutReveal']),
     );
@@ -312,5 +369,57 @@ describe('PublicPresenceStudioService', () => {
       context,
       { expectedCurrentContentHash: null },
     );
+  });
+
+  it('surfaces the Debut auto-switch dependency before release when the Active Hub target is not approved yet', async () => {
+    vi.mocked(homepageAdminRepository.findTalentById).mockResolvedValue({
+      code: 'sakura-kaze',
+      customDomain: null,
+      customDomainVerified: false,
+      displayName: 'Sakura Kaze',
+      homepagePath: 'sakura-home',
+      id: 'talent-1',
+      timezone: 'Asia/Tokyo',
+    } as never);
+    vi.mocked(
+      publicPresenceFoundationRepository.findPortalByTalentId,
+    ).mockResolvedValue(createPortalRecord());
+    vi.mocked(
+      publicPresenceFoundationRepository.findLatestVersionsByPortal,
+    ).mockResolvedValue([
+      createDebutRevealVersionRecord(),
+      createVersionRecord(),
+    ]);
+    vi.mocked(
+      publicPresenceFoundationRepository.findValidationSnapshotById,
+    ).mockResolvedValue(null);
+    vi.mocked(
+      publicPresenceFoundationRepository.findLatestVersionByTemplate,
+    ).mockImplementation(async (_tenantSchema, _portalId, templateId, states) => {
+      if (templateId !== 'activeTalentHub') {
+        return null;
+      }
+
+      if (states?.includes('approved')) {
+        return null;
+      }
+
+      return createVersionRecord();
+    });
+
+    const result = await service.getWorkspace('talent-1', 'tenant_test', 'debutReveal');
+
+    expect(result.draftVersion?.templateId).toBe('debutReveal');
+    expect(result.releaseReadiness.blockingDependencyCount).toBe(1);
+    expect(result.releaseReadiness.dependencies).toEqual([
+      expect.objectContaining({
+        blocksPublish: true,
+        nextAction: 'openActiveTalentHubDraft',
+        status: 'blocked',
+        targetTemplateId: 'activeTalentHub',
+        targetVersionState: 'draft',
+        templateId: 'debutReveal',
+      }),
+    ]);
   });
 });

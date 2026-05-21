@@ -8,7 +8,7 @@ import {
   Req,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiPropertyOptional, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { ErrorCodes } from '@tcrn/shared';
+import { ErrorCodes, resolveRbacPermission } from '@tcrn/shared';
 import { Type } from 'class-transformer';
 import { IsBoolean, IsOptional, IsString } from 'class-validator';
 import type { Request } from 'express';
@@ -16,6 +16,7 @@ import type { Request } from 'express';
 import { AuthenticatedUser, CurrentUser } from '../../common/decorators/current-user.decorator';
 import { getPrimaryAcceptLanguage } from '../../common/request-locale.util';
 import { success } from '../../common/response.util';
+import { PermissionSnapshotService } from '../permission/permission-snapshot.service';
 import type { TalentSummary, TreeNode } from './organization.service';
 import { OrganizationService } from './organization.service';
 
@@ -71,6 +72,9 @@ interface OrganizationTreeTalentResponse {
   lifecycleStatus: TalentSummary['lifecycleStatus'];
   publishedAt: string | null;
   isActive: boolean;
+  lifecycleMaintenance: {
+    canManage: boolean;
+  };
 }
 
 interface OrganizationTreeSubsidiaryResponse {
@@ -86,6 +90,7 @@ interface OrganizationTreeSubsidiaryResponse {
 const mapTreeTalent = (
   talent: TalentSummary,
   options: {
+    canManageLifecycleMaintenance: boolean;
     subsidiaryId: string | null;
     subsidiaryName?: string;
     path: string;
@@ -103,10 +108,14 @@ const mapTreeTalent = (
   lifecycleStatus: talent.lifecycleStatus,
   publishedAt: talent.publishedAt?.toISOString() ?? null,
   isActive: talent.isActive,
+  lifecycleMaintenance: {
+    canManage: options.canManageLifecycleMaintenance,
+  },
 });
 
 const mapTreeNode = (
   node: TreeNode,
+  lifecycleMaintenanceAccess: ReadonlyMap<string, boolean>,
   parentId: string | null = null
 ): OrganizationTreeSubsidiaryResponse => ({
   id: node.id,
@@ -116,13 +125,22 @@ const mapTreeNode = (
   path: node.path,
   talents: (node.talents ?? []).map((talent) =>
     mapTreeTalent(talent, {
+      canManageLifecycleMaintenance:
+        lifecycleMaintenanceAccess.get(talent.id) ?? false,
       subsidiaryId: node.id,
       subsidiaryName: node.name,
       path: `${node.path}${talent.code}/`,
     })
   ),
-  children: node.children.map((child) => mapTreeNode(child, node.id)),
+  children: node.children.map((child) =>
+    mapTreeNode(child, lifecycleMaintenanceAccess, node.id),
+  ),
 });
+
+const TALENT_LIFECYCLE_MAINTENANCE_ACTION = resolveRbacPermission(
+  'talent',
+  'update',
+).checkedAction;
 
 const createSuccessEnvelopeSchema = (dataSchema: Record<string, unknown>, exampleData: unknown) => ({
   type: 'object',
@@ -172,8 +190,15 @@ const ORGANIZATION_TREE_TALENT_SCHEMA = {
     lifecycleStatus: { type: 'string', enum: ['draft', 'published', 'disabled'], example: 'published' },
     publishedAt: { type: 'string', nullable: true, format: 'date-time', example: '2026-04-13T09:00:00.000Z' },
     isActive: { type: 'boolean', example: true },
+    lifecycleMaintenance: {
+      type: 'object',
+      properties: {
+        canManage: { type: 'boolean', example: true },
+      },
+      required: ['canManage'],
+    },
   },
-  required: ['id', 'code', 'name', 'displayName', 'avatarUrl', 'subsidiaryId', 'path', 'homepagePath', 'lifecycleStatus', 'publishedAt', 'isActive'],
+  required: ['id', 'code', 'name', 'displayName', 'avatarUrl', 'subsidiaryId', 'path', 'homepagePath', 'lifecycleStatus', 'publishedAt', 'isActive', 'lifecycleMaintenance'],
 };
 
 const ORGANIZATION_TREE_SUBSIDIARY_SCHEMA: Record<string, unknown> = {
@@ -242,6 +267,9 @@ const ORGANIZATION_TREE_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
             lifecycleStatus: 'published',
             publishedAt: '2026-04-13T09:00:00.000Z',
             isActive: true,
+            lifecycleMaintenance: {
+              canManage: true,
+            },
           },
         ],
         children: [],
@@ -450,7 +478,10 @@ const ORGANIZATION_NOT_FOUND_SCHEMA = createErrorEnvelopeSchema(
 @Controller('organization')
 @ApiBearerAuth()
 export class OrganizationController {
-  constructor(private readonly organizationService: OrganizationService) {}
+  constructor(
+    private readonly organizationService: OrganizationService,
+    private readonly permissionSnapshotService: PermissionSnapshotService,
+  ) {}
 
   /**
    * GET /api/v1/organization/tree
@@ -490,16 +521,99 @@ Use this for initial page load. For lazy loading, use /tree/root and /tree/child
       }
     );
 
+    const lifecycleMaintenanceAccess = await this.resolveLifecycleMaintenanceAccess(
+      user,
+      tree,
+    );
+
     return success({
       tenantId: tree.tenant.id,
-      subsidiaries: tree.tree.map((node) => mapTreeNode(node)),
+      subsidiaries: tree.tree.map((node) =>
+        mapTreeNode(node, lifecycleMaintenanceAccess),
+      ),
       directTalents: tree.talentsWithoutSubsidiary.map((talent) =>
         mapTreeTalent(talent, {
+          canManageLifecycleMaintenance:
+            lifecycleMaintenanceAccess.get(talent.id) ?? false,
           subsidiaryId: null,
           path: `/${talent.code}/`,
         })
       ),
     });
+  }
+
+  private async resolveLifecycleMaintenanceAccess(
+    user: AuthenticatedUser,
+    tree: {
+      tree: TreeNode[];
+      talentsWithoutSubsidiary: TalentSummary[];
+    },
+  ): Promise<Map<string, boolean>> {
+    const talentIds = new Set<string>();
+    const collectTalentIds = (nodes: TreeNode[]) => {
+      for (const node of nodes) {
+        for (const talent of node.talents ?? []) {
+          talentIds.add(talent.id);
+        }
+        collectTalentIds(node.children);
+      }
+    };
+
+    collectTalentIds(tree.tree);
+    for (const talent of tree.talentsWithoutSubsidiary) {
+      talentIds.add(talent.id);
+    }
+
+    if (talentIds.size === 0) {
+      return new Map();
+    }
+
+    const hasTenantLevelLifecycleAccess = await this.checkLifecycleMaintenanceAccess(
+      user,
+      'tenant',
+      null,
+    );
+
+    if (hasTenantLevelLifecycleAccess) {
+      return new Map(Array.from(talentIds, (talentId) => [talentId, true]));
+    }
+
+    const entries = await Promise.all(
+      Array.from(talentIds).map(async (talentId) => [
+        talentId,
+        await this.checkLifecycleMaintenanceAccess(user, 'talent', talentId),
+      ] as const),
+    );
+
+    return new Map(entries);
+  }
+
+  private async checkLifecycleMaintenanceAccess(
+    user: AuthenticatedUser,
+    scopeType: 'tenant' | 'talent',
+    scopeId: string | null,
+  ): Promise<boolean> {
+    const cachedAllowed = await this.permissionSnapshotService.checkPermission(
+      user.tenantSchema,
+      user.id,
+      'talent',
+      TALENT_LIFECYCLE_MAINTENANCE_ACTION,
+      scopeType,
+      scopeId,
+    );
+
+    if (cachedAllowed) {
+      return true;
+    }
+
+    return this.permissionSnapshotService.refreshAndCheckPermission(
+      user.tenantSchema,
+      user.id,
+      'talent',
+      TALENT_LIFECYCLE_MAINTENANCE_ACTION,
+      scopeType,
+      scopeId,
+    );
   }
 
   /**

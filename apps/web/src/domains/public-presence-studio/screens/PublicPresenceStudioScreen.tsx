@@ -11,6 +11,7 @@ import type {
   PublicPresenceProjection,
   PublicPresenceValidationIssue,
   PublicPresenceValidationSnapshot,
+  SupportedUiLocale,
 } from '@tcrn/shared';
 import {
   DEFAULT_THEME,
@@ -62,6 +63,7 @@ import {
   bootstrapPublicPresenceWorkspace,
   cancelPublicPresenceSchedule,
   createPublicPresenceRollbackDraft,
+  type PublicPresenceStudioReleaseDependency,
   type PublicPresenceStudioStageSectionSummary,
   type PublicPresenceStudioTemplateSummary,
   type PublicPresenceStudioWorkspaceResponse,
@@ -528,6 +530,117 @@ function getValidationTone(
   }
 
   return 'success';
+}
+
+function getValidationToneFromCounts(
+  counts: {
+    blocker: number;
+    fatal: number;
+    info: number;
+    warning: number;
+  } | null,
+): 'success' | 'warning' | 'error' | 'info' {
+  if (!counts) {
+    return 'info';
+  }
+
+  if (counts.fatal > 0 || counts.blocker > 0) {
+    return 'error';
+  }
+
+  if (counts.warning > 0) {
+    return 'warning';
+  }
+
+  return 'success';
+}
+
+function buildReleaseDependencyIssues(
+  dependencies: PublicPresenceStudioReleaseDependency[],
+): PublicPresenceValidationIssue[] {
+  return dependencies
+    .filter((dependency) => dependency.status === 'blocked' && dependency.blocksPublish)
+    .map((dependency) => ({
+      acknowledgementRequired: false,
+      blocksAiPatch: false,
+      blocksPublish: dependency.blocksPublish,
+      blocksVisualEdit: false,
+      code: dependency.id,
+      fallbackBehavior: 'safePlaceholder',
+      id: dependency.id,
+      messageKey: dependency.messageKey,
+      path: ['releaseReadiness', dependency.targetTemplateId],
+      policyVersion: 'studio-workbench',
+      registryVersion: 'studio-workbench',
+      severity: dependency.severity,
+      state: 'invalidRecoverable',
+      suggestedFix: dependency.suggestedFix,
+      templateId: dependency.templateId,
+    }));
+}
+
+function mergeReleaseIssueCounts(
+  snapshot: PublicPresenceValidationSnapshot | null,
+  dependencyIssues: PublicPresenceValidationIssue[],
+) {
+  const baseCounts = snapshot?.issueCounts ?? {
+    blocker: 0,
+    fatal: 0,
+    info: 0,
+    warning: 0,
+  };
+
+  return dependencyIssues.reduce(
+    (counts, issue) => ({
+      ...counts,
+      [issue.severity]: counts[issue.severity] + 1,
+    }),
+    { ...baseCounts },
+  );
+}
+
+function getReleaseDependencyActionLabel(
+  locale: SupportedUiLocale,
+  nextAction: PublicPresenceStudioReleaseDependency['nextAction'],
+) {
+  switch (nextAction) {
+    case 'startActiveTalentHubDraft':
+      return pickLocaleText(locale, {
+        en: 'Start the always-on hub',
+        zh_HANS: '开始常驻主页',
+        zh_HANT: '開始常駐首頁',
+        ja: '常設ハブを開始',
+        ko: '상시 허브 시작',
+        fr: 'Démarrer le hub permanent',
+      });
+    case 'openActiveTalentHubDraft':
+      return pickLocaleText(locale, {
+        en: 'Open the always-on hub draft',
+        zh_HANS: '打开常驻主页草稿',
+        zh_HANT: '打開常駐首頁草稿',
+        ja: '常設ハブの下書きを開く',
+        ko: '상시 허브 초안 열기',
+        fr: 'Ouvrir le brouillon du hub permanent',
+      });
+    case 'openActiveTalentHubReview':
+      return pickLocaleText(locale, {
+        en: 'Open the always-on hub review',
+        zh_HANS: '打开常驻主页审核面',
+        zh_HANT: '打開常駐首頁審核面',
+        ja: '常設ハブのレビューを開く',
+        ko: '상시 허브 검토 열기',
+        fr: 'Ouvrir la revue du hub permanent',
+      });
+    default:
+      return pickLocaleText(locale, {
+        en: 'Open the always-on hub',
+        zh_HANS: '打开常驻主页',
+        zh_HANT: '打開常駐首頁',
+        ja: '常設ハブを開く',
+        ko: '상시 허브 열기',
+        fr: 'Ouvrir le hub permanent',
+      });
+  }
 }
 
 function buildStageSectionSummary(
@@ -1240,10 +1353,51 @@ function PublicPresenceStudioScreenInner({
   const currentSnapshot = workspace?.draftVersion?.validationSnapshot ?? null;
   const currentDraftHash = workspace?.draftVersion?.contentHash ?? null;
   const currentDocumentState = workspace?.draftVersion?.documentState ?? 'draft';
+  const blockedReleaseDependencyIssues = useMemo(
+    () => buildReleaseDependencyIssues(workspace?.releaseReadiness?.dependencies ?? []),
+    [workspace?.releaseReadiness?.dependencies],
+  );
+  const currentReleaseIssues = useMemo(
+    () => [
+      ...(currentSnapshot?.issues ?? []),
+      ...blockedReleaseDependencyIssues,
+    ],
+    [blockedReleaseDependencyIssues, currentSnapshot?.issues],
+  );
+  const currentReleaseIssueCounts = useMemo(
+    () => mergeReleaseIssueCounts(currentSnapshot, blockedReleaseDependencyIssues),
+    [blockedReleaseDependencyIssues, currentSnapshot],
+  );
+  const blockedReleaseDependencyById = useMemo(
+    () => new Map(
+      (workspace?.releaseReadiness?.dependencies ?? [])
+        .filter((dependency) => dependency.status === 'blocked' && dependency.blocksPublish)
+        .map((dependency) => [dependency.id, dependency] as const),
+    ),
+    [workspace?.releaseReadiness?.dependencies],
+  );
+  const hasBlockingReleaseIssues =
+    currentReleaseIssueCounts.fatal > 0 || currentReleaseIssueCounts.blocker > 0;
+  const canRunDirectPublishPath = ['draft', 'changesRequested', 'inReview', 'approved', 'scheduled'].includes(
+    currentDocumentState,
+  );
   const orderedSections = useMemo(
     () => sortSectionsForTemplate(currentTemplate, workspace?.stageSections ?? []),
     [currentTemplate, workspace?.stageSections],
   );
+
+  const runDirectPublishPath = async () => {
+    if (!workspace?.draftVersion) {
+      throw new Error(copy.notices.workflowActionError);
+    }
+
+    return publishPublicPresenceNow(
+      request,
+      talentId,
+      currentDraftHash,
+      workspace.selectedTemplateId,
+    );
+  };
 
   const closeMobileWorkbenchSheets = useCallback(() => {
     pendingMobileSheetRef.current = 'closed';
@@ -1274,6 +1428,25 @@ function PublicPresenceStudioScreenInner({
     setLeftDrawerMode(mode);
     setLeftDrawerOpen(true);
   }, [closeMobileWorkbenchSheets, closeStageWorkbenchPanel]);
+
+  const handleResolveReleaseDependency = async (
+    dependency: PublicPresenceStudioReleaseDependency,
+  ) => {
+    if (dependency.targetTemplateId !== 'activeTalentHub') {
+      return;
+    }
+
+    setNotice(null);
+
+    if (dependency.nextAction === 'startActiveTalentHubDraft') {
+      await handleBootstrap('activeTalentHub');
+    } else {
+      setSelectedTemplateId('activeTalentHub');
+    }
+
+    setPreviewFocus(false);
+    openWorkbenchDrawer('release');
+  };
 
   const openStageWorkbenchPanel = useCallback((nextPanel: StagePanelState) => {
     closeMobileWorkbenchSheets();
@@ -3091,10 +3264,10 @@ function PublicPresenceStudioScreenInner({
         ) : null}
         <div className="flex flex-wrap gap-2">
           {([
-            [copy.reviewPublish.fatalLabel, currentSnapshot?.issueCounts.fatal ?? 0, 'error'],
-            [copy.reviewPublish.blockerLabel, currentSnapshot?.issueCounts.blocker ?? 0, 'error'],
-            [copy.reviewPublish.warningLabel, currentSnapshot?.issueCounts.warning ?? 0, 'warning'],
-            [copy.reviewPublish.infoLabel, currentSnapshot?.issueCounts.info ?? 0, 'info'],
+            [copy.reviewPublish.fatalLabel, currentReleaseIssueCounts.fatal, 'error'],
+            [copy.reviewPublish.blockerLabel, currentReleaseIssueCounts.blocker, 'error'],
+            [copy.reviewPublish.warningLabel, currentReleaseIssueCounts.warning, 'warning'],
+            [copy.reviewPublish.infoLabel, currentReleaseIssueCounts.info, 'info'],
           ] as const).map(([label, count, tone]) => (
             <div
               key={label}
@@ -3107,7 +3280,7 @@ function PublicPresenceStudioScreenInner({
             </div>
           ))}
         </div>
-        {currentSnapshot?.issues.length ? (
+        {currentReleaseIssues.length ? (
           <div className="space-y-2">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
               {pickLocaleText(locale, {
@@ -3120,30 +3293,45 @@ function PublicPresenceStudioScreenInner({
               })}
             </p>
             <div className="space-y-2">
-              {currentSnapshot.issues.map((issue) => (
-                <div
-                  key={issue.id}
-                  className="rounded-2xl border border-slate-200 bg-white px-3 py-3"
-                >
-                  <div className="flex flex-wrap items-center gap-2">
-                    <PublicPresenceBadge
-                      tone={
-                        issue.severity === 'fatal' || issue.severity === 'blocker'
-                          ? 'error'
-                          : issue.severity === 'warning'
-                            ? 'warning'
-                            : 'info'
-                      }
-                      variant="outline"
-                    >
-                      {issue.severity}
-                    </PublicPresenceBadge>
+              {currentReleaseIssues.map((issue) => {
+                const dependency = blockedReleaseDependencyById.get(issue.id);
+
+                return (
+                  <div
+                    key={issue.id}
+                    className="rounded-2xl border border-slate-200 bg-white px-3 py-3"
+                  >
+                    <div className="flex flex-wrap items-center gap-2">
+                      <PublicPresenceBadge
+                        tone={
+                          issue.severity === 'fatal' || issue.severity === 'blocker'
+                            ? 'error'
+                            : issue.severity === 'warning'
+                              ? 'warning'
+                              : 'info'
+                        }
+                        variant="outline"
+                      >
+                        {issue.severity}
+                      </PublicPresenceBadge>
+                    </div>
+                    <p className="mt-2 text-sm leading-6 text-slate-600">
+                      {getIssueSummaryCopy(locale, issue)}
+                    </p>
+                    {dependency ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          void handleResolveReleaseDependency(dependency);
+                        }}
+                        className="mt-3 inline-flex rounded-full border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700 transition hover:border-rose-300 hover:bg-rose-100"
+                      >
+                        {getReleaseDependencyActionLabel(locale, dependency.nextAction)}
+                      </button>
+                    ) : null}
                   </div>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">
-                    {getIssueSummaryCopy(locale, issue)}
-                  </p>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         ) : (
@@ -3206,7 +3394,11 @@ function PublicPresenceStudioScreenInner({
                   ),
               );
             }}
-            disabled={isWorkflowActionDisabled || !['inReview', 'changesRequested'].includes(currentDocumentState)}
+            disabled={
+              isWorkflowActionDisabled
+              || hasBlockingReleaseIssues
+              || !['inReview', 'changesRequested'].includes(currentDocumentState)
+            }
             className="rounded-full border border-emerald-200 bg-white px-4 py-2 text-sm font-semibold text-emerald-700 transition hover:border-emerald-300 hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {workflowAction === 'approve'
@@ -3223,16 +3415,10 @@ function PublicPresenceStudioScreenInner({
               void runWorkflowAction(
                 'publish',
                 copy.notices.publishSuccess,
-                () =>
-                  publishPublicPresenceNow(
-                    request,
-                    talentId,
-                    currentDraftHash,
-                    workspace.selectedTemplateId,
-                  ),
+                () => runDirectPublishPath(),
               );
             }}
-            disabled={isWorkflowActionDisabled || !['approved', 'scheduled'].includes(currentDocumentState)}
+            disabled={isWorkflowActionDisabled || hasBlockingReleaseIssues || !canRunDirectPublishPath}
             className="rounded-full border border-rose-200 bg-white px-4 py-2 text-sm font-semibold text-rose-700 transition hover:border-rose-300 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {workflowAction === 'publish'
@@ -3321,7 +3507,11 @@ function PublicPresenceStudioScreenInner({
                   ),
               );
             }}
-            disabled={isWorkflowActionDisabled || !['approved', 'scheduled'].includes(currentDocumentState)}
+            disabled={
+              isWorkflowActionDisabled
+              || hasBlockingReleaseIssues
+              || !['approved', 'scheduled'].includes(currentDocumentState)
+            }
             className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {workflowAction === 'schedule'
@@ -3590,7 +3780,7 @@ function PublicPresenceStudioScreenInner({
 
   const currentValidationSummary = formatPublicPresenceStudioValidationSummary(
     locale,
-    currentSnapshot?.issueCounts ?? null,
+    currentReleaseIssueCounts,
   );
   const showLeftDrawer = !previewFocus && leftDrawerOpen && !stagePanel;
   const showRightDrawer = !previewFocus && Boolean(stagePanel);
@@ -3850,7 +4040,7 @@ function PublicPresenceStudioScreenInner({
               <PublicPresenceBadge icon={<Sparkles />} tone="rose">
                 {copy.header.badge}
               </PublicPresenceBadge>
-              <PublicPresenceBadge tone={getValidationTone(currentSnapshot)} variant="outline">
+              <PublicPresenceBadge tone={getValidationToneFromCounts(currentReleaseIssueCounts)} variant="outline">
                 {currentValidationSummary}
               </PublicPresenceBadge>
               <PublicPresenceBadge className="hidden min-[1400px]:inline-flex" tone="slate" variant="outline">

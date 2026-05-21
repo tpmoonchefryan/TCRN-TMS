@@ -2,6 +2,7 @@ import type {
   PublicPresenceDocument,
   PublicPresencePhaseVisibility,
   PublicPresenceProjection,
+  PublicPresenceTemplateId,
   PublicPresenceValidationSnapshot,
 } from '@tcrn/shared';
 
@@ -11,7 +12,7 @@ export interface PublicPresenceStudioTemplateSummary {
   optionalSections: string[];
   recommendedSections: string[];
   requiredSections: string[];
-  templateId: string;
+  templateId: PublicPresenceTemplateId;
   useCase: string;
 }
 
@@ -57,7 +58,7 @@ export interface PublicPresenceStudioVersionSummary {
   lastValidationSnapshotId: string | null;
   publishedAt: string | null;
   scheduledFor: string | null;
-  templateId: string;
+  templateId: PublicPresenceTemplateId;
   updatedAt: string;
   validationSnapshot: PublicPresenceValidationSnapshot | null;
   versionNumber: number;
@@ -68,7 +69,28 @@ export interface PublicPresenceStudioPageVersionSummary {
   liveVersion: PublicPresenceStudioVersionSummary | null;
   revealAutoSwitchAt: string | null;
   scheduledVersion: PublicPresenceStudioVersionSummary | null;
-  templateId: string;
+  templateId: PublicPresenceTemplateId;
+}
+
+export type PublicPresenceStudioReleaseDependencyNextAction =
+  | 'none'
+  | 'startActiveTalentHubDraft'
+  | 'openActiveTalentHubDraft'
+  | 'openActiveTalentHubReview';
+
+export interface PublicPresenceStudioReleaseDependency {
+  blocksPublish: boolean;
+  id: string;
+  messageKey: string;
+  nextAction: PublicPresenceStudioReleaseDependencyNextAction;
+  revealAutoSwitchAt: string;
+  severity: 'blocker' | 'info';
+  status: 'blocked' | 'ready';
+  suggestedFix: string;
+  targetTemplateId: PublicPresenceTemplateId;
+  targetVersionId: string | null;
+  targetVersionState: string | null;
+  templateId: PublicPresenceTemplateId;
 }
 
 export interface PublicPresenceStudioWorkspaceResponse {
@@ -95,7 +117,11 @@ export interface PublicPresenceStudioWorkspaceResponse {
     talentCode: string;
     tenantCode: string;
   } | null;
-  selectedTemplateId: string;
+  releaseReadiness?: {
+    blockingDependencyCount: number;
+    dependencies: PublicPresenceStudioReleaseDependency[];
+  };
+  selectedTemplateId: PublicPresenceTemplateId;
   stageSections: PublicPresenceStudioStageSectionSummary[];
   templates: PublicPresenceStudioTemplateSummary[];
   workflowEvents: Array<{
@@ -109,6 +135,43 @@ export interface PublicPresenceStudioWorkspaceResponse {
     toDocumentState: string | null;
     versionId: string | null;
   }>;
+}
+
+export type PublicPresenceAuthoringArtifactKind = 'component' | 'template';
+export type PublicPresenceAuthoringArtifactStatus = 'draft' | 'submitted' | 'validated';
+export type PublicPresenceAuthoringValidationState = 'ready' | 'unvalidated' | 'warning';
+export type PublicPresenceAuthoringFileKind = 'code' | 'doc' | 'fixture' | 'schema';
+
+export interface PublicPresenceAuthoringFile {
+  contents: string;
+  kind: PublicPresenceAuthoringFileKind;
+  language: string;
+  path: string;
+}
+
+export interface PublicPresenceAuthoringValidationSummary {
+  issueCount: number;
+  passCount: number;
+  warnCount: number;
+}
+
+export interface PublicPresenceAuthoringDraftSummary {
+  artifactKind: PublicPresenceAuthoringArtifactKind;
+  artifactStatus: PublicPresenceAuthoringArtifactStatus;
+  id: string;
+  lastSavedAt: string;
+  lastValidatedAt: string | null;
+  subjectKey: string;
+  submittedAt: string | null;
+  updatedAt: string;
+  validationState: PublicPresenceAuthoringValidationState;
+}
+
+export interface PublicPresenceAuthoringDraftResponse
+  extends PublicPresenceAuthoringDraftSummary {
+  sourceBundle: PublicPresenceAuthoringFile[];
+  validationSummary: PublicPresenceAuthoringValidationSummary;
+  version: number;
 }
 
 type RequestFn = <T>(path: string, init?: RequestInit) => Promise<T>;
@@ -321,5 +384,131 @@ export function createPublicPresenceRollbackDraft(
       },
       method: 'POST',
     },
+  );
+}
+
+function resolveAuthoringCollectionPath(
+  talentId: string,
+  artifactKind: PublicPresenceAuthoringArtifactKind,
+) {
+  return `/api/v1/talents/${talentId}/public-presence/authoring/${
+    artifactKind === 'template' ? 'templates' : 'components'
+  }`;
+}
+
+function appendSubjectKey(path: string, subjectKey?: string | null) {
+  if (!subjectKey) {
+    return path;
+  }
+
+  const params = new URLSearchParams();
+  params.set('subjectKey', subjectKey);
+  return `${path}?${params.toString()}`;
+}
+
+export function listPublicPresenceAuthoringDrafts(
+  request: RequestFn,
+  talentId: string,
+  artifactKind: PublicPresenceAuthoringArtifactKind,
+) {
+  return request<PublicPresenceAuthoringDraftSummary[]>(
+    resolveAuthoringCollectionPath(talentId, artifactKind),
+  );
+}
+
+export function readPublicPresenceAuthoringDraft(
+  request: RequestFn,
+  talentId: string,
+  artifactKind: PublicPresenceAuthoringArtifactKind,
+  subjectKey?: string | null,
+) {
+  return request<PublicPresenceAuthoringDraftResponse | null>(
+    appendSubjectKey(
+      `${resolveAuthoringCollectionPath(talentId, artifactKind)}/current`,
+      subjectKey,
+    ),
+  );
+}
+
+function writePublicPresenceAuthoringDraft(
+  request: RequestFn,
+  talentId: string,
+  artifactKind: PublicPresenceAuthoringArtifactKind,
+  pathSuffix: '' | '/submit' | '/validate',
+  input: {
+    sourceBundle: PublicPresenceAuthoringFile[];
+    subjectKey?: string | null;
+    validationSummary?: PublicPresenceAuthoringValidationSummary;
+  },
+  method: 'POST' | 'PUT',
+) {
+  return request<PublicPresenceAuthoringDraftResponse>(
+    `${resolveAuthoringCollectionPath(talentId, artifactKind)}/current${pathSuffix}`,
+    {
+      body: JSON.stringify(input),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      method,
+    },
+  );
+}
+
+export function savePublicPresenceAuthoringDraft(
+  request: RequestFn,
+  talentId: string,
+  artifactKind: PublicPresenceAuthoringArtifactKind,
+  input: {
+    sourceBundle: PublicPresenceAuthoringFile[];
+    subjectKey?: string | null;
+  },
+) {
+  return writePublicPresenceAuthoringDraft(
+    request,
+    talentId,
+    artifactKind,
+    '',
+    input,
+    'PUT',
+  );
+}
+
+export function validatePublicPresenceAuthoringDraft(
+  request: RequestFn,
+  talentId: string,
+  artifactKind: PublicPresenceAuthoringArtifactKind,
+  input: {
+    sourceBundle: PublicPresenceAuthoringFile[];
+    subjectKey?: string | null;
+    validationSummary?: PublicPresenceAuthoringValidationSummary;
+  },
+) {
+  return writePublicPresenceAuthoringDraft(
+    request,
+    talentId,
+    artifactKind,
+    '/validate',
+    input,
+    'POST',
+  );
+}
+
+export function submitPublicPresenceAuthoringDraft(
+  request: RequestFn,
+  talentId: string,
+  artifactKind: PublicPresenceAuthoringArtifactKind,
+  input: {
+    sourceBundle: PublicPresenceAuthoringFile[];
+    subjectKey?: string | null;
+    validationSummary?: PublicPresenceAuthoringValidationSummary;
+  },
+) {
+  return writePublicPresenceAuthoringDraft(
+    request,
+    talentId,
+    artifactKind,
+    '/submit',
+    input,
+    'POST',
   );
 }

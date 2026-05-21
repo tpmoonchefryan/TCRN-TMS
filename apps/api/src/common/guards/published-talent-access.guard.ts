@@ -100,7 +100,10 @@ export class PublishedTalentAccessGuard implements CanActivate {
       uniqueTalentIds[0],
     );
 
-    if (lifecycleStatus !== 'published') {
+    const allowsDraft = options.allowDraft === true;
+    const lifecycleAllowed = lifecycleStatus === 'published' || (allowsDraft && lifecycleStatus === 'draft');
+
+    if (!lifecycleAllowed) {
       throw new ForbiddenException({
         code: ErrorCodes.TALENT_NOT_PUBLISHED,
         message:

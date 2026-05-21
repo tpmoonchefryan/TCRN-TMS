@@ -438,6 +438,7 @@ function TalentListRow({
   onLifecycleAction: (talent: OrganizationTalent) => void;
 }>) {
   const { copy } = useOrganizationStructureCopy();
+  const canManageLifecycleMaintenance = talent.lifecycleMaintenance.canManage;
   const lifecycleActionLabel =
     talent.lifecycleStatus === 'disabled' ? copy.actions.reEnableWorkspace : copy.actions.disableWorkspace;
   const lifecycleToneClasses =
@@ -480,14 +481,16 @@ function TalentListRow({
           >
             {editTalentSettingsLabel}
           </Link>
-          <button
-            type="button"
-            disabled={isLifecyclePending}
-            onClick={() => onLifecycleAction(talent)}
-            className={`inline-flex items-center rounded-full border bg-white px-3 py-1.5 text-xs font-medium transition disabled:cursor-not-allowed disabled:opacity-50 ${lifecycleToneClasses}`}
-          >
-            {lifecycleActionLabel}
-          </button>
+          {canManageLifecycleMaintenance ? (
+            <button
+              type="button"
+              disabled={isLifecyclePending}
+              onClick={() => onLifecycleAction(talent)}
+              className={`inline-flex items-center rounded-full border bg-white px-3 py-1.5 text-xs font-medium transition disabled:cursor-not-allowed disabled:opacity-50 ${lifecycleToneClasses}`}
+            >
+              {lifecycleActionLabel}
+            </button>
+          ) : null}
         </div>
       </div>
     </div>

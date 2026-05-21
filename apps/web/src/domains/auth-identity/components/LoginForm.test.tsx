@@ -149,6 +149,9 @@ function buildTalent(overrides: Partial<OrganizationTalent> = {}): OrganizationT
     lifecycleStatus: 'published',
     publishedAt: '2026-05-06T00:00:00.000Z',
     isActive: true,
+    lifecycleMaintenance: {
+      canManage: true,
+    },
     ...overrides,
   };
 }

@@ -32,6 +32,11 @@ import type {
 import { HomepageAdminRepository } from '../infrastructure/homepage-admin.repository';
 import { PublicPresenceFoundationRepository } from '../infrastructure/public-presence-foundation.repository';
 import { PublicPresenceFoundationService } from './public-presence-foundation.service';
+import {
+  buildStudioReleaseReadinessSummary,
+  extractRevealAutoSwitchAt,
+  type PublicPresenceStudioReleaseDependency,
+} from './public-presence-release-readiness';
 
 export interface PublicPresenceStudioTemplateSummary {
   defaultSectionOrder: string[];
@@ -135,6 +140,10 @@ export interface PublicPresenceStudioWorkspace {
     talentCode: string;
     tenantCode: string;
   } | null;
+  releaseReadiness: {
+    blockingDependencyCount: number;
+    dependencies: PublicPresenceStudioReleaseDependency[];
+  };
   selectedTemplateId: PublicPresenceTemplateId;
   stageSections: PublicPresenceStudioStageSectionSummary[];
   templates: PublicPresenceStudioTemplateSummary[];
@@ -443,28 +452,6 @@ function resolveSelectedTemplateId(
   return 'activeTalentHub';
 }
 
-function extractRevealAutoSwitchAt(
-  version: PublicPresenceDocumentVersionRecord | null,
-): string | null {
-  if (!version || version.templateId !== 'debutReveal') {
-    return null;
-  }
-
-  const document = parseDocument(version);
-  const countdownSection = document.sections.find(
-    (section) => section.kind === 'countdownReveal',
-  );
-  const fieldValue = countdownSection?.fields?.revealAtUtc;
-
-  if (!fieldValue || typeof fieldValue !== 'object' || !('value' in fieldValue)) {
-    return null;
-  }
-
-  return typeof fieldValue.value === 'string' && fieldValue.value.trim().length > 0
-    ? fieldValue.value.trim()
-    : null;
-}
-
 function normalizePublicRouteSegment(value: string | null | undefined) {
   return value?.trim().toLowerCase() ?? '';
 }
@@ -538,6 +525,10 @@ export class PublicPresenceStudioService {
           talentCode: normalizedTalentCode,
           tenantCode: normalizedTenantCode,
         },
+        releaseReadiness: {
+          blockingDependencyCount: 0,
+          dependencies: [],
+        },
         selectedTemplateId,
         stageSections,
         templates,
@@ -545,7 +536,7 @@ export class PublicPresenceStudioService {
       };
     }
 
-    const [latestRecords, liveRecord, workflowEvents, scheduledRecords] = await Promise.all([
+    const [latestRecords, liveRecord, workflowEvents, scheduledRecords, publishReadyRecords] = await Promise.all([
       this.publicPresenceFoundationRepository.findLatestVersionsByPortal(
         tenantSchema,
         portal.id,
@@ -570,6 +561,16 @@ export class PublicPresenceStudioService {
           ),
         ),
       ),
+      Promise.all(
+        Object.values(PUBLIC_PRESENCE_TEMPLATE_DEFINITIONS).map((template) =>
+          this.publicPresenceFoundationRepository.findLatestVersionByTemplate(
+            tenantSchema,
+            portal.id,
+            template.templateId,
+            ['approved', 'scheduled', 'published'],
+          ),
+        ),
+      ),
     ]);
 
     const selectedTemplateId = resolveSelectedTemplateId(
@@ -585,6 +586,11 @@ export class PublicPresenceStudioService {
     );
     const scheduledRecordByTemplate = new Map(
       scheduledRecords
+        .filter((record): record is PublicPresenceDocumentVersionRecord => Boolean(record))
+        .map((record) => [record.templateId as PublicPresenceTemplateId, record]),
+    );
+    const publishReadyRecordByTemplate = new Map(
+      publishReadyRecords
         .filter((record): record is PublicPresenceDocumentVersionRecord => Boolean(record))
         .map((record) => [record.templateId as PublicPresenceTemplateId, record]),
     );
@@ -648,6 +654,13 @@ export class PublicPresenceStudioService {
     const selectedPageVersion =
       pageVersions.find((pageVersion) => pageVersion.templateId === selectedTemplateId)
       ?? null;
+    const releaseReadiness = buildStudioReleaseReadinessSummary({
+      latestActiveHubVersion: latestRecordByTemplate.get('activeTalentHub') ?? null,
+      publishReadyActiveHubVersion:
+        publishReadyRecordByTemplate.get('activeTalentHub')
+        ?? (liveRecord?.templateId === 'activeTalentHub' ? liveRecord : null),
+      selectedVersion: latestRecordByTemplate.get(selectedTemplateId) ?? null,
+    });
 
     return {
       draftVersion: selectedPageVersion?.latestVersion ?? null,
@@ -664,6 +677,7 @@ export class PublicPresenceStudioService {
         talentCode: normalizedTalentCode,
         tenantCode: normalizedTenantCode,
       },
+      releaseReadiness,
       selectedTemplateId,
       stageSections,
       templates,

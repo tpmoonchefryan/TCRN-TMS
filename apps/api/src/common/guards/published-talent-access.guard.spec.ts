@@ -103,6 +103,23 @@ describe('PublishedTalentAccessGuard', () => {
     }
   });
 
+  it('allows draft talents when the route opts into draft access', async () => {
+    vi.mocked(mockReflector.getAllAndOverride).mockReturnValue({ allowDraft: true });
+    mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([
+      { lifecycleStatus: 'draft' },
+    ]);
+
+    const request = {
+      user: { tenantSchema: 'tenant_test' },
+      params: { talentId: publishedTalentId },
+      headers: {},
+      body: {},
+      query: {},
+    };
+
+    await expect(guard.canActivate(createContext(request))).resolves.toBe(true);
+  });
+
   it('resolves the owner talent from jobId and verifies carrier consistency', async () => {
     vi.mocked(mockReflector.getAllAndOverride).mockReturnValue({ jobOwnerSource: 'report' });
     mockPrisma.$queryRawUnsafe

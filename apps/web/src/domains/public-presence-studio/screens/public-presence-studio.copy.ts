@@ -2887,31 +2887,43 @@ const EDITABILITY_STATE_LABELS: LocaleCopyRecord<Record<string, string>> = {
 const ISSUE_MESSAGE_LABELS: LocaleCopyRecord<Record<string, string>> = {
   en: {
     'publicPresence.validation.missingRequiredSection': 'A required section is still missing.',
+    'publicPresence.validation.debutRevealRequiresApprovedActiveHub':
+      'Approve the always-on hub before scheduling the debut switch.',
     'publicPresence.validation.lockedComponent': 'This content is preserved from a locked source.',
     warning: 'Review this section before release.',
   },
   zh_HANS: {
     'publicPresence.validation.missingRequiredSection': '仍有必填分区尚未补齐。',
+    'publicPresence.validation.debutRevealRequiresApprovedActiveHub':
+      '请先确认常驻主页版本，再安排出道切换。',
     'publicPresence.validation.lockedComponent': '这部分内容来自锁定源，当前仅保留展示。',
     warning: '这个分区在发布前仍需复核。',
   },
   zh_HANT: {
     'publicPresence.validation.missingRequiredSection': '仍有必填分区尚未补齐。',
+    'publicPresence.validation.debutRevealRequiresApprovedActiveHub':
+      '請先確認常駐首頁版本，再安排出道切換。',
     'publicPresence.validation.lockedComponent': '这部分内容来自锁定源，当前仅保留展示。',
     warning: '这个分区在发布前仍需复核。',
   },
   ja: {
     'publicPresence.validation.missingRequiredSection': '必須セクションがまだ不足しています。',
+    'publicPresence.validation.debutRevealRequiresApprovedActiveHub':
+      'デビュー切り替えを予定する前に、常設ハブを承認してください。',
     'publicPresence.validation.lockedComponent': 'この内容はロック済みソースから保持されています。',
     warning: '公開前にこのセクションを再確認してください。',
   },
   ko: {
     'publicPresence.validation.missingRequiredSection': 'A required section is still missing.',
+    'publicPresence.validation.debutRevealRequiresApprovedActiveHub':
+      'Approve the always-on hub before scheduling the debut switch.',
     'publicPresence.validation.lockedComponent': 'This content is preserved from a locked source.',
     warning: 'Review this section before release.',
   },
   fr: {
     'publicPresence.validation.missingRequiredSection': 'A required section is still missing.',
+    'publicPresence.validation.debutRevealRequiresApprovedActiveHub':
+      'Approve the always-on hub before scheduling the debut switch.',
     'publicPresence.validation.lockedComponent': 'This content is preserved from a locked source.',
     warning: 'Review this section before release.',
   },

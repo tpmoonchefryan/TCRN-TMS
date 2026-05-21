@@ -16,6 +16,9 @@ export interface OrganizationTalent {
   lifecycleStatus: 'draft' | 'published' | 'disabled';
   publishedAt: string | null;
   isActive: boolean;
+  lifecycleMaintenance: {
+    canManage: boolean;
+  };
 }
 
 export interface OrganizationNode {

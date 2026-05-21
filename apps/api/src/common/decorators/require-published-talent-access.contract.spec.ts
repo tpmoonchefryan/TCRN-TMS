@@ -8,6 +8,7 @@ import { MembershipController } from '../../modules/customer/controllers/members
 import { PlatformIdentityController } from '../../modules/customer/controllers/platform-identity.controller';
 import { ExportController } from '../../modules/export/controllers/export.controller';
 import { HomepageController } from '../../modules/homepage/controllers/homepage.controller';
+import { PublicPresenceController } from '../../modules/homepage/controllers/public-presence.controller';
 import { ImportController } from '../../modules/import/controllers/import.controller';
 import { MarshmallowController } from '../../modules/marshmallow/controllers/marshmallow.controller';
 import { ReportController } from '../../modules/report/controllers/report.controller';
@@ -34,6 +35,9 @@ describe('RequirePublishedTalentAccess contract coverage', () => {
     expect(getPublishedTalentAccessMetadata(ExportController)).toEqual({});
     expect(getPublishedTalentAccessMetadata(ReportController)).toEqual({});
     expect(getPublishedTalentAccessMetadata(HomepageController)).toEqual({});
+    expect(getPublishedTalentAccessMetadata(PublicPresenceController)).toEqual({
+      allowDraft: true,
+    });
     expect(getPublishedTalentAccessMetadata(MarshmallowController)).toEqual({});
   });
 

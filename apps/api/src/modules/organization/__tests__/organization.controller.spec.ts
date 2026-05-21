@@ -10,6 +10,10 @@ import type { OrganizationService, OrganizationTree } from '../organization.serv
 describe('OrganizationController', () => {
   let controller: OrganizationController;
   let mockOrganizationService: Pick<OrganizationService, 'getTree'>;
+  let mockPermissionSnapshotService: {
+    checkPermission: ReturnType<typeof vi.fn>;
+    refreshAndCheckPermission: ReturnType<typeof vi.fn>;
+  };
 
   const user: AuthenticatedUser = {
     id: 'user-1',
@@ -82,8 +86,15 @@ describe('OrganizationController', () => {
     mockOrganizationService = {
       getTree: vi.fn(),
     };
+    mockPermissionSnapshotService = {
+      checkPermission: vi.fn().mockResolvedValue(true),
+      refreshAndCheckPermission: vi.fn(),
+    };
 
-    controller = new OrganizationController(mockOrganizationService as OrganizationService);
+    controller = new OrganizationController(
+      mockOrganizationService as OrganizationService,
+      mockPermissionSnapshotService as never,
+    );
   });
 
   it('maps the recursive organization tree into the frontend response contract', async () => {
@@ -132,6 +143,9 @@ describe('OrganizationController', () => {
                 lifecycleStatus: 'published',
                 publishedAt: '2026-04-11T00:00:00.000Z',
                 isActive: true,
+                lifecycleMaintenance: {
+                  canManage: true,
+                },
               },
             ],
             children: [
@@ -160,9 +174,22 @@ describe('OrganizationController', () => {
             lifecycleStatus: 'draft',
             publishedAt: null,
             isActive: false,
+            lifecycleMaintenance: {
+              canManage: true,
+            },
           },
         ],
       },
     });
+
+    expect(mockPermissionSnapshotService.checkPermission).toHaveBeenCalledWith(
+      'tenant_test',
+      'user-1',
+      'talent',
+      'write',
+      'tenant',
+      null,
+    );
+    expect(mockPermissionSnapshotService.refreshAndCheckPermission).not.toHaveBeenCalled();
   });
 });
