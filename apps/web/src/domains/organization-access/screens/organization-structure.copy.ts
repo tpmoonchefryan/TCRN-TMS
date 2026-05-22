@@ -28,6 +28,8 @@ interface OrganizationStructureCopy {
     refreshing: string;
     createSubsidiary: string;
     createTalent: string;
+    openHomepageManagement: string;
+    openStudio: string;
     openWorkspace: string;
     editTalentSettings: string;
     disableWorkspace: string;
@@ -121,6 +123,8 @@ interface OrganizationStructureCopy {
     createdInScopePrefix: string;
     subsidiaryCreatedInTenantRoot: string;
     subsidiaryCreatedInScopePrefix: string;
+    createdTalentReadyTitle: string;
+    createdTalentWorkflowHint: string;
   };
   lifecycle: {
     draft: string;
@@ -166,6 +170,8 @@ const copyByLocale: Record<SupportedUiLocale, OrganizationStructureCopy> = {
       refreshing: 'Refreshing…',
       createSubsidiary: 'Create subsidiary',
       createTalent: 'Create talent',
+      openHomepageManagement: 'Homepage Management',
+      openStudio: 'Open Studio',
       openWorkspace: 'Open business pages',
       editTalentSettings: 'Edit talent settings',
       disableWorkspace: 'Disable workspace',
@@ -259,6 +265,8 @@ const copyByLocale: Record<SupportedUiLocale, OrganizationStructureCopy> = {
       createdInScopePrefix: 'was created in',
       subsidiaryCreatedInTenantRoot: 'was created at tenant root.',
       subsidiaryCreatedInScopePrefix: 'was created under',
+      createdTalentReadyTitle: 'Created talent ready',
+      createdTalentWorkflowHint: 'Continue with homepage setup or Studio right away.',
     },
     lifecycle: {
       draft: 'Draft',
@@ -302,6 +310,8 @@ const copyByLocale: Record<SupportedUiLocale, OrganizationStructureCopy> = {
       refreshing: '刷新中…',
       createSubsidiary: '创建分目录',
       createTalent: '创建艺人',
+      openHomepageManagement: '主页管理',
+      openStudio: '进入 Studio',
       openWorkspace: '进入业务页',
       editTalentSettings: '编辑艺人设置',
       disableWorkspace: '停用工作区',
@@ -395,6 +405,8 @@ const copyByLocale: Record<SupportedUiLocale, OrganizationStructureCopy> = {
       createdInScopePrefix: '已创建在以下范围：',
       subsidiaryCreatedInTenantRoot: '已创建在租户根级。',
       subsidiaryCreatedInScopePrefix: '已创建在以下分目录下：',
+      createdTalentReadyTitle: '新艺人已就绪',
+      createdTalentWorkflowHint: '可立即进入主页管理或 Studio 继续搭建。',
     },
     lifecycle: {
       draft: '草稿',
@@ -438,6 +450,8 @@ const copyByLocale: Record<SupportedUiLocale, OrganizationStructureCopy> = {
       refreshing: '刷新中…',
       createSubsidiary: '创建分目录',
       createTalent: '创建艺人',
+      openHomepageManagement: '主頁管理',
+      openStudio: '進入 Studio',
       openWorkspace: '进入业务页',
       editTalentSettings: '编辑艺人设置',
       disableWorkspace: '停用工作區',
@@ -531,6 +545,8 @@ const copyByLocale: Record<SupportedUiLocale, OrganizationStructureCopy> = {
       createdInScopePrefix: '已创建在以下范围：',
       subsidiaryCreatedInTenantRoot: '已创建在租户根级。',
       subsidiaryCreatedInScopePrefix: '已创建在以下分目录下：',
+      createdTalentReadyTitle: '新藝人已就緒',
+      createdTalentWorkflowHint: '可立即進入主頁管理或 Studio 繼續搭建。',
     },
     lifecycle: {
       draft: '草稿',
@@ -574,6 +590,8 @@ const copyByLocale: Record<SupportedUiLocale, OrganizationStructureCopy> = {
       refreshing: '更新中…',
       createSubsidiary: '配下スコープを作成',
       createTalent: 'タレントを作成',
+      openHomepageManagement: 'ホームページ管理',
+      openStudio: 'Studio を開く',
       openWorkspace: '業務画面を開く',
       editTalentSettings: 'タレント設定を編集',
       disableWorkspace: 'ワークスペースを無効化',
@@ -667,6 +685,8 @@ const copyByLocale: Record<SupportedUiLocale, OrganizationStructureCopy> = {
       createdInScopePrefix: 'を次のスコープに作成しました:',
       subsidiaryCreatedInTenantRoot: 'をテナントルートに作成しました。',
       subsidiaryCreatedInScopePrefix: 'を次の親スコープ配下に作成しました:',
+      createdTalentReadyTitle: '新しいタレントの準備ができました',
+      createdTalentWorkflowHint: 'このままホームページ管理または Studio に進めます。',
     },
     lifecycle: {
       draft: '下書き',
@@ -710,6 +730,8 @@ const copyByLocale: Record<SupportedUiLocale, OrganizationStructureCopy> = {
       refreshing: 'Refreshing…',
       createSubsidiary: 'Create subsidiary',
       createTalent: 'Create talent',
+      openHomepageManagement: 'Homepage Management',
+      openStudio: 'Open Studio',
       openWorkspace: 'Open business pages',
       editTalentSettings: 'Edit talent settings',
       disableWorkspace: 'Disable workspace',
@@ -803,6 +825,8 @@ const copyByLocale: Record<SupportedUiLocale, OrganizationStructureCopy> = {
       createdInScopePrefix: 'was created in',
       subsidiaryCreatedInTenantRoot: 'was created at tenant root.',
       subsidiaryCreatedInScopePrefix: 'was created under',
+      createdTalentReadyTitle: 'Created talent ready',
+      createdTalentWorkflowHint: 'Continue with homepage setup or Studio right away.',
     },
     lifecycle: {
       draft: 'Draft',
@@ -846,6 +870,8 @@ const copyByLocale: Record<SupportedUiLocale, OrganizationStructureCopy> = {
       refreshing: 'Refreshing…',
       createSubsidiary: 'Create subsidiary',
       createTalent: 'Create talent',
+      openHomepageManagement: 'Gestion de la page d’accueil',
+      openStudio: 'Ouvrir le studio',
       openWorkspace: 'Open business pages',
       editTalentSettings: 'Edit talent settings',
       disableWorkspace: 'Disable workspace',
@@ -939,6 +965,8 @@ const copyByLocale: Record<SupportedUiLocale, OrganizationStructureCopy> = {
       createdInScopePrefix: 'was created in',
       subsidiaryCreatedInTenantRoot: 'was created at tenant root.',
       subsidiaryCreatedInScopePrefix: 'was created under',
+      createdTalentReadyTitle: 'Nouveau talent prêt',
+      createdTalentWorkflowHint: 'Poursuivez immédiatement dans la gestion de la page d’accueil ou dans le studio.',
     },
     lifecycle: {
       draft: 'Draft',

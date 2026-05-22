@@ -35,7 +35,9 @@ import {
 import { ApiRequestError } from '@/platform/http/api';
 import {
   buildSubsidiaryBusinessPath,
+  buildPublicPresenceStudioEditorPath,
   buildTalentSettingsPath,
+  buildTalentWorkspaceSectionPath,
   buildTalentWorkspacePath,
   buildTenantBusinessPath,
 } from '@/platform/routing/workspace-paths';
@@ -107,6 +109,14 @@ interface CreateSubsidiaryDraft {
   nameBase: string;
   nameLocaleValues: Record<string, string>;
   descriptionBase: string;
+}
+
+interface CreatedTalentResult {
+  talentId: string;
+  code: string;
+  label: string;
+  scopeLabel: string;
+  scopeType: 'tenant' | 'subsidiary';
 }
 
 interface LifecycleDialogState {
@@ -241,6 +251,18 @@ function buildOrganizationStructureQueryState({
 
 function getErrorMessage(reason: unknown, fallback: string) {
   return reason instanceof ApiRequestError ? reason.message : fallback;
+}
+
+function pickFirstNonEmptyString(values: Array<string | null | undefined>) {
+  for (const value of values) {
+    const trimmed = value?.trim();
+
+    if (trimmed) {
+      return trimmed;
+    }
+  }
+
+  return null;
 }
 
 function getInventoryPaginationCopy(
@@ -426,6 +448,7 @@ function TalentListRow({
   openWorkspaceLabel,
   tenantId,
   talent,
+  isHighlighted,
   isLifecyclePending,
   onLifecycleAction,
 }: Readonly<{
@@ -434,6 +457,7 @@ function TalentListRow({
   openWorkspaceLabel: string;
   tenantId: string;
   talent: OrganizationTalent;
+  isHighlighted: boolean;
   isLifecyclePending: boolean;
   onLifecycleAction: (talent: OrganizationTalent) => void;
 }>) {
@@ -447,9 +471,12 @@ function TalentListRow({
       : 'border-rose-200 text-rose-700 hover:border-rose-300 hover:bg-rose-50';
   const lifecycleLabel = getOrganizationLifecycleLabel(talent.lifecycleStatus, locale);
   const scopeLabel = getOrganizationTalentScopeLabel(talent, locale);
+  const rowClasses = isHighlighted
+    ? 'border-emerald-300 bg-emerald-50/80 shadow-[0_0_0_1px_rgba(16,185,129,0.18)]'
+    : 'border-slate-200/80 bg-white/90 shadow-sm';
 
   return (
-    <div className="rounded-2xl border border-slate-200/80 bg-white/90 px-4 py-4 shadow-sm">
+    <div className={`rounded-2xl border px-4 py-4 ${rowClasses}`}>
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0 flex-1 space-y-2">
           <div className="flex flex-wrap items-center gap-2">
@@ -533,6 +560,7 @@ export function OrganizationStructureScreen({
     EMPTY_CREATE_SUBSIDIARY_DRAFT,
   );
   const [createSubsidiaryPending, setCreateSubsidiaryPending] = useState(false);
+  const [createdTalentResult, setCreatedTalentResult] = useState<CreatedTalentResult | null>(null);
   const [notice, setNotice] = useState<NoticeState | null>(null);
   const [lifecycleDialogState, setLifecycleDialogState] = useState<LifecycleDialogState | null>(null);
   const [lifecycleDialogPending, setLifecycleDialogPending] = useState(false);
@@ -821,23 +849,46 @@ export function OrganizationStructureScreen({
     setNotice(null);
 
     try {
+      const submittedCode = createDraft.code.trim().toUpperCase();
+      const submittedDisplayName = createDraft.displayName.trim();
+      const submittedNameBase = createDraft.nameBase.trim();
+      const selectedScope = selectedNode;
       const created = await createOrganizationTalent(request, {
         subsidiaryId: selectedSubsidiaryId,
         profileStoreId: createDraft.profileStoreId,
-        code: createDraft.code.trim().toUpperCase(),
-        displayName: createDraft.displayName.trim(),
-        name: buildLocalizedTextPayload(createDraft.nameBase, createDraft.nameLocaleValues),
+        code: submittedCode,
+        displayName: submittedDisplayName,
+        name: buildLocalizedTextPayload(submittedNameBase, createDraft.nameLocaleValues),
         timezone: createDraft.timezone.trim() || undefined,
       });
+      const createdTalentLabel =
+        pickFirstNonEmptyString([
+          created.displayName,
+          created.localizedName,
+          submittedDisplayName,
+          created.code,
+          submittedCode,
+        ]) ?? submittedCode;
 
+      applyQueryState({
+        page: 1,
+        selectedSubsidiaryId: created.subsidiaryId ?? null,
+      });
       setReloadVersion((current) => current + 1);
       setCreateDraft(buildCreateDraft(profileStoresPanel.data));
       setIsCreateDrawerOpen(false);
+      setCreatedTalentResult({
+        talentId: created.id,
+        code: pickFirstNonEmptyString([created.code, submittedCode]) ?? submittedCode,
+        label: createdTalentLabel,
+        scopeLabel: selectedScope?.displayName ?? copy.tree.tenantRootLabel,
+        scopeType: selectedScope ? 'subsidiary' : 'tenant',
+      });
       setNotice({
         tone: 'success',
-        message: selectedNode
-          ? `${created.localizedName} ${copy.notices.createdInScopePrefix} ${selectedNode.displayName}.`
-          : `${created.localizedName} ${copy.notices.createdInTenantRoot}`,
+        message: selectedScope
+          ? `${createdTalentLabel} ${copy.notices.createdInScopePrefix} ${selectedScope.displayName}.`
+          : `${createdTalentLabel} ${copy.notices.createdInTenantRoot}`,
       });
     } catch (reason) {
       setNotice({
@@ -981,8 +1032,15 @@ export function OrganizationStructureScreen({
     : [copy.header.tenantBadge];
   const allTenantTalents = data ? [...data.directTalents, ...collectTalents(data.subsidiaries)] : [];
   const scopedTalents = selectedNode ? collectTalents([selectedNode]) : allTenantTalents;
-  const inventoryPagination = buildPaginationMeta(scopedTalents.length, inventoryPage, inventoryPageSize);
-  const paginatedScopedTalents = scopedTalents.slice(
+  const orderedScopedTalents =
+    createdTalentResult && scopedTalents.some((talent) => talent.id === createdTalentResult.talentId)
+      ? [
+          scopedTalents.find((talent) => talent.id === createdTalentResult.talentId)!,
+          ...scopedTalents.filter((talent) => talent.id !== createdTalentResult.talentId),
+        ]
+      : scopedTalents;
+  const inventoryPagination = buildPaginationMeta(orderedScopedTalents.length, inventoryPage, inventoryPageSize);
+  const paginatedScopedTalents = orderedScopedTalents.slice(
     (inventoryPagination.page - 1) * inventoryPagination.pageSize,
     inventoryPagination.page * inventoryPagination.pageSize,
   );
@@ -995,6 +1053,12 @@ export function OrganizationStructureScreen({
     inventoryPageRange.end,
     inventoryPagination.totalCount,
   );
+  const createdTalentHomepageHref = createdTalentResult
+    ? buildTalentWorkspaceSectionPath(tenantId, createdTalentResult.talentId, 'homepage')
+    : null;
+  const createdTalentStudioHref = createdTalentResult
+    ? buildPublicPresenceStudioEditorPath(tenantId, createdTalentResult.talentId)
+    : null;
 
   useEffect(() => {
     if (!loading && data && inventoryPage > inventoryPagination.totalPages) {
@@ -1035,6 +1099,26 @@ export function OrganizationStructureScreen({
     selectedSubsidiaryId,
     showInactive,
   ]);
+
+  useEffect(() => {
+    if (!createdTalentResult) {
+      return;
+    }
+
+    const element = document.querySelector<HTMLElement>('[data-created-talent-spotlight="true"]');
+
+    if (!element) {
+      return;
+    }
+
+    if (typeof element.scrollIntoView === 'function') {
+      element.scrollIntoView({
+        block: 'nearest',
+      });
+    }
+
+    element.focus();
+  }, [createdTalentResult]);
 
   if (loading && !data) {
     return (
@@ -1328,50 +1412,99 @@ export function OrganizationStructureScreen({
               </span>
             </div>
 
-            {scopedTalents.length > 0 ? (
-              <div className="space-y-4">
-                <div className="grid gap-3">
-                  {paginatedScopedTalents.map((talent) => (
-                    <TalentListRow
-                      key={talent.id}
-                      locale={locale}
-                      editTalentSettingsLabel={copy.actions.editTalentSettings}
-                      openWorkspaceLabel={copy.actions.openWorkspace}
-                      tenantId={tenantId}
-                      talent={talent}
-                      isLifecyclePending={preparingTalentId === talent.id}
-                      onLifecycleAction={prepareLifecycleAction}
-                    />
-                  ))}
+            <div className="space-y-4">
+              {createdTalentResult && createdTalentHomepageHref && createdTalentStudioHref ? (
+                <div
+                  role="region"
+                  tabIndex={-1}
+                  aria-label={`${copy.notices.createdTalentReadyTitle}: ${createdTalentResult.label}`}
+                  data-created-talent-spotlight="true"
+                  data-testid="organization-created-talent-spotlight"
+                  className="rounded-2xl border border-emerald-200 bg-emerald-50/90 px-4 py-4 text-slate-900 shadow-sm outline-none"
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-4">
+                    <div className="min-w-0 flex-1 space-y-2">
+                      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700">
+                        {copy.notices.createdTalentReadyTitle}
+                      </p>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="text-base font-semibold text-slate-950">{createdTalentResult.label}</p>
+                        <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-600">
+                          {createdTalentResult.code}
+                        </span>
+                        <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-medium text-emerald-800">
+                          {createdTalentResult.scopeType === 'subsidiary'
+                            ? copy.header.subsidiaryBadge
+                            : copy.header.tenantBadge}
+                        </span>
+                      </div>
+                      <p className="text-sm text-slate-700">{createdTalentResult.scopeLabel}</p>
+                      <p className="text-sm text-slate-600">{copy.notices.createdTalentWorkflowHint}</p>
+                    </div>
+
+                    <div className="flex flex-wrap items-center justify-end gap-2">
+                      <Link
+                        href={createdTalentHomepageHref}
+                        className="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+                      >
+                        {copy.actions.openHomepageManagement}
+                      </Link>
+                      <Link
+                        href={createdTalentStudioHref}
+                        className="inline-flex items-center rounded-full border border-slate-950 bg-slate-950 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-slate-800"
+                      >
+                        {copy.actions.openStudio}
+                      </Link>
+                    </div>
+                  </div>
                 </div>
-                <PaginationFooter
-                  pagination={inventoryPagination}
-                  itemCount={paginatedScopedTalents.length}
-                  labels={{
-                    pageLabel: inventoryPaginationCopy.page,
-                    rangeLabel: inventoryPaginationCopy.range,
-                    rowsPerPageLabel: inventoryPaginationCopy.pageSize,
-                    pageSizeAriaLabel: inventoryPaginationCopy.pageSize,
-                    previousLabel: inventoryPaginationCopy.previous,
-                    nextLabel: inventoryPaginationCopy.next,
-                  }}
-                  onPageChange={(nextPage) => applyQueryState({ page: nextPage })}
-                  onPageSizeChange={(nextPageSize) => {
-                    applyQueryState({
-                      page: 1,
-                      pageSize: nextPageSize as PageSizeOption,
-                    });
-                  }}
-                  className="rounded-2xl border border-slate-200 bg-white/85 shadow-sm"
+              ) : null}
+              {scopedTalents.length > 0 ? (
+                <>
+                  <div className="grid gap-3">
+                    {paginatedScopedTalents.map((talent) => (
+                      <TalentListRow
+                        key={talent.id}
+                        locale={locale}
+                        editTalentSettingsLabel={copy.actions.editTalentSettings}
+                        openWorkspaceLabel={copy.actions.openWorkspace}
+                        tenantId={tenantId}
+                        talent={talent}
+                        isHighlighted={createdTalentResult?.talentId === talent.id}
+                        isLifecyclePending={preparingTalentId === talent.id}
+                        onLifecycleAction={prepareLifecycleAction}
+                      />
+                    ))}
+                  </div>
+                  <PaginationFooter
+                    pagination={inventoryPagination}
+                    itemCount={paginatedScopedTalents.length}
+                    labels={{
+                      pageLabel: inventoryPaginationCopy.page,
+                      rangeLabel: inventoryPaginationCopy.range,
+                      rowsPerPageLabel: inventoryPaginationCopy.pageSize,
+                      pageSizeAriaLabel: inventoryPaginationCopy.pageSize,
+                      previousLabel: inventoryPaginationCopy.previous,
+                      nextLabel: inventoryPaginationCopy.next,
+                    }}
+                    onPageChange={(nextPage) => applyQueryState({ page: nextPage })}
+                    onPageSizeChange={(nextPageSize) => {
+                      applyQueryState({
+                        page: 1,
+                        pageSize: nextPageSize as PageSizeOption,
+                      });
+                    }}
+                    className="rounded-2xl border border-slate-200 bg-white/85 shadow-sm"
+                  />
+                </>
+              ) : (
+                <StateView
+                  status="empty"
+                  title={copy.inventory.emptyTitle}
+                  description={copy.inventory.emptyDescription}
                 />
-              </div>
-            ) : (
-              <StateView
-                status="empty"
-                title={copy.inventory.emptyTitle}
-                description={copy.inventory.emptyDescription}
-              />
-            )}
+              )}
+            </div>
           </GlassSurface>
         </div>
       </div>

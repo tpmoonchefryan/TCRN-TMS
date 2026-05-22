@@ -57,6 +57,17 @@ vi.mock('next/dynamic', () => ({
       const valueRef = useRef(value);
       const modelListenersRef = useRef(new Set<() => void>());
       const editorListenersRef = useRef(new Set<() => void>());
+      const updateModelValue = (nextValue: string, notifyListeners = true) => {
+        valueRef.current = nextValue;
+        setValue(nextValue);
+
+        if (!notifyListeners) {
+          return;
+        }
+
+        modelListenersRef.current.forEach((listener) => listener());
+        editorListenersRef.current.forEach((listener) => listener());
+      };
       const modelRef = useRef({
         getValue: () => valueRef.current,
         onDidChangeContent: (listener: () => void) => {
@@ -66,6 +77,9 @@ vi.mock('next/dynamic', () => ({
               modelListenersRef.current.delete(listener);
             },
           };
+        },
+        setValue: (nextValue: string) => {
+          updateModelValue(nextValue);
         },
       });
 
@@ -90,23 +104,112 @@ vi.mock('next/dynamic', () => ({
       }, [props.onMount]);
 
       return (
-        <div data-testid="monaco-editor-stub">
-          <div>{props.path}</div>
+        <div className="monaco-editor" data-testid="monaco-editor-stub">
+          <div className="view-lines">{props.path}</div>
           <textarea
             aria-label={props.path ?? 'Editor file'}
             onChange={(event) => {
               const nextValue = event.currentTarget.value;
-              valueRef.current = nextValue;
-              setValue(nextValue);
-              modelListenersRef.current.forEach((listener) => listener());
-              editorListenersRef.current.forEach((listener) => listener());
+              updateModelValue(nextValue);
             }}
             value={value}
+          />
+          <textarea
+            aria-label={`${props.path ?? 'Editor file'} input area`}
+            className="inputarea"
+            data-testid="monaco-inputarea-stub"
+            defaultValue=""
+            onInput={() => undefined}
           />
         </div>
       );
     },
 }));
+
+function buildAdvancedWorkspace() {
+  return {
+    draftVersion: {
+      contentHash: 'workspace-hash-1',
+      contentHashAlgorithm: 'sha256',
+      createdAt: '2026-05-21T01:00:00.000Z',
+      document: {
+        metadata: {
+          title: 'Sakura Kaze Official Hub',
+        },
+        personaKit: {
+          campaignLabel: 'Sakura Kaze',
+        },
+        schemaVersion: '1.0',
+        sections: [
+          {
+            fields: {
+              displayName: {
+                provenance: 'publicPresence',
+                value: 'Sakura Kaze',
+              },
+            },
+            id: 'first-1',
+            kind: 'firstEncounter',
+            phaseVisibility: 'always',
+          },
+        ],
+        templateId: 'activeTalentHub',
+      },
+      documentSchemaVersion: '1.0',
+      documentState: 'draft',
+      id: 'draft-version-1',
+      lastValidationSnapshotId: null,
+      publishedAt: null,
+      scheduledFor: null,
+      templateId: 'activeTalentHub',
+      updatedAt: '2026-05-21T01:05:00.000Z',
+      validationSnapshot: null,
+      versionNumber: 1,
+    },
+    liveTemplateId: null,
+    liveVersion: null,
+    pageVersions: [],
+    portal: {
+      createdAt: '2026-05-21T01:00:00.000Z',
+      draftVersionId: 'draft-version-1',
+      id: 'portal-1',
+      lastValidatedAt: '2026-05-21T01:05:00.000Z',
+      latestValidationState: 'validEditable',
+      latestVersionNumber: 1,
+      liveVersionId: null,
+      talentId: 'talent-1',
+      updatedAt: '2026-05-21T01:05:00.000Z',
+      version: 1,
+    },
+    publicRoute: {
+      canonicalPath: '/tenant-1/sakura/homepage',
+      domainHostname: null,
+      legacyPath: null,
+      talentCode: 'sakura',
+      tenantCode: 'tenant-1',
+    },
+    releaseReadiness: {
+      blockingDependencyCount: 0,
+      dependencies: [],
+    },
+    selectedTemplateId: 'activeTalentHub',
+    stageSections: [],
+    templates: [],
+    workflowEvents: [],
+  };
+}
+
+function buildAdvancedPreview() {
+  return {
+    appearance: {
+      theme: {},
+    },
+    metadata: {
+      title: 'Sakura Kaze Official Hub',
+    },
+    sections: [],
+  };
+}
 
 function setWindowWidth(width: number) {
   Object.defineProperty(window, 'innerWidth', {
@@ -122,6 +225,33 @@ describe('PublicPresenceAuthoringIdeScreen', () => {
     setWindowWidth(1024);
     mockRequest.mockReset();
     mockRequest.mockImplementation(async (path: string, init?: RequestInit) => {
+      if (path.startsWith('/api/v1/talents/talent-1/public-presence/preview')) {
+        return buildAdvancedPreview();
+      }
+
+      if (path.startsWith('/api/v1/talents/talent-1/public-presence') && !path.includes('/authoring/')) {
+        if (init?.method === 'PATCH') {
+          const payload = JSON.parse(String(init.body ?? '{}')) as {
+            document?: Record<string, unknown>;
+          };
+
+          return {
+            ...buildAdvancedWorkspace(),
+            draftVersion: {
+              ...buildAdvancedWorkspace().draftVersion,
+              document: payload.document ?? buildAdvancedWorkspace().draftVersion.document,
+              updatedAt: '2026-05-21T01:06:00.000Z',
+            },
+            portal: {
+              ...buildAdvancedWorkspace().portal,
+              lastValidatedAt: '2026-05-21T01:06:00.000Z',
+            },
+          };
+        }
+
+        return buildAdvancedWorkspace();
+      }
+
       if (
         path.includes('/authoring/templates/current')
         || path.includes('/authoring/components/current')
@@ -227,6 +357,88 @@ describe('PublicPresenceAuthoringIdeScreen', () => {
     fireEvent.click(screen.getAllByRole('button', { name: 'Files' })[0]);
     expect(screen.getByTestId('ide-file-src/component.tsx')).toBeInTheDocument();
     expect(screen.getAllByText('Editor')[0]).toBeInTheDocument();
+  });
+
+  it('supports restricted workspace file and folder CRUD from the file explorer', async () => {
+    setWindowWidth(1440);
+
+    render(
+      <PublicPresenceAuthoringIdeScreen
+        target="template"
+        talentId="talent-1"
+        tenantId="tenant-1"
+        templateId="activeTalentHub"
+      />,
+    );
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Files' })[0]);
+
+    const fileDrawer = screen.getByTestId('ide-file-drawer');
+    fireEvent.click(within(fileDrawer).getByRole('button', { name: 'New folder' }));
+    fireEvent.change(within(fileDrawer).getByRole('textbox'), {
+      target: {
+        value: 'src/custom-blocks',
+      },
+    });
+    fireEvent.click(within(fileDrawer).getByRole('button', { name: 'Apply' }));
+
+    expect(within(fileDrawer).getByTestId('ide-folder-src/custom-blocks')).toBeInTheDocument();
+
+    fireEvent.click(within(fileDrawer).getByRole('button', { name: 'New file' }));
+    fireEvent.change(within(fileDrawer).getByRole('textbox'), {
+      target: {
+        value: 'src/custom-blocks/hero-note.tsx',
+      },
+    });
+    fireEvent.click(within(fileDrawer).getByRole('button', { name: 'Apply' }));
+
+    expect(within(fileDrawer).getByTestId('ide-file-src/custom-blocks/hero-note.tsx')).toBeInTheDocument();
+    expect(screen.getAllByText('src/custom-blocks/hero-note.tsx').length).toBeGreaterThan(0);
+
+    fireEvent.click(within(fileDrawer).getByTestId('ide-file-src/custom-blocks/hero-note.tsx'));
+    fireEvent.click(screen.getAllByRole('button', { name: 'Files' })[0]);
+    fireEvent.click(within(screen.getByTestId('ide-file-drawer')).getByRole('button', { name: 'Rename' }));
+    fireEvent.change(within(screen.getByTestId('ide-file-drawer')).getByRole('textbox'), {
+      target: {
+        value: 'src/custom-blocks/hero-note-renamed.tsx',
+      },
+    });
+    fireEvent.click(within(screen.getByTestId('ide-file-drawer')).getByRole('button', { name: 'Apply' }));
+
+    expect(screen.getByTestId('ide-file-src/custom-blocks/hero-note-renamed.tsx')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId('ide-folder-src/custom-blocks'));
+    fireEvent.click(within(screen.getByTestId('ide-file-drawer')).getByRole('button', { name: 'Delete' }));
+
+    expect(screen.queryByTestId('ide-folder-src/custom-blocks')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('ide-file-src/custom-blocks/hero-note-renamed.tsx')).not.toBeInTheDocument();
+  });
+
+  it('rejects blocked workspace paths before applying file explorer changes', async () => {
+    setWindowWidth(1440);
+
+    render(
+      <PublicPresenceAuthoringIdeScreen
+        target="component"
+        talentId="talent-1"
+        tenantId="tenant-1"
+        componentType="SocialLinks"
+      />,
+    );
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Files' })[0]);
+
+    const fileDrawer = screen.getByTestId('ide-file-drawer');
+    fireEvent.click(within(fileDrawer).getByRole('button', { name: 'New file' }));
+    fireEvent.change(within(fileDrawer).getByRole('textbox'), {
+      target: {
+        value: '../escape.ts',
+      },
+    });
+    fireEvent.click(within(fileDrawer).getByRole('button', { name: 'Apply' }));
+
+    expect(within(fileDrawer).getByRole('alert')).toHaveTextContent(/letters|workspace/i);
+    expect(screen.queryByTestId('ide-file-../escape.ts')).not.toBeInTheDocument();
   });
 
   it('switches the live preview to mobile layout mode when requested', async () => {
@@ -420,9 +632,29 @@ describe('PublicPresenceAuthoringIdeScreen', () => {
     expect(screen.getByRole('option', { name: 'Before reveal hold' })).toBeInTheDocument();
   });
 
+  it('loads current homepage source into Advanced page-source mode', async () => {
+    render(
+      <PublicPresenceAuthoringIdeScreen
+        advancedMode="page-source"
+        target="advanced"
+        talentId="talent-1"
+        tenantId="tenant-1"
+        templateId="activeTalentHub"
+      />,
+    );
+
+    const editor = await screen.findByRole('textbox', { name: 'src/page-source.json' });
+
+    await waitFor(() => {
+      expect(String((editor as HTMLTextAreaElement).value)).toContain('Sakura Kaze Official Hub');
+    });
+    expect(screen.getByTestId('mock-public-preview')).toHaveTextContent('Sakura Kaze Official Hub');
+  });
+
   it('renders a standalone advanced IDE with mode switches and safe custom-html preview', async () => {
     render(
       <PublicPresenceAuthoringIdeScreen
+        componentDraftKey="new"
         advancedMode="custom-html"
         target="advanced"
         talentId="talent-1"
@@ -445,6 +677,168 @@ describe('PublicPresenceAuthoringIdeScreen', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Page source' }));
     expect(screen.getByRole('button', { name: 'Page source' })).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByText('Structured page preview')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByTestId('mock-public-preview')).toHaveTextContent('Sakura Kaze Official Hub');
+    });
+  });
+
+  it('saves current homepage source back through the homepage draft endpoint', async () => {
+    render(
+      <PublicPresenceAuthoringIdeScreen
+        advancedMode="page-source"
+        target="advanced"
+        talentId="talent-1"
+        tenantId="tenant-1"
+        templateId="activeTalentHub"
+      />,
+    );
+
+    const editor = await screen.findByRole('textbox', { name: 'src/page-source.json' });
+    fireEvent.change(editor, {
+      target: {
+        value: JSON.stringify(
+          {
+            ...buildAdvancedWorkspace().draftVersion.document,
+            metadata: {
+              title: 'Advanced Source Roundtrip',
+            },
+          },
+          null,
+          2,
+        ),
+      },
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Save draft' }));
+
+    await waitFor(() => {
+      expect(mockRequest).toHaveBeenCalledWith(
+        '/api/v1/talents/talent-1/public-presence/draft',
+        expect.objectContaining({
+          method: 'PATCH',
+        }),
+      );
+      expect(screen.getAllByText('Draft saved')[0]).toBeInTheDocument();
+    });
+  });
+
+  it('captures select-all textarea fallback edits for advanced page source saves', async () => {
+    render(
+      <PublicPresenceAuthoringIdeScreen
+        advancedMode="page-source"
+        target="advanced"
+        talentId="talent-1"
+        tenantId="tenant-1"
+        templateId="activeTalentHub"
+      />,
+    );
+
+    const editor = await screen.findByRole('textbox', { name: 'src/page-source.json' });
+    await waitFor(() => {
+      expect(String((editor as HTMLTextAreaElement).value)).toContain('Sakura Kaze Official Hub');
+    });
+
+    const replacement = JSON.stringify(
+      {
+        ...buildAdvancedWorkspace().draftVersion.document,
+        metadata: {
+          title: 'Advanced textarea fallback marker',
+        },
+      },
+      null,
+      2,
+    );
+    const saveButton = screen.getByRole('button', { name: 'Save draft' });
+
+    expect(saveButton).toBeDisabled();
+    fireEvent.keyDown(screen.getByTestId('monaco-editor-host'), {
+      key: 'a',
+      metaKey: true,
+    });
+    fireEvent.input(screen.getByTestId('monaco-inputarea-stub'), {
+      target: {
+        value: replacement,
+      },
+    });
+
+    await waitFor(() => {
+      expect(screen.getAllByText('Unsaved changes')[0]).toBeInTheDocument();
+      expect(saveButton).not.toBeDisabled();
+    });
+
+    fireEvent.click(saveButton);
+
+    await waitFor(() => {
+      const saveCall = mockRequest.mock.calls.find(
+        ([path, init]) =>
+          path === '/api/v1/talents/talent-1/public-presence/draft'
+          && init?.method === 'PATCH',
+      );
+      const payload = JSON.parse(String(saveCall?.[1]?.body ?? '{}')) as {
+        document: {
+          metadata?: {
+            title?: string;
+          };
+        };
+      };
+
+      expect(payload.document.metadata?.title).toBe('Advanced textarea fallback marker');
+    });
+  });
+
+  it('keeps the visible editor focus path saveable for custom template drafts', async () => {
+    render(
+      <PublicPresenceAuthoringIdeScreen
+        target="template"
+        talentId="talent-1"
+        tenantId="tenant-1"
+      />,
+    );
+
+    const marker = 'AR38 visible editor marker';
+    const saveButton = screen.getByRole('button', { name: 'Save draft' });
+    const viewLines = document.querySelector('.monaco-editor .view-lines');
+    const editor = screen.getByRole('textbox', { name: 'src/template.tsx' });
+
+    expect(viewLines).not.toBeNull();
+    fireEvent.mouseDown(viewLines!);
+    expect(document.activeElement).toBe(editor);
+
+    fireEvent.change(editor, {
+      target: {
+        value: `export const customTemplateVisibleMarker = "${marker}";\n`,
+      },
+    });
+
+    await waitFor(() => {
+      expect(screen.getAllByText('Unsaved changes')[0]).toBeInTheDocument();
+      expect(saveButton).not.toBeDisabled();
+    });
+
+    fireEvent.click(saveButton);
+
+    await waitFor(() => {
+      const saveCall = mockRequest.mock.calls.find(
+        ([path, init]) =>
+          path === '/api/v1/talents/talent-1/public-presence/authoring/templates/current'
+          && init?.method === 'PUT',
+      );
+      const payload = JSON.parse(String(saveCall?.[1]?.body ?? '{}')) as {
+        sourceBundle: Array<{
+          contents: string;
+          path: string;
+        }>;
+      };
+
+      expect(payload.sourceBundle).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            contents: `export const customTemplateVisibleMarker = "${marker}";\n`,
+            path: 'src/template.tsx',
+          }),
+        ]),
+      );
+    });
   });
 
   it('keeps custom HTML authoring in a real dirty-save-validate lifecycle', async () => {
@@ -525,6 +919,138 @@ describe('PublicPresenceAuthoringIdeScreen', () => {
     expect(screen.getByTestId('ide-custom-html-preview').getAttribute('srcdoc')).toContain(
       'Advanced switch marker',
     );
+  });
+
+  it('persists new template drafts after textarea replacement fallback', async () => {
+    render(
+      <PublicPresenceAuthoringIdeScreen
+        target="template"
+        talentId="talent-1"
+        tenantId="tenant-1"
+      />,
+    );
+
+    const marker = 'AR38 textarea template marker';
+    const saveButton = screen.getByRole('button', { name: 'Save draft' });
+
+    fireEvent.keyDown(screen.getByTestId('monaco-editor-host'), {
+      key: 'a',
+      metaKey: true,
+    });
+    fireEvent.input(screen.getByTestId('monaco-inputarea-stub'), {
+      target: {
+        value: `export const customTemplateMarker = "${marker}";\n`,
+      },
+    });
+
+    await waitFor(() => {
+      expect(screen.getAllByText('Unsaved changes')[0]).toBeInTheDocument();
+      expect(saveButton).not.toBeDisabled();
+    });
+
+    fireEvent.click(saveButton);
+
+    await waitFor(() => {
+      const saveCall = mockRequest.mock.calls.find(
+        ([path, init]) =>
+          path === '/api/v1/talents/talent-1/public-presence/authoring/templates/current'
+          && init?.method === 'PUT',
+      );
+      const payload = JSON.parse(String(saveCall?.[1]?.body ?? '{}')) as {
+        sourceBundle: Array<{
+          contents: string;
+          path: string;
+        }>;
+        subjectKey?: string;
+      };
+
+      expect(payload.subjectKey).toBe('new');
+      expect(payload.sourceBundle).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            contents: `export const customTemplateMarker = "${marker}";\n`,
+            path: 'src/template.tsx',
+          }),
+        ]),
+      );
+    });
+  });
+
+  it('persists created workspace file contents after textarea replacement fallback', async () => {
+    setWindowWidth(1440);
+
+    render(
+      <PublicPresenceAuthoringIdeScreen
+        target="template"
+        talentId="talent-1"
+        tenantId="tenant-1"
+        templateId="activeTalentHub"
+      />,
+    );
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Files' })[0]);
+
+    const fileDrawer = screen.getByTestId('ide-file-drawer');
+    fireEvent.click(within(fileDrawer).getByRole('button', { name: 'New folder' }));
+    fireEvent.change(within(fileDrawer).getByRole('textbox'), {
+      target: {
+        value: 'src/custom-blocks',
+      },
+    });
+    fireEvent.click(within(fileDrawer).getByRole('button', { name: 'Apply' }));
+
+    fireEvent.click(within(fileDrawer).getByRole('button', { name: 'New file' }));
+    fireEvent.change(within(fileDrawer).getByRole('textbox'), {
+      target: {
+        value: 'src/custom-blocks/hero-note.tsx',
+      },
+    });
+    fireEvent.click(within(fileDrawer).getByRole('button', { name: 'Apply' }));
+
+    const marker = 'AR38 workspace textarea marker';
+    const saveButton = screen.getByRole('button', { name: 'Save draft' });
+
+    fireEvent.keyDown(screen.getByTestId('monaco-editor-host'), {
+      key: 'a',
+      metaKey: true,
+    });
+    fireEvent.input(screen.getByTestId('monaco-inputarea-stub'), {
+      target: {
+        value: `export const customWorkspaceMarker = "${marker}";\n`,
+      },
+    });
+
+    await waitFor(() => {
+      expect(saveButton).not.toBeDisabled();
+    });
+
+    fireEvent.click(saveButton);
+
+    await waitFor(() => {
+      const saveCall = mockRequest.mock.calls.find(
+        ([path, init]) =>
+          path === '/api/v1/talents/talent-1/public-presence/authoring/templates/current'
+          && init?.method === 'PUT',
+      );
+      const payload = JSON.parse(String(saveCall?.[1]?.body ?? '{}')) as {
+        sourceBundle: Array<{
+          contents: string;
+          path: string;
+        }>;
+      };
+
+      expect(payload.sourceBundle).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            contents: `export const customWorkspaceMarker = "${marker}";\n`,
+            path: 'src/custom-blocks/hero-note.tsx',
+          }),
+          expect.objectContaining({
+            path: 'system/workspace.json',
+          }),
+        ]),
+      );
+    });
   });
 
   it('persists template drafts through durable authoring endpoints', async () => {

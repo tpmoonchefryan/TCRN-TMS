@@ -6,9 +6,12 @@ import {
   PUBLIC_PRESENCE_TEMPLATE_DEFINITIONS,
   ThemePreset,
   type HomepageComponentType,
+  type PublicPresenceDocument,
   type PublicPresencePhaseVisibility,
+  type PublicPresenceProjection,
   type PublicPresencePublicProjection,
   type PublicPresenceTemplateId,
+  type SupportedUiLocale,
 } from '@tcrn/shared';
 import {
   AlertCircle,
@@ -19,28 +22,34 @@ import {
   FileJson2,
   FileText,
   LayoutTemplate,
-  LoaderCircle,
   Package2,
   PlaySquare,
   Smartphone,
   Upload,
 } from 'lucide-react';
-import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import { startTransition, useEffect, useId, useMemo, useRef, useState } from 'react';
+import { forwardRef, useEffect, useId, useImperativeHandle, useMemo, useRef, useState } from 'react';
 
 import { PublicPresenceBadge, PublicPresenceShell, PublicPresenceSurface } from '@/domains/public-presence';
 import { PublicHomepageProjectionRenderer } from '@/domains/public-homepage/components/PublicHomepageProjectionRenderer';
 import {
   readPublicPresenceAuthoringDraft,
+  readPublicPresenceDraftPreview,
+  readPublicPresenceWorkspace,
   savePublicPresenceAuthoringDraft,
+  savePublicPresenceWorkspaceDraft,
   submitPublicPresenceAuthoringDraft,
   type PublicPresenceAuthoringDraftResponse,
   type PublicPresenceAuthoringFile,
   type PublicPresenceAuthoringValidationSummary,
+  type PublicPresenceStudioWorkspaceResponse,
   validatePublicPresenceAuthoringDraft,
 } from '@/domains/public-presence-studio/api/public-presence-studio.api';
 import { useOverlayFocusManager } from '@/domains/public-presence-studio/screens/public-presence-studio-overlay';
+import {
+  buildComponentAuthoringManifest,
+  buildTemplateAuthoringManifest,
+} from '@/domains/public-presence-studio/screens/public-presence-authoring-blueprint';
 import {
   getHomepageSurfaceActionLabel,
   getPublicPresencePreviewPhaseLabel,
@@ -64,27 +73,22 @@ type FixtureMode = 'default' | 'unsafeFallback';
 type MobileAuthoringSurface = 'editor' | 'preview';
 type MobileIdeOverlay = 'actions' | 'previewOptions' | 'files' | 'checks' | null;
 type AdvancedPageMode = 'page-source' | 'custom-html' | 'registry-snippets';
-type MonacoDisposableLike = {
-  dispose: () => void;
-};
-type MonacoTextModelLike = {
+type WorkspaceCommandKind = 'new-file' | 'new-folder' | 'rename';
+type WorkspaceEntryKind = 'file' | 'folder';
+type WorkspacePathValidationCode =
+  | 'invalidCharacters'
+  | 'missingFilePath'
+  | 'missingFolderPath'
+  | 'relativePathOnly';
+type SourceEditorHandle = {
+  focus: () => void;
   getValue: () => string;
-  onDidChangeContent: (listener: () => void) => MonacoDisposableLike;
+  setValue: (value: string) => void;
 };
-type MonacoEditorLike = {
-  focus?: () => void;
-  getModel: () => MonacoTextModelLike | null;
-  onDidChangeModelContent?: (listener: () => void) => MonacoDisposableLike;
-};
-type MonacoEditorProps = {
-  defaultLanguage?: string;
-  height?: string | number;
-  loading?: React.ReactNode;
+type SourceEditorProps = {
+  className?: string;
   onChange?: (value: string | undefined) => void;
-  onMount?: (editor: MonacoEditorLike, monaco: unknown) => void;
-  options?: Record<string, unknown>;
   path?: string;
-  theme?: string;
   value?: string;
 };
 
@@ -98,6 +102,14 @@ interface VirtualFile {
 interface ValidationItem {
   level: 'pass' | 'warn';
   message: string;
+}
+
+interface WorkspaceEntry {
+  depth: number;
+  groupId: VirtualFileGroupId;
+  kind: WorkspaceEntryKind;
+  label: string;
+  path: string;
 }
 
 type VirtualFileGroupId = 'docs' | 'sidecars' | 'source' | 'styles' | 'tests';
@@ -151,6 +163,8 @@ const CUSTOM_HTML_EXTERNAL_ASSET_PATTERN =
   /^(?:https?:|data:|\/\/|\/\\|%2f%2f|%5c%5c)/i;
 const CUSTOM_HTML_CSS_ASSET_PATTERN =
   /@import|url\s*\(\s*['"]?\s*(?:https?:|data:|\/\/|\/\\|%2f%2f|%5c%5c)/i;
+const AUTHORING_WORKSPACE_INDEX_PATH = 'system/workspace.json';
+const WORKSPACE_PATH_SEGMENT_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/;
 const FOCUSABLE_SELECTOR = [
   'a[href]',
   'button:not([disabled])',
@@ -170,23 +184,374 @@ function getFocusableElements(container: HTMLElement) {
   });
 }
 
-const MonacoEditor = dynamic<MonacoEditorProps>(
-  async () => {
-    const module = await import('@monaco-editor/react');
-    return module.default;
-  },
-  {
-    ssr: false,
-    loading: () => (
-      <div
-        data-testid="monaco-loading"
-        className="flex min-h-[28rem] items-center justify-center rounded-[1.75rem] border border-slate-200 bg-slate-950 text-slate-100"
-      >
-        <LoaderCircle className="h-5 w-5 animate-spin" aria-hidden="true" />
-      </div>
+function isWorkspaceIndexPath(path: string) {
+  return path === AUTHORING_WORKSPACE_INDEX_PATH;
+}
+
+function getVisibleWorkspaceFiles(files: VirtualFile[]) {
+  return files.filter((file) => !isWorkspaceIndexPath(file.path));
+}
+
+function inferWorkspaceFileKind(path: string): VirtualFile['kind'] {
+  if (path.endsWith('.md') || path.endsWith('.txt')) {
+    return 'doc';
+  }
+
+  if (path.endsWith('.json')) {
+    return path.includes('fixtures/') ? 'fixture' : 'schema';
+  }
+
+  return 'code';
+}
+
+function inferWorkspaceFileLanguage(path: string) {
+  if (path.endsWith('.tsx') || path.endsWith('.ts')) {
+    return 'typescript';
+  }
+
+  if (path.endsWith('.css')) {
+    return 'css';
+  }
+
+  if (path.endsWith('.html')) {
+    return 'html';
+  }
+
+  if (path.endsWith('.json')) {
+    return 'json';
+  }
+
+  if (path.endsWith('.md')) {
+    return 'markdown';
+  }
+
+  return 'text';
+}
+
+function collectParentFolders(path: string) {
+  const segments = path.split('/');
+  const folders: string[] = [];
+
+  for (let index = 1; index < segments.length; index += 1) {
+    folders.push(segments.slice(0, index).join('/'));
+  }
+
+  return folders;
+}
+
+function readWorkspaceFolderIndex(files: VirtualFile[]) {
+  const indexFile = files.find((file) => isWorkspaceIndexPath(file.path));
+
+  if (!indexFile) {
+    return [];
+  }
+
+  try {
+    const parsed = JSON.parse(indexFile.contents) as { folders?: unknown };
+    return Array.isArray(parsed.folders)
+      ? parsed.folders.filter((folder): folder is string => typeof folder === 'string')
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeWorkspaceFolderIndex(files: VirtualFile[], folders: string[]): VirtualFile[] {
+  const nextFolders = [...new Set(folders)].sort();
+  const visibleFiles = files.filter((file) => !isWorkspaceIndexPath(file.path));
+
+  if (nextFolders.length === 0) {
+    return visibleFiles;
+  }
+
+  return [
+    ...visibleFiles,
+    {
+      contents: JSON.stringify({ folders: nextFolders }, null, 2),
+      kind: 'schema',
+      language: 'json',
+      path: AUTHORING_WORKSPACE_INDEX_PATH,
+    },
+  ];
+}
+
+function getWorkspaceFolders(files: VirtualFile[]) {
+  const derivedFolders = getVisibleWorkspaceFiles(files).flatMap((file) => collectParentFolders(file.path));
+  return [...new Set([...readWorkspaceFolderIndex(files), ...derivedFolders])].sort();
+}
+
+function resolveWorkspaceGroupIdFromPath(path: string): VirtualFileGroupId {
+  if (path.startsWith('tests/')) {
+    return 'tests';
+  }
+
+  if (path.endsWith('.css') || path.includes('/styles')) {
+    return 'styles';
+  }
+
+  if (
+    path.endsWith('.json')
+    || path.startsWith('fixtures/')
+    || path.startsWith('manifest')
+    || path.includes('schema')
+  ) {
+    return 'sidecars';
+  }
+
+  if (path.startsWith('docs/') || path.startsWith('safety/')) {
+    return 'docs';
+  }
+
+  return 'source';
+}
+
+function buildWorkspaceEntries(files: VirtualFile[]): WorkspaceEntry[] {
+  const folderEntries = getWorkspaceFolders(files).map((path) => ({
+    depth: Math.max(path.split('/').length - 1, 0),
+    groupId: resolveWorkspaceGroupIdFromPath(path),
+    kind: 'folder' as const,
+    label: path.split('/').at(-1) ?? path,
+    path,
+  }));
+  const fileEntries = getVisibleWorkspaceFiles(files).map((file) => ({
+    depth: Math.max(file.path.split('/').length - 1, 0),
+    groupId: resolveWorkspaceGroupIdFromPath(file.path),
+    kind: 'file' as const,
+    label: file.path.split('/').at(-1) ?? file.path,
+    path: file.path,
+  }));
+
+  return [...folderEntries, ...fileEntries].sort((left, right) => {
+    if (left.groupId !== right.groupId) {
+      return left.groupId.localeCompare(right.groupId);
+    }
+
+    if (left.path === right.path) {
+      return left.kind === right.kind ? 0 : left.kind === 'folder' ? -1 : 1;
+    }
+
+    return left.path.localeCompare(right.path);
+  });
+}
+
+function validateWorkspacePathInput(
+  rawPath: string,
+  kind: WorkspaceEntryKind,
+): WorkspacePathValidationCode | null {
+  const path = rawPath.trim();
+
+  if (!path) {
+    return kind === 'folder'
+      ? 'missingFolderPath'
+      : 'missingFilePath';
+  }
+
+  if (
+    path === AUTHORING_WORKSPACE_INDEX_PATH
+    || path.startsWith('/')
+    || path.startsWith('~')
+    || /^[A-Za-z]:/.test(path)
+    || path.includes('\\')
+    || path.includes('//')
+  ) {
+    return 'relativePathOnly';
+  }
+
+  const segments = path.split('/');
+
+  if (
+    segments.some((segment) => segment.length === 0 || segment === '.' || segment === '..')
+    || segments.some((segment) => segment.startsWith('.'))
+    || segments.some((segment) => !WORKSPACE_PATH_SEGMENT_PATTERN.test(segment))
+  ) {
+    return 'invalidCharacters';
+  }
+
+  return null;
+}
+
+function getWorkspacePathValidationMessage(
+  locale: string,
+  code: WorkspacePathValidationCode,
+) {
+  switch (code) {
+    case 'missingFolderPath':
+      return pickLocaleText(locale, {
+        en: 'Choose a folder path before saving.',
+        zh_HANS: '保存前请先填写文件夹路径。',
+        zh_HANT: '儲存前請先填寫資料夾路徑。',
+        ja: '保存する前にフォルダパスを入力してください。',
+        ko: '저장하기 전에 폴더 경로를 입력하세요.',
+        fr: 'Choisissez un chemin de dossier avant d’enregistrer.',
+      });
+    case 'missingFilePath':
+      return pickLocaleText(locale, {
+        en: 'Choose a file path before saving.',
+        zh_HANS: '保存前请先填写文件路径。',
+        zh_HANT: '儲存前請先填寫檔案路徑。',
+        ja: '保存する前にファイルパスを入力してください。',
+        ko: '저장하기 전에 파일 경로를 입력하세요.',
+        fr: 'Choisissez un chemin de fichier avant d’enregistrer.',
+      });
+    case 'relativePathOnly':
+      return pickLocaleText(locale, {
+        en: 'Use a workspace-relative path.',
+        zh_HANS: '请使用工作区内的相对路径。',
+        zh_HANT: '請使用工作區內的相對路徑。',
+        ja: 'ワークスペース内の相対パスを使ってください。',
+        ko: '워크스페이스 내부의 상대 경로를 사용하세요.',
+        fr: 'Utilisez un chemin relatif au workspace.',
+      });
+    default:
+      return pickLocaleText(locale, {
+        en: 'Use letters, numbers, dashes, underscores, slashes, and dots only.',
+        zh_HANS: '路径只能使用字母、数字、短横线、下划线、斜杠和点号。',
+        zh_HANT: '路徑只能使用字母、數字、短橫線、底線、斜線與點號。',
+        ja: 'パスには英字、数字、ハイフン、アンダースコア、スラッシュ、ドットのみ使えます。',
+        ko: '경로에는 문자, 숫자, 하이픈, 언더스코어, 슬래시, 점만 사용할 수 있습니다.',
+        fr: 'Utilisez uniquement des lettres, chiffres, tirets, underscores, slashs et points.',
+      });
+  }
+}
+
+function createWorkspaceFile(files: VirtualFile[], path: string): VirtualFile[] {
+  const nextPath = path.trim();
+  const nextFolders = [...getWorkspaceFolders(files), ...collectParentFolders(nextPath)];
+
+  return writeWorkspaceFolderIndex(
+    [
+      ...getVisibleWorkspaceFiles(files),
+      {
+        contents: '',
+        kind: inferWorkspaceFileKind(nextPath),
+        language: inferWorkspaceFileLanguage(nextPath),
+        path: nextPath,
+      },
+    ],
+    nextFolders,
+  );
+}
+
+function createWorkspaceFolder(files: VirtualFile[], path: string): VirtualFile[] {
+  return writeWorkspaceFolderIndex(files, [...getWorkspaceFolders(files), path.trim()]);
+}
+
+function renameWorkspaceEntry(
+  files: VirtualFile[],
+  entry: { kind: WorkspaceEntryKind; path: string },
+  nextPathInput: string,
+): VirtualFile[] {
+  const nextPath = nextPathInput.trim();
+  const currentFolders = getWorkspaceFolders(files);
+
+  if (entry.kind === 'file') {
+    const nextFiles = getVisibleWorkspaceFiles(files).map((file) =>
+      file.path === entry.path ? { ...file, path: nextPath } : file,
+    );
+
+    return writeWorkspaceFolderIndex(
+      nextFiles,
+      currentFolders
+        .filter((folder) => folder !== entry.path)
+        .concat(collectParentFolders(nextPath)),
+    );
+  }
+
+  const nextFiles = getVisibleWorkspaceFiles(files).map((file) =>
+    file.path === entry.path || file.path.startsWith(`${entry.path}/`)
+      ? {
+          ...file,
+          path: `${nextPath}${file.path.slice(entry.path.length)}`,
+        }
+      : file,
+  );
+  const nextFolders = currentFolders
+    .filter((folder) => folder !== entry.path && !folder.startsWith(`${entry.path}/`))
+    .concat(
+      currentFolders
+        .filter((folder) => folder === entry.path || folder.startsWith(`${entry.path}/`))
+        .map((folder) => `${nextPath}${folder.slice(entry.path.length)}`),
+    )
+    .concat(collectParentFolders(nextPath));
+
+  return writeWorkspaceFolderIndex(nextFiles, nextFolders);
+}
+
+function deleteWorkspaceEntry(
+  files: VirtualFile[],
+  entry: { kind: WorkspaceEntryKind; path: string },
+): VirtualFile[] {
+  if (entry.kind === 'file') {
+    return writeWorkspaceFolderIndex(
+      getVisibleWorkspaceFiles(files).filter((file) => file.path !== entry.path),
+      getWorkspaceFolders(files).filter((folder) => folder !== entry.path),
+    );
+  }
+
+  return writeWorkspaceFolderIndex(
+    getVisibleWorkspaceFiles(files).filter(
+      (file) => file.path !== entry.path && !file.path.startsWith(`${entry.path}/`),
     ),
+    getWorkspaceFolders(files).filter(
+      (folder) => folder !== entry.path && !folder.startsWith(`${entry.path}/`),
+    ),
+  );
+}
+
+const StableSourceEditor = forwardRef<SourceEditorHandle, SourceEditorProps>(function StableSourceEditor(
+  {
+    className,
+    onChange,
+    path,
+    value,
   },
-);
+  ref,
+) {
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+
+  useImperativeHandle(ref, () => ({
+    focus: () => {
+      textareaRef.current?.focus();
+    },
+    getValue: () => textareaRef.current?.value ?? '',
+    setValue: (nextValue: string) => {
+      if (!textareaRef.current) {
+        return;
+      }
+
+      textareaRef.current.value = nextValue;
+    },
+  }), []);
+
+  return (
+    <div
+      className={`monaco-editor flex h-full flex-col bg-slate-950 text-slate-100 ${className ?? ''}`.trim()}
+      data-testid="monaco-editor-stub"
+    >
+      <div
+        aria-hidden="true"
+        className="view-lines h-8 shrink-0 border-b border-slate-800/80 bg-slate-950/95"
+        onMouseDown={(event) => {
+          event.preventDefault();
+          textareaRef.current?.focus();
+        }}
+      />
+      <textarea
+        ref={textareaRef}
+        aria-label={path ?? 'Editor file'}
+        autoCapitalize="off"
+        autoCorrect="off"
+        className="inputarea min-h-0 flex-1 resize-none border-0 bg-slate-950 px-4 py-3 font-mono text-[13px] leading-6 text-slate-100 outline-none"
+        data-testid="monaco-inputarea-stub"
+        onChange={(event) => {
+          onChange?.(event.currentTarget.value);
+        }}
+        spellCheck={false}
+        value={value ?? ''}
+      />
+    </div>
+  );
+});
 
 function buildTemplatePreviewProjection(
   templateId: PublicPresenceTemplateId,
@@ -447,6 +812,7 @@ function buildComponentPreviewProjection(
 function buildTemplateFiles(
   templateId: PublicPresenceTemplateId,
   locale: string,
+  linkedComponentDraftKeys: readonly string[] = [],
 ): VirtualFile[] {
   const definition = PUBLIC_PRESENCE_TEMPLATE_DEFINITIONS[templateId];
 
@@ -485,7 +851,11 @@ function buildTemplateFiles(
       path: 'manifest.json',
       kind: 'schema',
       language: 'json',
-      contents: JSON.stringify(definition, null, 2),
+      contents: JSON.stringify(
+        buildTemplateAuthoringManifest(templateId, locale as SupportedUiLocale, linkedComponentDraftKeys),
+        null,
+        2,
+      ),
     },
     {
       path: 'fixtures/default.json',
@@ -494,6 +864,11 @@ function buildTemplateFiles(
       contents: JSON.stringify(
         {
           fixture: 'default',
+          homepageStarter: buildTemplateAuthoringManifest(
+            templateId,
+            locale as SupportedUiLocale,
+            linkedComponentDraftKeys,
+          ).authoring.homepageStarter,
           locale,
           previewPhase: templateId === 'debutReveal' ? 'countdown' : 'always',
           templateId,
@@ -546,7 +921,11 @@ function buildComponentFiles(
       path: 'manifest.json',
       kind: 'schema',
       language: 'json',
-      contents: JSON.stringify(definition, null, 2),
+      contents: JSON.stringify(
+        buildComponentAuthoringManifest(componentType, locale as SupportedUiLocale),
+        null,
+        2,
+      ),
     },
     {
       path: 'props.schema.json',
@@ -572,6 +951,10 @@ function buildComponentFiles(
         {
           componentType,
           fixture: 'default',
+          homepageStarter: buildComponentAuthoringManifest(
+            componentType,
+            locale as SupportedUiLocale,
+          ).authoring.homepageStarter,
           locale,
           visualSupport: definition.visualSupport,
         },
@@ -889,6 +1272,38 @@ function getAuthoringSubjectLabel(
   return componentType.replace(/([a-z0-9])([A-Z])/g, '$1 $2');
 }
 
+function getAuthoringSourceScopeLabel(locale: string, target: AuthoringTarget) {
+  switch (target) {
+    case 'template':
+      return pickLocaleText(locale, {
+        en: 'Template source',
+        zh_HANS: '模板源稿',
+        zh_HANT: '模板源稿',
+        ja: 'テンプレートソース',
+        ko: '템플릿 소스',
+        fr: 'Source template',
+      });
+    case 'component':
+      return pickLocaleText(locale, {
+        en: 'Component source',
+        zh_HANS: '组件源稿',
+        zh_HANT: '元件源稿',
+        ja: 'コンポーネントソース',
+        ko: '컴포넌트 소스',
+        fr: 'Source composant',
+      });
+    default:
+      return pickLocaleText(locale, {
+        en: 'Current homepage source',
+        zh_HANS: '当前主页源稿',
+        zh_HANT: '目前主頁源稿',
+        ja: '現在のホームページソース',
+        ko: '현재 홈페이지 소스',
+        fr: 'Source actuelle de la homepage',
+      });
+  }
+}
+
 function getAdvancedModeLabel(locale: string, mode: AdvancedPageMode) {
   switch (mode) {
     case 'custom-html':
@@ -1204,6 +1619,27 @@ function buildAdvancedPreviewProjection(
   return baseProjection;
 }
 
+function buildCurrentHomepageSourceFiles(
+  document: PublicPresenceDocument,
+  templateId: PublicPresenceTemplateId,
+  locale: string,
+): VirtualFile[] {
+  return buildAdvancedFiles('page-source', templateId, locale).map((file) =>
+    file.path === 'src/page-source.json'
+      ? {
+          ...file,
+          contents: JSON.stringify(document, null, 2),
+        }
+      : file,
+  );
+}
+
+function readCurrentHomepageSourceDocument(
+  files: VirtualFile[],
+): PublicPresenceDocument {
+  return JSON.parse(readVirtualFileContents(files, 'src/page-source.json')) as PublicPresenceDocument;
+}
+
 function buildValidationItems(
   locale: string,
   target: AuthoringTarget,
@@ -1423,6 +1859,7 @@ function usePreviewFit(targetWidth: number) {
 
 export function PublicPresenceAuthoringIdeScreen({
   advancedMode,
+  componentDraftKey,
   componentType,
   target,
   talentId,
@@ -1430,6 +1867,7 @@ export function PublicPresenceAuthoringIdeScreen({
   tenantId,
 }: Readonly<{
   advancedMode?: AdvancedPageMode | null;
+  componentDraftKey?: string | null;
   componentType?: string | null;
   target: AuthoringTarget;
   talentId: string;
@@ -1457,14 +1895,51 @@ export function PublicPresenceAuthoringIdeScreen({
   const initialFiles = useMemo(
     () =>
       target === 'template'
-        ? buildTemplateFiles(effectiveTemplateId, locale)
+        ? buildTemplateFiles(
+            effectiveTemplateId,
+            locale,
+            componentDraftKey ? [componentDraftKey] : [],
+          )
         : target === 'component'
           ? buildComponentFiles(effectiveComponentType, locale)
           : buildAdvancedFiles(selectedAdvancedMode, effectiveTemplateId, locale),
-    [effectiveComponentType, effectiveTemplateId, locale, selectedAdvancedMode, target],
+    [
+      componentDraftKey,
+      effectiveComponentType,
+      effectiveTemplateId,
+      locale,
+      selectedAdvancedMode,
+      target,
+    ],
   );
+  const [advancedWorkspace, setAdvancedWorkspace] =
+    useState<PublicPresenceStudioWorkspaceResponse | null>(null);
+  const [advancedWorkspaceError, setAdvancedWorkspaceError] = useState<string | null>(null);
+  const [advancedPreviewProjection, setAdvancedPreviewProjection] =
+    useState<PublicPresenceProjection | null>(null);
+  const [advancedHomepageFiles, setAdvancedHomepageFiles] = useState<VirtualFile[] | null>(null);
   const [files, setFiles] = useState<VirtualFile[]>(initialFiles);
+  const [persistedFiles, setPersistedFiles] = useState<VirtualFile[]>(initialFiles);
   const [activePath, setActivePath] = useState(initialFiles[0]?.path ?? '');
+  const [openTabs, setOpenTabs] = useState<string[]>(
+    getVisibleWorkspaceFiles(initialFiles).slice(0, 1).map((file) => file.path),
+  );
+  const [selectedWorkspaceEntry, setSelectedWorkspaceEntry] = useState<{
+    kind: WorkspaceEntryKind;
+    path: string;
+  } | null>(
+    getVisibleWorkspaceFiles(initialFiles)[0]
+      ? {
+          kind: 'file',
+          path: getVisibleWorkspaceFiles(initialFiles)[0]!.path,
+        }
+      : null,
+  );
+  const [workspaceCommand, setWorkspaceCommand] = useState<WorkspaceCommandKind | null>(null);
+  const [workspacePathInput, setWorkspacePathInput] = useState('');
+  const [workspacePathValidationCode, setWorkspacePathValidationCode] =
+    useState<WorkspacePathValidationCode | null>(null);
+  const [workspaceCommandError, setWorkspaceCommandError] = useState<string | null>(null);
   const [editorDirty, setEditorDirty] = useState(false);
   const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
   const [lastValidatedAt, setLastValidatedAt] = useState<string | null>(null);
@@ -1481,8 +1956,7 @@ export function PublicPresenceAuthoringIdeScreen({
   const editorHostRef = useRef<HTMLDivElement | null>(null);
   const mobileActionsSheetPanelRef = useRef<HTMLDivElement | null>(null);
   const mobileUtilitySheetPanelRef = useRef<HTMLDivElement | null>(null);
-  const monacoEditorRef = useRef<MonacoEditorLike | null>(null);
-  const monacoModelListenerRef = useRef<MonacoDisposableLike | null>(null);
+  const sourceEditorRef = useRef<SourceEditorHandle | null>(null);
   const skipNextInitialFilesResetRef = useRef(false);
   const syncEditorContentsRef = useRef<(path: string | undefined, value: string | undefined) => void>(
     () => undefined,
@@ -1526,7 +2000,50 @@ export function PublicPresenceAuthoringIdeScreen({
     ? 'advanced'
     : `${target}:${authoringSubjectKey ?? 'new'}`;
 
-  const activeFile = files.find((file) => file.path === activePath) ?? files[0];
+  const visibleFiles = useMemo(() => getVisibleWorkspaceFiles(files), [files]);
+  const persistedVisibleFiles = useMemo(() => getVisibleWorkspaceFiles(persistedFiles), [persistedFiles]);
+  const activeFile = visibleFiles.find((file) => file.path === activePath) ?? visibleFiles[0];
+  const workspaceEntries = useMemo(() => buildWorkspaceEntries(files), [files]);
+  const dirtyFilePaths = useMemo(() => {
+    const currentFiles = new Map(
+      visibleFiles.map((file) => [file.path, JSON.stringify([file.kind, file.language, file.contents])]),
+    );
+    const savedFiles = new Map(
+      persistedVisibleFiles.map((file) => [file.path, JSON.stringify([file.kind, file.language, file.contents])]),
+    );
+    const nextDirtyPaths = new Set<string>();
+
+    currentFiles.forEach((snapshot, path) => {
+      if (savedFiles.get(path) !== snapshot) {
+        nextDirtyPaths.add(path);
+      }
+    });
+    savedFiles.forEach((_snapshot, path) => {
+      if (!currentFiles.has(path)) {
+        nextDirtyPaths.add(path);
+      }
+    });
+
+    return nextDirtyPaths;
+  }, [persistedVisibleFiles, visibleFiles]);
+  const dirtyFolderPaths = useMemo(() => {
+    const currentFolders = new Set(getWorkspaceFolders(files));
+    const savedFolders = new Set(getWorkspaceFolders(persistedFiles));
+    const nextDirtyFolders = new Set<string>();
+
+    currentFolders.forEach((path) => {
+      if (!savedFolders.has(path)) {
+        nextDirtyFolders.add(path);
+      }
+    });
+    savedFolders.forEach((path) => {
+      if (!currentFolders.has(path)) {
+        nextDirtyFolders.add(path);
+      }
+    });
+
+    return nextDirtyFolders;
+  }, [files, persistedFiles]);
   const desktopPreviewFit = usePreviewFit(720);
   const authoringSubjectLabel = getAuthoringSubjectLabel(
     locale,
@@ -1534,20 +2051,33 @@ export function PublicPresenceAuthoringIdeScreen({
     effectiveTemplateId,
     effectiveComponentType,
   );
+  const authoringSourceScopeLabel = getAuthoringSourceScopeLabel(locale, target);
   const mobileSurfaceStatusLabel = getMobileSurfaceStatusLabel(locale, mobileSurface);
-  const previewProjection = useMemo<PublicPresencePublicProjection>(
+  const previewProjection = useMemo<PublicPresencePublicProjection | PublicPresenceProjection>(
     () =>
       target === 'template'
         ? buildTemplatePreviewProjection(effectiveTemplateId, locale)
         : target === 'component'
           ? buildComponentPreviewProjection(effectiveComponentType, locale)
-          : buildAdvancedPreviewProjection(
-              selectedAdvancedMode,
-              effectiveTemplateId,
-              locale,
-              files,
-            ),
-    [effectiveComponentType, effectiveTemplateId, files, locale, selectedAdvancedMode, target],
+          : selectedAdvancedMode === 'page-source' && advancedPreviewProjection && !editorDirty
+            ? advancedPreviewProjection
+            : buildAdvancedPreviewProjection(
+                selectedAdvancedMode,
+                advancedWorkspace?.selectedTemplateId ?? effectiveTemplateId,
+                locale,
+                files,
+              ),
+    [
+      advancedPreviewProjection,
+      advancedWorkspace?.selectedTemplateId,
+      editorDirty,
+      effectiveComponentType,
+      effectiveTemplateId,
+      files,
+      locale,
+      selectedAdvancedMode,
+      target,
+    ],
   );
   const customHtmlPreviewState = useMemo(
     () => {
@@ -1581,60 +2111,22 @@ export function PublicPresenceAuthoringIdeScreen({
       return;
     }
 
-    startTransition(() => {
-      setFiles((current) =>
-        current.map((file) =>
-          file.path === path
-            ? { ...file, contents: nextContents }
-            : file,
-        ),
-      );
-    });
+    setFiles((current) =>
+      current.map((file) =>
+        file.path === path
+          ? { ...file, contents: nextContents }
+          : file,
+      ),
+    );
     setEditorDirty(true);
     setSubmitStatus('idle');
   };
 
-  const syncMonacoModelContents = (fallbackValue?: string) => {
-    const modelValue = monacoEditorRef.current?.getModel()?.getValue();
-
+  const flushActiveEditorContents = () => {
     syncEditorContentsRef.current(
       activePathRef.current,
-      modelValue ?? fallbackValue,
+      sourceEditorRef.current?.getValue(),
     );
-  };
-
-  const registerMonacoModelListener = (editor: MonacoEditorLike | null) => {
-    monacoModelListenerRef.current?.dispose();
-    monacoModelListenerRef.current = null;
-
-    if (!editor) {
-      return;
-    }
-
-    if (editor.onDidChangeModelContent) {
-      monacoModelListenerRef.current = editor.onDidChangeModelContent(() => {
-        const model = editor.getModel();
-
-        if (!model) {
-          return;
-        }
-
-        syncEditorContentsRef.current(
-          activePathRef.current,
-          model.getValue(),
-        );
-      });
-      return;
-    }
-
-    const model = editor.getModel();
-
-    monacoModelListenerRef.current = model?.onDidChangeContent(() => {
-      syncEditorContentsRef.current(
-        activePathRef.current,
-        model.getValue(),
-      );
-    }) ?? null;
   };
 
   useEffect(() => {
@@ -1673,7 +2165,21 @@ export function PublicPresenceAuthoringIdeScreen({
     }
 
     setFiles(initialFiles);
+    setPersistedFiles(initialFiles);
     setActivePath(initialFiles[0]?.path ?? '');
+    setOpenTabs(getVisibleWorkspaceFiles(initialFiles).slice(0, 1).map((file) => file.path));
+    setSelectedWorkspaceEntry(
+      getVisibleWorkspaceFiles(initialFiles)[0]
+        ? {
+            kind: 'file',
+            path: getVisibleWorkspaceFiles(initialFiles)[0]!.path,
+          }
+        : null,
+    );
+    setWorkspaceCommand(null);
+    setWorkspacePathInput('');
+    setWorkspacePathValidationCode(null);
+    setWorkspaceCommandError(null);
     setEditorDirty(false);
     setLastSavedAt(null);
     setLastValidatedAt(null);
@@ -1710,11 +2216,22 @@ export function PublicPresenceAuthoringIdeScreen({
         setHydratedAuthoringKey(authoringDraftKey);
         const nextFiles = normalizeAuthoringFiles(draft, initialFiles);
         setFiles(nextFiles);
+        setPersistedFiles(nextFiles);
         setActivePath((current) =>
           nextFiles.some((file) => file.path === current)
             ? current
             : (nextFiles[0]?.path ?? ''),
         );
+        setOpenTabs(getVisibleWorkspaceFiles(nextFiles).slice(0, 1).map((file) => file.path));
+        setSelectedWorkspaceEntry(
+          getVisibleWorkspaceFiles(nextFiles)[0]
+            ? {
+                kind: 'file',
+                path: getVisibleWorkspaceFiles(nextFiles)[0]!.path,
+              }
+            : null,
+        );
+        setWorkspaceCommandError(null);
         setEditorDirty(false);
         setLastSavedAt(draft?.lastSavedAt ?? null);
         setLastValidatedAt(draft?.lastValidatedAt ?? null);
@@ -1733,10 +2250,114 @@ export function PublicPresenceAuthoringIdeScreen({
     };
   }, [authoringDraftKey, authoringSubjectKey, initialFiles, request, talentId, target]);
 
-  useEffect(() => () => {
-    monacoModelListenerRef.current?.dispose();
-    monacoModelListenerRef.current = null;
-  }, []);
+  useEffect(() => {
+    if (target !== 'advanced') {
+      return;
+    }
+
+    let cancelled = false;
+
+    setAdvancedWorkspaceError(null);
+
+    void readPublicPresenceWorkspace(request, talentId, effectiveTemplateId)
+      .then(async (workspaceResult) => {
+        if (cancelled) {
+          return;
+        }
+
+        setAdvancedWorkspace(workspaceResult);
+
+        const currentDocument = workspaceResult.draftVersion?.document ?? null;
+
+        if (currentDocument) {
+          const nextFiles = buildCurrentHomepageSourceFiles(
+            currentDocument,
+            workspaceResult.selectedTemplateId,
+            locale,
+          );
+
+          setAdvancedHomepageFiles(nextFiles);
+          setLastSavedAt(workspaceResult.draftVersion?.updatedAt ?? null);
+          setLastValidatedAt(
+            workspaceResult.portal?.lastValidatedAt
+            ?? workspaceResult.draftVersion?.updatedAt
+            ?? null,
+          );
+          setSubmitStatus(
+            workspaceResult.draftVersion?.validationSnapshot ? 'ready' : 'idle',
+          );
+
+          if (!editorDirtyRef.current && selectedAdvancedMode === 'page-source') {
+            setFiles(nextFiles);
+            setPersistedFiles(nextFiles);
+            setActivePath((current) =>
+              nextFiles.some((file) => file.path === current)
+                ? current
+                : (nextFiles[0]?.path ?? ''),
+            );
+            setOpenTabs(getVisibleWorkspaceFiles(nextFiles).slice(0, 1).map((file) => file.path));
+            setSelectedWorkspaceEntry(
+              getVisibleWorkspaceFiles(nextFiles)[0]
+                ? {
+                    kind: 'file',
+                    path: getVisibleWorkspaceFiles(nextFiles)[0]!.path,
+                  }
+                : null,
+            );
+          }
+        }
+
+        const previewResult = await readPublicPresenceDraftPreview(
+          request,
+          talentId,
+          'current',
+          workspaceResult.selectedTemplateId,
+        ).catch(() => null);
+
+        if (!cancelled) {
+          setAdvancedPreviewProjection(previewResult);
+        }
+      })
+      .catch(() => {
+        if (cancelled) {
+          return;
+        }
+
+        setAdvancedWorkspaceError(
+          pickLocaleText(locale, {
+            en: 'Unable to load the current homepage source.',
+            zh_HANS: '无法载入当前主页源稿。',
+            zh_HANT: '無法載入目前主頁源稿。',
+            ja: '現在のホームページソースを読み込めませんでした。',
+            ko: '현재 홈페이지 소스를 불러오지 못했습니다.',
+            fr: 'Impossible de charger la source actuelle de la homepage.',
+          }),
+        );
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [effectiveTemplateId, locale, request, selectedAdvancedMode, talentId, target]);
+
+  useEffect(() => {
+    if (
+      target !== 'advanced'
+      || selectedAdvancedMode !== 'page-source'
+      || !advancedHomepageFiles
+      || editorDirtyRef.current
+    ) {
+      return;
+    }
+
+    setFiles(advancedHomepageFiles);
+    setPersistedFiles(advancedHomepageFiles);
+    setActivePath((current) =>
+      advancedHomepageFiles.some((file) => file.path === current)
+        ? current
+        : (advancedHomepageFiles[0]?.path ?? ''),
+    );
+  }, [advancedHomepageFiles, selectedAdvancedMode, target]);
 
   const mobileModalOpen = !isWideDesktop && mobileOverlay !== null;
 
@@ -1832,76 +2453,24 @@ export function PublicPresenceAuthoringIdeScreen({
   }, [mobileModalOpen, mobileOverlay]);
 
   useEffect(() => {
-    const editor = monacoEditorRef.current;
-
-    if (!editor || typeof window === 'undefined') {
+    if (typeof window === 'undefined' || !editorDirty) {
       return undefined;
     }
 
-    const frame = window.requestAnimationFrame(() => {
-      registerMonacoModelListener(editor);
-    });
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
 
     return () => {
-      window.cancelAnimationFrame(frame);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
     };
-  }, [activeFile?.path]);
-
-  useEffect(() => {
-    const host = editorHostRef.current;
-
-    if (!host || typeof window === 'undefined') {
-      return undefined;
-    }
-
-    let animationFrame: number | null = null;
-
-    const scheduleModelSync = (fallbackValue?: string) => {
-      if (animationFrame !== null) {
-        window.cancelAnimationFrame(animationFrame);
-      }
-
-      animationFrame = window.requestAnimationFrame(() => {
-        animationFrame = null;
-        syncMonacoModelContents(fallbackValue);
-      });
-    };
-
-    const handleEditorEvent = (event: Event) => {
-      if (event.target instanceof HTMLTextAreaElement) {
-        scheduleModelSync(event.target.value);
-        return;
-      }
-
-      scheduleModelSync();
-    };
-
-    const events: Array<keyof HTMLElementEventMap> = [
-      'beforeinput',
-      'input',
-      'keyup',
-      'paste',
-      'cut',
-      'compositionend',
-    ];
-
-    events.forEach((eventName) => {
-      host.addEventListener(eventName, handleEditorEvent, true);
-    });
-
-    return () => {
-      if (animationFrame !== null) {
-        window.cancelAnimationFrame(animationFrame);
-      }
-
-      events.forEach((eventName) => {
-        host.removeEventListener(eventName, handleEditorEvent, true);
-      });
-    };
-  }, [activeFile?.path]);
+  }, [editorDirty]);
 
   const buildAuthoringSourceBundle = (): PublicPresenceAuthoringFile[] => {
-    const activeEditorContents = monacoEditorRef.current?.getModel()?.getValue();
+    const activeEditorContents = sourceEditorRef.current?.getValue();
 
     return filesRef.current.map((file) => ({
       contents:
@@ -1920,15 +2489,69 @@ export function PublicPresenceAuthoringIdeScreen({
   ) => {
     const nextFiles = normalizeAuthoringFiles(result, initialFiles);
     setFiles(nextFiles);
+    setPersistedFiles(nextFiles);
     setActivePath((current) =>
       nextFiles.some((file) => file.path === current)
         ? current
         : (nextFiles[0]?.path ?? '')
     );
+    setOpenTabs((current) => {
+      const nextVisiblePaths = getVisibleWorkspaceFiles(nextFiles).map((file) => file.path);
+      const retainedTabs = current.filter((path) => nextVisiblePaths.includes(path));
+      return retainedTabs.length > 0 ? retainedTabs : nextVisiblePaths.slice(0, 1);
+    });
     setEditorDirty(false);
     setLastSavedAt(result.lastSavedAt);
     setLastValidatedAt(result.lastValidatedAt);
     setSubmitStatus(nextSubmitStatus);
+  };
+
+  const persistAdvancedHomepageSource = async (
+    nextSubmitStatus: 'idle' | 'ready',
+  ) => {
+    const nextDocument = readCurrentHomepageSourceDocument(buildAuthoringSourceBundle());
+    const result = await savePublicPresenceWorkspaceDraft(request, talentId, {
+      document: nextDocument,
+      expectedCurrentContentHash: advancedWorkspace?.draftVersion?.contentHash,
+    });
+    const nextFiles = buildCurrentHomepageSourceFiles(
+      result.draftVersion?.document ?? nextDocument,
+      result.selectedTemplateId,
+      locale,
+    );
+
+    setAdvancedWorkspace(result);
+    setAdvancedHomepageFiles(nextFiles);
+    setAdvancedWorkspaceError(null);
+    setFiles(nextFiles);
+    setPersistedFiles(nextFiles);
+    setActivePath((current) =>
+      nextFiles.some((file) => file.path === current)
+        ? current
+        : (nextFiles[0]?.path ?? '')
+    );
+    setOpenTabs((current) => {
+      const nextVisiblePaths = getVisibleWorkspaceFiles(nextFiles).map((file) => file.path);
+      const retainedTabs = current.filter((path) => nextVisiblePaths.includes(path));
+      return retainedTabs.length > 0 ? retainedTabs : nextVisiblePaths.slice(0, 1);
+    });
+    setEditorDirty(false);
+    setLastSavedAt(result.draftVersion?.updatedAt ?? new Date().toISOString());
+    setLastValidatedAt(
+      result.portal?.lastValidatedAt
+      ?? result.draftVersion?.updatedAt
+      ?? new Date().toISOString(),
+    );
+    setSubmitStatus(nextSubmitStatus);
+
+    const previewResult = await readPublicPresenceDraftPreview(
+      request,
+      talentId,
+      'current',
+      result.selectedTemplateId,
+    ).catch(() => null);
+
+    setAdvancedPreviewProjection(previewResult);
   };
 
   const exitHref =
@@ -2009,18 +2632,228 @@ export function PublicPresenceAuthoringIdeScreen({
     () =>
       (['source', 'styles', 'docs', 'tests', 'sidecars'] as const)
         .map((groupId) => ({
-          files: files.filter((file) => resolveVirtualFileGroupId(file) === groupId),
+          entries: workspaceEntries.filter((entry) => entry.groupId === groupId),
           groupId,
         }))
-        .filter((group) => group.files.length > 0),
-    [files],
+        .filter((group) => group.entries.length > 0),
+    [workspaceEntries],
   );
   const showDesktopUtilityPanel = isWideDesktop && desktopUtilityPanel !== null;
   const ideGridClass = showDesktopUtilityPanel
     ? 'xl:grid-cols-[3.5rem_minmax(16rem,18rem)_minmax(0,0.88fr)_minmax(30rem,1.12fr)] 2xl:grid-cols-[3.5rem_minmax(18rem,20rem)_minmax(0,0.92fr)_minmax(34rem,1.08fr)]'
     : 'xl:grid-cols-[3.5rem_minmax(0,0.95fr)_minmax(34rem,1.05fr)] 2xl:grid-cols-[3.5rem_minmax(0,1.05fr)_minmax(38rem,1fr)]';
+  const workspacePathValidationMessage = workspacePathValidationCode
+    ? getWorkspacePathValidationMessage(locale, workspacePathValidationCode)
+    : null;
+
+  const openWorkspaceFile = (path: string, closeOverlay?: () => void) => {
+    flushActiveEditorContents();
+    setActivePath(path);
+    setSelectedWorkspaceEntry({ kind: 'file', path });
+    setOpenTabs((current) => (current.includes(path) ? current : [...current, path]));
+    closeOverlay?.();
+  };
+
+  const selectWorkspaceFolder = (path: string) => {
+    setSelectedWorkspaceEntry({ kind: 'folder', path });
+  };
+
+  const beginWorkspaceCommand = (kind: WorkspaceCommandKind) => {
+    const selectedPath = selectedWorkspaceEntry?.path
+      ?? activeFile?.path
+      ?? '';
+    const nextInput =
+      kind === 'rename'
+        ? selectedPath
+        : kind === 'new-file'
+          ? selectedWorkspaceEntry?.kind === 'folder'
+            ? `${selectedPath}/new-file.ts`
+            : 'src/new-file.ts'
+          : selectedWorkspaceEntry?.kind === 'folder'
+            ? `${selectedPath}/new-folder`
+            : 'src/new-folder';
+
+    setWorkspaceCommand(kind);
+    setWorkspacePathInput(nextInput);
+    setWorkspacePathValidationCode(null);
+    setWorkspaceCommandError(null);
+  };
+
+  const commitWorkspaceCommand = () => {
+    if (!workspaceCommand) {
+      return;
+    }
+
+    const entryKind = workspaceCommand === 'new-folder' ? 'folder' : 'file';
+    const validationCode = validateWorkspacePathInput(workspacePathInput, entryKind);
+
+    if (validationCode) {
+      setWorkspacePathValidationCode(validationCode);
+      setWorkspaceCommandError(null);
+      return;
+    }
+
+    const nextPath = workspacePathInput.trim();
+    const currentFilePaths = new Set(visibleFiles.map((file) => file.path));
+    const currentFolderPaths = new Set(getWorkspaceFolders(files));
+
+    if (workspaceCommand === 'new-file' && (currentFilePaths.has(nextPath) || currentFolderPaths.has(nextPath))) {
+      setWorkspaceCommandError(
+        pickLocaleText(locale, {
+          en: 'That path is already in this workspace.',
+          zh_HANS: '这个路径已经在当前工作区里了。',
+          zh_HANT: '這個路徑已經在目前工作區裡了。',
+          ja: 'このパスはすでに現在のワークスペースで使われています。',
+          ko: '이 경로는 이미 현재 워크스페이스에서 사용 중입니다.',
+          fr: 'Ce chemin existe déjà dans ce workspace.',
+        }),
+      );
+      return;
+    }
+
+    if (workspaceCommand === 'new-folder' && (currentFolderPaths.has(nextPath) || currentFilePaths.has(nextPath))) {
+      setWorkspaceCommandError(
+        pickLocaleText(locale, {
+          en: 'That folder path is already in this workspace.',
+          zh_HANS: '这个文件夹路径已经在当前工作区里了。',
+          zh_HANT: '這個資料夾路徑已經在目前工作區裡了。',
+          ja: 'このフォルダパスはすでに現在のワークスペースで使われています。',
+          ko: '이 폴더 경로는 이미 현재 워크스페이스에서 사용 중입니다.',
+          fr: 'Ce dossier existe déjà dans ce workspace.',
+        }),
+      );
+      return;
+    }
+
+    if (workspaceCommand === 'rename' && !selectedWorkspaceEntry) {
+      setWorkspaceCommandError(
+        pickLocaleText(locale, {
+          en: 'Choose a file or folder first.',
+          zh_HANS: '请先选择一个文件或文件夹。',
+          zh_HANT: '請先選擇一個檔案或資料夾。',
+          ja: '先にファイルまたはフォルダを選んでください。',
+          ko: '먼저 파일이나 폴더를 선택하세요.',
+          fr: 'Choisissez d’abord un fichier ou un dossier.',
+        }),
+      );
+      return;
+    }
+
+    if (
+      workspaceCommand === 'rename'
+      && selectedWorkspaceEntry
+      && nextPath !== selectedWorkspaceEntry.path
+      && (currentFilePaths.has(nextPath) || currentFolderPaths.has(nextPath))
+    ) {
+      setWorkspaceCommandError(
+        pickLocaleText(locale, {
+          en: 'Choose a different path before renaming.',
+          zh_HANS: '请换一个路径再重命名。',
+          zh_HANT: '請換一個路徑再重新命名。',
+          ja: '別のパスを指定してから名前を変更してください。',
+          ko: '다른 경로를 지정한 뒤 이름을 바꾸세요.',
+          fr: 'Choisissez un autre chemin avant de renommer.',
+        }),
+      );
+      return;
+    }
+
+    const nextFiles =
+      workspaceCommand === 'new-file'
+        ? createWorkspaceFile(files, nextPath)
+        : workspaceCommand === 'new-folder'
+          ? createWorkspaceFolder(files, nextPath)
+          : renameWorkspaceEntry(files, selectedWorkspaceEntry!, nextPath);
+
+    setFiles(nextFiles);
+    setWorkspaceCommand(null);
+    setWorkspacePathInput('');
+    setWorkspacePathValidationCode(null);
+    setWorkspaceCommandError(null);
+    setEditorDirty(true);
+    setSubmitStatus('idle');
+
+    if (workspaceCommand === 'new-folder') {
+      setSelectedWorkspaceEntry({ kind: 'folder', path: nextPath });
+      return;
+    }
+
+    const focusPath = workspaceCommand === 'rename' ? nextPath : nextPath;
+    setActivePath(focusPath);
+    setSelectedWorkspaceEntry({ kind: 'file', path: focusPath });
+    setOpenTabs((current) => (current.includes(focusPath) ? current : [...current, focusPath]));
+  };
+
+  const removeSelectedWorkspaceEntry = () => {
+    if (!selectedWorkspaceEntry) {
+      return;
+    }
+
+    const nextFiles = deleteWorkspaceEntry(files, selectedWorkspaceEntry);
+    const nextVisiblePaths = getVisibleWorkspaceFiles(nextFiles).map((file) => file.path);
+
+    setFiles(nextFiles);
+    setWorkspaceCommand(null);
+    setWorkspacePathInput('');
+    setWorkspacePathValidationCode(null);
+    setWorkspaceCommandError(null);
+    setEditorDirty(true);
+    setSubmitStatus('idle');
+    setOpenTabs((current) => {
+      const retainedTabs = current.filter((path) => nextVisiblePaths.includes(path));
+      return retainedTabs.length > 0 ? retainedTabs : nextVisiblePaths.slice(0, 1);
+    });
+    const nextActivePath = nextVisiblePaths.includes(activePath)
+      ? activePath
+      : (nextVisiblePaths[0] ?? '');
+    setActivePath(nextActivePath);
+    setSelectedWorkspaceEntry(
+      nextActivePath
+        ? {
+            kind: 'file',
+            path: nextActivePath,
+          }
+        : null,
+    );
+  };
+
+  const closeWorkspaceTab = (path: string) => {
+    setOpenTabs((current) => {
+      const nextTabs = current.filter((entryPath) => entryPath !== path);
+
+      if (activePath === path) {
+        const nextActive = nextTabs[0] ?? visibleFiles.find((file) => file.path !== path)?.path ?? '';
+        setActivePath(nextActive);
+        setSelectedWorkspaceEntry(
+          nextActive
+            ? {
+                kind: 'file',
+                path: nextActive,
+              }
+            : null,
+        );
+      }
+
+      return nextTabs;
+    });
+  };
 
   const handleSaveDraft = async () => {
+    flushActiveEditorContents();
+
+    if (target === 'advanced' && selectedAdvancedMode === 'page-source') {
+      setAuthoringAction('save');
+
+      try {
+        await persistAdvancedHomepageSource('idle');
+      } catch {
+        return;
+      } finally {
+        setAuthoringAction('idle');
+      }
+      return;
+    }
+
     if (target === 'advanced' || !authoringSubjectKey) {
       setLastSavedAt(new Date().toISOString());
       setEditorDirty(false);
@@ -2058,6 +2891,22 @@ export function PublicPresenceAuthoringIdeScreen({
   };
 
   const handleValidate = async () => {
+    flushActiveEditorContents();
+
+    if (target === 'advanced' && selectedAdvancedMode === 'page-source') {
+      setAuthoringAction('validate');
+
+      try {
+        await persistAdvancedHomepageSource('ready');
+        openValidationSurface();
+      } catch {
+        return;
+      } finally {
+        setAuthoringAction('idle');
+      }
+      return;
+    }
+
     if (target === 'advanced' || !authoringSubjectKey) {
       setLastValidatedAt(new Date().toISOString());
       openValidationSurface();
@@ -2088,8 +2937,15 @@ export function PublicPresenceAuthoringIdeScreen({
   };
 
   const handleSubmit = async () => {
+    flushActiveEditorContents();
+
     if (!lastValidatedAt || editorDirty) {
       openValidationSurface();
+      return;
+    }
+
+    if (target === 'advanced' && selectedAdvancedMode === 'page-source') {
+      setSubmitStatus('ready');
       return;
     }
 
@@ -2165,7 +3021,11 @@ export function PublicPresenceAuthoringIdeScreen({
     ko: target === 'template' ? '템플릿 IDE' : target === 'component' ? '컴포넌트 IDE' : '고급 IDE',
     fr: target === 'template' ? 'IDE Template' : target === 'component' ? 'IDE Composant' : 'IDE avancé',
   });
-  const title = authoringSubjectLabel;
+  const title = target === 'advanced'
+    ? advancedWorkspace?.draftVersion?.document.metadata?.title
+      ?? advancedWorkspace?.publicRoute?.canonicalPath
+      ?? authoringSubjectLabel
+    : authoringSubjectLabel;
   const previewSurfaceLabel = getPreviewSurfaceLabel(locale, target, selectedAdvancedMode);
   const authoringActions = [
     {
@@ -2257,6 +3117,229 @@ export function PublicPresenceAuthoringIdeScreen({
     },
   ];
 
+  const renderWorkspaceExplorer = (closeOverlay?: () => void) => (
+    <>
+      <div className="mb-4 flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={() => beginWorkspaceCommand('new-file')}
+          className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+        >
+          {pickLocaleText(locale, {
+            en: 'New file',
+            zh_HANS: '新建文件',
+            zh_HANT: '新增檔案',
+            ja: '新しいファイル',
+            ko: '새 파일',
+            fr: 'Nouveau fichier',
+          })}
+        </button>
+        <button
+          type="button"
+          onClick={() => beginWorkspaceCommand('new-folder')}
+          className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+        >
+          {pickLocaleText(locale, {
+            en: 'New folder',
+            zh_HANS: '新建文件夹',
+            zh_HANT: '新增資料夾',
+            ja: '新しいフォルダ',
+            ko: '새 폴더',
+            fr: 'Nouveau dossier',
+          })}
+        </button>
+        <button
+          type="button"
+          onClick={() => beginWorkspaceCommand('rename')}
+          disabled={!selectedWorkspaceEntry}
+          className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {pickLocaleText(locale, {
+            en: 'Rename',
+            zh_HANS: '重命名',
+            zh_HANT: '重新命名',
+            ja: '名前を変更',
+            ko: '이름 바꾸기',
+            fr: 'Renommer',
+          })}
+        </button>
+        <button
+          type="button"
+          onClick={() => removeSelectedWorkspaceEntry()}
+          disabled={!selectedWorkspaceEntry}
+          className="inline-flex items-center gap-2 rounded-full border border-rose-200 bg-white px-3 py-2 text-xs font-semibold text-rose-700 transition hover:border-rose-300 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {pickLocaleText(locale, {
+            en: 'Delete',
+            zh_HANS: '删除',
+            zh_HANT: '刪除',
+            ja: '削除',
+            ko: '삭제',
+            fr: 'Supprimer',
+          })}
+        </button>
+      </div>
+
+      {workspaceCommand ? (
+        <div className="mb-4 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3">
+          <p className="text-sm font-semibold text-slate-900">
+            {workspaceCommand === 'new-file'
+              ? pickLocaleText(locale, {
+                  en: 'Choose the new file path',
+                  zh_HANS: '填写新文件路径',
+                  zh_HANT: '填寫新檔案路徑',
+                  ja: '新しいファイルのパスを入力',
+                  ko: '새 파일 경로 입력',
+                  fr: 'Choisir le chemin du nouveau fichier',
+                })
+              : workspaceCommand === 'new-folder'
+                ? pickLocaleText(locale, {
+                    en: 'Choose the new folder path',
+                    zh_HANS: '填写新文件夹路径',
+                    zh_HANT: '填寫新資料夾路徑',
+                    ja: '新しいフォルダのパスを入力',
+                    ko: '새 폴더 경로 입력',
+                    fr: 'Choisir le chemin du nouveau dossier',
+                  })
+                : pickLocaleText(locale, {
+                    en: 'Choose the updated path',
+                    zh_HANS: '填写新的路径',
+                    zh_HANT: '填寫新的路徑',
+                    ja: '新しいパスを入力',
+                    ko: '새 경로 입력',
+                    fr: 'Choisir le nouveau chemin',
+                  })}
+          </p>
+          <input
+            value={workspacePathInput}
+            onChange={(event) => {
+              setWorkspacePathInput(event.currentTarget.value);
+              setWorkspacePathValidationCode(null);
+              setWorkspaceCommandError(null);
+            }}
+            className="mt-3 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900"
+          />
+          {workspacePathValidationMessage || workspaceCommandError ? (
+            <p className="mt-2 text-xs leading-5 text-rose-700" role="alert">
+              {workspaceCommandError ?? workspacePathValidationMessage}
+            </p>
+          ) : null}
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => commitWorkspaceCommand()}
+              className="inline-flex items-center gap-2 rounded-full border border-rose-200 bg-white px-3 py-2 text-xs font-semibold text-rose-700 transition hover:border-rose-300 hover:bg-rose-50"
+            >
+              {pickLocaleText(locale, {
+                en: 'Apply',
+                zh_HANS: '应用',
+                zh_HANT: '套用',
+                ja: '適用',
+                ko: '적용',
+                fr: 'Appliquer',
+              })}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setWorkspaceCommand(null);
+                setWorkspacePathInput('');
+                setWorkspacePathValidationCode(null);
+                setWorkspaceCommandError(null);
+              }}
+              className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+            >
+              {pickLocaleText(locale, {
+                en: 'Cancel',
+                zh_HANS: '取消',
+                zh_HANT: '取消',
+                ja: 'キャンセル',
+                ko: '취소',
+                fr: 'Annuler',
+              })}
+            </button>
+          </div>
+        </div>
+      ) : null}
+
+      <div className="space-y-4">
+        {groupedFiles.map((group) => (
+          <div key={group.groupId} className="space-y-2">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+              {getVirtualFileGroupLabel(locale, group.groupId)}
+            </p>
+            <div className="space-y-2">
+              {group.entries.map((entry) => (
+                entry.kind === 'folder' ? (
+                  <button
+                    key={`folder-${entry.path}`}
+                    type="button"
+                    data-testid={`ide-folder-${entry.path}`}
+                    onClick={() => selectWorkspaceFolder(entry.path)}
+                    className={`flex w-full items-center gap-3 rounded-2xl border px-3 py-3 text-left text-sm font-medium transition ${
+                      selectedWorkspaceEntry?.kind === 'folder' && selectedWorkspaceEntry.path === entry.path
+                        ? 'border-rose-300 bg-rose-50 text-rose-800'
+                        : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'
+                    }`}
+                    style={{ paddingLeft: `${0.75 + entry.depth * 0.75}rem` }}
+                  >
+                    <Package2 className="h-4 w-4" aria-hidden="true" />
+                    <span className="truncate">{entry.label}</span>
+                    {dirtyFolderPaths.has(entry.path) ? (
+                      <span className="ml-auto text-[11px] font-semibold uppercase tracking-[0.14em] text-amber-700">
+                        {pickLocaleText(locale, {
+                          en: 'Dirty',
+                          zh_HANS: '未保存',
+                          zh_HANT: '未儲存',
+                          ja: '未保存',
+                          ko: '미저장',
+                          fr: 'Modifié',
+                        })}
+                      </span>
+                    ) : null}
+                  </button>
+                ) : (
+                  <button
+                    key={entry.path}
+                    type="button"
+                    data-testid={`ide-file-${entry.path}`}
+                    onClick={() => openWorkspaceFile(entry.path, closeOverlay)}
+                    className={`flex w-full items-center gap-3 rounded-2xl border px-3 py-3 text-left text-sm font-medium transition ${
+                      activePath === entry.path
+                        ? 'border-rose-300 bg-rose-50 text-rose-800'
+                        : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'
+                    }`}
+                    style={{ paddingLeft: `${0.75 + entry.depth * 0.75}rem` }}
+                  >
+                    {resolveFileIcon(visibleFiles.find((file) => file.path === entry.path) ?? activeFile ?? {
+                      contents: '',
+                      kind: 'code',
+                      language: 'text',
+                      path: entry.path,
+                    })}
+                    <span className="truncate">{entry.label}</span>
+                    {dirtyFilePaths.has(entry.path) ? (
+                      <span className="ml-auto text-[11px] font-semibold uppercase tracking-[0.14em] text-amber-700">
+                        {pickLocaleText(locale, {
+                          en: 'Dirty',
+                          zh_HANS: '未保存',
+                          zh_HANT: '未儲存',
+                          ja: '未保存',
+                          ko: '미저장',
+                          fr: 'Modifié',
+                        })}
+                      </span>
+                    ) : null}
+                  </button>
+                )
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </>
+  );
+
   return (
     <PublicPresenceShell
       className="px-3 py-3 sm:px-4 sm:py-4 lg:px-5 lg:py-3"
@@ -2276,13 +3359,18 @@ export function PublicPresenceAuthoringIdeScreen({
                   icon={
                     target === 'template' ? (
                       <LayoutTemplate className="h-4 w-4" aria-hidden="true" />
-                    ) : (
+                    ) : target === 'component' ? (
                       <Package2 className="h-4 w-4" aria-hidden="true" />
+                    ) : (
+                      <FileJson2 className="h-4 w-4" aria-hidden="true" />
                     )
                   }
                   tone="rose"
                 >
                   {ideBadgeLabel}
+                </PublicPresenceBadge>
+                <PublicPresenceBadge tone="slate" variant="outline">
+                  {authoringSourceScopeLabel}
                 </PublicPresenceBadge>
                 <PublicPresenceBadge tone="slate" variant="outline">
                   {title}
@@ -2373,13 +3461,18 @@ export function PublicPresenceAuthoringIdeScreen({
               icon={
                 target === 'template' ? (
                   <LayoutTemplate className="h-4 w-4" aria-hidden="true" />
-                ) : (
+                ) : target === 'component' ? (
                   <Package2 className="h-4 w-4" aria-hidden="true" />
+                ) : (
+                  <FileJson2 className="h-4 w-4" aria-hidden="true" />
                 )
               }
               tone="rose"
             >
               {ideBadgeLabel}
+            </PublicPresenceBadge>
+            <PublicPresenceBadge tone="slate" variant="outline">
+              {authoringSourceScopeLabel}
             </PublicPresenceBadge>
             <PublicPresenceBadge tone="slate" variant="outline">
               {title}
@@ -2452,6 +3545,16 @@ export function PublicPresenceAuthoringIdeScreen({
             )}
           </div>
         </PublicPresenceSurface>
+
+        {advancedWorkspaceError ? (
+          <PublicPresenceSurface
+            className="px-4 py-3 text-sm text-rose-700"
+            data-testid="ide-workspace-error"
+            variant="inset"
+          >
+            {advancedWorkspaceError}
+          </PublicPresenceSurface>
+        ) : null}
 
         {mobileActionsOpen ? (
           <PublicPresenceSurface
@@ -2712,36 +3815,7 @@ export function PublicPresenceAuthoringIdeScreen({
                   </button>
                 </div>
                 <div className="min-h-0 flex-1 overflow-auto px-4 py-4">
-                  <div className="space-y-4">
-                    {groupedFiles.map((group) => (
-                      <div key={group.groupId} className="space-y-2">
-                        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
-                          {getVirtualFileGroupLabel(locale, group.groupId)}
-                        </p>
-                        <div className="space-y-2">
-                          {group.files.map((file) => (
-                            <button
-                              key={file.path}
-                              type="button"
-                              data-testid={`ide-file-${file.path}`}
-                              onClick={() => {
-                                setActivePath(file.path);
-                                setDesktopUtilityPanel(null);
-                              }}
-                              className={`flex w-full items-center gap-3 rounded-2xl border px-3 py-3 text-left text-sm font-medium transition ${
-                                activePath === file.path
-                                  ? 'border-rose-300 bg-rose-50 text-rose-800'
-                                  : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'
-                              }`}
-                            >
-                              {resolveFileIcon(file)}
-                              <span className="truncate">{file.path}</span>
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                  {renderWorkspaceExplorer(() => setDesktopUtilityPanel(null))}
                 </div>
               </div>
             </div>
@@ -2877,13 +3951,20 @@ export function PublicPresenceAuthoringIdeScreen({
                               return;
                             }
 
-                            const nextFiles = buildAdvancedFiles(mode, effectiveTemplateId, locale);
+                            const nextFiles =
+                              mode === 'page-source' && advancedHomepageFiles
+                                ? advancedHomepageFiles
+                                : buildAdvancedFiles(
+                                    mode,
+                                    advancedWorkspace?.selectedTemplateId ?? effectiveTemplateId,
+                                    locale,
+                                  );
                             const nextHref = buildPublicPresenceAdvancedIdePath(
                               tenantId,
                               talentId,
                               {
                                 mode,
-                                templateId: effectiveTemplateId,
+                                templateId: advancedWorkspace?.selectedTemplateId ?? effectiveTemplateId,
                               },
                             );
                             skipNextInitialFilesResetRef.current = true;
@@ -2910,37 +3991,59 @@ export function PublicPresenceAuthoringIdeScreen({
                 </div>
               </div>
               <div className="min-h-0 flex-1 px-3 pb-3 pt-14 sm:px-4 sm:pb-4 sm:pt-16">
+                <div className="mb-3 flex flex-wrap gap-2 overflow-x-auto [scrollbar-width:none]">
+                  {openTabs
+                    .filter((path) => visibleFiles.some((file) => file.path === path))
+                    .map((path) => (
+                      <button
+                        key={path}
+                        type="button"
+                        onClick={() => openWorkspaceFile(path)}
+                        className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+                          activePath === path
+                            ? 'border-rose-300 bg-rose-50 text-rose-800'
+                            : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'
+                        }`}
+                      >
+                        <span className="max-w-[12rem] truncate">{path}</span>
+                        {dirtyFilePaths.has(path) ? (
+                          <span aria-hidden="true" className="h-2 w-2 rounded-full bg-amber-500" />
+                        ) : null}
+                        {openTabs.length > 1 ? (
+                          <span
+                            role="button"
+                            tabIndex={0}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              closeWorkspaceTab(path);
+                            }}
+                            onKeyDown={(event) => {
+                              if (event.key === 'Enter' || event.key === ' ') {
+                                event.preventDefault();
+                                event.stopPropagation();
+                                closeWorkspaceTab(path);
+                              }
+                            }}
+                            className="rounded-full px-1 text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+                          >
+                            ×
+                          </span>
+                        ) : null}
+                      </button>
+                    ))}
+                </div>
                 <div
                   data-testid="monaco-editor-host"
                   ref={editorHostRef}
                   onMouseDownCapture={() => {
-                    monacoEditorRef.current?.focus?.();
+                    sourceEditorRef.current?.focus();
                   }}
                   className="h-full overflow-hidden rounded-[1.75rem] border border-slate-200"
                 >
-                  <MonacoEditor
+                  <StableSourceEditor
                     key={`${target}:${selectedAdvancedMode}:${activeFile?.path ?? 'none'}`}
-                    defaultLanguage={activeFile?.language}
-                    height="100%"
-                    onMount={(editor) => {
-                      monacoEditorRef.current = editor;
-                      registerMonacoModelListener(editor);
-
-                      const model = editor.getModel();
-
-                      if (model) {
-                        syncEditorContentsRef.current(activeFile?.path, model.getValue());
-                      }
-                    }}
-                    options={{
-                      automaticLayout: true,
-                      fontSize: 13,
-                      minimap: { enabled: false },
-                      scrollBeyondLastLine: false,
-                      wordWrap: 'on',
-                    }}
+                    ref={sourceEditorRef}
                     path={activeFile?.path}
-                    theme="vs-dark"
                     value={activeFile?.contents ?? ''}
                     onChange={(value) => {
                       syncEditorContentsRef.current(activeFile?.path, value);
@@ -3398,35 +4501,8 @@ export function PublicPresenceAuthoringIdeScreen({
                     </label>
                   </div>
                 ) : activeMobileUtilityOverlay === 'files' ? (
-                  <div className="space-y-4 overflow-auto pr-1">
-                    {groupedFiles.map((group) => (
-                      <div key={group.groupId} className="space-y-2">
-                        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
-                          {getVirtualFileGroupLabel(locale, group.groupId)}
-                        </p>
-                        <div className="space-y-2">
-                          {group.files.map((file) => (
-                            <button
-                              key={file.path}
-                              type="button"
-                              data-testid={`ide-file-${file.path}`}
-                              onClick={() => {
-                                setActivePath(file.path);
-                                setMobileOverlay(null);
-                              }}
-                              className={`flex w-full items-center gap-3 rounded-2xl border px-3 py-3 text-left text-sm font-medium transition ${
-                                activePath === file.path
-                                  ? 'border-rose-300 bg-rose-50 text-rose-800'
-                                  : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'
-                              }`}
-                            >
-                              {resolveFileIcon(file)}
-                              <span className="truncate">{file.path}</span>
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
+                  <div className="overflow-auto pr-1">
+                    {renderWorkspaceExplorer(() => setMobileOverlay(null))}
                   </div>
                 ) : (
                   <>

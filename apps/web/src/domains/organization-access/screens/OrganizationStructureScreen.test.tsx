@@ -442,7 +442,7 @@ describe('OrganizationStructureScreen', () => {
           code: 'MIO',
           path: '/MIO/',
           name: localizedFixture('Ookami Mio'),
-          localizedName: 'Ookami Mio',
+          localizedName: undefined,
           displayName: 'Mio',
           avatarUrl: null,
           homepagePath: 'mio',
@@ -494,8 +494,118 @@ describe('OrganizationStructureScreen', () => {
       });
     });
 
-    expect(await screen.findByText('Mio')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(getTreeCallCount()).toBe(2);
+    });
+
+    expect(await screen.findByText('Mio was created in tenant root.')).toBeInTheDocument();
+    expect(screen.queryByText(/undefined was created/i)).not.toBeInTheDocument();
+
+    const spotlight = await screen.findByTestId('organization-created-talent-spotlight');
+
+    await waitFor(() => {
+      expect(spotlight).toHaveFocus();
+    });
+
+    expect(
+      within(spotlight).getByRole('link', { name: 'Homepage Management' }),
+    ).toHaveAttribute('href', '/tenant/tenant-1/talent/talent-4/homepage');
+    expect(within(spotlight).getByRole('link', { name: 'Open Studio' })).toHaveAttribute(
+      'href',
+      '/studio/public-presence/tenant-1/talent-4',
+    );
+
+    expect(await screen.findByText('/MIO/')).toBeInTheDocument();
     expect(screen.queryByLabelText('Talent code')).not.toBeInTheDocument();
+  });
+
+  it('keeps the created talent discoverable even when the refreshed inventory still has not surfaced it', async () => {
+    let treeCalls = 0;
+
+    mockRequest.mockImplementation((path: string, init?: RequestInit) => {
+      if (path === '/api/v1/profile-stores?page=1&pageSize=20') {
+        return Promise.resolve(profileStoresResponse);
+      }
+
+      if (path === '/api/v1/organization/tree?includeInactive=false') {
+        treeCalls += 1;
+
+        return Promise.resolve({
+          tenantId: 'tenant-1',
+          subsidiaries: [],
+          directTalents: [],
+        });
+      }
+
+      if (path === '/api/v1/talents' && init?.method === 'POST') {
+        return Promise.resolve({
+          id: 'talent-5',
+          subsidiaryId: null,
+          code: 'SUZU',
+          path: '/SUZU/',
+          name: localizedFixture('Suzu'),
+          localizedName: undefined,
+          displayName: 'Suzu',
+          avatarUrl: null,
+          homepagePath: 'suzu',
+          timezone: 'Asia/Shanghai',
+          lifecycleStatus: 'draft',
+          publishedAt: null,
+          publishedBy: null,
+          isActive: false,
+          createdAt: '2026-04-17T12:00:00.000Z',
+          version: 1,
+        });
+      }
+
+      throw new Error(`Unexpected request: ${path}`);
+    });
+
+    render(<OrganizationStructureScreen tenantId="tenant-1" />);
+
+    expect(await screen.findByRole('heading', { name: 'Tenant Alpha' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Create talent' }));
+
+    await waitFor(() => {
+      expect((screen.getByLabelText('Profile store') as HTMLSelectElement).value).toBe('store-1');
+    });
+
+    fireEvent.change(screen.getByLabelText('Talent code'), {
+      target: { value: 'suzu' },
+    });
+    fireEvent.change(screen.getByLabelText('Display name'), {
+      target: { value: 'Suzu' },
+    });
+    fireEvent.change(screen.getByLabelText('Legal / English name'), {
+      target: { value: 'Suzu' },
+    });
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Create talent' })[1]);
+
+    await waitFor(() => {
+      expect(treeCalls).toBe(2);
+    });
+
+    expect(await screen.findByText('Suzu was created in tenant root.')).toBeInTheDocument();
+    expect(screen.queryByText(/undefined was created/i)).not.toBeInTheDocument();
+    expect(screen.getByText('No talents in this branch')).toBeInTheDocument();
+
+    const spotlight = await screen.findByTestId('organization-created-talent-spotlight');
+
+    await waitFor(() => {
+      expect(spotlight).toHaveFocus();
+    });
+
+    expect(within(spotlight).getByText('Suzu')).toBeInTheDocument();
+    expect(within(spotlight).getByText('SUZU')).toBeInTheDocument();
+    expect(
+      within(spotlight).getByRole('link', { name: 'Homepage Management' }),
+    ).toHaveAttribute('href', '/tenant/tenant-1/talent/talent-5/homepage');
+    expect(within(spotlight).getByRole('link', { name: 'Open Studio' })).toHaveAttribute(
+      'href',
+      '/studio/public-presence/tenant-1/talent-5',
+    );
   });
 
   it('can disable and re-enable a talent when inactive workspaces are shown', async () => {

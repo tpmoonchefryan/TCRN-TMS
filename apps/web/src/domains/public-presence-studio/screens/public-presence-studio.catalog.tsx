@@ -42,6 +42,7 @@ import {
   buildPublicPresenceStudioEditorPath,
   buildPublicPresenceStudioPreviewPath,
   buildPublicPresenceTemplateAuthoringPath,
+  mergePathSearchParams,
 } from '@/platform/routing/workspace-paths';
 import { formatLocaleDateTime, pickLocaleText } from '@/platform/runtime/locale/locale-text';
 import { useUiLocale } from '@/platform/runtime/locale/locale-provider';
@@ -297,6 +298,32 @@ function buildAuthoringDraftHref(
   return draft.subjectKey in PUBLIC_PRESENCE_COMPONENT_DEFINITIONS
     ? buildPublicPresenceComponentAuthoringPath(tenantId, talentId, draft.subjectKey)
     : buildPublicPresenceComponentAuthoringPath(tenantId, talentId);
+}
+
+function buildTemplateDraftHomepageHref(
+  tenantId: string,
+  talentId: string,
+  subjectKey: string,
+) {
+  return mergePathSearchParams(
+    buildPublicPresenceStudioEditorPath(tenantId, talentId, 'activeTalentHub'),
+    {
+      templateDraftKey: subjectKey,
+    },
+  );
+}
+
+function buildComponentDraftTemplateHref(
+  tenantId: string,
+  talentId: string,
+  subjectKey: string,
+) {
+  return mergePathSearchParams(
+    buildPublicPresenceTemplateAuthoringPath(tenantId, talentId),
+    {
+      componentDraftKey: subjectKey,
+    },
+  );
 }
 
 function getComponentSupportBadgeLabel(
@@ -702,19 +729,49 @@ function AuthoringDraftActivityPanel({
               {formatLocaleDateTime(locale, draft.lastSavedAt, draft.lastSavedAt)}
             </p>
             <div className="mt-3">
-              <SurfaceCommandLink
-                href={buildAuthoringDraftHref(tenantId, talentId, draft)}
-                icon={<Code2 className="h-4 w-4" aria-hidden="true" />}
-                label={pickLocaleText(locale, {
-                  en: 'Open saved draft',
-                  zh_HANS: '打开已保存草稿',
-                  zh_HANT: '打開已儲存草稿',
-                  ja: '保存済みドラフトを開く',
-                  ko: '저장된 드래프트 열기',
-                  fr: 'Ouvrir le brouillon enregistré',
-                })}
-                tone="primary"
-              />
+              <div className="flex flex-wrap gap-2">
+                <SurfaceCommandLink
+                  href={buildAuthoringDraftHref(tenantId, talentId, draft)}
+                  icon={<Code2 className="h-4 w-4" aria-hidden="true" />}
+                  label={pickLocaleText(locale, {
+                    en: 'Open saved draft',
+                    zh_HANS: '打开已保存草稿',
+                    zh_HANT: '打開已儲存草稿',
+                    ja: '保存済みドラフトを開く',
+                    ko: '저장된 드래프트 열기',
+                    fr: 'Ouvrir le brouillon enregistré',
+                  })}
+                  tone="primary"
+                />
+                {artifactKind === 'template' ? (
+                  <SurfaceCommandLink
+                    href={buildTemplateDraftHomepageHref(tenantId, talentId, draft.subjectKey)}
+                    icon={<LayoutTemplate className="h-4 w-4" aria-hidden="true" />}
+                    label={pickLocaleText(locale, {
+                      en: 'Create homepage from this draft',
+                      zh_HANS: '用这个草稿创建主页',
+                      zh_HANT: '用這個草稿建立主頁',
+                      ja: 'この草稿からホームページを作成',
+                      ko: '이 초안으로 홈페이지 만들기',
+                      fr: 'Créer une homepage depuis ce brouillon',
+                    })}
+                  />
+                ) : null}
+                {artifactKind === 'component' ? (
+                  <SurfaceCommandLink
+                    href={buildComponentDraftTemplateHref(tenantId, talentId, draft.subjectKey)}
+                    icon={<LayoutTemplate className="h-4 w-4" aria-hidden="true" />}
+                    label={pickLocaleText(locale, {
+                      en: 'Start template from this block',
+                      zh_HANS: '用这个模块开始模板草稿',
+                      zh_HANT: '用這個模組開始模板草稿',
+                      ja: 'このブロックからテンプレート草稿を開始',
+                      ko: '이 블록으로 템플릿 초안 시작하기',
+                      fr: 'Démarrer un template depuis ce bloc',
+                    })}
+                  />
+                ) : null}
+              </div>
             </div>
           </div>
         ))}

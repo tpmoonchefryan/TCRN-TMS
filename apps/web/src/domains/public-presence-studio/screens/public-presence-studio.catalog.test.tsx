@@ -157,11 +157,19 @@ describe('public-presence-studio.catalog', () => {
       'href',
       '/studio/public-presence/tenant-1/talent-1/templates/new',
     );
+    expect(screen.getByRole('link', { name: 'Create homepage from this draft' })).toHaveAttribute(
+      'href',
+      '/studio/public-presence/tenant-1/talent-1?templateId=activeTalentHub&templateDraftKey=new',
+    );
 
     render(<ComponentStoreScreen talentId="talent-1" tenantId="tenant-1" />);
     await waitFor(() => {
       expect(screen.getAllByText('Recent draft activity').length).toBeGreaterThan(1);
     });
     expect(screen.getByText('New component draft')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Start template from this block' })).toHaveAttribute(
+      'href',
+      '/studio/public-presence/tenant-1/talent-1/templates/new?componentDraftKey=new',
+    );
   });
 });

@@ -63,11 +63,13 @@ import {
   bootstrapPublicPresenceWorkspace,
   cancelPublicPresenceSchedule,
   createPublicPresenceRollbackDraft,
+  type PublicPresenceAuthoringDraftResponse,
   type PublicPresenceStudioReleaseDependency,
   type PublicPresenceStudioStageSectionSummary,
   type PublicPresenceStudioTemplateSummary,
   type PublicPresenceStudioWorkspaceResponse,
   publishPublicPresenceNow,
+  readPublicPresenceAuthoringDraft,
   readPublicPresenceDraftPreview,
   readPublicPresenceWorkspace,
   requestPublicPresenceChanges,
@@ -98,6 +100,12 @@ import {
   type PublicPresenceStudioCopy,
   usePublicPresenceStudioCopy,
 } from '@/domains/public-presence-studio/screens/public-presence-studio.copy';
+import {
+  buildComponentStarterBlueprint,
+  buildTemplateStarterBlueprint,
+  readComponentStarterBlueprint,
+  readTemplateStarterBlueprint,
+} from '@/domains/public-presence-studio/screens/public-presence-authoring-blueprint';
 import { useOverlayFocusManager } from '@/domains/public-presence-studio/screens/public-presence-studio-overlay';
 import { withPublicPresenceRouteTimeout } from '@/domains/public-presence-studio/screens/public-presence-studio.loading';
 import {
@@ -434,6 +442,194 @@ function buildDefaultComponentForType(type: HomepageComponentType): PublicPresen
   };
 }
 
+function isHomepageComponentType(value: unknown): value is HomepageComponentType {
+  return typeof value === 'string' && value in PUBLIC_PRESENCE_COMPONENT_DEFINITIONS;
+}
+
+function reorderDocumentSectionsForStarter(
+  document: PublicPresenceDocument,
+  stageSections: PublicPresenceStudioStageSectionSummary[],
+  sectionOrder: readonly string[],
+) {
+  if (sectionOrder.length === 0) {
+    return document;
+  }
+
+  const sectionByKind = new Map(document.sections.map((section) => [section.kind, section]));
+  const stageSectionByKind = new Map(stageSections.map((section) => [section.kind, section]));
+  const orderedSections: PublicPresenceDocument['sections'] = [];
+  const seenKinds = new Set<string>();
+
+  sectionOrder.forEach((sectionKind) => {
+    const existingSection = sectionByKind.get(sectionKind);
+    const stageSection = stageSectionByKind.get(sectionKind);
+
+    if (existingSection) {
+      orderedSections.push(existingSection);
+      seenKinds.add(sectionKind);
+      return;
+    }
+
+    if (!stageSection) {
+      return;
+    }
+
+    orderedSections.push(buildEmptySectionDraft(stageSection, orderedSections.length));
+    seenKinds.add(sectionKind);
+  });
+
+  document.sections.forEach((section) => {
+    if (!seenKinds.has(section.kind)) {
+      orderedSections.push(section);
+    }
+  });
+
+  return {
+    ...document,
+    sections: orderedSections,
+  };
+}
+
+function buildCustomHomepageDraftFromAuthoring(params: {
+  componentDraft: PublicPresenceAuthoringDraftResponse | null;
+  document: PublicPresenceDocument;
+  locale: SupportedUiLocale;
+  stageSections: PublicPresenceStudioStageSectionSummary[];
+  templateDraft: PublicPresenceAuthoringDraftResponse;
+}) {
+  const {
+    componentDraft,
+    document,
+    locale,
+    stageSections,
+    templateDraft,
+  } = params;
+  const templateBlueprintFallback = buildTemplateStarterBlueprint(
+    document.templateId,
+    locale,
+  );
+  const parsedTemplateBlueprint = readTemplateStarterBlueprint(templateDraft.sourceBundle);
+  const templateBlueprint = {
+    ...templateBlueprintFallback,
+    ...parsedTemplateBlueprint,
+    linkedComponentDraftKeys:
+      parsedTemplateBlueprint?.linkedComponentDraftKeys?.length
+        ? parsedTemplateBlueprint.linkedComponentDraftKeys
+        : templateBlueprintFallback.linkedComponentDraftKeys,
+    sectionOrder:
+      parsedTemplateBlueprint?.sectionOrder?.length
+        ? parsedTemplateBlueprint.sectionOrder
+        : templateBlueprintFallback.sectionOrder,
+  };
+
+  let nextDocument = reorderDocumentSectionsForStarter(
+    document,
+    stageSections,
+    templateBlueprint.sectionOrder,
+  );
+
+  nextDocument = {
+    ...nextDocument,
+    personaKit: {
+      ...nextDocument.personaKit,
+      campaignLabel: templateBlueprint.campaignLabel,
+      tagline: templateBlueprint.heroIntro,
+    },
+  };
+  nextDocument = buildSectionDocument(
+    nextDocument,
+    'firstEncounter',
+    'headline',
+    templateBlueprint.heroHeadline,
+  );
+  nextDocument = buildSectionDocument(
+    nextDocument,
+    'firstEncounter',
+    'intro',
+    templateBlueprint.heroIntro,
+  );
+
+  if (!componentDraft) {
+    return nextDocument;
+  }
+
+  const parsedComponentBlueprint = readComponentStarterBlueprint(componentDraft.sourceBundle);
+  const componentType = isHomepageComponentType(parsedComponentBlueprint?.componentType)
+    ? parsedComponentBlueprint.componentType
+    : isHomepageComponentType(componentDraft.subjectKey)
+      ? componentDraft.subjectKey
+      : null;
+
+  if (!componentType) {
+    return nextDocument;
+  }
+
+  const componentBlueprintFallback = buildComponentStarterBlueprint(componentType, locale);
+  const componentBlueprint = {
+    ...componentBlueprintFallback,
+    ...parsedComponentBlueprint,
+    preferredSectionKind:
+      parsedComponentBlueprint?.preferredSectionKind
+      ?? componentBlueprintFallback.preferredSectionKind,
+    props: parsedComponentBlueprint?.props ?? componentBlueprintFallback.props,
+  };
+  const stageSectionByKind = new Map(stageSections.map((section) => [section.kind, section]));
+  const preferredSectionCandidates = [
+    componentBlueprint.preferredSectionKind,
+    ...templateBlueprint.sectionOrder,
+    ...stageSections.map((section) => section.kind),
+  ].filter((value): value is string => Boolean(value));
+  const targetSectionKind = preferredSectionCandidates.find((sectionKind) =>
+    stageSectionByKind.get(sectionKind)?.allowedComponents.includes(componentType),
+  );
+
+  if (!targetSectionKind) {
+    return nextDocument;
+  }
+
+  const targetSectionDefinition = stageSectionByKind.get(targetSectionKind);
+
+  if (!targetSectionDefinition) {
+    return nextDocument;
+  }
+
+  if (!nextDocument.sections.some((section) => section.kind === targetSectionKind)) {
+    nextDocument = {
+      ...nextDocument,
+      sections: [
+        ...nextDocument.sections,
+        buildEmptySectionDraft(targetSectionDefinition, nextDocument.sections.length),
+      ],
+    };
+  }
+
+  return {
+    ...nextDocument,
+    sections: nextDocument.sections.map((section) => {
+      if (section.kind !== targetSectionKind) {
+        return section;
+      }
+
+      const existingComponents = Array.isArray(section.components) ? [...section.components] : [];
+
+      if (existingComponents.some((component) => component.type === componentType)) {
+        return section;
+      }
+
+      const starterComponent = buildDefaultComponentForType(componentType);
+      starterComponent.props = {
+        ...starterComponent.props,
+        ...componentBlueprint.props,
+      };
+
+      return {
+        ...section,
+        components: [...existingComponents, starterComponent],
+      };
+    }),
+  };
+}
+
 function resolveFieldEditability(
   definition:
     | Pick<PublicPresenceFieldDefinition, 'sourceOnly' | 'visualEditable'>
@@ -692,6 +888,65 @@ function getIssueSummaryCopy(
   );
 }
 
+function extractClipboardPlainText(dataTransfer: DataTransfer | null | undefined) {
+  if (!dataTransfer) {
+    return '';
+  }
+
+  const text = dataTransfer.getData('text/plain');
+
+  if (text) {
+    return text;
+  }
+
+  const html = dataTransfer.getData('text/html');
+
+  if (!html) {
+    return '';
+  }
+
+  if (typeof window !== 'undefined' && typeof window.DOMParser !== 'undefined') {
+    const parsed = new window.DOMParser().parseFromString(html, 'text/html');
+    return parsed.body.textContent ?? '';
+  }
+
+  return html.replace(/<[^>]+>/g, ' ');
+}
+
+function handlePlainTextPaste(
+  event: {
+    clipboardData?: DataTransfer | null;
+    currentTarget: HTMLInputElement | HTMLTextAreaElement;
+    preventDefault: () => void;
+  },
+  onChange: (value: string) => void,
+) {
+  const target = event.currentTarget;
+  const pastedText = extractClipboardPlainText(event.clipboardData);
+
+  if (!pastedText) {
+    return;
+  }
+
+  event.preventDefault();
+
+  const selectionStart = target.selectionStart ?? target.value.length;
+  const selectionEnd = target.selectionEnd ?? selectionStart;
+  const nextValue =
+    `${target.value.slice(0, selectionStart)}${pastedText}${target.value.slice(selectionEnd)}`;
+  const nextCaretPosition = selectionStart + pastedText.length;
+
+  onChange(nextValue);
+
+  if (typeof window !== 'undefined') {
+    window.requestAnimationFrame(() => {
+      if (document.activeElement === target) {
+        target.setSelectionRange(nextCaretPosition, nextCaretPosition);
+      }
+    });
+  }
+}
+
 function EmptyWorkspaceState({
   copy,
   locale,
@@ -788,6 +1043,7 @@ function ControlledTextInput({
         value={value}
         disabled={disabled}
         onChange={(event) => onChange(event.target.value)}
+        onPaste={(event) => handlePlainTextPaste(event, onChange)}
         className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-rose-300 focus:ring-2 focus:ring-rose-200 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400"
         placeholder={placeholder}
       />
@@ -818,6 +1074,7 @@ function ControlledTextArea({
         value={value}
         disabled={disabled}
         onChange={(event) => onChange(event.target.value)}
+        onPaste={(event) => handlePlainTextPaste(event, onChange)}
         className="min-h-24 w-full rounded-3xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-900 outline-none transition focus:border-rose-300 focus:ring-2 focus:ring-rose-200 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400"
         placeholder={placeholder}
       />
@@ -1081,6 +1338,9 @@ function PublicPresenceStudioScreenInner({
   const [mobilePreviewToolsOpen, setMobilePreviewToolsOpen] = useState(false);
   const [previewFocus, setPreviewFocus] = useState(false);
   const [previewViewport, setPreviewViewport] = useState<StudioViewportMode>('desktop');
+  const [customDraftBootstrapState, setCustomDraftBootstrapState] = useState<
+    'idle' | 'running' | 'done'
+  >('idle');
   const [isDesktopWorkbench, setIsDesktopWorkbench] = useState(
     () => (typeof window !== 'undefined' ? window.innerWidth >= 1280 : true),
   );
@@ -1123,10 +1383,12 @@ function PublicPresenceStudioScreenInner({
       hasLeftPanelQuery: searchParams.has('leftPanel'),
       leftDrawerMode: leftDrawerValue,
       mobileSheet: mobileSheetValue,
+      componentDraftKey: searchParams.get('componentDraftKey'),
       previewFocus: previewFocusValue,
       previewPhase: previewPhaseValue,
       previewViewport: previewViewportValue,
       stagePanel: stagePanelValue,
+      templateDraftKey: searchParams.get('templateDraftKey'),
       templateId: searchParams.get('templateId'),
     };
   }, [searchKey, searchParams]);
@@ -1191,6 +1453,153 @@ function PublicPresenceStudioScreenInner({
       cancelled = true;
     };
   }, [copy.state.loadWorkspaceError, request, selectedTemplateId, talentId]);
+
+  useEffect(() => {
+    setCustomDraftBootstrapState('idle');
+  }, [queryState.componentDraftKey, queryState.templateDraftKey]);
+
+  useEffect(() => {
+    if (
+      loading
+      || !workspace
+      || workspace.draftVersion
+      || !queryState.templateDraftKey
+      || customDraftBootstrapState !== 'idle'
+    ) {
+      return;
+    }
+
+    let cancelled = false;
+
+    const bootstrapCustomHomepageDraft = async () => {
+      setCustomDraftBootstrapState('running');
+      setNotice(null);
+
+      try {
+        const templateDraft = await readPublicPresenceAuthoringDraft(
+          request,
+          talentId,
+          'template',
+          queryState.templateDraftKey,
+        );
+
+        if (!templateDraft) {
+          throw new Error(
+            pickLocaleText(locale, {
+              en: 'The selected template draft could not be found.',
+              zh_HANS: '找不到你选择的模板草稿。',
+              zh_HANT: '找不到你選擇的模板草稿。',
+              ja: '選択したテンプレート草稿が見つかりませんでした。',
+              ko: '선택한 템플릿 초안을 찾을 수 없습니다.',
+              fr: 'Impossible de retrouver le brouillon de template sélectionné.',
+            }),
+          );
+        }
+
+        const fallbackTemplateId = selectedTemplateId === 'debutReveal'
+          ? 'debutReveal'
+          : 'activeTalentHub';
+        const templateBlueprint = readTemplateStarterBlueprint(templateDraft.sourceBundle);
+        const bootstrapTemplateId = templateBlueprint?.baseTemplateId === 'debutReveal'
+          ? 'debutReveal'
+          : fallbackTemplateId;
+        const linkedComponentDraftKey = queryState.componentDraftKey?.trim()
+          || templateBlueprint?.linkedComponentDraftKeys?.[0]
+          || (queryState.templateDraftKey === 'new' ? 'new' : null);
+        const componentDraft = linkedComponentDraftKey
+          ? await readPublicPresenceAuthoringDraft(
+              request,
+              talentId,
+              'component',
+              linkedComponentDraftKey,
+            ).catch(() => null)
+          : null;
+        const bootstrapResult = await bootstrapPublicPresenceWorkspace(
+          request,
+          talentId,
+          bootstrapTemplateId,
+        );
+        const starterDocument = bootstrapResult.draftVersion?.document;
+
+        if (!starterDocument) {
+          throw new Error(copy.notices.bootstrapError);
+        }
+
+        const nextDocument = buildCustomHomepageDraftFromAuthoring({
+          componentDraft,
+          document: starterDocument,
+          locale,
+          stageSections: bootstrapResult.stageSections,
+          templateDraft,
+        });
+        const savedResult = await savePublicPresenceWorkspaceDraft(request, talentId, {
+          document: nextDocument,
+          expectedCurrentContentHash: bootstrapResult.draftVersion?.contentHash ?? null,
+        });
+
+        if (cancelled) {
+          return;
+        }
+
+        setWorkspace(savedResult);
+        setEditorDocument(savedResult.draftVersion?.document ?? null);
+        setSelectedTemplateId(savedResult.selectedTemplateId);
+        setNotice({
+          message: pickLocaleText(locale, {
+            en: 'Custom homepage starter is ready in Studio.',
+            zh_HANS: '自定义主页起稿已经在 Studio 中就绪。',
+            zh_HANT: '自訂主頁起稿已經在 Studio 中就緒。',
+            ja: 'カスタムホームページ下書きが Studio に準備できました。',
+            ko: '커스텀 홈페이지 스타터가 Studio에 준비되었습니다.',
+            fr: 'Le starter de homepage personnalisé est prêt dans le Studio.',
+          }),
+          persistent: false,
+          tone: 'success',
+        });
+      } catch (reason) {
+        if (cancelled) {
+          return;
+        }
+
+        setNotice({
+          message: getErrorMessage(
+            reason,
+            pickLocaleText(locale, {
+              en: 'Unable to create the homepage starter from this template draft.',
+              zh_HANS: '暂时无法从这个模板草稿创建主页起稿。',
+              zh_HANT: '暫時無法從這個模板草稿建立主頁起稿。',
+              ja: 'このテンプレート草稿からホームページ下書きを作成できませんでした。',
+              ko: '이 템플릿 초안으로 홈페이지 스타터를 만들 수 없습니다.',
+              fr: 'Impossible de créer le starter de homepage depuis ce brouillon de template.',
+            }),
+          ),
+          persistent: true,
+          tone: 'error',
+        });
+      } finally {
+        if (!cancelled) {
+          setCustomDraftBootstrapState('done');
+        }
+      }
+    };
+
+    void bootstrapCustomHomepageDraft();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    copy.notices.bootstrapError,
+    customDraftBootstrapState,
+    loading,
+    locale,
+    queryState.componentDraftKey,
+    queryState.templateDraftKey,
+    request,
+    selectedTemplateId,
+    talentId,
+    workspace,
+  ]);
 
   useEffect(() => {
     if (!workspace?.draftVersion) {

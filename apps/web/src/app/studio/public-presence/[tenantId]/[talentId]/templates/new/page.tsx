@@ -6,14 +6,15 @@ export default async function PublicPresenceTemplateAuthoringPage({
   searchParams,
 }: Readonly<{
   params: Promise<{ tenantId: string; talentId: string }>;
-  searchParams: Promise<{ templateId?: string }>;
+  searchParams: Promise<{ componentDraftKey?: string; templateId?: string }>;
 }>) {
   const { tenantId, talentId } = await params;
-  const { templateId } = await searchParams;
+  const { componentDraftKey, templateId } = await searchParams;
 
   return (
     <TalentBusinessAccessGate allowDraft tenantId={tenantId} talentId={talentId}>
       <PublicPresenceAuthoringIdeScreen
+        componentDraftKey={componentDraftKey ?? null}
         target="template"
         talentId={talentId}
         templateId={templateId ?? null}

@@ -56,6 +56,7 @@ const AUTHORING_FILE_KINDS = new Set<PublicPresenceAuthoringFileKind>([
 ]);
 
 const SUBJECT_KEY_PATTERN = /^[A-Za-z0-9_-]{1,64}$/;
+const AUTHORING_PATH_SEGMENT_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/;
 
 @Injectable()
 export class PublicPresenceAuthoringService {
@@ -214,6 +215,8 @@ export class PublicPresenceAuthoringService {
       });
     }
 
+    const seenPaths = new Set<string>();
+
     return sourceBundle.map((file, index) => {
       if (!file || typeof file !== 'object' || Array.isArray(file)) {
         throw new BadRequestException({
@@ -235,12 +238,23 @@ export class PublicPresenceAuthoringService {
         });
       }
 
+      this.assertValidAuthoringPath(path, index);
+
       if (!AUTHORING_FILE_KINDS.has(kind as PublicPresenceAuthoringFileKind)) {
         throw new BadRequestException({
           code: ErrorCodes.VALIDATION_FAILED,
           message: `Authoring file ${index + 1} uses an unsupported file kind.`,
         });
       }
+
+      if (seenPaths.has(path)) {
+        throw new BadRequestException({
+          code: ErrorCodes.VALIDATION_FAILED,
+          message: `Authoring file ${index + 1} duplicates an existing workspace path.`,
+        });
+      }
+
+      seenPaths.add(path);
 
       return {
         contents,
@@ -249,6 +263,35 @@ export class PublicPresenceAuthoringService {
         path,
       };
     });
+  }
+
+  private assertValidAuthoringPath(path: string, index: number) {
+    if (
+      path.startsWith('/')
+      || path.startsWith('~')
+      || /^[A-Za-z]:/.test(path)
+      || path.includes('\\')
+      || path.includes('//')
+    ) {
+      throw new BadRequestException({
+        code: ErrorCodes.VALIDATION_FAILED,
+        message: `Authoring file ${index + 1} must use a workspace-relative path.`,
+      });
+    }
+
+    const segments = path.split('/');
+
+    if (
+      segments.length === 0
+      || segments.some((segment) => segment.length === 0 || segment === '.' || segment === '..')
+      || segments.some((segment) => segment.startsWith('.'))
+      || segments.some((segment) => !AUTHORING_PATH_SEGMENT_PATTERN.test(segment))
+    ) {
+      throw new BadRequestException({
+        code: ErrorCodes.VALIDATION_FAILED,
+        message: `Authoring file ${index + 1} uses a blocked workspace path.`,
+      });
+    }
   }
 
   private parseValidationSummary(

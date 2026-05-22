@@ -1,4 +1,5 @@
 import type { RequestContext } from '@tcrn/shared';
+import { BadRequestException } from '@nestjs/common';
 import { describe, expect, it, vi } from 'vitest';
 
 import { PublicPresenceAuthoringService } from './public-presence-authoring.service';
@@ -100,5 +101,41 @@ describe('PublicPresenceAuthoringService', () => {
     expect(result.artifactStatus).toBe('submitted');
     expect(result.submittedAt).not.toBeNull();
     expect(result.validationSummary.warnCount).toBe(1);
+  });
+
+  it('rejects blocked workspace paths and duplicate files', async () => {
+    const { service } = createService();
+
+    await expect(
+      service.saveDraft('template', 'talent-1', context, {
+        sourceBundle: [
+          {
+            contents: 'export const bad = true;\n',
+            kind: 'code',
+            language: 'typescript',
+            path: '../secrets.ts',
+          },
+        ],
+      }),
+    ).rejects.toBeInstanceOf(BadRequestException);
+
+    await expect(
+      service.saveDraft('component', 'talent-1', context, {
+        sourceBundle: [
+          {
+            contents: 'export const one = true;\n',
+            kind: 'code',
+            language: 'typescript',
+            path: 'src/component.tsx',
+          },
+          {
+            contents: 'export const two = true;\n',
+            kind: 'code',
+            language: 'typescript',
+            path: 'src/component.tsx',
+          },
+        ],
+      }),
+    ).rejects.toBeInstanceOf(BadRequestException);
   });
 });
