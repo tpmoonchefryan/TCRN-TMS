@@ -77,7 +77,7 @@ export function PublicMarshmallowMessageCard({
           {formatLocaleDateTime(locale, message.createdAt, message.createdAt)}
         </span>
       </div>
-      <p className="mt-4 whitespace-pre-wrap text-sm leading-7 text-slate-800">{message.content}</p>
+      <p className="mt-4 text-sm leading-7 whitespace-pre-wrap text-slate-800">{message.content}</p>
       {message.imageUrls.length > 0 ? (
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
           {message.imageUrls.map((url, index) => (
@@ -95,7 +95,7 @@ export function PublicMarshmallowMessageCard({
           <p className="text-xs font-semibold text-sky-800">
             {formatReplyHeading(copy.replyLabel, message.repliedBy?.displayName || null, locale)}
           </p>
-          <p className="mt-2 whitespace-pre-wrap text-sm leading-7 text-slate-700">
+          <p className="mt-2 text-sm leading-7 whitespace-pre-wrap text-slate-700">
             {message.replyContent}
           </p>
         </div>
@@ -114,7 +114,7 @@ export function PublicMarshmallowMessageCard({
                 aria-pressed={isActive}
                 disabled={disabled}
                 onClick={() => void onReact(message.id, reaction)}
-                className={`inline-flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm font-medium transition focus:outline-none focus:ring-2 focus:ring-rose-200 disabled:cursor-not-allowed disabled:opacity-60 motion-reduce:transition-none ${
+                className={`inline-flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm font-medium transition focus:ring-2 focus:ring-rose-200 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60 motion-reduce:transition-none ${
                   isActive
                     ? 'border-transparent text-white'
                     : 'border-slate-200 bg-white/80 text-slate-700 hover:border-slate-300 hover:bg-white'

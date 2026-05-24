@@ -572,7 +572,7 @@ export function CustomDomainConfigEntityWorkspace({
 
       <div className="grid gap-3 sm:grid-cols-3">
         <div className="rounded-2xl border border-slate-200 bg-white/85 px-4 py-4 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+          <p className="text-xs font-semibold tracking-[0.18em] text-slate-500 uppercase">
             {pickLocaleText(locale, {
               en: 'Owned here',
               zh_HANS: '本级拥有',
@@ -585,7 +585,7 @@ export function CustomDomainConfigEntityWorkspace({
           <p className="mt-2 text-2xl font-semibold text-slate-950">{ownedCount}</p>
         </div>
         <div className="rounded-2xl border border-slate-200 bg-white/85 px-4 py-4 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+          <p className="text-xs font-semibold tracking-[0.18em] text-slate-500 uppercase">
             {pickLocaleText(locale, {
               en: 'Inherited',
               zh_HANS: '继承',
@@ -598,7 +598,7 @@ export function CustomDomainConfigEntityWorkspace({
           <p className="mt-2 text-2xl font-semibold text-slate-950">{inheritedCount}</p>
         </div>
         <div className="rounded-2xl border border-slate-200 bg-white/85 px-4 py-4 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+          <p className="text-xs font-semibold tracking-[0.18em] text-slate-500 uppercase">
             {pickLocaleText(locale, {
               en: 'Active',
               zh_HANS: '启用中',
@@ -638,7 +638,7 @@ export function CustomDomainConfigEntityWorkspace({
               value={search}
               onChange={(event) => onSearchChange(event.target.value)}
               placeholder="brand.example.com"
-              className="w-full rounded-xl border border-slate-300 bg-white/85 py-2.5 pl-4 pr-3 text-sm text-slate-900 shadow-sm transition focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-200"
+              className="w-full rounded-xl border border-slate-300 bg-white/85 py-2.5 pr-3 pl-4 text-sm text-slate-900 shadow-sm transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200 focus:outline-none"
             />
           </label>
           <button
@@ -782,11 +782,11 @@ export function CustomDomainConfigEntityWorkspace({
             <tr key={domain.id} className={!domain.isActive ? 'bg-slate-50/80' : undefined}>
               <td className="px-6 py-4 align-top">
                 <div className="space-y-2">
-                  <p className="break-all font-mono text-sm font-semibold text-slate-950">
+                  <p className="font-mono text-sm font-semibold break-all text-slate-950">
                     {domain.hostname}
                   </p>
                   {domain.customDomainVerificationToken ? (
-                    <p className="break-all font-mono text-xs leading-5 text-slate-500">
+                    <p className="font-mono text-xs leading-5 break-all text-slate-500">
                       {buildTxtRecord(domain.customDomainVerificationToken)}
                     </p>
                   ) : null}
@@ -795,7 +795,7 @@ export function CustomDomainConfigEntityWorkspace({
               <td className="px-6 py-4 align-top">
                 <div className="space-y-2">
                   <div className="flex flex-wrap gap-2">
-                    <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-700">
+                    <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold tracking-[0.16em] text-slate-700 uppercase">
                       {domain.inherited
                         ? pickLocaleText(locale, {
                             en: 'Inherited',
@@ -814,7 +814,7 @@ export function CustomDomainConfigEntityWorkspace({
                             fr: 'Managed here',
                           })}
                     </span>
-                    <span className="rounded-full bg-indigo-50 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-indigo-700">
+                    <span className="rounded-full bg-indigo-50 px-2.5 py-1 text-[11px] font-semibold tracking-[0.16em] text-indigo-700 uppercase">
                       {resolveOwnerLabel(domain, locale)}
                     </span>
                   </div>
@@ -826,7 +826,7 @@ export function CustomDomainConfigEntityWorkspace({
               <td className="px-6 py-4 align-top">
                 <div className="flex flex-wrap gap-2">
                   <span
-                    className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] ${domain.customDomainVerified ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-amber-200 bg-amber-50 text-amber-700'}`}
+                    className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold tracking-[0.16em] uppercase ${domain.customDomainVerified ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-amber-200 bg-amber-50 text-amber-700'}`}
                   >
                     {domain.customDomainVerified
                       ? pickLocaleText(locale, {
@@ -847,7 +847,7 @@ export function CustomDomainConfigEntityWorkspace({
                         })}
                   </span>
                   <span
-                    className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] ${domain.isActive ? 'border-slate-200 bg-white text-slate-600' : 'border-rose-200 bg-rose-50 text-rose-700'}`}
+                    className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold tracking-[0.16em] uppercase ${domain.isActive ? 'border-slate-200 bg-white text-slate-600' : 'border-rose-200 bg-rose-50 text-rose-700'}`}
                   >
                     {domain.isActive
                       ? pickLocaleText(locale, {
@@ -867,7 +867,7 @@ export function CustomDomainConfigEntityWorkspace({
                           fr: 'Inactive',
                         })}
                   </span>
-                  <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-600">
+                  <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold tracking-[0.16em] text-slate-600 uppercase">
                     {domain.customDomainSslMode}
                   </span>
                 </div>
@@ -879,7 +879,7 @@ export function CustomDomainConfigEntityWorkspace({
                       <button
                         type="button"
                         onClick={() => beginEdit(domain)}
-                        className="rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+                        className="rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold tracking-[0.16em] text-slate-700 uppercase transition hover:border-slate-300 hover:bg-slate-50"
                       >
                         {pickLocaleText(locale, {
                           en: 'Edit',
@@ -894,7 +894,7 @@ export function CustomDomainConfigEntityWorkspace({
                         type="button"
                         onClick={() => void handleVerify(domain)}
                         disabled={verificationPendingId === domain.id}
-                        className="rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                        className="rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold tracking-[0.16em] text-slate-700 uppercase transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         {verificationPendingId === domain.id
                           ? pickLocaleText(locale, {
@@ -916,7 +916,7 @@ export function CustomDomainConfigEntityWorkspace({
                       </button>
                     </>
                   ) : (
-                    <span className="rounded-full bg-slate-100 px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                    <span className="rounded-full bg-slate-100 px-3 py-2 text-xs font-semibold tracking-[0.16em] text-slate-500 uppercase">
                       {pickLocaleText(locale, {
                         en: 'Review only',
                         zh_HANS: '仅查看',
@@ -1066,7 +1066,7 @@ export function CustomDomainConfigEntityWorkspace({
                 setEditorError(null);
               }}
               placeholder="brand.example.com"
-              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400"
+              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm transition outline-none focus:border-slate-400"
             />
           </label>
 
@@ -1098,7 +1098,7 @@ export function CustomDomainConfigEntityWorkspace({
                     customDomainSslMode: event.target.value as SslMode,
                   }))
                 }
-                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400"
+                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm transition outline-none focus:border-slate-400"
               >
                 <option value="auto">auto</option>
                 <option value="self_hosted">self_hosted</option>

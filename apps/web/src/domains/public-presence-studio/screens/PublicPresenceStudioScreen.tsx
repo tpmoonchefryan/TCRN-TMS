@@ -202,7 +202,7 @@ function NoticeToast({
   return (
     <div
       role={tone === 'error' ? 'alert' : 'status'}
-      className={`fixed right-4 top-4 z-40 max-w-sm rounded-3xl border px-4 py-3 text-sm shadow-lg ${
+      className={`fixed top-4 right-4 z-40 max-w-sm rounded-3xl border px-4 py-3 text-sm shadow-lg ${
         tone === 'error'
           ? 'border-rose-200 bg-rose-50 text-rose-800'
           : 'border-emerald-200 bg-emerald-50 text-emerald-800'
@@ -214,7 +214,7 @@ function NoticeToast({
           type="button"
           aria-label="Dismiss notice"
           onClick={onDismiss}
-          className="border-current/15 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border bg-white/80"
+          className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-current/15 bg-white/80"
         >
           <X className="h-4 w-4" aria-hidden="true" />
         </button>
@@ -977,7 +977,7 @@ function EmptyWorkspaceState({
                 {pickLocaleText(locale, templateAsset.assetDescription)}
               </p>
             </div>
-            <p className="text-xs uppercase tracking-[0.18em] text-slate-500">
+            <p className="text-xs tracking-[0.18em] text-slate-500 uppercase">
               {copy.emptyWorkspace.defaultOrderPrefix}:{' '}
               {templateAsset.defaultSectionOrder
                 .map((sectionKind) =>
@@ -1023,7 +1023,7 @@ function ControlledTextInput({
         disabled={disabled}
         onChange={(event) => onChange(event.target.value)}
         onPaste={(event) => handlePlainTextPaste(event, onChange)}
-        className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-rose-300 focus:ring-2 focus:ring-rose-200 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400"
+        className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 transition outline-none focus:border-rose-300 focus:ring-2 focus:ring-rose-200 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400"
         placeholder={placeholder}
       />
       {footer}
@@ -1054,7 +1054,7 @@ function ControlledTextArea({
         disabled={disabled}
         onChange={(event) => onChange(event.target.value)}
         onPaste={(event) => handlePlainTextPaste(event, onChange)}
-        className="min-h-24 w-full rounded-3xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-900 outline-none transition focus:border-rose-300 focus:ring-2 focus:ring-rose-200 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400"
+        className="min-h-24 w-full rounded-3xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-900 transition outline-none focus:border-rose-300 focus:ring-2 focus:ring-rose-200 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400"
         placeholder={placeholder}
       />
       {footer}
@@ -1084,7 +1084,7 @@ function ControlledSelect({
         value={value}
         disabled={disabled}
         onChange={(event) => onChange(event.target.value)}
-        className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-rose-300 focus:ring-2 focus:ring-rose-200 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400"
+        className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 transition outline-none focus:border-rose-300 focus:ring-2 focus:ring-rose-200 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400"
       >
         {options.map((option) => (
           <option key={option.value} value={option.value}>
@@ -3447,7 +3447,7 @@ function PublicPresenceStudioScreenInner({
         data-testid="stage-section-panel"
         variant="inset"
       >
-        <div className="space-y-4 border-b border-slate-200 px-4 pb-4 pt-4">
+        <div className="space-y-4 border-b border-slate-200 px-4 pt-4 pb-4">
           <div className="space-y-2 pr-10">
             <div className="flex flex-wrap items-center gap-2">
               <PublicPresenceBadge tone="rose">
@@ -3758,7 +3758,7 @@ function PublicPresenceStudioScreenInner({
         </div>
         {currentReleaseIssues.length ? (
           <div className="space-y-2">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+            <p className="text-xs font-semibold tracking-[0.16em] text-slate-500 uppercase">
               {pickLocaleText(locale, {
                 en: 'Open checks',
                 zh_HANS: '当前检查项',
@@ -3984,7 +3984,7 @@ function PublicPresenceStudioScreenInner({
           <textarea
             value={reviewComment}
             onChange={(event) => setReviewComment(event.target.value)}
-            className="min-h-24 w-full rounded-3xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-900 outline-none transition focus:border-rose-300 focus:ring-2 focus:ring-rose-200"
+            className="min-h-24 w-full rounded-3xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-900 transition outline-none focus:border-rose-300 focus:ring-2 focus:ring-rose-200"
           />
         </label>
         <label className="block space-y-2">
@@ -3995,7 +3995,7 @@ function PublicPresenceStudioScreenInner({
             type="datetime-local"
             value={scheduledFor}
             onChange={(event) => setScheduledFor(event.target.value)}
-            className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-rose-300 focus:ring-2 focus:ring-rose-200"
+            className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 transition outline-none focus:border-rose-300 focus:ring-2 focus:ring-rose-200"
           />
         </label>
         <div className="grid gap-2">
@@ -4707,7 +4707,7 @@ function PublicPresenceStudioScreenInner({
               fr: 'Feuille destinations studio',
             })}
             aria-modal
-            className="bg-white/97 !fixed inset-x-3 bottom-3 z-40 max-h-[72vh] overflow-auto rounded-[2rem] border border-slate-200/90 p-4 shadow-xl xl:hidden"
+            className="!fixed inset-x-3 bottom-3 z-40 max-h-[72vh] overflow-auto rounded-[2rem] border border-slate-200/90 bg-white/97 p-4 shadow-xl xl:hidden"
             data-testid="studio-mobile-manage-sheet"
             id={mobileManageSheetId}
             role="dialog"
@@ -4895,7 +4895,7 @@ function PublicPresenceStudioScreenInner({
         <div className={`grid min-h-[calc(100vh-4.75rem)] gap-2 ${workbenchGridClass}`}>
           {!previewFocus ? (
             <PublicPresenceSurface
-              className="bg-white/97 !fixed bottom-4 left-1/2 z-30 flex -translate-x-1/2 flex-row items-center gap-2 rounded-full border border-slate-200/90 px-2 py-2 shadow-lg backdrop-blur md:!static md:bottom-auto md:left-auto md:z-auto md:h-full md:translate-x-0 md:flex-col md:rounded-[2rem] md:border-transparent md:bg-white md:px-2 md:py-3 md:shadow-none md:backdrop-blur-0"
+              className="md:backdrop-blur-0 !fixed bottom-4 left-1/2 z-30 flex -translate-x-1/2 flex-row items-center gap-2 rounded-full border border-slate-200/90 bg-white/97 px-2 py-2 shadow-lg backdrop-blur md:!static md:bottom-auto md:left-auto md:z-auto md:h-full md:translate-x-0 md:flex-col md:rounded-[2rem] md:border-transparent md:bg-white md:px-2 md:py-3 md:shadow-none"
               data-testid="left-rail"
               variant="inset"
             >
@@ -4975,7 +4975,7 @@ function PublicPresenceStudioScreenInner({
                       aria-label={drawerCloseLabel}
                       onClick={() => setLeftDrawerOpen(false)}
                       ref={leftDrawerOverlay.desktopInitialFocusRef}
-                      className="absolute right-3 top-3 inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+                      className="absolute top-3 right-3 inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
                     >
                       <X className="h-4 w-4" aria-hidden="true" />
                     </button>
@@ -4996,7 +4996,7 @@ function PublicPresenceStudioScreenInner({
                       aria-label={drawerCloseLabel}
                       onClick={() => setLeftDrawerOpen(false)}
                       ref={leftDrawerOverlay.mobileInitialFocusRef}
-                      className="absolute right-3 top-3 inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+                      className="absolute top-3 right-3 inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
                     >
                       <X className="h-4 w-4" aria-hidden="true" />
                     </button>
@@ -5141,7 +5141,7 @@ function PublicPresenceStudioScreenInner({
                 />
               ) : previewProjection ? (
                 <div
-                  className={`min-h-0 flex-1 px-3 pb-3 pt-3 sm:px-4 sm:pb-4 sm:pt-4 ${previewViewport === 'mobile' ? 'mx-auto w-full max-w-[27rem]' : ''}`}
+                  className={`min-h-0 flex-1 px-3 pt-3 pb-3 sm:px-4 sm:pt-4 sm:pb-4 ${previewViewport === 'mobile' ? 'mx-auto w-full max-w-[27rem]' : ''}`}
                 >
                   <div className="h-full overflow-hidden rounded-[1.75rem] border border-slate-200 bg-slate-50/80 p-3">
                     <div
@@ -5241,7 +5241,7 @@ function PublicPresenceStudioScreenInner({
                   fr: 'Feuille outils aperçu studio',
                 })}
                 aria-modal
-                className="bg-white/97 !fixed inset-x-3 bottom-3 z-40 max-h-[72vh] overflow-auto rounded-[2rem] border border-slate-200/90 p-4 shadow-xl xl:hidden"
+                className="!fixed inset-x-3 bottom-3 z-40 max-h-[72vh] overflow-auto rounded-[2rem] border border-slate-200/90 bg-white/97 p-4 shadow-xl xl:hidden"
                 data-testid="studio-mobile-preview-tools-sheet"
                 id={mobilePreviewToolsSheetId}
                 role="dialog"
@@ -5352,7 +5352,7 @@ function PublicPresenceStudioScreenInner({
                       aria-label={drawerCloseLabel}
                       onClick={closeStageWorkbenchPanel}
                       ref={rightDrawerOverlay.desktopInitialFocusRef}
-                      className="absolute right-3 top-3 inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+                      className="absolute top-3 right-3 inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
                     >
                       <X className="h-4 w-4" aria-hidden="true" />
                     </button>
@@ -5373,7 +5373,7 @@ function PublicPresenceStudioScreenInner({
                       aria-label={drawerCloseLabel}
                       onClick={closeStageWorkbenchPanel}
                       ref={rightDrawerOverlay.mobileInitialFocusRef}
-                      className="absolute right-3 top-3 inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+                      className="absolute top-3 right-3 inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
                     >
                       <X className="h-4 w-4" aria-hidden="true" />
                     </button>

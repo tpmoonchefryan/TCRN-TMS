@@ -239,9 +239,9 @@ function SummaryCard({
 }>) {
   return (
     <div className="min-w-0 rounded-2xl border border-slate-200 bg-white/80 px-4 py-4 shadow-sm">
-      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">{label}</p>
-      <p className="mt-2 break-words text-2xl font-semibold text-slate-950">{value}</p>
-      <p className="mt-2 break-words text-xs leading-5 text-slate-500 [overflow-wrap:anywhere]">
+      <p className="text-xs font-semibold tracking-[0.2em] text-slate-500 uppercase">{label}</p>
+      <p className="mt-2 text-2xl font-semibold break-words text-slate-950">{value}</p>
+      <p className="mt-2 text-xs leading-5 [overflow-wrap:anywhere] break-words text-slate-500">
         {hint}
       </p>
     </div>
@@ -264,7 +264,7 @@ function StatusBadge({
 
   return (
     <span
-      className={`inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.14em] ${toneClasses}`}
+      className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-medium tracking-[0.14em] whitespace-nowrap uppercase ${toneClasses}`}
     >
       {label}
     </span>
@@ -333,7 +333,7 @@ function TextField({
         type="text"
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="w-full rounded-2xl border border-slate-200 bg-white/90 px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+        className="w-full rounded-2xl border border-slate-200 bg-white/90 px-3 py-2.5 text-sm text-slate-900 shadow-sm transition outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
       />
     </label>
   );
@@ -358,7 +358,7 @@ function NumberField({
         min={min}
         value={value}
         onChange={(event) => onChange(Number(event.target.value))}
-        className="w-full rounded-2xl border border-slate-200 bg-white/90 px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+        className="w-full rounded-2xl border border-slate-200 bg-white/90 px-3 py-2.5 text-sm text-slate-900 shadow-sm transition outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
       />
     </label>
   );
@@ -380,7 +380,7 @@ function TextareaField({
         value={value}
         onChange={(event) => onChange(event.target.value)}
         rows={3}
-        className="w-full rounded-2xl border border-slate-200 bg-white/90 px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+        className="w-full rounded-2xl border border-slate-200 bg-white/90 px-3 py-2.5 text-sm text-slate-900 shadow-sm transition outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
       />
     </label>
   );
@@ -425,7 +425,7 @@ function SelectField({
       <select
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="w-full rounded-2xl border border-slate-200 bg-white/90 px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+        className="w-full rounded-2xl border border-slate-200 bg-white/90 px-3 py-2.5 text-sm text-slate-900 shadow-sm transition outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
       >
         {options.map((option) => (
           <option key={option.value} value={option.value}>
@@ -982,7 +982,7 @@ export function MarshmallowManagementScreen({
       <GlassSurface className="p-8">
         <div className="flex flex-wrap items-start justify-between gap-6">
           <div className="space-y-4">
-            <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-600">
+            <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-xs font-semibold tracking-[0.18em] text-slate-600 uppercase">
               <Mailbox className="h-3.5 w-3.5" />
               {copy.header.eyebrow}
             </div>
@@ -1114,13 +1114,13 @@ export function MarshmallowManagementScreen({
                     {copy.config.turnstile.description}
                   </p>
                 </div>
-                <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-slate-700">
+                <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold tracking-[0.14em] text-slate-700 uppercase">
                   {turnstileStatusLabel}
                 </span>
               </div>
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
                 <div className="rounded-xl border border-slate-200 bg-slate-50/80 px-3 py-3">
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                  <p className="text-xs font-semibold tracking-[0.16em] text-slate-500 uppercase">
                     {copy.config.turnstile.siteKeyLabel}
                   </p>
                   <p className="mt-1 text-sm font-semibold text-slate-900">
@@ -1130,7 +1130,7 @@ export function MarshmallowManagementScreen({
                   </p>
                 </div>
                 <div className="rounded-xl border border-slate-200 bg-slate-50/80 px-3 py-3">
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                  <p className="text-xs font-semibold tracking-[0.16em] text-slate-500 uppercase">
                     {copy.config.turnstile.secretKeyLabel}
                   </p>
                   <p className="mt-1 text-sm font-semibold text-slate-900">
@@ -1370,7 +1370,7 @@ export function MarshmallowManagementScreen({
                             label={getMarshmallowMessageStatusLabel(locale, message.status)}
                           />
                           {message.rejectionReason ? (
-                            <p className="text-xs uppercase tracking-[0.14em] text-slate-500">
+                            <p className="text-xs tracking-[0.14em] text-slate-500 uppercase">
                               {message.rejectionReason}
                             </p>
                           ) : null}
@@ -1570,7 +1570,7 @@ export function MarshmallowManagementScreen({
               <div className="rounded-2xl border border-slate-200 bg-white/80 p-4">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div className="space-y-2">
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                    <p className="text-xs font-semibold tracking-[0.18em] text-slate-500 uppercase">
                       {copy.export.latestJobTitle}
                     </p>
                     <p className="text-base font-semibold text-slate-950">

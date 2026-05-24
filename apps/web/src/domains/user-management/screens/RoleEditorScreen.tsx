@@ -482,7 +482,7 @@ export function RoleEditorScreen({
               <ArrowLeft className="h-4 w-4" />
               {roleEditorCopy.backToInventory}
             </Link>
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
+            <p className="text-xs font-semibold tracking-[0.24em] text-slate-500 uppercase">
               {roleEditorCopy.badge(workspaceDisplayLabel)}
             </p>
             <h1 className="text-3xl font-semibold text-slate-950">{title}</h1>
@@ -546,7 +546,7 @@ export function RoleEditorScreen({
                         <p className="text-sm font-semibold text-slate-900">
                           {resolveScopedLabel(binding.scopeType, binding.scopeName, sharedCopy)}
                         </p>
-                        <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                        <p className="text-xs tracking-[0.18em] text-slate-400 uppercase">
                           {getLocalizedScopeTypeLabel(binding.scopeType, locale)}
                         </p>
                       </div>
@@ -826,13 +826,13 @@ export function RoleEditorScreen({
                     <table className="min-w-full border-collapse">
                       <thead className="bg-white">
                         <tr>
-                          <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                          <th className="px-4 py-3 text-left text-xs font-semibold tracking-[0.18em] text-slate-500 uppercase">
                             {getLocalizedRoleResourceColumnLabel(locale)}
                           </th>
                           {RBAC_CANONICAL_ACTIONS.map((action) => (
                             <th
                               key={`${group.moduleCode}-${action}`}
-                              className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500"
+                              className="px-4 py-3 text-left text-xs font-semibold tracking-[0.18em] text-slate-500 uppercase"
                             >
                               {getLocalizedRbacActionLabel(action, locale)}
                             </th>
@@ -847,7 +847,7 @@ export function RoleEditorScreen({
                                 <p className="text-sm font-semibold text-slate-900">
                                   {pickLocalizedName(resource, locale)}
                                 </p>
-                                <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                                <p className="text-xs tracking-[0.18em] text-slate-400 uppercase">
                                   {resource.code}
                                 </p>
                               </div>
@@ -874,7 +874,7 @@ export function RoleEditorScreen({
                                           },
                                         }));
                                       }}
-                                      className="w-full min-w-[120px] rounded-2xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400"
+                                      className="w-full min-w-[120px] rounded-2xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm transition outline-none focus:border-slate-400"
                                     >
                                       {(['unset', 'grant', 'deny'] as const).map((option) => (
                                         <option key={option} value={option}>

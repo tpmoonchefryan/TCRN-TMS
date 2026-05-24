@@ -541,11 +541,11 @@ export function DictionaryExplorerPanel({
                 <div className="flex items-start justify-between gap-3">
                   <div className="space-y-1">
                     <p className="text-sm font-semibold">{dictionaryType.name}</p>
-                    <p className="text-xs uppercase tracking-[0.18em] text-slate-500">
+                    <p className="text-xs tracking-[0.18em] text-slate-500 uppercase">
                       {dictionaryType.type}
                     </p>
                   </div>
-                  <span className="whitespace-nowrap rounded-full border border-slate-200 bg-white/80 px-2.5 py-1 text-xs font-semibold text-slate-600">
+                  <span className="rounded-full border border-slate-200 bg-white/80 px-2.5 py-1 text-xs font-semibold whitespace-nowrap text-slate-600">
                     {dictionaryType.count}
                   </span>
                 </div>
@@ -576,7 +576,7 @@ export function DictionaryExplorerPanel({
 
           <div className="flex flex-wrap items-center gap-3">
             <label className="relative block min-w-[18rem] flex-1">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <input
                 aria-label={copy.searchAriaLabel}
                 value={search}
@@ -584,7 +584,7 @@ export function DictionaryExplorerPanel({
                   applyDictionaryQueryState({ page: 1, search: event.target.value });
                 }}
                 placeholder={copy.searchPlaceholder}
-                className="w-full rounded-xl border border-slate-300 bg-white/85 py-2.5 pl-10 pr-3 text-sm text-slate-900 shadow-sm transition focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-200"
+                className="w-full rounded-xl border border-slate-300 bg-white/85 py-2.5 pr-3 pl-10 text-sm text-slate-900 shadow-sm transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200 focus:outline-none"
               />
             </label>
 
@@ -630,7 +630,7 @@ export function DictionaryExplorerPanel({
                     <td className="px-6 py-4">
                       <div className="space-y-1">
                         <p className="text-sm font-semibold text-slate-950">{item.code}</p>
-                        <p className="text-xs uppercase tracking-[0.18em] text-slate-500">
+                        <p className="text-xs tracking-[0.18em] text-slate-500 uppercase">
                           {copy.versionPrefix}
                           {item.version}
                         </p>
@@ -649,7 +649,7 @@ export function DictionaryExplorerPanel({
                     </td>
                     <td className="px-6 py-4">
                       <span
-                        className={`inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold ${
+                        className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold whitespace-nowrap ${
                           item.isActive
                             ? 'bg-emerald-100 text-emerald-700'
                             : 'bg-slate-200 text-slate-600'

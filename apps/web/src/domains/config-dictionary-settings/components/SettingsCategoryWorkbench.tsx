@@ -68,7 +68,7 @@ export function SettingsCategoryWorkbench({
   return (
     <div className="grid min-w-0 gap-5 lg:grid-cols-[15rem_minmax(0,1fr)] lg:items-start">
       <nav
-        className="min-w-0 border-b border-slate-200 pb-3 lg:border-b-0 lg:border-r lg:pb-0 lg:pr-4"
+        className="min-w-0 border-b border-slate-200 pb-3 lg:border-r lg:border-b-0 lg:pr-4 lg:pb-0"
         aria-label={ariaLabel}
       >
         <div

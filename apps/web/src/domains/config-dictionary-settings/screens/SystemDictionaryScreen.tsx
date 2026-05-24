@@ -608,7 +608,7 @@ export function SystemDictionaryScreen() {
       <GlassSurface className="p-8">
         <div className="flex flex-wrap items-start justify-between gap-6">
           <div className="space-y-4">
-            <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-600">
+            <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-xs font-semibold tracking-[0.18em] text-slate-600 uppercase">
               <BookText className="h-3.5 w-3.5" />
               {text('AC / System Dictionary', 'AC / 系统词典', 'AC / システム辞書')}
             </div>
@@ -628,7 +628,7 @@ export function SystemDictionaryScreen() {
 
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="rounded-2xl border border-slate-200 bg-white/80 px-4 py-4 shadow-sm">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+              <p className="text-xs font-semibold tracking-[0.18em] text-slate-500 uppercase">
                 {text('Dictionary Types', '词典类型', '辞書タイプ')}
               </p>
               <p className="mt-2 text-base font-semibold text-slate-950">
@@ -636,7 +636,7 @@ export function SystemDictionaryScreen() {
               </p>
             </div>
             <div className="rounded-2xl border border-slate-200 bg-white/80 px-4 py-4 shadow-sm">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+              <p className="text-xs font-semibold tracking-[0.18em] text-slate-500 uppercase">
                 {text('Active Type', '当前类型', '選択中タイプ')}
               </p>
               <p className="mt-2 text-base font-semibold text-slate-950">
@@ -811,7 +811,7 @@ export function SystemDictionaryScreen() {
                   setTypeDraft((current) => ({ ...current, code: event.target.value }))
                 }
                 placeholder={text('CUSTOMER_STATUS', 'CUSTOMER_STATUS', 'CUSTOMER_STATUS')}
-                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm transition focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-200"
+                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200 focus:outline-none"
               />
             </label>
             <label className="space-y-2 text-sm font-medium text-slate-700">
@@ -828,7 +828,7 @@ export function SystemDictionaryScreen() {
                 onChange={(event) =>
                   setTypeDraft((current) => ({ ...current, sortOrder: event.target.value }))
                 }
-                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm transition focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-200"
+                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200 focus:outline-none"
               />
             </label>
           </div>
@@ -866,7 +866,7 @@ export function SystemDictionaryScreen() {
               onChange={(event) =>
                 setTypeDraft((current) => ({ ...current, nameBase: event.target.value }))
               }
-              className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm transition focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-200"
+              className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200 focus:outline-none"
             />
           </label>
 
@@ -883,7 +883,7 @@ export function SystemDictionaryScreen() {
                 setTypeDraft((current) => ({ ...current, descriptionBase: event.target.value }))
               }
               rows={4}
-              className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm transition focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-200"
+              className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200 focus:outline-none"
             />
           </label>
         </div>
@@ -1054,7 +1054,7 @@ export function SystemDictionaryScreen() {
                 }
                 disabled={itemMutationState?.mode === 'edit'}
                 placeholder={text('ACTIVE', 'ACTIVE', 'ACTIVE')}
-                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm transition focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-200 disabled:cursor-not-allowed disabled:bg-slate-100"
+                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200 focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-100"
               />
             </label>
             <label className="space-y-2 text-sm font-medium text-slate-700">
@@ -1067,7 +1067,7 @@ export function SystemDictionaryScreen() {
                 onChange={(event) =>
                   setItemDraft((current) => ({ ...current, sortOrder: event.target.value }))
                 }
-                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm transition focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-200"
+                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200 focus:outline-none"
               />
             </label>
           </div>
@@ -1105,7 +1105,7 @@ export function SystemDictionaryScreen() {
               onChange={(event) =>
                 setItemDraft((current) => ({ ...current, nameBase: event.target.value }))
               }
-              className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm transition focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-200"
+              className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200 focus:outline-none"
             />
           </label>
 
@@ -1122,7 +1122,7 @@ export function SystemDictionaryScreen() {
                 setItemDraft((current) => ({ ...current, descriptionBase: event.target.value }))
               }
               rows={4}
-              className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm transition focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-200"
+              className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200 focus:outline-none"
             />
           </label>
 
@@ -1150,7 +1150,7 @@ export function SystemDictionaryScreen() {
                 '{\n  "color": "#4f46e5"\n}',
                 '{\n  "color": "#4f46e5"\n}'
               )}
-              className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 font-mono text-sm text-slate-900 shadow-sm transition focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-200"
+              className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 font-mono text-sm text-slate-900 shadow-sm transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200 focus:outline-none"
             />
           </label>
         </div>
@@ -1230,7 +1230,7 @@ export function SystemDictionaryScreen() {
                       `${confirmState.item.code} を安定参照コードを変えずに無効化します。`
                     )}
               </p>
-              <p className="text-xs uppercase tracking-[0.18em] text-slate-500">
+              <p className="text-xs tracking-[0.18em] text-slate-500 uppercase">
                 {selectedType?.type || confirmState.item.dictionaryCode}
               </p>
             </div>

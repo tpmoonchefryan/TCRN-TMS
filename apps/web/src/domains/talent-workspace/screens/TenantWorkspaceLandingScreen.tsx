@@ -382,7 +382,7 @@ export function TenantWorkspaceLandingScreen({
       <GlassSurface className="p-8">
         <div className="flex flex-wrap items-start justify-between gap-6">
           <div className="space-y-4">
-            <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-600">
+            <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-xs font-semibold tracking-[0.18em] text-slate-600 uppercase">
               <Sparkles className="h-3.5 w-3.5" />
               {pickLocaleText(locale, {
                 en: 'Talent selection',
@@ -419,7 +419,7 @@ export function TenantWorkspaceLandingScreen({
 
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="rounded-2xl border border-slate-200 bg-white/80 px-4 py-4 shadow-sm">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+              <p className="text-xs font-semibold tracking-[0.18em] text-slate-500 uppercase">
                 {pickLocaleText(locale, {
                   en: 'Tenant',
                   zh_HANS: '租户',
@@ -432,7 +432,7 @@ export function TenantWorkspaceLandingScreen({
               <p className="mt-2 text-base font-semibold text-slate-950">{tenantName}</p>
             </div>
             <div className="rounded-2xl border border-slate-200 bg-white/80 px-4 py-4 shadow-sm">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+              <p className="text-xs font-semibold tracking-[0.18em] text-slate-500 uppercase">
                 {pickLocaleText(locale, {
                   en: 'Published talents',
                   zh_HANS: '已发布艺人',
@@ -461,7 +461,7 @@ export function TenantWorkspaceLandingScreen({
               <Link
                 key={talent.id}
                 href={buildTalentWorkspacePath(tenantId, talent.id)}
-                className="bg-white/88 group block rounded-3xl border border-slate-200 p-6 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:bg-white"
+                className="group block rounded-3xl border border-slate-200 bg-white/88 p-6 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:bg-white"
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="space-y-3">

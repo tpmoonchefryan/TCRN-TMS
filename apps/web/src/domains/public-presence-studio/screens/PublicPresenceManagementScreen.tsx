@@ -194,7 +194,7 @@ function SummaryCard({
 }>) {
   return (
     <PublicPresenceSurface className="p-4" variant="inset">
-      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{label}</p>
+      <p className="text-xs font-semibold tracking-[0.18em] text-slate-500 uppercase">{label}</p>
       <p className="mt-2 text-lg font-semibold text-slate-950">{value}</p>
       <p className="mt-2 text-sm leading-6 text-slate-600">{hint}</p>
     </PublicPresenceSurface>
@@ -564,7 +564,7 @@ export function PublicPresenceManagementScreen({
               </div>
               <div className="space-y-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">
+                  <span className="text-sm font-semibold tracking-[0.18em] text-slate-500 uppercase">
                     {pickLocaleText(locale, {
                       en: 'Live route',
                       zh_HANS: '线上路由',
@@ -1283,7 +1283,7 @@ export function PublicPresenceManagementScreen({
                           {getPublicPresenceTemplateUseCase(locale, template)}
                         </p>
                         {pageVersion.latestVersion?.updatedAt ? (
-                          <p className="text-xs uppercase tracking-[0.18em] text-slate-500">
+                          <p className="text-xs tracking-[0.18em] text-slate-500 uppercase">
                             {formatPublicPresenceStudioDateTime(
                               locale,
                               pageVersion.latestVersion.updatedAt

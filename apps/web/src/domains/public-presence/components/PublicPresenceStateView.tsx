@@ -56,7 +56,7 @@ export function PublicPresenceStateView({
       <div className="mt-5 space-y-2">
         <h2
           className={publicPresenceClassNames(
-            'text-lg font-semibold leading-7',
+            'text-lg leading-7 font-semibold',
             publicPresenceTokens.text.primary
           )}
         >

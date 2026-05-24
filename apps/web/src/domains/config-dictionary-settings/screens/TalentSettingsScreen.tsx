@@ -266,14 +266,14 @@ function FieldRow({
 }>) {
   return (
     <div className="min-w-0 rounded-2xl border border-slate-200 bg-white/80 px-4 py-4 shadow-sm">
-      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{label}</p>
+      <p className="text-xs font-semibold tracking-[0.18em] text-slate-500 uppercase">{label}</p>
       <p
-        className={`mt-2 min-w-0 whitespace-normal break-all font-semibold text-slate-950 ${valueClassName ?? 'text-base'}`}
+        className={`mt-2 min-w-0 font-semibold break-all whitespace-normal text-slate-950 ${valueClassName ?? 'text-base'}`}
       >
         {value}
       </p>
       {hint ? (
-        <p className="mt-2 min-w-0 whitespace-normal break-all text-sm leading-6 text-slate-600">
+        <p className="mt-2 min-w-0 text-sm leading-6 break-all whitespace-normal text-slate-600">
           {hint}
         </p>
       ) : null}
@@ -335,7 +335,7 @@ function ReadinessList({
       <ul className="mt-3 space-y-3">
         {items.map((item) => (
           <li key={item.code} className="space-y-1">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em]">
+            <p className="text-xs font-semibold tracking-[0.18em] uppercase">
               {item.label || item.code}
             </p>
             <p className="text-sm leading-6">{item.message}</p>
@@ -1667,7 +1667,7 @@ export function TalentSettingsScreen({
               <GlassSurface className="p-8">
                 <div className="flex flex-wrap items-start justify-between gap-6">
                   <div className="space-y-4">
-                    <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-600">
+                    <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-xs font-semibold tracking-[0.18em] text-slate-600 uppercase">
                       <UserRound className="h-3.5 w-3.5" />
                       {text('Talent Settings', '艺人设置', 'タレント設定')}
                     </div>
@@ -2359,7 +2359,7 @@ export function TalentSettingsScreen({
                     <div
                       ref={homepageRoutingRef}
                       tabIndex={-1}
-                      className={`rounded-2xl border bg-white/85 px-5 py-5 shadow-sm outline-none transition ${
+                      className={`rounded-2xl border bg-white/85 px-5 py-5 shadow-sm transition outline-none ${
                         activeFocus === 'homepage-routing'
                           ? 'border-indigo-300 ring-2 ring-indigo-200'
                           : 'border-slate-200'
@@ -2507,7 +2507,7 @@ export function TalentSettingsScreen({
                           <>
                             <div className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50/85 px-4 py-4">
                               <div className="space-y-1">
-                                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                                <p className="text-xs font-semibold tracking-[0.18em] text-slate-500 uppercase">
                                   {text('Step 1', '步骤 1', 'ステップ 1')}
                                 </p>
                                 <p className="text-sm font-semibold text-slate-950">
@@ -2568,7 +2568,7 @@ export function TalentSettingsScreen({
                                     setCustomDomainVerifyNotice(null);
                                   }}
                                   placeholder="fans.example.com"
-                                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400"
+                                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm transition outline-none focus:border-slate-400"
                                 />
                               </label>
 
@@ -2603,7 +2603,7 @@ export function TalentSettingsScreen({
                             {customDomainPanel.data.domains.length > 0 ? (
                               <div className="space-y-4 rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
                                 <div className="space-y-1">
-                                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                                  <p className="text-xs font-semibold tracking-[0.18em] text-slate-500 uppercase">
                                     {text('Domain inventory', '域名清单', 'ドメイン一覧')}
                                   </p>
                                   <p className="text-sm font-semibold text-slate-950">
@@ -2638,10 +2638,10 @@ export function TalentSettingsScreen({
                                       >
                                         <div className="flex flex-wrap items-start justify-between gap-3">
                                           <div className="min-w-0 space-y-1">
-                                            <p className="break-all font-mono text-sm font-semibold text-slate-950">
+                                            <p className="font-mono text-sm font-semibold break-all text-slate-950">
                                               {domain.hostname}
                                             </p>
-                                            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                                            <p className="text-xs font-semibold tracking-[0.16em] text-slate-500 uppercase">
                                               {domain.ownerType === 'talent'
                                                 ? text(
                                                     'Talent dedicated',
@@ -2805,7 +2805,7 @@ export function TalentSettingsScreen({
                             {customDomainPanel.data.customDomain ? (
                               <div className="space-y-4 rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
                                 <div className="space-y-1">
-                                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                                  <p className="text-xs font-semibold tracking-[0.18em] text-slate-500 uppercase">
                                     {text('Step 2', '步骤 2', 'ステップ 2')}
                                   </p>
                                   <p className="text-sm font-semibold text-slate-950">
@@ -2907,7 +2907,7 @@ export function TalentSettingsScreen({
                             {customDomainPanel.data.customDomain ? (
                               <div className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50/85 px-4 py-4">
                                 <div className="space-y-1">
-                                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                                  <p className="text-xs font-semibold tracking-[0.18em] text-slate-500 uppercase">
                                     {text('Step 3', '步骤 3', 'ステップ 3')}
                                   </p>
                                   <p className="text-sm font-semibold text-slate-950">
@@ -2958,7 +2958,7 @@ export function TalentSettingsScreen({
                             {customDomainPanel.data.customDomain ? (
                               <div className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50/85 px-4 py-4">
                                 <div className="space-y-1">
-                                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                                  <p className="text-xs font-semibold tracking-[0.18em] text-slate-500 uppercase">
                                     {text('Step 4', '步骤 4', 'ステップ 4')}
                                   </p>
                                   <p className="text-sm font-semibold text-slate-950">
@@ -3000,7 +3000,7 @@ export function TalentSettingsScreen({
                                       setCustomDomainSslError(null);
                                       setCustomDomainSslSuccess(null);
                                     }}
-                                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400"
+                                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm transition outline-none focus:border-slate-400"
                                   >
                                     {customDomainSslModeOptions.map((option) => (
                                       <option key={option.value} value={option.value}>
@@ -3051,7 +3051,7 @@ export function TalentSettingsScreen({
                     <div
                       ref={marshmallowRoutingRef}
                       tabIndex={-1}
-                      className={`rounded-2xl border bg-white/85 px-5 py-5 shadow-sm outline-none transition ${
+                      className={`rounded-2xl border bg-white/85 px-5 py-5 shadow-sm transition outline-none ${
                         activeFocus === 'marshmallow-routing'
                           ? 'border-indigo-300 ring-2 ring-indigo-200'
                           : 'border-slate-200'

@@ -52,28 +52,28 @@ export function PublicPresenceDecorationLayer({
     >
       <span
         className={publicPresenceClassNames(
-          'absolute left-6 top-12 hidden h-28 w-40 -rotate-6 rounded-lg border border-rose-100 bg-white/50 shadow-sm md:block',
+          'absolute top-12 left-6 hidden h-28 w-40 -rotate-6 rounded-lg border border-rose-100 bg-white/50 shadow-sm md:block',
           animated &&
-            'motion-safe:duration-500 motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-left-4 motion-reduce:animate-none'
+            'motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-left-4 motion-safe:duration-500 motion-reduce:animate-none'
         )}
       />
       <span
         className={publicPresenceClassNames(
-          'absolute right-8 top-24 hidden h-16 w-32 rotate-6 rounded-lg border border-dashed border-sky-200 bg-sky-50/40 lg:block',
+          'absolute top-24 right-8 hidden h-16 w-32 rotate-6 rounded-lg border border-dashed border-sky-200 bg-sky-50/40 lg:block',
           animated &&
-            'motion-safe:duration-500 motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-right-4 motion-reduce:animate-none'
+            'motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-right-4 motion-safe:duration-500 motion-reduce:animate-none'
         )}
       />
       {shouldShowDecoration(density, 'standard') ? (
         <>
           <span className="absolute bottom-20 left-10 hidden h-10 w-10 rotate-12 rounded-md border border-amber-200 bg-amber-50/40 md:block" />
-          <span className="absolute bottom-32 right-14 hidden h-20 w-28 -rotate-3 rounded-lg border border-emerald-100 bg-white/40 lg:block" />
+          <span className="absolute right-14 bottom-32 hidden h-20 w-28 -rotate-3 rounded-lg border border-emerald-100 bg-white/40 lg:block" />
         </>
       ) : null}
       {shouldShowDecoration(density, 'festive') ? (
         <>
-          <span className="absolute left-[46%] top-10 hidden h-3 w-3 rotate-45 rounded-sm bg-rose-300/50 md:block" />
-          <span className="absolute bottom-16 right-[28%] hidden h-3 w-3 rotate-45 rounded-sm bg-sky-300/50 md:block" />
+          <span className="absolute top-10 left-[46%] hidden h-3 w-3 rotate-45 rounded-sm bg-rose-300/50 md:block" />
+          <span className="absolute right-[28%] bottom-16 hidden h-3 w-3 rotate-45 rounded-sm bg-sky-300/50 md:block" />
         </>
       ) : null}
     </div>

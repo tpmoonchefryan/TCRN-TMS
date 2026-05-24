@@ -84,12 +84,12 @@ function FieldRow({
 }>) {
   return (
     <div className="min-w-0 rounded-2xl border border-slate-200 bg-white/80 px-4 py-4 shadow-sm">
-      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{label}</p>
-      <p className="mt-2 min-w-0 whitespace-normal break-all text-base font-semibold text-slate-950">
+      <p className="text-xs font-semibold tracking-[0.18em] text-slate-500 uppercase">{label}</p>
+      <p className="mt-2 min-w-0 text-base font-semibold break-all whitespace-normal text-slate-950">
         {value}
       </p>
       {hint ? (
-        <p className="mt-2 min-w-0 whitespace-normal break-all text-sm leading-6 text-slate-600">
+        <p className="mt-2 min-w-0 text-sm leading-6 break-all whitespace-normal text-slate-600">
           {hint}
         </p>
       ) : null}
@@ -483,7 +483,7 @@ export function SubsidiarySettingsScreen({
               <GlassSurface className="p-8">
                 <div className="flex flex-wrap items-start justify-between gap-6">
                   <div className="space-y-4">
-                    <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-600">
+                    <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-xs font-semibold tracking-[0.18em] text-slate-600 uppercase">
                       <Building2 className="h-3.5 w-3.5" />
                       {text({
                         en: 'Subsidiary settings',

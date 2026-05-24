@@ -344,7 +344,7 @@ function SummaryCard({
 }>) {
   return (
     <div className="rounded-2xl border border-slate-200 bg-white/80 px-4 py-4 shadow-sm">
-      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">{label}</p>
+      <p className="text-xs font-semibold tracking-[0.2em] text-slate-500 uppercase">{label}</p>
       <p className="mt-2 text-3xl font-semibold text-slate-950">{value}</p>
       <p className="mt-2 text-xs leading-5 text-slate-500">{hint}</p>
     </div>
@@ -827,7 +827,7 @@ export function UserManagementScreen({
       <GlassSurface className="p-8">
         <div className="flex flex-wrap items-start justify-between gap-6">
           <div className="space-y-3">
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
+            <p className="text-xs font-semibold tracking-[0.24em] text-slate-500 uppercase">
               {managementCopy.badge(workspaceDisplayLabel)}
             </p>
             <h1 className="text-3xl font-semibold text-slate-950">{managementCopy.title}</h1>
@@ -926,7 +926,7 @@ export function UserManagementScreen({
                         });
                       }}
                       placeholder={managementCopy.users.searchPlaceholder}
-                      className="w-72 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-slate-400"
+                      className="w-72 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 transition outline-none focus:border-slate-400"
                     />
                   </label>
                   <label className="space-y-2 text-sm">
@@ -941,7 +941,7 @@ export function UserManagementScreen({
                           page: 1,
                         });
                       }}
-                      className="rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-slate-400"
+                      className="rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 transition outline-none focus:border-slate-400"
                     >
                       <option value="all">{managementCopy.users.statusAll}</option>
                       <option value="active">{managementCopy.users.statusActive}</option>
@@ -982,7 +982,7 @@ export function UserManagementScreen({
                             {user.displayName || user.username}
                           </p>
                           <p className="text-sm text-slate-500">{user.email}</p>
-                          <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                          <p className="text-xs tracking-[0.18em] text-slate-400 uppercase">
                             {user.username}
                           </p>
                         </div>
@@ -1204,7 +1204,7 @@ export function UserManagementScreen({
                           <p className="text-sm font-semibold text-slate-900">
                             {role.localizedName || role.name.en || role.code}
                           </p>
-                          <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                          <p className="text-xs tracking-[0.18em] text-slate-400 uppercase">
                             {role.code}
                           </p>
                           {role.description ? (
@@ -1381,7 +1381,7 @@ export function UserManagementScreen({
                               scopeId: nextScopeOptions[0]?.id ?? '',
                             }));
                           }}
-                          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400"
+                          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm transition outline-none focus:border-slate-400"
                         >
                           <option value="subsidiary">
                             {managementCopy.delegation.scopeTypeSubsidiary}
@@ -1404,7 +1404,7 @@ export function UserManagementScreen({
                               scopeId: event.target.value,
                             }));
                           }}
-                          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400"
+                          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm transition outline-none focus:border-slate-400"
                         >
                           {delegationScopeOptions.map((option) => (
                             <option key={`${option.type}-${option.id}`} value={option.id}>
@@ -1444,7 +1444,7 @@ export function UserManagementScreen({
                               delegateId: nextDelegateOptions[0]?.id ?? '',
                             }));
                           }}
-                          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400"
+                          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm transition outline-none focus:border-slate-400"
                         >
                           <option value="user">{managementCopy.delegation.delegateTypeUser}</option>
                           <option value="role">{managementCopy.delegation.delegateTypeRole}</option>
@@ -1463,7 +1463,7 @@ export function UserManagementScreen({
                               delegateId: event.target.value,
                             }));
                           }}
-                          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400"
+                          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm transition outline-none focus:border-slate-400"
                         >
                           {delegationDelegateOptions.map((option) => (
                             <option key={option.id} value={option.id}>
@@ -1517,7 +1517,7 @@ export function UserManagementScreen({
                           <p className="text-sm font-semibold text-slate-900">
                             {delegation.scopeName}
                           </p>
-                          <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                          <p className="text-xs tracking-[0.18em] text-slate-400 uppercase">
                             {getLocalizedScopeTypeLabel(delegation.scopeType, locale)}
                           </p>
                         </div>
@@ -1527,7 +1527,7 @@ export function UserManagementScreen({
                           <p className="text-sm font-semibold text-slate-900">
                             {delegation.delegateName}
                           </p>
-                          <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                          <p className="text-xs tracking-[0.18em] text-slate-400 uppercase">
                             {getLocalizedDelegateTypeLabel(delegation.delegateType, locale)}
                           </p>
                         </div>

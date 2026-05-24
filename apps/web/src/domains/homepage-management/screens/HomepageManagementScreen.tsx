@@ -180,7 +180,7 @@ function SummaryCard({
 
   return (
     <div className="min-w-0 rounded-2xl border border-slate-200 bg-white/80 px-4 py-4 shadow-sm">
-      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">{label}</p>
+      <p className="text-xs font-semibold tracking-[0.2em] text-slate-500 uppercase">{label}</p>
       {canShowCopyAction ? (
         <div className="mt-2 flex min-w-0 items-start gap-2">
           <p className={valueClassName} title={value}>
@@ -193,7 +193,7 @@ function SummaryCard({
             onClick={() => {
               void handleCopy();
             }}
-            className="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 transition hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+            className="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 transition hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:outline-none"
           >
             {copyState === 'copied' ? (
               <Check className="h-3.5 w-3.5" aria-hidden="true" />
@@ -230,7 +230,7 @@ function StatusBadge({
 
   return (
     <span
-      className={`rounded-full px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.14em] ${toneClasses}`}
+      className={`rounded-full px-2.5 py-1 text-[11px] font-medium tracking-[0.14em] uppercase ${toneClasses}`}
     >
       {label}
     </span>
@@ -576,7 +576,7 @@ export function HomepageManagementScreen({
       <GlassSurface className="p-8">
         <div className="flex flex-wrap items-start justify-between gap-6">
           <div className="space-y-4">
-            <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-600">
+            <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-xs font-semibold tracking-[0.18em] text-slate-600 uppercase">
               <Globe2 className="h-3.5 w-3.5" />
               {copy.header.eyebrow}
             </div>
@@ -728,7 +728,7 @@ export function HomepageManagementScreen({
                         page: 1,
                       });
                     }}
-                    className={`rounded-full border px-3 py-1.5 text-xs font-medium uppercase tracking-[0.14em] transition ${
+                    className={`rounded-full border px-3 py-1.5 text-xs font-medium tracking-[0.14em] uppercase transition ${
                       isActive
                         ? 'border-slate-900 bg-slate-900 text-white'
                         : 'border-slate-200 bg-white/85 text-slate-700 hover:border-slate-300 hover:bg-white'

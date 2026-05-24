@@ -152,7 +152,7 @@ export const ActionDrawer: React.FC<ActionDrawerProps> = ({
             onOpenChange(false);
           }
         }}
-        className={`absolute inset-0 border-0 bg-slate-900/55 p-0 backdrop-blur-sm ${isExiting ? 'duration-300 animate-out fade-out' : 'duration-300 animate-in fade-in'} ${tokens.motion.reduced}`}
+        className={`absolute inset-0 border-0 bg-slate-900/55 p-0 backdrop-blur-sm ${isExiting ? 'animate-out fade-out duration-300' : 'animate-in fade-in duration-300'} ${tokens.motion.reduced}`}
       />
 
       {/* Drawer */}

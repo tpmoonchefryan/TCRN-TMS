@@ -220,7 +220,7 @@ export function SummaryCard({
 }>) {
   return (
     <div className="rounded-2xl border border-slate-200 bg-white/80 px-4 py-4 shadow-sm">
-      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">{label}</p>
+      <p className="text-xs font-semibold tracking-[0.2em] text-slate-500 uppercase">{label}</p>
       <p className="mt-2 text-3xl font-semibold text-slate-950">{value}</p>
       <p className="mt-2 text-xs leading-5 text-slate-500">{hint}</p>
     </div>
@@ -245,7 +245,7 @@ export function ScopeAssignmentCard({
           <p className="text-sm font-semibold text-slate-900">
             {resolveRoleDisplayName(assignment, locale)}
           </p>
-          <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+          <p className="text-xs tracking-[0.18em] text-slate-400 uppercase">
             {assignment.roleCode}
           </p>
         </div>

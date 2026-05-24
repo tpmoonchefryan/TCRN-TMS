@@ -85,7 +85,7 @@ export function TurnstileSettingsFields({
     <div className="space-y-5">
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="rounded-xl border border-slate-200 bg-white/80 px-4 py-3">
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+          <p className="text-xs font-semibold tracking-[0.16em] text-slate-500 uppercase">
             {text('Readiness', '就绪状态', '準備状況')}
           </p>
           <p className="mt-2 text-sm font-semibold text-slate-950">{statusLabel(response, text)}</p>
@@ -104,7 +104,7 @@ export function TurnstileSettingsFields({
           </p>
         </div>
         <div className="rounded-xl border border-slate-200 bg-white/80 px-4 py-3">
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+          <p className="text-xs font-semibold tracking-[0.16em] text-slate-500 uppercase">
             {text('Source', '来源', 'ソース')}
           </p>
           <p className="mt-2 text-sm font-semibold text-slate-950">{sourceLabel(response, text)}</p>
@@ -117,7 +117,7 @@ export function TurnstileSettingsFields({
           </p>
         </div>
         <div className="rounded-xl border border-slate-200 bg-white/80 px-4 py-3">
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+          <p className="text-xs font-semibold tracking-[0.16em] text-slate-500 uppercase">
             {text('Key status', '密钥状态', 'キー状態')}
           </p>
           <p className="mt-2 text-sm font-semibold text-slate-950">

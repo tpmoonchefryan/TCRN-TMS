@@ -177,7 +177,7 @@ export const TranslationDrawer: React.FC<TranslationDrawerProps> = ({
       <button
         type="button"
         onClick={() => onOpenChange(false)}
-        className="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50"
+        className="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:outline-none disabled:opacity-50"
         disabled={isSaving}
       >
         {cancelButtonLabel}
@@ -185,12 +185,12 @@ export const TranslationDrawer: React.FC<TranslationDrawerProps> = ({
       <button
         type="button"
         onClick={handleSave}
-        className="inline-flex items-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50"
+        className="inline-flex items-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:outline-none disabled:opacity-50"
         disabled={isSaving}
       >
         {isSaving ? (
           <svg
-            className="-ml-1 mr-2 h-4 w-4 animate-spin text-white"
+            className="mr-2 -ml-1 h-4 w-4 animate-spin text-white"
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
             viewBox="0 0 24 24"
@@ -232,7 +232,7 @@ export const TranslationDrawer: React.FC<TranslationDrawerProps> = ({
                 {field.label} <span className="font-normal text-slate-400">{baseValueSuffix}</span>
               </label>
               <div
-                className={`whitespace-pre-wrap rounded-md border border-slate-200 bg-slate-50 p-3 text-sm ${tokens.colors.text}`}
+                className={`rounded-md border border-slate-200 bg-slate-50 p-3 text-sm whitespace-pre-wrap ${tokens.colors.text}`}
               >
                 {field.baseValue.trim().length > 0 ? (
                   field.baseValue
@@ -261,7 +261,7 @@ export const TranslationDrawer: React.FC<TranslationDrawerProps> = ({
                   <div className="min-w-0">
                     <h3 className={`text-base font-bold ${tokens.colors.text}`}>{localeLabel}</h3>
                     {localeDef ? null : (
-                      <p className="text-xs uppercase tracking-[0.16em] text-slate-400">
+                      <p className="text-xs tracking-[0.16em] text-slate-400 uppercase">
                         {localeCode}
                       </p>
                     )}
@@ -269,7 +269,7 @@ export const TranslationDrawer: React.FC<TranslationDrawerProps> = ({
                   <button
                     type="button"
                     onClick={() => handleRemoveLanguage(localeCode)}
-                    className="rounded px-2 py-1 text-xs font-medium text-slate-500 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-500"
+                    className="rounded px-2 py-1 text-xs font-medium text-slate-500 hover:text-red-600 focus:ring-2 focus:ring-red-500 focus:outline-none"
                     aria-label={removeLanguageAriaLabel(localeLabel)}
                   >
                     {removeLanguageVisibleLabel}
@@ -342,7 +342,7 @@ export const TranslationDrawer: React.FC<TranslationDrawerProps> = ({
                         key={locale.code}
                         type="button"
                         onClick={() => handleAddLanguage(locale.code)}
-                        className="inline-flex items-center rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-sm font-medium text-indigo-700 hover:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                        className="inline-flex items-center rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-sm font-medium text-indigo-700 hover:bg-indigo-100 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:outline-none"
                       >
                         {locale.label}
                       </button>
@@ -358,7 +358,7 @@ export const TranslationDrawer: React.FC<TranslationDrawerProps> = ({
                   </label>
                   <select
                     id="long-tail-locale-select"
-                    className="block w-full rounded-md border-slate-300 py-2 pl-3 pr-10 text-base focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
+                    className="block w-full rounded-md border-slate-300 py-2 pr-10 pl-3 text-base focus:border-indigo-500 focus:ring-indigo-500 focus:outline-none sm:text-sm"
                     value=""
                     onChange={(e) => handleAddLanguage(e.target.value)}
                     aria-label={addOtherLanguageLabel}

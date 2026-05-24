@@ -585,7 +585,7 @@ function SummaryCard({
 }>) {
   return (
     <div className="rounded-2xl border border-slate-200 bg-white/80 px-4 py-4 shadow-sm">
-      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">{label}</p>
+      <p className="text-xs font-semibold tracking-[0.2em] text-slate-500 uppercase">{label}</p>
       <p className="mt-2 text-3xl font-semibold text-slate-950">{value}</p>
       <p className="mt-2 text-xs leading-5 text-slate-500">{hint}</p>
     </div>
@@ -640,7 +640,7 @@ function InlineActionButton({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`inline-flex flex-nowrap items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-1.5 text-xs font-medium transition ${toneClasses} disabled:cursor-not-allowed disabled:opacity-50`}
+      className={`inline-flex flex-nowrap items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium whitespace-nowrap transition ${toneClasses} disabled:cursor-not-allowed disabled:opacity-50`}
     >
       {children}
     </button>
@@ -1989,7 +1989,7 @@ export function SecurityManagementScreen({
       <GlassSurface className="p-8">
         <div className="flex flex-wrap items-start justify-between gap-6">
           <div className="space-y-4">
-            <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-600">
+            <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-xs font-semibold tracking-[0.18em] text-slate-600 uppercase">
               <ShieldCheck className="h-3.5 w-3.5" />
               {workspaceName}
             </div>
@@ -2239,7 +2239,7 @@ export function SecurityManagementScreen({
                             <td className="px-6 py-4 text-sm text-slate-700">
                               {entry.scope.join(', ') || copy.common.all}
                             </td>
-                            <td className="whitespace-nowrap px-6 py-4">
+                            <td className="px-6 py-4 whitespace-nowrap">
                               <div className="flex flex-nowrap gap-2 whitespace-nowrap">
                                 <ToneBadge
                                   tone={entry.isActive ? 'success' : 'neutral'}
@@ -2253,7 +2253,7 @@ export function SecurityManagementScreen({
                                 ) : null}
                               </div>
                             </td>
-                            <td className="whitespace-nowrap px-6 py-4">
+                            <td className="px-6 py-4 whitespace-nowrap">
                               <div className="flex flex-nowrap gap-2 whitespace-nowrap">
                                 <InlineActionButton
                                   onClick={() => void openBlocklistEditor(entry.id)}
@@ -2870,7 +2870,7 @@ export function SecurityManagementScreen({
                       {blocklistBatchPreview.validPatterns.length > 0 ? (
                         <ul className="space-y-1 text-sm text-slate-700">
                           {blocklistBatchPreview.validPatterns.map((pattern) => (
-                            <li key={pattern} className="break-all font-mono">
+                            <li key={pattern} className="font-mono break-all">
                               {pattern}
                             </li>
                           ))}
@@ -2888,7 +2888,7 @@ export function SecurityManagementScreen({
                       {blocklistBatchPreview.duplicatePatterns.length > 0 ? (
                         <ul className="space-y-1 text-sm text-slate-700">
                           {blocklistBatchPreview.duplicatePatterns.map((pattern, index) => (
-                            <li key={`${pattern}-${index}`} className="break-all font-mono">
+                            <li key={`${pattern}-${index}`} className="font-mono break-all">
                               {pattern}
                             </li>
                           ))}
@@ -2906,7 +2906,7 @@ export function SecurityManagementScreen({
                       {blocklistBatchPreview.invalidPatterns.length > 0 ? (
                         <ul className="space-y-1 text-sm text-slate-700">
                           {blocklistBatchPreview.invalidPatterns.map((pattern, index) => (
-                            <li key={`${pattern}-${index}`} className="break-all font-mono">
+                            <li key={`${pattern}-${index}`} className="font-mono break-all">
                               {pattern}
                             </li>
                           ))}
@@ -3050,7 +3050,7 @@ export function SecurityManagementScreen({
                                 label={getSecuritySeverityLabel(locale, entry.severity)}
                               />
                             </td>
-                            <td className="whitespace-nowrap px-6 py-4">
+                            <td className="px-6 py-4 whitespace-nowrap">
                               <div className="flex flex-nowrap gap-2 whitespace-nowrap">
                                 <ToneBadge
                                   tone={entry.isActive ? 'success' : 'neutral'}
@@ -3064,7 +3064,7 @@ export function SecurityManagementScreen({
                                 ) : null}
                               </div>
                             </td>
-                            <td className="whitespace-nowrap px-6 py-4">
+                            <td className="px-6 py-4 whitespace-nowrap">
                               <div className="flex flex-nowrap gap-2 whitespace-nowrap">
                                 <InlineActionButton
                                   onClick={() => void openExternalEditor(entry.id)}
@@ -3584,7 +3584,7 @@ export function SecurityManagementScreen({
                               label={rule.isActive ? copy.common.active : copy.common.inactive}
                             />
                           </td>
-                          <td className="whitespace-nowrap px-6 py-4">
+                          <td className="px-6 py-4 whitespace-nowrap">
                             <InlineActionButton
                               tone="danger"
                               onClick={() =>
@@ -4073,7 +4073,7 @@ export function SecurityManagementScreen({
                               <p className="text-sm font-semibold text-slate-900">
                                 {pickSecurityLocalizedName(locale, store, store.code)}
                               </p>
-                              <p className="text-xs uppercase tracking-[0.18em] text-slate-500">
+                              <p className="text-xs tracking-[0.18em] text-slate-500 uppercase">
                                 {store.code}
                               </p>
                             </div>

@@ -376,16 +376,16 @@ export function LoginForm() {
         />
       </div>
 
-      <div className="mx-auto grid min-h-[calc(100vh-5rem)] w-full max-w-6xl gap-10 px-6 pb-12 pt-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(22rem,28rem)] lg:items-center">
+      <div className="mx-auto grid min-h-[calc(100vh-5rem)] w-full max-w-6xl gap-10 px-6 pt-4 pb-12 lg:grid-cols-[minmax(0,1.1fr)_minmax(22rem,28rem)] lg:items-center">
         <section className="space-y-6">
           {loginCopy.brandEyebrow ? (
-            <div className="inline-flex items-center rounded-full border border-slate-200 bg-white/70 px-4 py-2 text-xs font-semibold uppercase tracking-[0.24em] text-slate-600 shadow-sm backdrop-blur">
+            <div className="inline-flex items-center rounded-full border border-slate-200 bg-white/70 px-4 py-2 text-xs font-semibold tracking-[0.24em] text-slate-600 uppercase shadow-sm backdrop-blur">
               {loginCopy.brandEyebrow}
             </div>
           ) : null}
 
           <div className="space-y-4">
-            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-500">
+            <p className="text-sm font-semibold tracking-[0.24em] text-slate-500 uppercase">
               {loginCopy.appName}
             </p>
             {heroTitle ? (
@@ -422,12 +422,12 @@ export function LoginForm() {
           {surfaceNote || loginCopy.boundaryNote ? (
             <div className="flex flex-wrap gap-3">
               {surfaceNote ? (
-                <div className="bg-white/78 rounded-2xl border border-slate-200 px-4 py-3 text-sm leading-6 text-slate-700 shadow-sm backdrop-blur">
+                <div className="rounded-2xl border border-slate-200 bg-white/78 px-4 py-3 text-sm leading-6 text-slate-700 shadow-sm backdrop-blur">
                   {surfaceNote}
                 </div>
               ) : null}
               {loginCopy.boundaryNote ? (
-                <div className="bg-white/78 rounded-2xl border border-slate-200 px-4 py-3 text-sm leading-6 text-slate-700 shadow-sm backdrop-blur">
+                <div className="rounded-2xl border border-slate-200 bg-white/78 px-4 py-3 text-sm leading-6 text-slate-700 shadow-sm backdrop-blur">
                   {loginCopy.boundaryNote}
                 </div>
               ) : null}
@@ -435,7 +435,7 @@ export function LoginForm() {
           ) : null}
         </section>
 
-        <section className="bg-white/92 w-full rounded-[2rem] border border-slate-200 p-8 shadow-[0_24px_90px_-45px_rgba(15,23,42,0.45)] backdrop-blur sm:p-10">
+        <section className="w-full rounded-[2rem] border border-slate-200 bg-white/92 p-8 shadow-[0_24px_90px_-45px_rgba(15,23,42,0.45)] backdrop-blur sm:p-10">
           <div className="space-y-4">
             <div className="space-y-2">
               <h1 className="text-3xl font-semibold text-slate-950">{stepTitle}</h1>
@@ -460,7 +460,7 @@ export function LoginForm() {
                         tenantCode: event.target.value.toUpperCase(),
                       }))
                     }
-                    className="w-full rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 text-slate-900 shadow-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-200"
+                    className="w-full rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 text-slate-900 shadow-sm transition outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-200"
                     placeholder="AC"
                     autoCapitalize="characters"
                     autoComplete="off"
@@ -482,7 +482,7 @@ export function LoginForm() {
                         login: event.target.value,
                       }))
                     }
-                    className="w-full rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 text-slate-900 shadow-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-200"
+                    className="w-full rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 text-slate-900 shadow-sm transition outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-200"
                     placeholder={loginCopy.usernamePlaceholder}
                     autoComplete="username"
                     spellCheck={false}
@@ -504,7 +504,7 @@ export function LoginForm() {
                         password: event.target.value,
                       }))
                     }
-                    className="w-full rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 text-slate-900 shadow-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-200"
+                    className="w-full rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 text-slate-900 shadow-sm transition outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-200"
                     placeholder={loginCopy.passwordPlaceholder}
                     autoComplete="current-password"
                     required
@@ -541,7 +541,7 @@ export function LoginForm() {
                   onChange={(event) =>
                     setTotpCode(event.target.value.replace(/\D/g, '').slice(0, 6))
                   }
-                  className="w-full rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 text-lg tracking-[0.35em] text-slate-900 shadow-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-200"
+                  className="w-full rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 text-lg tracking-[0.35em] text-slate-900 shadow-sm transition outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-200"
                   placeholder={loginCopy.totpPlaceholder}
                   autoComplete="one-time-code"
                   aria-label={loginCopy.totpLabel}
@@ -563,7 +563,7 @@ export function LoginForm() {
                     type="password"
                     value={newPassword}
                     onChange={(event) => setNewPassword(event.target.value)}
-                    className="w-full rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 text-slate-900 shadow-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-200"
+                    className="w-full rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 text-slate-900 shadow-sm transition outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-200"
                     placeholder={loginCopy.passwordPlaceholder}
                     autoComplete="new-password"
                     required
@@ -579,7 +579,7 @@ export function LoginForm() {
                     type="password"
                     value={newPasswordConfirm}
                     onChange={(event) => setNewPasswordConfirm(event.target.value)}
-                    className="w-full rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 text-slate-900 shadow-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-200"
+                    className="w-full rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 text-slate-900 shadow-sm transition outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-200"
                     placeholder={loginCopy.confirmNewPasswordPlaceholder}
                     autoComplete="new-password"
                     required

@@ -60,7 +60,7 @@ export const PaginationFooter: React.FC<PaginationFooterProps> = ({
               value={pagination.pageSize}
               onChange={(event) => onPageSizeChange(Number(event.target.value))}
               disabled={isLoading}
-              className={`rounded-lg border ${tokens.colors.border} bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-60`}
+              className={`rounded-lg border ${tokens.colors.border} bg-white px-3 py-2 text-sm text-slate-700 focus:ring-2 focus:ring-indigo-500 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60`}
             >
               {pageSizeOptions.map((option) => (
                 <option key={option} value={option}>

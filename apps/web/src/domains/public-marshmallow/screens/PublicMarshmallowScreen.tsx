@@ -542,7 +542,7 @@ export function PublicMarshmallowScreen({
                     minLength={config.minMessageLength}
                     maxLength={config.maxMessageLength}
                     rows={7}
-                    className="w-full rounded-lg border border-rose-100 bg-white/85 px-4 py-4 text-sm leading-7 text-slate-900 outline-none transition focus:border-rose-300 focus:bg-white focus:ring-2 focus:ring-rose-100 motion-reduce:transition-none"
+                    className="w-full rounded-lg border border-rose-100 bg-white/85 px-4 py-4 text-sm leading-7 text-slate-900 transition outline-none focus:border-rose-300 focus:bg-white focus:ring-2 focus:ring-rose-100 motion-reduce:transition-none"
                     required
                   />
                   <p className="text-xs text-slate-500">
@@ -576,7 +576,7 @@ export function PublicMarshmallowScreen({
                       id="public-marshmallow-sender"
                       value={senderName}
                       onChange={(event) => setSenderName(event.target.value)}
-                      className="w-full rounded-lg border border-rose-100 bg-white/80 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-rose-300 focus:bg-white focus:ring-2 focus:ring-rose-100 motion-reduce:transition-none"
+                      className="w-full rounded-lg border border-rose-100 bg-white/80 px-4 py-3 text-sm text-slate-900 transition outline-none focus:border-rose-300 focus:bg-white focus:ring-2 focus:ring-rose-100 motion-reduce:transition-none"
                       maxLength={64}
                       required={!isAnonymous}
                     />

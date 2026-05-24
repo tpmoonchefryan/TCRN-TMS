@@ -88,7 +88,7 @@ export const SettingsLayout: React.FC<SettingsLayoutProps> = ({
       <nav
         id={sectionNavId}
         tabIndex={-1}
-        className="bg-white/78 min-w-0 rounded-lg border border-slate-200 p-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+        className="min-w-0 rounded-lg border border-slate-200 bg-white/78 p-2 shadow-sm focus:ring-2 focus:ring-indigo-500/50 focus:outline-none"
         aria-label={ariaLabel}
       >
         <div

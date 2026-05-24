@@ -105,7 +105,7 @@ export function SummaryCard({
 }>) {
   return (
     <div className="rounded-2xl border border-slate-200 bg-white/80 px-4 py-4 shadow-sm">
-      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">{label}</p>
+      <p className="text-xs font-semibold tracking-[0.2em] text-slate-500 uppercase">{label}</p>
       <p className="mt-2 text-3xl font-semibold text-slate-950">{value}</p>
       <p className="mt-2 text-xs leading-5 text-slate-500">{hint}</p>
     </div>
@@ -130,7 +130,7 @@ export function ToneBadge({
 
   return (
     <span
-      className={`rounded-full px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.14em] ${toneClasses}`}
+      className={`rounded-full px-2.5 py-1 text-[11px] font-medium tracking-[0.14em] uppercase ${toneClasses}`}
     >
       {label}
     </span>

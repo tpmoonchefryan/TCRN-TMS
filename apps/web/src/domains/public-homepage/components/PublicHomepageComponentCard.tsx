@@ -425,7 +425,7 @@ export function PublicHomepageComponentCard({
                   href={url}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-2 rounded-md border border-dashed border-sky-200 bg-white/85 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-sky-300 hover:bg-white focus:outline-none focus:ring-2 focus:ring-sky-200 motion-reduce:transition-none"
+                  className="inline-flex items-center gap-2 rounded-md border border-dashed border-sky-200 bg-white/85 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-sky-300 hover:bg-white focus:ring-2 focus:ring-sky-200 focus:outline-none motion-reduce:transition-none"
                 >
                   <ExternalLink className="h-4 w-4" />
                   {label}
@@ -579,7 +579,7 @@ export function PublicHomepageComponentCard({
             href={url}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center justify-center gap-2 rounded-md bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:translate-y-[-1px] hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-200 motion-reduce:transition-none motion-reduce:hover:translate-y-0"
+            className="inline-flex items-center justify-center gap-2 rounded-md bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:translate-y-[-1px] hover:bg-slate-800 focus:ring-2 focus:ring-rose-200 focus:outline-none motion-reduce:transition-none motion-reduce:hover:translate-y-0"
           >
             {label}
             <ExternalLink className="h-4 w-4" />
@@ -603,7 +603,7 @@ export function PublicHomepageComponentCard({
             {showSubmitButton && marshmallowUrl ? (
               <a
                 href={marshmallowUrl}
-                className="inline-flex items-center gap-2 rounded-md border border-amber-200 bg-white/85 px-4 py-2 text-sm font-semibold text-amber-900 transition hover:border-amber-300 hover:bg-amber-50 focus:outline-none focus:ring-2 focus:ring-amber-200 motion-reduce:transition-none"
+                className="inline-flex items-center gap-2 rounded-md border border-amber-200 bg-white/85 px-4 py-2 text-sm font-semibold text-amber-900 transition hover:border-amber-300 hover:bg-amber-50 focus:ring-2 focus:ring-amber-200 focus:outline-none motion-reduce:transition-none"
               >
                 <MessageCircleMore className="h-4 w-4" />
                 {copy.marshmallow}

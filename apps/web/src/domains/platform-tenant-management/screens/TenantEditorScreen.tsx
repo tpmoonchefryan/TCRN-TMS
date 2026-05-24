@@ -382,14 +382,14 @@ export function TenantEditorScreen({
               <ArrowLeft className="h-4 w-4" />
               {editorCopy.backToInventory}
             </Link>
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
+            <p className="text-xs font-semibold tracking-[0.24em] text-slate-500 uppercase">
               {editorCopy.badge}
             </p>
             <h1 className="text-3xl font-semibold text-slate-950">{editorTitle}</h1>
             <p className="max-w-3xl text-sm leading-6 text-slate-600">
               {mode === 'create' ? editorCopy.createDescription : editorCopy.editDescription}
             </p>
-            <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
+            <p className="text-xs tracking-[0.2em] text-slate-500 uppercase">
               {session?.tenantName || copy.currentAcTenantFallback}
             </p>
           </div>
@@ -677,7 +677,7 @@ export function TenantEditorScreen({
                   >
                     <div className="flex flex-wrap items-start justify-between gap-4">
                       <div className="space-y-2">
-                        <p className="break-all text-sm font-semibold text-slate-950">
+                        <p className="text-sm font-semibold break-all text-slate-950">
                           {domain.domain}
                         </p>
                         <label className="block space-y-2">

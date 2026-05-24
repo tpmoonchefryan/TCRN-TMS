@@ -657,24 +657,24 @@ function renderScopeSummary(
     <div className="space-y-2">
       <div className="flex flex-wrap gap-2">
         <span
-          className={`whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] ${scopeTone}`}
+          className={`rounded-full px-2.5 py-1 text-[11px] font-semibold tracking-[0.16em] whitespace-nowrap uppercase ${scopeTone}`}
         >
           {isInherited
             ? copy.inheritedFromScope(copy.scopeTypeLabel(ownerScopeType))
             : copy.scopeOwned}
         </span>
         {entity.isDisabledHere ? (
-          <span className="whitespace-nowrap rounded-full bg-slate-900 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-white">
+          <span className="rounded-full bg-slate-900 px-2.5 py-1 text-[11px] font-semibold tracking-[0.16em] whitespace-nowrap text-white uppercase">
             {copy.disabledHerePill}
           </span>
         ) : null}
         {entity.isForceUse ? (
-          <span className="whitespace-nowrap rounded-full bg-red-100 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-red-700">
+          <span className="rounded-full bg-red-100 px-2.5 py-1 text-[11px] font-semibold tracking-[0.16em] whitespace-nowrap text-red-700 uppercase">
             {copy.requiredPill}
           </span>
         ) : null}
         {entity.isSystem ? (
-          <span className="whitespace-nowrap rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-600">
+          <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold tracking-[0.16em] whitespace-nowrap text-slate-600 uppercase">
             {copy.systemPill}
           </span>
         ) : null}
@@ -729,7 +729,7 @@ function renderField(
           aria-label={field.label}
           value={typeof value === 'string' ? value : ''}
           onChange={(event) => onChange(field.key, event.target.value)}
-          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400"
+          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm transition outline-none focus:border-slate-400"
         >
           <option value="">Select a parent record</option>
           {parentOptions.map((option) => (
@@ -753,7 +753,7 @@ function renderField(
           aria-label={field.label}
           value={typeof value === 'string' ? value : ''}
           onChange={(event) => onChange(field.key, event.target.value)}
-          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400"
+          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm transition outline-none focus:border-slate-400"
         >
           <option value="">{field.placeholder ?? field.label}</option>
           {(field.options ?? []).map((option) => (
@@ -782,7 +782,7 @@ function renderField(
           onChange={(event) => onChange(field.key, event.target.value)}
           placeholder={field.placeholder}
           rows={4}
-          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400"
+          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm transition outline-none focus:border-slate-400"
         />
       </label>
     );
@@ -806,7 +806,7 @@ function renderField(
             value={typeof value === 'string' ? value : ''}
             onChange={(event) => onChange(field.key, event.target.value)}
             placeholder={field.placeholder}
-            className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400"
+            className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm transition outline-none focus:border-slate-400"
           />
         </div>
       </label>
@@ -833,7 +833,7 @@ function renderField(
         value={typeof value === 'string' ? value : ''}
         onChange={(event) => onChange(field.key, event.target.value)}
         placeholder={field.placeholder}
-        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400"
+        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm transition outline-none focus:border-slate-400"
       />
       {field.description ? (
         <p className="text-xs leading-5 text-slate-500">{field.description}</p>
@@ -1640,7 +1640,7 @@ export function ScopedConfigEntityWorkspace({
                   <div className="flex items-start justify-between gap-3">
                     <div className="space-y-1">
                       <p className="text-sm font-semibold">{entry.label}</p>
-                      <p className="text-xs uppercase tracking-[0.18em] text-slate-500">
+                      <p className="text-xs tracking-[0.18em] text-slate-500 uppercase">
                         {entry.type}
                       </p>
                     </div>
@@ -1703,7 +1703,7 @@ export function ScopedConfigEntityWorkspace({
                 <div className="flex items-start justify-between gap-3">
                   <div className="space-y-1">
                     <p className="text-sm font-semibold">{entry.label}</p>
-                    <p className="text-xs uppercase tracking-[0.18em] text-slate-500">
+                    <p className="text-xs tracking-[0.18em] text-slate-500 uppercase">
                       {entry.type}
                     </p>
                   </div>
@@ -1759,25 +1759,25 @@ export function ScopedConfigEntityWorkspace({
 
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <div className="rounded-2xl border border-slate-200 bg-white/85 px-4 py-4 shadow-sm">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+              <p className="text-xs font-semibold tracking-[0.18em] text-slate-500 uppercase">
                 {resolvedCopy.visibleRecordsLabel}
               </p>
               <p className="mt-2 text-2xl font-semibold text-slate-950">{records.length}</p>
             </div>
             <div className="rounded-2xl border border-slate-200 bg-white/85 px-4 py-4 shadow-sm">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+              <p className="text-xs font-semibold tracking-[0.18em] text-slate-500 uppercase">
                 {resolvedCopy.activeLabel}
               </p>
               <p className="mt-2 text-2xl font-semibold text-slate-950">{activeCount}</p>
             </div>
             <div className="rounded-2xl border border-slate-200 bg-white/85 px-4 py-4 shadow-sm">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+              <p className="text-xs font-semibold tracking-[0.18em] text-slate-500 uppercase">
                 {resolvedCopy.inheritedLabel}
               </p>
               <p className="mt-2 text-2xl font-semibold text-slate-950">{inheritedCount}</p>
             </div>
             <div className="rounded-2xl border border-slate-200 bg-white/85 px-4 py-4 shadow-sm">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+              <p className="text-xs font-semibold tracking-[0.18em] text-slate-500 uppercase">
                 {resolvedCopy.disabledHereLabel}
               </p>
               <p className="mt-2 text-2xl font-semibold text-slate-950">{disabledHereCount}</p>
@@ -1796,7 +1796,7 @@ export function ScopedConfigEntityWorkspace({
                     applyScopedConfigQueryState({ page: 1, search: event.target.value })
                   }
                   placeholder={resolvedCopy.searchPlaceholder(selectedEntry.label)}
-                  className="w-full rounded-xl border border-slate-300 bg-white/85 py-2.5 pl-4 pr-3 text-sm text-slate-900 shadow-sm transition focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-200"
+                  className="w-full rounded-xl border border-slate-300 bg-white/85 py-2.5 pr-3 pl-4 text-sm text-slate-900 shadow-sm transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200 focus:outline-none"
                 />
               </label>
 
@@ -1957,7 +1957,7 @@ export function ScopedConfigEntityWorkspace({
                       <td className="px-6 py-4 align-top">
                         <div className="space-y-2">
                           <span
-                            className={`inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] ${
+                            className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold tracking-[0.16em] whitespace-nowrap uppercase ${
                               entity.isActive
                                 ? 'bg-emerald-100 text-emerald-700'
                                 : 'bg-slate-200 text-slate-700'
@@ -1976,7 +1976,7 @@ export function ScopedConfigEntityWorkspace({
                               <button
                                 type="button"
                                 onClick={() => beginEdit(entity)}
-                                className="rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+                                className="rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold tracking-[0.16em] text-slate-700 uppercase transition hover:border-slate-300 hover:bg-slate-50"
                                 aria-label={`${resolvedCopy.editLabel} ${entity.code ?? entity.localizedName}`}
                               >
                                 {resolvedCopy.editLabel}
@@ -1985,7 +1985,7 @@ export function ScopedConfigEntityWorkspace({
                                 type="button"
                                 onClick={() => queueToggle(entity)}
                                 disabled={entity.isSystem}
-                                className="rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                className="rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold tracking-[0.16em] text-slate-700 uppercase transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
                                 aria-label={`${entity.isActive ? resolvedCopy.deactivateLabel : resolvedCopy.reactivateLabel} ${entity.code ?? entity.localizedName}`}
                               >
                                 {entity.isActive
@@ -1997,7 +1997,7 @@ export function ScopedConfigEntityWorkspace({
                             <button
                               type="button"
                               onClick={() => queueToggle(entity)}
-                              className="rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+                              className="rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold tracking-[0.16em] text-slate-700 uppercase transition hover:border-slate-300 hover:bg-slate-50"
                               aria-label={`${entity.isDisabledHere ? resolvedCopy.enableHereLabel : resolvedCopy.disableHereLabel} ${entity.code ?? entity.localizedName}`}
                             >
                               {entity.isDisabledHere
@@ -2005,7 +2005,7 @@ export function ScopedConfigEntityWorkspace({
                                 : resolvedCopy.disableHereLabel}
                             </button>
                           ) : (
-                            <span className="whitespace-nowrap rounded-full bg-slate-100 px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                            <span className="rounded-full bg-slate-100 px-3 py-2 text-xs font-semibold tracking-[0.16em] whitespace-nowrap text-slate-500 uppercase">
                               {resolvedCopy.inheritedPill}
                             </span>
                           )}
@@ -2094,7 +2094,7 @@ export function ScopedConfigEntityWorkspace({
                 onChange={(event) => updateDraft('code', event.target.value.toUpperCase())}
                 placeholder="BUSINESS_SEGMENT_A"
                 disabled={editorMode === 'edit'}
-                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400 disabled:bg-slate-100 disabled:text-slate-500"
+                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm transition outline-none focus:border-slate-400 disabled:bg-slate-100 disabled:text-slate-500"
               />
             </label>
 
@@ -2107,7 +2107,7 @@ export function ScopedConfigEntityWorkspace({
                 type="number"
                 value={typeof draft.sortOrder === 'string' ? draft.sortOrder : '0'}
                 onChange={(event) => updateDraft('sortOrder', event.target.value)}
-                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400"
+                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm transition outline-none focus:border-slate-400"
               />
             </label>
           </div>
@@ -2138,7 +2138,7 @@ export function ScopedConfigEntityWorkspace({
               type="text"
               value={typeof draft.nameBase === 'string' ? draft.nameBase : ''}
               onChange={(event) => updateDraft('nameBase', event.target.value)}
-              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400"
+              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm transition outline-none focus:border-slate-400"
             />
           </label>
 
@@ -2152,7 +2152,7 @@ export function ScopedConfigEntityWorkspace({
                 value={typeof draft.descriptionBase === 'string' ? draft.descriptionBase : ''}
                 onChange={(event) => updateDraft('descriptionBase', event.target.value)}
                 rows={3}
-                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400"
+                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm transition outline-none focus:border-slate-400"
               />
             </label>
           ) : null}

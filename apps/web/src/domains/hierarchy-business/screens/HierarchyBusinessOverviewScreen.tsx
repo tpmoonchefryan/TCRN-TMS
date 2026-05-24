@@ -388,7 +388,7 @@ export function HierarchyBusinessOverviewScreen({
       <GlassSurface className="p-8">
         <div className="flex flex-wrap items-start justify-between gap-6">
           <div className="space-y-4">
-            <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-600">
+            <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-xs font-semibold tracking-[0.18em] text-slate-600 uppercase">
               <Building2 className="h-3.5 w-3.5" />
               {scopeLabel}
             </div>
@@ -410,7 +410,7 @@ export function HierarchyBusinessOverviewScreen({
           </div>
 
           <div className="rounded-3xl border border-slate-200 bg-white/80 px-5 py-5 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+            <p className="text-xs font-semibold tracking-[0.18em] text-slate-500 uppercase">
               {pickLocaleText(locale, {
                 en: 'Scope path',
                 zh_HANS: '范围路径',
@@ -427,7 +427,7 @@ export function HierarchyBusinessOverviewScreen({
 
       <div className="grid gap-4 xl:grid-cols-4">
         <div className="rounded-2xl border border-slate-200 bg-white/85 px-5 py-5 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+          <p className="text-xs font-semibold tracking-[0.18em] text-slate-500 uppercase">
             {pickLocaleText(locale, {
               en: 'Managed talents',
               zh_HANS: '管理艺人数',
@@ -440,7 +440,7 @@ export function HierarchyBusinessOverviewScreen({
           <p className="mt-3 text-3xl font-semibold text-slate-950">{talents.length}</p>
         </div>
         <div className="rounded-2xl border border-slate-200 bg-white/85 px-5 py-5 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+          <p className="text-xs font-semibold tracking-[0.18em] text-slate-500 uppercase">
             {pickLocaleText(locale, {
               en: 'Published',
               zh_HANS: '已发布',
@@ -453,7 +453,7 @@ export function HierarchyBusinessOverviewScreen({
           <p className="mt-3 text-3xl font-semibold text-slate-950">{publishedTalents}</p>
         </div>
         <div className="rounded-2xl border border-slate-200 bg-white/85 px-5 py-5 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+          <p className="text-xs font-semibold tracking-[0.18em] text-slate-500 uppercase">
             {pickLocaleText(locale, {
               en: 'Draft',
               zh_HANS: '草稿',
@@ -466,7 +466,7 @@ export function HierarchyBusinessOverviewScreen({
           <p className="mt-3 text-3xl font-semibold text-slate-950">{draftTalents}</p>
         </div>
         <div className="rounded-2xl border border-slate-200 bg-white/85 px-5 py-5 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+          <p className="text-xs font-semibold tracking-[0.18em] text-slate-500 uppercase">
             {pickLocaleText(locale, {
               en: 'Disabled',
               zh_HANS: '停用',
@@ -484,7 +484,7 @@ export function HierarchyBusinessOverviewScreen({
         {moduleCards.map((card) => (
           <GlassSurface key={card.key} className="p-6">
             <div className="space-y-3">
-              <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-600">
+              <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-xs font-semibold tracking-[0.18em] text-slate-600 uppercase">
                 {card.icon}
                 {pickLocaleText(locale, {
                   en: 'Planned',

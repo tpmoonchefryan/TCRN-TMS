@@ -3443,7 +3443,7 @@ export function PublicPresenceAuthoringIdeScreen({
       <div className="space-y-4">
         {groupedFiles.map((group) => (
           <div key={group.groupId} className="space-y-2">
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+            <p className="text-xs font-semibold tracking-[0.14em] text-slate-500 uppercase">
               {getVirtualFileGroupLabel(locale, group.groupId)}
             </p>
             <div className="space-y-2">
@@ -3465,7 +3465,7 @@ export function PublicPresenceAuthoringIdeScreen({
                     <Package2 className="h-4 w-4" aria-hidden="true" />
                     <span className="truncate">{entry.label}</span>
                     {dirtyFolderPaths.has(entry.path) ? (
-                      <span className="ml-auto text-[11px] font-semibold uppercase tracking-[0.14em] text-amber-700">
+                      <span className="ml-auto text-[11px] font-semibold tracking-[0.14em] text-amber-700 uppercase">
                         {pickLocaleText(locale, {
                           en: 'Dirty',
                           zh_HANS: '未保存',
@@ -3501,7 +3501,7 @@ export function PublicPresenceAuthoringIdeScreen({
                     )}
                     <span className="truncate">{entry.label}</span>
                     {dirtyFilePaths.has(entry.path) ? (
-                      <span className="ml-auto text-[11px] font-semibold uppercase tracking-[0.14em] text-amber-700">
+                      <span className="ml-auto text-[11px] font-semibold tracking-[0.14em] text-amber-700 uppercase">
                         {pickLocaleText(locale, {
                           en: 'Dirty',
                           zh_HANS: '未保存',
@@ -3719,7 +3719,7 @@ export function PublicPresenceAuthoringIdeScreen({
               </button>
             </div>
             <div
-              className="bg-white/96 rounded-2xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700"
+              className="rounded-2xl border border-slate-200 bg-white/96 px-3 py-2 text-sm font-medium text-slate-700"
               data-testid="ide-mobile-surface-status"
               role="status"
             >
@@ -3835,7 +3835,7 @@ export function PublicPresenceAuthoringIdeScreen({
               fr: 'Feuille actions authoring',
             })}
             aria-modal
-            className="bg-white/97 !fixed inset-x-3 bottom-3 z-40 max-h-[72vh] overflow-auto rounded-[2rem] border border-slate-200/90 p-4 shadow-xl xl:hidden"
+            className="!fixed inset-x-3 bottom-3 z-40 max-h-[72vh] overflow-auto rounded-[2rem] border border-slate-200/90 bg-white/97 p-4 shadow-xl xl:hidden"
             data-testid="ide-mobile-actions-sheet"
             id={mobileActionsSheetId}
             role="dialog"
@@ -3918,7 +3918,7 @@ export function PublicPresenceAuthoringIdeScreen({
 
                         setMobileOverlay((current) => (current === 'actions' ? null : current));
                       }}
-                      className="inline-flex min-h-14 flex-col items-center justify-center gap-1 rounded-2xl border border-slate-200 bg-white px-2 py-2 text-center text-[11px] font-semibold leading-tight text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                      className="inline-flex min-h-14 flex-col items-center justify-center gap-1 rounded-2xl border border-slate-200 bg-white px-2 py-2 text-center text-[11px] leading-tight font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       {action.icon}
                       <span>{action.label}</span>
@@ -3927,7 +3927,7 @@ export function PublicPresenceAuthoringIdeScreen({
                     <Link
                       key={action.key}
                       href={action.href ?? '#'}
-                      className={`inline-flex min-h-14 flex-col items-center justify-center gap-1 rounded-2xl border px-2 py-2 text-center text-[11px] font-semibold leading-tight transition ${
+                      className={`inline-flex min-h-14 flex-col items-center justify-center gap-1 rounded-2xl border px-2 py-2 text-center text-[11px] leading-tight font-semibold transition ${
                         action.tone === 'rose'
                           ? 'border-rose-200 bg-white text-rose-700 hover:border-rose-300 hover:bg-rose-50'
                           : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'
@@ -3945,7 +3945,7 @@ export function PublicPresenceAuthoringIdeScreen({
 
         <div className={`relative grid min-h-[calc(100vh-4.75rem)] gap-2 ${ideGridClass}`}>
           <PublicPresenceSurface
-            className="bg-white/97 !fixed bottom-4 left-1/2 z-30 flex -translate-x-1/2 flex-row items-center gap-2 rounded-full border border-slate-200/90 px-2 py-2 shadow-lg backdrop-blur md:!static md:bottom-auto md:left-auto md:z-auto md:h-full md:translate-x-0 md:flex-col md:rounded-[2rem] md:border-transparent md:bg-white md:px-1 md:py-2 md:shadow-none md:backdrop-blur-0"
+            className="md:backdrop-blur-0 !fixed bottom-4 left-1/2 z-30 flex -translate-x-1/2 flex-row items-center gap-2 rounded-full border border-slate-200/90 bg-white/97 px-2 py-2 shadow-lg backdrop-blur md:!static md:bottom-auto md:left-auto md:z-auto md:h-full md:translate-x-0 md:flex-col md:rounded-[2rem] md:border-transparent md:bg-white md:px-1 md:py-2 md:shadow-none"
             data-overlay-scope="true"
             data-testid="ide-file-rail"
             variant="inset"
@@ -4049,7 +4049,7 @@ export function PublicPresenceAuthoringIdeScreen({
               <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm">
                 <div className="flex items-start justify-between gap-3 border-b border-slate-200 px-4 py-4">
                   <div className="space-y-1">
-                    <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">
+                    <h2 className="text-sm font-semibold tracking-[0.18em] text-slate-500 uppercase">
                       {pickLocaleText(locale, {
                         en: 'Files',
                         zh_HANS: '文件',
@@ -4199,7 +4199,7 @@ export function PublicPresenceAuthoringIdeScreen({
               data-testid="ide-editor-surface"
             >
               <div className="pointer-events-none absolute inset-x-3 top-3 z-10 flex justify-start sm:inset-x-4">
-                <div className="bg-white/96 pointer-events-auto flex min-w-0 flex-wrap items-center gap-2 overflow-x-auto whitespace-nowrap rounded-full border border-slate-200/90 px-3 py-2 text-sm shadow-sm [scrollbar-width:none]">
+                <div className="pointer-events-auto flex min-w-0 [scrollbar-width:none] flex-wrap items-center gap-2 overflow-x-auto rounded-full border border-slate-200/90 bg-white/96 px-3 py-2 text-sm whitespace-nowrap shadow-sm">
                   <PublicPresenceBadge tone="rose">
                     {target === 'advanced'
                       ? getAdvancedModeLabel(locale, selectedAdvancedMode)
@@ -4265,8 +4265,8 @@ export function PublicPresenceAuthoringIdeScreen({
                   ) : null}
                 </div>
               </div>
-              <div className="min-h-0 flex-1 px-3 pb-3 pt-14 sm:px-4 sm:pb-4 sm:pt-16">
-                <div className="mb-3 flex flex-wrap gap-2 overflow-x-auto [scrollbar-width:none]">
+              <div className="min-h-0 flex-1 px-3 pt-14 pb-3 sm:px-4 sm:pt-16 sm:pb-4">
+                <div className="mb-3 flex [scrollbar-width:none] flex-wrap gap-2 overflow-x-auto">
                   {openTabs
                     .filter((path) => visibleFiles.some((file) => file.path === path))
                     .map((path) => (
@@ -4338,7 +4338,7 @@ export function PublicPresenceAuthoringIdeScreen({
           >
             <div className="pointer-events-none absolute inset-x-3 top-3 z-10 flex justify-start sm:inset-x-4">
               {!isWideDesktop ? (
-                <div className="bg-white/96 pointer-events-auto w-full rounded-[1.5rem] border border-slate-200/90 px-3 py-2 text-sm shadow-sm">
+                <div className="pointer-events-auto w-full rounded-[1.5rem] border border-slate-200/90 bg-white/96 px-3 py-2 text-sm shadow-sm">
                   <div className="flex items-center justify-between gap-2">
                     <PublicPresenceBadge tone="rose">{previewSurfaceLabel}</PublicPresenceBadge>
                     <button
@@ -4411,7 +4411,7 @@ export function PublicPresenceAuthoringIdeScreen({
                 </div>
               ) : null}
               {isWideDesktop ? (
-                <div className="bg-white/96 pointer-events-auto min-w-0 flex-wrap items-center gap-2 rounded-[1.5rem] border border-slate-200/90 px-3 py-2 text-sm shadow-sm xl:flex">
+                <div className="pointer-events-auto min-w-0 flex-wrap items-center gap-2 rounded-[1.5rem] border border-slate-200/90 bg-white/96 px-3 py-2 text-sm shadow-sm xl:flex">
                   <PublicPresenceBadge tone="rose">{previewSurfaceLabel}</PublicPresenceBadge>
                   <button
                     type="button"
@@ -4497,7 +4497,7 @@ export function PublicPresenceAuthoringIdeScreen({
 
             <div
               data-testid="ide-live-preview"
-              className={`min-h-0 flex-1 px-3 pb-3 pt-16 sm:px-4 sm:pb-4 sm:pt-20 ${
+              className={`min-h-0 flex-1 px-3 pt-16 pb-3 sm:px-4 sm:pt-20 sm:pb-4 ${
                 viewport === 'mobile' ? 'mx-auto w-full max-w-[24rem]' : ''
               }`}
             >
@@ -4587,7 +4587,7 @@ export function PublicPresenceAuthoringIdeScreen({
             <PublicPresenceSurface
               aria-label={mobileUtilitySheetLabel}
               aria-modal
-              className="bg-white/97 !fixed inset-x-3 bottom-3 z-40 max-h-[72vh] overflow-auto rounded-[2rem] border border-slate-200/90 p-4 shadow-xl xl:hidden"
+              className="!fixed inset-x-3 bottom-3 z-40 max-h-[72vh] overflow-auto rounded-[2rem] border border-slate-200/90 bg-white/97 p-4 shadow-xl xl:hidden"
               data-testid={mobileUtilitySheetTestId}
               id={mobileUtilitySheetId}
               role="dialog"
@@ -4722,7 +4722,7 @@ export function PublicPresenceAuthoringIdeScreen({
                         mobileUtilityOverlay.registerTrigger(event.currentTarget);
                         setMobileOverlay(item.key as Exclude<MobileIdeOverlay, 'actions' | null>);
                       }}
-                      className={`inline-flex min-h-12 items-center justify-center rounded-2xl border px-3 py-2 text-center text-xs font-semibold leading-tight transition ${
+                      className={`inline-flex min-h-12 items-center justify-center rounded-2xl border px-3 py-2 text-center text-xs leading-tight font-semibold transition ${
                         activeMobileUtilityOverlay === item.key
                           ? 'border-rose-300 bg-rose-50 text-rose-700'
                           : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'

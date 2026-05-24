@@ -602,7 +602,7 @@ export function PublicPresencePreviewScreen({
               <select
                 value={currentTemplateId}
                 onChange={(event) => setSelectedTemplateId(event.target.value)}
-                className="w-full rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-900 outline-none transition focus:border-rose-300"
+                className="w-full rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-900 transition outline-none focus:border-rose-300"
               >
                 {templateVersions.map((pageVersion) => {
                   const template = workspace.templates.find(
@@ -714,7 +714,7 @@ export function PublicPresencePreviewScreen({
               <select
                 value={currentTemplateId}
                 onChange={(event) => setSelectedTemplateId(event.target.value)}
-                className="w-full rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-900 outline-none transition focus:border-rose-300"
+                className="w-full rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-900 transition outline-none focus:border-rose-300"
               >
                 {templateVersions.map((pageVersion) => {
                   const template = workspace.templates.find(
@@ -780,7 +780,7 @@ export function PublicPresencePreviewScreen({
                 onChange={(event) =>
                   setPreviewPhase(event.target.value as PublicPresencePhaseVisibility | 'current')
                 }
-                className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-900 outline-none transition focus:border-rose-300"
+                className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-900 transition outline-none focus:border-rose-300"
               >
                 {previewPhaseOptions.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -899,7 +899,7 @@ export function PublicPresencePreviewScreen({
             >
               <div
                 aria-label={copy.fanPreview.frameLabel}
-                className={`min-h-0 flex-1 overflow-hidden px-3 pb-3 pt-3 sm:px-4 sm:pb-4 sm:pt-4 ${viewportFrameClass}`}
+                className={`min-h-0 flex-1 overflow-hidden px-3 pt-3 pb-3 sm:px-4 sm:pt-4 sm:pb-4 ${viewportFrameClass}`}
               >
                 <div className="h-full overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white/80 p-3">
                   <div
@@ -977,7 +977,7 @@ export function PublicPresencePreviewScreen({
                         event.target.value as PublicPresencePhaseVisibility | 'current'
                       )
                     }
-                    className="w-full rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-900 outline-none transition focus:border-rose-300"
+                    className="w-full rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-900 transition outline-none focus:border-rose-300"
                   >
                     {previewPhaseOptions.map((option) => (
                       <option key={option.value} value={option.value}>
@@ -999,7 +999,7 @@ export function PublicPresencePreviewScreen({
                   fr: 'Feuille outils aperçu',
                 })}
                 aria-modal
-                className="bg-white/97 !fixed inset-x-3 bottom-3 z-40 max-h-[72vh] overflow-auto rounded-[2rem] border border-slate-200/90 p-4 shadow-xl sm:hidden"
+                className="!fixed inset-x-3 bottom-3 z-40 max-h-[72vh] overflow-auto rounded-[2rem] border border-slate-200/90 bg-white/97 p-4 shadow-xl sm:hidden"
                 data-testid="preview-mobile-tools-sheet"
                 id={mobilePreviewToolsSheetId}
                 role="dialog"
@@ -1064,7 +1064,7 @@ export function PublicPresencePreviewScreen({
                           event.target.value as PublicPresencePhaseVisibility | 'current'
                         )
                       }
-                      className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-900 outline-none transition focus:border-rose-300"
+                      className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-900 transition outline-none focus:border-rose-300"
                     >
                       {previewPhaseOptions.map((option) => (
                         <option key={option.value} value={option.value}>
@@ -1112,7 +1112,7 @@ export function PublicPresencePreviewScreen({
                   fr: 'Inspecteur aperçu',
                 })}
                 aria-modal={false}
-                className="bg-white/97 !fixed inset-x-3 bottom-3 z-40 max-h-[70vh] overflow-auto rounded-[2rem] border border-slate-200/90 p-4 shadow-xl lg:sticky lg:top-20 lg:ml-auto lg:w-[20rem]"
+                className="!fixed inset-x-3 bottom-3 z-40 max-h-[70vh] overflow-auto rounded-[2rem] border border-slate-200/90 bg-white/97 p-4 shadow-xl lg:sticky lg:top-20 lg:ml-auto lg:w-[20rem]"
                 data-testid="preview-side-rail"
                 id={detailsSurfaceId}
                 role="dialog"

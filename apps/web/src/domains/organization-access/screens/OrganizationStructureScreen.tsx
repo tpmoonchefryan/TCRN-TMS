@@ -385,7 +385,7 @@ function ScopeBreadcrumb({
   labels: string[];
 }>) {
   return (
-    <div className="flex flex-wrap items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
+    <div className="flex flex-wrap items-center gap-2 text-xs font-medium tracking-[0.18em] text-slate-500 uppercase">
       {labels.map((label, index) => (
         <div key={`${label}-${index}`} className="flex items-center gap-2">
           {index > 0 ? <ChevronRight className="h-3.5 w-3.5 text-slate-400" /> : null}
@@ -506,7 +506,7 @@ function TalentListRow({
         <div className="min-w-0 flex-1 space-y-2">
           <div className="flex flex-wrap items-center gap-2">
             <p className="text-sm font-semibold text-slate-950">{talent.name}</p>
-            <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+            <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold tracking-[0.16em] text-slate-500 uppercase">
               {talent.code}
             </span>
             <span className="rounded-full bg-slate-950 px-2.5 py-1 text-[11px] font-medium text-white">
@@ -1379,12 +1379,12 @@ export function OrganizationStructureScreen({
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <FolderTree className="h-4 w-4 text-slate-500" />
-                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
+                <p className="text-xs font-semibold tracking-[0.22em] text-slate-500 uppercase">
                   {copy.tree.title}
                 </p>
               </div>
               <label className="relative block">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-slate-400" />
                 <input
                   value={search}
                   onChange={(event) => {
@@ -1394,7 +1394,7 @@ export function OrganizationStructureScreen({
                     });
                   }}
                   placeholder={copy.tree.searchPlaceholder}
-                  className="w-full rounded-full border border-slate-200 bg-white py-2 pl-10 pr-4 text-sm text-slate-900 outline-none transition focus:border-slate-400"
+                  className="w-full rounded-full border border-slate-200 bg-white py-2 pr-4 pl-10 text-sm text-slate-900 transition outline-none focus:border-slate-400"
                 />
               </label>
             </div>
@@ -1450,7 +1450,7 @@ export function OrganizationStructureScreen({
           <GlassSurface className="p-6 md:p-7">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="space-y-2">
-                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
+                <p className="text-xs font-semibold tracking-[0.24em] text-slate-500 uppercase">
                   {copy.header.eyebrow}
                 </p>
                 <ScopeBreadcrumb labels={scopeLabels} />
@@ -1487,7 +1487,7 @@ export function OrganizationStructureScreen({
                   isPending={loading}
                   pendingText={copy.actions.refreshing}
                   onClick={() => setReloadVersion((current) => current + 1)}
-                  className="h-11 shrink-0 whitespace-nowrap rounded-full px-3.5 text-sm font-semibold"
+                  className="h-11 shrink-0 rounded-full px-3.5 text-sm font-semibold whitespace-nowrap"
                 >
                   <span className="inline-flex items-center gap-2 whitespace-nowrap">
                     <RefreshCcw className="h-4 w-4" />
@@ -1553,14 +1553,14 @@ export function OrganizationStructureScreen({
                 >
                   <div className="flex flex-wrap items-start justify-between gap-4">
                     <div className="min-w-0 flex-1 space-y-2">
-                      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700">
+                      <p className="text-xs font-semibold tracking-[0.2em] text-emerald-700 uppercase">
                         {copy.notices.createdTalentReadyTitle}
                       </p>
                       <div className="flex flex-wrap items-center gap-2">
                         <p className="text-base font-semibold text-slate-950">
                           {createdTalentResult.label}
                         </p>
-                        <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-600">
+                        <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold tracking-[0.16em] text-slate-600 uppercase">
                           {createdTalentResult.code}
                         </span>
                         <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-medium text-emerald-800">
@@ -1706,7 +1706,7 @@ export function OrganizationStructureScreen({
                     }))
                   }
                   placeholder={copy.form.subsidiaryCodePlaceholder}
-                  className="w-full rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400"
+                  className="w-full rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 text-sm text-slate-900 transition outline-none focus:border-slate-400"
                 />
               </label>
               <div className="space-y-3 md:col-span-2">
@@ -1725,7 +1725,7 @@ export function OrganizationStructureScreen({
                         }))
                       }
                       placeholder={copy.form.subsidiaryNamePlaceholder}
-                      className="w-full rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400"
+                      className="w-full rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 text-sm text-slate-900 transition outline-none focus:border-slate-400"
                     />
                   </label>
                   <button
@@ -1769,7 +1769,7 @@ export function OrganizationStructureScreen({
                   }
                   placeholder={copy.form.subsidiaryDescriptionPlaceholder}
                   rows={4}
-                  className="w-full rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400"
+                  className="w-full rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 text-sm text-slate-900 transition outline-none focus:border-slate-400"
                 />
               </label>
             </div>
@@ -1848,7 +1848,7 @@ export function OrganizationStructureScreen({
                     }))
                   }
                   placeholder={copy.form.talentCodePlaceholder}
-                  className="w-full rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400"
+                  className="w-full rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 text-sm text-slate-900 transition outline-none focus:border-slate-400"
                 />
               </label>
               <label className="space-y-2">
@@ -1865,7 +1865,7 @@ export function OrganizationStructureScreen({
                     }))
                   }
                   placeholder={copy.form.displayNamePlaceholder}
-                  className="w-full rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400"
+                  className="w-full rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 text-sm text-slate-900 transition outline-none focus:border-slate-400"
                 />
               </label>
               <label className="space-y-2">
@@ -1882,7 +1882,7 @@ export function OrganizationStructureScreen({
                     }))
                   }
                   placeholder={copy.form.legalNamePlaceholder}
-                  className="w-full rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400"
+                  className="w-full rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 text-sm text-slate-900 transition outline-none focus:border-slate-400"
                 />
               </label>
               <div className="space-y-3 md:col-span-2">
@@ -1959,7 +1959,7 @@ export function OrganizationStructureScreen({
                       profileStoreId: event.target.value,
                     }))
                   }
-                  className="w-full rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400"
+                  className="w-full rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 text-sm text-slate-900 transition outline-none focus:border-slate-400"
                 >
                   {profileStoresPanel.data?.items.map((profileStore) => (
                     <option key={profileStore.id} value={profileStore.id}>
@@ -1981,7 +1981,7 @@ export function OrganizationStructureScreen({
                       artistStageId: event.target.value,
                     }))
                   }
-                  className="w-full rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400"
+                  className="w-full rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 text-sm text-slate-900 transition outline-none focus:border-slate-400"
                 >
                   <option value="">{copy.form.artistStageLabel}</option>
                   {(artistStagesPanel.data ?? []).map((artistStage) => {
@@ -2015,7 +2015,7 @@ export function OrganizationStructureScreen({
                     }))
                   }
                   placeholder={copy.form.timezonePlaceholder}
-                  className="w-full rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400"
+                  className="w-full rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 text-sm text-slate-900 transition outline-none focus:border-slate-400"
                 />
               </label>
             </div>

@@ -644,7 +644,7 @@ export function CustomerCreateScreen({ tenantId, talentId }: Readonly<CustomerCr
       <GlassSurface className="p-8">
         <div className="flex flex-wrap items-start justify-between gap-6">
           <div className="space-y-4">
-            <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-600">
+            <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-xs font-semibold tracking-[0.18em] text-slate-600 uppercase">
               {profileType === 'company' ? (
                 <Building2 className="h-3.5 w-3.5" />
               ) : (
@@ -771,7 +771,7 @@ export function CustomerCreateScreen({ tenantId, talentId }: Readonly<CustomerCr
                   setDraft((current) => ({ ...current, nickname: event.target.value }));
                   clearValidationError('nickname');
                 }}
-                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm transition outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
                 placeholder={pickText(effectiveSelectedLocale, {
                   en: 'Ari',
                   zh_HANS: '例如：小悠',
@@ -812,7 +812,7 @@ export function CustomerCreateScreen({ tenantId, talentId }: Readonly<CustomerCr
                     primaryLanguage: event.target.value as SupportedUiLocale,
                   }))
                 }
-                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm transition outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
               >
                 {CUSTOMER_LANGUAGE_OPTIONS.map((option) => (
                   <option key={option} value={option}>
@@ -843,7 +843,7 @@ export function CustomerCreateScreen({ tenantId, talentId }: Readonly<CustomerCr
                     setDraft((current) => ({ ...current, companyLegalName: event.target.value }));
                     clearValidationError('companyLegalName');
                   }}
-                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm transition outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
                   placeholder={pickText(effectiveSelectedLocale, {
                     en: 'Acme Corporation',
                     zh_HANS: '例如：极光传媒有限公司',
@@ -883,7 +883,7 @@ export function CustomerCreateScreen({ tenantId, talentId }: Readonly<CustomerCr
                   onChange={(event) =>
                     setDraft((current) => ({ ...current, companyShortName: event.target.value }))
                   }
-                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm transition outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
                   placeholder={pickText(effectiveSelectedLocale, {
                     en: 'Acme',
                     zh_HANS: '例如：极光传媒',
@@ -977,7 +977,7 @@ export function CustomerCreateScreen({ tenantId, talentId }: Readonly<CustomerCr
                       clearValidationError(...MEMBERSHIP_VALIDATION_FIELDS);
                     }}
                     disabled={membershipOptions.loading || membershipOptions.platforms.length === 0}
-                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 disabled:cursor-not-allowed disabled:bg-slate-100"
+                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm transition outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 disabled:cursor-not-allowed disabled:bg-slate-100"
                     aria-describedby={
                       isMembershipValidationError ? 'membership-validation-error' : undefined
                     }
@@ -1036,7 +1036,7 @@ export function CustomerCreateScreen({ tenantId, talentId }: Readonly<CustomerCr
                       clearValidationError(...MEMBERSHIP_VALIDATION_FIELDS);
                     }}
                     disabled={membershipOptions.loading || membershipClassOptions.length === 0}
-                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 disabled:cursor-not-allowed disabled:bg-slate-100"
+                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm transition outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 disabled:cursor-not-allowed disabled:bg-slate-100"
                     aria-describedby={
                       isMembershipValidationError ? 'membership-validation-error' : undefined
                     }
@@ -1096,7 +1096,7 @@ export function CustomerCreateScreen({ tenantId, talentId }: Readonly<CustomerCr
                       !membershipDraft.membershipClassCode ||
                       membershipTypeOptions.length === 0
                     }
-                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 disabled:cursor-not-allowed disabled:bg-slate-100"
+                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm transition outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 disabled:cursor-not-allowed disabled:bg-slate-100"
                     aria-describedby={
                       isMembershipValidationError ? 'membership-validation-error' : undefined
                     }
@@ -1164,7 +1164,7 @@ export function CustomerCreateScreen({ tenantId, talentId }: Readonly<CustomerCr
                       !membershipDraft.membershipTypeCode ||
                       membershipLevelOptions.length === 0
                     }
-                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 disabled:cursor-not-allowed disabled:bg-slate-100"
+                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm transition outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 disabled:cursor-not-allowed disabled:bg-slate-100"
                     aria-describedby={
                       isMembershipValidationError ? 'membership-validation-error' : undefined
                     }
@@ -1228,7 +1228,7 @@ export function CustomerCreateScreen({ tenantId, talentId }: Readonly<CustomerCr
                       }));
                       clearValidationError(...MEMBERSHIP_VALIDATION_FIELDS);
                     }}
-                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm transition outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
                     aria-describedby={
                       isMembershipValidationError ? 'membership-validation-error' : undefined
                     }
@@ -1258,7 +1258,7 @@ export function CustomerCreateScreen({ tenantId, talentId }: Readonly<CustomerCr
                         validTo: event.target.value,
                       }))
                     }
-                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm transition outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
                   />
                 </label>
 
@@ -1331,7 +1331,7 @@ export function CustomerCreateScreen({ tenantId, talentId }: Readonly<CustomerCr
                       }))
                     }
                     rows={3}
-                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm transition outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
                     placeholder={pickText(effectiveSelectedLocale, {
                       en: 'Optional note for the first membership record.',
                       zh_HANS: '首条会员记录的可选备注。',
@@ -1363,7 +1363,7 @@ export function CustomerCreateScreen({ tenantId, talentId }: Readonly<CustomerCr
                 setDraft((current) => ({ ...current, notes: event.target.value }))
               }
               rows={5}
-              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm transition outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
               placeholder={pickText(effectiveSelectedLocale, {
                 en: 'Optional internal note.',
                 zh_HANS: '可选内部备注。',

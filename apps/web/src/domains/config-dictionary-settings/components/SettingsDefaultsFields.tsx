@@ -51,12 +51,12 @@ function SettingsFieldRow({
 }>) {
   return (
     <div className="min-w-0 rounded-2xl border border-slate-200 bg-white/80 px-4 py-4 shadow-sm">
-      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{label}</p>
-      <p className="mt-2 min-w-0 whitespace-normal break-all text-base font-semibold text-slate-950">
+      <p className="text-xs font-semibold tracking-[0.18em] text-slate-500 uppercase">{label}</p>
+      <p className="mt-2 min-w-0 text-base font-semibold break-all whitespace-normal text-slate-950">
         {value}
       </p>
       {hint ? (
-        <p className="mt-2 min-w-0 whitespace-normal break-all text-sm leading-6 text-slate-600">
+        <p className="mt-2 min-w-0 text-sm leading-6 break-all whitespace-normal text-slate-600">
           {hint}
         </p>
       ) : null}
@@ -178,7 +178,7 @@ export function SettingsDefaultsFormFields({
                   defaultLanguage: event.target.value as SupportedUiLocale,
                 }))
               }
-              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400"
+              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm transition outline-none focus:border-slate-400"
             >
               {LANGUAGE_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -202,7 +202,7 @@ export function SettingsDefaultsFormFields({
                   timezone: event.target.value,
                 }))
               }
-              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400"
+              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm transition outline-none focus:border-slate-400"
             >
               {TIMEZONE_OPTIONS.map((option) => (
                 <option key={option} value={option}>
@@ -226,7 +226,7 @@ export function SettingsDefaultsFormFields({
                   dateFormat: event.target.value,
                 }))
               }
-              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400"
+              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm transition outline-none focus:border-slate-400"
             >
               {DATE_FORMAT_OPTIONS.map((option) => (
                 <option key={option} value={option}>
@@ -250,7 +250,7 @@ export function SettingsDefaultsFormFields({
                   currency: event.target.value,
                 }))
               }
-              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400"
+              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm transition outline-none focus:border-slate-400"
             >
               {CURRENCY_OPTIONS.map((option) => (
                 <option key={option} value={option}>
@@ -313,7 +313,7 @@ export function SettingsDefaultsFormFields({
                   maxImportRows: Number(event.target.value),
                 }))
               }
-              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400"
+              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm transition outline-none focus:border-slate-400"
             />
             <p className="text-xs text-slate-500">{getSourceHint('maxImportRows')}</p>
           </label>
@@ -372,7 +372,7 @@ export function SettingsDefaultsFormFields({
                   },
                 }))
               }
-              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400"
+              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm transition outline-none focus:border-slate-400"
             />
             <p className="text-xs text-slate-500">{getSourceHint('passwordPolicy')}</p>
           </label>
@@ -398,7 +398,7 @@ export function SettingsDefaultsFormFields({
                   },
                 }))
               }
-              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400"
+              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm transition outline-none focus:border-slate-400"
             />
             <p className="text-xs text-slate-500">{getSourceHint('passwordPolicy')}</p>
           </label>

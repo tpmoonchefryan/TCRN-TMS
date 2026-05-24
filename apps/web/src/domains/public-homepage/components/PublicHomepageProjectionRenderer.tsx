@@ -127,7 +127,7 @@ function ActionLink({
       href={href}
       target="_blank"
       rel="noreferrer"
-      className="inline-flex items-center justify-center gap-2 rounded-md bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-200 motion-reduce:transition-none motion-reduce:hover:translate-y-0"
+      className="inline-flex items-center justify-center gap-2 rounded-md bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-slate-800 focus:ring-2 focus:ring-rose-200 focus:outline-none motion-reduce:transition-none motion-reduce:hover:translate-y-0"
     >
       {label}
       <ExternalLink aria-hidden="true" className="h-4 w-4" />

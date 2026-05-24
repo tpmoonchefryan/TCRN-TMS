@@ -57,7 +57,7 @@ export function PublicPresenceBadge({
   return (
     <span
       className={publicPresenceClassNames(
-        'inline-flex min-h-7 items-center gap-2 px-3 py-1 text-xs font-semibold leading-5',
+        'inline-flex min-h-7 items-center gap-2 px-3 py-1 text-xs leading-5 font-semibold',
         publicPresenceTokens.radius.badge,
         variantClasses,
         className

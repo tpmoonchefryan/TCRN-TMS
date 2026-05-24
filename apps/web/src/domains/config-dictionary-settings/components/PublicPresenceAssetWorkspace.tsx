@@ -319,7 +319,7 @@ function DetailMetric({
 }>) {
   return (
     <div className="rounded-2xl border border-slate-200 bg-white/90 px-4 py-3">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+      <p className="text-[11px] font-semibold tracking-[0.16em] text-slate-500 uppercase">
         {label}
       </p>
       <p className="mt-2 text-sm font-semibold text-slate-900">{value}</p>
@@ -366,17 +366,17 @@ function AssetRow({
         <div className="min-w-0 flex-1 space-y-3">
           <div className="flex flex-wrap items-center gap-2">
             <p className="text-base font-semibold text-slate-950">{displayName}</p>
-            <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-600">
+            <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-semibold tracking-[0.14em] text-slate-600 uppercase">
               {getManagedStateLabel(locale, asset)}
             </span>
-            <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-600">
+            <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-semibold tracking-[0.14em] text-slate-600 uppercase">
               {getAssetOwnerLabel(locale, asset.asset.ownerType)}
             </span>
-            <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-600">
+            <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-semibold tracking-[0.14em] text-slate-600 uppercase">
               {getAssetStatusLabel(locale, asset)}
             </span>
             {asset.asset.isSystem ? (
-              <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-amber-700">
+              <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[11px] font-semibold tracking-[0.14em] text-amber-700 uppercase">
                 <Shield className="h-3.5 w-3.5" aria-hidden="true" />
                 {pickLocaleText(locale, {
                   en: 'System',
@@ -1042,13 +1042,13 @@ export function PublicPresenceAssetWorkspace({
       <div className="space-y-5">
         <div className="rounded-3xl border border-slate-200 bg-slate-50/80 p-5">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-600">
+            <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold tracking-[0.14em] text-slate-600 uppercase">
               {buildAssetTypeLabel(locale, selectedAssetDetail)}
             </span>
-            <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-600">
+            <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold tracking-[0.14em] text-slate-600 uppercase">
               {getAssetStatusLabel(locale, selectedAssetDetail)}
             </span>
-            <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-600">
+            <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold tracking-[0.14em] text-slate-600 uppercase">
               {selectedAssetDetail.asset.code}
             </span>
           </div>
@@ -1058,7 +1058,7 @@ export function PublicPresenceAssetWorkspace({
 
         {drawerState.mode === 'preview' ? (
           <div className="rounded-[2rem] border border-slate-200 bg-gradient-to-br from-white via-rose-50/50 to-slate-50 p-6">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+            <p className="text-[11px] font-semibold tracking-[0.18em] text-slate-500 uppercase">
               {pickLocaleText(locale, {
                 en: 'Preview focus',
                 zh_HANS: '预览聚焦',
@@ -1245,7 +1245,7 @@ export function PublicPresenceAssetWorkspace({
       >
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">
+            <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold tracking-[0.16em] text-slate-600 uppercase">
               {icon}
               {familyTitle}
             </div>

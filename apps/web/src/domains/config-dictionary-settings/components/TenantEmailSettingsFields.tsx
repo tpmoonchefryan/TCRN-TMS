@@ -128,7 +128,7 @@ export function TenantEmailSettingsFields({
                 className="rounded-xl border border-slate-200 bg-white/80 px-4 py-3"
               >
                 <div className="flex flex-wrap items-center justify-between gap-3">
-                  <p className="break-all text-sm font-semibold text-slate-950">{domain.domain}</p>
+                  <p className="text-sm font-semibold break-all text-slate-950">{domain.domain}</p>
                   <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700">
                     {formatStatus(domain.status, text)}
                   </span>

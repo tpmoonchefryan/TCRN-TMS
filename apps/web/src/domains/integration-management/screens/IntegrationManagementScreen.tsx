@@ -746,7 +746,7 @@ function SummaryCard({
 }>) {
   return (
     <div className="rounded-2xl border border-slate-200 bg-white/80 px-4 py-4 shadow-sm">
-      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">{label}</p>
+      <p className="text-xs font-semibold tracking-[0.2em] text-slate-500 uppercase">{label}</p>
       <p className="mt-2 text-2xl font-semibold text-slate-950">{value}</p>
       <p className="mt-2 text-xs leading-5 text-slate-500">{hint}</p>
     </div>
@@ -999,7 +999,7 @@ function TextField({
         placeholder={placeholder}
         disabled={disabled}
         required={required}
-        className="w-full rounded-2xl border border-slate-200 bg-white/90 px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 disabled:cursor-not-allowed disabled:bg-slate-100"
+        className="w-full rounded-2xl border border-slate-200 bg-white/90 px-3 py-2.5 text-sm text-slate-900 shadow-sm transition outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 disabled:cursor-not-allowed disabled:bg-slate-100"
       />
     </label>
   );
@@ -1026,7 +1026,7 @@ function TextAreaField({
         rows={rows}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
-        className="w-full rounded-2xl border border-slate-200 bg-white/90 px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+        className="w-full rounded-2xl border border-slate-200 bg-white/90 px-3 py-2.5 text-sm text-slate-900 shadow-sm transition outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
       />
     </label>
   );
@@ -1052,7 +1052,7 @@ function SelectField({
         value={value}
         onChange={(event) => onChange(event.target.value)}
         disabled={disabled}
-        className="w-full rounded-2xl border border-slate-200 bg-white/90 px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 disabled:cursor-not-allowed disabled:bg-slate-100"
+        className="w-full rounded-2xl border border-slate-200 bg-white/90 px-3 py-2.5 text-sm text-slate-900 shadow-sm transition outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 disabled:cursor-not-allowed disabled:bg-slate-100"
       >
         {options.map((option) => (
           <option key={option.value} value={option.value}>
@@ -3915,7 +3915,7 @@ export function IntegrationManagementScreen({
         }`}
         style={{ marginLeft: `${depth * 16}px` }}
       >
-        <div className="border-current/20 mt-1 flex h-5 w-5 flex-none items-center justify-center rounded-full border bg-white/70">
+        <div className="mt-1 flex h-5 w-5 flex-none items-center justify-center rounded-full border border-current/20 bg-white/70">
           {options.leaf ? (
             <Circle className="h-2.5 w-2.5 fill-current" />
           ) : (
@@ -3925,7 +3925,7 @@ export function IntegrationManagementScreen({
         <div className="min-w-0 space-y-1">
           <div className="flex flex-wrap items-center gap-2">
             <span className="truncate text-sm font-semibold">{scope.label}</span>
-            <span className="border-current/10 text-current/70 rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-[0.16em]">
+            <span className="rounded-full border border-current/10 px-2 py-0.5 text-[10px] tracking-[0.16em] text-current/70 uppercase">
               {kindLabel}
             </span>
           </div>
@@ -4004,7 +4004,7 @@ export function IntegrationManagementScreen({
       <GlassSurface className="p-6">
         <div className="flex flex-wrap items-start justify-between gap-6">
           <div className="space-y-4">
-            <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-600">
+            <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-xs font-semibold tracking-[0.18em] text-slate-600 uppercase">
               <Cable className="h-3.5 w-3.5" />
               {workspaceChipLabel}
             </div>
@@ -4296,7 +4296,7 @@ export function IntegrationManagementScreen({
                         'スコープ機能マトリクス'
                       )}
                     >
-                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                      <p className="text-xs font-semibold tracking-[0.18em] text-slate-500 uppercase">
                         {text('Scope capability matrix', '范围能力矩阵', 'スコープ機能マトリクス')}
                       </p>
                       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
@@ -4412,7 +4412,7 @@ export function IntegrationManagementScreen({
                                       <p className="text-sm font-semibold text-slate-950">
                                         {adapter.platform.displayName}
                                       </p>
-                                      <p className="text-xs uppercase tracking-[0.18em] text-slate-500">
+                                      <p className="text-xs tracking-[0.18em] text-slate-500 uppercase">
                                         {adapter.platform.code}
                                       </p>
                                     </div>
@@ -4932,7 +4932,7 @@ export function IntegrationManagementScreen({
                                       ) : null}
                                     </div>
                                     <div className="rounded-2xl border border-slate-200 bg-white/80 p-4">
-                                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                                      <p className="text-xs font-semibold tracking-[0.16em] text-slate-500 uppercase">
                                         {text('Platform', '平台', 'プラットフォーム')}
                                       </p>
                                       <p className="mt-2 text-sm font-semibold text-slate-950">
@@ -4941,7 +4941,7 @@ export function IntegrationManagementScreen({
                                       </p>
                                     </div>
                                     <div className="rounded-2xl border border-slate-200 bg-white/80 p-4">
-                                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                                      <p className="text-xs font-semibold tracking-[0.16em] text-slate-500 uppercase">
                                         {text('Definition / type', '定义 / 类型', '定義 / 種別')}
                                       </p>
                                       <div className="mt-2 flex flex-wrap gap-2">
@@ -6232,7 +6232,7 @@ export function IntegrationManagementScreen({
                                               <p className="font-semibold text-slate-900">
                                                 {eventDefinition?.name ?? eventName}
                                               </p>
-                                              <p className="text-xs uppercase tracking-[0.14em] text-slate-500">
+                                              <p className="text-xs tracking-[0.14em] text-slate-500 uppercase">
                                                 {eventName}
                                               </p>
                                               {eventDefinition?.description ? (
@@ -6288,7 +6288,7 @@ export function IntegrationManagementScreen({
                                           <p className="font-semibold text-slate-900">
                                             {eventDefinition.name}
                                           </p>
-                                          <p className="text-xs uppercase tracking-[0.14em] text-slate-500">
+                                          <p className="text-xs tracking-[0.14em] text-slate-500 uppercase">
                                             {eventDefinition.event}
                                           </p>
                                           <p className="text-xs leading-5 text-slate-500">
@@ -7170,7 +7170,7 @@ export function IntegrationManagementScreen({
                                     `${generatedKey.consumerCode} の新しいキー情報`
                                   )}
                                 </p>
-                                <p className="mt-2 break-all font-mono text-xs">
+                                <p className="mt-2 font-mono text-xs break-all">
                                   {generatedKey.apiKey}
                                 </p>
                                 <p className="mt-2 text-xs">{generatedKey.message}</p>
@@ -7638,7 +7638,7 @@ export function IntegrationManagementScreen({
                                                   {tenant.code} · {tenant.schemaName}
                                                 </p>
                                               </div>
-                                              <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+                                              <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] font-semibold tracking-[0.14em] text-slate-500 uppercase">
                                                 {text(
                                                   'Optional override',
                                                   '可选覆盖',
@@ -8293,7 +8293,7 @@ export function IntegrationManagementScreen({
                                   {text('Preview HTML', '预览 HTML', 'プレビュー HTML')}
                                 </p>
                                 <div className="mt-2 rounded-2xl border border-slate-200 bg-white p-3 text-sm text-slate-700">
-                                  <pre className="whitespace-pre-wrap break-words">
+                                  <pre className="break-words whitespace-pre-wrap">
                                     {templatePreview.htmlBody}
                                   </pre>
                                 </div>
@@ -8303,7 +8303,7 @@ export function IntegrationManagementScreen({
                                       {text('Preview text', '预览文本', 'プレビュー本文')}
                                     </p>
                                     <div className="mt-2 rounded-2xl border border-slate-200 bg-white p-3 text-sm text-slate-700">
-                                      <pre className="whitespace-pre-wrap break-words">
+                                      <pre className="break-words whitespace-pre-wrap">
                                         {templatePreview.textBody}
                                       </pre>
                                     </div>

@@ -258,7 +258,7 @@ export const TableShell: React.FC<TableShellProps> = ({
                             direction: getNextSortDirection(currentSortDirection),
                           })
                         }
-                        className="inline-flex max-w-full items-center gap-2 rounded-md text-inherit outline-none transition hover:text-slate-900 focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2"
+                        className="inline-flex max-w-full items-center gap-2 rounded-md text-inherit transition outline-none hover:text-slate-900 focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2"
                       >
                         <span className="truncate">{column.header}</span>
                         {sort.getSortIndicator ? (

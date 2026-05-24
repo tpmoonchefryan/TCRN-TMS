@@ -380,7 +380,7 @@ function SummaryCard({
 }>) {
   return (
     <div className="rounded-2xl border border-slate-200 bg-white/80 px-4 py-4 shadow-sm">
-      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">{label}</p>
+      <p className="text-xs font-semibold tracking-[0.2em] text-slate-500 uppercase">{label}</p>
       <p className="mt-2 text-2xl font-semibold text-slate-950">{value}</p>
       <p className="mt-2 text-xs leading-5 text-slate-500">{hint}</p>
     </div>
@@ -398,7 +398,7 @@ function MetricChip({
 }>) {
   return (
     <div className="min-w-0 rounded-lg border border-slate-200 bg-white/80 px-3 py-2">
-      <p className="truncate text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+      <p className="truncate text-[11px] font-semibold tracking-[0.14em] text-slate-500 uppercase">
         {label}
       </p>
       <p className="mt-1 truncate text-sm font-semibold text-slate-950">{value}</p>
@@ -452,7 +452,7 @@ function StatusBadge({
 
   return (
     <span
-      className={`rounded-full px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.14em] ${toneClasses}`}
+      className={`rounded-full px-2.5 py-1 text-[11px] font-medium tracking-[0.14em] uppercase ${toneClasses}`}
     >
       {label}
     </span>
@@ -524,7 +524,7 @@ function TextField({
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
-        className="w-full rounded-2xl border border-slate-200 bg-white/90 px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+        className="w-full rounded-2xl border border-slate-200 bg-white/90 px-3 py-2.5 text-sm text-slate-900 shadow-sm transition outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
       />
     </label>
   );
@@ -546,7 +546,7 @@ function DateField({
         type="date"
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="w-full rounded-2xl border border-slate-200 bg-white/90 px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+        className="w-full rounded-2xl border border-slate-200 bg-white/90 px-3 py-2.5 text-sm text-slate-900 shadow-sm transition outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
       />
     </label>
   );
@@ -591,7 +591,7 @@ function SelectField({
       <select
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="w-full rounded-2xl border border-slate-200 bg-white/90 px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+        className="w-full rounded-2xl border border-slate-200 bg-white/90 px-3 py-2.5 text-sm text-slate-900 shadow-sm transition outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
       >
         {options.map((option) => (
           <option key={option.value} value={option.value}>
@@ -805,7 +805,7 @@ function SchemaFilterField({
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0 space-y-1">
             <p className="text-sm font-medium text-slate-800">{label}</p>
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+            <p className="text-xs font-semibold tracking-[0.16em] text-slate-500 uppercase">
               {selectedCountLabel}
             </p>
           </div>
@@ -813,7 +813,7 @@ function SchemaFilterField({
             type="button"
             onClick={() => onOpenPicker(field.id)}
             disabled={disabled || optionsLoading}
-            className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold tracking-[0.14em] text-slate-700 uppercase transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
             aria-label={pickLocaleText(locale, {
               en: `Select ${label}`,
               zh_HANS: `选择${label}`,
@@ -1693,7 +1693,7 @@ export function ReportsManagementScreen({
       <GlassSurface className="p-6">
         <div className="flex flex-wrap items-start justify-between gap-5">
           <div className="space-y-4">
-            <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-600">
+            <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-xs font-semibold tracking-[0.18em] text-slate-600 uppercase">
               <FileSpreadsheet className="h-3.5 w-3.5" />
               {copy.header.eyebrow}
             </div>
@@ -1759,7 +1759,7 @@ export function ReportsManagementScreen({
         <GlassSurface className="p-6">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="space-y-2">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+              <p className="text-xs font-semibold tracking-[0.2em] text-slate-500 uppercase">
                 {copy.portal.badge}
               </p>
               <h2 className="text-lg font-semibold text-slate-950">{copy.portal.title}</h2>
@@ -1861,7 +1861,7 @@ export function ReportsManagementScreen({
                   <div className="space-y-5">
                     <div className="flex flex-wrap items-start justify-between gap-4">
                       <div className="space-y-3">
-                        <p className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700">
+                        <p className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold tracking-[0.18em] text-emerald-700 uppercase">
                           {selectedReportIsAvailable
                             ? reportsViewCopy.cardBadge
                             : copy.drawer.unavailableReport}
@@ -2644,7 +2644,7 @@ export function ReportsManagementScreen({
                     </p>
                   ) : null}
                 </div>
-                <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">
+                <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold tracking-[0.16em] text-slate-600 uppercase">
                   {optionPickerFilteredOptions.length}
                 </span>
               </div>
@@ -2661,7 +2661,7 @@ export function ReportsManagementScreen({
                   fr: `Rechercher ${optionPickerFieldLabel}`,
                 })}
               </span>
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <input
                 type="search"
                 value={optionPicker?.search ?? ''}
@@ -2678,7 +2678,7 @@ export function ReportsManagementScreen({
                   ko: '라벨 또는 코드 검색',
                   fr: 'Rechercher libellé ou code',
                 })}
-                className="w-full rounded-2xl border border-slate-200 bg-white py-3 pl-10 pr-4 text-sm text-slate-900 shadow-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+                className="w-full rounded-2xl border border-slate-200 bg-white py-3 pr-4 pl-10 text-sm text-slate-900 shadow-sm transition outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
               />
             </label>
 
@@ -2728,10 +2728,10 @@ export function ReportsManagementScreen({
                         className="mt-0.5 h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
                       />
                       <span className="min-w-0 flex-1">
-                        <span className="block break-words font-medium text-slate-900">
+                        <span className="block font-medium break-words text-slate-900">
                           {option.label}
                         </span>
-                        <span className="block break-all text-xs text-slate-500">
+                        <span className="block text-xs break-all text-slate-500">
                           {option.value}
                         </span>
                       </span>

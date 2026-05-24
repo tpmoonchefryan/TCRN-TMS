@@ -980,7 +980,7 @@ export function ObservabilityScreen({
       <GlassSurface className="p-5">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
           <div className="space-y-3">
-            <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-600">
+            <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-xs font-semibold tracking-[0.18em] text-slate-600 uppercase">
               <Activity className="h-3.5 w-3.5" />
               {`${copy.header.eyebrowPrefix} / ${workspaceLabel} / ${copy.header.title}`}
             </div>
@@ -1003,7 +1003,7 @@ export function ObservabilityScreen({
                 key={label}
                 className="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white/80 px-3 py-2"
               >
-                <dt className="font-semibold uppercase tracking-[0.12em] text-slate-500">
+                <dt className="font-semibold tracking-[0.12em] text-slate-500 uppercase">
                   {label}
                 </dt>
                 <dd className="font-semibold text-slate-950">{value}</dd>
@@ -1316,7 +1316,7 @@ export function ObservabilityScreen({
                         <td className="px-6 py-4">
                           <div className="max-w-[24rem] space-y-1 text-sm text-slate-700">
                             <p className="break-words">{entry.message || copy.common.noMessage}</p>
-                            <p className="break-words text-xs text-slate-500">
+                            <p className="text-xs break-words text-slate-500">
                               {networkSummary || `${networkLabel}: ${copy.common.noRequest}`}
                             </p>
                           </div>
@@ -1756,16 +1756,16 @@ export function ObservabilityScreen({
                 ],
               ].map(([label, value]) => (
                 <div key={label} className="rounded-lg border border-slate-200 bg-white/80 p-4">
-                  <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                  <dt className="text-xs font-semibold tracking-[0.16em] text-slate-500 uppercase">
                     {label}
                   </dt>
-                  <dd className="mt-2 break-words text-sm font-semibold text-slate-900">{value}</dd>
+                  <dd className="mt-2 text-sm font-semibold break-words text-slate-900">{value}</dd>
                 </div>
               ))}
             </dl>
             <div className="space-y-2">
               <h3 className="text-sm font-semibold text-slate-950">{detailsLabel}</h3>
-              <pre className="max-h-[28rem] overflow-auto whitespace-pre-wrap rounded-lg border border-slate-200 bg-slate-950 p-4 text-xs leading-5 text-slate-50">
+              <pre className="max-h-[28rem] overflow-auto rounded-lg border border-slate-200 bg-slate-950 p-4 text-xs leading-5 whitespace-pre-wrap text-slate-50">
                 {formatDiffDetails(selectedChangeLog.diff, locale) ||
                   formatJsonBlock(selectedChangeLog.diff) ||
                   copy.common.noMessage}
@@ -1838,10 +1838,10 @@ export function ObservabilityScreen({
                         key={label}
                         className="rounded-lg border border-slate-200 bg-white/80 p-4"
                       >
-                        <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                        <dt className="text-xs font-semibold tracking-[0.16em] text-slate-500 uppercase">
                           {label}
                         </dt>
-                        <dd className="mt-2 break-words text-sm font-semibold text-slate-900">
+                        <dd className="mt-2 text-sm font-semibold break-words text-slate-900">
                           {value}
                         </dd>
                       </div>
@@ -1850,7 +1850,7 @@ export function ObservabilityScreen({
                   {selectedTechEvent.errorCode || selectedTechEvent.errorStack ? (
                     <div className="space-y-2">
                       <h3 className="text-sm font-semibold text-slate-950">{errorLabel}</h3>
-                      <pre className="max-h-40 overflow-auto whitespace-pre-wrap rounded-lg border border-rose-200 bg-rose-50 p-4 text-xs leading-5 text-rose-950">
+                      <pre className="max-h-40 overflow-auto rounded-lg border border-rose-200 bg-rose-50 p-4 text-xs leading-5 whitespace-pre-wrap text-rose-950">
                         {[selectedTechEvent.errorCode, selectedTechEvent.errorStack]
                           .filter(Boolean)
                           .join('\n\n')}
@@ -1859,7 +1859,7 @@ export function ObservabilityScreen({
                   ) : null}
                   <div className="space-y-2">
                     <h3 className="text-sm font-semibold text-slate-950">{payloadLabel}</h3>
-                    <pre className="max-h-[28rem] overflow-auto whitespace-pre-wrap rounded-lg border border-slate-200 bg-slate-950 p-4 text-xs leading-5 text-slate-50">
+                    <pre className="max-h-[28rem] overflow-auto rounded-lg border border-slate-200 bg-slate-950 p-4 text-xs leading-5 whitespace-pre-wrap text-slate-50">
                       {formatJsonBlock(context.raw) || copy.common.noMessage}
                     </pre>
                   </div>

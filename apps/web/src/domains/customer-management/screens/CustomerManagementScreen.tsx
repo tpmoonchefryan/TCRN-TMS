@@ -253,7 +253,7 @@ function SummaryCard({
 }>) {
   return (
     <div className="rounded-2xl border border-slate-200 bg-white/80 px-4 py-4 shadow-sm">
-      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">{label}</p>
+      <p className="text-xs font-semibold tracking-[0.2em] text-slate-500 uppercase">{label}</p>
       <p className="mt-2 text-2xl font-semibold text-slate-950">{value}</p>
       <p className="mt-2 text-xs leading-5 text-slate-500">{hint}</p>
     </div>
@@ -707,7 +707,7 @@ export function CustomerManagementScreen({
       <GlassSurface className="p-8">
         <div className="flex flex-wrap items-start justify-between gap-6">
           <div className="space-y-4">
-            <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-600">
+            <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-xs font-semibold tracking-[0.18em] text-slate-600 uppercase">
               <Users2 className="h-3.5 w-3.5" />
               {customerCopy.badge}
             </div>
@@ -769,7 +769,7 @@ export function CustomerManagementScreen({
         <div className="space-y-4">
           <div className="flex flex-wrap items-center gap-3">
             <label className="relative min-w-[260px] flex-1">
-              <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <Search className="pointer-events-none absolute top-1/2 left-4 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <input
                 type="search"
                 value={search}
@@ -780,7 +780,7 @@ export function CustomerManagementScreen({
                   })
                 }
                 placeholder={customerCopy.searchPlaceholder}
-                className="w-full rounded-2xl border border-slate-200 bg-white/85 py-3 pl-11 pr-4 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400"
+                className="w-full rounded-2xl border border-slate-200 bg-white/85 py-3 pr-4 pl-11 text-sm text-slate-900 shadow-sm transition outline-none focus:border-slate-400"
               />
             </label>
 
@@ -799,7 +799,7 @@ export function CustomerManagementScreen({
                         page: 1,
                       })
                     }
-                    className={`rounded-full border px-3 py-1.5 text-xs font-medium uppercase tracking-[0.14em] transition ${
+                    className={`rounded-full border px-3 py-1.5 text-xs font-medium tracking-[0.14em] uppercase transition ${
                       isActive
                         ? 'border-slate-900 bg-slate-900 text-white'
                         : 'border-slate-200 bg-white/85 text-slate-700 hover:border-slate-300 hover:bg-white'
@@ -836,7 +836,7 @@ export function CustomerManagementScreen({
                         page: 1,
                       })
                     }
-                    className={`rounded-full border px-3 py-1.5 text-xs font-medium uppercase tracking-[0.14em] transition ${
+                    className={`rounded-full border px-3 py-1.5 text-xs font-medium tracking-[0.14em] uppercase transition ${
                       isActive
                         ? 'border-indigo-600 bg-indigo-600 text-white'
                         : 'border-slate-200 bg-white/85 text-slate-700 hover:border-slate-300 hover:bg-white'

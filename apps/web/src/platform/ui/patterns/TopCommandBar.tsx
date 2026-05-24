@@ -123,7 +123,7 @@ export const TopCommandBar: React.FC<TopCommandBarProps> = ({
       {searchProps && hasMobileSearch && isMobileSearchOpen ? (
         <div
           id={mobileSearchId}
-          className="absolute left-0 right-0 top-full mt-3 rounded-2xl border border-slate-200 bg-white/95 p-3 shadow-xl backdrop-blur md:hidden"
+          className="absolute top-full right-0 left-0 mt-3 rounded-2xl border border-slate-200 bg-white/95 p-3 shadow-xl backdrop-blur md:hidden"
         >
           <CommandSearchInput {...searchProps} autoFocus />
         </div>

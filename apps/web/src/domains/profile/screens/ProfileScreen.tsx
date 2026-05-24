@@ -181,8 +181,8 @@ function SummaryCard({
 }>) {
   return (
     <div className="min-w-0 rounded-2xl border border-slate-200 bg-white/80 px-4 py-4 shadow-sm">
-      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">{label}</p>
-      <p className="mt-2 break-words text-xl font-semibold leading-8 text-slate-950 sm:text-2xl">
+      <p className="text-xs font-semibold tracking-[0.2em] text-slate-500 uppercase">{label}</p>
+      <p className="mt-2 text-xl leading-8 font-semibold break-words text-slate-950 sm:text-2xl">
         {value}
       </p>
       <p className="mt-2 text-xs leading-5 text-slate-500">{hint}</p>
@@ -208,7 +208,7 @@ function SecurityActionCard({
       <div className="min-w-0 space-y-2">
         <p className="text-sm font-semibold text-slate-950">{title}</p>
         <p className="text-sm leading-6 text-slate-600">{description}</p>
-        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">{meta}</p>
+        <p className="text-xs font-semibold tracking-[0.16em] text-slate-500 uppercase">{meta}</p>
       </div>
       <button
         type="button"
@@ -859,7 +859,7 @@ export function ProfileScreen({
       <GlassSurface className="p-8">
         <div className="flex flex-wrap items-start justify-between gap-6">
           <div className="space-y-4">
-            <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-600">
+            <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-xs font-semibold tracking-[0.18em] text-slate-600 uppercase">
               <UserRound className="h-3.5 w-3.5" />
               {`${copy.header.chipPrefix} / ${workspaceDisplayLabel} / ${headerTitle}`}
             </div>

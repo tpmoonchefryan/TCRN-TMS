@@ -201,7 +201,7 @@ export function TalentBusinessShell({
           onOpenChange={setIsMobileNavOpen}
           header={
             <div className="space-y-2">
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
+              <p className="text-xs font-semibold tracking-[0.24em] text-slate-500 uppercase">
                 TCRN TMS
               </p>
               <div className="space-y-1">
@@ -234,7 +234,7 @@ export function TalentBusinessShell({
           mobileMenuButtonLabel={shellA11y.openNavigation}
           leftArea={
             <div className="space-y-1">
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500 sm:hidden">
+              <p className="text-xs font-semibold tracking-[0.22em] text-slate-500 uppercase sm:hidden">
                 {copy.talentBusiness.shellLabel}
               </p>
               <p className="text-lg font-semibold text-slate-900">{pageTitle}</p>

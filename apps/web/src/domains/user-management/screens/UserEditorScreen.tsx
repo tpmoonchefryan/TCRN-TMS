@@ -647,7 +647,7 @@ export function UserEditorScreen({
               <ArrowLeft className="h-4 w-4" />
               {editorCopy.backToInventory}
             </Link>
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
+            <p className="text-xs font-semibold tracking-[0.24em] text-slate-500 uppercase">
               {editorCopy.badge(workspaceDisplayLabel)}
             </p>
             <h1 className="text-3xl font-semibold text-slate-950">
@@ -1132,7 +1132,7 @@ export function UserEditorScreen({
                             <p className="text-sm font-semibold text-slate-900">
                               {resolveScopedLabel(access.scopeType, access.scopeName, sharedCopy)}
                             </p>
-                            <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                            <p className="text-xs tracking-[0.18em] text-slate-400 uppercase">
                               {getLocalizedScopeTypeLabel(access.scopeType, locale)}
                             </p>
                           </div>
