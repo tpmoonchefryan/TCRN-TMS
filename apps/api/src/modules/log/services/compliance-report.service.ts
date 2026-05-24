@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable, Logger } from '@nestjs/common';
 
 import { DatabaseService } from '../../database';
@@ -43,7 +42,7 @@ export class ComplianceReportService {
   async generateReport(
     tenantId: string,
     startDate: Date,
-    endDate: Date,
+    endDate: Date
   ): Promise<ComplianceReportSummary> {
     this.logger.log(`Generating compliance report for tenant ${tenantId}`);
 
@@ -97,28 +96,28 @@ export class ComplianceReportService {
     prisma: ReturnType<DatabaseService['getPrisma']>,
     tenantSchema: string,
     startDate: Date,
-    endDate: Date,
+    endDate: Date
   ): Promise<ComplianceReportSummary['auditMetrics']> {
     try {
       const changeLogResult = await prisma.$queryRawUnsafe<{ count: bigint }[]>(
         `SELECT COUNT(*) as count FROM "${tenantSchema}".change_log
          WHERE occurred_at >= $1 AND occurred_at <= $2`,
         startDate,
-        endDate,
+        endDate
       );
 
       const techEventResult = await prisma.$queryRawUnsafe<{ count: bigint }[]>(
         `SELECT COUNT(*) as count FROM "${tenantSchema}".technical_event_log
          WHERE occurred_at >= $1 AND occurred_at <= $2`,
         startDate,
-        endDate,
+        endDate
       );
 
       const integrationLogResult = await prisma.$queryRawUnsafe<{ count: bigint }[]>(
         `SELECT COUNT(*) as count FROM "${tenantSchema}".integration_log
          WHERE occurred_at >= $1 AND occurred_at <= $2`,
         startDate,
-        endDate,
+        endDate
       );
 
       return {
@@ -140,7 +139,7 @@ export class ComplianceReportService {
     prisma: ReturnType<DatabaseService['getPrisma']>,
     tenantSchema: string,
     startDate: Date,
-    endDate: Date,
+    endDate: Date
   ): Promise<ComplianceReportSummary['integrationMetrics']> {
     try {
       const result = await prisma.$queryRawUnsafe<
@@ -157,7 +156,7 @@ export class ComplianceReportService {
          FROM "${tenantSchema}".integration_log
          WHERE occurred_at >= $1 AND occurred_at <= $2`,
         startDate,
-        endDate,
+        endDate
       );
 
       const total = Number(result[0]?.total || 0);

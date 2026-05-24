@@ -90,9 +90,7 @@ export interface ListTenantsOptions {
 type RequestFn = <T>(path: string, init?: RequestInit) => Promise<T>;
 type RequestEnvelopeFn = <T>(path: string, init?: RequestInit) => Promise<ApiSuccessEnvelope<T>>;
 
-function buildQueryString(
-  input: Record<string, string | number | boolean | null | undefined>,
-) {
+function buildQueryString(input: Record<string, string | number | boolean | null | undefined>) {
   const params = new URLSearchParams();
 
   for (const [key, value] of Object.entries(input)) {
@@ -109,7 +107,7 @@ function buildQueryString(
 
 export async function listTenants(
   requestEnvelope: RequestEnvelopeFn,
-  options: ListTenantsOptions = {},
+  options: ListTenantsOptions = {}
 ): Promise<PaginatedResult<TenantListItem>> {
   const page = options.page ?? 1;
   const pageSize = options.pageSize ?? 20;
@@ -159,11 +157,7 @@ export function activateTenant(request: RequestFn, tenantId: string) {
   });
 }
 
-export function deactivateTenant(
-  request: RequestFn,
-  tenantId: string,
-  reason?: string,
-) {
+export function deactivateTenant(request: RequestFn, tenantId: string, reason?: string) {
   return request<TenantActivationResult>(`/api/v1/tenants/${tenantId}/deactivate`, {
     method: 'POST',
     headers: {
@@ -189,13 +183,16 @@ export function updateTenantSendingDomains(
       status: ManagedSendingDomainStatus;
     }>;
     defaultDomainId?: string | null;
-  },
+  }
 ) {
-  return request<TenantSendingDomainsResponse>(`/api/v1/email/tenants/${tenantId}/sending-domains`, {
-    method: 'PATCH',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(payload),
-  });
+  return request<TenantSendingDomainsResponse>(
+    `/api/v1/email/tenants/${tenantId}/sending-domains`,
+    {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    }
+  );
 }

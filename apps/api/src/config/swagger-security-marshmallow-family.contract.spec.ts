@@ -1,5 +1,4 @@
 import 'reflect-metadata';
-
 import { describe, expect, it } from 'vitest';
 
 import { LogSearchController } from '../modules/log/controllers/log-search.controller';
@@ -30,39 +29,32 @@ const API_MODEL_PROPERTIES_ARRAY_METADATA_KEY = 'swagger/apiModelPropertiesArray
 type ControllerClass = { prototype: object };
 type SwaggerResponseMetadata = Record<string, { schema?: unknown; content?: unknown }>;
 
-const getResponseStatuses = (
-  controllerClass: ControllerClass,
-  methodName: string,
-): string[] => {
+const getResponseStatuses = (controllerClass: ControllerClass, methodName: string): string[] => {
   const prototype = controllerClass.prototype as Record<string, unknown>;
-  const metadata = Reflect.getMetadata(
-    API_RESPONSE_METADATA_KEY,
-    prototype[methodName],
-  ) as Record<string, unknown> | undefined;
+  const metadata = Reflect.getMetadata(API_RESPONSE_METADATA_KEY, prototype[methodName]) as
+    | Record<string, unknown>
+    | undefined;
 
   return Object.keys(metadata ?? {}).sort();
 };
 
 const getResponseMetadata = (
   controllerClass: ControllerClass,
-  methodName: string,
+  methodName: string
 ): SwaggerResponseMetadata => {
   const prototype = controllerClass.prototype as Record<string, unknown>;
-  return ((Reflect.getMetadata(
-    API_RESPONSE_METADATA_KEY,
-    prototype[methodName],
-  ) as SwaggerResponseMetadata | undefined) ?? {});
+  return (
+    (Reflect.getMetadata(API_RESPONSE_METADATA_KEY, prototype[methodName]) as
+      | SwaggerResponseMetadata
+      | undefined) ?? {}
+  );
 };
 
-const getPathParamNames = (
-  controllerClass: ControllerClass,
-  methodName: string,
-): string[] => {
+const getPathParamNames = (controllerClass: ControllerClass, methodName: string): string[] => {
   const prototype = controllerClass.prototype as Record<string, unknown>;
-  const metadata = Reflect.getMetadata(
-    API_PARAMETERS_METADATA_KEY,
-    prototype[methodName],
-  ) as Array<{ in?: string; name?: string }> | undefined;
+  const metadata = Reflect.getMetadata(API_PARAMETERS_METADATA_KEY, prototype[methodName]) as
+    | Array<{ in?: string; name?: string }>
+    | undefined;
 
   return (metadata ?? [])
     .filter((parameter) => parameter.in === 'path' && typeof parameter.name === 'string')
@@ -73,7 +65,7 @@ const getPathParamNames = (
 const getDocumentedDtoProperties = (dtoClass: { prototype: object }): string[] => {
   const metadata = Reflect.getMetadata(
     API_MODEL_PROPERTIES_ARRAY_METADATA_KEY,
-    dtoClass.prototype,
+    dtoClass.prototype
   ) as string[] | undefined;
 
   return (metadata ?? []).map((property) => property.replace(/^:/, '')).sort();
@@ -82,9 +74,60 @@ const getDocumentedDtoProperties = (dtoClass: { prototype: object }): string[] =
 describe('Swagger security and marshmallow family contract', () => {
   it('attaches explicit response schemas to security, blocklist, and marshmallow routes', () => {
     const controllerMethods: Array<[ControllerClass, string[]]> = [
-      [SecurityController, ['getFingerprint', 'listBlocklist', 'createBlocklist', 'testBlocklist', 'getBlocklist', 'updateBlocklist', 'deleteBlocklist', 'disableBlocklist', 'enableBlocklist', 'listIpRules', 'createIpRule', 'checkIpAccess', 'deleteIpRule']],
-      [ExternalBlocklistController, ['findMany', 'findWithInheritance', 'findWithInheritanceTalent', 'findById', 'create', 'update', 'delete', 'disableInScope', 'enableInScope', 'batchToggle']],
-      [MarshmallowController, ['getConfig', 'updateConfig', 'uploadAvatar', 'setCustomDomain', 'verifyCustomDomain', 'generateSsoToken', 'listMessages', 'approveMessage', 'rejectMessage', 'unrejectMessage', 'replyMessage', 'batchAction', 'updateMessage', 'exportMessages', 'getExportJob', 'getExportDownloadUrl']],
+      [
+        SecurityController,
+        [
+          'getFingerprint',
+          'listBlocklist',
+          'createBlocklist',
+          'testBlocklist',
+          'getBlocklist',
+          'updateBlocklist',
+          'deleteBlocklist',
+          'disableBlocklist',
+          'enableBlocklist',
+          'listIpRules',
+          'createIpRule',
+          'checkIpAccess',
+          'deleteIpRule',
+        ],
+      ],
+      [
+        ExternalBlocklistController,
+        [
+          'findMany',
+          'findWithInheritance',
+          'findWithInheritanceTalent',
+          'findById',
+          'create',
+          'update',
+          'delete',
+          'disableInScope',
+          'enableInScope',
+          'batchToggle',
+        ],
+      ],
+      [
+        MarshmallowController,
+        [
+          'getConfig',
+          'updateConfig',
+          'uploadAvatar',
+          'setCustomDomain',
+          'verifyCustomDomain',
+          'generateSsoToken',
+          'listMessages',
+          'approveMessage',
+          'rejectMessage',
+          'unrejectMessage',
+          'replyMessage',
+          'batchAction',
+          'updateMessage',
+          'exportMessages',
+          'getExportJob',
+          'getExportDownloadUrl',
+        ],
+      ],
       [LogSearchController, ['search']],
     ];
 
@@ -93,9 +136,7 @@ describe('Swagger security and marshmallow family contract', () => {
         const responseEntries = Object.values(getResponseMetadata(controllerClass, methodName));
         expect(responseEntries.length).toBeGreaterThan(0);
         expect(
-          responseEntries.every(
-            (response) => Boolean(response?.schema || response?.content),
-          ),
+          responseEntries.every((response) => Boolean(response?.schema || response?.content))
         ).toBe(true);
       }
     }
@@ -409,10 +450,7 @@ describe('Swagger security and marshmallow family contract', () => {
       'talentId',
     ]);
     expect(getPathParamNames(MarshmallowController, 'exportMessages')).toEqual(['talentId']);
-    expect(getPathParamNames(MarshmallowController, 'getExportJob')).toEqual([
-      'jobId',
-      'talentId',
-    ]);
+    expect(getPathParamNames(MarshmallowController, 'getExportJob')).toEqual(['jobId', 'talentId']);
     expect(getPathParamNames(MarshmallowController, 'getExportDownloadUrl')).toEqual([
       'jobId',
       'talentId',

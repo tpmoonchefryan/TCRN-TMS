@@ -1,12 +1,8 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { buildSharedMarshmallowUrl, type LocalizedText } from '@tcrn/shared';
 
 import { CaptchaMode, type UpdateConfigDto } from '../dto/marshmallow.dto';
-import {
-  buildCaptchaRuntimeStatus,
-  type CaptchaRuntimeStatus,
-} from './captcha-runtime.policy';
+import { buildCaptchaRuntimeStatus, type CaptchaRuntimeStatus } from './captcha-runtime.policy';
 
 export const DEFAULT_MARSHMALLOW_CONFIG = {
   isEnabled: false,
@@ -89,7 +85,7 @@ export interface MarshmallowConfigFieldChange {
 }
 
 export const isMarshmallowEnabledByTalentSettings = (
-  settings: Record<string, unknown> | null | undefined,
+  settings: Record<string, unknown> | null | undefined
 ): boolean => settings?.marshmallowEnabled !== false;
 
 export const buildDefaultMarshmallowConfig = (isEnabled: boolean) => ({
@@ -98,7 +94,7 @@ export const buildDefaultMarshmallowConfig = (isEnabled: boolean) => ({
 });
 
 export const buildMarshmallowConfigStats = (
-  stats: MarshmallowConfigStatsRow | null | undefined,
+  stats: MarshmallowConfigStatsRow | null | undefined
 ): MarshmallowConfigStats => {
   const row = stats ?? {
     total: 0n,
@@ -164,7 +160,7 @@ export const buildMarshmallowConfigResponse = (params: {
 
 export const buildMarshmallowConfigChanges = (
   config: MarshmallowConfigRecord,
-  dto: UpdateConfigDto,
+  dto: UpdateConfigDto
 ): {
   changedFields: MarshmallowConfigFieldChange[];
   oldValue: Record<string, unknown>;

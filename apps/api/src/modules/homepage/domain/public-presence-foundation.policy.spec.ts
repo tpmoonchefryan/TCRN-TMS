@@ -1,17 +1,14 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
-import {
-  createPublicPresenceValidationArtifact,
-  type PublicPresenceDocument,
-} from '@tcrn/shared';
 import { describe, expect, it } from 'vitest';
 
+import { createPublicPresenceValidationArtifact, type PublicPresenceDocument } from '@tcrn/shared';
+
+import { buildPublicPresenceSeedRuntimeAuthorityForTests } from '../testing/public-presence-seed-runtime-authority';
 import {
   buildPublicPresenceHashableDocument,
   calculatePublicPresenceContentHash,
   derivePublicPresenceValidationState,
 } from './public-presence-foundation.policy';
-import { buildPublicPresenceSeedRuntimeAuthorityForTests } from '../testing/public-presence-seed-runtime-authority';
 
 const safeDocument: PublicPresenceDocument = {
   schemaVersion: '1.0',
@@ -91,10 +88,10 @@ describe('public presence foundation policy', () => {
     };
 
     expect(buildPublicPresenceHashableDocument(reorderedDocument)).toEqual(
-      buildPublicPresenceHashableDocument(safeDocument),
+      buildPublicPresenceHashableDocument(safeDocument)
     );
     expect(calculatePublicPresenceContentHash(reorderedDocument)).toBe(
-      calculatePublicPresenceContentHash(safeDocument),
+      calculatePublicPresenceContentHash(safeDocument)
     );
   });
 
@@ -127,14 +124,10 @@ describe('public presence foundation policy', () => {
       {
         mode: 'draft',
         runtimeAuthority: activeHubRuntimeAuthority,
-      },
+      }
     );
 
-    expect(derivePublicPresenceValidationState(safeArtifact.snapshot)).toBe(
-      'validEditable',
-    );
-    expect(derivePublicPresenceValidationState(unsafeArtifact.snapshot)).toBe(
-      'unsafe',
-    );
+    expect(derivePublicPresenceValidationState(safeArtifact.snapshot)).toBe('validEditable');
+    expect(derivePublicPresenceValidationState(unsafeArtifact.snapshot)).toBe('unsafe');
   });
 });

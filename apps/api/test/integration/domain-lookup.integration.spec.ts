@@ -1,7 +1,9 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import request from 'supertest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+
 import { PrismaClient } from '@tcrn/database';
 import {
   createLocalizedText,
@@ -10,8 +12,6 @@ import {
   createTestUserInTenant,
   type TenantFixture,
 } from '@tcrn/shared';
-import request from 'supertest';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { AppModule } from '../../src/app.module';
 import { bootstrapTestApp } from '../../src/testing/bootstrap-test-app';
@@ -60,7 +60,7 @@ describe('Domain Lookup Integration Tests', () => {
       customDomain,
       marshmallowPath,
       lifecycleStatus,
-      createdBy,
+      createdBy
     );
   };
 

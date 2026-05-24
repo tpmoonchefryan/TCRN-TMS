@@ -1,12 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
-import { 
-  BlocklistAction,
-  BlocklistPatternType,
-  OwnerType,
-  SeverityLevel
-} from './enums';
 import type { LocalizedText } from '../constants/locale';
+import { BlocklistAction, BlocklistPatternType, OwnerType, SeverityLevel } from './enums';
 
 // System Dictionary Types
 export interface DictionaryItem {
@@ -37,7 +31,7 @@ export interface ConfigEntity {
   created_at: string;
   updated_at: string;
   version: number;
-  
+
   // Computed / Hydrated fields
   is_inherited?: boolean;
   is_disabled_here?: boolean;
@@ -78,4 +72,4 @@ export const ENTITY_TYPES = {
   // ...
 } as const;
 
-export type EntityType = typeof ENTITY_TYPES[keyof typeof ENTITY_TYPES];
+export type EntityType = (typeof ENTITY_TYPES)[keyof typeof ENTITY_TYPES];

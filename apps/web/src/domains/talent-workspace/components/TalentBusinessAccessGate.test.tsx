@@ -57,7 +57,7 @@ describe('TalentBusinessAccessGate', () => {
     render(
       <TalentBusinessAccessGate tenantId="tenant-1" talentId="talent-1">
         <div>Published workspace content</div>
-      </TalentBusinessAccessGate>,
+      </TalentBusinessAccessGate>
     );
 
     expect(screen.getByText('Checking talent availability')).toBeInTheDocument();
@@ -75,19 +75,19 @@ describe('TalentBusinessAccessGate', () => {
     render(
       <TalentBusinessAccessGate tenantId="tenant-1" talentId="talent-1">
         <div>Draft workspace content</div>
-      </TalentBusinessAccessGate>,
+      </TalentBusinessAccessGate>
     );
 
     expect(await screen.findByText('Talent not published')).toBeInTheDocument();
     expect(
       screen.getByText(
-        'Draft talents stay in organization structure until they are published. Business pages remain unavailable.',
-      ),
+        'Draft talents stay in organization structure until they are published. Business pages remain unavailable.'
+      )
     ).toBeInTheDocument();
     expect(screen.queryByText('Draft workspace content')).not.toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Open organization structure' })).toHaveAttribute(
       'href',
-      '/tenant/tenant-1/organization-structure',
+      '/tenant/tenant-1/organization-structure'
     );
   });
 
@@ -100,7 +100,7 @@ describe('TalentBusinessAccessGate', () => {
     render(
       <TalentBusinessAccessGate allowDraft tenantId="tenant-1" talentId="talent-1">
         <div>Draft homepage workspace content</div>
-      </TalentBusinessAccessGate>,
+      </TalentBusinessAccessGate>
     );
 
     expect(await screen.findByText('Draft homepage workspace content')).toBeInTheDocument();
@@ -116,31 +116,31 @@ describe('TalentBusinessAccessGate', () => {
     render(
       <TalentBusinessAccessGate tenantId="tenant-1" talentId="talent-1">
         <div>Disabled workspace content</div>
-      </TalentBusinessAccessGate>,
+      </TalentBusinessAccessGate>
     );
 
     expect(await screen.findByText('Talent disabled')).toBeInTheDocument();
     expect(
       screen.getByText(
-        'Disabled talents stay out of business pages until someone re-enables them in organization structure.',
-      ),
+        'Disabled talents stay out of business pages until someone re-enables them in organization structure.'
+      )
     ).toBeInTheDocument();
     expect(screen.queryByText('Disabled workspace content')).not.toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Open organization structure' })).toHaveAttribute(
       'href',
-      '/tenant/tenant-1/organization-structure',
+      '/tenant/tenant-1/organization-structure'
     );
   });
 
   it('renders an error state when lifecycle verification fails', async () => {
     mockReadTalentDetail.mockRejectedValue(
-      new ApiRequestError('Talent detail lookup failed.', 'TALENT_LOOKUP_FAILED', 500),
+      new ApiRequestError('Talent detail lookup failed.', 'TALENT_LOOKUP_FAILED', 500)
     );
 
     render(
       <TalentBusinessAccessGate tenantId="tenant-1" talentId="talent-1">
         <div>Hidden workspace content</div>
-      </TalentBusinessAccessGate>,
+      </TalentBusinessAccessGate>
     );
 
     expect(await screen.findByText('Talent unavailable')).toBeInTheDocument();
@@ -168,7 +168,7 @@ describe('TalentBusinessAccessGate', () => {
     render(
       <TalentBusinessAccessGate tenantId="tenant-1" talentId="talent-1">
         <div>Recovered workspace content</div>
-      </TalentBusinessAccessGate>,
+      </TalentBusinessAccessGate>
     );
 
     expect(screen.getByText('Checking talent availability')).toBeInTheDocument();

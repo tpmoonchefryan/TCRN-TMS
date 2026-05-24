@@ -1,7 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+import { describe, expect, it, vi } from 'vitest';
 
 import { createLocalizedText, type RequestContext } from '@tcrn/shared';
-import { describe, expect, it, vi } from 'vitest';
 
 import { ProfileStoreApplicationService } from '../application/profile-store.service';
 import { ProfileStoreService } from './profile-store.service';
@@ -88,8 +88,8 @@ describe('ProfileStoreService', () => {
           code: 'DEFAULT_STORE',
           name: defaultStoreName,
         },
-        context,
-      ),
+        context
+      )
     ).resolves.toMatchObject({
       code: 'DEFAULT_STORE',
       isDefault: true,
@@ -101,8 +101,8 @@ describe('ProfileStoreService', () => {
           version: 1,
           name: { en: 'Updated Store' },
         },
-        context,
-      ),
+        context
+      )
     ).resolves.toMatchObject({
       version: 2,
     });

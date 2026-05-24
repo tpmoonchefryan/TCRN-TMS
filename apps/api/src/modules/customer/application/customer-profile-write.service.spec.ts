@@ -1,8 +1,8 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { ConflictException, NotFoundException } from '@nestjs/common';
-import type { RequestContext } from '@tcrn/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import type { RequestContext } from '@tcrn/shared';
 
 import type { ChangeLogService, TechEventLogService } from '../../log';
 import { ProfileType } from '../dto/customer.dto';
@@ -50,7 +50,7 @@ describe('CustomerProfileWriteService', () => {
     mockChangeLogService,
     mockTechEventLogService,
     mockCustomerArchiveAccessService,
-    mockCustomerPiiPlatformApplicationService,
+    mockCustomerPiiPlatformApplicationService
   );
 
   beforeEach(() => {
@@ -58,13 +58,13 @@ describe('CustomerProfileWriteService', () => {
   });
 
   it('throws NotFoundException when deactivate cannot resolve customer access', async () => {
-    vi.mocked(
-      mockCustomerArchiveAccessService.requireCustomerArchiveAccess,
-    ).mockRejectedValue(new NotFoundException());
+    vi.mocked(mockCustomerArchiveAccessService.requireCustomerArchiveAccess).mockRejectedValue(
+      new NotFoundException()
+    );
 
-    await expect(
-      service.deactivate('customer-1', 'talent-1', 'OTHER', 1, context),
-    ).rejects.toThrow(NotFoundException);
+    await expect(service.deactivate('customer-1', 'talent-1', 'OTHER', 1, context)).rejects.toThrow(
+      NotFoundException
+    );
   });
 
   it('throws ConflictException when deactivate version mismatches', async () => {
@@ -81,9 +81,9 @@ describe('CustomerProfileWriteService', () => {
       notes: null,
     });
 
-    await expect(
-      service.deactivate('customer-1', 'talent-1', 'OTHER', 2, context),
-    ).rejects.toThrow(ConflictException);
+    await expect(service.deactivate('customer-1', 'talent-1', 'OTHER', 2, context)).rejects.toThrow(
+      ConflictException
+    );
   });
 
   it('reactivates the customer and records audit side effects', async () => {
@@ -103,22 +103,23 @@ describe('CustomerProfileWriteService', () => {
     vi.mocked(mockRepository.createAccessLog).mockResolvedValue(1 as never);
     vi.mocked(mockChangeLogService.create).mockResolvedValue(undefined as never);
     vi.mocked(
-      mockCustomerPiiPlatformApplicationService.syncCustomerLifecycleState,
+      mockCustomerPiiPlatformApplicationService.syncCustomerLifecycleState
     ).mockResolvedValue({
       customerId: 'customer-1',
       lifecycleStatus: 'active',
       syncedAt: '2026-04-15T02:00:00.000Z',
     } as never);
 
-    await expect(
-      service.reactivate('customer-1', 'talent-1', context),
-    ).resolves.toEqual({ id: 'customer-1', isActive: true });
+    await expect(service.reactivate('customer-1', 'talent-1', context)).resolves.toEqual({
+      id: 'customer-1',
+      isActive: true,
+    });
 
     expect(mockRepository.reactivate).toHaveBeenCalledTimes(1);
     expect(mockChangeLogService.create).toHaveBeenCalledTimes(1);
     expect(mockRepository.createAccessLog).toHaveBeenCalledTimes(1);
     expect(
-      mockCustomerPiiPlatformApplicationService.syncCustomerLifecycleState,
+      mockCustomerPiiPlatformApplicationService.syncCustomerLifecycleState
     ).toHaveBeenCalledWith(
       'customer-1',
       'talent-1',
@@ -127,7 +128,7 @@ describe('CustomerProfileWriteService', () => {
         action: 'reactivate',
         isActive: true,
       }),
-      context,
+      context
     );
   });
 
@@ -151,16 +152,16 @@ describe('CustomerProfileWriteService', () => {
     vi.mocked(mockRepository.createAccessLog).mockResolvedValue(1 as never);
     vi.mocked(mockChangeLogService.create).mockResolvedValue(undefined as never);
     vi.mocked(
-      mockCustomerPiiPlatformApplicationService.syncCustomerLifecycleState,
+      mockCustomerPiiPlatformApplicationService.syncCustomerLifecycleState
     ).mockRejectedValue(platformFailure);
     vi.mocked(mockTechEventLogService.warn).mockResolvedValue(undefined as never);
 
-    await expect(
-      service.deactivate('customer-1', 'talent-1', 'OTHER', 3, context),
-    ).rejects.toThrow('platform unavailable');
+    await expect(service.deactivate('customer-1', 'talent-1', 'OTHER', 3, context)).rejects.toThrow(
+      'platform unavailable'
+    );
 
     expect(
-      mockCustomerPiiPlatformApplicationService.syncCustomerLifecycleState,
+      mockCustomerPiiPlatformApplicationService.syncCustomerLifecycleState
     ).toHaveBeenCalledWith(
       'customer-1',
       'talent-1',
@@ -170,7 +171,7 @@ describe('CustomerProfileWriteService', () => {
         isActive: false,
         reasonCode: 'OTHER',
       }),
-      context,
+      context
     );
     expect(mockTechEventLogService.warn).toHaveBeenCalledWith(
       'PII_PLATFORM_LIFECYCLE_SYNC_FAILED',
@@ -180,7 +181,7 @@ describe('CustomerProfileWriteService', () => {
         profileType: ProfileType.INDIVIDUAL,
         originalError: 'platform unavailable',
       }),
-      context,
+      context
     );
   });
 });

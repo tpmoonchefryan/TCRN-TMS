@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { ReportJobStatus } from '../dto/report.dto';
 
 const STATUS_TRANSITIONS: Record<ReportJobStatus, ReportJobStatus[]> = {
@@ -15,7 +14,7 @@ const STATUS_TRANSITIONS: Record<ReportJobStatus, ReportJobStatus[]> = {
 
 export const canTransitionReportJob = (
   currentStatus: ReportJobStatus,
-  targetStatus: ReportJobStatus,
+  targetStatus: ReportJobStatus
 ): boolean => STATUS_TRANSITIONS[currentStatus].includes(targetStatus);
 
 export const buildReportJobTransitionUpdates = (
@@ -25,7 +24,7 @@ export const buildReportJobTransitionUpdates = (
   },
   targetStatus: ReportJobStatus,
   updates?: Record<string, unknown>,
-  now: Date = new Date(),
+  now: Date = new Date()
 ): Record<string, unknown> => {
   const statusUpdates: Record<string, unknown> = { status: targetStatus };
 
@@ -58,7 +57,7 @@ export const buildReportJobTransitionUpdates = (
 
 export const getReportJobProgressPercentage = (
   processedRows: number,
-  totalRows: number,
+  totalRows: number
 ): number => {
   if (totalRows <= 0) {
     return 0;
@@ -71,10 +70,7 @@ export const canDownloadReportJob = (job: {
   status: ReportJobStatus;
   expiresAt: Date | null;
 }): boolean => {
-  if (
-    job.status !== ReportJobStatus.SUCCESS &&
-    job.status !== ReportJobStatus.CONSUMED
-  ) {
+  if (job.status !== ReportJobStatus.SUCCESS && job.status !== ReportJobStatus.CONSUMED) {
     return false;
   }
 

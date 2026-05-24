@@ -1,9 +1,10 @@
 'use client';
 
-import type { SupportedUiLocale } from '@tcrn/shared';
 import { Search } from 'lucide-react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Fragment, startTransition, useEffect, useMemo, useState } from 'react';
+
+import type { SupportedUiLocale } from '@tcrn/shared';
 
 import {
   type DictionaryItemRecord,
@@ -13,10 +14,7 @@ import {
   type RequestFn,
 } from '@/domains/config-dictionary-settings/api/system-dictionary.api';
 import { type ApiPaginationMeta, ApiRequestError } from '@/platform/http/api';
-import {
-  formatLocaleDateTime,
-  pickLocaleText,
-} from '@/platform/runtime/locale/locale-text';
+import { formatLocaleDateTime, pickLocaleText } from '@/platform/runtime/locale/locale-text';
 import {
   buildPaginationMeta,
   getPaginationRange,
@@ -39,7 +37,7 @@ function getErrorMessage(reason: unknown, fallback: string) {
   return reason instanceof ApiRequestError ? reason.message : fallback;
 }
 
-function formatDateTime(locale: SupportedUiLocale , value: string) {
+function formatDateTime(locale: SupportedUiLocale, value: string) {
   return formatLocaleDateTime(locale, value, value);
 }
 
@@ -72,7 +70,8 @@ const DEFAULT_COPY: DictionaryExplorerPanelCopy = {
   updatedColumn: 'Updated',
   actionsColumn: 'Actions',
   defaultItemsTitle: 'Dictionary items',
-  defaultItemsDescription: 'Browse the stable controlled vocabulary used across downstream modules.',
+  defaultItemsDescription:
+    'Browse the stable controlled vocabulary used across downstream modules.',
   searchAriaLabel: 'Search dictionary items',
   searchPlaceholder: 'Search code or localized name',
   includeInactiveAriaLabel: 'Include inactive dictionary items',
@@ -89,7 +88,7 @@ const DEFAULT_COPY: DictionaryExplorerPanelCopy = {
 
 function resolveDictionaryExplorerTypeCode(
   types: readonly DictionaryTypeSummary[],
-  requestedTypeCode: string | null,
+  requestedTypeCode: string | null
 ) {
   if (requestedTypeCode && types.some((entry) => entry.type === requestedTypeCode)) {
     return requestedTypeCode;
@@ -128,7 +127,7 @@ function buildDictionaryExplorerQueryState(
     pageSize: PageSizeOption;
     search: string;
     typeCode: string | null;
-  },
+  }
 ) {
   const params = new URLSearchParams(searchParams.toString());
   const normalizedSearch = search.trim();
@@ -168,7 +167,7 @@ export interface DictionaryExplorerPanelProps {
   types: DictionaryTypeSummary[];
   emptyTitle?: string;
   emptyDescription?: string;
-  locale?: SupportedUiLocale ;
+  locale?: SupportedUiLocale;
   copy?: DictionaryExplorerPanelCopy;
   intro?: React.ReactNode;
   renderToolbar?: (selectedType: DictionaryTypeSummary | null) => React.ReactNode;
@@ -199,11 +198,14 @@ export function DictionaryExplorerPanel({
   const router = useRouter();
   const searchParams = useSearchParams();
   const defaultTypeCode = types[0]?.type ?? null;
-  const urlSelectedTypeCode = resolveDictionaryExplorerTypeCode(types, searchParams.get('dictionaryType'));
+  const urlSelectedTypeCode = resolveDictionaryExplorerTypeCode(
+    types,
+    searchParams.get('dictionaryType')
+  );
   const urlSearch = searchParams.get('dictionarySearch') ?? '';
   const urlIncludeInactive = parseDictionaryIncludeInactiveParam(
     searchParams.get('dictionaryInactive'),
-    includeInactiveByDefault,
+    includeInactiveByDefault
   );
   const urlPage = parsePageParam(searchParams.get('dictionaryPage'));
   const urlPageSize = parsePageSizeParam(searchParams.get('dictionaryPageSize'));
@@ -222,13 +224,17 @@ export function DictionaryExplorerPanel({
 
   const selectedType = useMemo(
     () => types.find((entry) => entry.type === selectedTypeCode) ?? null,
-    [selectedTypeCode, types],
+    [selectedTypeCode, types]
   );
 
   useEffect(() => {
-    setSelectedTypeCode((current) => (current === urlSelectedTypeCode ? current : urlSelectedTypeCode));
+    setSelectedTypeCode((current) =>
+      current === urlSelectedTypeCode ? current : urlSelectedTypeCode
+    );
     setSearch((current) => (current === urlSearch ? current : urlSearch));
-    setIncludeInactive((current) => (current === urlIncludeInactive ? current : urlIncludeInactive));
+    setIncludeInactive((current) =>
+      current === urlIncludeInactive ? current : urlIncludeInactive
+    );
     setPage((current) => (current === urlPage ? current : urlPage));
     setPageSize((current) => (current === urlPageSize ? current : urlPageSize));
   }, [urlIncludeInactive, urlPage, urlPageSize, urlSearch, urlSelectedTypeCode]);
@@ -240,11 +246,11 @@ export function DictionaryExplorerPanel({
       pageSize: PageSizeOption;
       search: string;
       typeCode: string | null;
-    }>,
+    }>
   ) {
     const nextTypeCode = resolveDictionaryExplorerTypeCode(
       types,
-      nextState.typeCode !== undefined ? nextState.typeCode : selectedTypeCode,
+      nextState.typeCode !== undefined ? nextState.typeCode : selectedTypeCode
     );
     const nextSearch = nextState.search ?? search;
     const nextIncludeInactive = nextState.includeInactive ?? includeInactive;
@@ -378,19 +384,26 @@ export function DictionaryExplorerPanel({
         return {
           dictionaryTypeCode: selectedTypeCode,
           data: shouldRetainData ? current.data : [],
-          pagination: shouldRetainData ? current.pagination : buildPaginationMeta(0, page, pageSize),
+          pagination: shouldRetainData
+            ? current.pagination
+            : buildPaginationMeta(0, page, pageSize),
           error: null,
           loading: true,
         };
       });
 
       try {
-        const response = await listDictionaryItems(requestEnvelope, selectedTypeCode, {
-          includeInactive,
-          page,
-          pageSize,
-          search: search.trim() || undefined,
-        }, locale);
+        const response = await listDictionaryItems(
+          requestEnvelope,
+          selectedTypeCode,
+          {
+            includeInactive,
+            page,
+            pageSize,
+            search: search.trim() || undefined,
+          },
+          locale
+        );
 
         if (cancelled) {
           return;
@@ -423,7 +436,17 @@ export function DictionaryExplorerPanel({
     return () => {
       cancelled = true;
     };
-  }, [copy.itemsUnavailableFallback, includeInactive, locale, page, pageSize, refreshToken, requestEnvelope, search, selectedType]);
+  }, [
+    copy.itemsUnavailableFallback,
+    includeInactive,
+    locale,
+    page,
+    pageSize,
+    refreshToken,
+    requestEnvelope,
+    search,
+    selectedType,
+  ]);
 
   if (types.length === 0) {
     return <StateView status="empty" title={emptyTitle} description={emptyDescription} />;
@@ -431,18 +454,66 @@ export function DictionaryExplorerPanel({
 
   const pageRange = getPaginationRange(itemsPanel.pagination, itemsPanel.data.length);
   const paginationCopy = {
-    page: pickLocaleText(locale, { en: `Page ${itemsPanel.pagination.page} of ${itemsPanel.pagination.totalPages}`, zh_HANS: `第 ${itemsPanel.pagination.page} / ${itemsPanel.pagination.totalPages} 页`, zh_HANT: `第 ${itemsPanel.pagination.page} / ${itemsPanel.pagination.totalPages} 页`, ja: `${itemsPanel.pagination.totalPages} ページ中 ${itemsPanel.pagination.page} ページ`, ko: `Page ${itemsPanel.pagination.page} of ${itemsPanel.pagination.totalPages}`, fr: `Page ${itemsPanel.pagination.page} of ${itemsPanel.pagination.totalPages}` }),
+    page: pickLocaleText(locale, {
+      en: `Page ${itemsPanel.pagination.page} of ${itemsPanel.pagination.totalPages}`,
+      zh_HANS: `第 ${itemsPanel.pagination.page} / ${itemsPanel.pagination.totalPages} 页`,
+      zh_HANT: `第 ${itemsPanel.pagination.page} / ${itemsPanel.pagination.totalPages} 页`,
+      ja: `${itemsPanel.pagination.totalPages} ページ中 ${itemsPanel.pagination.page} ページ`,
+      ko: `Page ${itemsPanel.pagination.page} of ${itemsPanel.pagination.totalPages}`,
+      fr: `Page ${itemsPanel.pagination.page} of ${itemsPanel.pagination.totalPages}`,
+    }),
     range:
       itemsPanel.pagination.totalCount === 0
-        ? pickLocaleText(locale, { en: 'No dictionary items available.', zh_HANS: '当前没有词典项。', zh_HANT: '当前没有词典项。', ja: '辞書項目はありません。', ko: 'No dictionary items available.', fr: 'No dictionary items available.' })
-        : pickLocaleText(locale, { en: `Showing ${pageRange.start}-${pageRange.end} of ${itemsPanel.pagination.totalCount}`, zh_HANS: `显示第 ${pageRange.start}-${pageRange.end} 条，共 ${itemsPanel.pagination.totalCount} 条`, zh_HANT: `显示第 ${pageRange.start}-${pageRange.end} 条，共 ${itemsPanel.pagination.totalCount} 条`, ja: `${itemsPanel.pagination.totalCount} 件中 ${pageRange.start}-${pageRange.end} 件を表示`, ko: `Showing ${pageRange.start}-${pageRange.end} of ${itemsPanel.pagination.totalCount}`, fr: `Showing ${pageRange.start}-${pageRange.end} of ${itemsPanel.pagination.totalCount}` }),
-    pageSize: pickLocaleText(locale, { en: 'Rows per page', zh_HANS: '每页条目', zh_HANT: '每页条目', ja: '表示件数', ko: 'Rows per page', fr: 'Rows per page' }),
-    previous: pickLocaleText(locale, { en: 'Previous', zh_HANS: '上一页', zh_HANT: '上一页', ja: '前へ', ko: 'Previous', fr: 'Previous' }),
-    next: pickLocaleText(locale, { en: 'Next', zh_HANS: '下一页', zh_HANT: '下一页', ja: '次へ', ko: 'Next', fr: 'Next' }),
+        ? pickLocaleText(locale, {
+            en: 'No dictionary items available.',
+            zh_HANS: '当前没有词典项。',
+            zh_HANT: '当前没有词典项。',
+            ja: '辞書項目はありません。',
+            ko: 'No dictionary items available.',
+            fr: 'No dictionary items available.',
+          })
+        : pickLocaleText(locale, {
+            en: `Showing ${pageRange.start}-${pageRange.end} of ${itemsPanel.pagination.totalCount}`,
+            zh_HANS: `显示第 ${pageRange.start}-${pageRange.end} 条，共 ${itemsPanel.pagination.totalCount} 条`,
+            zh_HANT: `显示第 ${pageRange.start}-${pageRange.end} 条，共 ${itemsPanel.pagination.totalCount} 条`,
+            ja: `${itemsPanel.pagination.totalCount} 件中 ${pageRange.start}-${pageRange.end} 件を表示`,
+            ko: `Showing ${pageRange.start}-${pageRange.end} of ${itemsPanel.pagination.totalCount}`,
+            fr: `Showing ${pageRange.start}-${pageRange.end} of ${itemsPanel.pagination.totalCount}`,
+          }),
+    pageSize: pickLocaleText(locale, {
+      en: 'Rows per page',
+      zh_HANS: '每页条目',
+      zh_HANT: '每页条目',
+      ja: '表示件数',
+      ko: 'Rows per page',
+      fr: 'Rows per page',
+    }),
+    previous: pickLocaleText(locale, {
+      en: 'Previous',
+      zh_HANS: '上一页',
+      zh_HANT: '上一页',
+      ja: '前へ',
+      ko: 'Previous',
+      fr: 'Previous',
+    }),
+    next: pickLocaleText(locale, {
+      en: 'Next',
+      zh_HANS: '下一页',
+      zh_HANT: '下一页',
+      ja: '次へ',
+      ko: 'Next',
+      fr: 'Next',
+    }),
   };
 
   const columns = renderItemActions
-    ? [copy.codeColumn, copy.localizedNameColumn, copy.statusColumn, copy.updatedColumn, copy.actionsColumn]
+    ? [
+        copy.codeColumn,
+        copy.localizedNameColumn,
+        copy.statusColumn,
+        copy.updatedColumn,
+        copy.actionsColumn,
+      ]
     : [copy.codeColumn, copy.localizedNameColumn, copy.statusColumn, copy.updatedColumn];
 
   return (
@@ -470,14 +541,18 @@ export function DictionaryExplorerPanel({
                 <div className="flex items-start justify-between gap-3">
                   <div className="space-y-1">
                     <p className="text-sm font-semibold">{dictionaryType.name}</p>
-                    <p className="text-xs uppercase tracking-[0.18em] text-slate-500">{dictionaryType.type}</p>
+                    <p className="text-xs uppercase tracking-[0.18em] text-slate-500">
+                      {dictionaryType.type}
+                    </p>
                   </div>
                   <span className="whitespace-nowrap rounded-full border border-slate-200 bg-white/80 px-2.5 py-1 text-xs font-semibold text-slate-600">
                     {dictionaryType.count}
                   </span>
                 </div>
                 {dictionaryType.description ? (
-                  <p className="mt-3 text-sm leading-6 text-slate-600">{dictionaryType.description}</p>
+                  <p className="mt-3 text-sm leading-6 text-slate-600">
+                    {dictionaryType.description}
+                  </p>
                 ) : null}
               </button>
             );
@@ -487,12 +562,16 @@ export function DictionaryExplorerPanel({
         <div className="space-y-4">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="space-y-1">
-              <p className="text-lg font-semibold text-slate-950">{selectedType?.name || copy.defaultItemsTitle}</p>
+              <p className="text-lg font-semibold text-slate-950">
+                {selectedType?.name || copy.defaultItemsTitle}
+              </p>
               <p className="text-sm leading-6 text-slate-600">
                 {selectedType?.description || copy.defaultItemsDescription}
               </p>
             </div>
-            {renderToolbar ? <div className="flex flex-wrap items-center gap-3">{renderToolbar(selectedType)}</div> : null}
+            {renderToolbar ? (
+              <div className="flex flex-wrap items-center gap-3">{renderToolbar(selectedType)}</div>
+            ) : null}
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
@@ -526,7 +605,11 @@ export function DictionaryExplorerPanel({
           </div>
 
           {itemsPanel.error ? (
-            <StateView status="error" title={copy.itemsUnavailableTitle} description={itemsPanel.error} />
+            <StateView
+              status="error"
+              title={copy.itemsUnavailableTitle}
+              description={itemsPanel.error}
+            />
           ) : (
             <Fragment>
               <TableShell
@@ -558,21 +641,29 @@ export function DictionaryExplorerPanel({
                         <p className="text-sm font-semibold text-slate-950">{item.localizedName}</p>
                         <p className="text-xs text-slate-500">{item.name.en}</p>
                         {item.localizedDescription ? (
-                          <p className="text-sm leading-6 text-slate-600">{item.localizedDescription}</p>
+                          <p className="text-sm leading-6 text-slate-600">
+                            {item.localizedDescription}
+                          </p>
                         ) : null}
                       </div>
                     </td>
                     <td className="px-6 py-4">
                       <span
                         className={`inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold ${
-                          item.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-600'
+                          item.isActive
+                            ? 'bg-emerald-100 text-emerald-700'
+                            : 'bg-slate-200 text-slate-600'
                         }`}
                       >
                         {item.isActive ? copy.activeStatus : copy.inactiveStatus}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-sm text-slate-600">{formatDateTime(locale, item.updatedAt)}</td>
-                    {renderItemActions ? <td className="px-6 py-4">{renderItemActions(item)}</td> : null}
+                    <td className="px-6 py-4 text-sm text-slate-600">
+                      {formatDateTime(locale, item.updatedAt)}
+                    </td>
+                    {renderItemActions ? (
+                      <td className="px-6 py-4">{renderItemActions(item)}</td>
+                    ) : null}
                   </tr>
                 ))}
               </TableShell>

@@ -1,6 +1,7 @@
-import type { SupportedUiLocale } from '@tcrn/shared';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import type { SupportedUiLocale } from '@tcrn/shared';
 
 import type { TalentCustomDomainConfigResponse } from '@/domains/config-dictionary-settings/api/public-domain-settings.api';
 import type {
@@ -96,7 +97,10 @@ describe('TalentSettingsScreen', () => {
           profileStore: {
             id: 'store-1',
             code: 'DEFAULT_STORE',
-            name: localizedFixture('Default Store', { zh_HANS: '默认档案库', ja: '既定プロフィールストア' }),
+            name: localizedFixture('Default Store', {
+              zh_HANS: '默认档案库',
+              ja: '既定プロフィールストア',
+            }),
             isDefault: true,
           },
           code: 'SORA',
@@ -237,16 +241,19 @@ describe('TalentSettingsScreen', () => {
             profileStore: {
               id: 'store-1',
               code: 'DEFAULT_STORE',
-              name: localizedFixture('Default Store', { zh_HANS: '默认档案库', ja: '既定プロフィールストア' }),
+              name: localizedFixture('Default Store', {
+                zh_HANS: '默认档案库',
+                ja: '既定プロフィールストア',
+              }),
               isDefault: true,
             },
             code: 'SORA',
             path: '/TOKYO/SORA/',
             name: localizedFixture('Tokino Sora', { zh_HANS: '时乃空', ja: 'ときのそら' }),
-          localizedName: '',
-          displayName: 'Sora',
-          description: localizedFixture(''),
-          localizedDescription: null,
+            localizedName: '',
+            displayName: 'Sora',
+            description: localizedFixture(''),
+            localizedDescription: null,
             avatarUrl: null,
             homepagePath: 'sora',
             timezone: 'Asia/Tokyo',
@@ -587,7 +594,10 @@ describe('TalentSettingsScreen', () => {
         ];
       }
 
-      if (path === '/api/v1/system-dictionary/CUSTOMER_STATUS?includeInactive=false&page=1&pageSize=20') {
+      if (
+        path ===
+        '/api/v1/system-dictionary/CUSTOMER_STATUS?includeInactive=false&page=1&pageSize=20'
+      ) {
         return {
           success: true,
           data: dictionaryItemsResponse,
@@ -606,7 +616,7 @@ describe('TalentSettingsScreen', () => {
 
       if (
         path ===
-          '/api/v1/configuration-entity/business-segment?scopeType=talent&scopeId=talent-1&includeInherited=true&includeDisabled=true&includeInactive=false&ownerOnly=false&page=1&pageSize=20&sort=sortOrder'
+        '/api/v1/configuration-entity/business-segment?scopeType=talent&scopeId=talent-1&includeInherited=true&includeDisabled=true&includeInactive=false&ownerOnly=false&page=1&pageSize=20&sort=sortOrder'
       ) {
         return {
           success: true,
@@ -624,7 +634,10 @@ describe('TalentSettingsScreen', () => {
         };
       }
 
-      if (path === '/api/v1/configuration-entity/business-segment/segment-inherited/disable' && init?.method === 'POST') {
+      if (
+        path === '/api/v1/configuration-entity/business-segment/segment-inherited/disable' &&
+        init?.method === 'POST'
+      ) {
         businessSegments[0] = {
           ...businessSegments[0],
           isDisabledHere: true,
@@ -659,12 +672,18 @@ describe('TalentSettingsScreen', () => {
 
     render(<TalentSettingsScreen tenantId="tenant-1" talentId="talent-1" />);
 
-    expect(await screen.findByRole('heading', { name: 'Sora Talent Settings' })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { name: 'Sora Talent Settings' })
+    ).toBeInTheDocument();
     expect(screen.getByText('Customer archive required')).toBeInTheDocument();
-    expect(screen.getByText('Bind an active customer archive before publishing this talent.')).toBeInTheDocument();
+    expect(
+      screen.getByText('Bind an active customer archive before publishing this talent.')
+    ).toBeInTheDocument();
     expect(screen.getByText('Homepage not published')).toBeInTheDocument();
     expect(
-      screen.getByText('The homepage is still private. Publish it if this talent should be visible on the public side.'),
+      screen.getByText(
+        'The homepage is still private. Publish it if this talent should be visible on the public side.'
+      )
     ).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Publish talent' })).toBeDisabled();
     expect(screen.getAllByText('Default Store').length).toBeGreaterThan(0);
@@ -690,7 +709,7 @@ describe('TalentSettingsScreen', () => {
             scopeType: 'talent',
             scopeId: 'talent-1',
           }),
-        }),
+        })
       );
     });
 
@@ -698,13 +717,18 @@ describe('TalentSettingsScreen', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Settings' }));
     expect(screen.getByRole('navigation', { name: 'Settings categories' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Defaults and routes' })).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByRole('button', { name: 'Defaults and routes' })).toHaveAttribute(
+      'aria-current',
+      'page'
+    );
     expect(screen.getAllByText('Date format').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Currency').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Customer import').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Password policy').length).toBeGreaterThan(0);
     expect(screen.getByText('Inherited CAPTCHA')).toBeInTheDocument();
-    expect(screen.getByText('Inherited from tenant-level Cloudflare Turnstile settings.')).toBeInTheDocument();
+    expect(
+      screen.getByText('Inherited from tenant-level Cloudflare Turnstile settings.')
+    ).toBeInTheDocument();
     expect(screen.queryByLabelText(/Cloudflare Turnstile Secret Key/i)).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Default language')).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Edit defaults' }));
@@ -744,7 +768,7 @@ describe('TalentSettingsScreen', () => {
             },
             version: 5,
           }),
-        }),
+        })
       );
     });
 
@@ -998,13 +1022,17 @@ describe('TalentSettingsScreen', () => {
 
     render(<TalentSettingsScreen tenantId="tenant-1" talentId="talent-1" />);
 
-    expect(await screen.findByRole('heading', { name: 'Sora Talent Settings' })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { name: 'Sora Talent Settings' })
+    ).toBeInTheDocument();
     expect(await screen.findByLabelText('Enable public marshmallow route')).toBeChecked();
 
     fireEvent.click(screen.getByRole('button', { name: 'Details' }));
 
     await waitFor(() => {
-      expect(replace).toHaveBeenCalledWith('/tenant/tenant-1/talent/talent-1/settings?section=details');
+      expect(replace).toHaveBeenCalledWith(
+        '/tenant/tenant-1/talent/talent-1/settings?section=details'
+      );
     });
 
     fireEvent.click(screen.getByRole('button', { name: 'Settings' }));
@@ -1012,7 +1040,9 @@ describe('TalentSettingsScreen', () => {
     expect(screen.queryByLabelText('Homepage custom-domain path')).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Marshmallow custom-domain path')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Save homepage path' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Save custom-domain paths' })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Save custom-domain paths' })
+    ).not.toBeInTheDocument();
     expect(await screen.findByText('/tenant_test/sora/homepage')).toBeInTheDocument();
     expect(await screen.findByText('/tenant_test/sora/marshmallow')).toBeInTheDocument();
 
@@ -1029,7 +1059,7 @@ describe('TalentSettingsScreen', () => {
           body: JSON.stringify({
             customDomain: 'fans.example.com',
           }),
-        }),
+        })
       );
     });
 
@@ -1037,10 +1067,12 @@ describe('TalentSettingsScreen', () => {
     expect(await screen.findByText('tcrn-verify=token-123')).toBeInTheDocument();
     expect(await screen.findByText('Fixed Public Routes')).toBeInTheDocument();
     expect(
-      await screen.findByText('The homepage route is fixed to /homepage under any custom domain.'),
+      await screen.findByText('The homepage route is fixed to /homepage under any custom domain.')
     ).toBeInTheDocument();
     expect(
-      await screen.findByText('The marshmallow route is fixed to /marshmallow under any custom domain.'),
+      await screen.findByText(
+        'The marshmallow route is fixed to /marshmallow under any custom domain.'
+      )
     ).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Verify custom domain' }));
@@ -1051,7 +1083,7 @@ describe('TalentSettingsScreen', () => {
         expect.objectContaining({
           method: 'POST',
           body: JSON.stringify({}),
-        }),
+        })
       );
     });
 
@@ -1070,7 +1102,7 @@ describe('TalentSettingsScreen', () => {
           body: JSON.stringify({
             sslMode: 'cloudflare',
           }),
-        }),
+        })
       );
     });
 
@@ -1104,20 +1136,22 @@ describe('TalentSettingsScreen', () => {
             allowedReactions: ['heart', 'star'],
             version: 3,
           }),
-        }),
+        })
       );
     });
 
     expect(await screen.findByText('Public marshmallow routing saved.')).toBeInTheDocument();
     expect(
       mockRequest.mock.calls.some(
-        ([path, init]) => path === '/api/v1/talents/talent-1/homepage/settings' && init?.method === 'PATCH',
-      ),
+        ([path, init]) =>
+          path === '/api/v1/talents/talent-1/homepage/settings' && init?.method === 'PATCH'
+      )
     ).toBe(false);
     expect(
       mockRequest.mock.calls.some(
-        ([path, init]) => path === '/api/v1/talents/talent-1/custom-domain/paths' && init?.method === 'PATCH',
-      ),
+        ([path, init]) =>
+          path === '/api/v1/talents/talent-1/custom-domain/paths' && init?.method === 'PATCH'
+      )
     ).toBe(false);
   });
 
@@ -1154,7 +1188,10 @@ describe('TalentSettingsScreen', () => {
           isActive: true,
           settings: { defaultLanguage: 'en', timezone: 'Asia/Tokyo', allowCustomHomepage: true },
           stats: { customerCount: 12, homepageVersionCount: 2, marshmallowMessageCount: 9 },
-          externalPagesDomain: { homepage: { isPublished: true }, marshmallow: { isEnabled: true } },
+          externalPagesDomain: {
+            homepage: { isPublished: true },
+            marshmallow: { isEnabled: true },
+          },
           createdAt: '2026-04-17T00:00:00.000Z',
           updatedAt: '2026-04-17T00:10:00.000Z',
           version: 5,
@@ -1167,7 +1204,11 @@ describe('TalentSettingsScreen', () => {
           scopeId: 'talent-1',
           settings: { defaultLanguage: 'en', timezone: 'Asia/Tokyo', allowCustomHomepage: true },
           overrides: [],
-          inheritedFrom: { defaultLanguage: 'tenant', timezone: 'tenant', allowCustomHomepage: 'tenant' },
+          inheritedFrom: {
+            defaultLanguage: 'tenant',
+            timezone: 'tenant',
+            allowCustomHomepage: 'tenant',
+          },
           version: 5,
         };
       }
@@ -1232,17 +1273,18 @@ describe('TalentSettingsScreen', () => {
 
     render(<TalentSettingsScreen tenantId="tenant-1" talentId="talent-1" />);
 
-    expect(await screen.findByRole('heading', { name: 'Sora Talent Settings' })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { name: 'Sora Talent Settings' })
+    ).toBeInTheDocument();
     expect(
       await screen.findByText(
-        'Custom-domain routing is temporarily unavailable. Ask an administrator to verify the custom-domain database migration.',
-      ),
+        'Custom-domain routing is temporarily unavailable. Ask an administrator to verify the custom-domain database migration.'
+      )
     ).toBeInTheDocument();
     expect(screen.queryByText(/PrismaClientKnownRequestError/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/public\.custom_domain_talent_selection/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/\$queryRawUnsafe/i)).not.toBeInTheDocument();
   });
-
 
   it('shows inherited custom-domain route previews and saves explicit selections', async () => {
     currentSearch = 'section=settings&focus=homepage-routing';
@@ -1336,7 +1378,10 @@ describe('TalentSettingsScreen', () => {
           isActive: true,
           settings: { defaultLanguage: 'en', timezone: 'Asia/Tokyo', allowCustomHomepage: true },
           stats: { customerCount: 12, homepageVersionCount: 2, marshmallowMessageCount: 9 },
-          externalPagesDomain: { homepage: { isPublished: true }, marshmallow: { isEnabled: true } },
+          externalPagesDomain: {
+            homepage: { isPublished: true },
+            marshmallow: { isEnabled: true },
+          },
           createdAt: '2026-04-17T00:00:00.000Z',
           updatedAt: '2026-04-17T00:10:00.000Z',
           version: 5,
@@ -1349,7 +1394,11 @@ describe('TalentSettingsScreen', () => {
           scopeId: 'talent-1',
           settings: { defaultLanguage: 'en', timezone: 'Asia/Tokyo', allowCustomHomepage: true },
           overrides: [],
-          inheritedFrom: { defaultLanguage: 'tenant', timezone: 'tenant', allowCustomHomepage: 'tenant' },
+          inheritedFrom: {
+            defaultLanguage: 'tenant',
+            timezone: 'tenant',
+            allowCustomHomepage: 'tenant',
+          },
           version: 5,
         };
       }
@@ -1385,7 +1434,10 @@ describe('TalentSettingsScreen', () => {
         return customDomainConfig;
       }
 
-      if (path === '/api/v1/talents/talent-1/custom-domain/inherited-selections' && init?.method === 'PATCH') {
+      if (
+        path === '/api/v1/talents/talent-1/custom-domain/inherited-selections' &&
+        init?.method === 'PATCH'
+      ) {
         customDomainConfig = {
           ...customDomainConfig,
           selectedInheritedDomainIds: ['tenant-domain'],
@@ -1460,12 +1512,11 @@ describe('TalentSettingsScreen', () => {
         expect.objectContaining({
           method: 'PATCH',
           body: JSON.stringify({ domainIds: ['tenant-domain'] }),
-        }),
+        })
       );
     });
     expect(await screen.findByText('Inherited domain selections saved.')).toBeInTheDocument();
   });
-
 
   it('does not render deprecated homepage-path editors when the settings route focuses homepage routing', async () => {
     currentSearch = 'section=settings&focus=homepage-routing';
@@ -1635,7 +1686,9 @@ describe('TalentSettingsScreen', () => {
 
     render(<TalentSettingsScreen tenantId="tenant-1" talentId="talent-1" />);
 
-    expect(await screen.findByRole('heading', { name: 'Sora Talent Settings' })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { name: 'Sora Talent Settings' })
+    ).toBeInTheDocument();
     expect(screen.queryByLabelText('Homepage path')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Save homepage path' })).not.toBeInTheDocument();
     expect(await screen.findByText('/tenant_test/sora/homepage')).toBeInTheDocument();
@@ -1656,10 +1709,10 @@ describe('TalentSettingsScreen', () => {
       code: 'SORA',
       path: '/TOKYO/SORA/',
       name: localizedFixture('Tokino Sora', { zh_HANS: '时乃空', ja: 'ときのそら' }),
-          localizedName: '',
-          displayName: 'Sora',
-          description: localizedFixture(''),
-          localizedDescription: null,
+      localizedName: '',
+      displayName: 'Sora',
+      description: localizedFixture(''),
+      localizedDescription: null,
       avatarUrl: null,
       homepagePath: 'sora',
       timezone: 'Asia/Tokyo',
@@ -1736,7 +1789,9 @@ describe('TalentSettingsScreen', () => {
           ogImageUrl: null,
           analyticsId: null,
           homepagePath: detail.homepagePath,
-          homepageUrl: detail.homepagePath ? `https://app.example.com/p/${detail.homepagePath}` : '',
+          homepageUrl: detail.homepagePath
+            ? `https://app.example.com/p/${detail.homepagePath}`
+            : '',
           createdAt: '2026-04-17T00:00:00.000Z',
           updatedAt: '2026-04-17T00:10:00.000Z',
           version: 3,
@@ -1847,7 +1902,9 @@ describe('TalentSettingsScreen', () => {
 
     render(<TalentSettingsScreen tenantId="tenant-1" talentId="talent-1" />);
 
-    expect(await screen.findByRole('heading', { name: 'Sora Talent Settings' })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { name: 'Sora Talent Settings' })
+    ).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Publish talent' })).toBeEnabled();
 
     fireEvent.click(screen.getByRole('button', { name: 'Publish talent' }));
@@ -1863,7 +1920,7 @@ describe('TalentSettingsScreen', () => {
           body: JSON.stringify({
             version: 5,
           }),
-        }),
+        })
       );
     });
 
@@ -1885,10 +1942,10 @@ describe('TalentSettingsScreen', () => {
       code: 'SORA',
       path: '/TOKYO/SORA/',
       name: localizedFixture('Tokino Sora', { zh_HANS: '时乃空', ja: 'ときのそら' }),
-          localizedName: '',
-          displayName: 'Sora',
-          description: localizedFixture(''),
-          localizedDescription: null,
+      localizedName: '',
+      displayName: 'Sora',
+      description: localizedFixture(''),
+      localizedDescription: null,
       avatarUrl: null,
       homepagePath: 'sora',
       timezone: 'Asia/Tokyo',
@@ -1960,7 +2017,9 @@ describe('TalentSettingsScreen', () => {
           ogImageUrl: null,
           analyticsId: null,
           homepagePath: detail.homepagePath,
-          homepageUrl: detail.homepagePath ? `https://app.example.com/p/${detail.homepagePath}` : '',
+          homepageUrl: detail.homepagePath
+            ? `https://app.example.com/p/${detail.homepagePath}`
+            : '',
           createdAt: '2026-04-17T00:00:00.000Z',
           updatedAt: '2026-04-17T00:10:00.000Z',
           version: 3,
@@ -2108,7 +2167,7 @@ describe('TalentSettingsScreen', () => {
           body: JSON.stringify({
             version: 8,
           }),
-        }),
+        })
       );
     });
 
@@ -2127,7 +2186,7 @@ describe('TalentSettingsScreen', () => {
           body: JSON.stringify({
             version: 9,
           }),
-        }),
+        })
       );
     });
 

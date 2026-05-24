@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable } from '@nestjs/common';
+
 import type { RequestContext } from '@tcrn/shared';
 
 import { CustomerExternalIdApplicationService } from '../application/customer-external-id.service';
@@ -12,46 +12,28 @@ import { CustomerExternalIdApplicationService } from '../application/customer-ex
 @Injectable()
 export class CustomerExternalIdService {
   constructor(
-    private readonly customerExternalIdApplicationService: CustomerExternalIdApplicationService,
+    private readonly customerExternalIdApplicationService: CustomerExternalIdApplicationService
   ) {}
 
-  findByCustomer(
-    customerId: string,
-    talentId: string,
-    context: RequestContext,
-  ) {
-    return this.customerExternalIdApplicationService.findByCustomer(
-      customerId,
-      talentId,
-      context,
-    );
+  findByCustomer(customerId: string, talentId: string, context: RequestContext) {
+    return this.customerExternalIdApplicationService.findByCustomer(customerId, talentId, context);
   }
 
   create(
     customerId: string,
     talentId: string,
     dto: { consumerCode: string; externalId: string },
-    context: RequestContext,
+    context: RequestContext
   ) {
-    return this.customerExternalIdApplicationService.create(
-      customerId,
-      talentId,
-      dto,
-      context,
-    );
+    return this.customerExternalIdApplicationService.create(customerId, talentId, dto, context);
   }
 
-  delete(
-    customerId: string,
-    externalIdId: string,
-    talentId: string,
-    context: RequestContext,
-  ) {
+  delete(customerId: string, externalIdId: string, talentId: string, context: RequestContext) {
     return this.customerExternalIdApplicationService.delete(
       customerId,
       externalIdId,
       talentId,
-      context,
+      context
     );
   }
 
@@ -59,13 +41,13 @@ export class CustomerExternalIdService {
     consumerCode: string,
     externalId: string,
     profileStoreId: string,
-    context: RequestContext,
+    context: RequestContext
   ) {
     return this.customerExternalIdApplicationService.findCustomerByExternalId(
       consumerCode,
       externalId,
       profileStoreId,
-      context,
+      context
     );
   }
 
@@ -73,13 +55,13 @@ export class CustomerExternalIdService {
     consumerCode: string,
     externalId: string,
     profileStoreId: string,
-    context: RequestContext,
+    context: RequestContext
   ) {
     return this.customerExternalIdApplicationService.existsInProfileStore(
       consumerCode,
       externalId,
       profileStoreId,
-      context,
+      context
     );
   }
 }

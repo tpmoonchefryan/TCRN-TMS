@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { BadRequestException } from '@nestjs/common';
+
 import { ErrorCodes, type RequestContext } from '@tcrn/shared';
 
 import {
@@ -47,9 +47,7 @@ export const assertCustomerBatchSize = (customerIds: string[]): void => {
 export const shouldQueueBatchOperation = (customerIds: string[]): boolean =>
   customerIds.length > MAX_SYNC_BATCH_SIZE;
 
-export const createBatchOperationResult = (
-  total: number,
-): BatchOperationResultDto => ({
+export const createBatchOperationResult = (total: number): BatchOperationResultDto => ({
   total,
   success: 0,
   failed: 0,
@@ -57,7 +55,7 @@ export const createBatchOperationResult = (
 });
 
 export const recordBatchOperationSuccess = (
-  result: BatchOperationResultDto,
+  result: BatchOperationResultDto
 ): BatchOperationResultDto => ({
   ...result,
   success: result.success + 1,
@@ -66,7 +64,7 @@ export const recordBatchOperationSuccess = (
 export const recordBatchOperationError = (
   result: BatchOperationResultDto,
   customerId: string,
-  error: unknown,
+  error: unknown
 ): BatchOperationResultDto => ({
   ...result,
   failed: result.failed + 1,
@@ -81,7 +79,7 @@ export const recordBatchOperationError = (
 
 export const assertBatchTagsProvided = (
   action: BatchAction.ADD_TAGS | BatchAction.REMOVE_TAGS,
-  tags?: string[],
+  tags?: string[]
 ): string[] => {
   if (!tags?.length) {
     throw new BadRequestException(`Tags required for ${action} action`);
@@ -90,19 +88,14 @@ export const assertBatchTagsProvided = (
   return tags;
 };
 
-export const mergeCustomerTags = (
-  currentTags: string[],
-  incomingTags: string[],
-): string[] => [...new Set([...currentTags, ...incomingTags])];
+export const mergeCustomerTags = (currentTags: string[], incomingTags: string[]): string[] => [
+  ...new Set([...currentTags, ...incomingTags]),
+];
 
-export const removeCustomerTags = (
-  currentTags: string[],
-  incomingTags: string[],
-): string[] => currentTags.filter((tag) => !incomingTags.includes(tag));
+export const removeCustomerTags = (currentTags: string[], incomingTags: string[]): string[] =>
+  currentTags.filter((tag) => !incomingTags.includes(tag));
 
-export const assertMembershipClassCodeForNewMembership = (
-  membershipClassCode?: string,
-): string => {
+export const assertMembershipClassCodeForNewMembership = (membershipClassCode?: string): string => {
   if (!membershipClassCode) {
     throw new BadRequestException('Membership class code required for new membership');
   }
@@ -111,13 +104,13 @@ export const assertMembershipClassCodeForNewMembership = (
 };
 
 export const hasMembershipValidityUpdates = (
-  dto: Pick<BatchOperationDto, 'validFrom' | 'validTo'>,
+  dto: Pick<BatchOperationDto, 'validFrom' | 'validTo'>
 ): boolean => Boolean(dto.validFrom || dto.validTo);
 
 export const buildQueuedBatchOperationPayload = (
   talentId: string,
   dto: BatchOperationDto,
-  context: RequestContext,
+  context: RequestContext
 ): BatchOperationQueuePayload => ({
   talentId,
   tenantSchema: context.tenantSchema,
@@ -135,7 +128,7 @@ export const buildQueuedBatchOperationPayload = (
 
 export const buildQueuedBatchOperationResponse = (
   customerCount: number,
-  jobId: string,
+  jobId: string
 ): { jobId: string; message: string } => ({
   jobId,
   message: `Batch operation queued for ${customerCount} customers. Check job status for progress.`,

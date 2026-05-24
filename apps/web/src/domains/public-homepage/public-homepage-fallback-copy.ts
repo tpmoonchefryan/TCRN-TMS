@@ -1,9 +1,6 @@
 import { pickLocaleText } from '@/platform/runtime/locale/locale-text';
 
-export function resolvePublicHomepageFallbackTitle(
-  locale: string,
-  title: string,
-) {
+export function resolvePublicHomepageFallbackTitle(locale: string, title: string) {
   if (title === 'Debut preview' || title === '__debutPreview__') {
     return pickLocaleText(locale, {
       en: 'Debut preview',
@@ -64,7 +61,7 @@ export function resolvePublicHomepageFallbackTitle(
 
 export function resolvePublicHomepageFallbackDescription(
   locale: string,
-  description: string | null,
+  description: string | null
 ) {
   if (!description) {
     return null;

@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable } from '@nestjs/common';
 
 import { DatabaseService } from '../../database';
@@ -13,9 +12,7 @@ import type {
 
 @Injectable()
 export class ReportJobReadRepository {
-  constructor(
-    private readonly databaseService: DatabaseService,
-  ) {}
+  constructor(private readonly databaseService: DatabaseService) {}
 
   private get prisma() {
     return this.databaseService.getPrisma();
@@ -24,9 +21,10 @@ export class ReportJobReadRepository {
   async findById(
     tenantSchema: string,
     jobId: string,
-    talentId: string,
+    talentId: string
   ): Promise<RawReportJobDetail | null> {
-    const jobs = await this.prisma.$queryRawUnsafe<RawReportJobDetail[]>(`
+    const jobs = await this.prisma.$queryRawUnsafe<RawReportJobDetail[]>(
+      `
       SELECT
         rj.id,
         rj.report_type,
@@ -53,7 +51,10 @@ export class ReportJobReadRepository {
       JOIN "${tenantSchema}".system_user su ON su.id = rj.created_by
       WHERE rj.id = $1::uuid
         AND rj.talent_id = $2::uuid
-    `, jobId, talentId);
+    `,
+      jobId,
+      talentId
+    );
 
     return jobs[0] ?? null;
   }
@@ -61,29 +62,32 @@ export class ReportJobReadRepository {
   findMany(
     tenantSchema: string,
     filters: ReportJobReadFilters,
-    pagination: ReportJobPagination,
+    pagination: ReportJobPagination
   ): Promise<RawReportJobListItem[]> {
     const { whereClause, params } = this.buildListQuery(filters);
 
-    return this.prisma.$queryRawUnsafe<RawReportJobListItem[]>(`
+    return this.prisma.$queryRawUnsafe<RawReportJobListItem[]>(
+      `
       SELECT id, report_type, status, total_rows, file_name, created_at, completed_at, expires_at
       FROM "${tenantSchema}".report_job
       WHERE ${whereClause}
       ORDER BY created_at DESC
       LIMIT ${pagination.take} OFFSET ${pagination.skip}
-    `, ...params);
+    `,
+      ...params
+    );
   }
 
-  async countMany(
-    tenantSchema: string,
-    filters: ReportJobReadFilters,
-  ): Promise<number> {
+  async countMany(tenantSchema: string, filters: ReportJobReadFilters): Promise<number> {
     const { whereClause, params } = this.buildListQuery(filters);
-    const totalResult = await this.prisma.$queryRawUnsafe<Array<{ count: bigint }>>(`
+    const totalResult = await this.prisma.$queryRawUnsafe<Array<{ count: bigint }>>(
+      `
       SELECT COUNT(*) AS count
       FROM "${tenantSchema}".report_job
       WHERE ${whereClause}
-    `, ...params);
+    `,
+      ...params
+    );
 
     return Number(totalResult[0]?.count || 0);
   }
@@ -91,30 +95,34 @@ export class ReportJobReadRepository {
   async findDownloadTarget(
     tenantSchema: string,
     jobId: string,
-    talentId: string,
+    talentId: string
   ): Promise<ReportJobDownloadTarget | null> {
-    const jobs = await this.prisma.$queryRawUnsafe<ReportJobDownloadTarget[]>(`
+    const jobs = await this.prisma.$queryRawUnsafe<ReportJobDownloadTarget[]>(
+      `
       SELECT id, status, file_path, file_name, expires_at, downloaded_at
       FROM "${tenantSchema}".report_job
       WHERE id = $1::uuid
         AND talent_id = $2::uuid
-    `, jobId, talentId);
+    `,
+      jobId,
+      talentId
+    );
 
     return jobs[0] ?? null;
   }
 
-  markConsumed(
-    tenantSchema: string,
-    jobId: string,
-  ) {
-    return this.prisma.$executeRawUnsafe(`
+  markConsumed(tenantSchema: string, jobId: string) {
+    return this.prisma.$executeRawUnsafe(
+      `
       UPDATE "${tenantSchema}".report_job
       SET status = 'consumed',
           downloaded_at = COALESCE(downloaded_at, NOW()),
           updated_at = NOW()
       WHERE id = $1::uuid
         AND status = 'success'
-    `, jobId);
+    `,
+      jobId
+    );
   }
 
   private buildListQuery(filters: ReportJobReadFilters): {

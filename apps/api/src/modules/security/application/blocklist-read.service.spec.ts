@@ -1,8 +1,8 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { NotFoundException } from '@nestjs/common';
-import { createLocalizedText } from '@tcrn/shared';
 import { describe, expect, it, vi } from 'vitest';
+
+import { createLocalizedText } from '@tcrn/shared';
 
 import { BlocklistReadRepository } from '../infrastructure/blocklist-read.repository';
 import { BlocklistReadService } from './blocklist-read.service';
@@ -76,15 +76,13 @@ describe('BlocklistReadService', () => {
         version: 2,
       },
     ]);
-    vi.mocked(mockRepository.getDisabledIds).mockResolvedValue(
-      new Set(['entry-1']),
-    );
+    vi.mocked(mockRepository.getDisabledIds).mockResolvedValue(new Set(['entry-1']));
 
     await expect(
       service.findMany('tenant_test', {
         scopeType: 'subsidiary',
         scopeId: 'sub-1',
-      }),
+      })
     ).resolves.toEqual({
       items: [
         {
@@ -104,10 +102,7 @@ describe('BlocklistReadService', () => {
           scopeSummary: {
             tokens: ['tenant', 'marshmallow', 'legacy-surface'],
             structuredScope: {
-              entries: [
-                { category: 'tenant' },
-                { category: 'surface', value: 'marshmallow' },
-              ],
+              entries: [{ category: 'tenant' }, { category: 'surface', value: 'marshmallow' }],
             },
             unsupported: ['legacy-surface'],
           },
@@ -134,7 +129,7 @@ describe('BlocklistReadService', () => {
     vi.mocked(mockRepository.findById).mockResolvedValue(null);
 
     await expect(service.findById('tenant_test', 'missing-entry')).rejects.toThrow(
-      NotFoundException,
+      NotFoundException
     );
   });
 

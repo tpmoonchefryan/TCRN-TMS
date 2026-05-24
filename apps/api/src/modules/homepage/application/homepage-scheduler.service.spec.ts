@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { TechEventLogService } from '../../log';
@@ -30,7 +29,7 @@ describe('HomepageSchedulerApplicationService', () => {
 
     service = new HomepageSchedulerApplicationService(
       mockRepository as unknown as HomepageSchedulerRepository,
-      mockTechEventLogService as unknown as TechEventLogService,
+      mockTechEventLogService as unknown as TechEventLogService
     );
   });
 
@@ -41,9 +40,7 @@ describe('HomepageSchedulerApplicationService', () => {
 
   it('archives old drafts across active tenant schemas and emits the completion tech event', async () => {
     mockRepository.listActiveTenantSchemas.mockResolvedValue(['tenant_a', 'tenant_b']);
-    mockRepository.archiveOldDraftVersions
-      .mockResolvedValueOnce(2)
-      .mockResolvedValueOnce(3);
+    mockRepository.archiveOldDraftVersions.mockResolvedValueOnce(2).mockResolvedValueOnce(3);
 
     await service.archiveOldDrafts();
 
@@ -52,12 +49,12 @@ describe('HomepageSchedulerApplicationService', () => {
     expect(mockRepository.archiveOldDraftVersions).toHaveBeenNthCalledWith(
       1,
       'tenant_a',
-      expectedCutoff,
+      expectedCutoff
     );
     expect(mockRepository.archiveOldDraftVersions).toHaveBeenNthCalledWith(
       2,
       'tenant_b',
-      expectedCutoff,
+      expectedCutoff
     );
     expect(mockTechEventLogService.info).toHaveBeenCalledWith(
       HOMEPAGE_DRAFT_ARCHIVAL_COMPLETED_EVENT,
@@ -65,7 +62,7 @@ describe('HomepageSchedulerApplicationService', () => {
       {
         archivedCount: 5,
         cutoffDate: expectedCutoff,
-      },
+      }
     );
   });
 
@@ -87,15 +84,13 @@ describe('HomepageSchedulerApplicationService', () => {
     expect(mockTechEventLogService.error).toHaveBeenCalledWith(
       HOMEPAGE_DRAFT_ARCHIVAL_FAILED_EVENT,
       'Failed to archive old draft versions',
-      error,
+      error
     );
   });
 
   it('returns aggregated archival stats for manual triggers without emitting tech events', async () => {
     mockRepository.listActiveTenantSchemas.mockResolvedValue(['tenant_a', 'tenant_b']);
-    mockRepository.archiveOldDraftVersions
-      .mockResolvedValueOnce(1)
-      .mockResolvedValueOnce(4);
+    mockRepository.archiveOldDraftVersions.mockResolvedValueOnce(1).mockResolvedValueOnce(4);
 
     await expect(service.triggerArchival()).resolves.toEqual({
       archived: 5,

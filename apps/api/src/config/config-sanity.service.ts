@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
@@ -9,7 +8,7 @@ export function getProductionUrlWarning(
   nodeEnv: string | undefined,
   key: string,
   url: string | undefined,
-  purpose: string,
+  purpose: string
 ): string | null {
   if (nodeEnv !== 'production' || !url) {
     return null;
@@ -41,13 +40,13 @@ export class ConfigSanityService implements OnModuleInit {
         nodeEnv,
         'FRONTEND_URL',
         this.configService.get<string>('FRONTEND_URL'),
-        'Password reset and email verification links may send users to localhost.',
+        'Password reset and email verification links may send users to localhost.'
       ),
       getProductionUrlWarning(
         nodeEnv,
         'APP_URL',
         this.configService.get<string>('APP_URL'),
-        'Homepage and public-page links may point operators or users back to localhost.',
+        'Homepage and public-page links may point operators or users back to localhost.'
       ),
     ].filter((warning): warning is string => warning !== null);
 

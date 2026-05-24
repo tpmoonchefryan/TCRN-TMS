@@ -10,24 +10,27 @@ type HarnessProps = {
 function installMatchMedia(matches: boolean) {
   const listeners = new Set<(event: MediaQueryListEvent) => void>();
 
-  vi.stubGlobal('matchMedia', vi.fn().mockImplementation(() => ({
-    matches,
-    media: '(prefers-reduced-motion: reduce)',
-    onchange: null,
-    addEventListener: (_event: string, listener: (event: MediaQueryListEvent) => void) => {
-      listeners.add(listener);
-    },
-    removeEventListener: (_event: string, listener: (event: MediaQueryListEvent) => void) => {
-      listeners.delete(listener);
-    },
-    addListener: (listener: (event: MediaQueryListEvent) => void) => {
-      listeners.add(listener);
-    },
-    removeListener: (listener: (event: MediaQueryListEvent) => void) => {
-      listeners.delete(listener);
-    },
-    dispatchEvent: () => true,
-  })));
+  vi.stubGlobal(
+    'matchMedia',
+    vi.fn().mockImplementation(() => ({
+      matches,
+      media: '(prefers-reduced-motion: reduce)',
+      onchange: null,
+      addEventListener: (_event: string, listener: (event: MediaQueryListEvent) => void) => {
+        listeners.add(listener);
+      },
+      removeEventListener: (_event: string, listener: (event: MediaQueryListEvent) => void) => {
+        listeners.delete(listener);
+      },
+      addListener: (listener: (event: MediaQueryListEvent) => void) => {
+        listeners.add(listener);
+      },
+      removeListener: (listener: (event: MediaQueryListEvent) => void) => {
+        listeners.delete(listener);
+      },
+      dispatchEvent: () => true,
+    }))
+  );
 }
 
 function installAnimationFrame() {
@@ -36,7 +39,7 @@ function installAnimationFrame() {
     vi.fn().mockImplementation((callback: FrameRequestCallback) => {
       callback(0);
       return 1;
-    }),
+    })
   );
   vi.stubGlobal('cancelAnimationFrame', vi.fn());
 }

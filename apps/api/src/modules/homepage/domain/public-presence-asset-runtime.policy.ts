@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import {
   PublicPresenceAssetSourceManifestSchema,
   type PublicPresenceAssetListEntry,
@@ -19,13 +18,13 @@ type SourceBundleCarrier = {
 };
 
 function readSourceManifestFile(
-  sourceBundle: readonly PublicPresenceSourceBundleFile[] | null | undefined,
+  sourceBundle: readonly PublicPresenceSourceBundleFile[] | null | undefined
 ) {
   return sourceBundle?.find((file) => file.path === 'manifest.json') ?? null;
 }
 
 function parseSourceManifestJson(
-  sourceBundle: readonly PublicPresenceSourceBundleFile[] | null | undefined,
+  sourceBundle: readonly PublicPresenceSourceBundleFile[] | null | undefined
 ) {
   const manifestFile = readSourceManifestFile(sourceBundle);
 
@@ -41,43 +40,35 @@ function parseSourceManifestJson(
 }
 
 export function parsePublicPresenceAssetSourceManifest(
-  sourceBundle: readonly PublicPresenceSourceBundleFile[] | null | undefined,
+  sourceBundle: readonly PublicPresenceSourceBundleFile[] | null | undefined
 ): PublicPresenceAssetSourceManifest | null {
   const parsed = PublicPresenceAssetSourceManifestSchema.safeParse(
-    parseSourceManifestJson(sourceBundle),
+    parseSourceManifestJson(sourceBundle)
   );
 
   return parsed.success ? (parsed.data as PublicPresenceAssetSourceManifest) : null;
 }
 
 export function readTemplateSourceManifestFromAssetEntry(
-  asset: Pick<PublicPresenceAssetListEntry, 'currentRevision'>,
+  asset: Pick<PublicPresenceAssetListEntry, 'currentRevision'>
 ): PublicPresenceTemplateSourceManifest | null {
-  const parsed = parsePublicPresenceAssetSourceManifest(
-    asset.currentRevision?.sourceBundle,
-  );
+  const parsed = parsePublicPresenceAssetSourceManifest(asset.currentRevision?.sourceBundle);
 
-  return parsed?.assetKind === 'template'
-    ? (parsed as PublicPresenceTemplateSourceManifest)
-    : null;
+  return parsed?.assetKind === 'template' ? (parsed as PublicPresenceTemplateSourceManifest) : null;
 }
 
 export function readTemplateSourceManifestFromPin(
-  pin: PublicPresenceAssetRevisionPin | null | undefined,
+  pin: PublicPresenceAssetRevisionPin | null | undefined
 ): PublicPresenceTemplateSourceManifest | null {
   const parsed = parsePublicPresenceAssetSourceManifest(pin?.snapshot?.sourceBundle);
 
-  return parsed?.assetKind === 'template'
-    ? (parsed as PublicPresenceTemplateSourceManifest)
-    : null;
+  return parsed?.assetKind === 'template' ? (parsed as PublicPresenceTemplateSourceManifest) : null;
 }
 
 export function readComponentSourceManifestFromAssetEntry(
-  asset: Pick<PublicPresenceAssetListEntry, 'currentRevision'>,
+  asset: Pick<PublicPresenceAssetListEntry, 'currentRevision'>
 ): PublicPresenceComponentSourceManifest | null {
-  const parsed = parsePublicPresenceAssetSourceManifest(
-    asset.currentRevision?.sourceBundle,
-  );
+  const parsed = parsePublicPresenceAssetSourceManifest(asset.currentRevision?.sourceBundle);
 
   return parsed?.assetKind === 'component'
     ? (parsed as PublicPresenceComponentSourceManifest)
@@ -85,7 +76,7 @@ export function readComponentSourceManifestFromAssetEntry(
 }
 
 export function derivePublicPresenceAssetManifestFromSourceManifest(
-  sourceManifest: PublicPresenceAssetSourceManifest,
+  sourceManifest: PublicPresenceAssetSourceManifest
 ): PublicPresenceAssetManifest {
   if (sourceManifest.assetKind === 'template') {
     const {
@@ -129,7 +120,7 @@ export function derivePublicPresenceAssetManifestFromSourceManifest(
 }
 
 function buildTemplateDefinition(
-  manifest: PublicPresenceTemplateSourceManifest,
+  manifest: PublicPresenceTemplateSourceManifest
 ): PublicPresenceTemplateDefinition {
   return {
     defaultSectionOrder: [...manifest.defaultSectionOrder],
@@ -148,7 +139,7 @@ function buildTemplateDefinition(
 }
 
 function buildComponentDefinition(
-  manifest: PublicPresenceComponentSourceManifest,
+  manifest: PublicPresenceComponentSourceManifest
 ): PublicPresenceComponentDefinition {
   return {
     aiPatchAllowlist: [...manifest.aiPatchAllowlist],
@@ -172,10 +163,9 @@ export function buildPublicPresenceRuntimeAuthority(input: {
   templatePin?: PublicPresenceAssetRevisionPin | null;
   templateSourceBundle?: readonly PublicPresenceSourceBundleFile[] | null;
 }): PublicPresenceAssetRuntimeAuthority | null {
-  const templateSourceManifest =
-    input.templateSourceBundle
-      ? parsePublicPresenceAssetSourceManifest(input.templateSourceBundle)
-      : readTemplateSourceManifestFromPin(input.templatePin ?? null);
+  const templateSourceManifest = input.templateSourceBundle
+    ? parsePublicPresenceAssetSourceManifest(input.templateSourceBundle)
+    : readTemplateSourceManifestFromPin(input.templatePin ?? null);
 
   if (!templateSourceManifest || templateSourceManifest.assetKind !== 'template') {
     return null;
@@ -202,14 +192,14 @@ export function buildPublicPresenceRuntimeAuthority(input: {
       templateSourceManifest.stageSections.map((section) => [
         section.kind,
         structuredClone(section),
-      ]),
+      ])
     ),
     template: buildTemplateDefinition(templateSourceManifest),
   };
 }
 
 export function readPublicPresenceAssetSourceBundle(
-  carrier: SourceBundleCarrier | null | undefined,
+  carrier: SourceBundleCarrier | null | undefined
 ) {
   return carrier?.sourceBundle ?? [];
 }

@@ -1,7 +1,11 @@
-import { SUPPORTED_UI_LOCALES } from '@tcrn/shared';
 import { describe, expect, it } from 'vitest';
 
-import { PUBLIC_MARSHMALLOW_CONFIG_SCHEMA, PUBLIC_MARSHMALLOW_MESSAGES_SCHEMA } from './marshmallow-swagger.schemas';
+import { SUPPORTED_UI_LOCALES } from '@tcrn/shared';
+
+import {
+  PUBLIC_MARSHMALLOW_CONFIG_SCHEMA,
+  PUBLIC_MARSHMALLOW_MESSAGES_SCHEMA,
+} from './marshmallow-swagger.schemas';
 
 type OpenApiObjectSchema = {
   properties?: Record<string, unknown>;
@@ -40,9 +44,7 @@ describe('marshmallow swagger locale contracts', () => {
       'runtimeBypass',
       'ready',
     ]);
-    expect(schema.required).toEqual(
-      expect.arrayContaining(['captchaMode', 'turnstile']),
-    );
+    expect(schema.required).toEqual(expect.arrayContaining(['captchaMode', 'turnstile']));
   });
 
   it('does not document internal responder identifiers or email on the public message contract', () => {

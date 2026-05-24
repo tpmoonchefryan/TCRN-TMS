@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable } from '@nestjs/common';
 
 import { DatabaseService } from '../../database';
@@ -17,9 +16,7 @@ interface ImportTalentProfileStoreRecord {
 
 @Injectable()
 export class ImportJobReadRepository {
-  constructor(
-    private readonly databaseService: DatabaseService,
-  ) {}
+  constructor(private readonly databaseService: DatabaseService) {}
 
   private get prisma() {
     return this.databaseService.getPrisma();
@@ -27,13 +24,16 @@ export class ImportJobReadRepository {
 
   async findTalentProfileStore(
     tenantSchema: string,
-    talentId: string,
+    talentId: string
   ): Promise<ImportTalentProfileStoreRecord | null> {
-    const talents = await this.prisma.$queryRawUnsafe<ImportTalentProfileStoreRecord[]>(`
+    const talents = await this.prisma.$queryRawUnsafe<ImportTalentProfileStoreRecord[]>(
+      `
       SELECT id, profile_store_id
       FROM "${tenantSchema}".talent
       WHERE id = $1::uuid
-    `, talentId);
+    `,
+      talentId
+    );
 
     return talents[0] ?? null;
   }
@@ -41,9 +41,10 @@ export class ImportJobReadRepository {
   async findById(
     tenantSchema: string,
     jobId: string,
-    talentId: string,
+    talentId: string
   ): Promise<RawImportJobRecord | null> {
-    const jobs = await this.prisma.$queryRawUnsafe<RawImportJobRecord[]>(`
+    const jobs = await this.prisma.$queryRawUnsafe<RawImportJobRecord[]>(
+      `
       SELECT ij.id, ij.job_type, ij.status, ij.file_name, ij.total_rows, ij.processed_rows,
              ij.success_rows, ij.failed_rows, ij.warning_rows, ij.started_at, ij.completed_at,
              ij.created_at, ij.created_by, c.code AS consumer_code
@@ -51,7 +52,10 @@ export class ImportJobReadRepository {
       LEFT JOIN "${tenantSchema}".consumer c ON c.id = ij.consumer_id
       WHERE ij.id = $1::uuid
         AND ij.talent_id = $2::uuid
-    `, jobId, talentId);
+    `,
+      jobId,
+      talentId
+    );
 
     return jobs[0] ?? null;
   }
@@ -59,11 +63,12 @@ export class ImportJobReadRepository {
   findMany(
     tenantSchema: string,
     filters: ImportJobListFilters,
-    pagination: ImportJobPagination,
+    pagination: ImportJobPagination
   ): Promise<RawImportJobRecord[]> {
     const { whereClause, params } = this.buildListQuery(filters);
 
-    return this.prisma.$queryRawUnsafe<RawImportJobRecord[]>(`
+    return this.prisma.$queryRawUnsafe<RawImportJobRecord[]>(
+      `
       SELECT ij.id, ij.job_type, ij.status, ij.file_name, ij.total_rows, ij.processed_rows,
              ij.success_rows, ij.failed_rows, ij.warning_rows, ij.started_at, ij.completed_at,
              ij.created_at, ij.created_by, c.code AS consumer_code
@@ -72,19 +77,21 @@ export class ImportJobReadRepository {
       WHERE ${whereClause}
       ORDER BY ij.created_at DESC
       LIMIT ${pagination.take} OFFSET ${pagination.skip}
-    `, ...params);
+    `,
+      ...params
+    );
   }
 
-  async countMany(
-    tenantSchema: string,
-    filters: ImportJobListFilters,
-  ): Promise<number> {
+  async countMany(tenantSchema: string, filters: ImportJobListFilters): Promise<number> {
     const { whereClause, params } = this.buildListQuery(filters);
-    const totalResult = await this.prisma.$queryRawUnsafe<Array<{ count: bigint }>>(`
+    const totalResult = await this.prisma.$queryRawUnsafe<Array<{ count: bigint }>>(
+      `
       SELECT COUNT(*) AS count
       FROM "${tenantSchema}".import_job ij
       WHERE ${whereClause}
-    `, ...params);
+    `,
+      ...params
+    );
 
     return Number(totalResult[0]?.count || 0);
   }
@@ -92,9 +99,10 @@ export class ImportJobReadRepository {
   getErrors(
     tenantSchema: string,
     jobId: string,
-    talentId: string,
+    talentId: string
   ): Promise<RawImportJobErrorRecord[]> {
-    return this.prisma.$queryRawUnsafe<RawImportJobErrorRecord[]>(`
+    return this.prisma.$queryRawUnsafe<RawImportJobErrorRecord[]>(
+      `
       SELECT
         ije.row_number,
         ije.error_code,
@@ -105,7 +113,10 @@ export class ImportJobReadRepository {
       WHERE ije.import_job_id = $1::uuid
         AND ij.talent_id = $2::uuid
       ORDER BY ije.row_number ASC
-    `, jobId, talentId);
+    `,
+      jobId,
+      talentId
+    );
   }
 
   private buildListQuery(filters: ImportJobListFilters): {

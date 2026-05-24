@@ -1,26 +1,26 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Transform, Type } from 'class-transformer';
-import type { LocalizedText, PartialLocalizedText } from '@tcrn/shared';
 import {
-    ArrayUnique,
-    IsArray,
-    IsBoolean,
-    IsEnum,
-    IsIn,
-    IsInt,
-    IsObject,
-    IsOptional,
-    IsString,
-    IsUrl,
-    IsUUID,
-    Matches,
-    Max,
-    MaxLength,
-    Min,
-    ValidateIf,
-    ValidateNested,
+  ArrayUnique,
+  IsArray,
+  IsBoolean,
+  IsEnum,
+  IsIn,
+  IsInt,
+  IsObject,
+  IsOptional,
+  IsString,
+  IsUrl,
+  IsUUID,
+  Matches,
+  Max,
+  MaxLength,
+  Min,
+  ValidateIf,
+  ValidateNested,
 } from 'class-validator';
+
+import type { LocalizedText, PartialLocalizedText } from '@tcrn/shared';
 
 // =============================================================================
 // Enums

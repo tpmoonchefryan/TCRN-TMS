@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { NotFoundException } from '@nestjs/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -23,7 +22,7 @@ describe('EmailDispatchApplicationService', () => {
 
     service = new EmailDispatchApplicationService(
       mockEmailQueueGateway as unknown as EmailQueueGateway,
-      mockEmailTemplateService as unknown as EmailTemplateApplicationService,
+      mockEmailTemplateService as unknown as EmailTemplateApplicationService
     );
   });
 
@@ -41,7 +40,7 @@ describe('EmailDispatchApplicationService', () => {
         tenantSchema: 'tenant_test',
         templateCode: 'WELCOME_EMAIL',
         recipientEmail: 'operator@example.com',
-      }),
+      })
     ).resolves.toEqual({
       jobId: 'job-123',
     });
@@ -63,7 +62,7 @@ describe('EmailDispatchApplicationService', () => {
         tenantSchema: 'tenant_test',
         templateCode: 'MISSING_TEMPLATE',
         recipientEmail: 'operator@example.com',
-      }),
+      })
     ).rejects.toThrow(NotFoundException);
   });
 
@@ -78,7 +77,7 @@ describe('EmailDispatchApplicationService', () => {
         tenantSchema: 'tenant_test',
         templateCode: 'WELCOME_EMAIL',
         recipientEmail: 'operator@example.com',
-      }),
+      })
     ).rejects.toThrow(NotFoundException);
   });
 
@@ -92,7 +91,7 @@ describe('EmailDispatchApplicationService', () => {
       service.send({
         tenantSchema: 'tenant_test',
         templateCode: 'WELCOME_EMAIL',
-      } as never),
+      } as never)
     ).rejects.toThrow('recipientEmail must be provided');
   });
 
@@ -106,23 +105,14 @@ describe('EmailDispatchApplicationService', () => {
     });
 
     await expect(
-      service.sendSystemEmail(
-        'system@example.com',
-        'WELCOME_EMAIL',
-        'ja',
-        { name: 'Sora' },
-      ),
+      service.sendSystemEmail('system@example.com', 'WELCOME_EMAIL', 'ja', { name: 'Sora' })
     ).resolves.toEqual({
       jobId: 'job-456',
     });
     await expect(
-      service.sendBusinessEmail(
-        'tenant_test',
-        'business@example.com',
-        'WELCOME_EMAIL',
-        'zh',
-        { name: 'Mio' },
-      ),
+      service.sendBusinessEmail('tenant_test', 'business@example.com', 'WELCOME_EMAIL', 'zh', {
+        name: 'Mio',
+      })
     ).resolves.toEqual({
       jobId: 'job-456',
     });

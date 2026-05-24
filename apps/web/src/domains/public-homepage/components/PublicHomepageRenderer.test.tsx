@@ -1,7 +1,8 @@
-import { DEFAULT_THEME } from '@tcrn/shared';
 import { render, screen } from '@testing-library/react';
 import type { ReactElement } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { DEFAULT_THEME } from '@tcrn/shared';
 
 import { type PublicHomepageContent } from '@/domains/public-homepage/api/public-homepage.api';
 import { PublicHomepageRenderer } from '@/domains/public-homepage/components/PublicHomepageRenderer';
@@ -84,21 +85,27 @@ describe('PublicHomepageRenderer', () => {
           timezone: 'Asia/Shanghai',
           description: null,
         }}
-      />,
+      />
     );
 
     expect(screen.getByText('官方粉丝页')).toBeInTheDocument();
     expect(screen.queryByText(/更新时间/)).not.toBeInTheDocument();
     expect(screen.queryByText(/已发布区块/)).not.toBeInTheDocument();
-    expect(screen.getAllByRole('link', { name: '打开链接' })[0]).toHaveAttribute('href', 'https://example.com');
+    expect(screen.getAllByRole('link', { name: '打开链接' })[0]).toHaveAttribute(
+      'href',
+      'https://example.com'
+    );
     expect(screen.getByText('当前还没有已发布的公开日程。')).toBeInTheDocument();
     expect(screen.getByText('当前离线')).toBeInTheDocument();
     expect(screen.getByText('128 人正在观看')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: '打开直播' })).toHaveAttribute('href', 'https://example.com/live');
+    expect(screen.getByRole('link', { name: '打开直播' })).toHaveAttribute(
+      'href',
+      'https://example.com/live'
+    );
     expect(screen.getByText('B站动态')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: '查看 B 站动态' })).toHaveAttribute(
       'href',
-      'https://space.bilibili.com/123456/dynamic',
+      'https://space.bilibili.com/123456/dynamic'
     );
   });
 
@@ -124,7 +131,7 @@ describe('PublicHomepageRenderer', () => {
           timezone: 'Asia/Tokyo',
           description: null,
         }}
-      />,
+      />
     );
 
     expect(screen.getByText('官方粉絲頁')).toBeInTheDocument();
@@ -166,11 +173,15 @@ describe('PublicHomepageRenderer', () => {
           timezone: 'Asia/Shanghai',
           description: 'Preview layout contract',
         }}
-      />,
+      />
     );
 
-    expect(screen.getByText('Bounded layout should flow through the public renderer.')).toBeInTheDocument();
-    const wrapper = container.querySelector('[style*="max-width: 1300px"][style*="min-height: 180px"]');
+    expect(
+      screen.getByText('Bounded layout should flow through the public renderer.')
+    ).toBeInTheDocument();
+    const wrapper = container.querySelector(
+      '[style*="max-width: 1300px"][style*="min-height: 180px"]'
+    );
     expect(wrapper).toHaveStyle({
       maxWidth: '1300px',
       minHeight: '180px',
@@ -217,7 +228,7 @@ describe('PublicHomepageRenderer', () => {
           timezone: 'Asia/Shanghai',
           description: null,
         }}
-      />,
+      />
     );
 
     expect(screen.getByText('棉花糖')).toBeInTheDocument();
@@ -260,7 +271,7 @@ describe('PublicHomepageRenderer', () => {
           timezone: 'Asia/Shanghai',
           description: null,
         }}
-      />,
+      />
     );
 
     const galleryGrid = container.querySelector('[style*="--homepage-gallery-columns: 4"]');

@@ -1,11 +1,11 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import {
   BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+
 import {
   createArtistLifecycleFlowSchema,
   ErrorCodes,
@@ -42,23 +42,19 @@ export class TalentLifecycleService {
   constructor(
     private readonly talentReadService: TalentReadService,
     private readonly customerArchiveAccessService: CustomerArchiveAccessService,
-    private readonly talentLifecycleRepository: TalentLifecycleRepository,
+    private readonly talentLifecycleRepository: TalentLifecycleRepository
   ) {}
 
-  async getPublishReadiness(
-    id: string,
-    tenantSchema: string,
-  ): Promise<TalentPublishReadiness> {
+  async getPublishReadiness(id: string, tenantSchema: string): Promise<TalentPublishReadiness> {
     const talent = await this.requireTalent(id, tenantSchema);
     const archiveReadiness =
       talent.lifecycleStatus === 'published'
         ? { hasActiveArchiveTarget: true }
-        : await this.customerArchiveAccessService.getTalentArchiveReadiness(
-            id,
-            tenantSchema,
-          );
-    const externalPagesDomain =
-      await this.talentReadService.getExternalPagesDomainConfig(id, tenantSchema);
+        : await this.customerArchiveAccessService.getTalentArchiveReadiness(id, tenantSchema);
+    const externalPagesDomain = await this.talentReadService.getExternalPagesDomainConfig(
+      id,
+      tenantSchema
+    );
 
     return buildTalentPublishReadiness({
       talent,
@@ -71,24 +67,24 @@ export class TalentLifecycleService {
     id: string,
     tenantSchema: string,
     version: number,
-    userId: string,
+    userId: string
   ): Promise<TalentData> {
     const current = await this.requireTalent(id, tenantSchema);
     this.assertVersion(current, version);
     const lifecycleContext = await this.loadArtistLifecycleContext(
       tenantSchema,
-      current.artistStageId,
+      current.artistStageId
     );
     const resolvedTransition = this.resolveLegacyLifecycleTransition(
       lifecycleContext,
       current,
-      'published',
+      'published'
     );
     return this.executeStageTransition(
       current,
       tenantSchema,
       userId,
-      resolvedTransition.targetStage,
+      resolvedTransition.targetStage
     );
   }
 
@@ -96,24 +92,24 @@ export class TalentLifecycleService {
     id: string,
     tenantSchema: string,
     version: number,
-    userId: string,
+    userId: string
   ): Promise<TalentData> {
     const current = await this.requireTalent(id, tenantSchema);
     this.assertVersion(current, version);
     const lifecycleContext = await this.loadArtistLifecycleContext(
       tenantSchema,
-      current.artistStageId,
+      current.artistStageId
     );
     const resolvedTransition = this.resolveLegacyLifecycleTransition(
       lifecycleContext,
       current,
-      'disabled',
+      'disabled'
     );
     return this.executeStageTransition(
       current,
       tenantSchema,
       userId,
-      resolvedTransition.targetStage,
+      resolvedTransition.targetStage
     );
   }
 
@@ -121,24 +117,24 @@ export class TalentLifecycleService {
     id: string,
     tenantSchema: string,
     version: number,
-    userId: string,
+    userId: string
   ): Promise<TalentData> {
     const current = await this.requireTalent(id, tenantSchema);
     this.assertVersion(current, version);
     const lifecycleContext = await this.loadArtistLifecycleContext(
       tenantSchema,
-      current.artistStageId,
+      current.artistStageId
     );
     const resolvedTransition = this.resolveLegacyLifecycleTransition(
       lifecycleContext,
       current,
-      'published',
+      'published'
     );
     return this.executeStageTransition(
       current,
       tenantSchema,
       userId,
-      resolvedTransition.targetStage,
+      resolvedTransition.targetStage
     );
   }
 
@@ -146,23 +142,20 @@ export class TalentLifecycleService {
     id: string,
     tenantSchema: string,
     input: TalentStageTransitionInput,
-    userId: string,
+    userId: string
   ): Promise<TalentData> {
     const current = await this.requireTalent(id, tenantSchema);
     this.assertVersion(current, input.version);
     const lifecycleContext = await this.loadArtistLifecycleContext(
       tenantSchema,
-      current.artistStageId,
+      current.artistStageId
     );
-    const resolvedTransition = this.resolveRequestedStageTransition(
-      lifecycleContext,
-      input,
-    );
+    const resolvedTransition = this.resolveRequestedStageTransition(lifecycleContext, input);
     return this.executeStageTransition(
       current,
       tenantSchema,
       userId,
-      resolvedTransition.targetStage,
+      resolvedTransition.targetStage
     );
   }
 
@@ -171,7 +164,7 @@ export class TalentLifecycleService {
     _tenantSchema: string,
     _newSubsidiaryId: string | null,
     _version: number,
-    _userId: string,
+    _userId: string
   ): Promise<TalentData> {
     throw new ConflictException({
       code: ErrorCodes.RES_CONFLICT,
@@ -180,10 +173,7 @@ export class TalentLifecycleService {
     });
   }
 
-  private async requireTalent(
-    id: string,
-    tenantSchema: string,
-  ): Promise<TalentData> {
+  private async requireTalent(id: string, tenantSchema: string): Promise<TalentData> {
     const talent = await this.talentReadService.findById(id, tenantSchema);
 
     if (!talent) {
@@ -219,7 +209,7 @@ export class TalentLifecycleService {
     talent: TalentData,
     tenantSchema: string,
     userId: string,
-    targetStage: ArtistStageLifecycleCatalogRecord,
+    targetStage: ArtistStageLifecycleCatalogRecord
   ) {
     if (targetStage.lifecycleStatusMapping === 'published') {
       const readiness = await this.getPublishReadiness(talent.id, tenantSchema);
@@ -231,21 +221,17 @@ export class TalentLifecycleService {
       tenantSchema,
       userId,
       targetStage.id,
-      targetStage.lifecycleStatusMapping,
+      targetStage.lifecycleStatusMapping
     );
   }
 
   private async loadArtistLifecycleContext(
     tenantSchema: string,
-    currentStageId: string,
+    currentStageId: string
   ): Promise<ArtistLifecycleContext> {
-    const stages = await this.talentLifecycleRepository.listArtistStages(
-      tenantSchema,
-    );
+    const stages = await this.talentLifecycleRepository.listArtistStages(tenantSchema);
 
-    const flow = await this.talentLifecycleRepository.readArtistLifecycleFlow(
-      tenantSchema,
-    );
+    const flow = await this.talentLifecycleRepository.readArtistLifecycleFlow(tenantSchema);
 
     let normalizedFlow;
 
@@ -256,8 +242,7 @@ export class TalentLifecycleService {
     } catch {
       throw new ConflictException({
         code: ErrorCodes.TALENT_LIFECYCLE_CONFLICT,
-        message:
-          'Artist lifecycle flow is missing or invalid for this tenant.',
+        message: 'Artist lifecycle flow is missing or invalid for this tenant.',
       });
     }
 
@@ -265,8 +250,7 @@ export class TalentLifecycleService {
     if (!currentStage) {
       throw new ConflictException({
         code: ErrorCodes.TALENT_LIFECYCLE_CONFLICT,
-        message:
-          'Current Artist Stage is unavailable in the tenant stage catalog.',
+        message: 'Current Artist Stage is unavailable in the tenant stage catalog.',
       });
     }
 
@@ -280,32 +264,27 @@ export class TalentLifecycleService {
   private resolveLegacyLifecycleTransition(
     lifecycleContext: ArtistLifecycleContext,
     talent: TalentData,
-    targetLifecycleStatus: TalentData['lifecycleStatus'],
+    targetLifecycleStatus: TalentData['lifecycleStatus']
   ): ResolvedArtistStageTransition {
     const candidateTransitions = lifecycleContext.flow.transitions
       .filter((transition) => transition.fromStageId === talent.artistStageId)
       .map((transition) => ({
-        targetStage: lifecycleContext.stages.find(
-          (stage) => stage.id === transition.toStageId,
-        ),
+        targetStage: lifecycleContext.stages.find((stage) => stage.id === transition.toStageId),
         transition,
       }))
-      .filter(
-        (
-          candidate,
-        ): candidate is ResolvedArtistStageTransition =>
-          Boolean(candidate.targetStage),
+      .filter((candidate): candidate is ResolvedArtistStageTransition =>
+        Boolean(candidate.targetStage)
       )
-      .filter((stage) =>
-        stage.targetStage.isActive &&
-        stage.targetStage.lifecycleStatusMapping === targetLifecycleStatus,
+      .filter(
+        (stage) =>
+          stage.targetStage.isActive &&
+          stage.targetStage.lifecycleStatusMapping === targetLifecycleStatus
       );
 
     if (candidateTransitions.length === 0) {
       throw new ConflictException({
         code: ErrorCodes.TALENT_LIFECYCLE_CONFLICT,
-        message:
-          'No allowed Artist Stage transition matches this lifecycle action.',
+        message: 'No allowed Artist Stage transition matches this lifecycle action.',
       });
     }
 
@@ -322,7 +301,7 @@ export class TalentLifecycleService {
 
   private resolveRequestedStageTransition(
     lifecycleContext: ArtistLifecycleContext,
-    input: TalentStageTransitionInput,
+    input: TalentStageTransitionInput
   ): ResolvedArtistStageTransition {
     this.assertExplicitStageTransitionRequest(input);
 
@@ -331,34 +310,27 @@ export class TalentLifecycleService {
         .filter(
           (transition) =>
             transition.fromStageId === lifecycleContext.currentStage.id &&
-            transition.id === input.transitionId,
+            transition.id === input.transitionId
         )
         .map((transition) => ({
-          targetStage: lifecycleContext.stages.find(
-            (stage) => stage.id === transition.toStageId,
-          ),
+          targetStage: lifecycleContext.stages.find((stage) => stage.id === transition.toStageId),
           transition,
         }))
-        .filter(
-          (
-            candidate,
-          ): candidate is ResolvedArtistStageTransition =>
-            Boolean(candidate.targetStage),
+        .filter((candidate): candidate is ResolvedArtistStageTransition =>
+          Boolean(candidate.targetStage)
         );
 
       if (matchedTransitions.length === 0) {
         throw new ConflictException({
           code: ErrorCodes.TALENT_LIFECYCLE_CONFLICT,
-          message:
-            'Requested Artist Stage transition is not allowed from the current stage.',
+          message: 'Requested Artist Stage transition is not allowed from the current stage.',
         });
       }
 
       if (matchedTransitions.length > 1) {
         throw new ConflictException({
           code: ErrorCodes.TALENT_LIFECYCLE_CONFLICT,
-          message:
-            'Artist lifecycle flow contains duplicate transition ids for the current stage.',
+          message: 'Artist lifecycle flow contains duplicate transition ids for the current stage.',
         });
       }
 
@@ -369,26 +341,24 @@ export class TalentLifecycleService {
     const matchedTransition = lifecycleContext.flow.transitions.find(
       (transition) =>
         transition.fromStageId === lifecycleContext.currentStage.id &&
-        transition.toStageId === targetArtistStageId,
+        transition.toStageId === targetArtistStageId
     );
 
     if (!matchedTransition) {
       throw new ConflictException({
         code: ErrorCodes.TALENT_LIFECYCLE_CONFLICT,
-        message:
-          'Requested Artist Stage transition is not allowed from the current stage.',
+        message: 'Requested Artist Stage transition is not allowed from the current stage.',
       });
     }
 
     const targetStage = lifecycleContext.stages.find(
-      (stage) => stage.id === matchedTransition.toStageId,
+      (stage) => stage.id === matchedTransition.toStageId
     );
 
     if (!targetStage) {
       throw new ConflictException({
         code: ErrorCodes.TALENT_LIFECYCLE_CONFLICT,
-        message:
-          'Requested Artist Stage target is unavailable in the tenant stage catalog.',
+        message: 'Requested Artist Stage target is unavailable in the tenant stage catalog.',
       });
     }
 
@@ -398,9 +368,7 @@ export class TalentLifecycleService {
     };
   }
 
-  private assertExplicitStageTransitionRequest(
-    input: TalentStageTransitionInput,
-  ) {
+  private assertExplicitStageTransitionRequest(input: TalentStageTransitionInput) {
     const hasTargetArtistStageId = Boolean(input.targetArtistStageId?.trim());
     const hasTransitionId = Boolean(input.transitionId?.trim());
 

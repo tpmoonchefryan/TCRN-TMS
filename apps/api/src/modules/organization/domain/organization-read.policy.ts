@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { pickLocalizedText, type LocalizedText } from '@tcrn/shared';
 
 export type OrganizationTalentLifecycleStatus = 'draft' | 'published' | 'disabled';
@@ -72,7 +71,7 @@ export const getTalentVisibilityClause = (includeInactive: boolean): string =>
 
 export const localizeOrganizationName = (
   record: { name: LocalizedText },
-  language: string,
+  language: string
 ): string => pickLocalizedText(record.name, language);
 
 export const mapTalentSummary = (talent: RawTalent, language: string): TalentSummary => ({
@@ -91,7 +90,7 @@ export const mapOrganizationChildNode = (
   subsidiary: RawSubsidiary,
   language: string,
   childCount: number,
-  talentCount: number,
+  talentCount: number
 ): OrganizationChildNodeSummary => ({
   id: subsidiary.id,
   code: subsidiary.code,

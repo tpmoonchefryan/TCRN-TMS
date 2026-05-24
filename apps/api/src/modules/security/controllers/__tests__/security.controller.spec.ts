@@ -32,7 +32,7 @@ describe('SecurityController', () => {
     controller = new SecurityController(
       mockFingerprintService as never,
       mockBlocklistService as never,
-      mockIpAccessService as never,
+      mockIpAccessService as never
     );
   });
 
@@ -44,10 +44,7 @@ describe('SecurityController', () => {
       scope: IpRuleScope.ADMIN,
     });
 
-    expect(mockIpAccessService.checkAccess).toHaveBeenCalledWith(
-      '127.0.0.1',
-      IpRuleScope.ADMIN,
-    );
+    expect(mockIpAccessService.checkAccess).toHaveBeenCalledWith('127.0.0.1', IpRuleScope.ADMIN);
   });
 
   it('defaults omitted scope to global', async () => {
@@ -57,9 +54,6 @@ describe('SecurityController', () => {
       ip: '127.0.0.1',
     });
 
-    expect(mockIpAccessService.checkAccess).toHaveBeenCalledWith(
-      '127.0.0.1',
-      IpRuleScope.GLOBAL,
-    );
+    expect(mockIpAccessService.checkAccess).toHaveBeenCalledWith('127.0.0.1', IpRuleScope.GLOBAL);
   });
 });

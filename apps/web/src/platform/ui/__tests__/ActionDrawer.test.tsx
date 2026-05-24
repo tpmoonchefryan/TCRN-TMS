@@ -17,7 +17,7 @@ describe('ActionDrawer', () => {
     // jsdom doesn't support matchMedia by default
     Object.defineProperty(window, 'matchMedia', {
       writable: true,
-      value: vi.fn().mockImplementation(query => ({
+      value: vi.fn().mockImplementation((query) => ({
         matches: false,
         media: query,
         onchange: null,
@@ -51,41 +51,41 @@ describe('ActionDrawer', () => {
 
   it('locks body scroll when open and unlocks ONLY after exit animation', () => {
     const { rerender } = render(<ActionDrawer {...defaultProps} />);
-    
+
     // Body overflow should be hidden
     expect(document.body.style.overflow).toBe('hidden');
-    
+
     // Trigger close (starts unmount delay)
     rerender(<ActionDrawer {...defaultProps} open={false} />);
-    
+
     // Should STILL be hidden because unmount is delayed
     expect(document.body.style.overflow).toBe('hidden');
-    
+
     // Fast forward past the 300ms duration
     act(() => {
       vi.advanceTimersByTime(300);
     });
-    
+
     // NOW it should be unlocked
     expect(document.body.style.overflow).toBe('');
   });
 
   it('bypasses unmount delay when prefers-reduced-motion is true', () => {
-    window.matchMedia = vi.fn().mockImplementation(query => ({
+    window.matchMedia = vi.fn().mockImplementation((query) => ({
       matches: query === '(prefers-reduced-motion: reduce)',
     }));
-    
+
     const { rerender } = render(<ActionDrawer {...defaultProps} />);
     expect(document.body.style.overflow).toBe('hidden');
-    
+
     // Trigger close
     rerender(<ActionDrawer {...defaultProps} open={false} />);
-    
+
     // Should be unlocked immediately (0ms delay)
     act(() => {
       vi.advanceTimersByTime(0);
     });
-    
+
     expect(document.body.style.overflow).toBe('');
   });
 
@@ -102,7 +102,7 @@ describe('ActionDrawer', () => {
         <ActionDrawer {...defaultProps} open={false}>
           {drawerBody}
         </ActionDrawer>
-      </>,
+      </>
     );
 
     screen.getByRole('button', { name: 'Open drawer' }).focus();
@@ -112,7 +112,7 @@ describe('ActionDrawer', () => {
         <>
           <button type="button">Open drawer</button>
           <ActionDrawer {...defaultProps}>{drawerBody}</ActionDrawer>
-        </>,
+        </>
       );
     });
 
@@ -137,7 +137,7 @@ describe('ActionDrawer', () => {
           <ActionDrawer {...defaultProps} open={false}>
             {drawerBody}
           </ActionDrawer>
-        </>,
+        </>
       );
     });
 
@@ -150,19 +150,25 @@ describe('ActionDrawer', () => {
 
   it('renders the standard footer with secondary before primary in DOM order', () => {
     render(
-      <ActionDrawer {...defaultProps} footer={
-        <ActionDrawerFooter
-          secondary={<button type="button">Cancel</button>}
-          primary={<button type="button">Save</button>}
-        />
-      } />,
+      <ActionDrawer
+        {...defaultProps}
+        footer={
+          <ActionDrawerFooter
+            secondary={<button type="button">Cancel</button>}
+            primary={<button type="button">Save</button>}
+          />
+        }
+      />
     );
 
-    const buttons = screen.getAllByRole('button').map((button) => button.textContent || button.getAttribute('aria-label'));
+    const buttons = screen
+      .getAllByRole('button')
+      .map((button) => button.textContent || button.getAttribute('aria-label'));
     expect(buttons).toContain('Cancel');
     expect(buttons.indexOf('Cancel')).toBeLessThan(buttons.indexOf('Save'));
     expect(screen.getByRole('button', { name: 'Cancel' }).parentElement).toHaveClass('flex-col');
-    expect(screen.getByRole('button', { name: 'Cancel' }).parentElement).not.toHaveClass('flex-col-reverse');
+    expect(screen.getByRole('button', { name: 'Cancel' }).parentElement).not.toHaveClass(
+      'flex-col-reverse'
+    );
   });
-
 });

@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable } from '@nestjs/common';
 
 import { canAccessRequestedTenant } from '../domain/tenant-read.policy';
@@ -7,9 +6,7 @@ import { TenantReadRepository } from '../infrastructure/tenant-read.repository';
 
 @Injectable()
 export class TenantReadService {
-  constructor(
-    private readonly tenantReadRepository: TenantReadRepository,
-  ) {}
+  constructor(private readonly tenantReadRepository: TenantReadRepository) {}
 
   async getTenantByCode(code: string) {
     const tenant = await this.tenantReadRepository.findByCode(code);

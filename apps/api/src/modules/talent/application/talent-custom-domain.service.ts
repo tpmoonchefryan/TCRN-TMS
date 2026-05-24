@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import {
   BadRequestException,
   Injectable,
@@ -7,6 +6,7 @@ import {
   NotFoundException,
   ServiceUnavailableException,
 } from '@nestjs/common';
+
 import { ErrorCodes } from '@tcrn/shared';
 
 import { isMissingDatabaseRelationError } from '../../../platform/persistence/database-error.util';
@@ -37,9 +37,7 @@ import { TalentCustomDomainRepository } from '../infrastructure/talent-custom-do
 export class TalentCustomDomainService {
   private readonly logger = new Logger(TalentCustomDomainService.name);
 
-  constructor(
-    private readonly talentCustomDomainRepository: TalentCustomDomainRepository,
-  ) {}
+  constructor(private readonly talentCustomDomainRepository: TalentCustomDomainRepository) {}
 
   private isMissingCustomDomainRegistryRelation(error: unknown): boolean {
     return isMissingDatabaseRelationError(error, [
@@ -60,7 +58,8 @@ export class TalentCustomDomainService {
   private createCustomDomainStorageUnavailableException(): ServiceUnavailableException {
     return new ServiceUnavailableException({
       code: ErrorCodes.SYS_CUSTOM_DOMAIN_REGISTRY_UNAVAILABLE,
-      message: 'Custom-domain routing is temporarily unavailable. Try again later or contact an administrator.',
+      message:
+        'Custom-domain routing is temporarily unavailable. Try again later or contact an administrator.',
     });
   }
 
@@ -69,7 +68,7 @@ export class TalentCustomDomainService {
 
     if (!readiness.ready) {
       this.logger.warn(
-        `Custom-domain registry is not ready for management operations: binding=${readiness.customDomainBinding}, selection=${readiness.customDomainTalentSelection}`,
+        `Custom-domain registry is not ready for management operations: binding=${readiness.customDomainBinding}, selection=${readiness.customDomainTalentSelection}`
       );
       throw this.createCustomDomainStorageUnavailableException();
     }
@@ -77,17 +76,17 @@ export class TalentCustomDomainService {
 
   private async listCustomDomainBindingsForTalentOrEmpty(
     tenantSchema: string,
-    legacyConfig: TalentLegacyCustomDomainConfig,
+    legacyConfig: TalentLegacyCustomDomainConfig
   ): Promise<TalentCustomDomainBindingRecord[]> {
     try {
       return await this.talentCustomDomainRepository.listCustomDomainBindingsForTalent(
         tenantSchema,
-        legacyConfig,
+        legacyConfig
       );
     } catch (error) {
       if (this.isMissingCustomDomainRegistryRelation(error)) {
         this.logger.warn(
-          `Custom-domain binding registry is unavailable for tenant schema "${tenantSchema}"; returning legacy-only custom-domain config.`,
+          `Custom-domain binding registry is unavailable for tenant schema "${tenantSchema}"; returning legacy-only custom-domain config.`
         );
         return [];
       }
@@ -98,17 +97,17 @@ export class TalentCustomDomainService {
 
   private async listSelectedInheritedDomainIdsOrEmpty(
     tenantSchema: string,
-    talentId: string,
+    talentId: string
   ): Promise<string[]> {
     try {
       return await this.talentCustomDomainRepository.listSelectedInheritedDomainIds(
         tenantSchema,
-        talentId,
+        talentId
       );
     } catch (error) {
       if (this.isMissingCustomDomainSelectionRelation(error)) {
         this.logger.warn(
-          `Custom-domain inherited selection registry is unavailable for talent "${talentId}" in tenant schema "${tenantSchema}"; returning no inherited selections.`,
+          `Custom-domain inherited selection registry is unavailable for talent "${talentId}" in tenant schema "${tenantSchema}"; returning no inherited selections.`
         );
         return [];
       }
@@ -119,12 +118,12 @@ export class TalentCustomDomainService {
 
   private async findCustomDomainBindingByHostnameOrNull(
     hostname: string,
-    excludeDomainId: string | null = null,
+    excludeDomainId: string | null = null
   ): Promise<TalentCustomDomainBindingRecord | null> {
     try {
       return await this.talentCustomDomainRepository.findCustomDomainBindingByHostname(
         hostname,
-        excludeDomainId,
+        excludeDomainId
       );
     } catch (error) {
       if (this.isMissingCustomDomainRegistryRelation(error)) {
@@ -139,14 +138,11 @@ export class TalentCustomDomainService {
     record: TalentCustomDomainBindingRecord,
     scopeType: CustomDomainOwnerType,
     scopeId: string | null,
-    selectedInheritedDomainIds: Set<string>,
+    selectedInheritedDomainIds: Set<string>
   ): TalentCustomDomainBindingCatalogItem {
-    const inherited = scopeType === 'tenant'
-      ? false
-      : record.ownerType !== scopeType || record.ownerId !== scopeId;
-    const routeMode = record.ownerType === 'talent'
-      ? 'dedicated_talent'
-      : 'scoped_talent_path';
+    const inherited =
+      scopeType === 'tenant' ? false : record.ownerType !== scopeType || record.ownerId !== scopeId;
+    const routeMode = record.ownerType === 'talent' ? 'dedicated_talent' : 'scoped_talent_path';
 
     return {
       ...record,
@@ -155,7 +151,6 @@ export class TalentCustomDomainService {
       routeMode,
     };
   }
-
 
   private async generateVerificationToken(): Promise<string> {
     const { randomBytes } = await import('crypto');
@@ -188,12 +183,12 @@ export class TalentCustomDomainService {
   private async ensureBindingOwnerExists(
     tenantSchema: string,
     ownerType: CustomDomainOwnerType,
-    ownerId: string | null,
+    ownerId: string | null
   ): Promise<void> {
     const ownerExists = await this.talentCustomDomainRepository.customDomainOwnerExists(
       tenantSchema,
       ownerType,
-      ownerId,
+      ownerId
     );
 
     if (!ownerExists) {
@@ -206,7 +201,7 @@ export class TalentCustomDomainService {
 
   private async ensureHostnameAvailable(
     hostname: string,
-    excludeDomainId: string | null,
+    excludeDomainId: string | null
   ): Promise<void> {
     const [bindingOwner, legacyOwner] = await Promise.all([
       this.findCustomDomainBindingByHostnameOrNull(hostname, excludeDomainId),
@@ -222,7 +217,7 @@ export class TalentCustomDomainService {
   }
 
   private async verifyBindingDnsRecord(
-    binding: TalentCustomDomainBindingRecord,
+    binding: TalentCustomDomainBindingRecord
   ): Promise<TalentCustomDomainVerificationResult> {
     if (!binding.customDomainVerificationToken) {
       throw new BadRequestException({
@@ -235,9 +230,7 @@ export class TalentCustomDomainService {
       const { promises: dns } = await import('dns');
       const records = await dns.resolveTxt(`_tcrn-verify.${binding.hostname}`);
       const flatRecords = records.flat();
-      const expectedRecord = buildVerificationTxtRecord(
-        binding.customDomainVerificationToken,
-      );
+      const expectedRecord = buildVerificationTxtRecord(binding.customDomainVerificationToken);
       const found = flatRecords.some((record) => record === expectedRecord);
 
       if (found) {
@@ -251,35 +244,27 @@ export class TalentCustomDomainService {
     } catch {
       return {
         verified: false,
-        message:
-          'DNS lookup failed. Please ensure the TXT record is properly configured.',
+        message: 'DNS lookup failed. Please ensure the TXT record is properly configured.',
       };
     }
   }
 
   async getCustomDomainConfig(
     talentId: string,
-    tenantSchema: string,
+    tenantSchema: string
   ): Promise<TalentCustomDomainConfig | null> {
-    const legacyConfig =
-      await this.talentCustomDomainRepository.getCustomDomainConfig(
-        talentId,
-        tenantSchema,
-      );
+    const legacyConfig = await this.talentCustomDomainRepository.getCustomDomainConfig(
+      talentId,
+      tenantSchema
+    );
 
     if (!legacyConfig) {
       return null;
     }
 
     const [bindingRecords, selectedInheritedDomainIds] = await Promise.all([
-      this.listCustomDomainBindingsForTalentOrEmpty(
-        tenantSchema,
-        legacyConfig,
-      ),
-      this.listSelectedInheritedDomainIdsOrEmpty(
-        tenantSchema,
-        legacyConfig.talentId,
-      ),
+      this.listCustomDomainBindingsForTalentOrEmpty(tenantSchema, legacyConfig),
+      this.listSelectedInheritedDomainIdsOrEmpty(tenantSchema, legacyConfig.talentId),
     ]);
     const domains = buildTalentEffectiveCustomDomains({
       legacyConfig,
@@ -292,8 +277,7 @@ export class TalentCustomDomainService {
     return {
       customDomain: legacyConfig.customDomain,
       customDomainVerified: legacyConfig.customDomainVerified,
-      customDomainVerificationToken:
-        legacyConfig.customDomainVerificationToken,
+      customDomainVerificationToken: legacyConfig.customDomainVerificationToken,
       customDomainSslMode: legacyConfig.customDomainSslMode,
       ...fixedPaths,
       domains,
@@ -304,7 +288,7 @@ export class TalentCustomDomainService {
 
   async listCustomDomainBindings(
     tenantSchema: string,
-    input: TalentCustomDomainBindingListOptions,
+    input: TalentCustomDomainBindingListOptions
   ): Promise<TalentCustomDomainBindingListResult> {
     if (input.scopeType === 'tenant' && input.scopeId !== null) {
       throw new BadRequestException({
@@ -321,17 +305,13 @@ export class TalentCustomDomainService {
     }
 
     await this.ensureCustomDomainRegistryReady();
-    await this.ensureBindingOwnerExists(
-      tenantSchema,
-      input.scopeType,
-      input.scopeId,
-    );
+    await this.ensureBindingOwnerExists(tenantSchema, input.scopeType, input.scopeId);
 
     let records: TalentCustomDomainBindingRecord[];
     try {
       records = await this.talentCustomDomainRepository.listCustomDomainBindingsForScope(
         tenantSchema,
-        input,
+        input
       );
     } catch (error) {
       if (this.isMissingCustomDomainRegistryRelation(error)) {
@@ -344,21 +324,13 @@ export class TalentCustomDomainService {
     let selectedInheritedDomainIds = new Set<string>();
     if (input.scopeType === 'talent' && input.scopeId) {
       selectedInheritedDomainIds = new Set(
-        await this.listSelectedInheritedDomainIdsOrEmpty(
-          tenantSchema,
-          input.scopeId,
-        ),
+        await this.listSelectedInheritedDomainIdsOrEmpty(tenantSchema, input.scopeId)
       );
     }
 
     return {
       domains: records.map((record) =>
-        this.buildCatalogItem(
-          record,
-          input.scopeType,
-          input.scopeId,
-          selectedInheritedDomainIds,
-        ),
+        this.buildCatalogItem(record, input.scopeType, input.scopeId, selectedInheritedDomainIds)
       ),
     };
   }
@@ -366,12 +338,12 @@ export class TalentCustomDomainService {
   async setCustomDomain(
     talentId: string,
     tenantSchema: string,
-    customDomain: string | null,
+    customDomain: string | null
   ): Promise<TalentCustomDomainSetResult> {
     if (!customDomain) {
       const removed = await this.talentCustomDomainRepository.clearCustomDomain(
         talentId,
-        tenantSchema,
+        tenantSchema
       );
       if (!removed) {
         throw new NotFoundException({
@@ -389,7 +361,7 @@ export class TalentCustomDomainService {
       this.talentCustomDomainRepository.findTalentIdByCustomDomain(
         tenantSchema,
         normalizedDomain,
-        talentId,
+        talentId
       ),
       this.findCustomDomainBindingByHostnameOrNull(normalizedDomain),
     ]);
@@ -407,7 +379,7 @@ export class TalentCustomDomainService {
       talentId,
       tenantSchema,
       normalizedDomain,
-      token,
+      token
     );
 
     if (!updated) {
@@ -422,7 +394,7 @@ export class TalentCustomDomainService {
 
   async verifyCustomDomain(
     talentId: string,
-    tenantSchema: string,
+    tenantSchema: string
   ): Promise<TalentCustomDomainVerificationResult> {
     const config = await this.getCustomDomainConfig(talentId, tenantSchema);
 
@@ -443,8 +415,7 @@ export class TalentCustomDomainService {
     if (!config.customDomainVerificationToken) {
       throw new BadRequestException({
         code: ErrorCodes.VALIDATION_FAILED,
-        message:
-          'No verification token generated. Please set the custom domain first.',
+        message: 'No verification token generated. Please set the custom domain first.',
       });
     }
 
@@ -452,16 +423,11 @@ export class TalentCustomDomainService {
       const { promises: dns } = await import('dns');
       const records = await dns.resolveTxt(`_tcrn-verify.${config.customDomain}`);
       const flatRecords = records.flat();
-      const expectedRecord = buildVerificationTxtRecord(
-        config.customDomainVerificationToken,
-      );
+      const expectedRecord = buildVerificationTxtRecord(config.customDomainVerificationToken);
       const found = flatRecords.some((record) => record === expectedRecord);
 
       if (found) {
-        await this.talentCustomDomainRepository.markCustomDomainVerified(
-          talentId,
-          tenantSchema,
-        );
+        await this.talentCustomDomainRepository.markCustomDomainVerified(talentId, tenantSchema);
 
         return { verified: true, message: 'Domain verified successfully' };
       }
@@ -473,12 +439,10 @@ export class TalentCustomDomainService {
     } catch {
       return {
         verified: false,
-        message:
-          'DNS lookup failed. Please ensure the TXT record is properly configured.',
+        message: 'DNS lookup failed. Please ensure the TXT record is properly configured.',
       };
     }
   }
-
 
   async createCustomDomainBinding(
     tenantSchema: string,
@@ -488,11 +452,11 @@ export class TalentCustomDomainService {
       hostname: string;
       customDomainSslMode?: CustomDomainSslMode;
       isActive?: boolean;
-    },
+    }
   ): Promise<TalentCustomDomainBindingMutationResult> {
     const normalizedInput: TalentCustomDomainBindingMutationInput = {
       ownerType: input.ownerType,
-      ownerId: input.ownerType === 'tenant' ? null : input.ownerId ?? null,
+      ownerId: input.ownerType === 'tenant' ? null : (input.ownerId ?? null),
       hostname: normalizeCustomDomain(input.hostname),
       customDomainSslMode: input.customDomainSslMode ?? 'auto',
       isActive: input.isActive ?? true,
@@ -503,7 +467,7 @@ export class TalentCustomDomainService {
     await this.ensureBindingOwnerExists(
       tenantSchema,
       normalizedInput.ownerType,
-      normalizedInput.ownerId,
+      normalizedInput.ownerId
     );
     await this.ensureHostnameAvailable(normalizedInput.hostname, null);
 
@@ -513,7 +477,7 @@ export class TalentCustomDomainService {
       domain = await this.talentCustomDomainRepository.createCustomDomainBinding(
         tenantSchema,
         normalizedInput,
-        token,
+        token
       );
     } catch (error) {
       if (this.isMissingCustomDomainRegistryRelation(error)) {
@@ -546,7 +510,7 @@ export class TalentCustomDomainService {
       hostname: string;
       customDomainSslMode?: CustomDomainSslMode;
       isActive?: boolean;
-    },
+    }
   ): Promise<TalentCustomDomainBindingMutationResult> {
     await this.ensureCustomDomainRegistryReady();
 
@@ -554,7 +518,7 @@ export class TalentCustomDomainService {
     try {
       current = await this.talentCustomDomainRepository.findCustomDomainBindingById(
         tenantSchema,
-        domainId,
+        domainId
       );
     } catch (error) {
       if (this.isMissingCustomDomainRegistryRelation(error)) {
@@ -573,7 +537,7 @@ export class TalentCustomDomainService {
 
     const normalizedInput: TalentCustomDomainBindingMutationInput = {
       ownerType: input.ownerType,
-      ownerId: input.ownerType === 'tenant' ? null : input.ownerId ?? null,
+      ownerId: input.ownerType === 'tenant' ? null : (input.ownerId ?? null),
       hostname: normalizeCustomDomain(input.hostname),
       customDomainSslMode: input.customDomainSslMode ?? current.customDomainSslMode,
       isActive: input.isActive ?? current.isActive,
@@ -584,7 +548,7 @@ export class TalentCustomDomainService {
     await this.ensureBindingOwnerExists(
       tenantSchema,
       normalizedInput.ownerType,
-      normalizedInput.ownerId,
+      normalizedInput.ownerId
     );
     if (hostnameChanged) {
       await this.ensureHostnameAvailable(normalizedInput.hostname, domainId);
@@ -597,7 +561,7 @@ export class TalentCustomDomainService {
         tenantSchema,
         domainId,
         normalizedInput,
-        token,
+        token
       );
     } catch (error) {
       if (this.isMissingCustomDomainRegistryRelation(error)) {
@@ -623,7 +587,7 @@ export class TalentCustomDomainService {
 
   async verifyCustomDomainBinding(
     tenantSchema: string,
-    domainId: string,
+    domainId: string
   ): Promise<TalentCustomDomainVerificationResult> {
     await this.ensureCustomDomainRegistryReady();
 
@@ -631,7 +595,7 @@ export class TalentCustomDomainService {
     try {
       binding = await this.talentCustomDomainRepository.findCustomDomainBindingById(
         tenantSchema,
-        domainId,
+        domainId
       );
     } catch (error) {
       if (this.isMissingCustomDomainRegistryRelation(error)) {
@@ -654,7 +618,7 @@ export class TalentCustomDomainService {
       try {
         await this.talentCustomDomainRepository.markCustomDomainBindingVerified(
           tenantSchema,
-          domainId,
+          domainId
         );
       } catch (error) {
         if (this.isMissingCustomDomainRegistryRelation(error)) {
@@ -671,7 +635,7 @@ export class TalentCustomDomainService {
   async setSelectedInheritedDomainIds(
     talentId: string,
     tenantSchema: string,
-    domainIds: string[],
+    domainIds: string[]
   ): Promise<TalentCustomDomainSelectionResult> {
     await this.ensureCustomDomainRegistryReady();
 
@@ -709,7 +673,7 @@ export class TalentCustomDomainService {
       await this.talentCustomDomainRepository.replaceSelectedInheritedDomainIds(
         tenantSchema,
         talentId,
-        uniqueDomainIds,
+        uniqueDomainIds
       );
     } catch (error) {
       if (this.isMissingCustomDomainSelectionRelation(error)) {
@@ -737,11 +701,11 @@ export class TalentCustomDomainService {
     _paths: {
       homepageCustomPath?: string;
       marshmallowCustomPath?: string;
-    },
+    }
   ): Promise<TalentCustomDomainPaths> {
     const config = await this.talentCustomDomainRepository.getCustomDomainConfig(
       talentId,
-      tenantSchema,
+      tenantSchema
     );
 
     if (!config) {
@@ -757,12 +721,12 @@ export class TalentCustomDomainService {
   async updateSslMode(
     talentId: string,
     tenantSchema: string,
-    sslMode: 'auto' | 'self_hosted' | 'cloudflare',
+    sslMode: 'auto' | 'self_hosted' | 'cloudflare'
   ): Promise<{ customDomainSslMode: string }> {
     const result = await this.talentCustomDomainRepository.updateSslMode(
       talentId,
       tenantSchema,
-      sslMode,
+      sslMode
     );
 
     if (!result) {

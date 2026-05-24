@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable } from '@nestjs/common';
+
 import {
   PublicPresenceAssetRevisionPinSchema,
   PublicPresenceAssetSnapshotSchema,
@@ -29,25 +29,17 @@ interface TemplateAssetPinRow {
   templateAssetSnapshot: Record<string, unknown> | null;
 }
 
-type DocumentVersionRow = Omit<
-  PublicPresenceDocumentVersionRecord,
-  'templateAssetPin'
-> & TemplateAssetPinRow;
+type DocumentVersionRow = Omit<PublicPresenceDocumentVersionRecord, 'templateAssetPin'> &
+  TemplateAssetPinRow;
 
-function parseTemplateAssetPin(
-  row: TemplateAssetPinRow,
-): PublicPresenceAssetRevisionPin | null {
-  if (
-    !row.templateAssetId
-    || !row.templateAssetRevisionId
-    || !row.templateAssetSourceHash
-  ) {
+function parseTemplateAssetPin(row: TemplateAssetPinRow): PublicPresenceAssetRevisionPin | null {
+  if (!row.templateAssetId || !row.templateAssetRevisionId || !row.templateAssetSourceHash) {
     return null;
   }
 
   const snapshot: PublicPresenceAssetSnapshot | null = row.templateAssetSnapshot
     ? (PublicPresenceAssetSnapshotSchema.parse(
-        row.templateAssetSnapshot,
+        row.templateAssetSnapshot
       ) as PublicPresenceAssetSnapshot)
     : null;
 
@@ -60,7 +52,7 @@ function parseTemplateAssetPin(
 }
 
 function toDocumentVersionRecord(
-  row: DocumentVersionRow | null | undefined,
+  row: DocumentVersionRow | null | undefined
 ): PublicPresenceDocumentVersionRecord | null {
   if (!row) {
     return null;
@@ -78,7 +70,7 @@ export class PublicPresenceFoundationRepository {
 
   async findPortalByTalentId(
     schema: string,
-    talentId: string,
+    talentId: string
   ): Promise<PublicPresencePortalRecord | null> {
     const prisma = this.databaseService.getPrisma();
     const portals = await prisma.$queryRawUnsafe<PublicPresencePortalRecord[]>(
@@ -97,7 +89,7 @@ export class PublicPresenceFoundationRepository {
         FROM "${schema}".public_presence_portal
         WHERE talent_id = $1::uuid
       `,
-      talentId,
+      talentId
     );
 
     return portals[0] ?? null;
@@ -105,7 +97,7 @@ export class PublicPresenceFoundationRepository {
 
   async createPortal(
     schema: string,
-    input: CreatePublicPresencePortalInput,
+    input: CreatePublicPresencePortalInput
   ): Promise<PublicPresencePortalRecord> {
     const prisma = this.databaseService.getPrisma();
     const created = await prisma.$queryRawUnsafe<PublicPresencePortalRecord[]>(
@@ -136,7 +128,7 @@ export class PublicPresenceFoundationRepository {
           version
       `,
       input.talentId,
-      input.actorId,
+      input.actorId
     );
 
     return created[0];
@@ -144,7 +136,7 @@ export class PublicPresenceFoundationRepository {
 
   async findDraftVersion(
     schema: string,
-    portalId: string,
+    portalId: string
   ): Promise<PublicPresenceDocumentVersionRecord | null> {
     const prisma = this.databaseService.getPrisma();
     const versions = await prisma.$queryRawUnsafe<DocumentVersionRow[]>(
@@ -175,7 +167,7 @@ export class PublicPresenceFoundationRepository {
           ON v.id = p.draft_version_id
         WHERE p.id = $1::uuid
       `,
-      portalId,
+      portalId
     );
 
     return toDocumentVersionRecord(versions[0]);
@@ -185,7 +177,7 @@ export class PublicPresenceFoundationRepository {
     schema: string,
     portalId: string,
     templateId: string,
-    states?: string[],
+    states?: string[]
   ): Promise<PublicPresenceDocumentVersionRecord | null> {
     const prisma = this.databaseService.getPrisma();
     const rows = await prisma.$queryRawUnsafe<DocumentVersionRow[]>(
@@ -220,7 +212,7 @@ export class PublicPresenceFoundationRepository {
       `,
       portalId,
       templateId,
-      states ?? null,
+      states ?? null
     );
 
     return toDocumentVersionRecord(rows[0]);
@@ -228,7 +220,7 @@ export class PublicPresenceFoundationRepository {
 
   async findLatestVersionsByPortal(
     schema: string,
-    portalId: string,
+    portalId: string
   ): Promise<PublicPresenceDocumentVersionRecord[]> {
     const prisma = this.databaseService.getPrisma();
 
@@ -288,7 +280,7 @@ export class PublicPresenceFoundationRepository {
         WHERE row_rank = 1
         ORDER BY "versionNumber" DESC
       `,
-      portalId,
+      portalId
     );
 
     return rows
@@ -298,7 +290,7 @@ export class PublicPresenceFoundationRepository {
 
   async findDocumentVersionById(
     schema: string,
-    versionId: string,
+    versionId: string
   ): Promise<PublicPresenceDocumentVersionRecord | null> {
     const prisma = this.databaseService.getPrisma();
     const versions = await prisma.$queryRawUnsafe<DocumentVersionRow[]>(
@@ -327,7 +319,7 @@ export class PublicPresenceFoundationRepository {
         FROM "${schema}".public_presence_document_version
         WHERE id = $1::uuid
       `,
-      versionId,
+      versionId
     );
 
     return toDocumentVersionRecord(versions[0]);
@@ -335,57 +327,55 @@ export class PublicPresenceFoundationRepository {
 
   async createDraftVersionAndAssign(
     schema: string,
-    input: PersistPublicPresenceDraftVersionInput,
+    input: PersistPublicPresenceDraftVersionInput
   ): Promise<{
     validationSnapshot: PublicPresenceValidationSnapshotRecord;
     version: PublicPresenceDocumentVersionRecord;
   }> {
     const prisma = this.databaseService.getPrisma();
     const rows = await prisma.$queryRawUnsafe<
-      Array<
-        {
-          acknowledgementIds: string[];
-          blockerCount: number;
-          blockerIds: string[];
-          blocksAiPatch: boolean;
-          blocksPublish: boolean;
-          blocksVisualEdit: boolean;
-          contentHash: string;
-          contentHashAlgorithm: string;
-          document: Record<string, unknown>;
-          documentSchemaVersion: string;
-          documentState: string;
-          fatalCount: number;
-          infoCount: number;
-          issueCounts: PublicPresenceValidationSnapshotRecord['issueCounts'];
-          lastValidationSnapshotId: string | null;
-          portalId: string;
-          projectionHash: string | null;
-          publishedAt: Date | null;
-          publishedBy: string | null;
-          registryVersion: string;
-          safetyPolicyVersion: string;
-          scheduledFor: Date | null;
-          snapshot: Record<string, unknown>;
-          snapshotCreatedAt: Date;
-          snapshotCreatedBy: string | null;
-          templateId: string;
-          templateAssetId: string | null;
-          templateAssetRevisionId: string | null;
-          templateAssetSourceHash: string | null;
-          templateAssetSnapshot: Record<string, unknown> | null;
-          validationMode: string;
-          validationSnapshotId: string;
-          validationState: string;
-          validationVersionId: string;
-          versionCreatedAt: Date;
-          versionCreatedBy: string | null;
-          versionId: string;
-          versionNumber: number;
-          versionUpdatedAt: Date;
-          warningCount: number;
-        }
-      >
+      Array<{
+        acknowledgementIds: string[];
+        blockerCount: number;
+        blockerIds: string[];
+        blocksAiPatch: boolean;
+        blocksPublish: boolean;
+        blocksVisualEdit: boolean;
+        contentHash: string;
+        contentHashAlgorithm: string;
+        document: Record<string, unknown>;
+        documentSchemaVersion: string;
+        documentState: string;
+        fatalCount: number;
+        infoCount: number;
+        issueCounts: PublicPresenceValidationSnapshotRecord['issueCounts'];
+        lastValidationSnapshotId: string | null;
+        portalId: string;
+        projectionHash: string | null;
+        publishedAt: Date | null;
+        publishedBy: string | null;
+        registryVersion: string;
+        safetyPolicyVersion: string;
+        scheduledFor: Date | null;
+        snapshot: Record<string, unknown>;
+        snapshotCreatedAt: Date;
+        snapshotCreatedBy: string | null;
+        templateId: string;
+        templateAssetId: string | null;
+        templateAssetRevisionId: string | null;
+        templateAssetSourceHash: string | null;
+        templateAssetSnapshot: Record<string, unknown> | null;
+        validationMode: string;
+        validationSnapshotId: string;
+        validationState: string;
+        validationVersionId: string;
+        versionCreatedAt: Date;
+        versionCreatedBy: string | null;
+        versionId: string;
+        versionNumber: number;
+        versionUpdatedAt: Date;
+        warningCount: number;
+      }>
     >(
       `
         WITH inserted_version AS (
@@ -644,7 +634,7 @@ export class PublicPresenceFoundationRepository {
       input.validationPersistence.projectionHash,
       input.validationPersistence.registryVersion,
       input.validationPersistence.safetyPolicyVersion,
-      JSON.stringify(input.validationSnapshot),
+      JSON.stringify(input.validationSnapshot)
     );
 
     const row = rows[0];
@@ -700,7 +690,7 @@ export class PublicPresenceFoundationRepository {
 
   async createValidationSnapshotForExistingDraft(
     schema: string,
-    input: PersistPublicPresenceValidationSnapshotInput,
+    input: PersistPublicPresenceValidationSnapshotInput
   ): Promise<PublicPresenceValidationSnapshotRecord> {
     const prisma = this.databaseService.getPrisma();
     const rows = await prisma.$queryRawUnsafe<PublicPresenceValidationSnapshotRecord[]>(
@@ -851,7 +841,7 @@ export class PublicPresenceFoundationRepository {
       input.eventType,
       input.documentState,
       input.contentHashAlgorithm,
-      input.contentHash,
+      input.contentHash
     );
 
     return rows[0];
@@ -859,7 +849,7 @@ export class PublicPresenceFoundationRepository {
 
   async findValidationSnapshotById(
     schema: string,
-    snapshotId: string,
+    snapshotId: string
   ): Promise<PublicPresenceValidationSnapshotRecord | null> {
     const prisma = this.databaseService.getPrisma();
     const rows = await prisma.$queryRawUnsafe<PublicPresenceValidationSnapshotRecord[]>(
@@ -889,7 +879,7 @@ export class PublicPresenceFoundationRepository {
         FROM "${schema}".public_presence_validation_snapshot
         WHERE id = $1::uuid
       `,
-      snapshotId,
+      snapshotId
     );
 
     return rows[0] ?? null;
@@ -898,7 +888,7 @@ export class PublicPresenceFoundationRepository {
   async findWorkflowEventsByPortalId(
     schema: string,
     portalId: string,
-    limit = 20,
+    limit = 20
   ): Promise<PublicPresenceWorkflowEventRecord[]> {
     const prisma = this.databaseService.getPrisma();
 
@@ -922,14 +912,14 @@ export class PublicPresenceFoundationRepository {
         LIMIT $2
       `,
       portalId,
-      limit,
+      limit
     );
   }
 
   async findLatestWorkflowEventByVersionAndType(
     schema: string,
     versionId: string,
-    eventType: string,
+    eventType: string
   ): Promise<PublicPresenceWorkflowEventRecord | null> {
     const prisma = this.databaseService.getPrisma();
     const rows = await prisma.$queryRawUnsafe<PublicPresenceWorkflowEventRecord[]>(
@@ -953,7 +943,7 @@ export class PublicPresenceFoundationRepository {
         LIMIT 1
       `,
       versionId,
-      eventType,
+      eventType
     );
 
     return rows[0] ?? null;
@@ -961,7 +951,7 @@ export class PublicPresenceFoundationRepository {
 
   async updateDocumentWorkflowState(
     schema: string,
-    input: UpdatePublicPresenceDocumentWorkflowStateInput,
+    input: UpdatePublicPresenceDocumentWorkflowStateInput
   ): Promise<PublicPresenceDocumentVersionRecord> {
     const prisma = this.databaseService.getPrisma();
     const rows = await prisma.$queryRawUnsafe<DocumentVersionRow[]>(
@@ -1042,7 +1032,7 @@ export class PublicPresenceFoundationRepository {
       input.eventType,
       input.contentHashAlgorithm,
       input.contentHash,
-      JSON.stringify(input.payload ?? {}),
+      JSON.stringify(input.payload ?? {})
     );
 
     return toDocumentVersionRecord(rows[0])!;
@@ -1050,7 +1040,7 @@ export class PublicPresenceFoundationRepository {
 
   async publishVersionAndAssignLive(
     schema: string,
-    input: UpdatePublicPresenceDocumentWorkflowStateInput,
+    input: UpdatePublicPresenceDocumentWorkflowStateInput
   ): Promise<PublicPresenceDocumentVersionRecord> {
     const prisma = this.databaseService.getPrisma();
     const rows = await prisma.$queryRawUnsafe<DocumentVersionRow[]>(
@@ -1157,7 +1147,7 @@ export class PublicPresenceFoundationRepository {
       input.eventType,
       input.contentHashAlgorithm,
       input.contentHash,
-      JSON.stringify(input.payload ?? {}),
+      JSON.stringify(input.payload ?? {})
     );
 
     return toDocumentVersionRecord(rows[0])!;
@@ -1165,7 +1155,7 @@ export class PublicPresenceFoundationRepository {
 
   async createDocumentFromSourceAndAssignDraft(
     schema: string,
-    input: CreatePublicPresenceDocumentFromSourceInput,
+    input: CreatePublicPresenceDocumentFromSourceInput
   ): Promise<PublicPresenceDocumentVersionRecord> {
     const prisma = this.databaseService.getPrisma();
     const rows = await prisma.$queryRawUnsafe<DocumentVersionRow[]>(
@@ -1289,7 +1279,7 @@ export class PublicPresenceFoundationRepository {
       JSON.stringify({
         ...(input.payload ?? {}),
         sourceVersionId: input.sourceVersionId,
-      }),
+      })
     );
 
     return toDocumentVersionRecord(rows[0])!;
@@ -1297,7 +1287,7 @@ export class PublicPresenceFoundationRepository {
 
   async findDueScheduledVersions(
     schema: string,
-    dueBefore: Date,
+    dueBefore: Date
   ): Promise<PublicPresenceScheduledVersionRecord[]> {
     const prisma = this.databaseService.getPrisma();
 
@@ -1314,12 +1304,12 @@ export class PublicPresenceFoundationRepository {
           AND v.scheduled_for IS NOT NULL
           AND v.scheduled_for <= $1::timestamptz
       `,
-      dueBefore,
+      dueBefore
     );
   }
 
   async findLiveDebutRevealVersions(
-    schema: string,
+    schema: string
   ): Promise<PublicPresenceScheduledVersionRecord[]> {
     const prisma = this.databaseService.getPrisma();
 
@@ -1334,7 +1324,7 @@ export class PublicPresenceFoundationRepository {
           ON v.id = p.live_version_id
         WHERE v.template_id = 'debutReveal'
           AND v.document_state = 'published'
-      `,
+      `
     );
   }
 }

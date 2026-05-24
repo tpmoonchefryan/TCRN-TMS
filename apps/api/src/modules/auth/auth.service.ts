@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
+
 import { prisma } from '@tcrn/database';
 import { ErrorCodes } from '@tcrn/shared';
 
@@ -84,7 +84,7 @@ export class AuthService {
     private readonly tokenService: TokenService,
     private readonly sessionService: SessionService,
     private readonly tenantService: TenantService,
-    private readonly permissionSnapshotService: PermissionSnapshotService,
+    private readonly permissionSnapshotService: PermissionSnapshotService
   ) {}
 
   /**
@@ -96,11 +96,11 @@ export class AuthService {
     password: string,
     ipAddress: string,
     userAgent?: string,
-    _rememberMe?: boolean,
+    _rememberMe?: boolean
   ): Promise<LoginResult> {
     // First, find the tenant by code
     const tenant = await this.tenantService.getTenantByCode(tenantCode);
-    
+
     if (!tenant) {
       throw new UnauthorizedException({
         code: ErrorCodes.AUTH_INVALID_CREDENTIALS,
@@ -125,7 +125,7 @@ export class AuthService {
       FROM "${tenant.schemaName}".system_user
       WHERE (username = $1 OR email = $1)
       LIMIT 1`,
-      login,
+      login
     );
 
     let user: EnrichedSystemUser | undefined;
@@ -157,7 +157,7 @@ export class AuthService {
         user.id,
         { login },
         ipAddress,
-        userAgent,
+        userAgent
       );
       throw new UnauthorizedException({
         code: ErrorCodes.AUTH_ACCOUNT_DISABLED,
@@ -174,7 +174,7 @@ export class AuthService {
         user.id,
         { login, lockedUntil: lockStatus.lockedUntil },
         ipAddress,
-        userAgent,
+        userAgent
       );
       throw new UnauthorizedException({
         code: ErrorCodes.AUTH_ACCOUNT_LOCKED,
@@ -190,7 +190,7 @@ export class AuthService {
         user.id,
         tenantSchema,
         false,
-        ipAddress,
+        ipAddress
       );
 
       await this.sessionService.logSecurityEvent(
@@ -199,7 +199,7 @@ export class AuthService {
         user.id,
         { login, failedCount: attemptResult.failedCount },
         ipAddress,
-        userAgent,
+        userAgent
       );
 
       throw new UnauthorizedException({
@@ -264,7 +264,7 @@ export class AuthService {
     },
     tenantSchema: string,
     ipAddress: string,
-    userAgent?: string,
+    userAgent?: string
   ): Promise<LoginResult> {
     // Track successful login
     await this.sessionService.trackLoginAttempt(user.id, tenantSchema, true, ipAddress);
@@ -288,12 +288,7 @@ export class AuthService {
 
     // Generate refresh token
     const { token: refreshToken, expiresAt: refreshTokenExpiresAt } =
-      await this.tokenService.generateRefreshToken(
-      user.id,
-      tenantSchema,
-      userAgent,
-      ipAddress,
-    );
+      await this.tokenService.generateRefreshToken(user.id, tenantSchema, userAgent, ipAddress);
 
     // Log successful login
     await this.sessionService.logSecurityEvent(
@@ -302,7 +297,7 @@ export class AuthService {
       user.id,
       { username: user.username },
       ipAddress,
-      userAgent,
+      userAgent
     );
 
     // Calculate password expiry
@@ -344,7 +339,7 @@ export class AuthService {
     sessionToken: string,
     code: string,
     ipAddress: string,
-    userAgent?: string,
+    userAgent?: string
   ): Promise<LoginResult> {
     // Verify session token
     let payload;
@@ -360,25 +355,30 @@ export class AuthService {
     const tenantSchema = payload.tsc;
 
     // Get user with TOTP secret
-    const users = await prisma.$queryRawUnsafe<Array<{
-      id: string;
-      username: string;
-      email: string;
-      display_name: string | null;
-      avatar_url: string | null;
-      preferred_language: string;
-      totp_secret: string | null;
-      is_totp_enabled: boolean;
-      force_reset: boolean;
-      password_changed_at: Date | null;
-    }>>(`
+    const users = await prisma.$queryRawUnsafe<
+      Array<{
+        id: string;
+        username: string;
+        email: string;
+        display_name: string | null;
+        avatar_url: string | null;
+        preferred_language: string;
+        totp_secret: string | null;
+        is_totp_enabled: boolean;
+        force_reset: boolean;
+        password_changed_at: Date | null;
+      }>
+    >(
+      `
       SELECT 
         id, username, email, display_name, avatar_url,
         preferred_language, totp_secret, is_totp_enabled,
         force_reset, password_changed_at
       FROM "${tenantSchema}".system_user
       WHERE id = $1::uuid
-    `, payload.sub);
+    `,
+      payload.sub
+    );
 
     if (users.length === 0 || !users[0].totp_secret) {
       throw new UnauthorizedException({
@@ -398,7 +398,7 @@ export class AuthService {
         user.id,
         {},
         ipAddress,
-        userAgent,
+        userAgent
       );
 
       throw new UnauthorizedException({
@@ -425,7 +425,7 @@ export class AuthService {
       },
       tenantSchema,
       ipAddress,
-      userAgent,
+      userAgent
     );
   }
 
@@ -436,7 +436,7 @@ export class AuthService {
     sessionToken: string,
     recoveryCode: string,
     ipAddress: string,
-    userAgent?: string,
+    userAgent?: string
   ): Promise<LoginResult & { recoveryCodesRemaining: number; warning: string }> {
     // Verify session token
     let payload;
@@ -452,15 +452,20 @@ export class AuthService {
     const tenantSchema = payload.tsc;
 
     // Find matching recovery code
-    const codes = await prisma.$queryRawUnsafe<Array<{
-      id: string;
-      code_hash: string;
-      is_used: boolean;
-    }>>(`
+    const codes = await prisma.$queryRawUnsafe<
+      Array<{
+        id: string;
+        code_hash: string;
+        is_used: boolean;
+      }>
+    >(
+      `
       SELECT id, code_hash, is_used
       FROM "${tenantSchema}".recovery_code
       WHERE user_id = $1::uuid AND is_used = false
-    `, payload.sub);
+    `,
+      payload.sub
+    );
 
     let matchedCodeId: string | null = null;
     for (const code of codes) {
@@ -477,7 +482,7 @@ export class AuthService {
         payload.sub,
         {},
         ipAddress,
-        userAgent,
+        userAgent
       );
 
       throw new UnauthorizedException({
@@ -487,18 +492,24 @@ export class AuthService {
     }
 
     // Mark code as used
-    await prisma.$executeRawUnsafe(`
+    await prisma.$executeRawUnsafe(
+      `
       UPDATE "${tenantSchema}".recovery_code
       SET is_used = true, used_at = now()
       WHERE id = $1::uuid
-    `, matchedCodeId);
+    `,
+      matchedCodeId
+    );
 
     // Count remaining codes
-    const remainingResult = await prisma.$queryRawUnsafe<Array<{ count: bigint }>>(`
+    const remainingResult = await prisma.$queryRawUnsafe<Array<{ count: bigint }>>(
+      `
       SELECT COUNT(*) as count
       FROM "${tenantSchema}".recovery_code
       WHERE user_id = $1::uuid AND is_used = false
-    `, payload.sub);
+    `,
+      payload.sub
+    );
     const remaining = Number(remainingResult[0]?.count || 0);
 
     await this.sessionService.logSecurityEvent(
@@ -507,27 +518,32 @@ export class AuthService {
       payload.sub,
       { remaining },
       ipAddress,
-      userAgent,
+      userAgent
     );
 
     // Get user info
-    const users = await prisma.$queryRawUnsafe<Array<{
-      id: string;
-      username: string;
-      email: string;
-      display_name: string | null;
-      avatar_url: string | null;
-      preferred_language: string;
-      is_totp_enabled: boolean;
-      force_reset: boolean;
-      password_changed_at: Date | null;
-    }>>(`
+    const users = await prisma.$queryRawUnsafe<
+      Array<{
+        id: string;
+        username: string;
+        email: string;
+        display_name: string | null;
+        avatar_url: string | null;
+        preferred_language: string;
+        is_totp_enabled: boolean;
+        force_reset: boolean;
+        password_changed_at: Date | null;
+      }>
+    >(
+      `
       SELECT 
         id, username, email, display_name, avatar_url,
         preferred_language, is_totp_enabled, force_reset, password_changed_at
       FROM "${tenantSchema}".system_user
       WHERE id = $1::uuid
-    `, payload.sub);
+    `,
+      payload.sub
+    );
 
     if (users.length === 0) {
       throw new UnauthorizedException({
@@ -553,7 +569,7 @@ export class AuthService {
       },
       tenantSchema,
       ipAddress,
-      userAgent,
+      userAgent
     );
 
     return {
@@ -570,26 +586,31 @@ export class AuthService {
     userId: string,
     tenantSchema: string,
     ipAddress: string,
-    userAgent?: string,
+    userAgent?: string
   ): Promise<LoginResult> {
     // Get user info
-    const users = await prisma.$queryRawUnsafe<Array<{
-      id: string;
-      username: string;
-      email: string;
-      display_name: string | null;
-      avatar_url: string | null;
-      preferred_language: string;
-      is_totp_enabled: boolean;
-      force_reset: boolean;
-      password_changed_at: Date | null;
-    }>>(`
+    const users = await prisma.$queryRawUnsafe<
+      Array<{
+        id: string;
+        username: string;
+        email: string;
+        display_name: string | null;
+        avatar_url: string | null;
+        preferred_language: string;
+        is_totp_enabled: boolean;
+        force_reset: boolean;
+        password_changed_at: Date | null;
+      }>
+    >(
+      `
       SELECT 
         id, username, email, display_name, avatar_url,
         preferred_language, is_totp_enabled, force_reset, password_changed_at
       FROM "${tenantSchema}".system_user
       WHERE id = $1::uuid
-    `, userId);
+    `,
+      userId
+    );
 
     if (users.length === 0) {
       throw new UnauthorizedException({
@@ -616,7 +637,7 @@ export class AuthService {
       },
       tenantSchema,
       ipAddress,
-      userAgent,
+      userAgent
     );
   }
 
@@ -625,7 +646,7 @@ export class AuthService {
    */
   async refreshAccessToken(
     refreshToken: string,
-    tenantSchema: string,
+    tenantSchema: string
   ): Promise<{
     accessToken: string;
     tokenType: string;
@@ -644,16 +665,21 @@ export class AuthService {
     const targetSchema = result.schema || tenantSchema;
 
     // Get user info
-    const users = await prisma.$queryRawUnsafe<Array<{
-      id: string;
-      username: string;
-      email: string;
-      is_active: boolean;
-    }>>(`
+    const users = await prisma.$queryRawUnsafe<
+      Array<{
+        id: string;
+        username: string;
+        email: string;
+        is_active: boolean;
+      }>
+    >(
+      `
       SELECT id, username, email, is_active
       FROM "${targetSchema}".system_user
       WHERE id = $1::uuid
-    `, result.userId);
+    `,
+      result.userId
+    );
 
     if (users.length === 0 || !users[0].is_active) {
       throw new UnauthorizedException({
@@ -695,7 +721,7 @@ export class AuthService {
     tenantSchema: string,
     refreshToken?: string,
     ipAddress?: string,
-    userAgent?: string,
+    userAgent?: string
   ): Promise<void> {
     if (refreshToken) {
       const result = await this.tokenService.verifyRefreshToken(refreshToken, tenantSchema);
@@ -710,7 +736,7 @@ export class AuthService {
       userId,
       {},
       ipAddress,
-      userAgent,
+      userAgent
     );
   }
 
@@ -721,7 +747,7 @@ export class AuthService {
     userId: string,
     tenantSchema: string,
     ipAddress?: string,
-    userAgent?: string,
+    userAgent?: string
   ): Promise<number> {
     const revokedCount = await this.tokenService.revokeAllUserTokens(userId, tenantSchema);
 
@@ -731,7 +757,7 @@ export class AuthService {
       userId,
       { revokedSessions: revokedCount },
       ipAddress,
-      userAgent,
+      userAgent
     );
 
     return revokedCount;

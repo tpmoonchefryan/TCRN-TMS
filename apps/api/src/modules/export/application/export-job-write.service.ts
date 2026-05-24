@@ -1,20 +1,20 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { InjectQueue } from '@nestjs/bullmq';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { ErrorCodes, LogSeverity, type RequestContext, TechEventType } from '@tcrn/shared';
 import type { Queue } from 'bullmq';
+
+import { ErrorCodes, LogSeverity, type RequestContext, TechEventType } from '@tcrn/shared';
 
 import { CustomerArchiveAccessService } from '../../customer/application/customer-archive-access.service';
 import { TechEventLogService } from '../../log';
 import { QUEUE_NAMES } from '../../queue';
+import { canCancelExportJob } from '../domain/export-job-state.policy';
 import {
   buildExportJobFilters,
   GENERIC_EXPORT_JOB_TYPE,
   getRequestedExportFormat,
   mapExportJobResponse,
 } from '../domain/export-job.policy';
-import { canCancelExportJob } from '../domain/export-job-state.policy';
 import {
   type CreateExportJobDto,
   type ExportJobResponse,
@@ -29,13 +29,13 @@ export class ExportJobWriteApplicationService {
     private readonly techEventLogService: TechEventLogService,
     private readonly customerArchiveAccessService: CustomerArchiveAccessService,
     @InjectQueue(QUEUE_NAMES.EXPORT)
-    private readonly exportQueue: Queue,
+    private readonly exportQueue: Queue
   ) {}
 
   async createJob(
     talentId: string,
     dto: CreateExportJobDto,
-    context: RequestContext,
+    context: RequestContext
   ): Promise<ExportJobResponse> {
     if (dto.jobType !== GENERIC_EXPORT_JOB_TYPE) {
       throw new BadRequestException({
@@ -44,14 +44,13 @@ export class ExportJobWriteApplicationService {
       });
     }
 
-    const archiveTarget =
-      await this.customerArchiveAccessService.requireTalentArchiveTarget(
-        talentId,
-        context,
-        {
-          missingArchiveMessage: 'Invalid talent or no profile store configured',
-        },
-      );
+    const archiveTarget = await this.customerArchiveAccessService.requireTalentArchiveTarget(
+      talentId,
+      context,
+      {
+        missingArchiveMessage: 'Invalid talent or no profile store configured',
+      }
+    );
 
     const format = getRequestedExportFormat(dto.format);
     const filters = buildExportJobFilters({
@@ -81,27 +80,27 @@ export class ExportJobWriteApplicationService {
       tenantSchema: context.tenantSchema,
     });
 
-    await this.techEventLogService.log({
-      eventType: TechEventType.EXPORT_JOB_STARTED,
-      scope: 'export',
-      severity: LogSeverity.INFO,
-      traceId: job.id,
-      payload: {
-        job_id: job.id,
-        job_type: dto.jobType,
-        format,
-        talent_id: talentId,
+    await this.techEventLogService.log(
+      {
+        eventType: TechEventType.EXPORT_JOB_STARTED,
+        scope: 'export',
+        severity: LogSeverity.INFO,
+        traceId: job.id,
+        payload: {
+          job_id: job.id,
+          job_type: dto.jobType,
+          format,
+          talent_id: talentId,
+        },
       },
-    }, context);
+      context
+    );
 
     return mapExportJobResponse(job);
   }
 
   async cancelJob(jobId: string, context: RequestContext): Promise<void> {
-    const job = await this.exportJobWriteRepository.findCancelableJob(
-      context.tenantSchema,
-      jobId,
-    );
+    const job = await this.exportJobWriteRepository.findCancelableJob(context.tenantSchema, jobId);
 
     if (!job) {
       throw new NotFoundException({

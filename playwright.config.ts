@@ -1,7 +1,8 @@
-import { defineConfig, devices } from '@playwright/test';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+
+import { defineConfig, devices } from '@playwright/test';
 
 const repoRoot = fileURLToPath(new URL('.', import.meta.url));
 

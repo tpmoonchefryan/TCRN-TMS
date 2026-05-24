@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import {
   ArgumentsHost,
   Catch,
@@ -8,8 +7,9 @@ import {
   HttpStatus,
   Logger,
 } from '@nestjs/common';
-import { ErrorCodes } from '@tcrn/shared';
 import { Request, Response } from 'express';
+
+import { ErrorCodes } from '@tcrn/shared';
 
 import { error } from '../response.util';
 import { TraceIdRequestFields } from '../trace/trace-id.util';
@@ -58,16 +58,13 @@ export class HttpExceptionFilter implements ExceptionFilter {
         errorCode = HTTP_STATUS_TO_ERROR_CODE[status] || ErrorCodes.SYS_ERROR;
       } else if (typeof exceptionResponse === 'object') {
         const responseObj = exceptionResponse as Record<string, unknown>;
-        
+
         // Support custom error code from application
-        errorCode = (responseObj.code as string) || 
-                   HTTP_STATUS_TO_ERROR_CODE[status] || 
-                   ErrorCodes.SYS_ERROR;
-        
-        message = (responseObj.message as string) || 
-                 exception.message || 
-                 'An error occurred';
-        
+        errorCode =
+          (responseObj.code as string) || HTTP_STATUS_TO_ERROR_CODE[status] || ErrorCodes.SYS_ERROR;
+
+        message = (responseObj.message as string) || exception.message || 'An error occurred';
+
         // Support validation errors with field details
         if (responseObj.details) {
           details = responseObj.details as Record<string, unknown>;
@@ -81,18 +78,12 @@ export class HttpExceptionFilter implements ExceptionFilter {
     } else if (exception instanceof Error) {
       status = HttpStatus.INTERNAL_SERVER_ERROR;
       errorCode = ErrorCodes.SYS_ERROR;
-      message = process.env.NODE_ENV === 'production' 
-        ? 'Internal server error' 
-        : exception.message;
-      
-      this.logger.error(
-        `Unhandled exception: ${exception.message}`,
-        exception.stack,
-        {
-          traceId,
-          requestId,
-        },
-      );
+      message = process.env.NODE_ENV === 'production' ? 'Internal server error' : exception.message;
+
+      this.logger.error(`Unhandled exception: ${exception.message}`, exception.stack, {
+        traceId,
+        requestId,
+      });
     } else {
       status = HttpStatus.INTERNAL_SERVER_ERROR;
       errorCode = ErrorCodes.SYS_ERROR;
@@ -100,15 +91,12 @@ export class HttpExceptionFilter implements ExceptionFilter {
     }
 
     // Log error details
-    this.logger.warn(
-      `${request.method} ${request.url} - ${status} ${errorCode}: ${message}`,
-      {
-        traceId,
-        requestId,
-        ip: request.ip,
-        userAgent: request.headers['user-agent'],
-      },
-    );
+    this.logger.warn(`${request.method} ${request.url} - ${status} ${errorCode}: ${message}`, {
+      traceId,
+      requestId,
+      ip: request.ip,
+      userAgent: request.headers['user-agent'],
+    });
 
     response.status(status).json(error(errorCode, message, details, traceId, requestId));
   }

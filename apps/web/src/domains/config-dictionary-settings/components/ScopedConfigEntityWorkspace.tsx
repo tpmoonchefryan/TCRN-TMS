@@ -1,9 +1,10 @@
 'use client';
 
-import type { LocalizedText, SupportedUiLocale } from '@tcrn/shared';
 import { Plus, RefreshCcw } from 'lucide-react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { startTransition, useEffect, useMemo, useRef, useState } from 'react';
+
+import type { LocalizedText, SupportedUiLocale } from '@tcrn/shared';
 
 import {
   type ConfigEntityRecord,
@@ -21,13 +22,6 @@ import {
   updateConfigEntity,
   type UpdateConfigEntityInput,
 } from '@/domains/config-dictionary-settings/api/settings.api';
-import {
-  CONFIG_ENTITY_CATALOG,
-  CONFIG_ENTITY_ORDER,
-  type ConfigEntityCatalogEntry,
-  type ConfigEntityFieldDefinition,
-  DEFAULT_CONFIG_ENTITY_TYPE,
-} from '@/domains/config-dictionary-settings/components/config-entity-catalog';
 import { CustomDomainConfigEntityWorkspace } from '@/domains/config-dictionary-settings/components/CustomDomainConfigEntityWorkspace';
 import {
   buildLocalizedTextPayload,
@@ -36,11 +30,15 @@ import {
   TranslationManagementDrawer,
   TranslationManagementTrigger,
 } from '@/domains/config-dictionary-settings/components/TranslationManagement';
-import { type ApiPaginationMeta, ApiRequestError } from '@/platform/http/api';
 import {
-  formatLocaleDateTime,
-  pickLocaleText,
-} from '@/platform/runtime/locale/locale-text';
+  CONFIG_ENTITY_CATALOG,
+  CONFIG_ENTITY_ORDER,
+  type ConfigEntityCatalogEntry,
+  type ConfigEntityFieldDefinition,
+  DEFAULT_CONFIG_ENTITY_TYPE,
+} from '@/domains/config-dictionary-settings/components/config-entity-catalog';
+import { type ApiPaginationMeta, ApiRequestError } from '@/platform/http/api';
+import { formatLocaleDateTime, pickLocaleText } from '@/platform/runtime/locale/locale-text';
 import {
   buildPaginationMeta,
   getPaginationRange,
@@ -49,14 +47,21 @@ import {
   parsePageParam,
   parsePageSizeParam,
 } from '@/platform/runtime/pagination/pagination';
-import { ActionDrawer, AsyncSubmitButton, ConfirmActionDialog, PaginationFooter, StateView, TableShell } from '@/platform/ui';
+import {
+  ActionDrawer,
+  AsyncSubmitButton,
+  ConfirmActionDialog,
+  PaginationFooter,
+  StateView,
+  TableShell,
+} from '@/platform/ui';
 
 interface ScopedConfigEntityWorkspaceProps {
   request: <T>(path: string, init?: RequestInit) => Promise<T>;
   requestEnvelope: RequestEnvelopeFn;
   scopeType: ConfigEntityScopeType;
   scopeId?: string;
-  locale?: SupportedUiLocale ;
+  locale?: SupportedUiLocale;
   copy?: ScopedConfigEntityWorkspaceCopy;
   catalog?: Record<ScopedConfigEntityType, ConfigEntityCatalogEntry>;
 }
@@ -190,10 +195,12 @@ const DEFAULT_COPY: ScopedConfigEntityWorkspaceCopy = {
   refreshAriaLabel: 'Refresh configuration list',
   currentScopeOnlyLabel: 'Current scope only',
   currentScopeOnlyAriaLabel: 'Current scope only',
-  currentScopeOnlyDescription: (scopeLabel) => `Hide inherited records and focus on records maintained at this ${scopeLabel}.`,
+  currentScopeOnlyDescription: (scopeLabel) =>
+    `Hide inherited records and focus on records maintained at this ${scopeLabel}.`,
   includeInactiveLabel: 'Include inactive records',
   includeInactiveAriaLabel: 'Include inactive records',
-  includeInactiveDescription: 'Keep inactive local records visible so you can review or reactivate them here.',
+  includeInactiveDescription:
+    'Keep inactive local records visible so you can review or reactivate them here.',
   unavailableTitle: 'Configuration entities unavailable',
   retryLabel: 'Retry',
   codeColumn: 'Code',
@@ -204,7 +211,8 @@ const DEFAULT_COPY: ScopedConfigEntityWorkspaceCopy = {
   emptyTitle: (entryLabel) => `No ${entryLabel.toLowerCase()} records returned`,
   emptyOwnedDescription: (entryLabel, scopeLabel) =>
     `No ${entryLabel.toLowerCase()} records are maintained directly at this ${scopeLabel}.`,
-  emptyFilteredDescription: (entryLabel) => `No ${entryLabel.toLowerCase()} records matched the current filters.`,
+  emptyFilteredDescription: (entryLabel) =>
+    `No ${entryLabel.toLowerCase()} records matched the current filters.`,
   emptyActionLabel: 'Create the first record',
   noCodeLabel: 'NO_CODE',
   createdAtLabel: (value) => `Created ${value}`,
@@ -279,7 +287,7 @@ function isTenantGlobalEntityType(entityType: ScopedConfigEntityType) {
 
 function resolveScopedConfigEntityType(
   catalog: Record<ScopedConfigEntityType, ConfigEntityCatalogEntry>,
-  requestedType: string | null,
+  requestedType: string | null
 ): ScopedConfigEntityType {
   if (requestedType && Object.prototype.hasOwnProperty.call(catalog, requestedType)) {
     return requestedType as ScopedConfigEntityType;
@@ -308,7 +316,7 @@ function buildScopedConfigEntityQueryState(
     pageSize: PageSizeOption;
     search: string;
     selectedType: ScopedConfigEntityType;
-  },
+  }
 ) {
   const params = new URLSearchParams(searchParams.toString());
   const normalizedSearch = search.trim();
@@ -350,7 +358,7 @@ function buildScopedConfigEntityQueryState(
 function isEntityInheritedInScope(
   entity: ConfigEntityRecord,
   currentScopeType: ConfigEntityScopeType,
-  entityType: ScopedConfigEntityType,
+  entityType: ScopedConfigEntityType
 ) {
   if (isTenantGlobalEntityType(entityType)) {
     return currentScopeType !== 'tenant';
@@ -361,7 +369,7 @@ function isEntityInheritedInScope(
 
 function resolveEntityOwnerScopeType(
   entity: ConfigEntityRecord,
-  entityType: ScopedConfigEntityType,
+  entityType: ScopedConfigEntityType
 ) {
   if (isTenantGlobalEntityType(entityType)) {
     return 'tenant' as const;
@@ -374,7 +382,7 @@ function getErrorMessage(reason: unknown, fallback: string) {
   return reason instanceof ApiRequestError ? reason.message : fallback;
 }
 
-function formatDateTime(locale: SupportedUiLocale , value: string) {
+function formatDateTime(locale: SupportedUiLocale, value: string) {
   return formatLocaleDateTime(locale, value, value);
 }
 
@@ -453,7 +461,11 @@ function createDraftFromEntity(entry: ConfigEntityCatalogEntry, entity: ConfigEn
     }
 
     nextDraft[field.key] =
-      typeof raw === 'string' || typeof raw === 'number' ? String(raw) : raw == null ? '' : String(raw);
+      typeof raw === 'string' || typeof raw === 'number'
+        ? String(raw)
+        : raw == null
+          ? ''
+          : String(raw);
   });
 
   return nextDraft;
@@ -462,7 +474,7 @@ function createDraftFromEntity(entry: ConfigEntityCatalogEntry, entity: ConfigEn
 function validateDraft(
   entry: ConfigEntityCatalogEntry,
   draft: ConfigEntityDraft,
-  copy: ScopedConfigEntityWorkspaceCopy,
+  copy: ScopedConfigEntityWorkspaceCopy
 ) {
   const code = normalizeStringValue(draft.code);
   if (!code || !/^[A-Z0-9_]{3,32}$/.test(code.toUpperCase())) {
@@ -495,7 +507,7 @@ function buildCreatePayload(
   draft: ConfigEntityDraft,
   scopeType: ConfigEntityScopeType,
   scopeId: string | undefined,
-  localeValues: LocaleValueDraft,
+  localeValues: LocaleValueDraft
 ): CreateConfigEntityInput {
   const nameBase = normalizeStringValue(draft.nameBase) || '';
   const descriptionBase = normalizeStringValue(draft.descriptionBase);
@@ -554,7 +566,7 @@ function buildUpdatePayload(
   entry: ConfigEntityCatalogEntry,
   draft: ConfigEntityDraft,
   version: number,
-  localeValues: LocaleValueDraft,
+  localeValues: LocaleValueDraft
 ): UpdateConfigEntityInput {
   const nameBase = normalizeStringValue(draft.nameBase) || '';
   const descriptionBase = normalizeStringValue(draft.descriptionBase);
@@ -609,7 +621,7 @@ function createEmptyLocaleValueDraft(): LocaleValueDraft {
 
 function createLocaleValueDraftFromEntity(
   entry: ConfigEntityCatalogEntry,
-  entity: ConfigEntityRecord | null,
+  entity: ConfigEntityRecord | null
 ): LocaleValueDraft {
   if (!entity) {
     return createEmptyLocaleValueDraft();
@@ -626,11 +638,11 @@ function createLocaleValueDraftFromEntity(
 }
 
 function renderScopeSummary(
-  locale: SupportedUiLocale ,
+  locale: SupportedUiLocale,
   entity: ConfigEntityRecord,
   copy: ScopedConfigEntityWorkspaceCopy,
   scopeType: ConfigEntityScopeType,
-  entityType: ScopedConfigEntityType,
+  entityType: ScopedConfigEntityType
 ) {
   const ownerScopeType = resolveEntityOwnerScopeType(entity, entityType);
   const scopeTone =
@@ -644,7 +656,9 @@ function renderScopeSummary(
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap gap-2">
-        <span className={`whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] ${scopeTone}`}>
+        <span
+          className={`whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] ${scopeTone}`}
+        >
           {isInherited
             ? copy.inheritedFromScope(copy.scopeTypeLabel(ownerScopeType))
             : copy.scopeOwned}
@@ -677,7 +691,7 @@ function renderField(
   draft: ConfigEntityDraft,
   parentOptions: ParentOption[],
   onChange: (key: string, value: DraftValue) => void,
-  _copy: ScopedConfigEntityWorkspaceCopy,
+  _copy: ScopedConfigEntityWorkspaceCopy
 ) {
   const value = draft[field.key];
 
@@ -696,7 +710,9 @@ function renderField(
         />
         <div className="space-y-1">
           <p className="text-sm font-semibold text-slate-950">{field.label}</p>
-          {field.description ? <p className="text-sm leading-6 text-slate-600">{field.description}</p> : null}
+          {field.description ? (
+            <p className="text-sm leading-6 text-slate-600">{field.description}</p>
+          ) : null}
         </div>
       </label>
     );
@@ -746,7 +762,9 @@ function renderField(
             </option>
           ))}
         </select>
-        {field.description ? <p className="text-xs leading-5 text-slate-500">{field.description}</p> : null}
+        {field.description ? (
+          <p className="text-xs leading-5 text-slate-500">{field.description}</p>
+        ) : null}
       </label>
     );
   }
@@ -817,7 +835,9 @@ function renderField(
         placeholder={field.placeholder}
         className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400"
       />
-      {field.description ? <p className="text-xs leading-5 text-slate-500">{field.description}</p> : null}
+      {field.description ? (
+        <p className="text-xs leading-5 text-slate-500">{field.description}</p>
+      ) : null}
     </label>
   );
 }
@@ -835,13 +855,18 @@ export function ScopedConfigEntityWorkspace({
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const urlSelectedType = resolveScopedConfigEntityType(catalog, searchParams.get('configEntityType'));
+  const urlSelectedType = resolveScopedConfigEntityType(
+    catalog,
+    searchParams.get('configEntityType')
+  );
   const urlSelectedTypeSupportsLocalScopeOnly = !isTenantGlobalEntityType(urlSelectedType);
   const urlSearch = searchParams.get('configEntitySearch') ?? '';
   const urlCurrentScopeOnly = urlSelectedTypeSupportsLocalScopeOnly
     ? parseConfigEntityBooleanParam(searchParams.get('configEntityScopeOnly'))
     : false;
-  const urlIncludeInactive = parseConfigEntityBooleanParam(searchParams.get('configEntityInactive'));
+  const urlIncludeInactive = parseConfigEntityBooleanParam(
+    searchParams.get('configEntityInactive')
+  );
   const urlPage = parsePageParam(searchParams.get('configEntityPage'));
   const urlPageSize = parsePageSizeParam(searchParams.get('configEntityPageSize'));
   const [selectedType, setSelectedType] = useState<ScopedConfigEntityType>(urlSelectedType);
@@ -856,15 +881,15 @@ export function ScopedConfigEntityWorkspace({
   const [page, setPage] = useState(urlPage);
   const [pageSize, setPageSize] = useState<PageSizeOption>(urlPageSize);
   const [pagination, setPagination] = useState<ApiPaginationMeta>(() =>
-    buildPaginationMeta(0, 1, PAGE_SIZE_OPTIONS[0]),
+    buildPaginationMeta(0, 1, PAGE_SIZE_OPTIONS[0])
   );
   const [refreshTick, setRefreshTick] = useState(0);
   const [editorMode, setEditorMode] = useState<'closed' | 'create' | 'edit'>('closed');
   const [editorTarget, setEditorTarget] = useState<ConfigEntityRecord | null>(null);
-  const [draft, setDraft] = useState<ConfigEntityDraft>(() => createEmptyDraft(catalog[DEFAULT_CONFIG_ENTITY_TYPE]));
-  const [localeValues, setLocaleValues] = useState<LocaleValueDraft>(
-    createEmptyLocaleValueDraft(),
+  const [draft, setDraft] = useState<ConfigEntityDraft>(() =>
+    createEmptyDraft(catalog[DEFAULT_CONFIG_ENTITY_TYPE])
   );
+  const [localeValues, setLocaleValues] = useState<LocaleValueDraft>(createEmptyLocaleValueDraft());
   const [isTranslationsOpen, setIsTranslationsOpen] = useState(false);
   const [editorError, setEditorError] = useState<string | null>(null);
   const [editorPending, setEditorPending] = useState(false);
@@ -874,21 +899,62 @@ export function ScopedConfigEntityWorkspace({
 
   const selectedEntry = catalog[selectedType];
   const supportsLocalScopeOnly = !isTenantGlobalEntityType(selectedType);
-  const canManageSelectedTypeInCurrentScope = !isTenantGlobalEntityType(selectedType) || scopeType === 'tenant';
+  const canManageSelectedTypeInCurrentScope =
+    !isTenantGlobalEntityType(selectedType) || scopeType === 'tenant';
   const effectiveCurrentScopeOnly = supportsLocalScopeOnly ? currentScopeOnly : false;
-  const inheritedOnlyNotice =
-    !canManageSelectedTypeInCurrentScope
-      ? pickLocaleText(locale, { en: `${selectedEntry.label} is managed at the tenant scope and can only be reviewed here.`, zh_HANS: `${selectedEntry.label} 仅能在租户范围维护，这里只能查看继承结果。`, zh_HANT: `${selectedEntry.label} 仅能在租户范围维护，这里只能查看继承结果。`, ja: `${selectedEntry.label} はテナントスコープでのみ管理でき、この画面では継承結果の確認のみ可能です。`, ko: `${selectedEntry.label} is managed at the tenant scope and can only be reviewed here.`, fr: `${selectedEntry.label} is managed at the tenant scope and can only be reviewed here.` })
-      : null;
-  const translationEditorCopy =
-    {
-      closeButtonAriaLabel: pickLocaleText(locale, { en: 'Close translation management drawer', zh_HANS: '关闭翻译管理抽屉', zh_HANT: '关闭翻译管理抽屉', ja: '翻訳管理ドロワーを閉じる', ko: 'Close translation management drawer', fr: 'Close translation management drawer' }),
-      description: pickLocaleText(locale, { en: 'Keep English in the main fields and add translated values only when needed.', zh_HANS: '主字段保留英文；只有需要额外语种时再补充翻译值。', zh_HANT: '主字段保留英文；只有需要额外语种时再补充翻译值。', ja: '主フィールドは英語のままにし、必要な場合のみ翻訳値を追加します。', ko: 'Keep English in the main fields and add translated values only when needed.', fr: 'Keep English in the main fields and add translated values only when needed.' }),
-      helper: pickLocaleText(locale, { en: 'Translation management', zh_HANS: '翻译管理', zh_HANT: '翻译管理', ja: '翻訳管理', ko: 'Translation management', fr: 'Translation management' }),
-      title: pickLocaleText(locale, { en: 'Translation management', zh_HANS: '翻译管理', zh_HANT: '翻译管理', ja: '翻訳管理', ko: 'Translation management', fr: 'Translation management' }),
-    };
+  const inheritedOnlyNotice = !canManageSelectedTypeInCurrentScope
+    ? pickLocaleText(locale, {
+        en: `${selectedEntry.label} is managed at the tenant scope and can only be reviewed here.`,
+        zh_HANS: `${selectedEntry.label} 仅能在租户范围维护，这里只能查看继承结果。`,
+        zh_HANT: `${selectedEntry.label} 仅能在租户范围维护，这里只能查看继承结果。`,
+        ja: `${selectedEntry.label} はテナントスコープでのみ管理でき、この画面では継承結果の確認のみ可能です。`,
+        ko: `${selectedEntry.label} is managed at the tenant scope and can only be reviewed here.`,
+        fr: `${selectedEntry.label} is managed at the tenant scope and can only be reviewed here.`,
+      })
+    : null;
+  const translationEditorCopy = {
+    closeButtonAriaLabel: pickLocaleText(locale, {
+      en: 'Close translation management drawer',
+      zh_HANS: '关闭翻译管理抽屉',
+      zh_HANT: '关闭翻译管理抽屉',
+      ja: '翻訳管理ドロワーを閉じる',
+      ko: 'Close translation management drawer',
+      fr: 'Close translation management drawer',
+    }),
+    description: pickLocaleText(locale, {
+      en: 'Keep English in the main fields and add translated values only when needed.',
+      zh_HANS: '主字段保留英文；只有需要额外语种时再补充翻译值。',
+      zh_HANT: '主字段保留英文；只有需要额外语种时再补充翻译值。',
+      ja: '主フィールドは英語のままにし、必要な場合のみ翻訳値を追加します。',
+      ko: 'Keep English in the main fields and add translated values only when needed.',
+      fr: 'Keep English in the main fields and add translated values only when needed.',
+    }),
+    helper: pickLocaleText(locale, {
+      en: 'Translation management',
+      zh_HANS: '翻译管理',
+      zh_HANT: '翻译管理',
+      ja: '翻訳管理',
+      ko: 'Translation management',
+      fr: 'Translation management',
+    }),
+    title: pickLocaleText(locale, {
+      en: 'Translation management',
+      zh_HANS: '翻译管理',
+      zh_HANT: '翻译管理',
+      ja: '翻訳管理',
+      ko: 'Translation management',
+      fr: 'Translation management',
+    }),
+  };
   const editorDrawerCopy = {
-    closeButtonAriaLabel: pickLocaleText(locale, { en: 'Close configuration record drawer', zh_HANS: '关闭配置记录抽屉', zh_HANT: '关闭配置记录抽屉', ja: '設定レコードドロワーを閉じる', ko: 'Close configuration record drawer', fr: 'Close configuration record drawer' }),
+    closeButtonAriaLabel: pickLocaleText(locale, {
+      en: 'Close configuration record drawer',
+      zh_HANS: '关闭配置记录抽屉',
+      zh_HANT: '关闭配置记录抽屉',
+      ja: '設定レコードドロワーを閉じる',
+      ko: 'Close configuration record drawer',
+      fr: 'Close configuration record drawer',
+    }),
   };
 
   const translationSections = useMemo(() => {
@@ -902,7 +968,14 @@ export function ScopedConfigEntityWorkspace({
       {
         baseValue: typeof draft.nameBase === 'string' ? draft.nameBase : '',
         id: 'name',
-        label: pickLocaleText(locale, { en: 'Name', zh_HANS: '名称', zh_HANT: '名称', ja: '名称', ko: 'Name', fr: 'Name' }),
+        label: pickLocaleText(locale, {
+          en: 'Name',
+          zh_HANS: '名称',
+          zh_HANT: '名称',
+          ja: '名称',
+          ko: 'Name',
+          fr: 'Name',
+        }),
         values: localeValues.name,
       },
     ];
@@ -912,7 +985,14 @@ export function ScopedConfigEntityWorkspace({
         baseValue: typeof draft.descriptionBase === 'string' ? draft.descriptionBase : '',
         id: 'description',
         kind: 'textarea',
-        label: pickLocaleText(locale, { en: 'Description', zh_HANS: '描述', zh_HANT: '描述', ja: '説明', ko: 'Description', fr: 'Description' }),
+        label: pickLocaleText(locale, {
+          en: 'Description',
+          zh_HANS: '描述',
+          zh_HANT: '描述',
+          ja: '説明',
+          ko: 'Description',
+          fr: 'Description',
+        }),
         values: localeValues.description,
       });
     }
@@ -922,7 +1002,14 @@ export function ScopedConfigEntityWorkspace({
         baseValue: typeof draft.contentMarkdownBase === 'string' ? draft.contentMarkdownBase : '',
         id: 'content',
         kind: 'textarea',
-        label: pickLocaleText(locale, { en: 'Consent content', zh_HANS: '同意内容', zh_HANT: '同意内容', ja: '同意本文', ko: 'Consent content', fr: 'Consent content' }),
+        label: pickLocaleText(locale, {
+          en: 'Consent content',
+          zh_HANS: '同意内容',
+          zh_HANT: '同意内容',
+          ja: '同意本文',
+          ko: 'Consent content',
+          fr: 'Consent content',
+        }),
         values: localeValues.content,
       });
     }
@@ -951,18 +1038,15 @@ export function ScopedConfigEntityWorkspace({
   useEffect(() => {
     setSelectedType((current) => (current === urlSelectedType ? current : urlSelectedType));
     setSearch((current) => (current === urlSearch ? current : urlSearch));
-    setIncludeInactive((current) => (current === urlIncludeInactive ? current : urlIncludeInactive));
-    setCurrentScopeOnly((current) => (current === urlCurrentScopeOnly ? current : urlCurrentScopeOnly));
+    setIncludeInactive((current) =>
+      current === urlIncludeInactive ? current : urlIncludeInactive
+    );
+    setCurrentScopeOnly((current) =>
+      current === urlCurrentScopeOnly ? current : urlCurrentScopeOnly
+    );
     setPage((current) => (current === urlPage ? current : urlPage));
     setPageSize((current) => (current === urlPageSize ? current : urlPageSize));
-  }, [
-    urlCurrentScopeOnly,
-    urlIncludeInactive,
-    urlPage,
-    urlPageSize,
-    urlSearch,
-    urlSelectedType,
-  ]);
+  }, [urlCurrentScopeOnly, urlIncludeInactive, urlPage, urlPageSize, urlSearch, urlSelectedType]);
 
   function applyScopedConfigQueryState(
     nextState: Partial<{
@@ -972,15 +1056,15 @@ export function ScopedConfigEntityWorkspace({
       pageSize: PageSizeOption;
       search: string;
       selectedType: ScopedConfigEntityType;
-    }>,
+    }>
   ) {
     const nextSelectedType = resolveScopedConfigEntityType(
       catalog,
-      nextState.selectedType !== undefined ? nextState.selectedType : selectedType,
+      nextState.selectedType !== undefined ? nextState.selectedType : selectedType
     );
     const nextSupportsLocalScopeOnly = !isTenantGlobalEntityType(nextSelectedType);
     const nextCurrentScopeOnly = nextSupportsLocalScopeOnly
-      ? nextState.currentScopeOnly ?? currentScopeOnly
+      ? (nextState.currentScopeOnly ?? currentScopeOnly)
       : false;
     const nextIncludeInactive = nextState.includeInactive ?? includeInactive;
     const nextSearch = nextState.search ?? search;
@@ -1171,21 +1255,25 @@ export function ScopedConfigEntityWorkspace({
       }
 
       try {
-        const parentRecords = await listAllConfigEntities(requestEnvelope, selectedEntry.parentType, {
-          scopeType,
-          scopeId,
-          includeInherited: true,
-          includeDisabled: true,
-          includeInactive: true,
-          sort: 'sortOrder',
-        });
+        const parentRecords = await listAllConfigEntities(
+          requestEnvelope,
+          selectedEntry.parentType,
+          {
+            scopeType,
+            scopeId,
+            includeInherited: true,
+            includeDisabled: true,
+            includeInactive: true,
+            sort: 'sortOrder',
+          }
+        );
 
         if (!cancelled) {
           setParentOptions(
             parentRecords.map((record) => ({
               id: record.id,
               name: record.localizedName,
-            })),
+            }))
           );
         }
       } catch {
@@ -1259,21 +1347,27 @@ export function ScopedConfigEntityWorkspace({
           request,
           selectedType,
           editorTarget.id,
-          buildUpdatePayload(selectedEntry, draft, editorTarget.version, localeValues),
+          buildUpdatePayload(selectedEntry, draft, editorTarget.version, localeValues)
         );
         setNotice({
           tone: 'success',
-          message: resolvedCopy.updateSuccess(selectedEntry.label, editorTarget.code ?? editorTarget.localizedName),
+          message: resolvedCopy.updateSuccess(
+            selectedEntry.label,
+            editorTarget.code ?? editorTarget.localizedName
+          ),
         });
       } else {
         await createConfigEntity(
           request,
           selectedType,
-          buildCreatePayload(selectedEntry, draft, scopeType, scopeId, localeValues),
+          buildCreatePayload(selectedEntry, draft, scopeType, scopeId, localeValues)
         );
         setNotice({
           tone: 'success',
-          message: resolvedCopy.createSuccess(selectedEntry.label, (normalizeStringValue(draft.code) || '').toUpperCase()),
+          message: resolvedCopy.createSuccess(
+            selectedEntry.label,
+            (normalizeStringValue(draft.code) || '').toUpperCase()
+          ),
         });
       }
 
@@ -1305,13 +1399,22 @@ export function ScopedConfigEntityWorkspace({
   function queueToggle(entity: ConfigEntityRecord) {
     const entityIsInherited = isEntityInheritedInScope(entity, scopeType, selectedType);
 
-    if (entityIsInherited && entity.canDisable && scopeType !== 'tenant' && !isTenantGlobalEntityType(selectedType)) {
+    if (
+      entityIsInherited &&
+      entity.canDisable &&
+      scopeType !== 'tenant' &&
+      !isTenantGlobalEntityType(selectedType)
+    ) {
       setConfirmState({
         title: entity.isDisabledHere
           ? resolvedCopy.enableInScopeTitle(entity.code ?? entity.localizedName)
           : resolvedCopy.disableInScopeTitle(entity.code ?? entity.localizedName),
-        description: entity.isDisabledHere ? resolvedCopy.enableInScopeDescription : resolvedCopy.disableInScopeDescription,
-        confirmText: entity.isDisabledHere ? resolvedCopy.enableInScopeConfirm : resolvedCopy.disableInScopeConfirm,
+        description: entity.isDisabledHere
+          ? resolvedCopy.enableInScopeDescription
+          : resolvedCopy.disableInScopeDescription,
+        confirmText: entity.isDisabledHere
+          ? resolvedCopy.enableInScopeConfirm
+          : resolvedCopy.disableInScopeConfirm,
         intent: entity.isDisabledHere ? 'primary' : 'danger',
         entity,
         entityType: selectedType,
@@ -1329,8 +1432,12 @@ export function ScopedConfigEntityWorkspace({
       title: entity.isActive
         ? resolvedCopy.deactivateTitle(entity.code ?? entity.localizedName)
         : resolvedCopy.reactivateTitle(entity.code ?? entity.localizedName),
-      description: entity.isActive ? resolvedCopy.deactivateDescription : resolvedCopy.reactivateDescription,
-      confirmText: entity.isActive ? resolvedCopy.deactivateConfirm : resolvedCopy.reactivateConfirm,
+      description: entity.isActive
+        ? resolvedCopy.deactivateDescription
+        : resolvedCopy.reactivateDescription,
+      confirmText: entity.isActive
+        ? resolvedCopy.deactivateConfirm
+        : resolvedCopy.reactivateConfirm,
       intent: entity.isActive ? 'danger' : 'primary',
       entity,
       entityType: selectedType,
@@ -1352,36 +1459,74 @@ export function ScopedConfigEntityWorkspace({
 
     try {
       if (confirmState.action === 'deactivate') {
-        await deactivateConfigEntity(request, actionType, confirmState.entity.id, confirmState.entity.version);
+        await deactivateConfigEntity(
+          request,
+          actionType,
+          confirmState.entity.id,
+          confirmState.entity.version
+        );
         setNotice({
           tone: 'success',
-          message: resolvedCopy.deactivateSuccess(actionEntry.label, confirmState.entity.code ?? confirmState.entity.localizedName),
+          message: resolvedCopy.deactivateSuccess(
+            actionEntry.label,
+            confirmState.entity.code ?? confirmState.entity.localizedName
+          ),
         });
       } else if (confirmState.action === 'reactivate') {
-        await reactivateConfigEntity(request, actionType, confirmState.entity.id, confirmState.entity.version);
+        await reactivateConfigEntity(
+          request,
+          actionType,
+          confirmState.entity.id,
+          confirmState.entity.version
+        );
         setNotice({
           tone: 'success',
-          message: resolvedCopy.reactivateSuccess(actionEntry.label, confirmState.entity.code ?? confirmState.entity.localizedName),
+          message: resolvedCopy.reactivateSuccess(
+            actionEntry.label,
+            confirmState.entity.code ?? confirmState.entity.localizedName
+          ),
         });
       } else if (confirmState.action === 'disable') {
         if (scopeType === 'tenant' || !scopeId) {
-          throw new Error('Inherited records can only be disabled inside subsidiary or talent scopes.');
+          throw new Error(
+            'Inherited records can only be disabled inside subsidiary or talent scopes.'
+          );
         }
 
-        await disableInheritedConfigEntity(request, actionType, confirmState.entity.id, scopeType, scopeId);
+        await disableInheritedConfigEntity(
+          request,
+          actionType,
+          confirmState.entity.id,
+          scopeType,
+          scopeId
+        );
         setNotice({
           tone: 'success',
-          message: resolvedCopy.disableInScopeSuccess(actionEntry.label, confirmState.entity.code ?? confirmState.entity.localizedName),
+          message: resolvedCopy.disableInScopeSuccess(
+            actionEntry.label,
+            confirmState.entity.code ?? confirmState.entity.localizedName
+          ),
         });
       } else {
         if (scopeType === 'tenant' || !scopeId) {
-          throw new Error('Inherited records can only be enabled inside subsidiary or talent scopes.');
+          throw new Error(
+            'Inherited records can only be enabled inside subsidiary or talent scopes.'
+          );
         }
 
-        await enableInheritedConfigEntity(request, actionType, confirmState.entity.id, scopeType, scopeId);
+        await enableInheritedConfigEntity(
+          request,
+          actionType,
+          confirmState.entity.id,
+          scopeType,
+          scopeId
+        );
         setNotice({
           tone: 'success',
-          message: resolvedCopy.enableInScopeSuccess(actionEntry.label, confirmState.entity.code ?? confirmState.entity.localizedName),
+          message: resolvedCopy.enableInScopeSuccess(
+            actionEntry.label,
+            confirmState.entity.code ?? confirmState.entity.localizedName
+          ),
         });
       }
 
@@ -1414,18 +1559,62 @@ export function ScopedConfigEntityWorkspace({
   }
 
   const activeCount = records.filter((record) => record.isActive).length;
-  const inheritedCount = records.filter((record) => isEntityInheritedInScope(record, scopeType, selectedType)).length;
+  const inheritedCount = records.filter((record) =>
+    isEntityInheritedInScope(record, scopeType, selectedType)
+  ).length;
   const disabledHereCount = records.filter((record) => record.isDisabledHere).length;
   const pageRange = getPaginationRange(pagination, records.length);
   const paginationCopy = {
-    page: pickLocaleText(locale, { en: `Page ${pagination.page} of ${pagination.totalPages}`, zh_HANS: `第 ${pagination.page} / ${pagination.totalPages} 页`, zh_HANT: `第 ${pagination.page} / ${pagination.totalPages} 页`, ja: `${pagination.totalPages} ページ中 ${pagination.page} ページ`, ko: `Page ${pagination.page} of ${pagination.totalPages}`, fr: `Page ${pagination.page} of ${pagination.totalPages}` }),
+    page: pickLocaleText(locale, {
+      en: `Page ${pagination.page} of ${pagination.totalPages}`,
+      zh_HANS: `第 ${pagination.page} / ${pagination.totalPages} 页`,
+      zh_HANT: `第 ${pagination.page} / ${pagination.totalPages} 页`,
+      ja: `${pagination.totalPages} ページ中 ${pagination.page} ページ`,
+      ko: `Page ${pagination.page} of ${pagination.totalPages}`,
+      fr: `Page ${pagination.page} of ${pagination.totalPages}`,
+    }),
     range:
       pagination.totalCount === 0
-        ? pickLocaleText(locale, { en: 'No records are currently visible.', zh_HANS: '当前没有可显示的记录。', zh_HANT: '当前没有可显示的记录。', ja: '現在表示できるレコードはありません。', ko: 'No records are currently visible.', fr: 'No records are currently visible.' })
-        : pickLocaleText(locale, { en: `Showing ${pageRange.start}-${pageRange.end} of ${pagination.totalCount}`, zh_HANS: `显示第 ${pageRange.start}-${pageRange.end} 条，共 ${pagination.totalCount} 条`, zh_HANT: `显示第 ${pageRange.start}-${pageRange.end} 条，共 ${pagination.totalCount} 条`, ja: `${pagination.totalCount} 件中 ${pageRange.start}-${pageRange.end} 件を表示`, ko: `Showing ${pageRange.start}-${pageRange.end} of ${pagination.totalCount}`, fr: `Showing ${pageRange.start}-${pageRange.end} of ${pagination.totalCount}` }),
-    pageSize: pickLocaleText(locale, { en: 'Rows per page', zh_HANS: '每页条目', zh_HANT: '每页条目', ja: '表示件数', ko: 'Rows per page', fr: 'Rows per page' }),
-    previous: pickLocaleText(locale, { en: 'Previous', zh_HANS: '上一页', zh_HANT: '上一页', ja: '前へ', ko: 'Previous', fr: 'Previous' }),
-    next: pickLocaleText(locale, { en: 'Next', zh_HANS: '下一页', zh_HANT: '下一页', ja: '次へ', ko: 'Next', fr: 'Next' }),
+        ? pickLocaleText(locale, {
+            en: 'No records are currently visible.',
+            zh_HANS: '当前没有可显示的记录。',
+            zh_HANT: '当前没有可显示的记录。',
+            ja: '現在表示できるレコードはありません。',
+            ko: 'No records are currently visible.',
+            fr: 'No records are currently visible.',
+          })
+        : pickLocaleText(locale, {
+            en: `Showing ${pageRange.start}-${pageRange.end} of ${pagination.totalCount}`,
+            zh_HANS: `显示第 ${pageRange.start}-${pageRange.end} 条，共 ${pagination.totalCount} 条`,
+            zh_HANT: `显示第 ${pageRange.start}-${pageRange.end} 条，共 ${pagination.totalCount} 条`,
+            ja: `${pagination.totalCount} 件中 ${pageRange.start}-${pageRange.end} 件を表示`,
+            ko: `Showing ${pageRange.start}-${pageRange.end} of ${pagination.totalCount}`,
+            fr: `Showing ${pageRange.start}-${pageRange.end} of ${pagination.totalCount}`,
+          }),
+    pageSize: pickLocaleText(locale, {
+      en: 'Rows per page',
+      zh_HANS: '每页条目',
+      zh_HANT: '每页条目',
+      ja: '表示件数',
+      ko: 'Rows per page',
+      fr: 'Rows per page',
+    }),
+    previous: pickLocaleText(locale, {
+      en: 'Previous',
+      zh_HANS: '上一页',
+      zh_HANT: '上一页',
+      ja: '前へ',
+      ko: 'Previous',
+      fr: 'Previous',
+    }),
+    next: pickLocaleText(locale, {
+      en: 'Next',
+      zh_HANS: '下一页',
+      zh_HANT: '下一页',
+      ja: '次へ',
+      ko: 'Next',
+      fr: 'Next',
+    }),
   };
 
   if (selectedType === CUSTOM_DOMAIN_ENTITY_TYPE) {
@@ -1451,7 +1640,9 @@ export function ScopedConfigEntityWorkspace({
                   <div className="flex items-start justify-between gap-3">
                     <div className="space-y-1">
                       <p className="text-sm font-semibold">{entry.label}</p>
-                      <p className="text-xs uppercase tracking-[0.18em] text-slate-500">{entry.type}</p>
+                      <p className="text-xs uppercase tracking-[0.18em] text-slate-500">
+                        {entry.type}
+                      </p>
                     </div>
                   </div>
                   <p className="mt-3 text-sm leading-6 text-slate-600">{entry.description}</p>
@@ -1471,8 +1662,12 @@ export function ScopedConfigEntityWorkspace({
             page={page}
             pageSize={pageSize}
             onSearchChange={(value) => applyScopedConfigQueryState({ page: 1, search: value })}
-            onCurrentScopeOnlyChange={(value) => applyScopedConfigQueryState({ currentScopeOnly: value, page: 1 })}
-            onIncludeInactiveChange={(value) => applyScopedConfigQueryState({ includeInactive: value, page: 1 })}
+            onCurrentScopeOnlyChange={(value) =>
+              applyScopedConfigQueryState({ currentScopeOnly: value, page: 1 })
+            }
+            onIncludeInactiveChange={(value) =>
+              applyScopedConfigQueryState({ includeInactive: value, page: 1 })
+            }
             onPageChange={(nextPage) => applyScopedConfigQueryState({ page: nextPage })}
             onPageSizeChange={(nextPageSize) => {
               applyScopedConfigQueryState({
@@ -1508,7 +1703,9 @@ export function ScopedConfigEntityWorkspace({
                 <div className="flex items-start justify-between gap-3">
                   <div className="space-y-1">
                     <p className="text-sm font-semibold">{entry.label}</p>
-                    <p className="text-xs uppercase tracking-[0.18em] text-slate-500">{entry.type}</p>
+                    <p className="text-xs uppercase tracking-[0.18em] text-slate-500">
+                      {entry.type}
+                    </p>
                   </div>
                 </div>
                 <p className="mt-3 text-sm leading-6 text-slate-600">{entry.description}</p>
@@ -1521,7 +1718,9 @@ export function ScopedConfigEntityWorkspace({
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="space-y-2">
               <p className="text-lg font-semibold text-slate-950">{selectedEntry.label}</p>
-              <p className="max-w-3xl text-sm leading-6 text-slate-600">{selectedEntry.description}</p>
+              <p className="max-w-3xl text-sm leading-6 text-slate-600">
+                {selectedEntry.description}
+              </p>
             </div>
             {canManageSelectedTypeInCurrentScope ? (
               <button
@@ -1534,7 +1733,14 @@ export function ScopedConfigEntityWorkspace({
               </button>
             ) : (
               <span className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-medium text-slate-600">
-                {pickLocaleText(locale, { en: 'Inherited review only', zh_HANS: '仅查看继承结果', zh_HANT: '仅查看继承结果', ja: '継承確認のみ', ko: 'Inherited review only', fr: 'Inherited review only' })}
+                {pickLocaleText(locale, {
+                  en: 'Inherited review only',
+                  zh_HANS: '仅查看继承结果',
+                  zh_HANT: '仅查看继承结果',
+                  ja: '継承確認のみ',
+                  ko: 'Inherited review only',
+                  fr: 'Inherited review only',
+                })}
               </span>
             )}
           </div>
@@ -1553,19 +1759,27 @@ export function ScopedConfigEntityWorkspace({
 
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <div className="rounded-2xl border border-slate-200 bg-white/85 px-4 py-4 shadow-sm">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{resolvedCopy.visibleRecordsLabel}</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                {resolvedCopy.visibleRecordsLabel}
+              </p>
               <p className="mt-2 text-2xl font-semibold text-slate-950">{records.length}</p>
             </div>
             <div className="rounded-2xl border border-slate-200 bg-white/85 px-4 py-4 shadow-sm">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{resolvedCopy.activeLabel}</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                {resolvedCopy.activeLabel}
+              </p>
               <p className="mt-2 text-2xl font-semibold text-slate-950">{activeCount}</p>
             </div>
             <div className="rounded-2xl border border-slate-200 bg-white/85 px-4 py-4 shadow-sm">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{resolvedCopy.inheritedLabel}</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                {resolvedCopy.inheritedLabel}
+              </p>
               <p className="mt-2 text-2xl font-semibold text-slate-950">{inheritedCount}</p>
             </div>
             <div className="rounded-2xl border border-slate-200 bg-white/85 px-4 py-4 shadow-sm">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{resolvedCopy.disabledHereLabel}</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                {resolvedCopy.disabledHereLabel}
+              </p>
               <p className="mt-2 text-2xl font-semibold text-slate-950">{disabledHereCount}</p>
             </div>
           </div>
@@ -1578,7 +1792,9 @@ export function ScopedConfigEntityWorkspace({
                   aria-label={resolvedCopy.searchAriaLabel}
                   type="search"
                   value={search}
-                  onChange={(event) => applyScopedConfigQueryState({ page: 1, search: event.target.value })}
+                  onChange={(event) =>
+                    applyScopedConfigQueryState({ page: 1, search: event.target.value })
+                  }
                   placeholder={resolvedCopy.searchPlaceholder(selectedEntry.label)}
                   className="w-full rounded-xl border border-slate-300 bg-white/85 py-2.5 pl-4 pr-3 text-sm text-slate-900 shadow-sm transition focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-200"
                 />
@@ -1599,7 +1815,12 @@ export function ScopedConfigEntityWorkspace({
                     aria-label={resolvedCopy.currentScopeOnlyAriaLabel}
                     type="checkbox"
                     checked={currentScopeOnly}
-                    onChange={(event) => applyScopedConfigQueryState({ currentScopeOnly: event.target.checked, page: 1 })}
+                    onChange={(event) =>
+                      applyScopedConfigQueryState({
+                        currentScopeOnly: event.target.checked,
+                        page: 1,
+                      })
+                    }
                     className="h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-500"
                   />
                   {resolvedCopy.currentScopeOnlyLabel}
@@ -1611,14 +1832,18 @@ export function ScopedConfigEntityWorkspace({
                   aria-label={resolvedCopy.includeInactiveAriaLabel}
                   type="checkbox"
                   checked={includeInactive}
-                  onChange={(event) => applyScopedConfigQueryState({ includeInactive: event.target.checked, page: 1 })}
+                  onChange={(event) =>
+                    applyScopedConfigQueryState({ includeInactive: event.target.checked, page: 1 })
+                  }
                   className="h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-500"
                 />
                 {resolvedCopy.includeInactiveLabel}
               </label>
             </div>
 
-            <div className={`mt-3 grid gap-3 ${supportsLocalScopeOnly || inheritedOnlyNotice ? 'lg:grid-cols-2' : ''}`}>
+            <div
+              className={`mt-3 grid gap-3 ${supportsLocalScopeOnly || inheritedOnlyNotice ? 'lg:grid-cols-2' : ''}`}
+            >
               {supportsLocalScopeOnly ? (
                 <p className="rounded-xl border border-slate-200 bg-slate-50/80 px-3 py-3 text-sm leading-6 text-slate-600">
                   {resolvedCopy.currentScopeOnlyDescription(resolvedCopy.scopeTypeLabel(scopeType))}
@@ -1667,24 +1892,35 @@ export function ScopedConfigEntityWorkspace({
                 emptyTitle={resolvedCopy.emptyTitle(selectedEntry.label)}
                 emptyDescription={
                   !canManageSelectedTypeInCurrentScope
-                    ? inheritedOnlyNotice ?? resolvedCopy.emptyFilteredDescription(selectedEntry.label)
+                    ? (inheritedOnlyNotice ??
+                      resolvedCopy.emptyFilteredDescription(selectedEntry.label))
                     : effectiveCurrentScopeOnly
-                    ? resolvedCopy.emptyOwnedDescription(selectedEntry.label, resolvedCopy.scopeTypeLabel(scopeType))
-                    : resolvedCopy.emptyFilteredDescription(selectedEntry.label)
+                      ? resolvedCopy.emptyOwnedDescription(
+                          selectedEntry.label,
+                          resolvedCopy.scopeTypeLabel(scopeType)
+                        )
+                      : resolvedCopy.emptyFilteredDescription(selectedEntry.label)
                 }
-                emptyAction={canManageSelectedTypeInCurrentScope ? (
-                  <button
-                    type="button"
-                    onClick={beginCreate}
-                    className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
-                  >
-                    {resolvedCopy.emptyActionLabel}
-                  </button>
-                ) : undefined}
+                emptyAction={
+                  canManageSelectedTypeInCurrentScope ? (
+                    <button
+                      type="button"
+                      onClick={beginCreate}
+                      className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
+                    >
+                      {resolvedCopy.emptyActionLabel}
+                    </button>
+                  ) : undefined
+                }
               >
                 {records.map((entity) => {
-                  const entityIsInherited = isEntityInheritedInScope(entity, scopeType, selectedType);
-                  const canEditOwnedRecord = canManageSelectedTypeInCurrentScope && !entityIsInherited;
+                  const entityIsInherited = isEntityInheritedInScope(
+                    entity,
+                    scopeType,
+                    selectedType
+                  );
+                  const canEditOwnedRecord =
+                    canManageSelectedTypeInCurrentScope && !entityIsInherited;
                   const canToggleInheritedRecord =
                     entityIsInherited &&
                     entity.canDisable &&
@@ -1692,73 +1928,92 @@ export function ScopedConfigEntityWorkspace({
                     !isTenantGlobalEntityType(selectedType);
 
                   return (
-                  <tr key={entity.id} className={!entity.isActive ? 'bg-slate-50/80' : undefined}>
-                    <td className="px-6 py-4 align-top">
-                      <div className="space-y-2">
-                        <p className="font-mono text-sm font-semibold text-slate-950">{entity.code || resolvedCopy.noCodeLabel}</p>
-                        <p className="text-xs leading-5 text-slate-500">{resolvedCopy.createdAtLabel(formatDateTime(locale, entity.createdAt))}</p>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 align-top">
-                      <div className="space-y-2">
-                        <p className="text-sm font-semibold text-slate-950">{entity.localizedName}</p>
-                        {entity.localizedDescription ? <p className="text-sm leading-6 text-slate-600">{entity.localizedDescription}</p> : null}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 align-top">
-                      {renderScopeSummary(locale, entity, resolvedCopy, scopeType, selectedType)}
-                    </td>
-                    <td className="px-6 py-4 align-top">
-                      <div className="space-y-2">
-                        <span
-                          className={`inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] ${
-                            entity.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-700'
-                          }`}
-                        >
-                          {entity.isActive ? resolvedCopy.activeStatus : resolvedCopy.inactiveStatus}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 align-top">
-                      <div className="flex flex-wrap justify-end gap-2">
-                        {canEditOwnedRecord ? (
-                          <>
-                            <button
-                              type="button"
-                              onClick={() => beginEdit(entity)}
-                              className="rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
-                              aria-label={`${resolvedCopy.editLabel} ${entity.code ?? entity.localizedName}`}
-                            >
-                              {resolvedCopy.editLabel}
-                            </button>
+                    <tr key={entity.id} className={!entity.isActive ? 'bg-slate-50/80' : undefined}>
+                      <td className="px-6 py-4 align-top">
+                        <div className="space-y-2">
+                          <p className="font-mono text-sm font-semibold text-slate-950">
+                            {entity.code || resolvedCopy.noCodeLabel}
+                          </p>
+                          <p className="text-xs leading-5 text-slate-500">
+                            {resolvedCopy.createdAtLabel(formatDateTime(locale, entity.createdAt))}
+                          </p>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 align-top">
+                        <div className="space-y-2">
+                          <p className="text-sm font-semibold text-slate-950">
+                            {entity.localizedName}
+                          </p>
+                          {entity.localizedDescription ? (
+                            <p className="text-sm leading-6 text-slate-600">
+                              {entity.localizedDescription}
+                            </p>
+                          ) : null}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 align-top">
+                        {renderScopeSummary(locale, entity, resolvedCopy, scopeType, selectedType)}
+                      </td>
+                      <td className="px-6 py-4 align-top">
+                        <div className="space-y-2">
+                          <span
+                            className={`inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] ${
+                              entity.isActive
+                                ? 'bg-emerald-100 text-emerald-700'
+                                : 'bg-slate-200 text-slate-700'
+                            }`}
+                          >
+                            {entity.isActive
+                              ? resolvedCopy.activeStatus
+                              : resolvedCopy.inactiveStatus}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 align-top">
+                        <div className="flex flex-wrap justify-end gap-2">
+                          {canEditOwnedRecord ? (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => beginEdit(entity)}
+                                className="rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+                                aria-label={`${resolvedCopy.editLabel} ${entity.code ?? entity.localizedName}`}
+                              >
+                                {resolvedCopy.editLabel}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => queueToggle(entity)}
+                                disabled={entity.isSystem}
+                                className="rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                aria-label={`${entity.isActive ? resolvedCopy.deactivateLabel : resolvedCopy.reactivateLabel} ${entity.code ?? entity.localizedName}`}
+                              >
+                                {entity.isActive
+                                  ? resolvedCopy.deactivateLabel
+                                  : resolvedCopy.reactivateLabel}
+                              </button>
+                            </>
+                          ) : canToggleInheritedRecord ? (
                             <button
                               type="button"
                               onClick={() => queueToggle(entity)}
-                              disabled={entity.isSystem}
-                              className="rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-                              aria-label={`${entity.isActive ? resolvedCopy.deactivateLabel : resolvedCopy.reactivateLabel} ${entity.code ?? entity.localizedName}`}
+                              className="rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+                              aria-label={`${entity.isDisabledHere ? resolvedCopy.enableHereLabel : resolvedCopy.disableHereLabel} ${entity.code ?? entity.localizedName}`}
                             >
-                              {entity.isActive ? resolvedCopy.deactivateLabel : resolvedCopy.reactivateLabel}
+                              {entity.isDisabledHere
+                                ? resolvedCopy.enableHereLabel
+                                : resolvedCopy.disableHereLabel}
                             </button>
-                          </>
-                        ) : canToggleInheritedRecord ? (
-                          <button
-                            type="button"
-                            onClick={() => queueToggle(entity)}
-                            className="rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
-                            aria-label={`${entity.isDisabledHere ? resolvedCopy.enableHereLabel : resolvedCopy.disableHereLabel} ${entity.code ?? entity.localizedName}`}
-                          >
-                            {entity.isDisabledHere ? resolvedCopy.enableHereLabel : resolvedCopy.disableHereLabel}
-                          </button>
-                        ) : (
-                          <span className="whitespace-nowrap rounded-full bg-slate-100 px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                            {resolvedCopy.inheritedPill}
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                )})}
+                          ) : (
+                            <span className="whitespace-nowrap rounded-full bg-slate-100 px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                              {resolvedCopy.inheritedPill}
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </TableShell>
 
               <PaginationFooter
@@ -1797,7 +2052,10 @@ export function ScopedConfigEntityWorkspace({
         title={
           editorMode === 'create'
             ? resolvedCopy.editorCreateTitle(selectedEntry.label)
-            : resolvedCopy.editorEditTitle(selectedEntry.label, editorTarget?.code ?? selectedEntry.label)
+            : resolvedCopy.editorEditTitle(
+                selectedEntry.label,
+                editorTarget?.code ?? selectedEntry.label
+              )
         }
         description={resolvedCopy.editorDescription(resolvedCopy.scopeTypeLabel(scopeType))}
         size="xl"
@@ -1815,7 +2073,9 @@ export function ScopedConfigEntityWorkspace({
             <AsyncSubmitButton
               intent="primary"
               isPending={editorPending}
-              pendingText={editorMode === 'create' ? resolvedCopy.createPending : resolvedCopy.savePending}
+              pendingText={
+                editorMode === 'create' ? resolvedCopy.createPending : resolvedCopy.savePending
+              }
               onClick={() => void handleSubmit()}
             >
               {editorMode === 'create' ? resolvedCopy.createSubmit : resolvedCopy.saveSubmit}
@@ -1839,7 +2099,9 @@ export function ScopedConfigEntityWorkspace({
             </label>
 
             <label className="space-y-2">
-              <span className="text-sm font-semibold text-slate-900">{resolvedCopy.sortOrderLabel}</span>
+              <span className="text-sm font-semibold text-slate-900">
+                {resolvedCopy.sortOrderLabel}
+              </span>
               <input
                 aria-label={resolvedCopy.sortOrderLabel}
                 type="number"
@@ -1853,8 +2115,12 @@ export function ScopedConfigEntityWorkspace({
           <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="space-y-1">
-                <p className="text-sm font-semibold text-slate-950">{translationEditorCopy.helper}</p>
-                <p className="text-sm leading-6 text-slate-600">{translationEditorCopy.description}</p>
+                <p className="text-sm font-semibold text-slate-950">
+                  {translationEditorCopy.helper}
+                </p>
+                <p className="text-sm leading-6 text-slate-600">
+                  {translationEditorCopy.description}
+                </p>
               </div>
               <TranslationManagementTrigger
                 count={countLocaleValues(translationSections)}
@@ -1864,7 +2130,9 @@ export function ScopedConfigEntityWorkspace({
           </div>
 
           <label className="space-y-2">
-            <span className="text-sm font-semibold text-slate-900">{resolvedCopy.nameBaseLabel}</span>
+            <span className="text-sm font-semibold text-slate-900">
+              {resolvedCopy.nameBaseLabel}
+            </span>
             <input
               aria-label={resolvedCopy.nameBaseLabel}
               type="text"
@@ -1876,7 +2144,9 @@ export function ScopedConfigEntityWorkspace({
 
           {selectedType !== 'consent' ? (
             <label className="space-y-2">
-              <span className="text-sm font-semibold text-slate-900">{resolvedCopy.descriptionBaseLabel}</span>
+              <span className="text-sm font-semibold text-slate-900">
+                {resolvedCopy.descriptionBaseLabel}
+              </span>
               <textarea
                 aria-label={resolvedCopy.descriptionBaseLabel}
                 value={typeof draft.descriptionBase === 'string' ? draft.descriptionBase : ''}
@@ -1890,11 +2160,17 @@ export function ScopedConfigEntityWorkspace({
           {selectedEntry.fields.length > 0 ? (
             <div className="space-y-4">
               <div className="space-y-1">
-                <p className="text-sm font-semibold text-slate-900">{resolvedCopy.entitySpecificFieldsTitle}</p>
-                <p className="text-sm leading-6 text-slate-600">{resolvedCopy.entitySpecificFieldsDescription}</p>
+                <p className="text-sm font-semibold text-slate-900">
+                  {resolvedCopy.entitySpecificFieldsTitle}
+                </p>
+                <p className="text-sm leading-6 text-slate-600">
+                  {resolvedCopy.entitySpecificFieldsDescription}
+                </p>
               </div>
               <div className="grid gap-4 lg:grid-cols-2">
-                {selectedEntry.fields.map((field) => renderField(field, draft, parentOptions, updateDraft, resolvedCopy))}
+                {selectedEntry.fields.map((field) =>
+                  renderField(field, draft, parentOptions, updateDraft, resolvedCopy)
+                )}
               </div>
             </div>
           ) : null}

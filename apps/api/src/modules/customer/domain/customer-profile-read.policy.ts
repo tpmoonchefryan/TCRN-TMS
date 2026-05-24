@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import type { LocalizedText } from '@tcrn/shared';
 
 export type CustomerProfileType = 'individual' | 'company';
@@ -81,7 +80,7 @@ export interface CustomerProfileDetailAggregate {
 
 export const mapCustomerProfileListItem = (
   item: CustomerProfileListRecord,
-  highestMembership?: CustomerProfileActiveMembershipRecord | null,
+  highestMembership?: CustomerProfileActiveMembershipRecord | null
 ) => ({
   id: item.id,
   profileType: item.profileType,
@@ -184,9 +183,7 @@ export const mapCustomerProfileDetailItem = (item: CustomerProfileDetailAggregat
     recentAccessHistory: item.accessLogs.map((log) => ({
       talent: { id: log.talent.id, displayName: log.talent.displayName },
       action: log.action,
-      operator: log.operator
-        ? { id: log.operator.id, username: log.operator.username }
-        : null,
+      operator: log.operator ? { id: log.operator.id, username: log.operator.username } : null,
       occurredAt: log.occurredAt,
     })),
     createdAt: item.createdAt,

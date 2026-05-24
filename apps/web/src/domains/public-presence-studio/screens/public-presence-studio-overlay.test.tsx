@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { beforeEach, describe, expect, it } from 'vitest';
 import { useState } from 'react';
+import { beforeEach, describe, expect, it } from 'vitest';
 
 import { useOverlayFocusManager } from '@/domains/public-presence-studio/screens/public-presence-studio-overlay';
 
@@ -36,7 +36,9 @@ function OverlayHarness({
           <button
             type="button"
             onClick={() => setOpen(false)}
-            ref={mode === 'desktop' ? overlay.desktopInitialFocusRef : overlay.mobileInitialFocusRef}
+            ref={
+              mode === 'desktop' ? overlay.desktopInitialFocusRef : overlay.mobileInitialFocusRef
+            }
           >
             Close overlay
           </button>

@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { createLocalizedText } from '@tcrn/shared';
 
 import { TalentCustomDomainService } from '../application/talent-custom-domain.service';
@@ -49,7 +49,7 @@ describe('TalentService facade', () => {
     mockReadService,
     mockLifecycleService,
     mockWriteService,
-    mockCustomDomainService,
+    mockCustomDomainService
   );
 
   beforeEach(() => {
@@ -96,19 +96,15 @@ describe('TalentService facade', () => {
     await expect(service.findByCode('TALENT001', 'tenant_test')).resolves.toMatchObject({
       code: 'TALENT001',
     });
-    await expect(
-      service.findByHomepagePath('/test-talent', 'tenant_test'),
-    ).resolves.toMatchObject({
+    await expect(service.findByHomepagePath('/test-talent', 'tenant_test')).resolves.toMatchObject({
       homepagePath: '/test-talent',
     });
     await expect(
-      service.findByCustomDomain('Talent.Example.com', 'tenant_test'),
+      service.findByCustomDomain('Talent.Example.com', 'tenant_test')
     ).resolves.toMatchObject({
       id: 'talent-123',
     });
-    await expect(
-      service.getProfileStoreById('store-123', 'tenant_test'),
-    ).resolves.toMatchObject({
+    await expect(service.getProfileStoreById('store-123', 'tenant_test')).resolves.toMatchObject({
       code: 'DEFAULT',
     });
     await expect(service.getTalentStats('talent-123', 'tenant_test')).resolves.toEqual({
@@ -116,7 +112,7 @@ describe('TalentService facade', () => {
       pendingMessagesCount: 1,
     });
     await expect(
-      service.getExternalPagesDomainConfig('talent-123', 'tenant_test'),
+      service.getExternalPagesDomainConfig('talent-123', 'tenant_test')
     ).resolves.toEqual({
       homepage: null,
       marshmallow: null,
@@ -165,26 +161,20 @@ describe('TalentService facade', () => {
       },
     });
 
-    await expect(
-      service.getPublishReadiness('talent-123', 'tenant_test'),
-    ).resolves.toMatchObject({
+    await expect(service.getPublishReadiness('talent-123', 'tenant_test')).resolves.toMatchObject({
       recommendedAction: 'publish',
     });
-    await expect(
-      service.publish('talent-123', 'tenant_test', 1, 'user-1'),
-    ).resolves.toMatchObject({
+    await expect(service.publish('talent-123', 'tenant_test', 1, 'user-1')).resolves.toMatchObject({
       lifecycleStatus: 'published',
     });
-    await expect(
-      service.disable('talent-123', 'tenant_test', 1, 'user-1'),
-    ).resolves.toMatchObject({
+    await expect(service.disable('talent-123', 'tenant_test', 1, 'user-1')).resolves.toMatchObject({
       lifecycleStatus: 'disabled',
     });
-    await expect(
-      service.reEnable('talent-123', 'tenant_test', 1, 'user-1'),
-    ).resolves.toMatchObject({
-      lifecycleStatus: 'published',
-    });
+    await expect(service.reEnable('talent-123', 'tenant_test', 1, 'user-1')).resolves.toMatchObject(
+      {
+        lifecycleStatus: 'published',
+      }
+    );
     await expect(
       service.transitionArtistStage(
         'talent-123',
@@ -193,14 +183,14 @@ describe('TalentService facade', () => {
           version: 2,
           targetArtistStageId: 'stage-published-2',
         },
-        'user-1',
-      ),
+        'user-1'
+      )
     ).resolves.toMatchObject({
       artistStageId: 'stage-published-2',
       version: 3,
     });
     await expect(
-      service.move('talent-123', 'tenant_test', 'subsidiary-456', 1, 'user-1'),
+      service.move('talent-123', 'tenant_test', 'subsidiary-456', 1, 'user-1')
     ).rejects.toMatchObject({
       response: {
         code: 'RES_CONFLICT',
@@ -232,24 +222,17 @@ describe('TalentService facade', () => {
           name: createLocalizedText({ en: 'Talent' }),
           displayName: 'Talent',
         },
-        'user-1',
-      ),
+        'user-1'
+      )
     ).resolves.toMatchObject({
       id: 'talent-123',
     });
     await expect(
-      service.update(
-        'talent-123',
-        'tenant_test',
-        { version: 1, displayName: 'Talent 2' },
-        'user-1',
-      ),
+      service.update('talent-123', 'tenant_test', { version: 1, displayName: 'Talent 2' }, 'user-1')
     ).resolves.toMatchObject({
       version: 2,
     });
-    await expect(
-      service.delete('talent-123', 'tenant_test', { version: 2 }),
-    ).resolves.toEqual({
+    await expect(service.delete('talent-123', 'tenant_test', { version: 2 })).resolves.toEqual({
       id: 'talent-123',
       deleted: true,
     });
@@ -277,33 +260,31 @@ describe('TalentService facade', () => {
       customDomainSslMode: 'cloudflare',
     } as never);
 
+    await expect(service.getCustomDomainConfig('talent-123', 'tenant_test')).resolves.toMatchObject(
+      {
+        customDomain: 'talent.example.com',
+      }
+    );
     await expect(
-      service.getCustomDomainConfig('talent-123', 'tenant_test'),
-    ).resolves.toMatchObject({
-      customDomain: 'talent.example.com',
-    });
-    await expect(
-      service.setCustomDomain('talent-123', 'tenant_test', 'talent.example.com'),
+      service.setCustomDomain('talent-123', 'tenant_test', 'talent.example.com')
     ).resolves.toMatchObject({
       token: 'token-123',
     });
-    await expect(
-      service.verifyCustomDomain('talent-123', 'tenant_test'),
-    ).resolves.toEqual({
+    await expect(service.verifyCustomDomain('talent-123', 'tenant_test')).resolves.toEqual({
       verified: true,
       message: 'Domain verified successfully',
     });
     await expect(
       service.updateServicePaths('talent-123', 'tenant_test', {
         homepageCustomPath: '/homepage',
-      }),
+      })
     ).resolves.toMatchObject({
       homepageCustomPath: 'homepage',
     });
-    await expect(
-      service.updateSslMode('talent-123', 'tenant_test', 'cloudflare'),
-    ).resolves.toEqual({
-      customDomainSslMode: 'cloudflare',
-    });
+    await expect(service.updateSslMode('talent-123', 'tenant_test', 'cloudflare')).resolves.toEqual(
+      {
+        customDomainSslMode: 'cloudflare',
+      }
+    );
   });
 });

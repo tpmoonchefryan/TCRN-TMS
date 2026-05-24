@@ -1,7 +1,8 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { ConflictException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { prisma } from '@tcrn/database';
 import {
   createLocalizedText,
@@ -14,20 +15,19 @@ import {
   type TenantFixture,
   type TestUser,
 } from '@tcrn/shared';
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { DatabaseService } from '@/modules/database/database.service';
-import { ChangeLogService } from '@/modules/log/services/change-log.service';
-import { TechEventLogService } from '@/modules/log/services/tech-event-log.service';
-import { ProfileType } from '@/modules/customer/dto/customer.dto';
 import { CustomerArchiveAccessService } from '@/modules/customer/application/customer-archive-access.service';
-import { CustomerProfileReadService } from '@/modules/customer/application/customer-profile-read.service';
 import { CustomerPiiPlatformApplicationService } from '@/modules/customer/application/customer-pii-platform.service';
+import { CustomerProfileReadService } from '@/modules/customer/application/customer-profile-read.service';
 import { CustomerProfileWriteService } from '@/modules/customer/application/customer-profile-write.service';
+import { ProfileType } from '@/modules/customer/dto/customer.dto';
 import { CustomerArchiveRepository } from '@/modules/customer/infrastructure/customer-archive.repository';
 import { CustomerProfileReadRepository } from '@/modules/customer/infrastructure/customer-profile-read.repository';
 import { CustomerProfileWriteRepository } from '@/modules/customer/infrastructure/customer-profile-write.repository';
 import { CustomerProfileService } from '@/modules/customer/services/customer-profile.service';
+import { DatabaseService } from '@/modules/database/database.service';
+import { ChangeLogService } from '@/modules/log/services/change-log.service';
+import { TechEventLogService } from '@/modules/log/services/tech-event-log.service';
 
 describe('CustomerProfileService', () => {
   let service: CustomerProfileService;
@@ -44,7 +44,7 @@ describe('CustomerProfileService', () => {
       prisma,
       tenantFixture,
       `customer_profile_user_${Date.now()}`,
-      ['ADMIN'],
+      ['ADMIN']
     );
     const subsidiary = await createTestSubsidiaryInTenant(prisma, tenantFixture, {
       code: `SUB_CP_${Date.now().toString(36).toUpperCase()}`,
@@ -65,7 +65,7 @@ describe('CustomerProfileService', () => {
         WHERE id = $1::uuid
         LIMIT 1
       `,
-      talent.id,
+      talent.id
     );
     const customer = await createTestCustomerInTenant(prisma, tenantFixture, {
       nickname: 'test customer profile',
@@ -101,7 +101,7 @@ describe('CustomerProfileService', () => {
             cl: ChangeLogService,
             te: TechEventLogService,
             readService: CustomerProfileReadService,
-            writeService: CustomerProfileWriteService,
+            writeService: CustomerProfileWriteService
           ) => {
             return new CustomerProfileService(db, cl, te, readService, writeService);
           },
@@ -166,11 +166,7 @@ describe('CustomerProfileService', () => {
 
   describe('findMany', () => {
     it('should return paginated customers', async () => {
-      const result = await service.findMany(
-        testTalentId,
-        { page: 1, pageSize: 20 },
-        mockContext,
-      );
+      const result = await service.findMany(testTalentId, { page: 1, pageSize: 20 }, mockContext);
 
       expect(result).toBeDefined();
       expect(result).toHaveProperty('items');
@@ -180,11 +176,7 @@ describe('CustomerProfileService', () => {
 
     it('should throw NotFoundException when talent not found', async () => {
       await expect(
-        service.findMany(
-          '00000000-0000-0000-0000-000000000000',
-          {},
-          mockContext,
-        ),
+        service.findMany('00000000-0000-0000-0000-000000000000', {}, mockContext)
       ).rejects.toThrow(NotFoundException);
     });
 
@@ -192,7 +184,7 @@ describe('CustomerProfileService', () => {
       const result = await service.findMany(
         testTalentId,
         { profileType: ProfileType.INDIVIDUAL },
-        mockContext,
+        mockContext
       );
 
       expect(result).toBeDefined();
@@ -202,11 +194,7 @@ describe('CustomerProfileService', () => {
     });
 
     it('should filter by isActive', async () => {
-      const result = await service.findMany(
-        testTalentId,
-        { isActive: true },
-        mockContext,
-      );
+      const result = await service.findMany(testTalentId, { isActive: true }, mockContext);
 
       expect(result).toBeDefined();
       result.items.forEach((item: { isActive: boolean }) => {
@@ -215,11 +203,7 @@ describe('CustomerProfileService', () => {
     });
 
     it('should support search by term', async () => {
-      const result = await service.findMany(
-        testTalentId,
-        { search: 'test' },
-        mockContext,
-      );
+      const result = await service.findMany(testTalentId, { search: 'test' }, mockContext);
 
       expect(result).toBeDefined();
       expect(result).toHaveProperty('items');
@@ -229,7 +213,7 @@ describe('CustomerProfileService', () => {
   describe('findById', () => {
     it('should throw NotFoundException for non-existent customer', async () => {
       await expect(
-        service.findById('00000000-0000-0000-0000-000000000000', testTalentId, mockContext),
+        service.findById('00000000-0000-0000-0000-000000000000', testTalentId, mockContext)
       ).rejects.toThrow(NotFoundException);
     });
 
@@ -243,19 +227,28 @@ describe('CustomerProfileService', () => {
   describe('deactivate', () => {
     it('should throw NotFoundException for non-existent customer', async () => {
       await expect(
-        service.deactivate('00000000-0000-0000-0000-000000000000', testTalentId, 'OTHER', 1, mockContext),
+        service.deactivate(
+          '00000000-0000-0000-0000-000000000000',
+          testTalentId,
+          'OTHER',
+          1,
+          mockContext
+        )
       ).rejects.toThrow(NotFoundException);
     });
 
     it('should throw ConflictException on version mismatch', async () => {
-      const customers = await prisma.$queryRawUnsafe<{ id: string; version: number }[]>(`
+      const customers = await prisma.$queryRawUnsafe<{ id: string; version: number }[]>(
+        `
         SELECT id, version FROM "${tenantFixture.schemaName}".customer_profile
         WHERE id = $1::uuid
         LIMIT 1
-      `, testCustomerId);
+      `,
+        testCustomerId
+      );
 
       await expect(
-        service.deactivate(customers[0].id, testTalentId, 'OTHER', 999, mockContext),
+        service.deactivate(customers[0].id, testTalentId, 'OTHER', 999, mockContext)
       ).rejects.toThrow(ConflictException);
     });
   });
@@ -265,18 +258,14 @@ describe('CustomerProfileService', () => {
       const result = await service.findMany(
         testTalentId,
         { search: 'ZZZZZZZZZZNONEXISTENT' },
-        mockContext,
+        mockContext
       );
 
       expect(result.items).toEqual([]);
     });
 
     it('should handle hasMembership filter', async () => {
-      const result = await service.findMany(
-        testTalentId,
-        { hasMembership: true },
-        mockContext,
-      );
+      const result = await service.findMany(testTalentId, { hasMembership: true }, mockContext);
 
       expect(result).toBeDefined();
       expect(result).toHaveProperty('items');
@@ -285,11 +274,7 @@ describe('CustomerProfileService', () => {
 
   describe('Sorting', () => {
     it('should sort by createdAt desc by default', async () => {
-      const result = await service.findMany(
-        testTalentId,
-        {},
-        mockContext,
-      );
+      const result = await service.findMany(testTalentId, {}, mockContext);
 
       expect(result).toBeDefined();
       // Check that items exist (sorting is handled by DB)
@@ -300,7 +285,7 @@ describe('CustomerProfileService', () => {
       const result = await service.findMany(
         testTalentId,
         { sort: 'nickname', order: 'asc' },
-        mockContext,
+        mockContext
       );
 
       expect(result).toBeDefined();

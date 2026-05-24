@@ -1,10 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 
-import {
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
 import { ErrorCodes, type RequestContext } from '@tcrn/shared';
 
 import { DatabaseService } from '../../database';
@@ -32,19 +28,15 @@ export class PlatformIdentityApplicationService {
   constructor(
     private readonly platformIdentityRepository: PlatformIdentityRepository,
     private readonly databaseService: DatabaseService,
-    private readonly customerArchiveAccessService: CustomerArchiveAccessService,
+    private readonly customerArchiveAccessService: CustomerArchiveAccessService
   ) {}
 
-  async findByCustomer(
-    customerId: string,
-    talentId: string,
-    context: RequestContext,
-  ) {
+  async findByCustomer(customerId: string, talentId: string, context: RequestContext) {
     await this.verifyCustomerAccess(customerId, talentId, context);
 
     const identities = await this.platformIdentityRepository.findByCustomer(
       context.tenantSchema,
-      customerId,
+      customerId
     );
 
     return identities.map((identity) => mapPlatformIdentityListRecord(identity));
@@ -54,13 +46,13 @@ export class PlatformIdentityApplicationService {
     customerId: string,
     talentId: string,
     dto: CreatePlatformIdentityDto,
-    context: RequestContext,
+    context: RequestContext
   ) {
     await this.verifyCustomerAccess(customerId, talentId, context);
 
     const platform = await this.platformIdentityRepository.findActivePlatformByCode(
       context.tenantSchema,
-      dto.platformCode,
+      dto.platformCode
     );
 
     if (!platform) {
@@ -74,7 +66,7 @@ export class PlatformIdentityApplicationService {
       context.tenantSchema,
       customerId,
       platform.id,
-      dto.platformUid,
+      dto.platformUid
     );
 
     if (existing) {
@@ -121,14 +113,14 @@ export class PlatformIdentityApplicationService {
     identityId: string,
     talentId: string,
     dto: UpdatePlatformIdentityDto,
-    context: RequestContext,
+    context: RequestContext
   ) {
     await this.verifyCustomerAccess(customerId, talentId, context);
 
     const identity = await this.platformIdentityRepository.findOwnedIdentity(
       context.tenantSchema,
       customerId,
-      identityId,
+      identityId
     );
 
     if (!identity) {
@@ -142,7 +134,7 @@ export class PlatformIdentityApplicationService {
     const updated = await this.platformIdentityRepository.update(
       context.tenantSchema,
       identityId,
-      buildPlatformIdentityUpdateInput(identity, dto),
+      buildPlatformIdentityUpdateInput(identity, dto)
     );
 
     for (const change of changes) {
@@ -159,10 +151,7 @@ export class PlatformIdentityApplicationService {
     await this.platformIdentityRepository.insertChangeLog(context.tenantSchema, {
       action: 'update',
       objectId: identityId,
-      objectName: buildPlatformIdentityObjectName(
-        identity.platformCode,
-        updated.platformUid,
-      ),
+      objectName: buildPlatformIdentityObjectName(identity.platformCode, updated.platformUid),
       diff: buildPlatformIdentityUpdateChangeLogDiff(identity, updated),
       userId: context.userId,
       ipAddress: context.ipAddress,
@@ -175,7 +164,7 @@ export class PlatformIdentityApplicationService {
     customerId: string,
     talentId: string,
     query: PlatformIdentityHistoryQueryDto,
-    context: RequestContext,
+    context: RequestContext
   ) {
     await this.verifyCustomerAccess(customerId, talentId, context);
 
@@ -208,12 +197,12 @@ export class PlatformIdentityApplicationService {
   private async verifyCustomerAccess(
     customerId: string,
     talentId: string,
-    context: RequestContext,
+    context: RequestContext
   ) {
     return this.customerArchiveAccessService.requireCustomerArchiveAccess(
       customerId,
       talentId,
-      context,
+      context
     );
   }
 }

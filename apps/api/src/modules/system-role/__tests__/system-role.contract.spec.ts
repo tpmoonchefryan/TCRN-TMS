@@ -1,7 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+import { describe, expect, it } from 'vitest';
 
 import { CreateSystemRoleSchema, UpdateSystemRoleSchema } from '@tcrn/shared';
-import { describe, expect, it } from 'vitest';
 
 const roleName = {
   en: 'Export Deny',

@@ -1,10 +1,11 @@
 'use client';
 
-import { buildSharedHomepagePath } from '@tcrn/shared';
 import { ArrowRight, LayoutPanelTop, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { startTransition, useEffect, useMemo, useState } from 'react';
+
+import { buildSharedHomepagePath } from '@tcrn/shared';
 
 import {
   type OrganizationNode,
@@ -64,7 +65,7 @@ function getLandingPaginationCopy(
   totalPages: number,
   start: number,
   end: number,
-  totalCount: number,
+  totalCount: number
 ) {
   return {
     page: pickLocaleText(locale, {
@@ -147,7 +148,7 @@ export function TenantWorkspaceLandingScreen({
     nextState: Partial<{
       page: number;
       pageSize: PageSizeOption;
-    }>,
+    }>
   ) {
     const nextPage = nextState.page ?? page;
     const nextPageSize = nextState.pageSize ?? pageSize;
@@ -218,8 +219,8 @@ export function TenantWorkspaceLandingScreen({
                 ja: '公開済みタレントの読み込みに失敗しました。',
                 ko: '게시된 탤런트를 불러오지 못했습니다.',
                 fr: 'Impossible de charger les talents publiés.',
-              }),
-            ),
+              })
+            )
           );
         }
       } finally {
@@ -239,7 +240,7 @@ export function TenantWorkspaceLandingScreen({
   const pagination = buildPaginationMeta(talents.length, page, pageSize);
   const paginatedTalents = talents.slice(
     (pagination.page - 1) * pagination.pageSize,
-    pagination.page * pagination.pageSize,
+    pagination.page * pagination.pageSize
   );
   const pageRange = getPaginationRange(pagination, paginatedTalents.length);
   const paginationCopy = getLandingPaginationCopy(
@@ -248,7 +249,7 @@ export function TenantWorkspaceLandingScreen({
     pagination.totalPages,
     pageRange.start,
     pageRange.end,
-    pagination.totalCount,
+    pagination.totalCount
   );
 
   useEffect(() => {
@@ -274,8 +275,9 @@ export function TenantWorkspaceLandingScreen({
     }
   }, [loading, page, pageSize, pagination.totalPages, pathname, router]);
 
-  const tenantName = session?.tenantName
-    || pickLocaleText(locale, {
+  const tenantName =
+    session?.tenantName ||
+    pickLocaleText(locale, {
       en: 'Current tenant',
       zh_HANS: '当前租户',
       zh_HANT: '目前租戶',
@@ -293,7 +295,7 @@ export function TenantWorkspaceLandingScreen({
   });
   const publishedCount = useMemo(
     () => formatLocaleNumber(locale, talents.length),
-    [locale, talents.length],
+    [locale, talents.length]
   );
 
   if (loading) {
@@ -449,60 +451,63 @@ export function TenantWorkspaceLandingScreen({
       <div className="space-y-4">
         <div className="grid gap-4 xl:grid-cols-2">
           {paginatedTalents.map((talent) => {
-          const publishedAt = formatLocaleDateTime(locale, talent.publishedAt, publishedLabel);
-          const scopeLabel = talent.subsidiaryName || tenantName;
-          const sharedHomepagePath =
-            session?.tenantCode ? buildSharedHomepagePath(session.tenantCode, talent.code) : null;
+            const publishedAt = formatLocaleDateTime(locale, talent.publishedAt, publishedLabel);
+            const scopeLabel = talent.subsidiaryName || tenantName;
+            const sharedHomepagePath = session?.tenantCode
+              ? buildSharedHomepagePath(session.tenantCode, talent.code)
+              : null;
 
-          return (
-            <Link
-              key={talent.id}
-              href={buildTalentWorkspacePath(tenantId, talent.id)}
-              className="group block rounded-3xl border border-slate-200 bg-white/88 p-6 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:bg-white"
-            >
-              <div className="flex items-start justify-between gap-4">
-                <div className="space-y-3">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <p className="text-lg font-semibold text-slate-950">{talent.displayName}</p>
-                    <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-medium text-emerald-800">
-                      {publishedLabel}
-                    </span>
-                  </div>
-                  <p className="text-sm text-slate-600">{scopeLabel}</p>
-                  <div className="flex flex-wrap gap-2 text-xs text-slate-500">
-                    <span className="rounded-full bg-slate-100 px-2.5 py-1">{talent.code}</span>
-                    {sharedHomepagePath ? (
-                      <span className="rounded-full bg-slate-100 px-2.5 py-1">{sharedHomepagePath}</span>
-                    ) : null}
-                    {publishedAt ? (
-                      <span className="rounded-full bg-slate-100 px-2.5 py-1">
-                        {pickLocaleText(locale, {
-                          en: `Published ${publishedAt}`,
-                          zh_HANS: `发布于 ${publishedAt}`,
-                          zh_HANT: `發佈於 ${publishedAt}`,
-                          ja: `${publishedAt} に公開`,
-                          ko: `${publishedAt} 게시`,
-                          fr: `Publié le ${publishedAt}`,
-                        })}
+            return (
+              <Link
+                key={talent.id}
+                href={buildTalentWorkspacePath(tenantId, talent.id)}
+                className="bg-white/88 group block rounded-3xl border border-slate-200 p-6 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:bg-white"
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div className="space-y-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="text-lg font-semibold text-slate-950">{talent.displayName}</p>
+                      <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-medium text-emerald-800">
+                        {publishedLabel}
                       </span>
-                    ) : null}
+                    </div>
+                    <p className="text-sm text-slate-600">{scopeLabel}</p>
+                    <div className="flex flex-wrap gap-2 text-xs text-slate-500">
+                      <span className="rounded-full bg-slate-100 px-2.5 py-1">{talent.code}</span>
+                      {sharedHomepagePath ? (
+                        <span className="rounded-full bg-slate-100 px-2.5 py-1">
+                          {sharedHomepagePath}
+                        </span>
+                      ) : null}
+                      {publishedAt ? (
+                        <span className="rounded-full bg-slate-100 px-2.5 py-1">
+                          {pickLocaleText(locale, {
+                            en: `Published ${publishedAt}`,
+                            zh_HANS: `发布于 ${publishedAt}`,
+                            zh_HANT: `發佈於 ${publishedAt}`,
+                            ja: `${publishedAt} に公開`,
+                            ko: `${publishedAt} 게시`,
+                            fr: `Publié le ${publishedAt}`,
+                          })}
+                        </span>
+                      ) : null}
+                    </div>
                   </div>
-                </div>
 
-                <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 transition group-hover:border-slate-300 group-hover:bg-slate-50">
-                  {pickLocaleText(locale, {
-                    en: 'Open',
-                    zh_HANS: '进入',
-                    zh_HANT: '進入',
-                    ja: '開く',
-                    ko: '열기',
-                    fr: 'Ouvrir',
-                  })}
-                  <ArrowRight className="h-4 w-4" />
-                </span>
-              </div>
-            </Link>
-          );
+                  <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 transition group-hover:border-slate-300 group-hover:bg-slate-50">
+                    {pickLocaleText(locale, {
+                      en: 'Open',
+                      zh_HANS: '进入',
+                      zh_HANT: '進入',
+                      ja: '開く',
+                      ko: '열기',
+                      fr: 'Ouvrir',
+                    })}
+                    <ArrowRight className="h-4 w-4" />
+                  </span>
+                </div>
+              </Link>
+            );
           })}
         </div>
         <PaginationFooter

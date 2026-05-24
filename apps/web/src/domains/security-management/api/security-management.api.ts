@@ -1,14 +1,11 @@
-import type {
-  LocalizedText,
-  PartialLocalizedText,
-} from '@tcrn/shared';
+import type { LocalizedText, PartialLocalizedText } from '@tcrn/shared';
 
 import type { ApiSuccessEnvelope } from '@/platform/http/api';
 
 export type RequestFn = <T>(path: string, init?: RequestInit) => Promise<T>;
 export type RequestEnvelopeFn = <T>(
   path: string,
-  init?: RequestInit,
+  init?: RequestInit
 ) => Promise<ApiSuccessEnvelope<T>>;
 
 export type SecurityTab = 'blocklist' | 'external-blocklist' | 'ip-access' | 'runtime-signals';
@@ -19,7 +16,12 @@ export type BlocklistSeverity = 'low' | 'medium' | 'high';
 export type BlocklistAction = 'reject' | 'flag' | 'replace';
 export type IpRuleType = 'whitelist' | 'blacklist';
 export type IpRuleScope = 'global' | 'admin' | 'public' | 'api';
-export type BlocklistScopeCategory = 'tenant' | 'subsidiary' | 'talent' | 'profile-store' | 'surface';
+export type BlocklistScopeCategory =
+  | 'tenant'
+  | 'subsidiary'
+  | 'talent'
+  | 'profile-store'
+  | 'surface';
 export type BlocklistSurfaceScope = 'marshmallow';
 
 export type BlocklistStructuredScopeEntry =
@@ -369,17 +371,20 @@ export async function getBlocklistEntry(request: RequestFn, blocklistId: string)
 }
 
 export async function createBlocklistEntry(request: RequestFn, payload: CreateBlocklistPayload) {
-  return request<BlocklistEntryRecord>('/api/v1/blocklist-entries', buildJsonRequestInit('POST', payload));
+  return request<BlocklistEntryRecord>(
+    '/api/v1/blocklist-entries',
+    buildJsonRequestInit('POST', payload)
+  );
 }
 
 export async function updateBlocklistEntry(
   request: RequestFn,
   blocklistId: string,
-  payload: UpdateBlocklistPayload,
+  payload: UpdateBlocklistPayload
 ) {
   return request<BlocklistEntryRecord>(
     `/api/v1/blocklist-entries/${blocklistId}`,
-    buildJsonRequestInit('PATCH', payload),
+    buildJsonRequestInit('PATCH', payload)
   );
 }
 
@@ -389,38 +394,38 @@ export async function deleteBlocklistEntry(request: RequestFn, blocklistId: stri
   });
 }
 
-export async function testBlocklistEntry(
-  request: RequestFn,
-  payload: TestBlocklistPayload,
-) {
-  return request<BlocklistTestResult>('/api/v1/blocklist-entries/test', buildJsonRequestInit('POST', payload));
+export async function testBlocklistEntry(request: RequestFn, payload: TestBlocklistPayload) {
+  return request<BlocklistTestResult>(
+    '/api/v1/blocklist-entries/test',
+    buildJsonRequestInit('POST', payload)
+  );
 }
 
 export async function disableInheritedBlocklistEntry(
   request: RequestFn,
   blocklistId: string,
-  payload: { scopeType: SecurityScopeType; scopeId?: string },
+  payload: { scopeType: SecurityScopeType; scopeId?: string }
 ) {
   return request<{ disabled: boolean }>(
     `/api/v1/blocklist-entries/${blocklistId}/disable`,
-    buildJsonRequestInit('POST', payload),
+    buildJsonRequestInit('POST', payload)
   );
 }
 
 export async function enableInheritedBlocklistEntry(
   request: RequestFn,
   blocklistId: string,
-  payload: { scopeType: SecurityScopeType; scopeId?: string },
+  payload: { scopeType: SecurityScopeType; scopeId?: string }
 ) {
   return request<{ enabled: boolean }>(
     `/api/v1/blocklist-entries/${blocklistId}/enable`,
-    buildJsonRequestInit('POST', payload),
+    buildJsonRequestInit('POST', payload)
   );
 }
 
 export async function listExternalBlocklistEntries(
   requestEnvelope: RequestEnvelopeFn,
-  options: ListExternalBlocklistOptions = {},
+  options: ListExternalBlocklistOptions = {}
 ) {
   const query = buildQueryString({
     scopeType: options.scopeType ?? 'tenant',
@@ -433,7 +438,9 @@ export async function listExternalBlocklistEntries(
     pageSize: options.pageSize ?? 20,
   });
 
-  const response = await requestEnvelope<ExternalBlocklistRecord[]>(`/api/v1/external-blocklist${query}`);
+  const response = await requestEnvelope<ExternalBlocklistRecord[]>(
+    `/api/v1/external-blocklist${query}`
+  );
 
   return {
     items: response.data,
@@ -447,19 +454,22 @@ export async function getExternalBlocklistEntry(request: RequestFn, entryId: str
 
 export async function createExternalBlocklistEntry(
   request: RequestFn,
-  payload: CreateExternalBlocklistPayload,
+  payload: CreateExternalBlocklistPayload
 ) {
-  return request<ExternalBlocklistRecord>('/api/v1/external-blocklist', buildJsonRequestInit('POST', payload));
+  return request<ExternalBlocklistRecord>(
+    '/api/v1/external-blocklist',
+    buildJsonRequestInit('POST', payload)
+  );
 }
 
 export async function updateExternalBlocklistEntry(
   request: RequestFn,
   entryId: string,
-  payload: UpdateExternalBlocklistPayload,
+  payload: UpdateExternalBlocklistPayload
 ) {
   return request<ExternalBlocklistRecord>(
     `/api/v1/external-blocklist/${entryId}`,
-    buildJsonRequestInit('PATCH', payload),
+    buildJsonRequestInit('PATCH', payload)
   );
 }
 
@@ -472,36 +482,39 @@ export async function deleteExternalBlocklistEntry(request: RequestFn, entryId: 
 export async function disableInheritedExternalBlocklistEntry(
   request: RequestFn,
   entryId: string,
-  payload: { scopeType: SecurityScopeType; scopeId?: string },
+  payload: { scopeType: SecurityScopeType; scopeId?: string }
 ) {
   return request<{ disabled: boolean }>(
     `/api/v1/external-blocklist/${entryId}/disable`,
-    buildJsonRequestInit('POST', payload),
+    buildJsonRequestInit('POST', payload)
   );
 }
 
 export async function enableInheritedExternalBlocklistEntry(
   request: RequestFn,
   entryId: string,
-  payload: { scopeType: SecurityScopeType; scopeId?: string },
+  payload: { scopeType: SecurityScopeType; scopeId?: string }
 ) {
   return request<{ enabled: boolean }>(
     `/api/v1/external-blocklist/${entryId}/enable`,
-    buildJsonRequestInit('POST', payload),
+    buildJsonRequestInit('POST', payload)
   );
 }
 
 export async function batchToggleExternalBlocklistEntries(
   request: RequestFn,
-  payload: { ids: string[]; isActive: boolean },
+  payload: { ids: string[]; isActive: boolean }
 ) {
   return request<BatchToggleExternalBlocklistResponse>(
     '/api/v1/external-blocklist/batch-toggle',
-    buildJsonRequestInit('POST', payload),
+    buildJsonRequestInit('POST', payload)
   );
 }
 
-export async function listIpAccessRules(request: RequestFn, options: ListIpAccessRulesOptions = {}) {
+export async function listIpAccessRules(
+  request: RequestFn,
+  options: ListIpAccessRulesOptions = {}
+) {
   const query = buildQueryString({
     ruleType: options.ruleType,
     scope: options.scope,
@@ -514,7 +527,10 @@ export async function listIpAccessRules(request: RequestFn, options: ListIpAcces
 }
 
 export async function createIpAccessRule(request: RequestFn, payload: CreateIpAccessRulePayload) {
-  return request<IpAccessRuleRecord>('/api/v1/ip-access-rules', buildJsonRequestInit('POST', payload));
+  return request<IpAccessRuleRecord>(
+    '/api/v1/ip-access-rules',
+    buildJsonRequestInit('POST', payload)
+  );
 }
 
 export async function deleteIpAccessRule(request: RequestFn, ruleId: string) {
@@ -523,8 +539,14 @@ export async function deleteIpAccessRule(request: RequestFn, ruleId: string) {
   });
 }
 
-export async function checkIpAccess(request: RequestFn, payload: { ip: string; scope?: IpRuleScope }) {
-  return request<IpAccessCheckResult>('/api/v1/ip-access-rules/check', buildJsonRequestInit('POST', payload));
+export async function checkIpAccess(
+  request: RequestFn,
+  payload: { ip: string; scope?: IpRuleScope }
+) {
+  return request<IpAccessCheckResult>(
+    '/api/v1/ip-access-rules/check',
+    buildJsonRequestInit('POST', payload)
+  );
 }
 
 export async function getFingerprint(request: RequestFn) {

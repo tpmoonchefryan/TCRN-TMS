@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { BullModule } from '@nestjs/bullmq';
 import { Module } from '@nestjs/common';
 
@@ -47,10 +46,7 @@ import {
 } from './services';
 
 @Module({
-  imports: [
-    BullModule.registerQueue({ name: QUEUE_NAMES.IMPORT }),
-    IntegrationModule,
-  ],
+  imports: [BullModule.registerQueue({ name: QUEUE_NAMES.IMPORT }), IntegrationModule],
   controllers: [
     CustomerController,
     PlatformIdentityController,

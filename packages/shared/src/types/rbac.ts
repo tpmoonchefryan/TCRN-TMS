@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import type { LocalizedText, PartialLocalizedText } from '../constants/locale';
 import type {
   PermissionAction,

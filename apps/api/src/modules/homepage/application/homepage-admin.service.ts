@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import {
   BadRequestException,
   ConflictException,
@@ -7,6 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+
 import { DEFAULT_THEME, ErrorCodes, type RequestContext } from '@tcrn/shared';
 
 import {
@@ -32,7 +32,7 @@ export class HomepageAdminService {
   constructor(
     private readonly homepageAdminRepository: HomepageAdminRepository,
     private readonly configService: ConfigService,
-    private readonly cdnPurgeService: CdnPurgeService,
+    private readonly cdnPurgeService: CdnPurgeService
   ) {}
 
   async getOrCreate(talentId: string, tenantSchema: string): Promise<HomepageResponse> {
@@ -45,13 +45,16 @@ export class HomepageAdminService {
       });
     }
 
-    let homepage = await this.homepageAdminRepository.findHomepageByTalentId(tenantSchema, talentId);
+    let homepage = await this.homepageAdminRepository.findHomepageByTalentId(
+      tenantSchema,
+      talentId
+    );
 
     if (!homepage) {
       homepage = await this.homepageAdminRepository.createHomepage(
         tenantSchema,
         talentId,
-        DEFAULT_THEME as unknown as Record<string, unknown>,
+        DEFAULT_THEME as unknown as Record<string, unknown>
       );
     }
 
@@ -77,7 +80,7 @@ export class HomepageAdminService {
   async saveDraft(
     talentId: string,
     dto: SaveDraftDto,
-    context: RequestContext,
+    context: RequestContext
   ): Promise<{
     draftVersion: { id: string; versionNumber: number; contentHash: string; updatedAt: string };
     isNewVersion: boolean;
@@ -85,7 +88,7 @@ export class HomepageAdminService {
     const tenantSchema = context.tenantSchema ?? '';
     const homepage = await this.homepageAdminRepository.findHomepageDraftPointer(
       tenantSchema,
-      talentId,
+      talentId
     );
 
     if (!homepage) {
@@ -100,7 +103,7 @@ export class HomepageAdminService {
     if (homepage.draftVersionId) {
       const currentDraft = await this.homepageAdminRepository.findHomepageVersionSummary(
         tenantSchema,
-        homepage.draftVersionId,
+        homepage.draftVersionId
       );
 
       if (currentDraft?.contentHash === contentHash) {
@@ -119,7 +122,7 @@ export class HomepageAdminService {
     const versionNumber =
       (await this.homepageAdminRepository.findLatestHomepageVersionNumber(
         tenantSchema,
-        homepage.id,
+        homepage.id
       )) + 1;
 
     await this.homepageAdminRepository.createDraftVersionAndAssign({
@@ -135,7 +138,7 @@ export class HomepageAdminService {
     const createdVersion = await this.homepageAdminRepository.findHomepageVersionByNumber(
       tenantSchema,
       homepage.id,
-      versionNumber,
+      versionNumber
     );
 
     if (!createdVersion) {
@@ -158,7 +161,7 @@ export class HomepageAdminService {
 
   async publish(
     talentId: string,
-    context: RequestContext,
+    context: RequestContext
   ): Promise<{
     publishedVersion: { id: string; versionNumber: number; publishedAt: string };
     homepageUrl: string;
@@ -167,7 +170,7 @@ export class HomepageAdminService {
     const tenantSchema = context.tenantSchema ?? '';
     const homepage = await this.homepageAdminRepository.findHomepagePublishTarget(
       tenantSchema,
-      talentId,
+      talentId
     );
 
     if (!homepage) {
@@ -195,7 +198,7 @@ export class HomepageAdminService {
     await this.homepageAdminRepository.markHomepagePublished(
       tenantSchema,
       homepage.id,
-      publishedVersion.id,
+      publishedVersion.id
     );
 
     await this.homepageAdminRepository.appendHomepagePublishChangeLog({
@@ -211,7 +214,7 @@ export class HomepageAdminService {
     try {
       await this.cdnPurgeService.purgeHomepage(
         homepage.homepagePath ?? '',
-        homepage.customDomain ?? undefined,
+        homepage.customDomain ?? undefined
       );
       cdnPurgeStatus = 'success';
     } catch {
@@ -236,7 +239,7 @@ export class HomepageAdminService {
     const tenantSchema = context.tenantSchema ?? '';
     const homepage = await this.homepageAdminRepository.findHomepagePublishTarget(
       tenantSchema,
-      talentId,
+      talentId
     );
 
     if (!homepage) {
@@ -258,7 +261,7 @@ export class HomepageAdminService {
     try {
       await this.cdnPurgeService.purgeHomepage(
         homepage.homepagePath ?? '',
-        homepage.customDomain ?? undefined,
+        homepage.customDomain ?? undefined
       );
     } catch {
       // Ignore CDN purge errors on unpublish to preserve current runtime behavior.
@@ -268,10 +271,13 @@ export class HomepageAdminService {
   async updateSettings(
     talentId: string,
     dto: UpdateSettingsDto,
-    context: RequestContext,
+    context: RequestContext
   ): Promise<HomepageResponse> {
     const tenantSchema = context.tenantSchema ?? '';
-    const homepage = await this.homepageAdminRepository.findHomepageSettings(tenantSchema, talentId);
+    const homepage = await this.homepageAdminRepository.findHomepageSettings(
+      tenantSchema,
+      talentId
+    );
 
     if (!homepage) {
       throw new NotFoundException({
@@ -296,7 +302,7 @@ export class HomepageAdminService {
         const existingTalentId = await this.homepageAdminRepository.findTalentIdByHomepagePath(
           tenantSchema,
           normalizedHomepagePath,
-          talentId,
+          talentId
         );
 
         if (existingTalentId) {
@@ -335,7 +341,7 @@ export class HomepageAdminService {
       await this.homepageAdminRepository.updateTalentHomepagePath(
         tenantSchema,
         talentId,
-        normalizedHomepagePath ?? null,
+        normalizedHomepagePath ?? null
       );
     }
 
@@ -363,7 +369,7 @@ export class HomepageAdminService {
 
   private async resolveVersionInfo(
     tenantSchema: string,
-    versionId: string | null,
+    versionId: string | null
   ): Promise<VersionInfo | null> {
     if (!versionId) {
       return null;
@@ -383,10 +389,7 @@ export class HomepageAdminService {
     });
   }
 
-  private async resolvePublishedBy(
-    tenantSchema: string,
-    version: HomepageAdminVersionRecord,
-  ) {
+  private async resolvePublishedBy(tenantSchema: string, version: HomepageAdminVersionRecord) {
     if (!version.publishedBy) {
       return null;
     }

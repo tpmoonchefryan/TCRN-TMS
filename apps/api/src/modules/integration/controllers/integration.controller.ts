@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import {
   Body,
   Controller,
@@ -13,12 +12,13 @@ import {
   Req,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Request } from 'express';
+
 import {
   INTEGRATION_ADAPTER_CREATE_DEFINITIONS,
   INTEGRATION_WEBHOOK_DEFINITIONS,
   type RequestContext,
 } from '@tcrn/shared';
-import { Request } from 'express';
 
 import { CurrentUser, RequirePermissions } from '../../../common/decorators';
 import {
@@ -30,15 +30,12 @@ import {
   UpdateAdapterDto,
   UpdateWebhookDto,
 } from '../dto/integration.dto';
-import { AdapterService } from '../services/adapter.service';
 import { AdapterResolutionService } from '../services/adapter-resolution.service';
+import { AdapterService } from '../services/adapter.service';
 import { ApiKeyService } from '../services/api-key.service';
 import { WebhookService } from '../services/webhook.service';
 
-function parseBooleanQueryValue(
-  value: string | string[] | undefined,
-  fallback: boolean,
-): boolean {
+function parseBooleanQueryValue(value: string | string[] | undefined, fallback: boolean): boolean {
   const rawValue = Array.isArray(value) ? value[0] : value;
 
   if (rawValue === undefined) {
@@ -66,7 +63,7 @@ export class IntegrationController {
     private readonly adapterService: AdapterService,
     private readonly adapterResolutionService: AdapterResolutionService,
     private readonly webhookService: WebhookService,
-    private readonly apiKeyService: ApiKeyService,
+    private readonly apiKeyService: ApiKeyService
   ) {}
 
   @Get('adapter-definitions')
@@ -89,7 +86,7 @@ export class IntegrationController {
   async listTenantAdapters(
     @Query() query: AdapterListQueryDto,
     @CurrentUser() user: { id: string; username: string; tenantId?: string; tenantSchema?: string },
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     return this.adapterService.findMany(
       { ownerType: OwnerType.TENANT, ownerId: null },
@@ -97,14 +94,14 @@ export class IntegrationController {
         ...query,
         includeInherited: parseBooleanQueryValue(
           req.query.includeInherited as string | string[] | undefined,
-          query.includeInherited ?? true,
+          query.includeInherited ?? true
         ),
         includeDisabled: parseBooleanQueryValue(
           req.query.includeDisabled as string | string[] | undefined,
-          query.includeDisabled ?? false,
+          query.includeDisabled ?? false
         ),
       },
-      this.buildContext(user, req),
+      this.buildContext(user, req)
     );
   }
 
@@ -114,13 +111,12 @@ export class IntegrationController {
   async createTenantAdapter(
     @Body() dto: CreateAdapterDto,
     @CurrentUser() user: { id: string; username: string },
-    @Req() req: Request,
+    @Req() req: Request
   ) {
-    return this.adapterService.create(
-      dto,
-      this.buildContext(user, req),
-      { ownerType: OwnerType.TENANT, ownerId: null },
-    );
+    return this.adapterService.create(dto, this.buildContext(user, req), {
+      ownerType: OwnerType.TENANT,
+      ownerId: null,
+    });
   }
 
   @Get('adapters/effective/:platformCode')
@@ -130,7 +126,7 @@ export class IntegrationController {
     @Param('platformCode') platformCode: string,
     @Query('adapterType') adapterType: string | undefined,
     @CurrentUser() user: { id: string; username: string; tenantId?: string; tenantSchema?: string },
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     return this.adapterResolutionService.resolveEffectiveAdapter(
       {
@@ -139,7 +135,7 @@ export class IntegrationController {
         platformCode,
         adapterType,
       },
-      this.buildContext(user, req),
+      this.buildContext(user, req)
     );
   }
 
@@ -149,7 +145,7 @@ export class IntegrationController {
   async getAdapter(
     @Param('adapterId', ParseUUIDPipe) adapterId: string,
     @CurrentUser() user: { id: string; username: string; tenantId?: string; tenantSchema?: string },
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     return this.adapterService.findById(adapterId, this.buildContext(user, req));
   }
@@ -161,7 +157,7 @@ export class IntegrationController {
     @Param('adapterId', ParseUUIDPipe) adapterId: string,
     @Body() dto: UpdateAdapterDto,
     @CurrentUser() user: { id: string; username: string; tenantId?: string; tenantSchema?: string },
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     return this.adapterService.update(adapterId, dto, this.buildContext(user, req));
   }
@@ -172,7 +168,7 @@ export class IntegrationController {
   async deactivateAdapter(
     @Param('adapterId', ParseUUIDPipe) adapterId: string,
     @CurrentUser() user: { id: string; username: string; tenantId?: string; tenantSchema?: string },
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     return this.adapterService.deactivate(adapterId, this.buildContext(user, req));
   }
@@ -183,7 +179,7 @@ export class IntegrationController {
   async reactivateAdapter(
     @Param('adapterId', ParseUUIDPipe) adapterId: string,
     @CurrentUser() user: { id: string; username: string; tenantId?: string; tenantSchema?: string },
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     return this.adapterService.reactivate(adapterId, this.buildContext(user, req));
   }
@@ -195,7 +191,7 @@ export class IntegrationController {
     @Param('adapterId', ParseUUIDPipe) adapterId: string,
     @Body() dto: UpdateAdapterConfigsDto,
     @CurrentUser() user: { id: string; username: string; tenantId?: string; tenantSchema?: string },
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     return this.adapterService.updateConfigs(adapterId, dto, this.buildContext(user, req));
   }
@@ -207,7 +203,7 @@ export class IntegrationController {
     @Param('adapterId', ParseUUIDPipe) adapterId: string,
     @Param('configKey') configKey: string,
     @CurrentUser() user: { id: string; username: string; tenantId?: string; tenantSchema?: string },
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     return this.adapterService.revealConfig(adapterId, configKey, this.buildContext(user, req));
   }
@@ -217,7 +213,7 @@ export class IntegrationController {
   @ApiOperation({ summary: 'List webhooks' })
   async listWebhooks(
     @CurrentUser() user: { id: string; username: string; tenantId?: string; tenantSchema?: string },
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     return this.webhookService.findMany(this.buildContext(user, req));
   }
@@ -228,7 +224,7 @@ export class IntegrationController {
   async createWebhook(
     @Body() dto: CreateWebhookDto,
     @CurrentUser() user: { id: string; username: string },
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     return this.webhookService.create(dto, this.buildContext(user, req));
   }
@@ -246,7 +242,7 @@ export class IntegrationController {
   async getWebhook(
     @Param('webhookId', ParseUUIDPipe) webhookId: string,
     @CurrentUser() user: { id: string; username: string; tenantId?: string; tenantSchema?: string },
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     return this.webhookService.findById(webhookId, this.buildContext(user, req));
   }
@@ -258,7 +254,7 @@ export class IntegrationController {
     @Param('webhookId', ParseUUIDPipe) webhookId: string,
     @Body() dto: UpdateWebhookDto,
     @CurrentUser() user: { id: string; username: string },
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     return this.webhookService.update(webhookId, dto, this.buildContext(user, req));
   }
@@ -269,7 +265,7 @@ export class IntegrationController {
   async deleteWebhook(
     @Param('webhookId', ParseUUIDPipe) webhookId: string,
     @CurrentUser() user: { id: string; username: string },
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     return this.webhookService.delete(webhookId, this.buildContext(user, req));
   }
@@ -280,7 +276,7 @@ export class IntegrationController {
   async deactivateWebhook(
     @Param('webhookId', ParseUUIDPipe) webhookId: string,
     @CurrentUser() user: { id: string; username: string },
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     return this.webhookService.deactivate(webhookId, this.buildContext(user, req));
   }
@@ -291,7 +287,7 @@ export class IntegrationController {
   async reactivateWebhook(
     @Param('webhookId', ParseUUIDPipe) webhookId: string,
     @CurrentUser() user: { id: string; username: string },
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     return this.webhookService.reactivate(webhookId, this.buildContext(user, req));
   }
@@ -302,14 +298,14 @@ export class IntegrationController {
   async regenerateConsumerKey(
     @Param('consumerId', ParseUUIDPipe) consumerId: string,
     @CurrentUser() user: { id: string; username: string },
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     return this.apiKeyService.regenerateKey(consumerId, this.buildContext(user, req));
   }
 
   private buildContext(
     user: { id: string; username: string; tenantId?: string; tenantSchema?: string },
-    req: Request,
+    req: Request
   ): RequestContext {
     const requestUser = req as Request & {
       user?: { tenantId?: string; tenantSchema?: string };

@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Module } from '@nestjs/common';
 
 import { IntegrationModule } from '../integration/integration.module';
@@ -41,11 +40,6 @@ import {
     MfrReportService,
     ExcelBuilderService,
   ],
-  exports: [
-    ReportJobService,
-    ReportJobStateService,
-    MfrReportService,
-    ExcelBuilderService,
-  ],
+  exports: [ReportJobService, ReportJobStateService, MfrReportService, ExcelBuilderService],
 })
 export class ReportModule {}

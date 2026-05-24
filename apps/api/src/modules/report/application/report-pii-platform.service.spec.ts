@@ -1,8 +1,8 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { BadRequestException, NotFoundException } from '@nestjs/common';
-import type { RequestContext } from '@tcrn/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import type { RequestContext } from '@tcrn/shared';
 
 import { OwnerType } from '../../integration/dto/integration.dto';
 import type { AdapterResolutionService } from '../../integration/services/adapter-resolution.service';
@@ -42,7 +42,7 @@ describe('ReportPiiPlatformApplicationService', () => {
     mockMfrReportRepository,
     mockAdapterResolutionService,
     mockPiiClientService,
-    mockTechEventLogService,
+    mockTechEventLogService
   );
 
   beforeEach(() => {
@@ -50,38 +50,25 @@ describe('ReportPiiPlatformApplicationService', () => {
   });
 
   it('returns null when no effective pii-platform adapter exists', async () => {
-    vi.mocked(
-      mockAdapterResolutionService.resolveEffectiveAdapter,
-    ).mockResolvedValue(null);
+    vi.mocked(mockAdapterResolutionService.resolveEffectiveAdapter).mockResolvedValue(null);
 
     await expect(
-      service.createMfrReportRequest(
-        ReportType.MFR,
-        'talent-1',
-        {},
-        ReportFormat.XLSX,
-        12,
-        context,
-      ),
+      service.createMfrReportRequest(ReportType.MFR, 'talent-1', {}, ReportFormat.XLSX, 12, context)
     ).resolves.toBeNull();
 
-    expect(
-      mockAdapterResolutionService.resolveEffectiveAdapter,
-    ).toHaveBeenCalledWith(
+    expect(mockAdapterResolutionService.resolveEffectiveAdapter).toHaveBeenCalledWith(
       {
         ownerType: OwnerType.TALENT,
         ownerId: 'talent-1',
         platformCode: 'TCRN_PII_PLATFORM',
       },
-      context,
+      context
     );
     expect(mockPiiClientService.createReportRequest).not.toHaveBeenCalled();
   });
 
   it('fails closed when the adapter is active but missing runtime config', async () => {
-    vi.mocked(
-      mockAdapterResolutionService.resolveEffectiveAdapter,
-    ).mockResolvedValue({
+    vi.mocked(mockAdapterResolutionService.resolveEffectiveAdapter).mockResolvedValue({
       id: 'adapter-1',
       code: 'TCRN_PII_PLATFORM',
       configs: [],
@@ -92,25 +79,20 @@ describe('ReportPiiPlatformApplicationService', () => {
     } as never);
 
     await expect(
-      service.createMfrReportRequest(
-        ReportType.MFR,
-        'talent-1',
-        {},
-        ReportFormat.CSV,
-        12,
-        context,
-      ),
+      service.createMfrReportRequest(ReportType.MFR, 'talent-1', {}, ReportFormat.CSV, 12, context)
     ).rejects.toThrow(BadRequestException);
   });
 
   it('throws when the target talent does not exist', async () => {
-    vi.mocked(
-      mockAdapterResolutionService.resolveEffectiveAdapter,
-    ).mockResolvedValue({
+    vi.mocked(mockAdapterResolutionService.resolveEffectiveAdapter).mockResolvedValue({
       id: 'adapter-1',
       code: 'TCRN_PII_PLATFORM',
       configs: [
-        { configKey: 'api_base_url', configValue: 'https://pii-platform.example.com', isSecret: false },
+        {
+          configKey: 'api_base_url',
+          configValue: 'https://pii-platform.example.com',
+          isSecret: false,
+        },
         { configKey: 'service_token', configValue: 'token-1', isSecret: true },
       ],
       resolvedFrom: {
@@ -121,25 +103,20 @@ describe('ReportPiiPlatformApplicationService', () => {
     vi.mocked(mockMfrReportRepository.findTalent).mockResolvedValue(null);
 
     await expect(
-      service.createMfrReportRequest(
-        ReportType.MFR,
-        'talent-1',
-        {},
-        ReportFormat.XLSX,
-        12,
-        context,
-      ),
+      service.createMfrReportRequest(ReportType.MFR, 'talent-1', {}, ReportFormat.XLSX, 12, context)
     ).rejects.toThrow(NotFoundException);
   });
 
   it('builds a report handoff request and returns portal redirect data', async () => {
-    vi.mocked(
-      mockAdapterResolutionService.resolveEffectiveAdapter,
-    ).mockResolvedValue({
+    vi.mocked(mockAdapterResolutionService.resolveEffectiveAdapter).mockResolvedValue({
       id: 'adapter-1',
       code: 'TCRN_PII_PLATFORM',
       configs: [
-        { configKey: 'api_base_url', configValue: 'https://pii-platform.example.com', isSecret: false },
+        {
+          configKey: 'api_base_url',
+          configValue: 'https://pii-platform.example.com',
+          isSecret: false,
+        },
         { configKey: 'service_token', configValue: 'token-1', isSecret: true },
       ],
       resolvedFrom: {
@@ -168,8 +145,8 @@ describe('ReportPiiPlatformApplicationService', () => {
         { platformCodes: ['youtube'] },
         ReportFormat.CSV,
         24,
-        context,
-      ),
+        context
+      )
     ).resolves.toEqual({
       deliveryMode: 'pii_platform_portal',
       requestId: 'report-request-1',
@@ -193,7 +170,7 @@ describe('ReportPiiPlatformApplicationService', () => {
       }),
       'token-1',
       'tenant-1',
-      'tenant_test',
+      'tenant_test'
     );
     expect(mockTechEventLogService.log).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -202,7 +179,7 @@ describe('ReportPiiPlatformApplicationService', () => {
           customerCount: 2,
         }),
       }),
-      context,
+      context
     );
   });
 });

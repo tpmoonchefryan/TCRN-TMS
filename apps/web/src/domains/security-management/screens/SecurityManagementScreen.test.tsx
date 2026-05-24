@@ -1,8 +1,9 @@
-import type { SupportedUiLocale } from '@tcrn/shared';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { localizedFixture } from '@/domains/config-dictionary-settings/testing/localized-fixtures';
 
+import type { SupportedUiLocale } from '@tcrn/shared';
+
+import { localizedFixture } from '@/domains/config-dictionary-settings/testing/localized-fixtures';
 import { SecurityManagementScreen } from '@/domains/security-management/screens/SecurityManagementScreen';
 
 const mockRequest = vi.fn();
@@ -301,8 +302,12 @@ describe('SecurityManagementScreen', () => {
     });
 
     fireEvent.click(within(ruleDrawer).getByRole('button', { name: 'Translation management' }));
-    const translationDrawer = await screen.findByRole('dialog', { name: 'Blocklist rule translations' });
-    fireEvent.click(await within(translationDrawer).findByRole('button', { name: /Simplified Chinese/i }));
+    const translationDrawer = await screen.findByRole('dialog', {
+      name: 'Blocklist rule translations',
+    });
+    fireEvent.click(
+      await within(translationDrawer).findByRole('button', { name: /Simplified Chinese/i })
+    );
     fireEvent.click(await within(translationDrawer).findByRole('button', { name: /Korean/i }));
 
     const translationInputs = within(translationDrawer).getAllByLabelText('Rule name');
@@ -315,7 +320,7 @@ describe('SecurityManagementScreen', () => {
     fireEvent.click(within(translationDrawer).getByRole('button', { name: 'Save' }));
     await waitFor(() => {
       expect(
-        screen.queryByRole('dialog', { name: 'Blocklist rule translations' }),
+        screen.queryByRole('dialog', { name: 'Blocklist rule translations' })
       ).not.toBeInTheDocument();
     });
 
@@ -339,13 +344,10 @@ describe('SecurityManagementScreen', () => {
             ko: '비속어 규칙',
           }),
           structuredScope: {
-            entries: [
-              { category: 'tenant' },
-              { category: 'surface', value: 'marshmallow' },
-            ],
+            entries: [{ category: 'tenant' }, { category: 'surface', value: 'marshmallow' }],
           },
           scope: ['legacy-surface'],
-        }),
+        })
       );
     });
   });
@@ -456,14 +458,16 @@ describe('SecurityManagementScreen', () => {
     expect(await screen.findByText('Enter a pattern before testing the rule.')).toBeInTheDocument();
     expect(mockRequest).not.toHaveBeenCalledWith(
       '/api/v1/blocklist-entries/test',
-      expect.anything(),
+      expect.anything()
     );
 
     fireEvent.change(within(ruleDrawer).getByLabelText('Pattern'), {
       target: { value: 'badword' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Test rule' }));
-    expect(await screen.findByText('Enter sample text before testing the rule.')).toBeInTheDocument();
+    expect(
+      await screen.findByText('Enter sample text before testing the rule.')
+    ).toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText('Sample text'), {
       target: { value: 'This contains badword.' },
@@ -480,14 +484,14 @@ describe('SecurityManagementScreen', () => {
             pattern: 'badword',
             patternType: 'keyword',
           }),
-        }),
+        })
       );
     });
 
     expect(
       await screen.findByText(
-        '1 match(es) detected. Effective action: Reject. Severity: High. Category: profanity.',
-      ),
+        '1 match(es) detected. Effective action: Reject. Severity: High. Category: profanity.'
+      )
     ).toBeInTheDocument();
   });
 
@@ -638,12 +642,9 @@ describe('SecurityManagementScreen', () => {
         inherit: true,
         isForceUse: false,
         structuredScope: {
-          entries: [
-            { category: 'tenant' },
-            { category: 'surface', value: 'marshmallow' },
-          ],
+          entries: [{ category: 'tenant' }, { category: 'surface', value: 'marshmallow' }],
         },
-      }),
+      })
     );
     expect(createdPayloads[0]).not.toHaveProperty('ownerId');
     expect(await screen.findByText('Blocklist entry created.')).toBeInTheDocument();
@@ -798,7 +799,9 @@ describe('SecurityManagementScreen', () => {
     });
 
     expect(await screen.findByText('Added 1 blocklist pattern(s); 1 failed.')).toBeInTheDocument();
-    expect((within(batchDrawer).getByLabelText('Patterns') as HTMLTextAreaElement).value).toBe('blocked-two');
+    expect((within(batchDrawer).getByLabelText('Patterns') as HTMLTextAreaElement).value).toBe(
+      'blocked-two'
+    );
   });
 
   it('guards dirty security editors before closing or switching tabs', async () => {
@@ -887,13 +890,19 @@ describe('SecurityManagementScreen', () => {
     });
 
     fireEvent.click(within(ruleDrawer).getByRole('button', { name: 'Cancel' }));
-    const closeGuard = await screen.findByRole('dialog', { name: 'Discard unsaved security changes?' });
+    const closeGuard = await screen.findByRole('dialog', {
+      name: 'Discard unsaved security changes?',
+    });
     fireEvent.click(within(closeGuard).getByRole('button', { name: 'Cancel' }));
 
-    expect(await screen.findByRole('dialog', { name: 'Create Blocklist Rule' })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('dialog', { name: 'Create Blocklist Rule' })
+    ).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('tab', { name: 'IP Access' }));
-    const tabGuard = await screen.findByRole('dialog', { name: 'Discard unsaved security changes?' });
+    const tabGuard = await screen.findByRole('dialog', {
+      name: 'Discard unsaved security changes?',
+    });
     fireEvent.click(within(tabGuard).getByRole('button', { name: 'Discard changes' }));
 
     expect(await screen.findByRole('button', { name: 'Add IP rule' })).toBeInTheDocument();
@@ -1030,11 +1039,14 @@ describe('SecurityManagementScreen', () => {
     expect(await screen.findByText('Discord Invite Filter')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Edit' }).closest('div')).toHaveClass(
       'flex-nowrap',
-      'whitespace-nowrap',
+      'whitespace-nowrap'
     );
-    expect(screen.getByText('active').closest('div')).toHaveClass('flex-nowrap', 'whitespace-nowrap');
+    expect(screen.getByText('active').closest('div')).toHaveClass(
+      'flex-nowrap',
+      'whitespace-nowrap'
+    );
     expect(mockReplace).not.toHaveBeenCalledWith(
-      '/tenant/tenant-1/security?tab=external-blocklist&scopeType=subsidiary&scopeId=sub-1',
+      '/tenant/tenant-1/security?tab=external-blocklist&scopeType=subsidiary&scopeId=sub-1'
     );
 
     fireEvent.click(screen.getByRole('tab', { name: 'IP Access' }));
@@ -1054,7 +1066,7 @@ describe('SecurityManagementScreen', () => {
 
     await waitFor(() => {
       expect(mockReplace).toHaveBeenCalledWith(
-        '/tenant/tenant-1/security?tab=runtime-signals&scopeType=subsidiary&scopeId=sub-1',
+        '/tenant/tenant-1/security?tab=runtime-signals&scopeType=subsidiary&scopeId=sub-1'
       );
     });
 
@@ -1067,7 +1079,8 @@ describe('SecurityManagementScreen', () => {
   });
 
   it('hydrates and writes scoped list pagination through URL query', async () => {
-    searchQuery = 'tab=external-blocklist&scopeType=subsidiary&scopeId=sub-1&externalPage=2&externalPageSize=20&foo=1';
+    searchQuery =
+      'tab=external-blocklist&scopeType=subsidiary&scopeId=sub-1&externalPage=2&externalPageSize=20&foo=1';
     const externalRequests: string[] = [];
 
     mockRequest.mockImplementation(async (requestPath: string, init?: RequestInit) => {
@@ -1170,15 +1183,17 @@ describe('SecurityManagementScreen', () => {
     render(<SecurityManagementScreen tenantId="tenant-1" />);
 
     expect(await screen.findByText('External Pattern 21')).toBeInTheDocument();
-    expect(externalRequests.some((requestPath) => (
-      requestPath.includes('page=2') && requestPath.includes('pageSize=20')
-    ))).toBe(true);
+    expect(
+      externalRequests.some(
+        (requestPath) => requestPath.includes('page=2') && requestPath.includes('pageSize=20')
+      )
+    ).toBe(true);
 
     fireEvent.click(screen.getByRole('button', { name: 'Previous' }));
 
     await waitFor(() => {
       expect(mockReplace).toHaveBeenCalledWith(
-        '/tenant/tenant-1/security?tab=external-blocklist&scopeType=subsidiary&scopeId=sub-1&foo=1',
+        '/tenant/tenant-1/security?tab=external-blocklist&scopeType=subsidiary&scopeId=sub-1&foo=1'
       );
     });
   });
@@ -1297,12 +1312,16 @@ describe('SecurityManagementScreen', () => {
 
     fireEvent.click(within(patternDrawer).getByRole('button', { name: 'Cancel' }));
     await waitFor(() => {
-      expect(screen.queryByRole('dialog', { name: 'Create External Pattern' })).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole('dialog', { name: 'Create External Pattern' })
+      ).not.toBeInTheDocument();
     });
 
     fireEvent.click(screen.getByRole('button', { name: 'Batch deactivate' }));
 
-    expect(await screen.findByText('Deactivate all visible external patterns?')).toBeInTheDocument();
+    expect(
+      await screen.findByText('Deactivate all visible external patterns?')
+    ).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Deactivate visible rules' }));
 
@@ -1311,11 +1330,13 @@ describe('SecurityManagementScreen', () => {
         '/api/v1/external-blocklist/batch-toggle',
         expect.objectContaining({
           method: 'POST',
-        }),
+        })
       );
     });
 
-    expect(await screen.findByText('Visible external patterns were deactivated.')).toBeInTheDocument();
+    expect(
+      await screen.findByText('Visible external patterns were deactivated.')
+    ).toBeInTheDocument();
     expect(await screen.findByText('inactive')).toBeInTheDocument();
   });
 

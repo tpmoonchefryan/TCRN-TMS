@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ImportJobStatus, ImportJobType } from '../dto/import.dto';
@@ -33,7 +32,7 @@ describe('ImportJobSubmissionApplicationService', () => {
     service = new ImportJobSubmissionApplicationService(
       mockImportJobWriteApplicationService as never,
       mockMinioService as never,
-      mockImportQueue as never,
+      mockImportQueue as never
     );
   });
 
@@ -61,7 +60,7 @@ describe('ImportJobSubmissionApplicationService', () => {
         consumerCode: 'CRM_SYSTEM',
         defaultProfileType: 'individual',
         context: mockContext,
-      }),
+      })
     ).resolves.toEqual({
       id: 'job-123',
       status: ImportJobStatus.PENDING,
@@ -77,7 +76,7 @@ describe('ImportJobSubmissionApplicationService', () => {
       fileBuffer.byteLength,
       1,
       'CRM_SYSTEM',
-      mockContext,
+      mockContext
     );
 
     expect(mockMinioService.uploadStream).toHaveBeenCalledWith(
@@ -85,7 +84,7 @@ describe('ImportJobSubmissionApplicationService', () => {
       'tenant_test/job-123.csv',
       expect.anything(),
       fileBuffer.byteLength,
-      'text/csv',
+      'text/csv'
     );
 
     expect(mockImportQueue.add).toHaveBeenCalledWith('process-import', {

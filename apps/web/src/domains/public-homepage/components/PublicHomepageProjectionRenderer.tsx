@@ -1,5 +1,8 @@
 'use client';
 
+import { ExternalLink, Sparkles } from 'lucide-react';
+import { type CSSProperties, type ReactNode } from 'react';
+
 import {
   DEFAULT_THEME,
   normalizeTheme,
@@ -9,26 +12,18 @@ import {
   type PublicPresencePublicProjection,
   type ThemeConfig,
 } from '@tcrn/shared';
-import { ExternalLink, Sparkles } from 'lucide-react';
-import {
-  type CSSProperties,
-  type ReactNode,
-} from 'react';
 
+import {
+  resolvePublicHomepageFallbackDescription,
+  resolvePublicHomepageFallbackTitle,
+} from '@/domains/public-homepage/public-homepage-fallback-copy';
 import {
   PublicPresenceBadge,
   PublicPresenceHero,
   PublicPresenceSurface,
 } from '@/domains/public-presence';
-import {
-  resolvePublicHomepageFallbackDescription,
-  resolvePublicHomepageFallbackTitle,
-} from '@/domains/public-homepage/public-homepage-fallback-copy';
 import { useUiLocale } from '@/platform/runtime/locale/locale-provider';
-import {
-  formatLocaleDateTime,
-  pickLocaleText,
-} from '@/platform/runtime/locale/locale-text';
+import { formatLocaleDateTime, pickLocaleText } from '@/platform/runtime/locale/locale-text';
 
 type PublicHomepageCopy = ReturnType<typeof useUiLocale>['copy']['publicHomepage'];
 type PublicHomepageResponsiveMode = 'auto' | 'desktop' | 'mobile';
@@ -114,10 +109,7 @@ function SectionTitle({
   theme: ThemeConfig;
 }>) {
   return (
-    <h2
-      className="text-xl font-semibold"
-      style={{ color: theme.colors.text }}
-    >
+    <h2 className="text-xl font-semibold" style={{ color: theme.colors.text }}>
       {title}
     </h2>
   );
@@ -143,10 +135,7 @@ function ActionLink({
   );
 }
 
-function resolveActionLabel(
-  action: { label: string; slot: string },
-  copy: PublicHomepageCopy,
-) {
+function resolveActionLabel(action: { label: string; slot: string }, copy: PublicHomepageCopy) {
   const trimmed = action.label.trim();
   const isSentinel = (value: string) => trimmed === value;
 
@@ -163,22 +152,18 @@ function resolveActionLabel(
   }
 
   if (action.slot === 'bilibiliProfile') {
-    return (
-      !trimmed
-      || trimmed === 'View Bilibili dynamics'
-      || isSentinel('__viewBilibiliDynamics__')
-    )
+    return !trimmed ||
+      trimmed === 'View Bilibili dynamics' ||
+      isSentinel('__viewBilibiliDynamics__')
       ? copy.viewBilibiliDynamics
       : trimmed;
   }
 
   if (
-    action.slot === 'compatibility'
-    || action.slot === 'currentAction'
-    || (
-      action.slot === 'officialChannel'
-      && (trimmed === 'Official channel' || isSentinel('__officialChannel__'))
-    )
+    action.slot === 'compatibility' ||
+    action.slot === 'currentAction' ||
+    (action.slot === 'officialChannel' &&
+      (trimmed === 'Official channel' || isSentinel('__officialChannel__')))
   ) {
     return !trimmed || isSentinel('__openLink__') ? copy.openLink : trimmed;
   }
@@ -186,17 +171,11 @@ function resolveActionLabel(
   return !trimmed || isSentinel('__openLink__') ? copy.openLink : trimmed;
 }
 
-function resolveCountdownTitle(
-  locale: string,
-  title: string,
-) {
+function resolveCountdownTitle(locale: string, title: string) {
   return resolvePublicHomepageFallbackTitle(locale, title);
 }
 
-function resolveCountdownDescription(
-  locale: string,
-  description: string | null,
-) {
+function resolveCountdownDescription(locale: string, description: string | null) {
   if (!description) {
     return null;
   }
@@ -254,7 +233,7 @@ function resolveCountdownDescription(
 function resolveSectionTitle(
   section: PublicPresenceProjectedSection,
   copy: PublicHomepageCopy,
-  locale: string,
+  locale: string
 ) {
   switch (section.sectionType) {
     case 'socialLinks':
@@ -270,9 +249,7 @@ function resolveSectionTitle(
         ? copy.video
         : section.title;
     case 'marshmallow':
-      return !section.title || section.title === 'Marshmallow'
-        ? copy.marshmallow
-        : section.title;
+      return !section.title || section.title === 'Marshmallow' ? copy.marshmallow : section.title;
     case 'schedule':
       return section.title || copy.schedule;
     case 'musicPlayer':
@@ -299,9 +276,7 @@ function resolveSectionTitle(
       }
 
       if (section.kind === 'fanInteraction') {
-        return !section.title || section.title === 'Marshmallow'
-          ? copy.marshmallow
-          : section.title;
+        return !section.title || section.title === 'Marshmallow' ? copy.marshmallow : section.title;
       }
 
       if (section.kind === 'officialUpdatesFeed') {
@@ -319,10 +294,10 @@ function resolveSectionTitle(
       }
 
       if (
-        section.title === 'Link'
-        || section.title === 'Primary action'
-        || section.title === 'LinkButton'
-        || section.title === '__openLink__'
+        section.title === 'Link' ||
+        section.title === 'Primary action' ||
+        section.title === 'LinkButton' ||
+        section.title === '__openLink__'
       ) {
         return copy.openLink;
       }
@@ -336,23 +311,25 @@ function resolveSectionTitle(
 function resolveSectionDescription(
   section: PublicPresenceProjectedSection,
   copy: PublicHomepageCopy,
-  locale: string,
+  locale: string
 ) {
   switch (section.sectionType) {
     case 'hero':
       return resolvePublicHomepageFallbackDescription(locale, section.description);
     case 'marshmallow':
-      return !section.description
-        || section.description === 'Public messages remain available on the dedicated marshmallow page.'
+      return !section.description ||
+        section.description ===
+          'Public messages remain available on the dedicated marshmallow page.'
         ? copy.marshmallowDescription
         : section.description;
     case 'musicPlayer':
-      return section.description === 'Embedded music playback is not enabled in the public projection yet.'
+      return section.description ===
+        'Embedded music playback is not enabled in the public projection yet.'
         ? null
         : section.description;
     case 'bilibiliDynamic':
-      return !section.description
-        || section.description === 'This block links to the source Bilibili profile.'
+      return !section.description ||
+        section.description === 'This block links to the source Bilibili profile.'
         ? copy.bilibiliDescription
         : section.description;
     case 'fallbackCard':
@@ -361,23 +338,19 @@ function resolveSectionDescription(
       }
 
       if (
-        !section.description
-        && section.kind === 'legacyCompatibility'
-        && section.title !== '__openLink__'
-        && section.title !== 'Link'
+        !section.description &&
+        section.kind === 'legacyCompatibility' &&
+        section.title !== '__openLink__' &&
+        section.title !== 'Link'
       ) {
         return copy.unsupportedDescription;
       }
 
-      if (
-        section.description === 'Some homepage content is shown here in a simplified view.'
-      ) {
+      if (section.description === 'Some homepage content is shown here in a simplified view.') {
         return copy.unsupportedDescription;
       }
 
-      if (
-        section.description === 'This block links to the source Bilibili profile.'
-      ) {
+      if (section.description === 'This block links to the source Bilibili profile.') {
         return copy.bilibiliDescription;
       }
 
@@ -392,7 +365,7 @@ function renderSection(
   theme: ThemeConfig,
   copy: PublicHomepageCopy,
   locale: string,
-  responsiveMode: PublicHomepageResponsiveMode,
+  responsiveMode: PublicHomepageResponsiveMode
 ) {
   const primaryText = { color: theme.colors.text } as CSSProperties;
   const secondaryText = { color: theme.colors.textSecondary } as CSSProperties;
@@ -409,22 +382,22 @@ function renderSection(
           className={useMobileLayout ? 'p-8' : 'p-8 md:p-10'}
         >
           <PublicPresenceHero
-            badge={(
+            badge={
               <PublicPresenceBadge icon={<Sparkles />} tone="rose">
                 {copy.badge}
               </PublicPresenceBadge>
-            )}
+            }
             responsiveMode={responsiveMode}
             title={heroTitle}
             titleStyle={primaryText}
-            description={heroDescription ? (
-              <p style={secondaryText}>{heroDescription}</p>
-            ) : null}
-            meta={section.timezone ? (
-              <PublicPresenceBadge tone="slate" variant="outline">
-                {copy.timezoneLabel}: {section.timezone}
-              </PublicPresenceBadge>
-            ) : null}
+            description={heroDescription ? <p style={secondaryText}>{heroDescription}</p> : null}
+            meta={
+              section.timezone ? (
+                <PublicPresenceBadge tone="slate" variant="outline">
+                  {copy.timezoneLabel}: {section.timezone}
+                </PublicPresenceBadge>
+              ) : null
+            }
             actions={
               section.primaryAction?.href ? (
                 <ActionLink
@@ -475,10 +448,7 @@ function renderSection(
               />
             ) : null}
             <div className="space-y-2">
-              <SectionTitle
-                title={section.displayName || copy.untitledProfile}
-                theme={theme}
-              />
+              <SectionTitle title={section.displayName || copy.untitledProfile} theme={theme} />
               {section.bio ? (
                 <p className="text-sm leading-7" style={secondaryText}>
                   {section.bio}
@@ -504,7 +474,7 @@ function renderSection(
                     href={link.href}
                     label={resolveActionLabel(link, copy)}
                   />
-                ) : null,
+                ) : null
               )}
             </div>
           </div>
@@ -520,9 +490,7 @@ function renderSection(
             />
             <div
               className={
-                useMobileLayout
-                  ? 'grid gap-4'
-                  : 'grid gap-4 sm:grid-cols-2 lg:grid-cols-3'
+                useMobileLayout ? 'grid gap-4' : 'grid gap-4 sm:grid-cols-2 lg:grid-cols-3'
               }
               style={{ '--homepage-gallery-columns': section.columns } as CSSProperties}
             >
@@ -537,15 +505,12 @@ function renderSection(
                       width={1200}
                     />
                     {section.showCaptions && image.alt ? (
-                      <figcaption
-                        className="px-4 py-3 text-sm"
-                        style={secondaryText}
-                      >
+                      <figcaption className="px-4 py-3 text-sm" style={secondaryText}>
                         {image.alt}
                       </figcaption>
                     ) : null}
                   </figure>
-                ) : null,
+                ) : null
               )}
             </div>
           </div>
@@ -598,7 +563,7 @@ function renderSection(
       return (
         <SectionSurface key={section.id} theme={theme} className="p-6">
           <div
-            className="prose prose-slate max-w-none prose-headings:mb-3 prose-headings:mt-0 prose-p:leading-7"
+            className="prose prose-slate prose-headings:mb-3 prose-headings:mt-0 prose-p:leading-7 max-w-none"
             style={{
               color: theme.colors.text,
               textAlign: section.textAlign,
@@ -717,8 +682,18 @@ function renderSection(
             className="border-white/70"
             style={{
               borderTopStyle: section.style,
-              marginTop: section.spacing === 'large' ? '2.5rem' : section.spacing === 'small' ? '1rem' : '1.5rem',
-              marginBottom: section.spacing === 'large' ? '2.5rem' : section.spacing === 'small' ? '1rem' : '1.5rem',
+              marginTop:
+                section.spacing === 'large'
+                  ? '2.5rem'
+                  : section.spacing === 'small'
+                    ? '1rem'
+                    : '1.5rem',
+              marginBottom:
+                section.spacing === 'large'
+                  ? '2.5rem'
+                  : section.spacing === 'small'
+                    ? '1rem'
+                    : '1.5rem',
             }}
           />
         </div>
@@ -781,7 +756,7 @@ function renderSection(
 }
 
 function resolveGroupedActionKind(
-  section: PublicPresenceProjectedSection,
+  section: PublicPresenceProjectedSection
 ): GroupedActionKind | null {
   if (section.sectionType !== 'linkButton' || !section.action.href) {
     return null;
@@ -820,10 +795,7 @@ function dedupeProjectedActions(actions: PublicPresenceProjectedAction[]) {
   return deduped;
 }
 
-function resolveGroupedActionTitle(
-  locale: string,
-  kind: GroupedActionKind,
-) {
+function resolveGroupedActionTitle(locale: string, kind: GroupedActionKind) {
   switch (kind) {
     case 'currentAction':
       return pickLocaleText(locale, {
@@ -857,10 +829,7 @@ function resolveGroupedActionTitle(
   }
 }
 
-function resolveGroupedActionDescription(
-  locale: string,
-  kind: GroupedActionKind,
-) {
+function resolveGroupedActionDescription(locale: string, kind: GroupedActionKind) {
   switch (kind) {
     case 'currentAction':
       return pickLocaleText(locale, {
@@ -894,9 +863,7 @@ function resolveGroupedActionDescription(
   }
 }
 
-function buildRenderableSections(
-  sections: PublicPresenceProjectedSection[],
-): RenderableSection[] {
+function buildRenderableSections(sections: PublicPresenceProjectedSection[]): RenderableSection[] {
   const renderable: RenderableSection[] = [];
   let hasGroupedCurrentAction = false;
 
@@ -914,11 +881,13 @@ function buildRenderableSections(
 
     const lastSection = renderable.at(-1);
 
-    if (lastSection && 'type' in lastSection && lastSection.type === 'groupedActionSection' && lastSection.groupKind === groupedKind) {
-      lastSection.actions = dedupeProjectedActions([
-        ...lastSection.actions,
-        section.action,
-      ]);
+    if (
+      lastSection &&
+      'type' in lastSection &&
+      lastSection.type === 'groupedActionSection' &&
+      lastSection.groupKind === groupedKind
+    ) {
+      lastSection.actions = dedupeProjectedActions([...lastSection.actions, section.action]);
       continue;
     }
 
@@ -954,15 +923,12 @@ function renderGroupedActionSection(
   section: GroupedActionSection,
   theme: ThemeConfig,
   copy: PublicHomepageCopy,
-  locale: string,
+  locale: string
 ) {
   return (
     <SectionSurface key={section.id} theme={theme} className="p-6">
       <div className="space-y-4">
-        <SectionTitle
-          title={resolveGroupedActionTitle(locale, section.groupKind)}
-          theme={theme}
-        />
+        <SectionTitle title={resolveGroupedActionTitle(locale, section.groupKind)} theme={theme} />
         {resolveGroupedActionDescription(locale, section.groupKind) ? (
           <p className="text-sm leading-7" style={{ color: theme.colors.textSecondary }}>
             {resolveGroupedActionDescription(locale, section.groupKind)}
@@ -976,7 +942,7 @@ function renderGroupedActionSection(
                 href={action.href}
                 label={resolveActionLabel(action, copy)}
               />
-            ) : null,
+            ) : null
           )}
         </div>
       </div>
@@ -997,22 +963,11 @@ export function PublicHomepageProjectionRenderer({
 
   return (
     <div className="space-y-8">
-      {renderableSections.map((section) => (
+      {renderableSections.map((section) =>
         'type' in section
-          ? renderGroupedActionSection(
-              section,
-              theme,
-              copy.publicHomepage,
-              locale,
-            )
-          : renderSection(
-              section,
-              theme,
-              copy.publicHomepage,
-              locale,
-              responsiveMode,
-            )
-      ))}
+          ? renderGroupedActionSection(section, theme, copy.publicHomepage, locale)
+          : renderSection(section, theme, copy.publicHomepage, locale, responsiveMode)
+      )}
     </div>
   );
 }

@@ -1,10 +1,11 @@
-import { SUPPORTED_UI_LOCALES, type IntegrationAdapterDefinition } from '@tcrn/shared';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { InterfaceAddAdapterScreen } from '@/domains/interface-management/screens/InterfaceAddAdapterScreen';
+import { SUPPORTED_UI_LOCALES, type IntegrationAdapterDefinition } from '@tcrn/shared';
 import type { SupportedUiLocale } from '@tcrn/shared';
+
+import { InterfaceAddAdapterScreen } from '@/domains/interface-management/screens/InterfaceAddAdapterScreen';
 
 const mockRequest = vi.fn();
 const mockReplace = vi.fn();
@@ -265,11 +266,11 @@ describe('InterfaceAddAdapterScreen', () => {
               { configKey: 'token', configValue: 'provider-token' },
             ],
           }),
-        }),
+        })
       );
     });
     expect(mockReplace).toHaveBeenCalledWith(
-      '/tenant/tenant-1/interface-management?ownerType=subsidiary&ownerId=sub-1',
+      '/tenant/tenant-1/interface-management?ownerType=subsidiary&ownerId=sub-1'
     );
   });
 });

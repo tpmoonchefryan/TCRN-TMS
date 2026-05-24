@@ -1,23 +1,24 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+import { createHash, randomUUID } from 'crypto';
 
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
+
 import { prisma } from '@tcrn/database';
 import { ErrorCodes } from '@tcrn/shared';
-import { createHash, randomUUID } from 'crypto';
 
 /**
  * JWT Access Token Payload
  */
 export interface AccessTokenPayload {
-  sub: string;       // User ID
-  tid: string;       // Tenant ID
-  tsc: string;       // Tenant Schema
+  sub: string; // User ID
+  tid: string; // Tenant ID
+  tsc: string; // Tenant Schema
   email: string;
   username: string;
   type: 'access';
-  jti: string;       // Token ID
+  jti: string; // Token ID
 }
 
 /**
@@ -46,12 +47,12 @@ export interface PasswordResetSessionPayload {
  * Used for authenticated access to public marshmallow pages
  */
 export interface MarshmallowSsoPayload {
-  sub: string;            // User ID
-  tid: string;            // Tenant ID
-  tsc: string;            // Tenant Schema
-  talentId: string;       // Talent ID for this marshmallow page
-  displayName: string;    // User's display name
-  email: string;          // User's email (for Gravatar)
+  sub: string; // User ID
+  tid: string; // Tenant ID
+  tsc: string; // Tenant Schema
+  talentId: string; // Talent ID for this marshmallow page
+  displayName: string; // User's display name
+  email: string; // User's email (for Gravatar)
   type: 'marshmallow_sso';
 }
 
@@ -67,7 +68,7 @@ export class TokenService {
 
   constructor(
     private readonly jwtService: JwtService,
-    private readonly configService: ConfigService,
+    private readonly configService: ConfigService
   ) {
     // Parse TTL values (default: 15m access, 12h refresh, 5m totp)
     this.accessTokenTtl = this.parseTtl(this.configService.get('JWT_ACCESS_TTL', '15m'));
@@ -96,11 +97,16 @@ export class TokenService {
     const unit = match[2];
 
     switch (unit) {
-      case 's': return value;
-      case 'm': return value * 60;
-      case 'h': return value * 3600;
-      case 'd': return value * 86400;
-      default: return 900;
+      case 's':
+        return value;
+      case 'm':
+        return value * 60;
+      case 'h':
+        return value * 3600;
+      case 'd':
+        return value * 86400;
+      default:
+        return 900;
     }
   }
 
@@ -114,7 +120,7 @@ export class TokenService {
     const jti = randomUUID();
     const token = this.jwtService.sign(
       { ...payload, type: 'access', jti },
-      { expiresIn: this.accessTokenTtl },
+      { expiresIn: this.accessTokenTtl }
     );
 
     return {
@@ -148,31 +154,38 @@ export class TokenService {
     userId: string,
     tenantSchema: string,
     deviceInfo?: string,
-    ipAddress?: string,
+    ipAddress?: string
   ): Promise<{
     token: string;
     expiresAt: Date;
   }> {
     // Generate random token part
     const randomPart = `${randomUUID().replace(/-/g, '')}${randomUUID().replace(/-/g, '')}`;
-    
+
     // Encode schema in token
     const schemaPart = Buffer.from(tenantSchema).toString('base64').replace(/=/g, ''); // Simple base64, usually safe for token chars if handled
     // Actually base64url is better but base64 with stripped = is fine for our usage
-    
+
     const token = `rt_${schemaPart}.${randomPart}`;
     const tokenHash = createHash('sha256').update(token).digest('hex');
-    
+
     const expiresAt = new Date();
     expiresAt.setSeconds(expiresAt.getSeconds() + this.refreshTokenTtl);
 
     // Store in database
-    await prisma.$executeRawUnsafe(`
+    await prisma.$executeRawUnsafe(
+      `
       INSERT INTO "${tenantSchema}".refresh_token 
         (id, user_id, token_hash, device_info, ip_address, expires_at, created_at)
       VALUES 
         (gen_random_uuid(), $1::uuid, $2, $3, $4::inet, $5, now())
-    `, userId, tokenHash, deviceInfo || null, ipAddress || null, expiresAt);
+    `,
+      userId,
+      tokenHash,
+      deviceInfo || null,
+      ipAddress || null,
+      expiresAt
+    );
 
     return { token, expiresAt };
   }
@@ -182,7 +195,7 @@ export class TokenService {
    */
   async verifyRefreshToken(
     token: string,
-    tenantSchema: string, // Fallback or override
+    tenantSchema: string // Fallback or override
   ): Promise<{
     userId: string;
     tokenId: string;
@@ -190,16 +203,16 @@ export class TokenService {
   } | null> {
     // Try to extract schema from token
     let targetSchema = tenantSchema;
-    
+
     if (token.startsWith('rt_') && token.includes('.')) {
       try {
         const parts = token.split('.');
         if (parts.length === 2) {
-           const schemaPart = parts[0].substring(3); // remove rt_
-           const decoded = Buffer.from(schemaPart, 'base64').toString('utf-8');
-           if (decoded) {
-             targetSchema = decoded;
-           }
+          const schemaPart = parts[0].substring(3); // remove rt_
+          const decoded = Buffer.from(schemaPart, 'base64').toString('utf-8');
+          if (decoded) {
+            targetSchema = decoded;
+          }
         }
       } catch {
         // Ignore parsing errors, fall back to provided schema
@@ -208,16 +221,21 @@ export class TokenService {
 
     const tokenHash = createHash('sha256').update(token).digest('hex');
 
-    const result = await prisma.$queryRawUnsafe<Array<{
-      id: string;
-      user_id: string;
-      expires_at: Date;
-      revoked_at: Date | null;
-    }>>(`
+    const result = await prisma.$queryRawUnsafe<
+      Array<{
+        id: string;
+        user_id: string;
+        expires_at: Date;
+        revoked_at: Date | null;
+      }>
+    >(
+      `
       SELECT id, user_id, expires_at, revoked_at
       FROM "${targetSchema}".refresh_token
       WHERE token_hash = $1
-    `, tokenHash);
+    `,
+      tokenHash
+    );
 
     if (result.length === 0) {
       return null;
@@ -246,23 +264,29 @@ export class TokenService {
    * Revoke Refresh Token
    */
   async revokeRefreshToken(tokenId: string, tenantSchema: string): Promise<void> {
-    await prisma.$executeRawUnsafe(`
+    await prisma.$executeRawUnsafe(
+      `
       UPDATE "${tenantSchema}".refresh_token
       SET revoked_at = now()
       WHERE id = $1::uuid
-    `, tokenId);
+    `,
+      tokenId
+    );
   }
 
   /**
    * Revoke All Refresh Tokens for User
    */
   async revokeAllUserTokens(userId: string, tenantSchema: string): Promise<number> {
-    const result = await prisma.$executeRawUnsafe(`
+    const result = (await prisma.$executeRawUnsafe(
+      `
       UPDATE "${tenantSchema}".refresh_token
       SET revoked_at = now()
       WHERE user_id = $1::uuid AND revoked_at IS NULL
-    `, userId) as number;
-    
+    `,
+      userId
+    )) as number;
+
     return result;
   }
 
@@ -275,7 +299,7 @@ export class TokenService {
   } {
     const token = this.jwtService.sign(
       { ...payload, type: 'totp_session' },
-      { expiresIn: this.totpSessionTtl },
+      { expiresIn: this.totpSessionTtl }
     );
 
     return {
@@ -301,15 +325,13 @@ export class TokenService {
   /**
    * Generate Password Reset Session Token
    */
-  generatePasswordResetSessionToken(
-    payload: Omit<PasswordResetSessionPayload, 'type'>,
-  ): {
+  generatePasswordResetSessionToken(payload: Omit<PasswordResetSessionPayload, 'type'>): {
     token: string;
     expiresIn: number;
   } {
     const token = this.jwtService.sign(
       { ...payload, type: 'password_reset' },
-      { expiresIn: this.totpSessionTtl },
+      { expiresIn: this.totpSessionTtl }
     );
 
     return {
@@ -355,10 +377,7 @@ export class TokenService {
     expiresIn: number;
   } {
     const expiresIn = 900; // 15 minutes
-    const token = this.jwtService.sign(
-      { ...payload, type: 'marshmallow_sso' },
-      { expiresIn },
-    );
+    const token = this.jwtService.sign({ ...payload, type: 'marshmallow_sso' }, { expiresIn });
 
     return {
       token,

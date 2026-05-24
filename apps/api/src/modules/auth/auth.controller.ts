@@ -1,31 +1,39 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+import { randomBytes } from 'crypto';
 
 import {
-    BadRequestException,
-    Body,
-    Controller,
-    Delete,
-    Get,
-    HttpCode,
-    HttpStatus,
-    Logger,
-    Param,
-    Patch,
-    Post,
-    Query,
-    Req,
-    Res,
-    UnauthorizedException,
-    UploadedFile,
-    UseGuards,
-    UseInterceptors,
+  BadRequestException,
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Logger,
+  Param,
+  Patch,
+  Post,
+  Query,
+  Req,
+  Res,
+  UnauthorizedException,
+  UploadedFile,
+  UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiConsumes,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
+import { Request, Response } from 'express';
+
 import { prisma } from '@tcrn/database';
 import { ErrorCodes } from '@tcrn/shared';
-import { randomBytes } from 'crypto';
-import { Request, Response } from 'express';
 
 import { Public } from '../../common/decorators';
 import { AuthenticatedUser, CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -35,16 +43,16 @@ import { EmailService } from '../email/services/email.service';
 import { BUCKETS, MinioService } from '../minio/minio.service';
 import { AuthService, type LoginResult } from './auth.service';
 import {
-    ChangePasswordDto,
-    ForceResetPasswordDto,
-    LoginDto,
-    RecoveryCodeVerifyDto,
-    RefreshTokenDto,
-    RegenerateRecoveryCodesDto,
-    TotpDisableDto,
-    TotpEnableDto,
-    TotpVerifyDto,
-    UpdateUserProfileDto
+  ChangePasswordDto,
+  ForceResetPasswordDto,
+  LoginDto,
+  RecoveryCodeVerifyDto,
+  RefreshTokenDto,
+  RegenerateRecoveryCodesDto,
+  TotpDisableDto,
+  TotpEnableDto,
+  TotpVerifyDto,
+  UpdateUserProfileDto,
 } from './dto/auth.dto';
 import { PasswordService } from './password.service';
 import { SessionService } from './session.service';
@@ -73,27 +81,27 @@ const createAuthErrorEnvelopeSchema = (code: string, message: string) => ({
 
 const AUTH_NOT_AUTHENTICATED_SCHEMA = createAuthErrorEnvelopeSchema(
   'AUTH_UNAUTHORIZED',
-  'Not authenticated',
+  'Not authenticated'
 );
 
 const AUTH_PROFILE_UPDATE_BAD_REQUEST_SCHEMA = createAuthErrorEnvelopeSchema(
   ErrorCodes.VALIDATION_FAILED,
-  'No fields to update',
+  'No fields to update'
 );
 
 const AUTH_PASSWORD_CHANGE_BAD_REQUEST_SCHEMA = createAuthErrorEnvelopeSchema(
   ErrorCodes.AUTH_PASSWORD_WEAK,
-  'Password does not meet requirements',
+  'Password does not meet requirements'
 );
 
 const AUTH_CURRENT_PASSWORD_INVALID_SCHEMA = createAuthErrorEnvelopeSchema(
   ErrorCodes.AUTH_INVALID_CREDENTIALS,
-  'Current password is incorrect',
+  'Current password is incorrect'
 );
 
 const AUTH_TOTP_ALREADY_ENABLED_SCHEMA = createAuthErrorEnvelopeSchema(
   ErrorCodes.AUTH_TOTP_ALREADY_ENABLED,
-  'TOTP is already enabled',
+  'TOTP is already enabled'
 );
 
 const REFRESH_TOKEN_COOKIE_PATH = '/api/v1';
@@ -110,7 +118,7 @@ export class AuthController {
     private readonly totpService: TotpService,
     private readonly tokenService: TokenService,
     private readonly sessionService: SessionService,
-    private readonly emailService: EmailService,
+    private readonly emailService: EmailService
   ) {}
 
   private setRefreshTokenCookie(res: Response, refreshToken: string, expiresAt: Date) {
@@ -142,7 +150,7 @@ export class AuthController {
   @Public()
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'User login',
     description: `Authenticates a user with tenant code, username/email, and password.
     
@@ -154,8 +162,8 @@ export class AuthController {
 The refresh token is automatically set as an HTTP-only cookie.`,
   })
   @ApiBody({ type: LoginDto })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Login successful - returns access token',
     schema: {
       example: {
@@ -174,8 +182,8 @@ The refresh token is automatically set as an HTTP-only cookie.`,
       },
     },
   })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'TOTP verification required',
     schema: {
       example: {
@@ -188,8 +196,8 @@ The refresh token is automatically set as an HTTP-only cookie.`,
       },
     },
   })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Password reset required',
     schema: {
       example: {
@@ -203,8 +211,8 @@ The refresh token is automatically set as an HTTP-only cookie.`,
       },
     },
   })
-  @ApiResponse({ 
-    status: 401, 
+  @ApiResponse({
+    status: 401,
     description: 'Invalid credentials',
     schema: {
       example: {
@@ -216,8 +224,8 @@ The refresh token is automatically set as an HTTP-only cookie.`,
       },
     },
   })
-  @ApiResponse({ 
-    status: 403, 
+  @ApiResponse({
+    status: 403,
     description: 'Account locked or tenant disabled',
     schema: {
       example: {
@@ -232,7 +240,7 @@ The refresh token is automatically set as an HTTP-only cookie.`,
   async login(
     @Body() dto: LoginDto,
     @Req() req: Request,
-    @Res({ passthrough: true }) res: Response,
+    @Res({ passthrough: true }) res: Response
   ) {
     const ipAddress = req.ip || req.socket.remoteAddress || '';
     const userAgent = req.get('user-agent');
@@ -243,7 +251,7 @@ The refresh token is automatically set as an HTTP-only cookie.`,
       dto.password,
       ipAddress,
       userAgent,
-      dto.rememberMe,
+      dto.rememberMe
     );
 
     if (result.type === 'success') {
@@ -288,7 +296,7 @@ The refresh token is automatically set as an HTTP-only cookie.`,
   async verifyTotp(
     @Body() dto: TotpVerifyDto,
     @Req() req: Request,
-    @Res({ passthrough: true }) res: Response,
+    @Res({ passthrough: true }) res: Response
   ) {
     const ipAddress = req.ip || req.socket.remoteAddress || '';
     const userAgent = req.get('user-agent');
@@ -297,7 +305,7 @@ The refresh token is automatically set as an HTTP-only cookie.`,
       dto.sessionToken,
       dto.code,
       ipAddress,
-      userAgent,
+      userAgent
     );
 
     if (result.type === 'success') {
@@ -323,7 +331,7 @@ The refresh token is automatically set as an HTTP-only cookie.`,
   async forceResetPassword(
     @Body() dto: ForceResetPasswordDto,
     @Req() req: Request,
-    @Res({ passthrough: true }) res: Response,
+    @Res({ passthrough: true }) res: Response
   ) {
     const ipAddress = req.ip || req.socket.remoteAddress || '';
     const userAgent = req.get('user-agent');
@@ -363,7 +371,8 @@ The refresh token is automatically set as an HTTP-only cookie.`,
     const newHash = await this.passwordService.hash(dto.newPassword);
 
     // Update password and clear force_reset flag
-    await prisma.$executeRawUnsafe(`
+    await prisma.$executeRawUnsafe(
+      `
       UPDATE "${tenantSchema}".system_user
       SET 
         password_hash = $2,
@@ -371,7 +380,10 @@ The refresh token is automatically set as an HTTP-only cookie.`,
         force_reset = false,
         updated_at = now()
       WHERE id = $1::uuid
-    `, payload.sub, newHash);
+    `,
+      payload.sub,
+      newHash
+    );
 
     // Log security event
     await this.sessionService.logSecurityEvent(
@@ -380,7 +392,7 @@ The refresh token is automatically set as an HTTP-only cookie.`,
       payload.sub,
       { reason: payload.reason },
       ipAddress,
-      userAgent,
+      userAgent
     );
 
     // Complete login after password reset
@@ -388,7 +400,7 @@ The refresh token is automatically set as an HTTP-only cookie.`,
       payload.sub,
       tenantSchema,
       ipAddress,
-      userAgent,
+      userAgent
     );
 
     if (result.type === 'success') {
@@ -412,10 +424,7 @@ The refresh token is automatically set as an HTTP-only cookie.`,
   @Post('forgot-password')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Request password reset via email' })
-  async forgotPassword(
-    @Body() dto: { email: string; tenantCode: string },
-    @Req() req: Request,
-  ) {
+  async forgotPassword(@Body() dto: { email: string; tenantCode: string }, @Req() req: Request) {
     const { email, tenantCode } = dto;
 
     // Validate input
@@ -442,18 +451,23 @@ The refresh token is automatically set as an HTTP-only cookie.`,
     const tenantSchema = tenant.schemaName;
 
     // Find user by email
-    const users = await prisma.$queryRawUnsafe<Array<{
-      id: string;
-      email: string;
-      display_name: string | null;
-      username: string;
-      preferred_language: string | null;
-      is_active: boolean;
-    }>>(`
+    const users = await prisma.$queryRawUnsafe<
+      Array<{
+        id: string;
+        email: string;
+        display_name: string | null;
+        username: string;
+        preferred_language: string | null;
+        is_active: boolean;
+      }>
+    >(
+      `
       SELECT id, email, display_name, username, preferred_language, is_active
       FROM "${tenantSchema}".system_user 
       WHERE email = $1
-    `, email.toLowerCase());
+    `,
+      email.toLowerCase()
+    );
 
     if (users.length === 0 || !users[0].is_active) {
       // Return success even if user not found (security: don't reveal user existence)
@@ -469,17 +483,26 @@ The refresh token is automatically set as an HTTP-only cookie.`,
     const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
 
     // Invalidate existing requests
-    await prisma.$executeRawUnsafe(`
+    await prisma.$executeRawUnsafe(
+      `
       DELETE FROM "${tenantSchema}".password_reset_request 
       WHERE user_id = $1::uuid AND used_at IS NULL
-    `, user.id);
+    `,
+      user.id
+    );
 
     // Create new request
-    await prisma.$executeRawUnsafe(`
+    await prisma.$executeRawUnsafe(
+      `
       INSERT INTO "${tenantSchema}".password_reset_request 
         (id, user_id, email, token, expires_at, created_at)
       VALUES (gen_random_uuid(), $1::uuid, $2, $3, $4, now())
-    `, user.id, email.toLowerCase(), token, expiresAt);
+    `,
+      user.id,
+      email.toLowerCase(),
+      token,
+      expiresAt
+    );
 
     // Build reset link
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
@@ -495,7 +518,7 @@ The refresh token is automatically set as an HTTP-only cookie.`,
           userName: user.display_name || user.username,
           resetLink,
           expiresIn: '1 hour',
-        },
+        }
       );
     } catch (error) {
       this.logger.error(`Failed to send password reset email: ${error}`);
@@ -511,7 +534,7 @@ The refresh token is automatically set as an HTTP-only cookie.`,
       user.id,
       { email },
       ipAddress,
-      userAgent,
+      userAgent
     );
 
     return success({
@@ -528,8 +551,9 @@ The refresh token is automatically set as an HTTP-only cookie.`,
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Reset password using email token' })
   async resetPasswordByToken(
-    @Body() dto: { token: string; tenantCode: string; newPassword: string; newPasswordConfirm: string },
-    @Req() req: Request,
+    @Body()
+    dto: { token: string; tenantCode: string; newPassword: string; newPasswordConfirm: string },
+    @Req() req: Request
   ) {
     const { token, tenantCode, newPassword, newPasswordConfirm } = dto;
 
@@ -575,16 +599,21 @@ The refresh token is automatically set as an HTTP-only cookie.`,
     const tenantSchema = tenant.schemaName;
 
     // Find reset request
-    const requests = await prisma.$queryRawUnsafe<Array<{
-      id: string;
-      user_id: string;
-      expires_at: Date;
-      used_at: Date | null;
-    }>>(`
+    const requests = await prisma.$queryRawUnsafe<
+      Array<{
+        id: string;
+        user_id: string;
+        expires_at: Date;
+        used_at: Date | null;
+      }>
+    >(
+      `
       SELECT id, user_id, expires_at, used_at
       FROM "${tenantSchema}".password_reset_request 
       WHERE token = $1
-    `, token);
+    `,
+      token
+    );
 
     if (requests.length === 0) {
       throw new BadRequestException({
@@ -615,7 +644,8 @@ The refresh token is automatically set as an HTTP-only cookie.`,
     const newHash = await this.passwordService.hash(newPassword);
 
     // Update user password
-    await prisma.$executeRawUnsafe(`
+    await prisma.$executeRawUnsafe(
+      `
       UPDATE "${tenantSchema}".system_user
       SET 
         password_hash = $2,
@@ -623,14 +653,20 @@ The refresh token is automatically set as an HTTP-only cookie.`,
         force_reset = false,
         updated_at = now()
       WHERE id = $1::uuid
-    `, request.user_id, newHash);
+    `,
+      request.user_id,
+      newHash
+    );
 
     // Mark request as used
-    await prisma.$executeRawUnsafe(`
+    await prisma.$executeRawUnsafe(
+      `
       UPDATE "${tenantSchema}".password_reset_request
       SET used_at = now()
       WHERE id = $1::uuid
-    `, request.id);
+    `,
+      request.id
+    );
 
     // Log event
     const ipAddress = req.ip || req.socket.remoteAddress || '';
@@ -641,7 +677,7 @@ The refresh token is automatically set as an HTTP-only cookie.`,
       request.user_id,
       {},
       ipAddress,
-      userAgent,
+      userAgent
     );
 
     return success({
@@ -660,7 +696,7 @@ The refresh token is automatically set as an HTTP-only cookie.`,
   async verifyRecoveryCode(
     @Body() dto: RecoveryCodeVerifyDto,
     @Req() req: Request,
-    @Res({ passthrough: true }) res: Response,
+    @Res({ passthrough: true }) res: Response
   ) {
     const ipAddress = req.ip || req.socket.remoteAddress || '';
     const userAgent = req.get('user-agent');
@@ -669,7 +705,7 @@ The refresh token is automatically set as an HTTP-only cookie.`,
       dto.sessionToken,
       dto.recoveryCode,
       ipAddress,
-      userAgent,
+      userAgent
     );
 
     if (result.type === 'success') {
@@ -693,7 +729,7 @@ The refresh token is automatically set as an HTTP-only cookie.`,
   @Public()
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Refresh access token',
     description: `Exchanges a valid refresh token for a new access token.
     
@@ -704,8 +740,8 @@ The refresh token can be provided in:
 Refresh tokens are single-use and rotate on each refresh.`,
   })
   @ApiBody({ type: RefreshTokenDto, required: false })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Token refreshed successfully',
     schema: {
       example: {
@@ -718,8 +754,8 @@ Refresh tokens are single-use and rotate on each refresh.`,
       },
     },
   })
-  @ApiResponse({ 
-    status: 401, 
+  @ApiResponse({
+    status: 401,
     description: 'Invalid or expired refresh token',
     schema: {
       example: {
@@ -731,13 +767,10 @@ Refresh tokens are single-use and rotate on each refresh.`,
       },
     },
   })
-  async refresh(
-    @Body() dto: RefreshTokenDto,
-    @Req() req: Request,
-  ) {
+  async refresh(@Body() dto: RefreshTokenDto, @Req() req: Request) {
     // Get refresh token from cookie or body
     const refreshToken = dto.refreshToken || req.cookies?.refresh_token;
-    
+
     if (!refreshToken) {
       throw new UnauthorizedException({
         code: ErrorCodes.AUTH_REFRESH_TOKEN_INVALID,
@@ -764,14 +797,14 @@ Refresh tokens are single-use and rotate on each refresh.`,
   @Post('logout')
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Logout current device',
     description: `Invalidates the current refresh token and clears the session.
     
 This only logs out the current device. Use /logout-all to logout all devices.`,
   })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Logged out successfully',
     schema: {
       example: {
@@ -780,8 +813,8 @@ This only logs out the current device. Use /logout-all to logout all devices.`,
       },
     },
   })
-  @ApiResponse({ 
-    status: 401, 
+  @ApiResponse({
+    status: 401,
     description: 'Not authenticated',
     schema: {
       example: {
@@ -796,19 +829,13 @@ This only logs out the current device. Use /logout-all to logout all devices.`,
   async logout(
     @CurrentUser() user: AuthenticatedUser,
     @Req() req: Request,
-    @Res({ passthrough: true }) res: Response,
+    @Res({ passthrough: true }) res: Response
   ) {
     const refreshToken = req.cookies?.refresh_token;
     const ipAddress = req.ip || req.socket.remoteAddress || '';
     const userAgent = req.get('user-agent');
 
-    await this.authService.logout(
-      user.id,
-      user.tenantSchema,
-      refreshToken,
-      ipAddress,
-      userAgent,
-    );
+    await this.authService.logout(user.id, user.tenantSchema, refreshToken, ipAddress, userAgent);
 
     // Clear refresh token cookie
     res.clearCookie('refresh_token', {
@@ -832,7 +859,7 @@ This only logs out the current device. Use /logout-all to logout all devices.`,
   async logoutAll(
     @CurrentUser() user: AuthenticatedUser,
     @Req() req: Request,
-    @Res({ passthrough: true }) res: Response,
+    @Res({ passthrough: true }) res: Response
   ) {
     const ipAddress = req.ip || req.socket.remoteAddress || '';
     const userAgent = req.get('user-agent');
@@ -841,7 +868,7 @@ This only logs out the current device. Use /logout-all to logout all devices.`,
       user.id,
       user.tenantSchema,
       ipAddress,
-      userAgent,
+      userAgent
     );
 
     // Clear refresh token cookie
@@ -871,13 +898,13 @@ This only logs out the current device. Use /logout-all to logout all devices.`,
     @Query('redirect_uri') redirectUri: string,
     @Query('state') state: string,
     @Req() req: Request,
-    @Res() res: Response,
+    @Res() res: Response
   ) {
     // Only support implicit flow for Swagger
     // Swagger sends response_type=token
-    
+
     const refreshToken = req.cookies?.refresh_token;
-    
+
     if (!refreshToken) {
       // If not logged in, we cannot auto-authorize
       // In a full OAuth provider we would show a login page here
@@ -892,7 +919,7 @@ This only logs out the current device. Use /logout-all to logout all devices.`,
 
     try {
       const result = await this.authService.refreshAccessToken(refreshToken, tenantSchema);
-      
+
       // Implicit flow returns token in fragment
       const params = new URLSearchParams();
       params.append('access_token', result.accessToken);
@@ -905,7 +932,7 @@ This only logs out the current device. Use /logout-all to logout all devices.`,
       const redirectUrl = `${redirectUri}#${params.toString()}`;
       return res.redirect(redirectUrl);
     } catch (error) {
-       throw new UnauthorizedException('Failed to authorize: ' + error.message);
+      throw new UnauthorizedException('Failed to authorize: ' + error.message);
     }
   }
 }
@@ -923,7 +950,7 @@ export class UserController {
     private readonly sessionService: SessionService,
     private readonly tokenService: TokenService,
     private readonly minioService: MinioService,
-    private readonly emailService: EmailService,
+    private readonly emailService: EmailService
   ) {}
 
   /**
@@ -931,12 +958,13 @@ export class UserController {
    * Get current user info
    */
   @Get()
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Get current user info',
-    description: 'Returns the authenticated user\'s profile information including security settings.',
+    description:
+      "Returns the authenticated user's profile information including security settings.",
   })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Returns current user profile',
     schema: {
       example: {
@@ -959,29 +987,38 @@ export class UserController {
       },
     },
   })
-  @ApiResponse({ status: 401, description: 'Not authenticated', schema: AUTH_NOT_AUTHENTICATED_SCHEMA })
+  @ApiResponse({
+    status: 401,
+    description: 'Not authenticated',
+    schema: AUTH_NOT_AUTHENTICATED_SCHEMA,
+  })
   async getCurrentUser(@CurrentUser() user: AuthenticatedUser) {
-    const users = await prisma.$queryRawUnsafe<Array<{
-      id: string;
-      username: string;
-      email: string;
-      phone: string | null;
-      display_name: string | null;
-      avatar_url: string | null;
-      preferred_language: string;
-      is_totp_enabled: boolean;
-      force_reset: boolean;
-      last_login_at: Date | null;
-      password_changed_at: Date | null;
-      created_at: Date;
-    }>>(`
+    const users = await prisma.$queryRawUnsafe<
+      Array<{
+        id: string;
+        username: string;
+        email: string;
+        phone: string | null;
+        display_name: string | null;
+        avatar_url: string | null;
+        preferred_language: string;
+        is_totp_enabled: boolean;
+        force_reset: boolean;
+        last_login_at: Date | null;
+        password_changed_at: Date | null;
+        created_at: Date;
+      }>
+    >(
+      `
       SELECT 
         id, username, email, phone, display_name, avatar_url,
         preferred_language, is_totp_enabled, force_reset,
         last_login_at, password_changed_at, created_at
       FROM "${user.tenantSchema}".system_user
       WHERE id = $1::uuid
-    `, user.id);
+    `,
+      user.id
+    );
 
     if (users.length === 0) {
       throw new UnauthorizedException({
@@ -1017,12 +1054,13 @@ export class UserController {
    * Update current user profile
    */
   @Patch()
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Update current user profile',
-    description: 'Updates the authenticated user\'s profile fields such as display name, phone, and language preferences.',
+    description:
+      "Updates the authenticated user's profile fields such as display name, phone, and language preferences.",
   })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Profile updated successfully (returns full user profile)',
     schema: {
       example: {
@@ -1037,11 +1075,19 @@ export class UserController {
       },
     },
   })
-  @ApiResponse({ status: 400, description: 'No fields to update', schema: AUTH_PROFILE_UPDATE_BAD_REQUEST_SCHEMA })
-  @ApiResponse({ status: 401, description: 'Not authenticated', schema: AUTH_NOT_AUTHENTICATED_SCHEMA })
+  @ApiResponse({
+    status: 400,
+    description: 'No fields to update',
+    schema: AUTH_PROFILE_UPDATE_BAD_REQUEST_SCHEMA,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Not authenticated',
+    schema: AUTH_NOT_AUTHENTICATED_SCHEMA,
+  })
   async updateCurrentUser(
     @CurrentUser() user: AuthenticatedUser,
-    @Body() dto: UpdateUserProfileDto,
+    @Body() dto: UpdateUserProfileDto
   ) {
     const updates: string[] = [];
     const values: unknown[] = [];
@@ -1076,7 +1122,7 @@ export class UserController {
     await prisma.$executeRawUnsafe(
       `UPDATE "${user.tenantSchema}".system_user SET ${updates.join(', ')} WHERE id = $1::uuid`,
       user.id,
-      ...values,
+      ...values
     );
 
     return this.getCurrentUser(user);
@@ -1088,12 +1134,13 @@ export class UserController {
    */
   @Post('password')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Change password',
-    description: 'Changes the authenticated user\'s password. Requires current password verification.',
+    description:
+      "Changes the authenticated user's password. Requires current password verification.",
   })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Password changed successfully',
     schema: {
       example: {
@@ -1106,12 +1153,20 @@ export class UserController {
       },
     },
   })
-  @ApiResponse({ status: 400, description: 'Validation failed (passwords don\'t match, weak password, or same as old)', schema: AUTH_PASSWORD_CHANGE_BAD_REQUEST_SCHEMA })
-  @ApiResponse({ status: 401, description: 'Current password incorrect', schema: AUTH_CURRENT_PASSWORD_INVALID_SCHEMA })
+  @ApiResponse({
+    status: 400,
+    description: "Validation failed (passwords don't match, weak password, or same as old)",
+    schema: AUTH_PASSWORD_CHANGE_BAD_REQUEST_SCHEMA,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Current password incorrect',
+    schema: AUTH_CURRENT_PASSWORD_INVALID_SCHEMA,
+  })
   async changePassword(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: ChangePasswordDto,
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     // Validate passwords match
     if (dto.newPassword !== dto.newPasswordConfirm) {
@@ -1132,9 +1187,12 @@ export class UserController {
     }
 
     // Get current password hash
-    const users = await prisma.$queryRawUnsafe<Array<{ password_hash: string }>>(`
+    const users = await prisma.$queryRawUnsafe<Array<{ password_hash: string }>>(
+      `
       SELECT password_hash FROM "${user.tenantSchema}".system_user WHERE id = $1::uuid
-    `, user.id);
+    `,
+      user.id
+    );
 
     if (users.length === 0) {
       throw new UnauthorizedException({
@@ -1153,7 +1211,10 @@ export class UserController {
     }
 
     // Check if new password is same as old
-    const isSame = await this.passwordService.isSamePassword(dto.newPassword, users[0].password_hash);
+    const isSame = await this.passwordService.isSamePassword(
+      dto.newPassword,
+      users[0].password_hash
+    );
     if (isSame) {
       throw new BadRequestException({
         code: ErrorCodes.AUTH_PASSWORD_SAME,
@@ -1165,7 +1226,8 @@ export class UserController {
     const newHash = await this.passwordService.hash(dto.newPassword);
 
     // Update password
-    await prisma.$executeRawUnsafe(`
+    await prisma.$executeRawUnsafe(
+      `
       UPDATE "${user.tenantSchema}".system_user
       SET 
         password_hash = $2,
@@ -1173,7 +1235,10 @@ export class UserController {
         force_reset = false,
         updated_at = now()
       WHERE id = $1::uuid
-    `, user.id, newHash);
+    `,
+      user.id,
+      newHash
+    );
 
     // Log security event
     const ipAddress = req.ip || req.socket.remoteAddress || '';
@@ -1184,7 +1249,7 @@ export class UserController {
       user.id,
       {},
       ipAddress,
-      userAgent,
+      userAgent
     );
 
     const expiresAt = this.passwordService.getPasswordExpiryDate();
@@ -1200,12 +1265,12 @@ export class UserController {
    * Initialize TOTP setup
    */
   @Post('totp/setup')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Initialize TOTP setup',
     description: 'Generates a new TOTP secret and returns QR code for authenticator app setup.',
   })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'TOTP setup initialized',
     schema: {
       example: {
@@ -1213,19 +1278,27 @@ export class UserController {
         data: {
           secret: 'JBSWY3DPEHPK3PXP',
           qrCode: 'data:image/png;base64,...',
-          otpauthUrl: 'otpauth://totp/TCRN%20TMS:john.doe%40example.com?secret=JBSWY3DPEHPK3PXP&issuer=TCRN%20TMS',
+          otpauthUrl:
+            'otpauth://totp/TCRN%20TMS:john.doe%40example.com?secret=JBSWY3DPEHPK3PXP&issuer=TCRN%20TMS',
           issuer: 'TCRN TMS',
           account: 'john.doe@example.com',
         },
       },
     },
   })
-  @ApiResponse({ status: 400, description: 'TOTP already enabled', schema: AUTH_TOTP_ALREADY_ENABLED_SCHEMA })
+  @ApiResponse({
+    status: 400,
+    description: 'TOTP already enabled',
+    schema: AUTH_TOTP_ALREADY_ENABLED_SCHEMA,
+  })
   async setupTotp(@CurrentUser() user: AuthenticatedUser) {
     // Check if TOTP is already enabled
-    const users = await prisma.$queryRawUnsafe<Array<{ is_totp_enabled: boolean }>>(`
+    const users = await prisma.$queryRawUnsafe<Array<{ is_totp_enabled: boolean }>>(
+      `
       SELECT is_totp_enabled FROM "${user.tenantSchema}".system_user WHERE id = $1::uuid
-    `, user.id);
+    `,
+      user.id
+    );
 
     if (users.length > 0 && users[0].is_totp_enabled) {
       throw new BadRequestException({
@@ -1238,11 +1311,15 @@ export class UserController {
     const setupInfo = await this.totpService.generateSetupInfo(user.email);
 
     // Store secret temporarily (will be saved on enable)
-    await prisma.$executeRawUnsafe(`
+    await prisma.$executeRawUnsafe(
+      `
       UPDATE "${user.tenantSchema}".system_user
       SET totp_secret = $2, updated_at = now()
       WHERE id = $1::uuid
-    `, user.id, setupInfo.secret);
+    `,
+      user.id,
+      setupInfo.secret
+    );
 
     return success({
       secret: setupInfo.secret,
@@ -1262,17 +1339,22 @@ export class UserController {
   async enableTotp(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: TotpEnableDto,
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     // Get stored secret
-    const users = await prisma.$queryRawUnsafe<Array<{ 
-      totp_secret: string | null;
-      is_totp_enabled: boolean;
-    }>>(`
+    const users = await prisma.$queryRawUnsafe<
+      Array<{
+        totp_secret: string | null;
+        is_totp_enabled: boolean;
+      }>
+    >(
+      `
       SELECT totp_secret, is_totp_enabled 
       FROM "${user.tenantSchema}".system_user 
       WHERE id = $1::uuid
-    `, user.id);
+    `,
+      user.id
+    );
 
     if (users.length === 0 || !users[0].totp_secret) {
       throw new BadRequestException({
@@ -1301,20 +1383,27 @@ export class UserController {
     const recoveryCodes = this.totpService.generateRecoveryCodes(10);
 
     // Enable TOTP
-    await prisma.$executeRawUnsafe(`
+    await prisma.$executeRawUnsafe(
+      `
       UPDATE "${user.tenantSchema}".system_user
       SET is_totp_enabled = true, totp_enabled_at = now(), updated_at = now()
       WHERE id = $1::uuid
-    `, user.id);
+    `,
+      user.id
+    );
 
     // Store recovery codes
     for (const code of recoveryCodes) {
       const hash = this.totpService.hashRecoveryCode(code);
-      await prisma.$executeRawUnsafe(`
+      await prisma.$executeRawUnsafe(
+        `
         INSERT INTO "${user.tenantSchema}".recovery_code 
           (id, user_id, code_hash, is_used, created_at)
         VALUES (gen_random_uuid(), $1::uuid, $2, false, now())
-      `, user.id, hash);
+      `,
+        user.id,
+        hash
+      );
     }
 
     // Log security event
@@ -1326,14 +1415,15 @@ export class UserController {
       user.id,
       {},
       ipAddress,
-      userAgent,
+      userAgent
     );
 
     return success({
       enabled: true,
       enabledAt: new Date().toISOString(),
       recoveryCodes,
-      warning: 'Save these recovery codes in a safe place. Each code can only be used once and cannot be viewed again.',
+      warning:
+        'Save these recovery codes in a safe place. Each code can only be used once and cannot be viewed again.',
     });
   }
 
@@ -1346,17 +1436,22 @@ export class UserController {
   async disableTotp(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: TotpDisableDto,
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     // Get current password hash and TOTP status
-    const users = await prisma.$queryRawUnsafe<Array<{
-      password_hash: string;
-      is_totp_enabled: boolean;
-    }>>(`
+    const users = await prisma.$queryRawUnsafe<
+      Array<{
+        password_hash: string;
+        is_totp_enabled: boolean;
+      }>
+    >(
+      `
       SELECT password_hash, is_totp_enabled 
       FROM "${user.tenantSchema}".system_user 
       WHERE id = $1::uuid
-    `, user.id);
+    `,
+      user.id
+    );
 
     if (users.length === 0) {
       throw new UnauthorizedException({
@@ -1382,7 +1477,8 @@ export class UserController {
     }
 
     // Disable TOTP
-    await prisma.$executeRawUnsafe(`
+    await prisma.$executeRawUnsafe(
+      `
       UPDATE "${user.tenantSchema}".system_user
       SET 
         is_totp_enabled = false, 
@@ -1390,12 +1486,17 @@ export class UserController {
         totp_enabled_at = NULL,
         updated_at = now()
       WHERE id = $1::uuid
-    `, user.id);
+    `,
+      user.id
+    );
 
     // Delete recovery codes
-    await prisma.$executeRawUnsafe(`
+    await prisma.$executeRawUnsafe(
+      `
       DELETE FROM "${user.tenantSchema}".recovery_code WHERE user_id = $1::uuid
-    `, user.id);
+    `,
+      user.id
+    );
 
     // Log security event
     const ipAddress = req.ip || req.socket.remoteAddress || '';
@@ -1406,7 +1507,7 @@ export class UserController {
       user.id,
       {},
       ipAddress,
-      userAgent,
+      userAgent
     );
 
     return success({
@@ -1424,17 +1525,22 @@ export class UserController {
   async regenerateRecoveryCodes(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: RegenerateRecoveryCodesDto,
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     // Verify password
-    const users = await prisma.$queryRawUnsafe<Array<{
-      password_hash: string;
-      is_totp_enabled: boolean;
-    }>>(`
+    const users = await prisma.$queryRawUnsafe<
+      Array<{
+        password_hash: string;
+        is_totp_enabled: boolean;
+      }>
+    >(
+      `
       SELECT password_hash, is_totp_enabled 
       FROM "${user.tenantSchema}".system_user 
       WHERE id = $1::uuid
-    `, user.id);
+    `,
+      user.id
+    );
 
     if (users.length === 0) {
       throw new UnauthorizedException({
@@ -1459,9 +1565,12 @@ export class UserController {
     }
 
     // Delete old recovery codes
-    await prisma.$executeRawUnsafe(`
+    await prisma.$executeRawUnsafe(
+      `
       DELETE FROM "${user.tenantSchema}".recovery_code WHERE user_id = $1::uuid
-    `, user.id);
+    `,
+      user.id
+    );
 
     // Generate new recovery codes
     const recoveryCodes = this.totpService.generateRecoveryCodes(10);
@@ -1469,11 +1578,15 @@ export class UserController {
     // Store new codes
     for (const code of recoveryCodes) {
       const hash = this.totpService.hashRecoveryCode(code);
-      await prisma.$executeRawUnsafe(`
+      await prisma.$executeRawUnsafe(
+        `
         INSERT INTO "${user.tenantSchema}".recovery_code 
           (id, user_id, code_hash, is_used, created_at)
         VALUES (gen_random_uuid(), $1::uuid, $2, false, now())
-      `, user.id, hash);
+      `,
+        user.id,
+        hash
+      );
     }
 
     // Log security event
@@ -1485,12 +1598,13 @@ export class UserController {
       user.id,
       {},
       ipAddress,
-      userAgent,
+      userAgent
     );
 
     return success({
       recoveryCodes,
-      warning: 'All previous recovery codes have been invalidated. Save these new codes in a safe place.',
+      warning:
+        'All previous recovery codes have been invalidated. Save these new codes in a safe place.',
     });
   }
 
@@ -1499,39 +1613,38 @@ export class UserController {
    * Get active sessions
    */
   @Get('sessions')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Get active sessions',
     description: 'Lists all active sessions for the current user including device information.',
   })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Returns list of active sessions',
     schema: {
       example: {
         success: true,
-        data: [{
-          id: '550e8400-e29b-41d4-a716-446655440000',
-          ipAddress: '192.168.1.1',
-          userAgent: 'Mozilla/5.0...',
-          deviceInfo: { browser: 'Chrome', os: 'MacOS' },
-          lastActivityAt: '2024-01-15T10:30:00Z',
-          createdAt: '2024-01-15T09:00:00Z',
-          isCurrent: true,
-        }],
+        data: [
+          {
+            id: '550e8400-e29b-41d4-a716-446655440000',
+            ipAddress: '192.168.1.1',
+            userAgent: 'Mozilla/5.0...',
+            deviceInfo: { browser: 'Chrome', os: 'MacOS' },
+            lastActivityAt: '2024-01-15T10:30:00Z',
+            createdAt: '2024-01-15T09:00:00Z',
+            isCurrent: true,
+          },
+        ],
       },
     },
   })
-  async getSessions(
-    @CurrentUser() user: AuthenticatedUser,
-    @Req() req: Request,
-  ) {
+  async getSessions(@CurrentUser() user: AuthenticatedUser, @Req() req: Request) {
     const refreshToken = req.cookies?.refresh_token;
     let currentTokenId: string | undefined;
 
     if (refreshToken) {
       const currentToken = await this.tokenService.verifyRefreshToken(
         refreshToken,
-        user.tenantSchema,
+        user.tenantSchema
       );
 
       if (currentToken?.userId === user.id) {
@@ -1542,7 +1655,7 @@ export class UserController {
     const sessions = await this.sessionService.getUserSessions(
       user.id,
       user.tenantSchema,
-      currentTokenId,
+      currentTokenId
     );
 
     return success(sessions);
@@ -1557,13 +1670,9 @@ export class UserController {
   async revokeSession(
     @CurrentUser() user: AuthenticatedUser,
     @Param('id') sessionId: string,
-    @Req() req: Request,
+    @Req() req: Request
   ) {
-    const revoked = await this.sessionService.revokeSession(
-      sessionId,
-      user.id,
-      user.tenantSchema,
-    );
+    const revoked = await this.sessionService.revokeSession(sessionId, user.id, user.tenantSchema);
 
     if (!revoked) {
       throw new BadRequestException({
@@ -1581,7 +1690,7 @@ export class UserController {
       user.id,
       { revokedSessionId: sessionId },
       ipAddress,
-      userAgent,
+      userAgent
     );
 
     return success({ message: 'Session revoked successfully' });
@@ -1601,7 +1710,7 @@ export class UserController {
   @ApiConsumes('multipart/form-data')
   async uploadAvatar(
     @CurrentUser() user: AuthenticatedUser,
-    @UploadedFile() file: Express.Multer.File,
+    @UploadedFile() file: Express.Multer.File
   ) {
     if (!file) {
       throw new BadRequestException({
@@ -1633,18 +1742,16 @@ export class UserController {
     const objectName = `${user.id}/${Date.now()}.${ext}`;
 
     // Get current avatar URL to delete old one later
-    const currentUsers = await prisma.$queryRawUnsafe<Array<{ avatar_url: string | null }>>(`
+    const currentUsers = await prisma.$queryRawUnsafe<Array<{ avatar_url: string | null }>>(
+      `
       SELECT avatar_url FROM "${user.tenantSchema}".system_user WHERE id = $1::uuid
-    `, user.id);
+    `,
+      user.id
+    );
     const oldAvatarUrl = currentUsers[0]?.avatar_url;
 
     // Upload to MinIO
-    await this.minioService.uploadFile(
-      BUCKETS.AVATARS,
-      objectName,
-      file.buffer,
-      file.mimetype,
-    );
+    await this.minioService.uploadFile(BUCKETS.AVATARS, objectName, file.buffer, file.mimetype);
 
     // Generate public URL
     const avatarUrl = await this.minioService.getPresignedUrl(
@@ -1654,11 +1761,15 @@ export class UserController {
     );
 
     // Update user avatar_url
-    await prisma.$executeRawUnsafe(`
+    await prisma.$executeRawUnsafe(
+      `
       UPDATE "${user.tenantSchema}".system_user
       SET avatar_url = $2, updated_at = now()
       WHERE id = $1::uuid
-    `, user.id, avatarUrl);
+    `,
+      user.id,
+      avatarUrl
+    );
 
     // Delete old avatar if it was stored in MinIO
     if (oldAvatarUrl && oldAvatarUrl.includes(BUCKETS.AVATARS)) {
@@ -1688,9 +1799,12 @@ export class UserController {
   @ApiOperation({ summary: 'Delete user avatar' })
   async deleteAvatar(@CurrentUser() user: AuthenticatedUser) {
     // Get current avatar URL
-    const users = await prisma.$queryRawUnsafe<Array<{ avatar_url: string | null }>>(`
+    const users = await prisma.$queryRawUnsafe<Array<{ avatar_url: string | null }>>(
+      `
       SELECT avatar_url FROM "${user.tenantSchema}".system_user WHERE id = $1::uuid
-    `, user.id);
+    `,
+      user.id
+    );
 
     if (users.length === 0) {
       throw new UnauthorizedException({
@@ -1715,11 +1829,14 @@ export class UserController {
     }
 
     // Set avatar_url to null
-    await prisma.$executeRawUnsafe(`
+    await prisma.$executeRawUnsafe(
+      `
       UPDATE "${user.tenantSchema}".system_user
       SET avatar_url = NULL, updated_at = now()
       WHERE id = $1::uuid
-    `, user.id);
+    `,
+      user.id
+    );
 
     return success({
       message: 'Avatar deleted successfully',
@@ -1736,7 +1853,7 @@ export class UserController {
   async requestEmailChange(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: { newEmail: string },
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     const { newEmail } = dto;
 
@@ -1750,10 +1867,14 @@ export class UserController {
     }
 
     // Check if email is already in use
-    const existingUser = await prisma.$queryRawUnsafe<Array<{ id: string }>>(`
+    const existingUser = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
+      `
       SELECT id FROM "${user.tenantSchema}".system_user 
       WHERE email = $1 AND id != $2::uuid
-    `, newEmail, user.id);
+    `,
+      newEmail,
+      user.id
+    );
 
     if (existingUser.length > 0) {
       throw new BadRequestException({
@@ -1767,22 +1888,36 @@ export class UserController {
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
     // Invalidate any existing requests for this user
-    await prisma.$executeRawUnsafe(`
+    await prisma.$executeRawUnsafe(
+      `
       DELETE FROM "${user.tenantSchema}".email_change_request 
       WHERE user_id = $1::uuid AND confirmed_at IS NULL
-    `, user.id);
+    `,
+      user.id
+    );
 
     // Create new request
-    await prisma.$executeRawUnsafe(`
+    await prisma.$executeRawUnsafe(
+      `
       INSERT INTO "${user.tenantSchema}".email_change_request 
         (id, user_id, new_email, token, expires_at, created_at)
       VALUES (gen_random_uuid(), $1::uuid, $2, $3, $4, now())
-    `, user.id, newEmail, token, expiresAt);
+    `,
+      user.id,
+      newEmail,
+      token,
+      expiresAt
+    );
 
     // Get user display name and preferred language
-    const users = await prisma.$queryRawUnsafe<Array<{ display_name: string | null; username: string; preferred_language: string | null }>>(`
+    const users = await prisma.$queryRawUnsafe<
+      Array<{ display_name: string | null; username: string; preferred_language: string | null }>
+    >(
+      `
       SELECT display_name, username, preferred_language FROM "${user.tenantSchema}".system_user WHERE id = $1::uuid
-    `, user.id);
+    `,
+      user.id
+    );
     const userName = users[0]?.display_name || users[0]?.username || 'User';
     const preferredLanguage = users[0]?.preferred_language || 'en';
 
@@ -1801,7 +1936,7 @@ export class UserController {
           newEmail,
           verificationLink,
           expiresIn: '24 hours',
-        },
+        }
       );
     } catch (error) {
       // Log error but don't expose to user
@@ -1821,7 +1956,7 @@ export class UserController {
       user.id,
       { newEmail },
       ipAddress,
-      userAgent,
+      userAgent
     );
 
     return success({
@@ -1839,7 +1974,7 @@ export class UserController {
   async confirmEmailChange(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: { token: string },
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     const { token } = dto;
 
@@ -1851,16 +1986,22 @@ export class UserController {
     }
 
     // Find the request
-    const requests = await prisma.$queryRawUnsafe<Array<{
-      id: string;
-      new_email: string;
-      expires_at: Date;
-      confirmed_at: Date | null;
-    }>>(`
+    const requests = await prisma.$queryRawUnsafe<
+      Array<{
+        id: string;
+        new_email: string;
+        expires_at: Date;
+        confirmed_at: Date | null;
+      }>
+    >(
+      `
       SELECT id, new_email, expires_at, confirmed_at 
       FROM "${user.tenantSchema}".email_change_request 
       WHERE token = $1 AND user_id = $2::uuid
-    `, token, user.id);
+    `,
+      token,
+      user.id
+    );
 
     if (requests.length === 0) {
       throw new BadRequestException({
@@ -1888,10 +2029,14 @@ export class UserController {
     }
 
     // Check if email is still available
-    const existingUser = await prisma.$queryRawUnsafe<Array<{ id: string }>>(`
+    const existingUser = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
+      `
       SELECT id FROM "${user.tenantSchema}".system_user 
       WHERE email = $1 AND id != $2::uuid
-    `, request.new_email, user.id);
+    `,
+      request.new_email,
+      user.id
+    );
 
     if (existingUser.length > 0) {
       throw new BadRequestException({
@@ -1901,18 +2046,25 @@ export class UserController {
     }
 
     // Update user email
-    await prisma.$executeRawUnsafe(`
+    await prisma.$executeRawUnsafe(
+      `
       UPDATE "${user.tenantSchema}".system_user
       SET email = $2, updated_at = now()
       WHERE id = $1::uuid
-    `, user.id, request.new_email);
+    `,
+      user.id,
+      request.new_email
+    );
 
     // Mark request as confirmed
-    await prisma.$executeRawUnsafe(`
+    await prisma.$executeRawUnsafe(
+      `
       UPDATE "${user.tenantSchema}".email_change_request
       SET confirmed_at = now()
       WHERE id = $1::uuid
-    `, request.id);
+    `,
+      request.id
+    );
 
     // Log security event
     const ipAddress = req.ip || req.socket.remoteAddress || '';
@@ -1923,7 +2075,7 @@ export class UserController {
       user.id,
       { newEmail: request.new_email },
       ipAddress,
-      userAgent,
+      userAgent
     );
 
     return success({

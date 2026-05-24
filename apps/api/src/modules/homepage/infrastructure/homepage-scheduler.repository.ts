@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable } from '@nestjs/common';
 
 import { DatabaseService } from '../../database';
@@ -36,7 +35,7 @@ export class HomepageSchedulerRepository {
                OR th.published_version_id = hv.id
           )
       `,
-      cutoffDate,
+      cutoffDate
     );
 
     return Number(archived);

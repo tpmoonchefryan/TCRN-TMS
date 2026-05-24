@@ -1,6 +1,5 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 // Export Module Zod Schemas
-
 import { z } from 'zod';
 
 import { PaginationSchema } from '../common.schema';
@@ -11,7 +10,11 @@ import { PaginationSchema } from '../common.schema';
 export const ExportJobTypeSchema = z.enum(['customer_export']);
 export const DataExportFormatSchema = z.enum(['csv', 'xlsx', 'json']);
 export const ExportJobStatusSchema = z.enum([
-  'pending', 'running', 'success', 'failed', 'cancelled'
+  'pending',
+  'running',
+  'success',
+  'failed',
+  'cancelled',
 ]);
 
 export type ExportJobType = z.infer<typeof ExportJobTypeSchema>;

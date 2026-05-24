@@ -1,11 +1,12 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
- 
-
 import { Test, TestingModule } from '@nestjs/testing';
-import { prisma } from '@tcrn/database';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { prisma } from '@tcrn/database';
+
 import { RedisService } from '../../redis';
+// Import after mock setup
+import { SessionInfo, SessionService } from '../session.service';
 
 // Mock prisma - must be at top level before imports that use it
 vi.mock('@tcrn/database', () => ({
@@ -14,9 +15,6 @@ vi.mock('@tcrn/database', () => ({
     $executeRawUnsafe: vi.fn(),
   },
 }));
-
-// Import after mock setup
-import { SessionInfo, SessionService } from '../session.service';
 
 // Get typed mock references
 const mockPrisma = prisma as unknown as {
@@ -249,9 +247,7 @@ describe('SessionService', () => {
 
   describe('isUserLocked', () => {
     it('should return not locked when user has no lock', async () => {
-      mockPrisma.$queryRawUnsafe.mockResolvedValue([
-        { locked_until: null },
-      ]);
+      mockPrisma.$queryRawUnsafe.mockResolvedValue([{ locked_until: null }]);
 
       const result = await service.isUserLocked(testUserId, testTenantSchema);
 
@@ -263,9 +259,7 @@ describe('SessionService', () => {
 
     it('should return locked when lock is in the future', async () => {
       const futureDate = new Date(Date.now() + 30 * 60 * 1000);
-      mockPrisma.$queryRawUnsafe.mockResolvedValue([
-        { locked_until: futureDate },
-      ]);
+      mockPrisma.$queryRawUnsafe.mockResolvedValue([{ locked_until: futureDate }]);
 
       const result = await service.isUserLocked(testUserId, testTenantSchema);
 
@@ -275,9 +269,7 @@ describe('SessionService', () => {
 
     it('should return not locked when lock has expired', async () => {
       const pastDate = new Date(Date.now() - 60 * 1000); // 1 minute ago
-      mockPrisma.$queryRawUnsafe.mockResolvedValue([
-        { locked_until: pastDate },
-      ]);
+      mockPrisma.$queryRawUnsafe.mockResolvedValue([{ locked_until: pastDate }]);
 
       const result = await service.isUserLocked(testUserId, testTenantSchema);
 
@@ -324,12 +316,9 @@ describe('SessionService', () => {
       mockPrisma.$executeRawUnsafe.mockResolvedValue(1);
 
       await expect(
-        service.logSecurityEvent(
-          testTenantSchema,
-          'logout',
-          testUserId,
-          { reason: 'user_initiated' }
-        )
+        service.logSecurityEvent(testTenantSchema, 'logout', testUserId, {
+          reason: 'user_initiated',
+        })
       ).resolves.not.toThrow();
     });
 
@@ -337,12 +326,7 @@ describe('SessionService', () => {
       mockPrisma.$executeRawUnsafe.mockRejectedValue(new Error('DB Error'));
 
       await expect(
-        service.logSecurityEvent(
-          testTenantSchema,
-          'error.event',
-          testUserId,
-          {}
-        )
+        service.logSecurityEvent(testTenantSchema, 'error.event', testUserId, {})
       ).resolves.not.toThrow();
     });
 

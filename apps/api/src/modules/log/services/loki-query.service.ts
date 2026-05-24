@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
@@ -28,8 +27,8 @@ export class LokiQueryService {
   constructor(
     configService: ConfigService,
     private readonly lokiQueryApplicationService: LokiQueryApplicationService = new LokiQueryApplicationService(
-      new LokiQueryGateway(configService),
-    ),
+      new LokiQueryGateway(configService)
+    )
   ) {}
 
   async query(params: LokiQueryParams): Promise<LokiQueryResponse> {

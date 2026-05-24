@@ -27,15 +27,13 @@ export function emptyLocalizedText(): LocalizedText {
   };
 }
 
-export function createLocalizedText(
-  value: PartialLocalizedText & { en: string },
-): LocalizedText {
+export function createLocalizedText(value: PartialLocalizedText & { en: string }): LocalizedText {
   return mergeLocalizedText(emptyLocalizedText(), value);
 }
 
 export function mergeLocalizedText(
   base: LocalizedText,
-  patch?: PartialLocalizedText | null,
+  patch?: PartialLocalizedText | null
 ): LocalizedText {
   const next = { ...base };
 
@@ -52,7 +50,7 @@ export function mergeLocalizedText(
 
 export function normalizeLocalizedText(
   input?: PartialLocalizedText | null,
-  fallback: string = '',
+  fallback: string = ''
 ): LocalizedText {
   const normalizedFallback = fallback.trim();
   const source = input ?? {};
@@ -73,13 +71,12 @@ export function isLocalizedText(input: unknown): input is LocalizedText {
     return false;
   }
 
-  return SUPPORTED_UI_LOCALES.every((locale) => typeof (input as Record<string, unknown>)[locale] === 'string');
+  return SUPPORTED_UI_LOCALES.every(
+    (locale) => typeof (input as Record<string, unknown>)[locale] === 'string'
+  );
 }
 
-export function pickLocalizedText(
-  value: LocalizedText,
-  locale?: string | null,
-): string {
+export function pickLocalizedText(value: LocalizedText, locale?: string | null): string {
   const supportedLocale = normalizeSupportedUiLocale(locale) ?? 'en';
   const localizedValue = value[supportedLocale];
 
@@ -98,10 +95,10 @@ export function normalizeSupportedUiLocale(input?: string | null): SupportedUiLo
   const normalized = input.trim().replace(/-/g, '_').toLowerCase();
 
   if (
-    normalized.startsWith('zh_hant')
-    || normalized.startsWith('zh_tw')
-    || normalized.startsWith('zh_hk')
-    || normalized.startsWith('zh_mo')
+    normalized.startsWith('zh_hant') ||
+    normalized.startsWith('zh_tw') ||
+    normalized.startsWith('zh_hk') ||
+    normalized.startsWith('zh_mo')
   ) {
     return 'zh_HANT';
   }

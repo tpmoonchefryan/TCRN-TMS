@@ -35,13 +35,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
             key={item.key}
             href={item.href}
             onClick={(e) => {
-              if (
-                e.button === 0
-                && !e.ctrlKey
-                && !e.metaKey
-                && !e.shiftKey
-                && !e.altKey
-              ) {
+              if (e.button === 0 && !e.ctrlKey && !e.metaKey && !e.shiftKey && !e.altKey) {
                 e.preventDefault();
                 onNavigate(item.href);
                 if (isMobileOpen) {
@@ -49,21 +43,29 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
                 }
               }
             }}
-            className={`
-              flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500
-              ${item.isActive
+            className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+              item.isActive
                 ? 'bg-indigo-50 text-indigo-600'
-                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}
-            `}
+                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+            } `}
             aria-current={item.isActive ? 'page' : undefined}
           >
-            {item.icon && <span className="flex h-5 w-5 flex-none items-center justify-center" aria-hidden="true">{item.icon}</span>}
+            {item.icon && (
+              <span
+                className="flex h-5 w-5 flex-none items-center justify-center"
+                aria-hidden="true"
+              >
+                {item.icon}
+              </span>
+            )}
             <span className="truncate">{item.label}</span>
           </a>
         ))}
       </nav>
 
-      {footer && <div className="flex-none border-t border-slate-200/50 bg-white/60 p-4">{footer}</div>}
+      {footer && (
+        <div className="flex-none border-t border-slate-200/50 bg-white/60 p-4">{footer}</div>
+      )}
     </div>
   );
 };

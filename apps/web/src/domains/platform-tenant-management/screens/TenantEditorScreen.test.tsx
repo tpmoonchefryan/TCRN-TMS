@@ -1,5 +1,6 @@
-import type { SupportedUiLocale } from '@tcrn/shared';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+
+import type { SupportedUiLocale } from '@tcrn/shared';
 
 import { TenantEditorScreen } from '@/domains/platform-tenant-management/screens/TenantEditorScreen';
 
@@ -96,7 +97,7 @@ describe('TenantEditorScreen', () => {
         '/api/v1/tenants',
         expect.objectContaining({
           method: 'POST',
-        }),
+        })
       );
     });
     expect(mockReplace).toHaveBeenCalledWith('/ac/tenant-ac/tenants/tenant-new');
@@ -218,7 +219,7 @@ describe('TenantEditorScreen', () => {
         '/api/v1/tenants/tenant-1',
         expect.objectContaining({
           method: 'PATCH',
-        }),
+        })
       );
     });
 
@@ -238,14 +239,14 @@ describe('TenantEditorScreen', () => {
         expect.objectContaining({
           method: 'PATCH',
           body: expect.stringContaining('"domain":"sender.alpha.example.com"'),
-        }),
+        })
       );
       expect(mockRequest).toHaveBeenCalledWith(
         '/api/v1/email/tenants/tenant-1/sending-domains',
         expect.objectContaining({
           method: 'PATCH',
           body: expect.stringContaining('"status":"verified"'),
-        }),
+        })
       );
     });
   });
@@ -335,7 +336,9 @@ describe('TenantEditorScreen', () => {
     });
 
     expect(await screen.findByRole('heading', { name: '发件域名' })).toBeInTheDocument();
-    expect(screen.getByText('管理当前租户由客户提供的发件域名，并向客户提供 DNS 记录完成配置。')).toBeInTheDocument();
+    expect(
+      screen.getByText('管理当前租户由客户提供的发件域名，并向客户提供 DNS 记录完成配置。')
+    ).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '新增发件域名' })).toBeInTheDocument();
     expect(screen.getByText('当前租户还没有添加客户发件域名。')).toBeInTheDocument();
 
@@ -344,8 +347,12 @@ describe('TenantEditorScreen', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: '新增发件域名' }));
 
-    expect(screen.getByLabelText('发件域名主机名: mail.alpha.example.com')).toHaveValue('mail.alpha.example.com');
-    expect(screen.getByLabelText('发件域名状态: mail.alpha.example.com')).toHaveDisplayValue('等待 DNS');
+    expect(screen.getByLabelText('发件域名主机名: mail.alpha.example.com')).toHaveValue(
+      'mail.alpha.example.com'
+    );
+    expect(screen.getByLabelText('发件域名状态: mail.alpha.example.com')).toHaveDisplayValue(
+      '等待 DNS'
+    );
 
     fireEvent.change(screen.getByLabelText('发件域名状态: mail.alpha.example.com'), {
       target: { value: 'verified' },
@@ -358,7 +365,7 @@ describe('TenantEditorScreen', () => {
         expect.objectContaining({
           method: 'PATCH',
           body: expect.stringContaining('"status":"verified"'),
-        }),
+        })
       );
     });
 

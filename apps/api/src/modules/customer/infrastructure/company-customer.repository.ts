@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable } from '@nestjs/common';
+
 import { Prisma, type PrismaClient } from '@tcrn/database';
 
 import { DatabaseService } from '../../database';
@@ -18,20 +18,16 @@ type CompanyCustomerDatabaseClient = Prisma.TransactionClient | PrismaClient;
 
 @Injectable()
 export class CompanyCustomerRepository {
-  constructor(
-    private readonly databaseService: DatabaseService,
-  ) {}
+  constructor(private readonly databaseService: DatabaseService) {}
 
-  withTransaction<T>(
-    operation: (prisma: Prisma.TransactionClient) => Promise<T>,
-  ): Promise<T> {
+  withTransaction<T>(operation: (prisma: Prisma.TransactionClient) => Promise<T>): Promise<T> {
     return this.databaseService.getPrisma().$transaction((prisma) => operation(prisma));
   }
 
   async findTalentProfileStore(
     prisma: CompanyCustomerDatabaseClient,
     tenantSchema: string,
-    talentId: string,
+    talentId: string
   ): Promise<CompanyCustomerTalentRecord | null> {
     const talents = await prisma.$queryRawUnsafe<CompanyCustomerTalentRecord[]>(
       `SELECT
@@ -39,7 +35,7 @@ export class CompanyCustomerRepository {
          profile_store_id as "profileStoreId"
        FROM "${tenantSchema}".talent
        WHERE id = $1::uuid`,
-      talentId,
+      talentId
     );
 
     return talents[0] ?? null;
@@ -48,7 +44,7 @@ export class CompanyCustomerRepository {
   async findActiveStatusId(
     prisma: CompanyCustomerDatabaseClient,
     tenantSchema: string,
-    statusCode: string,
+    statusCode: string
   ): Promise<string | null> {
     const statuses = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
       `SELECT id
@@ -56,7 +52,7 @@ export class CompanyCustomerRepository {
        WHERE code = $1
          AND is_active = true
        LIMIT 1`,
-      statusCode,
+      statusCode
     );
 
     return statuses[0]?.id ?? null;
@@ -65,7 +61,7 @@ export class CompanyCustomerRepository {
   async findActiveBusinessSegmentId(
     prisma: CompanyCustomerDatabaseClient,
     tenantSchema: string,
-    businessSegmentCode: string,
+    businessSegmentCode: string
   ): Promise<string | null> {
     const segments = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
       `SELECT id
@@ -73,7 +69,7 @@ export class CompanyCustomerRepository {
        WHERE code = $1
          AND is_active = true
        LIMIT 1`,
-      businessSegmentCode,
+      businessSegmentCode
     );
 
     return segments[0]?.id ?? null;
@@ -82,7 +78,7 @@ export class CompanyCustomerRepository {
   async findActiveConsumer(
     prisma: CompanyCustomerDatabaseClient,
     tenantSchema: string,
-    consumerCode: string,
+    consumerCode: string
   ): Promise<{ id: string } | null> {
     const consumers = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
       `SELECT id
@@ -90,7 +86,7 @@ export class CompanyCustomerRepository {
        WHERE code = $1
          AND is_active = true
        LIMIT 1`,
-      consumerCode,
+      consumerCode
     );
 
     return consumers[0] ?? null;
@@ -109,7 +105,7 @@ export class CompanyCustomerRepository {
       source?: string | null;
       notes?: string | null;
       userId: string;
-    },
+    }
   ): Promise<CompanyCustomerCreatedRecord> {
     const customers = await prisma.$queryRawUnsafe<CompanyCustomerCreatedRecord[]>(
       `INSERT INTO "${tenantSchema}".customer_profile (
@@ -131,7 +127,7 @@ export class CompanyCustomerRepository {
       args.tags,
       args.source ?? null,
       args.notes ?? null,
-      args.userId,
+      args.userId
     );
 
     return customers[0];
@@ -149,7 +145,7 @@ export class CompanyCustomerRepository {
       establishmentDate?: Date | null;
       businessSegmentId: string | null;
       website?: string | null;
-    },
+    }
   ) {
     return prisma.$executeRawUnsafe(
       `INSERT INTO "${tenantSchema}".customer_company_info (
@@ -173,7 +169,7 @@ export class CompanyCustomerRepository {
       null,
       null,
       null,
-      null,
+      null
     );
   }
 
@@ -186,7 +182,7 @@ export class CompanyCustomerRepository {
       consumerId: string;
       externalId: string;
       userId: string;
-    },
+    }
   ) {
     return prisma.$executeRawUnsafe(
       `INSERT INTO "${tenantSchema}".customer_external_id (
@@ -199,7 +195,7 @@ export class CompanyCustomerRepository {
       args.profileStoreId,
       args.consumerId,
       args.externalId,
-      args.userId,
+      args.userId
     );
   }
 
@@ -207,7 +203,7 @@ export class CompanyCustomerRepository {
     prisma: CompanyCustomerDatabaseClient,
     tenantSchema: string,
     customerId: string,
-    talentId: string,
+    talentId: string
   ): Promise<CompanyCustomerAccessRecord | null> {
     const customers = await prisma.$queryRawUnsafe<CompanyCustomerAccessRecord[]>(
       `SELECT
@@ -226,7 +222,7 @@ export class CompanyCustomerRepository {
          AND t.id = $2::uuid
          AND t.profile_store_id IS NOT NULL`,
       customerId,
-      talentId,
+      talentId
     );
 
     return customers[0] ?? null;
@@ -240,7 +236,7 @@ export class CompanyCustomerRepository {
       talentId: string;
       userId: string;
       update: CompanyCustomerProfileUpdateInput;
-    },
+    }
   ): Promise<CompanyCustomerUpdatedRecord | null> {
     const setParts = [
       'last_modified_talent_id = $1::uuid',
@@ -278,7 +274,7 @@ export class CompanyCustomerRepository {
        WHERE id = $${paramIndex}::uuid
        RETURNING id, nickname, version, updated_at as "updatedAt"`,
       ...params,
-      args.customerId,
+      args.customerId
     );
 
     return updated[0] ?? null;
@@ -288,7 +284,7 @@ export class CompanyCustomerRepository {
     prisma: CompanyCustomerDatabaseClient,
     tenantSchema: string,
     customerId: string,
-    update: CompanyCustomerInfoUpdateInput,
+    update: CompanyCustomerInfoUpdateInput
   ) {
     const setParts: string[] = [];
     const params: Array<string | Date | null> = [];
@@ -327,7 +323,7 @@ export class CompanyCustomerRepository {
        SET ${setParts.join(', ')}
        WHERE customer_id = $${paramIndex}::uuid`,
       ...params,
-      customerId,
+      customerId
     );
   }
 
@@ -335,7 +331,7 @@ export class CompanyCustomerRepository {
     prisma: CompanyCustomerDatabaseClient,
     tenantSchema: string,
     customerId: string,
-    update: CompanyCustomerInfoUpdateInput,
+    update: CompanyCustomerInfoUpdateInput
   ) {
     const columns = ['id', 'customer_id', 'updated_at'];
     const values = ['gen_random_uuid()', '$1::uuid', 'NOW()'];
@@ -380,7 +376,7 @@ export class CompanyCustomerRepository {
     return prisma.$executeRawUnsafe(
       `INSERT INTO "${tenantSchema}".customer_company_info (${columns.join(', ')})
        VALUES (${values.join(', ')})`,
-      ...params,
+      ...params
     );
   }
 
@@ -398,7 +394,7 @@ export class CompanyCustomerRepository {
       userAgent?: string;
       requestId?: string;
       fieldChanges?: string;
-    },
+    }
   ) {
     if (args.fieldChanges === undefined) {
       return prisma.$executeRawUnsafe(
@@ -417,7 +413,7 @@ export class CompanyCustomerRepository {
         args.userName,
         args.ipAddress ?? '0.0.0.0',
         args.userAgent,
-        args.requestId ?? null,
+        args.requestId ?? null
       );
     }
 
@@ -438,7 +434,7 @@ export class CompanyCustomerRepository {
       args.userName,
       args.ipAddress ?? '0.0.0.0',
       args.userAgent,
-      args.requestId ?? null,
+      args.requestId ?? null
     );
   }
 }

@@ -1,10 +1,9 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 // Load Test: Run daily, validate sustained load performance
-
-import http from 'k6/http';
-import { check, sleep, group } from 'k6';
-import { Rate, Trend, Counter } from 'k6/metrics';
 import { textSummary } from 'https://jslib.k6.io/k6-summary/0.0.1/index.js';
+import { check, sleep, group } from 'k6';
+import http from 'k6/http';
+import { Rate, Trend, Counter } from 'k6/metrics';
 
 const errorRate = new Rate('errors');
 const apiLatency = new Trend('api_latency');
@@ -47,10 +46,7 @@ export default function (data) {
 
   group('Customer Management', () => {
     // List query
-    const listRes = http.get(
-      `${BASE_URL}/api/v1/customers?page=1&pageSize=20`,
-      { headers }
-    );
+    const listRes = http.get(`${BASE_URL}/api/v1/customers?page=1&pageSize=20`, { headers });
     check(listRes, { 'list ok': (r) => r.status === 200 });
     requestCount.add(1);
 

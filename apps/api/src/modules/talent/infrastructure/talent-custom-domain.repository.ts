@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable } from '@nestjs/common';
+
 import { prisma } from '@tcrn/database';
 
 import type {
@@ -30,7 +30,7 @@ export class TalentCustomDomainRepository {
     >(
       `SELECT
          to_regclass('public.custom_domain_binding')::text as "customDomainBinding",
-         to_regclass('public.custom_domain_talent_selection')::text as "customDomainTalentSelection"`,
+         to_regclass('public.custom_domain_talent_selection')::text as "customDomainTalentSelection"`
     );
 
     const readiness = {
@@ -51,7 +51,7 @@ export class TalentCustomDomainRepository {
        FROM public.tenant
        WHERE schema_name = $1
        LIMIT 1`,
-      tenantSchema,
+      tenantSchema
     );
 
     return tenants[0]?.tenantId ?? null;
@@ -59,7 +59,7 @@ export class TalentCustomDomainRepository {
 
   async getCustomDomainConfig(
     talentId: string,
-    tenantSchema: string,
+    tenantSchema: string
   ): Promise<TalentLegacyCustomDomainConfig | null> {
     const results = await prisma.$queryRawUnsafe<TalentLegacyCustomDomainConfig[]>(
       `SELECT
@@ -74,16 +74,15 @@ export class TalentCustomDomainRepository {
         marshmallow_path as "marshmallowCustomPath"
        FROM "${tenantSchema}".talent
        WHERE id = $1::uuid`,
-      talentId,
+      talentId
     );
 
     return results[0] || null;
   }
 
-
   async listCustomDomainBindingsForTalent(
     tenantSchema: string,
-    legacyConfig: TalentLegacyCustomDomainConfig,
+    legacyConfig: TalentLegacyCustomDomainConfig
   ): Promise<TalentCustomDomainBindingRecord[]> {
     const tenantId = await this.getTenantIdBySchema(tenantSchema);
 
@@ -134,14 +133,11 @@ export class TalentCustomDomainRepository {
          binding.hostname ASC`,
       tenantId,
       legacyConfig.talentId,
-      legacyConfig.subsidiaryId,
+      legacyConfig.subsidiaryId
     );
   }
 
-  async listSelectedInheritedDomainIds(
-    tenantSchema: string,
-    talentId: string,
-  ): Promise<string[]> {
+  async listSelectedInheritedDomainIds(tenantSchema: string, talentId: string): Promise<string[]> {
     const tenantId = await this.getTenantIdBySchema(tenantSchema);
 
     if (!tenantId) {
@@ -155,7 +151,7 @@ export class TalentCustomDomainRepository {
          AND talent_id = $2::uuid
          AND is_enabled = true`,
       tenantId,
-      talentId,
+      talentId
     );
 
     return rows.map((row) => row.id);
@@ -163,7 +159,7 @@ export class TalentCustomDomainRepository {
 
   async listCustomDomainBindingsForScope(
     tenantSchema: string,
-    options: TalentCustomDomainBindingListOptions,
+    options: TalentCustomDomainBindingListOptions
   ): Promise<TalentCustomDomainBindingRecord[]> {
     const tenantId = await this.getTenantIdBySchema(tenantSchema);
 
@@ -198,7 +194,7 @@ export class TalentCustomDomainRepository {
            ${activeClause}
            ${tenantSearchClause}
          ORDER BY binding.hostname ASC`,
-        ...params,
+        ...params
       );
     }
 
@@ -207,7 +203,9 @@ export class TalentCustomDomainRepository {
     }
 
     if (options.scopeType === 'subsidiary') {
-      const params = searchParam ? [tenantId, options.scopeId, searchParam] : [tenantId, options.scopeId];
+      const params = searchParam
+        ? [tenantId, options.scopeId, searchParam]
+        : [tenantId, options.scopeId];
       const ownerClause = options.includeInherited
         ? `(
              (binding.owner_type = 'tenant' AND binding.owner_id IS NULL)
@@ -251,11 +249,13 @@ export class TalentCustomDomainRepository {
            END,
            ancestor_subsidiaries.depth DESC NULLS LAST,
            binding.hostname ASC`,
-        ...params,
+        ...params
       );
     }
 
-    const params = searchParam ? [tenantId, options.scopeId, searchParam] : [tenantId, options.scopeId];
+    const params = searchParam
+      ? [tenantId, options.scopeId, searchParam]
+      : [tenantId, options.scopeId];
     const ownerClause = options.includeInherited
       ? `(
            (binding.owner_type = 'tenant' AND binding.owner_id IS NULL)
@@ -308,15 +308,14 @@ export class TalentCustomDomainRepository {
          END,
          ancestor_subsidiaries.depth DESC NULLS LAST,
          binding.hostname ASC`,
-      ...params,
+      ...params
     );
   }
-
 
   async customDomainOwnerExists(
     tenantSchema: string,
     ownerType: CustomDomainOwnerType,
-    ownerId: string | null,
+    ownerId: string | null
   ): Promise<boolean> {
     if (ownerType === 'tenant') {
       return (await this.getTenantIdBySchema(tenantSchema)) !== null;
@@ -332,7 +331,7 @@ export class TalentCustomDomainRepository {
        FROM "${tenantSchema}".${table}
        WHERE id = $1::uuid
        LIMIT 1`,
-      ownerId,
+      ownerId
     );
 
     return results.length > 0;
@@ -340,7 +339,7 @@ export class TalentCustomDomainRepository {
 
   async findCustomDomainBindingById(
     tenantSchema: string,
-    domainId: string,
+    domainId: string
   ): Promise<TalentCustomDomainBindingRecord | null> {
     const results = await prisma.$queryRawUnsafe<TalentCustomDomainBindingRecord[]>(
       `SELECT
@@ -359,7 +358,7 @@ export class TalentCustomDomainRepository {
          AND binding.id = $2::uuid
        LIMIT 1`,
       tenantSchema,
-      domainId,
+      domainId
     );
 
     return results[0] ?? null;
@@ -367,7 +366,7 @@ export class TalentCustomDomainRepository {
 
   async findCustomDomainBindingByHostname(
     hostname: string,
-    excludeDomainId: string | null = null,
+    excludeDomainId: string | null = null
   ): Promise<TalentCustomDomainBindingRecord | null> {
     const results = await prisma.$queryRawUnsafe<TalentCustomDomainBindingRecord[]>(
       `SELECT
@@ -385,20 +384,20 @@ export class TalentCustomDomainRepository {
          AND ($2::uuid IS NULL OR id != $2::uuid)
        LIMIT 1`,
       hostname,
-      excludeDomainId,
+      excludeDomainId
     );
 
     return results[0] ?? null;
   }
 
   async findLegacyCustomDomainOwner(
-    hostname: string,
+    hostname: string
   ): Promise<{ tenantSchema: string; talentId: string } | null> {
     const tenants = await prisma.$queryRawUnsafe<Array<{ tenantSchema: string }>>(
       `SELECT schema_name as "tenantSchema"
        FROM public.tenant
        WHERE is_active = true
-       ORDER BY schema_name ASC`,
+       ORDER BY schema_name ASC`
     );
 
     for (const tenant of tenants) {
@@ -408,7 +407,7 @@ export class TalentCustomDomainRepository {
            FROM "${tenant.tenantSchema}".talent
            WHERE LOWER(custom_domain) = $1
            LIMIT 1`,
-          hostname,
+          hostname
         );
 
         if (talents[0]) {
@@ -428,7 +427,7 @@ export class TalentCustomDomainRepository {
   async createCustomDomainBinding(
     tenantSchema: string,
     input: TalentCustomDomainBindingMutationInput,
-    token: string,
+    token: string
   ): Promise<TalentCustomDomainBindingRecord | null> {
     const results = await prisma.$queryRawUnsafe<TalentCustomDomainBindingRecord[]>(
       `INSERT INTO public.custom_domain_binding (
@@ -468,7 +467,7 @@ export class TalentCustomDomainRepository {
       input.hostname,
       token,
       input.customDomainSslMode,
-      input.isActive,
+      input.isActive
     );
 
     return results[0] ?? null;
@@ -478,7 +477,7 @@ export class TalentCustomDomainRepository {
     tenantSchema: string,
     domainId: string,
     input: TalentCustomDomainBindingMutationInput,
-    token: string | null,
+    token: string | null
   ): Promise<TalentCustomDomainBindingRecord | null> {
     const results = await prisma.$queryRawUnsafe<TalentCustomDomainBindingRecord[]>(
       `UPDATE public.custom_domain_binding binding
@@ -518,7 +517,7 @@ export class TalentCustomDomainRepository {
       input.hostname,
       token,
       input.customDomainSslMode,
-      input.isActive,
+      input.isActive
     );
 
     return results[0] ?? null;
@@ -526,7 +525,7 @@ export class TalentCustomDomainRepository {
 
   async markCustomDomainBindingVerified(
     tenantSchema: string,
-    domainId: string,
+    domainId: string
   ): Promise<TalentCustomDomainBindingRecord | null> {
     const results = await prisma.$queryRawUnsafe<TalentCustomDomainBindingRecord[]>(
       `UPDATE public.custom_domain_binding binding
@@ -546,7 +545,7 @@ export class TalentCustomDomainRepository {
          binding.is_active as "isActive",
          NULL::integer as "ownerDepth"`,
       tenantSchema,
-      domainId,
+      domainId
     );
 
     return results[0] ?? null;
@@ -555,7 +554,7 @@ export class TalentCustomDomainRepository {
   async replaceSelectedInheritedDomainIds(
     tenantSchema: string,
     talentId: string,
-    domainIds: string[],
+    domainIds: string[]
   ): Promise<void> {
     const tenantId = await this.getTenantIdBySchema(tenantSchema);
 
@@ -570,7 +569,7 @@ export class TalentCustomDomainRepository {
          WHERE tenant_id = $1::uuid
            AND talent_id = $2::uuid`,
         tenantId,
-        talentId,
+        talentId
       );
 
       for (const domainId of domainIds) {
@@ -588,16 +587,13 @@ export class TalentCustomDomainRepository {
              updated_at = now()`,
           tenantId,
           domainId,
-          talentId,
+          talentId
         );
       }
     });
   }
 
-  async clearCustomDomain(
-    talentId: string,
-    tenantSchema: string,
-  ): Promise<boolean> {
+  async clearCustomDomain(talentId: string, tenantSchema: string): Promise<boolean> {
     const removed = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
       `UPDATE "${tenantSchema}".talent
        SET
@@ -607,7 +603,7 @@ export class TalentCustomDomainRepository {
          updated_at = now()
        WHERE id = $1::uuid
        RETURNING id`,
-      talentId,
+      talentId
     );
 
     return removed.length > 0;
@@ -616,14 +612,14 @@ export class TalentCustomDomainRepository {
   async findTalentIdByCustomDomain(
     tenantSchema: string,
     customDomain: string,
-    talentId: string,
+    talentId: string
   ): Promise<string | null> {
     const existing = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
       `SELECT id
        FROM "${tenantSchema}".talent
        WHERE custom_domain = $1 AND id != $2::uuid`,
       customDomain,
-      talentId,
+      talentId
     );
 
     return existing[0]?.id ?? null;
@@ -633,7 +629,7 @@ export class TalentCustomDomainRepository {
     talentId: string,
     tenantSchema: string,
     customDomain: string,
-    token: string,
+    token: string
   ): Promise<boolean> {
     const updated = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
       `UPDATE "${tenantSchema}".talent
@@ -646,27 +642,24 @@ export class TalentCustomDomainRepository {
        RETURNING id`,
       talentId,
       customDomain,
-      token,
+      token
     );
 
     return updated.length > 0;
   }
 
-  markCustomDomainVerified(
-    talentId: string,
-    tenantSchema: string,
-  ) {
+  markCustomDomainVerified(talentId: string, tenantSchema: string) {
     return prisma.$queryRawUnsafe(
       `UPDATE "${tenantSchema}".talent
        SET custom_domain_verified = true, updated_at = now()
        WHERE id = $1::uuid`,
-      talentId,
+      talentId
     );
   }
 
   async getServicePaths(
     talentId: string,
-    tenantSchema: string,
+    tenantSchema: string
   ): Promise<TalentCustomDomainPaths | null> {
     const current = await prisma.$queryRawUnsafe<TalentCustomDomainPaths[]>(
       `SELECT
@@ -674,7 +667,7 @@ export class TalentCustomDomainRepository {
         marshmallow_path as "marshmallowCustomPath"
        FROM "${tenantSchema}".talent
        WHERE id = $1::uuid`,
-      talentId,
+      talentId
     );
 
     return current[0] || null;
@@ -683,7 +676,7 @@ export class TalentCustomDomainRepository {
   async updateServicePaths(
     talentId: string,
     tenantSchema: string,
-    paths: TalentCustomDomainPaths,
+    paths: TalentCustomDomainPaths
   ): Promise<TalentCustomDomainPaths | null> {
     const updates: string[] = [];
     const params: unknown[] = [talentId];
@@ -712,7 +705,7 @@ export class TalentCustomDomainRepository {
        RETURNING
          homepage_path as "homepageCustomPath",
          marshmallow_path as "marshmallowCustomPath"`,
-      ...params,
+      ...params
     );
 
     return results[0] || null;
@@ -721,17 +714,15 @@ export class TalentCustomDomainRepository {
   async updateSslMode(
     talentId: string,
     tenantSchema: string,
-    sslMode: CustomDomainSslMode,
+    sslMode: CustomDomainSslMode
   ): Promise<{ customDomainSslMode: string } | null> {
-    const results = await prisma.$queryRawUnsafe<
-      Array<{ customDomainSslMode: string }>
-    >(
+    const results = await prisma.$queryRawUnsafe<Array<{ customDomainSslMode: string }>>(
       `UPDATE "${tenantSchema}".talent
        SET custom_domain_ssl_mode = $2, updated_at = now()
        WHERE id = $1::uuid
        RETURNING custom_domain_ssl_mode as "customDomainSslMode"`,
       talentId,
-      sslMode,
+      sslMode
     );
 
     return results[0] || null;

@@ -16,7 +16,7 @@ export interface CaptchaRuntimeStatusInput {
 }
 
 export function normalizeCaptchaRuntimeEnvironment(
-  value: string | null | undefined,
+  value: string | null | undefined
 ): CaptchaRuntimeEnvironment {
   if (value === 'production' || value === 'staging' || value === 'test') {
     return value;

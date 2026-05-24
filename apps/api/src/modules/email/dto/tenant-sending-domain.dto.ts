@@ -1,9 +1,11 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Type } from 'class-transformer';
 import { IsArray, IsIn, IsOptional, IsString, ValidateNested } from 'class-validator';
 
-import { TENANT_SENDING_DOMAIN_STATUSES, type TenantSendingDomainStatus } from '../domain/tenant-sending-domain.policy';
+import {
+  TENANT_SENDING_DOMAIN_STATUSES,
+  type TenantSendingDomainStatus,
+} from '../domain/tenant-sending-domain.policy';
 
 export class ManagedTenantSendingDomainDto {
   @IsOptional()

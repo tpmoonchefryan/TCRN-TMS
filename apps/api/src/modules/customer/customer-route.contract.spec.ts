@@ -1,7 +1,6 @@
-import 'reflect-metadata';
-
 import { RequestMethod } from '@nestjs/common';
 import { METHOD_METADATA, PATH_METADATA } from '@nestjs/common/constants';
+import 'reflect-metadata';
 import { describe, expect, it } from 'vitest';
 
 import { PERMISSIONS_KEY } from '../../common/decorators/require-permissions.decorator';
@@ -32,12 +31,14 @@ const getControllerRoutes = (controller: object): ControllerRoute[] => {
   const controllerClass = controller as { prototype: Record<string, unknown> };
   const methodNames = Object.getOwnPropertyNames(controllerClass.prototype).filter(
     (methodName) =>
-      methodName !== 'constructor' && typeof controllerClass.prototype[methodName] === 'function',
+      methodName !== 'constructor' && typeof controllerClass.prototype[methodName] === 'function'
   );
 
   return methodNames.flatMap((methodName) => {
     const handler = controllerClass.prototype[methodName];
-    const requestMethod = Reflect.getMetadata(METHOD_METADATA, handler) as RequestMethod | undefined;
+    const requestMethod = Reflect.getMetadata(METHOD_METADATA, handler) as
+      | RequestMethod
+      | undefined;
 
     if (requestMethod === undefined) {
       return [];
@@ -104,32 +105,32 @@ describe('Customer private route contract', () => {
           path: ':customerId/reactivate',
         },
         { methodName: 'batchOperation', requestMethod: RequestMethod.POST, path: 'batch' },
-      ]),
+      ])
     );
   });
 
   it('keeps nested customer subresources under talent-root customer paths', () => {
     expect(Reflect.getMetadata(PATH_METADATA, PlatformIdentityController)).toBe(
-      'talents/:talentId/customers/:customerId/platform-identities',
+      'talents/:talentId/customers/:customerId/platform-identities'
     );
     expect(Reflect.getMetadata(PATH_METADATA, MembershipController)).toBe(
-      'talents/:talentId/customers/:customerId/memberships',
+      'talents/:talentId/customers/:customerId/memberships'
     );
     expect(Reflect.getMetadata(PATH_METADATA, ExternalIdController)).toBe(
-      'talents/:talentId/customers/:customerId/external-ids',
+      'talents/:talentId/customers/:customerId/external-ids'
     );
   });
 
   it('does not keep flat customer-root controller paths for migrated customer endpoints', () => {
     expect(Reflect.getMetadata(PATH_METADATA, CustomerController)).not.toBe('customers');
     expect(Reflect.getMetadata(PATH_METADATA, PlatformIdentityController)).not.toBe(
-      'customers/:customerId/platform-identities',
+      'customers/:customerId/platform-identities'
     );
     expect(Reflect.getMetadata(PATH_METADATA, MembershipController)).not.toBe(
-      'customers/:customerId/memberships',
+      'customers/:customerId/memberships'
     );
     expect(Reflect.getMetadata(PATH_METADATA, ExternalIdController)).not.toBe(
-      'customers/:customerId/external-ids',
+      'customers/:customerId/external-ids'
     );
   });
 

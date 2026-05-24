@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Module } from '@nestjs/common';
 
 import { ConfigSanityService } from '../../config/config-sanity.service';
@@ -12,7 +11,13 @@ import { GlobalConfigService } from './global-config.service';
 
 @Module({
   controllers: [ConfigController, GlobalConfigController],
-  providers: [ConfigService, BlocklistService, ConsumerKeyService, GlobalConfigService, ConfigSanityService],
+  providers: [
+    ConfigService,
+    BlocklistService,
+    ConsumerKeyService,
+    GlobalConfigService,
+    ConfigSanityService,
+  ],
   exports: [ConfigService, BlocklistService, ConsumerKeyService, GlobalConfigService],
 })
 export class ConfigModule {}

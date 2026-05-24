@@ -1,9 +1,9 @@
-import 'reflect-metadata';
-
 import { RequestMethod } from '@nestjs/common';
 import { METHOD_METADATA, PATH_METADATA } from '@nestjs/common/constants';
-import { INTEGRATION_ADAPTER_CREATE_DEFINITIONS } from '@tcrn/shared';
+import 'reflect-metadata';
 import { describe, expect, it } from 'vitest';
+
+import { INTEGRATION_ADAPTER_CREATE_DEFINITIONS } from '@tcrn/shared';
 
 import {
   IntegrationController,
@@ -33,12 +33,14 @@ const getControllerRoutes = (controller: object): ControllerRoute[] => {
   const controllerClass = controller as { prototype: Record<string, unknown> };
   const methodNames = Object.getOwnPropertyNames(controllerClass.prototype).filter(
     (methodName) =>
-      methodName !== 'constructor' && typeof controllerClass.prototype[methodName] === 'function',
+      methodName !== 'constructor' && typeof controllerClass.prototype[methodName] === 'function'
   );
 
   return methodNames.flatMap((methodName) => {
     const handler = controllerClass.prototype[methodName];
-    const requestMethod = Reflect.getMetadata(METHOD_METADATA, handler) as RequestMethod | undefined;
+    const requestMethod = Reflect.getMetadata(METHOD_METADATA, handler) as
+      | RequestMethod
+      | undefined;
 
     if (requestMethod === undefined) {
       return [];
@@ -57,12 +59,9 @@ describe('Integration private route contract', () => {
     expect(INTEGRATION_ADAPTER_CREATE_DEFINITIONS.map((definition) => definition.key)).toEqual([
       'ai-adapter',
     ]);
-    expect(INTEGRATION_ADAPTER_CREATE_DEFINITIONS[0].configFields.map((field) => field.key)).toEqual([
-      'provider',
-      'endpoint_path',
-      'model',
-      'token',
-    ]);
+    expect(
+      INTEGRATION_ADAPTER_CREATE_DEFINITIONS[0].configFields.map((field) => field.key)
+    ).toEqual(['provider', 'endpoint_path', 'model', 'token']);
   });
 
   it('keeps webhooks and tenant-owned adapters under the tenant-root integration family', () => {
@@ -123,16 +122,16 @@ describe('Integration private route contract', () => {
           requestMethod: RequestMethod.POST,
           path: 'consumers/:consumerId/regenerate-key',
         },
-      ]),
+      ])
     );
   });
 
   it('moves owner-target adapter collection commands to explicit subsidiary and talent roots', () => {
     expect(Reflect.getMetadata(PATH_METADATA, SubsidiaryIntegrationAdapterController)).toBe(
-      'subsidiaries/:subsidiaryId/integration/adapters',
+      'subsidiaries/:subsidiaryId/integration/adapters'
     );
     expect(Reflect.getMetadata(PATH_METADATA, TalentIntegrationAdapterController)).toBe(
-      'talents/:talentId/integration/adapters',
+      'talents/:talentId/integration/adapters'
     );
 
     expect(getControllerRoutes(SubsidiaryIntegrationAdapterController)).toEqual(
@@ -154,7 +153,7 @@ describe('Integration private route contract', () => {
           requestMethod: RequestMethod.POST,
           path: ':adapterId/enable',
         },
-      ]),
+      ])
     );
 
     expect(getControllerRoutes(TalentIntegrationAdapterController)).toEqual(
@@ -176,7 +175,7 @@ describe('Integration private route contract', () => {
           requestMethod: RequestMethod.POST,
           path: ':adapterId/enable',
         },
-      ]),
+      ])
     );
   });
 });

@@ -35,7 +35,14 @@ import {
   parsePageSizeParam,
 } from '@/platform/runtime/pagination/pagination';
 import { useSession } from '@/platform/runtime/session/session-provider';
-import { ConfirmActionDialog, FormSection, GlassSurface, PaginationFooter, StateView, TableShell } from '@/platform/ui';
+import {
+  ConfirmActionDialog,
+  FormSection,
+  GlassSurface,
+  PaginationFooter,
+  StateView,
+  TableShell,
+} from '@/platform/ui';
 
 type VersionFilter = 'all' | 'draft' | 'published' | 'archived';
 
@@ -222,7 +229,9 @@ function StatusBadge({
           : 'bg-rose-100 text-rose-800';
 
   return (
-    <span className={`rounded-full px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.14em] ${toneClasses}`}>
+    <span
+      className={`rounded-full px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.14em] ${toneClasses}`}
+    >
       {label}
     </span>
   );
@@ -270,7 +279,11 @@ function NoticeBanner({
       ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
       : 'border-rose-200 bg-rose-50 text-rose-800';
 
-  return <div className={`rounded-2xl border px-4 py-3 text-sm font-medium ${toneClasses}`}>{message}</div>;
+  return (
+    <div className={`rounded-2xl border px-4 py-3 text-sm font-medium ${toneClasses}`}>
+      {message}
+    </div>
+  );
 }
 
 export function HomepageManagementScreen({
@@ -316,7 +329,7 @@ export function HomepageManagementScreen({
       filter: VersionFilter;
       page: number;
       pageSize: PageSizeOption;
-    }>,
+    }>
   ) {
     const nextFilter = nextState.filter ?? filter;
     const nextPage = nextState.page ?? page;
@@ -415,7 +428,15 @@ export function HomepageManagementScreen({
     return () => {
       cancelled = true;
     };
-  }, [copy.state.loadLedgerError, copy.state.loadWorkspaceError, filter, page, pageSize, request, talentId]);
+  }, [
+    copy.state.loadLedgerError,
+    copy.state.loadWorkspaceError,
+    filter,
+    page,
+    pageSize,
+    request,
+    talentId,
+  ]);
 
   async function refreshAfterMutation() {
     const activeStatus = filter === 'all' ? undefined : filter;
@@ -474,7 +495,7 @@ export function HomepageManagementScreen({
   if (loading && !homepage) {
     return (
       <div className="space-y-6">
-          <GlassSurface className="p-8">
+        <GlassSurface className="p-8">
           <p className="text-sm font-medium text-slate-500">{copy.state.loading}</p>
         </GlassSurface>
       </div>
@@ -482,13 +503,21 @@ export function HomepageManagementScreen({
   }
 
   if (loadError || !homepage) {
-    return <StateView status="error" title={copy.state.unavailableTitle} description={loadError || undefined} />;
+    return (
+      <StateView
+        status="error"
+        title={copy.state.unavailableTitle}
+        description={loadError || undefined}
+      />
+    );
   }
 
   const totalVersions = versionsPanel.total;
   const draftVersionNumber = homepage.draftVersion?.versionNumber;
   const publishedVersionNumber = homepage.publishedVersion?.versionNumber;
-  const currentPublicState = homepage.isPublished ? copy.summary.publicPublishedValue : copy.summary.publicDraftOnlyValue;
+  const currentPublicState = homepage.isPublished
+    ? copy.summary.publicPublishedValue
+    : copy.summary.publicDraftOnlyValue;
   const sharedHomepageRoute = extractPathnameFromUrl(homepage.homepageUrl);
   const pageRange = getPaginationRange(versionsPanel.pagination, versionsPanel.data.length);
   const paginationLabel = pickLocaleText(locale, {
@@ -553,7 +582,9 @@ export function HomepageManagementScreen({
             </div>
             <div className="space-y-3">
               <h1 className="text-3xl font-semibold text-slate-950">{copy.header.title}</h1>
-              <p className="max-w-3xl text-sm leading-6 text-slate-600">{copy.header.description}</p>
+              <p className="max-w-3xl text-sm leading-6 text-slate-600">
+                {copy.header.description}
+              </p>
             </div>
           </div>
 
@@ -609,7 +640,11 @@ export function HomepageManagementScreen({
         <SummaryCard
           label={copy.summary.publicStateLabel}
           value={currentPublicState}
-          hint={homepage.isPublished ? copy.summary.publicPublishedHint : copy.summary.publicDraftOnlyHint}
+          hint={
+            homepage.isPublished
+              ? copy.summary.publicPublishedHint
+              : copy.summary.publicDraftOnlyHint
+          }
         />
         <SummaryCard
           label={copy.summary.draftVersionLabel}
@@ -626,10 +661,7 @@ export function HomepageManagementScreen({
       {notice ? <NoticeBanner tone={notice.tone} message={notice.message} /> : null}
 
       <GlassSurface className="p-6">
-        <FormSection
-          title={copy.facts.title}
-          description={copy.facts.description}
-        >
+        <FormSection title={copy.facts.title} description={copy.facts.description}>
           <div className="grid gap-4 xl:grid-cols-2">
             <SummaryCard
               label={copy.facts.homepageUrlLabel}
@@ -663,11 +695,15 @@ export function HomepageManagementScreen({
             />
             <SummaryCard
               label={copy.facts.publishedVersionLabel}
-              value={publishedVersionNumber ? `v${publishedVersionNumber}` : copy.facts.noPublishedVersion}
+              value={
+                publishedVersionNumber
+                  ? `v${publishedVersionNumber}`
+                  : copy.facts.noPublishedVersion
+              }
               hint={`${copy.facts.updatedAtPrefix} ${formatHomepageManagementDateTime(
                 locale,
                 homepage.updatedAt,
-                copy.facts.updatedAtUnknown,
+                copy.facts.updatedAtUnknown
               )}.`}
             />
           </div>
@@ -675,10 +711,7 @@ export function HomepageManagementScreen({
       </GlassSurface>
 
       <GlassSurface className="p-6">
-        <FormSection
-          title={copy.ledger.title}
-          description={copy.ledger.description}
-        >
+        <FormSection title={copy.ledger.title} description={copy.ledger.description}>
           <div className="space-y-4">
             <div className="flex flex-wrap items-center gap-2">
               {(['all', 'draft', 'published', 'archived'] as const).map((candidate) => {
@@ -732,33 +765,57 @@ export function HomepageManagementScreen({
               >
                 {versionsPanel.data.map((item) => (
                   <tr key={item.id} className="align-top">
-                    <td className="px-6 py-4 text-sm font-semibold text-slate-900">v{item.versionNumber}</td>
+                    <td className="px-6 py-4 text-sm font-semibold text-slate-900">
+                      v{item.versionNumber}
+                    </td>
                     <td className="px-6 py-4">
-                      <StatusBadge status={item.status} label={getHomepageVersionStatusLabel(locale, item.status)} />
+                      <StatusBadge
+                        status={item.status}
+                        label={getHomepageVersionStatusLabel(locale, item.status)}
+                      />
                     </td>
                     <td className="px-6 py-4 text-sm leading-6 text-slate-600">
                       <div className="space-y-1">
                         <p>{item.contentPreview || copy.ledger.noPreview}</p>
-                        <p className="text-xs text-slate-500">{formatHomepageComponentCount(locale, item.componentCount)}</p>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-slate-600">
-                      <div className="space-y-1">
-                        <p>{formatHomepageManagementDateTime(locale, item.createdAt, copy.common.never)}</p>
                         <p className="text-xs text-slate-500">
-                          {copy.ledger.createdByPrefix} {item.createdBy?.username || copy.ledger.createdBySystem}
+                          {formatHomepageComponentCount(locale, item.componentCount)}
                         </p>
                       </div>
                     </td>
                     <td className="px-6 py-4 text-sm text-slate-600">
                       <div className="space-y-1">
-                        <p>{formatHomepageManagementDateTime(locale, item.publishedAt, copy.common.never)}</p>
-                        <p className="text-xs text-slate-500">{item.publishedBy?.username || copy.ledger.publishedByUnpublished}</p>
+                        <p>
+                          {formatHomepageManagementDateTime(
+                            locale,
+                            item.createdAt,
+                            copy.common.never
+                          )}
+                        </p>
+                        <p className="text-xs text-slate-500">
+                          {copy.ledger.createdByPrefix}{' '}
+                          {item.createdBy?.username || copy.ledger.createdBySystem}
+                        </p>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-slate-600">
+                      <div className="space-y-1">
+                        <p>
+                          {formatHomepageManagementDateTime(
+                            locale,
+                            item.publishedAt,
+                            copy.common.never
+                          )}
+                        </p>
+                        <p className="text-xs text-slate-500">
+                          {item.publishedBy?.username || copy.ledger.publishedByUnpublished}
+                        </p>
                       </div>
                     </td>
                     <td className="px-6 py-4">
                       {item.status === 'draft' ? (
-                        <span className="text-xs font-medium text-slate-500">{copy.ledger.currentDraft}</span>
+                        <span className="text-xs font-medium text-slate-500">
+                          {copy.ledger.currentDraft}
+                        </span>
                       ) : (
                         <ActionButton
                           tone="primary"

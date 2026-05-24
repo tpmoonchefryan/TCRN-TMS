@@ -35,7 +35,7 @@ export enum TechEventType {
   AUTH_LOGIN_FAILED = 'AUTH_LOGIN_FAILED',
   REPORT_JOB_FAILED = 'REPORT_JOB_FAILED',
   SYSTEM_STARTUP = 'SYSTEM_STARTUP',
-  API_RATE_LIMIT = 'API_RATE_LIMIT'
+  API_RATE_LIMIT = 'API_RATE_LIMIT',
 }
 
 export enum TechEventScope {
@@ -43,7 +43,7 @@ export enum TechEventScope {
   SECURITY = 'security',
   IMPORT = 'import',
   EXPORT = 'export',
-  INTEGRATION = 'integration'
+  INTEGRATION = 'integration',
 }
 
 export interface TechEventLogEntry {

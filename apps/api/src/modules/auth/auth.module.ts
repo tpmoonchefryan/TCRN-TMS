@@ -1,6 +1,5 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
-import { forwardRef,Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 
@@ -45,4 +44,3 @@ import { TotpService } from './totp.service';
   exports: [AuthService, PasswordService, TotpService, TokenService, AuthRateLimiterGuard],
 })
 export class AuthModule {}
-

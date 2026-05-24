@@ -11,10 +11,7 @@ import {
   listTenants,
   type TenantListItem,
 } from '@/domains/platform-tenant-management/api/tenant-management.api';
-import {
-  type ApiPaginationMeta,
-  buildFallbackPagination,
-} from '@/platform/http/api';
+import { type ApiPaginationMeta, buildFallbackPagination } from '@/platform/http/api';
 import { pickLocaleText } from '@/platform/runtime/locale/locale-text';
 import {
   getPaginationRange,
@@ -24,7 +21,13 @@ import {
   parsePageSizeParam,
 } from '@/platform/runtime/pagination/pagination';
 import { useSession } from '@/platform/runtime/session/session-provider';
-import { ConfirmActionDialog, GlassSurface, PaginationFooter, StateView, TableShell } from '@/platform/ui';
+import {
+  ConfirmActionDialog,
+  GlassSurface,
+  PaginationFooter,
+  StateView,
+  TableShell,
+} from '@/platform/ui';
 
 import {
   formatTenantCreatedAt,
@@ -158,7 +161,7 @@ export function TenantManagementScreen({
       activityFilter: ActivityFilter;
       page: number;
       pageSize: PageSizeOption;
-    }>,
+    }>
   ) {
     const nextSearch = nextState.search ?? search;
     const nextTierFilter = nextState.tierFilter ?? tierFilter;
@@ -275,9 +278,7 @@ export function TenantManagementScreen({
   }
 
   if (panel.error && panel.data.length === 0 && !panel.loading) {
-    return (
-      <StateView status="error" title={managementCopy.title} description={panel.error} />
-    );
+    return <StateView status="error" title={managementCopy.title} description={panel.error} />;
   }
 
   const activeCount = panel.data.filter((tenant) => tenant.isActive).length;
@@ -358,8 +359,16 @@ export function TenantManagementScreen({
               value={String(panel.data.length)}
               hint={managementCopy.visibleTenantsHint}
             />
-            <SummaryCard label={managementCopy.active} value={String(activeCount)} hint={managementCopy.activeHint} />
-            <SummaryCard label={managementCopy.acTierLabel} value={String(acCount)} hint={managementCopy.acTierHint} />
+            <SummaryCard
+              label={managementCopy.active}
+              value={String(activeCount)}
+              hint={managementCopy.activeHint}
+            />
+            <SummaryCard
+              label={managementCopy.acTierLabel}
+              value={String(acCount)}
+              hint={managementCopy.acTierHint}
+            />
             <SummaryCard
               label={managementCopy.standardTierLabel}
               value={String(standardCount)}
@@ -433,7 +442,6 @@ export function TenantManagementScreen({
                 <option value="inactive">{managementCopy.inactiveStatus}</option>
               </select>
             </label>
-
           </div>
         </div>
       </GlassSurface>
@@ -461,7 +469,9 @@ export function TenantManagementScreen({
               <td className="px-6 py-4">
                 <div className="space-y-1">
                   <p className="text-sm font-semibold text-slate-900">{tenant.name}</p>
-                  <p className="text-xs uppercase tracking-[0.18em] text-slate-400">{tenant.code}</p>
+                  <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                    {tenant.code}
+                  </p>
                 </div>
               </td>
               <td className="px-6 py-4">
@@ -473,7 +483,9 @@ export function TenantManagementScreen({
               <td className="px-6 py-4">
                 <ToneBadge
                   tone={tenant.isActive ? 'success' : 'warning'}
-                  label={tenant.isActive ? managementCopy.activeStatus : managementCopy.inactiveStatus}
+                  label={
+                    tenant.isActive ? managementCopy.activeStatus : managementCopy.inactiveStatus
+                  }
                 />
               </td>
               <td className="px-6 py-4 text-sm text-slate-600">
@@ -511,7 +523,11 @@ export function TenantManagementScreen({
                           confirmText: copy.editor.deactivateSubmit,
                           intent: 'danger',
                           onConfirm: async () => {
-                            await deactivateTenant(request, tenant.id, 'Deactivated from AC console');
+                            await deactivateTenant(
+                              request,
+                              tenant.id,
+                              'Deactivated from AC console'
+                            );
                             await refreshTenants();
                             return `${tenant.name} ${copy.editor.successDeactivate}`;
                           },

@@ -1,11 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 
-import {
-  BadRequestException,
-  Injectable,
-  Logger,
-  NotFoundException,
-} from '@nestjs/common';
 import { ErrorCodes, type RequestContext } from '@tcrn/shared';
 
 import {
@@ -32,15 +27,9 @@ import { MarshmallowMessageRepository } from '../infrastructure/marshmallow-mess
 export class MarshmallowMessageApplicationService {
   private readonly logger = new Logger(MarshmallowMessageApplicationService.name);
 
-  constructor(
-    private readonly marshmallowMessageRepository: MarshmallowMessageRepository,
-  ) {}
+  constructor(private readonly marshmallowMessageRepository: MarshmallowMessageRepository) {}
 
-  async findMany(
-    talentId: string,
-    tenantSchema: string,
-    query: MessageListQueryDto,
-  ) {
+  async findMany(talentId: string, tenantSchema: string, query: MessageListQueryDto) {
     const [items, total, statsRow] = await Promise.all([
       this.marshmallowMessageRepository.findMany(talentId, tenantSchema, query),
       this.marshmallowMessageRepository.countMany(talentId, tenantSchema, query),
@@ -50,10 +39,7 @@ export class MarshmallowMessageApplicationService {
     const replierIds = items
       .map((message) => message.repliedBy)
       .filter((repliedBy): repliedBy is string => Boolean(repliedBy));
-    const users = await this.marshmallowMessageRepository.findUsersByIds(
-      tenantSchema,
-      replierIds,
-    );
+    const users = await this.marshmallowMessageRepository.findUsersByIds(tenantSchema, replierIds);
     const repliers = new Map(users.map((user) => [user.id, user]));
 
     return buildMarshmallowMessageListResponse({
@@ -68,7 +54,7 @@ export class MarshmallowMessageApplicationService {
     talentId: string,
     tenantSchema: string,
     messageId: string,
-    context: RequestContext,
+    context: RequestContext
   ) {
     const message = await this.getMessageOrThrow(talentId, tenantSchema, messageId);
 
@@ -84,7 +70,7 @@ export class MarshmallowMessageApplicationService {
       talentId,
       tenantSchema,
       messageId,
-      context.userId ?? '',
+      context.userId ?? ''
     );
 
     await this.safeInsertChangeLog(
@@ -96,7 +82,7 @@ export class MarshmallowMessageApplicationService {
         objectName: 'Message',
         diff: { old: { status: message.status }, new: { status: 'approved' } },
       },
-      context,
+      context
     );
 
     return buildMarshmallowModerationResponse(updated);
@@ -107,7 +93,7 @@ export class MarshmallowMessageApplicationService {
     tenantSchema: string,
     messageId: string,
     dto: RejectMessageDto,
-    context: RequestContext,
+    context: RequestContext
   ) {
     const message = await this.getMessageOrThrow(talentId, tenantSchema, messageId);
     const updated = await this.marshmallowMessageRepository.reject(
@@ -115,7 +101,7 @@ export class MarshmallowMessageApplicationService {
       tenantSchema,
       messageId,
       dto,
-      context.userId ?? '',
+      context.userId ?? ''
     );
 
     await this.safeInsertChangeLog(
@@ -130,7 +116,7 @@ export class MarshmallowMessageApplicationService {
           new: { status: 'rejected', reason: dto.reason },
         },
       },
-      context,
+      context
     );
 
     return buildMarshmallowModerationResponse(updated);
@@ -140,7 +126,7 @@ export class MarshmallowMessageApplicationService {
     talentId: string,
     tenantSchema: string,
     messageId: string,
-    context: RequestContext,
+    context: RequestContext
   ) {
     const message = await this.getMessageOrThrow(talentId, tenantSchema, messageId);
 
@@ -154,7 +140,7 @@ export class MarshmallowMessageApplicationService {
     const updated = await this.marshmallowMessageRepository.unreject(
       talentId,
       tenantSchema,
-      messageId,
+      messageId
     );
 
     await this.safeInsertChangeLog(
@@ -172,7 +158,7 @@ export class MarshmallowMessageApplicationService {
           new: { status: 'pending' },
         },
       },
-      context,
+      context
     );
 
     return buildMarshmallowModerationResponse(updated);
@@ -183,7 +169,7 @@ export class MarshmallowMessageApplicationService {
     tenantSchema: string,
     messageId: string,
     dto: ReplyMessageDto,
-    context: RequestContext,
+    context: RequestContext
   ) {
     const message = await this.getMessageOrThrow(talentId, tenantSchema, messageId);
 
@@ -199,7 +185,7 @@ export class MarshmallowMessageApplicationService {
       tenantSchema,
       messageId,
       dto,
-      context.userId ?? '',
+      context.userId ?? ''
     );
 
     await this.safeInsertChangeLog(
@@ -211,7 +197,7 @@ export class MarshmallowMessageApplicationService {
         objectName: 'Message',
         diff: { new: buildMarshmallowReplyDiff(dto.content) },
       },
-      context,
+      context
     );
 
     return buildMarshmallowReplyResponse({
@@ -223,12 +209,7 @@ export class MarshmallowMessageApplicationService {
     });
   }
 
-  async update(
-    talentId: string,
-    tenantSchema: string,
-    messageId: string,
-    dto: UpdateMessageDto,
-  ) {
+  async update(talentId: string, tenantSchema: string, messageId: string, dto: UpdateMessageDto) {
     const message = await this.getMessageOrThrow(talentId, tenantSchema, messageId);
     const changes = buildMarshmallowMessageUpdateFieldChanges(dto);
 
@@ -245,7 +226,7 @@ export class MarshmallowMessageApplicationService {
       talentId,
       tenantSchema,
       messageId,
-      changes,
+      changes
     );
 
     return buildMarshmallowMessageUpdateResponse(updated);
@@ -255,12 +236,12 @@ export class MarshmallowMessageApplicationService {
     talentId: string,
     tenantSchema: string,
     dto: BatchActionDto,
-    context: RequestContext,
+    context: RequestContext
   ) {
     const ownedCount = await this.marshmallowMessageRepository.countOwnedMessages(
       talentId,
       tenantSchema,
-      dto.messageIds,
+      dto.messageIds
     );
 
     if (ownedCount !== dto.messageIds.length) {
@@ -274,7 +255,7 @@ export class MarshmallowMessageApplicationService {
       talentId,
       tenantSchema,
       dto,
-      context.userId ?? '',
+      context.userId ?? ''
     );
 
     return {
@@ -283,15 +264,11 @@ export class MarshmallowMessageApplicationService {
     };
   }
 
-  private async getMessageOrThrow(
-    talentId: string,
-    tenantSchema: string,
-    messageId: string,
-  ) {
+  private async getMessageOrThrow(talentId: string, tenantSchema: string, messageId: string) {
     const message = await this.marshmallowMessageRepository.findMessageById(
       talentId,
       tenantSchema,
-      messageId,
+      messageId
     );
 
     if (!message) {
@@ -313,14 +290,10 @@ export class MarshmallowMessageApplicationService {
       objectName: string;
       diff: Record<string, unknown>;
     },
-    context: RequestContext,
+    context: RequestContext
   ): Promise<void> {
     try {
-      await this.marshmallowMessageRepository.insertChangeLog(
-        tenantSchema,
-        data,
-        context,
-      );
+      await this.marshmallowMessageRepository.insertChangeLog(tenantSchema, data, context);
     } catch (error) {
       this.logger.error('Failed to create change log', error);
     }

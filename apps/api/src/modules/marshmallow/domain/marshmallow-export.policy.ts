@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import type { ExportMessagesDto } from '../dto/marshmallow.dto';
 
 export const MARSHMALLOW_EXPORT_QUEUE_JOB_NAME = 'marshmallow_export';
@@ -68,7 +67,7 @@ export interface MarshmallowExportDownloadTarget {
 }
 
 export const buildMarshmallowExportFilters = (
-  dto: ExportMessagesDto,
+  dto: ExportMessagesDto
 ): MarshmallowExportJobFilters => ({
   status: dto.status,
   startDate: dto.startDate,
@@ -76,13 +75,12 @@ export const buildMarshmallowExportFilters = (
   includeRejected: dto.includeRejected,
 });
 
-export const canDownloadMarshmallowExportJob = (
-  job: MarshmallowExportDownloadTarget,
-): boolean => job.status === MarshmallowExportStatus.SUCCESS && Boolean(job.file_path);
+export const canDownloadMarshmallowExportJob = (job: MarshmallowExportDownloadTarget): boolean =>
+  job.status === MarshmallowExportStatus.SUCCESS && Boolean(job.file_path);
 
 export const mapMarshmallowExportJobResponse = (
   job: RawMarshmallowExportJobRecord,
-  talentId: string,
+  talentId: string
 ): MarshmallowExportJobResponse => ({
   id: job.id,
   status: job.status as MarshmallowExportStatus,
@@ -90,9 +88,10 @@ export const mapMarshmallowExportJobResponse = (
   fileName: job.file_name,
   totalRecords: job.total_records,
   processedRecords: job.processed_records,
-  downloadUrl: job.status === MarshmallowExportStatus.SUCCESS && job.file_path
-    ? `/api/v1/talents/${talentId}/marshmallow/export/${job.id}/download`
-    : null,
+  downloadUrl:
+    job.status === MarshmallowExportStatus.SUCCESS && job.file_path
+      ? `/api/v1/talents/${talentId}/marshmallow/export/${job.id}/download`
+      : null,
   expiresAt: job.expires_at?.toISOString() ?? null,
   createdAt: job.created_at.toISOString(),
   completedAt: job.completed_at?.toISOString() ?? null,

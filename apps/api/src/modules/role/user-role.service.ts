@@ -1,6 +1,11 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { prisma } from '@tcrn/database';
 import {
   ErrorCodes,
@@ -9,7 +14,10 @@ import {
 } from '@tcrn/shared';
 
 import { buildLocalizedJsonTextSql } from '../../common/request-locale.util';
-import { DelegatedAdminService, DelegateScopeType } from '../delegated-admin/delegated-admin.service';
+import {
+  DelegatedAdminService,
+  DelegateScopeType,
+} from '../delegated-admin/delegated-admin.service';
 import { PermissionSnapshotService, ScopeType } from '../permission/permission-snapshot.service';
 import { TenantService } from '../tenant/tenant.service';
 
@@ -40,7 +48,7 @@ export class UserRoleService {
   constructor(
     private readonly snapshotService: PermissionSnapshotService,
     private readonly delegatedAdminService: DelegatedAdminService,
-    private readonly tenantService: TenantService,
+    private readonly tenantService: TenantService
   ) {}
 
   /**
@@ -48,7 +56,7 @@ export class UserRoleService {
    */
   private async hasTenantAdminPermission(
     tenantSchema: string,
-    grantorUserId: string,
+    grantorUserId: string
   ): Promise<boolean> {
     const snapshotAllowsAdmin = await this.snapshotService.checkPermission(
       tenantSchema,
@@ -56,7 +64,7 @@ export class UserRoleService {
       'system_user',
       'admin',
       'tenant',
-      null,
+      null
     );
 
     if (snapshotAllowsAdmin) {
@@ -69,18 +77,23 @@ export class UserRoleService {
       'system_user',
       'admin',
       'tenant',
-      null,
+      null
     );
   }
 
   /**
    * Get user's role assignments
    */
-  async getUserRoles(userId: string, tenantSchema: string, language: string = 'en'): Promise<UserRoleAssignment[]> {
+  async getUserRoles(
+    userId: string,
+    tenantSchema: string,
+    language: string = 'en'
+  ): Promise<UserRoleAssignment[]> {
     const roleNameSql = buildLocalizedJsonTextSql('r.name', language);
     const subsidiaryNameSql = buildLocalizedJsonTextSql('s.name', language);
 
-    const assignments = await prisma.$queryRawUnsafe<UserRoleAssignment[]>(`
+    const assignments = await prisma.$queryRawUnsafe<UserRoleAssignment[]>(
+      `
       SELECT 
         ur.id,
         ur.user_id as "userId",
@@ -117,7 +130,9 @@ export class UserRoleService {
       JOIN "${tenantSchema}".role r ON ur.role_id = r.id
       WHERE ur.user_id = CAST($1 AS uuid)
       ORDER BY ur.scope_type, ur.granted_at DESC
-    `, userId);
+    `,
+      userId
+    );
 
     return assignments;
   }
@@ -156,7 +171,7 @@ export class UserRoleService {
         tenantSchema,
         grantorUserId,
         scopeType as DelegateScopeType,
-        scopeId,
+        scopeId
       );
     }
 
@@ -179,21 +194,27 @@ export class UserRoleService {
     },
     grantedBy: string
   ): Promise<UserRoleAssignment> {
-    const normalizedScopeId = data.scopeType === 'tenant' ? null : (data.scopeId || null);
+    const normalizedScopeId = data.scopeType === 'tenant' ? null : data.scopeId || null;
 
     // Check if role exists and get role code - support both roleId and roleCode
     let roles: Array<{ id: string; code: string }>;
-    
+
     if (data.roleCode) {
       // Prefer roleCode as it's consistent across schemas
-      roles = await prisma.$queryRawUnsafe<Array<{ id: string; code: string }>>(`
+      roles = await prisma.$queryRawUnsafe<Array<{ id: string; code: string }>>(
+        `
         SELECT id, code FROM "${tenantSchema}".role WHERE code = $1 AND is_active = true
-      `, data.roleCode);
+      `,
+        data.roleCode
+      );
     } else if (data.roleId) {
       // Fallback to roleId for backward compatibility
-      roles = await prisma.$queryRawUnsafe<Array<{ id: string; code: string }>>(`
+      roles = await prisma.$queryRawUnsafe<Array<{ id: string; code: string }>>(
+        `
         SELECT id, code FROM "${tenantSchema}".role WHERE id = CAST($1 AS uuid) AND is_active = true
-      `, data.roleId);
+      `,
+        data.roleId
+      );
     } else {
       throw new BadRequestException({
         code: ErrorCodes.VALIDATION_FIELD_REQUIRED,
@@ -233,7 +254,7 @@ export class UserRoleService {
       grantedBy,
       roleCode,
       data.scopeType,
-      data.scopeId || null,
+      data.scopeId || null
     );
 
     if (!canAssign) {
@@ -245,9 +266,12 @@ export class UserRoleService {
 
     // Validate scope
     if (data.scopeType === 'subsidiary' && data.scopeId) {
-      const subsidiaries = await prisma.$queryRawUnsafe<Array<{ id: string }>>(`
+      const subsidiaries = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
+        `
         SELECT id FROM "${tenantSchema}".subsidiary WHERE id = CAST($1 AS uuid)
-      `, data.scopeId);
+      `,
+        data.scopeId
+      );
       if (subsidiaries.length === 0) {
         throw new NotFoundException({
           code: ErrorCodes.RES_NOT_FOUND,
@@ -255,9 +279,12 @@ export class UserRoleService {
         });
       }
     } else if (data.scopeType === 'talent' && data.scopeId) {
-      const talents = await prisma.$queryRawUnsafe<Array<{ id: string }>>(`
+      const talents = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
+        `
         SELECT id FROM "${tenantSchema}".talent WHERE id = CAST($1 AS uuid)
-      `, data.scopeId);
+      `,
+        data.scopeId
+      );
       if (talents.length === 0) {
         throw new NotFoundException({
           code: ErrorCodes.RES_NOT_FOUND,
@@ -267,7 +294,8 @@ export class UserRoleService {
     }
 
     // Check for duplicate assignment
-    const existing = await prisma.$queryRawUnsafe<Array<{ id: string }>>(`
+    const existing = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
+      `
       SELECT id FROM "${tenantSchema}".user_role
       WHERE user_id = CAST($1 AS uuid)
         AND role_id = CAST($2 AS uuid)
@@ -276,7 +304,12 @@ export class UserRoleService {
           ($3 = 'tenant')
           OR COALESCE(scope_id, '00000000-0000-0000-0000-000000000000') = COALESCE(CAST($4 AS uuid), '00000000-0000-0000-0000-000000000000')
         )
-    `, userId, roleId, data.scopeType, normalizedScopeId);
+    `,
+      userId,
+      roleId,
+      data.scopeType,
+      normalizedScopeId
+    );
 
     if (existing.length > 0) {
       throw new BadRequestException({
@@ -286,12 +319,21 @@ export class UserRoleService {
     }
 
     // Create assignment
-    await prisma.$executeRawUnsafe(`
+    await prisma.$executeRawUnsafe(
+      `
       INSERT INTO "${tenantSchema}".user_role 
         (id, user_id, role_id, scope_type, scope_id, inherit, granted_at, granted_by, expires_at)
       VALUES 
         (gen_random_uuid(), CAST($1 AS uuid), CAST($2 AS uuid), $3, CAST($4 AS uuid), $5, now(), CAST($6 AS uuid), $7)
-    `, userId, roleId, data.scopeType, normalizedScopeId, data.inherit, grantedBy, data.expiresAt || null);
+    `,
+      userId,
+      roleId,
+      data.scopeType,
+      normalizedScopeId,
+      data.inherit,
+      grantedBy,
+      data.expiresAt || null
+    );
 
     // Refresh permission snapshot
     await this.snapshotService.refreshUserSnapshots(tenantSchema, userId);
@@ -304,14 +346,14 @@ export class UserRoleService {
   /**
    * Remove role assignment
    */
-  async removeAssignment(
-    assignmentId: string,
-    tenantSchema: string
-  ): Promise<void> {
+  async removeAssignment(assignmentId: string, tenantSchema: string): Promise<void> {
     // Get assignment to find user_id
-    const assignments = await prisma.$queryRawUnsafe<Array<{ userId: string }>>(`
+    const assignments = await prisma.$queryRawUnsafe<Array<{ userId: string }>>(
+      `
       SELECT user_id as "userId" FROM "${tenantSchema}".user_role WHERE id = CAST($1 AS uuid)
-    `, assignmentId);
+    `,
+      assignmentId
+    );
 
     if (assignments.length === 0) {
       throw new NotFoundException({
@@ -323,9 +365,12 @@ export class UserRoleService {
     const userId = assignments[0].userId;
 
     // Delete assignment
-    await prisma.$executeRawUnsafe(`
+    await prisma.$executeRawUnsafe(
+      `
       DELETE FROM "${tenantSchema}".user_role WHERE id = CAST($1 AS uuid)
-    `, assignmentId);
+    `,
+      assignmentId
+    );
 
     // Refresh permission snapshot
     await this.snapshotService.refreshUserSnapshots(tenantSchema, userId);
@@ -343,9 +388,12 @@ export class UserRoleService {
     }
   ): Promise<UserRoleAssignment> {
     // Get assignment
-    const assignments = await prisma.$queryRawUnsafe<Array<{ userId: string }>>(`
+    const assignments = await prisma.$queryRawUnsafe<Array<{ userId: string }>>(
+      `
       SELECT user_id as "userId" FROM "${tenantSchema}".user_role WHERE id = CAST($1 AS uuid)
-    `, assignmentId);
+    `,
+      assignmentId
+    );
 
     if (assignments.length === 0) {
       throw new NotFoundException({
@@ -370,18 +418,21 @@ export class UserRoleService {
     }
 
     if (updates.length > 0) {
-      await prisma.$executeRawUnsafe(`
+      await prisma.$executeRawUnsafe(
+        `
         UPDATE "${tenantSchema}".user_role
         SET ${updates.join(', ')}
         WHERE id = CAST($1 AS uuid)
-      `, ...params);
+      `,
+        ...params
+      );
 
       // Refresh permission snapshot
       await this.snapshotService.refreshUserSnapshots(tenantSchema, userId);
     }
 
     const updatedAssignments = await this.getUserRoles(userId, tenantSchema);
-    const updated = updatedAssignments.find(a => a.id === assignmentId);
+    const updated = updatedAssignments.find((a) => a.id === assignmentId);
     if (!updated) {
       throw new NotFoundException({
         code: ErrorCodes.RES_NOT_FOUND,

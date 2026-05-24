@@ -1,10 +1,11 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+import { Readable } from 'stream';
 
 import { InjectQueue } from '@nestjs/bullmq';
 import { Injectable } from '@nestjs/common';
-import { type RequestContext } from '@tcrn/shared';
 import type { Queue } from 'bullmq';
-import { Readable } from 'stream';
+
+import { type RequestContext } from '@tcrn/shared';
 
 import { BUCKETS, MinioService } from '../../minio';
 import { QUEUE_NAMES } from '../../queue';
@@ -17,7 +18,7 @@ export class ImportJobSubmissionApplicationService {
     private readonly importJobWriteApplicationService: ImportJobWriteApplicationService,
     private readonly minioService: MinioService,
     @InjectQueue(QUEUE_NAMES.IMPORT)
-    private readonly importQueue: Queue,
+    private readonly importQueue: Queue
   ) {}
 
   async submitCustomerCreateJob(params: {
@@ -38,7 +39,7 @@ export class ImportJobSubmissionApplicationService {
       params.fileSize,
       params.totalRows,
       params.consumerCode,
-      params.context,
+      params.context
     );
 
     const objectName = `${params.context.tenantSchema}/${job.id}.csv`;
@@ -47,7 +48,7 @@ export class ImportJobSubmissionApplicationService {
       objectName,
       Readable.from(params.fileBuffer),
       params.fileSize,
-      'text/csv',
+      'text/csv'
     );
 
     await this.importQueue.add('process-import', {

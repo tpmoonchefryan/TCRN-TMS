@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable } from '@nestjs/common';
+
 import { Prisma, type PrismaClient } from '@tcrn/database';
 
 import { DatabaseService } from '../../database';
@@ -14,24 +14,20 @@ type IndividualCustomerPiiDatabaseClient = Prisma.TransactionClient | PrismaClie
 
 @Injectable()
 export class IndividualCustomerPiiRepository {
-  constructor(
-    private readonly databaseService: DatabaseService,
-  ) {}
+  constructor(private readonly databaseService: DatabaseService) {}
 
-  withTransaction<T>(
-    operation: (prisma: Prisma.TransactionClient) => Promise<T>,
-  ): Promise<T> {
+  withTransaction<T>(operation: (prisma: Prisma.TransactionClient) => Promise<T>): Promise<T> {
     return this.databaseService.getPrisma().$transaction((prisma) => operation(prisma));
   }
 
   async findCustomerRecord(
     tenantSchema: string,
-    customerId: string,
+    customerId: string
   ): Promise<IndividualCustomerPiiCustomerRecord | null> {
-    const customers = await this.databaseService.getPrisma().$queryRawUnsafe<
-      IndividualCustomerPiiCustomerRecord[]
-    >(
-      `SELECT
+    const customers = await this.databaseService
+      .getPrisma()
+      .$queryRawUnsafe<IndividualCustomerPiiCustomerRecord[]>(
+        `SELECT
          id,
          profile_type as "profileType",
          profile_store_id as "profileStoreId",
@@ -43,26 +39,26 @@ export class IndividualCustomerPiiRepository {
          notes
        FROM "${tenantSchema}".customer_profile
        WHERE id = $1::uuid`,
-      customerId,
-    );
+        customerId
+      );
 
     return customers[0] ?? null;
   }
 
   async findTalentProfileStore(
     tenantSchema: string,
-    talentId: string,
+    talentId: string
   ): Promise<IndividualCustomerPiiTalentRecord | null> {
-    const talents = await this.databaseService.getPrisma().$queryRawUnsafe<
-      IndividualCustomerPiiTalentRecord[]
-    >(
-      `SELECT
+    const talents = await this.databaseService
+      .getPrisma()
+      .$queryRawUnsafe<IndividualCustomerPiiTalentRecord[]>(
+        `SELECT
          id,
          profile_store_id as "profileStoreId"
        FROM "${tenantSchema}".talent
        WHERE id = $1::uuid`,
-      talentId,
-    );
+        talentId
+      );
 
     return talents[0] ?? null;
   }
@@ -80,7 +76,7 @@ export class IndividualCustomerPiiRepository {
       ipAddress?: string;
       userAgent?: string;
       requestId: string;
-    },
+    }
   ) {
     return prisma.$executeRawUnsafe(
       `INSERT INTO "${tenantSchema}".customer_access_log (
@@ -98,7 +94,7 @@ export class IndividualCustomerPiiRepository {
       args.userName,
       args.ipAddress ?? '0.0.0.0',
       args.userAgent,
-      args.requestId,
+      args.requestId
     );
   }
 
@@ -116,7 +112,7 @@ export class IndividualCustomerPiiRepository {
       ipAddress?: string;
       userAgent?: string;
       requestId: string;
-    },
+    }
   ) {
     return prisma.$executeRawUnsafe(
       `INSERT INTO "${tenantSchema}".customer_access_log (
@@ -135,7 +131,7 @@ export class IndividualCustomerPiiRepository {
       args.userName,
       args.ipAddress ?? '0.0.0.0',
       args.userAgent,
-      args.requestId,
+      args.requestId
     );
   }
 
@@ -146,7 +142,7 @@ export class IndividualCustomerPiiRepository {
       customerId: string;
       talentId: string;
       userId: string;
-    },
+    }
   ) {
     return prisma.$executeRawUnsafe(
       `UPDATE "${tenantSchema}".customer_profile
@@ -157,7 +153,7 @@ export class IndividualCustomerPiiRepository {
        WHERE id = $1::uuid`,
       args.customerId,
       args.talentId,
-      args.userId,
+      args.userId
     );
   }
 }

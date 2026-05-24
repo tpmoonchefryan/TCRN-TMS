@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import cookieParser from 'cookie-parser';
 import { ZodValidationPipe } from 'nestjs-zod';
@@ -18,7 +17,7 @@ export const bootstrapTestApp = async (app: INestApplication): Promise<INestAppl
       transformOptions: {
         enableImplicitConversion: true,
       },
-    }),
+    })
   );
   app.useGlobalFilters(new HttpExceptionFilter());
 

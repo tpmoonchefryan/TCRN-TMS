@@ -1,11 +1,11 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import {
   BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+
 import {
   type BlocklistStructuredScopeInput,
   ErrorCodes,
@@ -14,9 +14,7 @@ import {
   type RequestContext,
 } from '@tcrn/shared';
 
-import {
-  mergeLocalizedTextPatch,
-} from '../../../platform/persistence/localized-text.persistence';
+import { mergeLocalizedTextPatch } from '../../../platform/persistence/localized-text.persistence';
 import { DatabaseService } from '../../database';
 import { ChangeLogService } from '../../log';
 import {
@@ -42,7 +40,7 @@ export class BlocklistWriteService {
     private readonly blocklistReadService: BlocklistReadService,
     private readonly databaseService: DatabaseService,
     private readonly changeLogService: ChangeLogService,
-    private readonly matcherService: BlocklistMatcherService,
+    private readonly matcherService: BlocklistMatcherService
   ) {}
 
   async create(dto: CreateBlocklistDto, context: RequestContext) {
@@ -68,7 +66,7 @@ export class BlocklistWriteService {
           ...normalizedDto,
           extraData: null,
         },
-        context.userId as string,
+        context.userId as string
       );
 
       await this.changeLogService.create(
@@ -80,7 +78,7 @@ export class BlocklistWriteService {
           objectName: pickLocalizedText(normalizedDto.name, 'en'),
           newValue: buildBlocklistCreateLogPayload(normalizedDto),
         },
-        context,
+        context
       );
 
       return newEntry;
@@ -90,16 +88,9 @@ export class BlocklistWriteService {
     return this.blocklistReadService.findById(tenantSchema, entry.id);
   }
 
-  async update(
-    id: string,
-    dto: UpdateBlocklistDto,
-    context: RequestContext,
-  ) {
+  async update(id: string, dto: UpdateBlocklistDto, context: RequestContext) {
     const tenantSchema = context.tenantSchema;
-    const entry = await this.blocklistWriteRepository.findForWrite(
-      tenantSchema,
-      id,
-    );
+    const entry = await this.blocklistWriteRepository.findForWrite(tenantSchema, id);
 
     if (!entry) {
       throw new NotFoundException({
@@ -115,11 +106,7 @@ export class BlocklistWriteService {
       });
     }
 
-    if (
-      dto.patternType === 'regex' &&
-      dto.pattern &&
-      !isValidBlocklistRegexPattern(dto.pattern)
-    ) {
+    if (dto.patternType === 'regex' && dto.pattern && !isValidBlocklistRegexPattern(dto.pattern)) {
       throw new BadRequestException({
         code: ErrorCodes.VALIDATION_FAILED,
         message: 'Invalid regex pattern',
@@ -135,13 +122,7 @@ export class BlocklistWriteService {
     }
 
     await prisma.$transaction(async (tx) => {
-      await this.blocklistWriteRepository.update(
-        tx,
-        tenantSchema,
-        id,
-        updateData,
-        context.userId,
-      );
+      await this.blocklistWriteRepository.update(tx, tenantSchema, id, updateData, context.userId);
 
       await this.changeLogService.create(
         tx,
@@ -151,7 +132,7 @@ export class BlocklistWriteService {
           objectId: id,
           objectName: pickLocalizedText(entry.name, 'en'),
         },
-        context,
+        context
       );
     });
 
@@ -184,7 +165,7 @@ export class BlocklistWriteService {
 
   private normalizeScope(
     scope: string[] | undefined,
-    structuredScope: CreateBlocklistDto['structuredScope'] | UpdateBlocklistDto['structuredScope'],
+    structuredScope: CreateBlocklistDto['structuredScope'] | UpdateBlocklistDto['structuredScope']
   ): string[] {
     try {
       return normalizeBlocklistScopeInput({
@@ -194,19 +175,14 @@ export class BlocklistWriteService {
     } catch (error) {
       throw new BadRequestException({
         code: ErrorCodes.VALIDATION_FAILED,
-        message: error instanceof Error
-          ? error.message
-          : 'Invalid blocklist structured scope',
+        message: error instanceof Error ? error.message : 'Invalid blocklist structured scope',
       });
     }
   }
 
   async delete(id: string, context: RequestContext) {
     const tenantSchema = context.tenantSchema;
-    const entry = await this.blocklistWriteRepository.findForWrite(
-      tenantSchema,
-      id,
-    );
+    const entry = await this.blocklistWriteRepository.findForWrite(tenantSchema, id);
 
     if (!entry) {
       throw new NotFoundException({
@@ -217,12 +193,7 @@ export class BlocklistWriteService {
 
     const prisma = this.databaseService.getPrisma();
     await prisma.$transaction(async (tx) => {
-      await this.blocklistWriteRepository.deactivate(
-        tx,
-        tenantSchema,
-        id,
-        context.userId,
-      );
+      await this.blocklistWriteRepository.deactivate(tx, tenantSchema, id, context.userId);
 
       await this.changeLogService.create(
         tx,
@@ -232,7 +203,7 @@ export class BlocklistWriteService {
           objectId: id,
           objectName: pickLocalizedText(entry.name, 'en'),
         },
-        context,
+        context
       );
     });
 
@@ -241,23 +212,16 @@ export class BlocklistWriteService {
   }
 
   test(dto: TestBlocklistDto) {
-    return this.matcherService.testPattern(
-      dto.testContent,
-      dto.pattern,
-      dto.patternType,
-    );
+    return this.matcherService.testPattern(dto.testContent, dto.pattern, dto.patternType);
   }
 
   async disableInScope(
     tenantSchema: string,
     id: string,
     dto: DisableScopeDto,
-    userId: string,
+    userId: string
   ): Promise<{ id: string; disabled: boolean }> {
-    const entry = await this.blocklistWriteRepository.findScopeEntryById(
-      tenantSchema,
-      id,
-    );
+    const entry = await this.blocklistWriteRepository.findScopeEntryById(tenantSchema, id);
 
     if (!entry) {
       throw new NotFoundException({
@@ -285,7 +249,7 @@ export class BlocklistWriteService {
       id,
       dto.scopeType,
       dto.scopeId,
-      userId,
+      userId
     );
 
     return { id, disabled: true };
@@ -294,14 +258,9 @@ export class BlocklistWriteService {
   async enableInScope(
     tenantSchema: string,
     id: string,
-    dto: DisableScopeDto,
+    dto: DisableScopeDto
   ): Promise<{ id: string; enabled: boolean }> {
-    await this.blocklistWriteRepository.enableInScope(
-      tenantSchema,
-      id,
-      dto.scopeType,
-      dto.scopeId,
-    );
+    await this.blocklistWriteRepository.enableInScope(tenantSchema, id, dto.scopeType, dto.scopeId);
 
     return { id, enabled: true };
   }

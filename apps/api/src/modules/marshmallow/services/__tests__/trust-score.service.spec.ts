@@ -1,9 +1,8 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
-import { afterEach,beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { RedisService } from '../../../redis';
-import { TrustLevel,TrustScoreService } from '../trust-score.service';
+import { TrustLevel, TrustScoreService } from '../trust-score.service';
 
 // Partially skip tests that need actual service API investigation
 describe('TrustScoreService', () => {
@@ -44,7 +43,7 @@ describe('TrustScoreService', () => {
         lastUpdated: Date.now(),
       };
       (mockRedisService.get as ReturnType<typeof vi.fn>).mockResolvedValue(
-        JSON.stringify(cachedScore),
+        JSON.stringify(cachedScore)
       );
 
       const result = await service.getTrustScore('cached-fingerprint');
@@ -97,7 +96,7 @@ describe('TrustScoreService', () => {
         lastUpdated: Date.now(),
       };
       (mockRedisService.get as ReturnType<typeof vi.fn>).mockResolvedValue(
-        JSON.stringify(highScore),
+        JSON.stringify(highScore)
       );
 
       const result = await service.updateFingerprintScore('high-score-fp', 'captcha_pass');
@@ -115,7 +114,7 @@ describe('TrustScoreService', () => {
         lastUpdated: Date.now(),
       };
       (mockRedisService.get as ReturnType<typeof vi.fn>).mockResolvedValue(
-        JSON.stringify(lowScore),
+        JSON.stringify(lowScore)
       );
 
       const result = await service.getTrustScore('low-score-fp');
@@ -131,7 +130,7 @@ describe('TrustScoreService', () => {
         lastUpdated: Date.now(),
       };
       (mockRedisService.get as ReturnType<typeof vi.fn>).mockResolvedValue(
-        JSON.stringify(suspiciousScore),
+        JSON.stringify(suspiciousScore)
       );
 
       const result = await service.getTrustScore('suspicious-fp');
@@ -147,7 +146,7 @@ describe('TrustScoreService', () => {
         lastUpdated: Date.now(),
       };
       (mockRedisService.get as ReturnType<typeof vi.fn>).mockResolvedValue(
-        JSON.stringify(trustedScore),
+        JSON.stringify(trustedScore)
       );
 
       const result = await service.getTrustScore('trusted-fp');

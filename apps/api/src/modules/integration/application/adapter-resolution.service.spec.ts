@@ -1,8 +1,8 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { NotFoundException } from '@nestjs/common';
-import { createLocalizedText, type RequestContext } from '@tcrn/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { createLocalizedText, type RequestContext } from '@tcrn/shared';
 
 import { OwnerType } from '../dto/integration.dto';
 import { AdapterResolutionRepository } from '../infrastructure/adapter-resolution.repository';
@@ -33,10 +33,7 @@ describe('AdapterResolutionApplicationService', () => {
     isEncrypted: vi.fn((value: string) => value.startsWith('enc:')),
   } as unknown as AdapterCryptoService;
 
-  const service = new AdapterResolutionApplicationService(
-    mockRepository,
-    mockCryptoService,
-  );
+  const service = new AdapterResolutionApplicationService(mockRepository, mockCryptoService);
   const localized = (en: string) => createLocalizedText({ en });
 
   beforeEach(() => {
@@ -118,8 +115,8 @@ describe('AdapterResolutionApplicationService', () => {
           platformCode: 'TCRN_PII_PLATFORM',
           adapterType: 'api_key',
         },
-        context,
-      ),
+        context
+      )
     ).resolves.toEqual({
       id: 'talent-adapter',
       ownerType: OwnerType.TALENT,
@@ -200,7 +197,7 @@ describe('AdapterResolutionApplicationService', () => {
         platformCode: 'TCRN_PII_PLATFORM',
         adapterType: 'api_key',
       },
-      context,
+      context
     );
 
     expect(resolved?.id).toBe('subsidiary-adapter');
@@ -258,8 +255,8 @@ describe('AdapterResolutionApplicationService', () => {
           ownerId: 'talent-1',
           platformCode: 'TCRN_PII_PLATFORM',
         },
-        context,
-      ),
+        context
+      )
     ).resolves.toBeNull();
   });
 
@@ -302,8 +299,8 @@ describe('AdapterResolutionApplicationService', () => {
           ownerId: 'talent-1',
           platformCode: 'TCRN_PII_PLATFORM',
         },
-        context,
-      ),
+        context
+      )
     ).resolves.toBeNull();
   });
 
@@ -333,7 +330,7 @@ describe('AdapterResolutionApplicationService', () => {
         ownerId: null,
         platformCode: 'TCRN_PII_PLATFORM',
       },
-      context,
+      context
     );
 
     expect(resolved?.id).toBe('tenant-adapter');
@@ -351,8 +348,8 @@ describe('AdapterResolutionApplicationService', () => {
           ownerId: 'missing-talent',
           platformCode: 'TCRN_PII_PLATFORM',
         },
-        context,
-      ),
+        context
+      )
     ).rejects.toThrow(NotFoundException);
   });
 });

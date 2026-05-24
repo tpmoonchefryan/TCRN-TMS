@@ -1,4 +1,5 @@
 import { BadRequestException } from '@nestjs/common';
+
 import { Prisma } from '@tcrn/database';
 import {
   isLocalizedText,
@@ -14,7 +15,7 @@ export function toJsonInput(input: JsonRecord): Prisma.InputJsonValue {
 }
 
 export function toNullableJsonInput(
-  input: JsonRecord | null,
+  input: JsonRecord | null
 ): Prisma.InputJsonValue | Prisma.NullableJsonNullValueInput {
   if (!input) {
     return Prisma.DbNull;
@@ -23,9 +24,7 @@ export function toNullableJsonInput(
   return input as Prisma.InputJsonValue;
 }
 
-export function toLocalizedTextJsonInput(
-  input: LocalizedText,
-): Prisma.InputJsonValue {
+export function toLocalizedTextJsonInput(input: LocalizedText): Prisma.InputJsonValue {
   return input as unknown as Prisma.InputJsonValue;
 }
 
@@ -56,7 +55,7 @@ export function readLocalizedText(input: Prisma.JsonValue, fieldName: string): L
 export function normalizeRequiredLocalizedText(
   input: PartialLocalizedText | undefined | null,
   fieldName: string,
-  fallback = '',
+  fallback = ''
 ): LocalizedText {
   const normalized = normalizeLocalizedText(input, fallback);
 
@@ -69,14 +68,14 @@ export function normalizeRequiredLocalizedText(
 
 export function normalizeOptionalLocalizedText(
   input: PartialLocalizedText | undefined | null,
-  fallback = '',
+  fallback = ''
 ): LocalizedText {
   return normalizeLocalizedText(input, fallback);
 }
 
 export function mergeLocalizedTextPatch(
   current: LocalizedText,
-  patch: PartialLocalizedText | undefined | null,
+  patch: PartialLocalizedText | undefined | null
 ): LocalizedText {
   return normalizeLocalizedText({ ...current, ...(patch ?? {}) }, current.en);
 }

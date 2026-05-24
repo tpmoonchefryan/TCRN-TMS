@@ -1,9 +1,9 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+import { Readable } from 'stream';
 
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Client } from 'minio';
-import { Readable } from 'stream';
 
 /**
  * Bucket names as per PRD §20.1 and architecture doc
@@ -140,13 +140,18 @@ export class MinioService implements OnModuleInit {
   /**
    * Apply lifecycle policy helper
    */
-  private async applyLifecyclePolicy(bucketName: string, config: BucketLifecycleConfig): Promise<void> {
+  private async applyLifecyclePolicy(
+    bucketName: string,
+    config: BucketLifecycleConfig
+  ): Promise<void> {
     try {
       await this.client.setBucketLifecycle(bucketName, config);
     } catch (error) {
       const err = error as { code?: string; message?: string };
       if (err?.code === 'InvalidArgument' || err?.code === 'NotImplemented') {
-        this.logger.log(`MinIO lifecycle policy not supported for ${bucketName} in this environment`);
+        this.logger.log(
+          `MinIO lifecycle policy not supported for ${bucketName} in this environment`
+        );
       } else {
         this.logger.warn(`Could not set ${bucketName} lifecycle policy: ${err?.message}`);
       }
@@ -235,7 +240,7 @@ export class MinioService implements OnModuleInit {
   async getFile(bucket: BucketName, objectName: string): Promise<Buffer> {
     const stream = await this.getFileStream(bucket, objectName);
     const chunks: Buffer[] = [];
-    
+
     return new Promise((resolve, reject) => {
       stream.on('data', (chunk) => chunks.push(chunk));
       stream.on('end', () => resolve(Buffer.concat(chunks)));

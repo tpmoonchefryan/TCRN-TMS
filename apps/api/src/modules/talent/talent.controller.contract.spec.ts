@@ -1,7 +1,6 @@
-import 'reflect-metadata';
-
 import { RequestMethod } from '@nestjs/common';
 import { METHOD_METADATA, PATH_METADATA } from '@nestjs/common/constants';
+import 'reflect-metadata';
 import { describe, expect, it } from 'vitest';
 
 import { PERMISSIONS_KEY } from '../../common/decorators/require-permissions.decorator';
@@ -23,12 +22,15 @@ const normalizePaths = (value: string | string[] | undefined): string[] => {
 
 const getControllerRoutes = (controller: typeof TalentController): ControllerRoute[] => {
   const methodNames = Object.getOwnPropertyNames(controller.prototype).filter(
-    (methodName) => methodName !== 'constructor' && typeof controller.prototype[methodName] === 'function',
+    (methodName) =>
+      methodName !== 'constructor' && typeof controller.prototype[methodName] === 'function'
   );
 
   return methodNames.flatMap((methodName) => {
     const handler = controller.prototype[methodName];
-    const requestMethod = Reflect.getMetadata(METHOD_METADATA, handler) as RequestMethod | undefined;
+    const requestMethod = Reflect.getMetadata(METHOD_METADATA, handler) as
+      | RequestMethod
+      | undefined;
 
     if (requestMethod === undefined) {
       return [];
@@ -150,7 +152,7 @@ describe('TalentController lifecycle route contract', () => {
           requestMethod: RequestMethod.PATCH,
           path: ':talentId/custom-domain/ssl-mode',
         },
-      ]),
+      ])
     );
   });
 
@@ -204,19 +206,18 @@ describe('TalentController lifecycle route contract', () => {
     ]);
   });
 
-
   it('keeps static custom-domain binding routes before the dynamic talent detail route', () => {
     const routes = getControllerRoutes(TalentController);
     const routeKeys = routes.map((route) => `${RequestMethod[route.requestMethod]} ${route.path}`);
 
     expect(routeKeys.indexOf('GET custom-domain-bindings')).toBeLessThan(
-      routeKeys.indexOf('GET :talentId'),
+      routeKeys.indexOf('GET :talentId')
     );
     expect(routeKeys.indexOf('POST custom-domain-bindings')).toBeLessThan(
-      routeKeys.indexOf('GET :talentId'),
+      routeKeys.indexOf('GET :talentId')
     );
     expect(routeKeys.indexOf('PATCH custom-domain-bindings/:domainId')).toBeLessThan(
-      routeKeys.indexOf('PATCH :talentId'),
+      routeKeys.indexOf('PATCH :talentId')
     );
   });
 

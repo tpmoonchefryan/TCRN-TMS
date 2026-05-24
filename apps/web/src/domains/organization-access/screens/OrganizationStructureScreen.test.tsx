@@ -1,7 +1,8 @@
-import type { SupportedUiLocale } from '@tcrn/shared';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { localizedFixture } from '@/domains/config-dictionary-settings/testing/localized-fixtures';
 
+import type { SupportedUiLocale } from '@tcrn/shared';
+
+import { localizedFixture } from '@/domains/config-dictionary-settings/testing/localized-fixtures';
 import { OrganizationStructureScreen } from '@/domains/organization-access/screens/OrganizationStructureScreen';
 
 const mockRequest = vi.fn();
@@ -11,7 +12,6 @@ let currentSearch = '';
 const localeState = {
   locale: 'en' as SupportedUiLocale,
 };
-
 
 vi.mock('next/navigation', () => ({
   usePathname: () => pathname,
@@ -96,7 +96,9 @@ const manageableLifecycleMaintenance = { canManage: true } as const;
 const unavailableLifecycleMaintenance = { canManage: false } as const;
 
 function getTreeCallCount() {
-  return mockRequest.mock.calls.filter(([path]) => String(path).startsWith('/api/v1/organization/tree?')).length;
+  return mockRequest.mock.calls.filter(([path]) =>
+    String(path).startsWith('/api/v1/organization/tree?')
+  ).length;
 }
 
 describe('OrganizationStructureScreen', () => {
@@ -236,7 +238,7 @@ describe('OrganizationStructureScreen', () => {
     expect(
       screen
         .getAllByRole('link', { name: 'Edit tenant settings' })
-        .some((element) => element.getAttribute('href') === '/tenant/tenant-1/settings'),
+        .some((element) => element.getAttribute('href') === '/tenant/tenant-1/settings')
     ).toBe(true);
 
     fireEvent.click(screen.getByRole('button', { name: /Tokyo Branch/i }));
@@ -245,10 +247,9 @@ describe('OrganizationStructureScreen', () => {
     expect(screen.getByText('Sora')).toBeInTheDocument();
     expect(screen.getByText('Mio')).toBeInTheDocument();
     expect(screen.queryByText('Root Talent')).not.toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Edit subsidiary settings: Tokyo Branch' })).toHaveAttribute(
-      'href',
-      '/tenant/tenant-1/subsidiary/subsidiary-1/settings',
-    );
+    expect(
+      screen.getByRole('link', { name: 'Edit subsidiary settings: Tokyo Branch' })
+    ).toHaveAttribute('href', '/tenant/tenant-1/subsidiary/subsidiary-1/settings');
   });
 
   it('reloads the tree when the refresh action is pressed so newly added talents become visible', async () => {
@@ -547,12 +548,13 @@ describe('OrganizationStructureScreen', () => {
       expect(spotlight).toHaveFocus();
     });
 
-    expect(
-      within(spotlight).getByRole('link', { name: 'Homepage Management' }),
-    ).toHaveAttribute('href', '/tenant/tenant-1/talent/talent-4/homepage');
+    expect(within(spotlight).getByRole('link', { name: 'Homepage Management' })).toHaveAttribute(
+      'href',
+      '/tenant/tenant-1/talent/talent-4/homepage'
+    );
     expect(within(spotlight).getByRole('link', { name: 'Open Studio' })).toHaveAttribute(
       'href',
-      '/studio/public-presence/tenant-1/talent-4',
+      '/studio/public-presence/tenant-1/talent-4'
     );
 
     expect(await screen.findByText('/MIO/')).toBeInTheDocument();
@@ -644,12 +646,13 @@ describe('OrganizationStructureScreen', () => {
 
     expect(within(spotlight).getByText('Suzu')).toBeInTheDocument();
     expect(within(spotlight).getByText('SUZU')).toBeInTheDocument();
-    expect(
-      within(spotlight).getByRole('link', { name: 'Homepage Management' }),
-    ).toHaveAttribute('href', '/tenant/tenant-1/talent/talent-5/homepage');
+    expect(within(spotlight).getByRole('link', { name: 'Homepage Management' })).toHaveAttribute(
+      'href',
+      '/tenant/tenant-1/talent/talent-5/homepage'
+    );
     expect(within(spotlight).getByRole('link', { name: 'Open Studio' })).toHaveAttribute(
       'href',
-      '/studio/public-presence/tenant-1/talent-5',
+      '/studio/public-presence/tenant-1/talent-5'
     );
   });
 
@@ -680,7 +683,11 @@ describe('OrganizationStructureScreen', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Create talent' }));
 
-    expect(await screen.findByText('No active artist stages are available yet. Add one in tenant settings before creating a talent.')).toBeInTheDocument();
+    expect(
+      await screen.findByText(
+        'No active artist stages are available yet. Add one in tenant settings before creating a talent.'
+      )
+    ).toBeInTheDocument();
     expect(screen.getAllByRole('button', { name: 'Create talent' })[1]).toBeDisabled();
   });
 
@@ -832,11 +839,15 @@ describe('OrganizationStructureScreen', () => {
     });
 
     fireEvent.click(screen.getByRole('button', { name: 'Disable workspace' }));
-    fireEvent.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Disable workspace' }));
+    fireEvent.click(
+      within(await screen.findByRole('dialog')).getByRole('button', { name: 'Disable workspace' })
+    );
 
     await screen.findByText('Disabled');
     fireEvent.click(screen.getByRole('button', { name: 'Re-enable workspace' }));
-    fireEvent.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Re-enable workspace' }));
+    fireEvent.click(
+      within(await screen.findByRole('dialog')).getByRole('button', { name: 'Re-enable workspace' })
+    );
 
     await waitFor(() => {
       expect(screen.getByText('Published')).toBeInTheDocument();
@@ -960,7 +971,7 @@ describe('OrganizationStructureScreen', () => {
     fireEvent.click(screen.getByRole('button', { name: '停用工作区' }));
 
     expect(
-      within(await screen.findByRole('dialog')).getByRole('button', { name: '停用工作区' }),
+      within(await screen.findByRole('dialog')).getByRole('button', { name: '停用工作区' })
     ).toBeInTheDocument();
   });
 
@@ -1107,5 +1118,4 @@ describe('OrganizationStructureScreen', () => {
     expect(screen.getByText('Talent 21')).toBeInTheDocument();
     expect(screen.queryByText('Talent 01')).not.toBeInTheDocument();
   });
-
 });

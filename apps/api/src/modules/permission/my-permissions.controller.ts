@@ -1,13 +1,16 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Controller, Get, Query, Req } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { prisma } from '@tcrn/database';
 import { IsEnum, IsOptional, IsString } from 'class-validator';
 import { Request } from 'express';
 
+import { prisma } from '@tcrn/database';
+
 import { AuthenticatedUser, CurrentUser } from '../../common/decorators/current-user.decorator';
-import { buildLocalizedJsonTextSql, getPrimaryAcceptLanguage } from '../../common/request-locale.util';
+import {
+  buildLocalizedJsonTextSql,
+  getPrimaryAcceptLanguage,
+} from '../../common/request-locale.util';
 import { success } from '../../common/response.util';
 import { PermissionSnapshotService, ScopeType } from './permission-snapshot.service';
 
@@ -50,7 +53,7 @@ export class MyPermissionsController {
   async getMyPermissions(
     @CurrentUser() user: AuthenticatedUser,
     @Query() query: GetMyPermissionsQueryDto,
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     const scopeNameSql = buildLocalizedJsonTextSql('name', getPrimaryAcceptLanguage(req));
     const roleNameSql = buildLocalizedJsonTextSql('r.name', getPrimaryAcceptLanguage(req));
@@ -63,7 +66,7 @@ export class MyPermissionsController {
       user.tenantSchema,
       user.id,
       scopeType,
-      scopeId,
+      scopeId
     );
 
     // Get scope info if specific scope requested
@@ -74,20 +77,26 @@ export class MyPermissionsController {
     };
 
     if (scopeType === 'subsidiary' && scopeId) {
-      const subsidiaries = await prisma.$queryRawUnsafe<Array<{ name: string }>>(`
+      const subsidiaries = await prisma.$queryRawUnsafe<Array<{ name: string }>>(
+        `
         SELECT ${scopeNameSql} as name
         FROM "${user.tenantSchema}".subsidiary 
         WHERE id = $1::uuid
-      `, scopeId);
+      `,
+        scopeId
+      );
       if (subsidiaries.length > 0) {
         scopeInfo.name = subsidiaries[0].name;
       }
     } else if (scopeType === 'talent' && scopeId) {
-      const talents = await prisma.$queryRawUnsafe<Array<{ name: string }>>(`
+      const talents = await prisma.$queryRawUnsafe<Array<{ name: string }>>(
+        `
         SELECT display_name as name 
         FROM "${user.tenantSchema}".talent 
         WHERE id = $1::uuid
-      `, scopeId);
+      `,
+        scopeId
+      );
       if (talents.length > 0) {
         scopeInfo.name = talents[0].name;
       }
@@ -99,7 +108,7 @@ export class MyPermissionsController {
       user.id,
       scopeType,
       scopeId,
-      roleNameSql,
+      roleNameSql
     );
 
     return success({
@@ -118,17 +127,20 @@ export class MyPermissionsController {
     userId: string,
     targetScopeType: ScopeType,
     targetScopeId: string | null,
-    localizedNameSql: string,
+    localizedNameSql: string
   ): Promise<UserRoleInfo[]> {
     // Get all user role assignments
-    const assignments = await prisma.$queryRawUnsafe<Array<{
-      roleCode: string;
-      roleName: string;
-      scopeType: ScopeType;
-      scopeId: string | null;
-      inherit: boolean;
-      scopePath: string | null;
-    }>>(`
+    const assignments = await prisma.$queryRawUnsafe<
+      Array<{
+        roleCode: string;
+        roleName: string;
+        scopeType: ScopeType;
+        scopeId: string | null;
+        inherit: boolean;
+        scopePath: string | null;
+      }>
+    >(
+      `
       SELECT 
         r.code as "roleCode",
         ${localizedNameSql} as "roleName",
@@ -149,21 +161,29 @@ export class MyPermissionsController {
       WHERE ur.user_id = $1::uuid
         AND (ur.expires_at IS NULL OR ur.expires_at > NOW())
         AND r.is_active = true
-    `, userId);
+    `,
+      userId
+    );
 
     // Get target scope path for inheritance check
     let targetPath: string | null = null;
     if (targetScopeType === 'subsidiary' && targetScopeId) {
-      const subsidiaries = await prisma.$queryRawUnsafe<Array<{ path: string }>>(`
+      const subsidiaries = await prisma.$queryRawUnsafe<Array<{ path: string }>>(
+        `
         SELECT path FROM "${tenantSchema}".subsidiary WHERE id = $1::uuid
-      `, targetScopeId);
+      `,
+        targetScopeId
+      );
       if (subsidiaries.length > 0) {
         targetPath = subsidiaries[0].path;
       }
     } else if (targetScopeType === 'talent' && targetScopeId) {
-      const talents = await prisma.$queryRawUnsafe<Array<{ path: string }>>(`
+      const talents = await prisma.$queryRawUnsafe<Array<{ path: string }>>(
+        `
         SELECT path FROM "${tenantSchema}".talent WHERE id = $1::uuid
-      `, targetScopeId);
+      `,
+        targetScopeId
+      );
       if (talents.length > 0) {
         targetPath = talents[0].path;
       }

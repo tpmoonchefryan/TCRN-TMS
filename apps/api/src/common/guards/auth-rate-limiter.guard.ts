@@ -1,13 +1,12 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import {
-    CanActivate,
-    ExecutionContext,
-    HttpException,
-    HttpStatus,
-    Injectable,
-    Logger,
-    OnModuleInit,
+  CanActivate,
+  ExecutionContext,
+  HttpException,
+  HttpStatus,
+  Injectable,
+  Logger,
+  OnModuleInit,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Request } from 'express';
@@ -28,9 +27,7 @@ export class AuthRateLimiterGuard implements CanActivate, OnModuleInit {
   private loginFailureLimiter: RateLimiterRedis | null = null;
   private redisClient: Redis | null = null;
 
-  constructor(
-    private readonly configService: ConfigService,
-  ) {}
+  constructor(private readonly configService: ConfigService) {}
 
   private isBypassedEnvironment() {
     const nodeEnv = this.configService.get<string>('NODE_ENV') ?? 'development';
@@ -123,7 +120,7 @@ export class AuthRateLimiterGuard implements CanActivate, OnModuleInit {
               code: 'AUTH_RATE_LIMIT_EXCEEDED',
               retryAfter,
             },
-            HttpStatus.TOO_MANY_REQUESTS,
+            HttpStatus.TOO_MANY_REQUESTS
           );
         }
       } catch (error) {
@@ -147,8 +144,10 @@ export class AuthRateLimiterGuard implements CanActivate, OnModuleInit {
       return true;
     } catch (rateLimiterRes) {
       await this.logBlockedRequest(ip, path, 'rate_limit_exceeded');
-      
-      const retryAfter = Math.ceil((rateLimiterRes as { msBeforeNext: number }).msBeforeNext / 1000);
+
+      const retryAfter = Math.ceil(
+        (rateLimiterRes as { msBeforeNext: number }).msBeforeNext / 1000
+      );
       response.setHeader('Retry-After', retryAfter.toString());
       response.setHeader('X-RateLimit-Limit', limit.toString());
       response.setHeader('X-RateLimit-Remaining', '0');
@@ -160,7 +159,7 @@ export class AuthRateLimiterGuard implements CanActivate, OnModuleInit {
           code: 'AUTH_RATE_LIMIT_EXCEEDED',
           retryAfter,
         },
-        HttpStatus.TOO_MANY_REQUESTS,
+        HttpStatus.TOO_MANY_REQUESTS
       );
     }
   }
@@ -195,9 +194,7 @@ export class AuthRateLimiterGuard implements CanActivate, OnModuleInit {
   private getClientIp(request: Request): string {
     const xForwardedFor = request.headers['x-forwarded-for'];
     if (xForwardedFor) {
-      const ips = Array.isArray(xForwardedFor)
-        ? xForwardedFor[0]
-        : xForwardedFor.split(',')[0];
+      const ips = Array.isArray(xForwardedFor) ? xForwardedFor[0] : xForwardedFor.split(',')[0];
       return ips.trim();
     }
 
@@ -209,13 +206,7 @@ export class AuthRateLimiterGuard implements CanActivate, OnModuleInit {
     return request.ip || request.socket?.remoteAddress || 'unknown';
   }
 
-  private async logBlockedRequest(
-    ip: string,
-    path: string,
-    reason: string,
-  ): Promise<void> {
-    this.logger.warn(
-      `Auth request blocked: ${reason} (ip=${ip}, path=${path})`,
-    );
+  private async logBlockedRequest(ip: string, path: string, reason: string): Promise<void> {
+    this.logger.warn(`Auth request blocked: ${reason} (ip=${ip}, path=${path})`);
   }
 }

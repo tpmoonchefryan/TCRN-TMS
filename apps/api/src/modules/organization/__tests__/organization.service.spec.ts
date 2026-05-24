@@ -1,9 +1,11 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { NotFoundException } from '@nestjs/common';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { prisma } from '@tcrn/database';
 import { createLocalizedText, type PartialLocalizedText } from '@tcrn/shared';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { OrganizationService } from '../organization.service';
 
 // Mock prisma before importing service
 vi.mock('@tcrn/database', () => ({
@@ -15,18 +17,14 @@ vi.mock('@tcrn/database', () => ({
   },
 }));
 
-import { OrganizationService } from '../organization.service';
-
 const mockPrisma = prisma as unknown as {
   tenant: { findUnique: ReturnType<typeof vi.fn> };
   $queryRawUnsafe: ReturnType<typeof vi.fn>;
 };
 
 describe('OrganizationService', () => {
-  const localized = (
-    en: string,
-    patch: PartialLocalizedText = {},
-  ) => createLocalizedText({ en, ...patch });
+  const localized = (en: string, patch: PartialLocalizedText = {}) =>
+    createLocalizedText({ en, ...patch });
 
   let service: OrganizationService;
 
@@ -124,18 +122,18 @@ describe('OrganizationService', () => {
     it('should throw NotFoundException when tenant not found', async () => {
       mockPrisma.tenant.findUnique.mockResolvedValue(null);
 
-      await expect(
-        service.getTree('non-existent', testTenantSchema),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.getTree('non-existent', testTenantSchema)).rejects.toThrow(
+        NotFoundException
+      );
     });
 
     it('should filter inactive subsidiaries when includeInactive is false', async () => {
       mockPrisma.tenant.findUnique.mockResolvedValue(mockTenant);
-      
+
       await service.getTree(testTenantId, testTenantSchema, { includeInactive: false });
 
       expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalledWith(
-        expect.stringContaining('is_active = true'),
+        expect.stringContaining('is_active = true')
       );
     });
 
@@ -179,11 +177,7 @@ describe('OrganizationService', () => {
         .mockResolvedValueOnce([mockSubsidiaries[0]]) // Get subsidiary for DIV_A
         .mockResolvedValueOnce([mockSubsidiaries[1]]); // Get subsidiary for DIV_A1
 
-      const result = await service.getBreadcrumb(
-        testTenantId,
-        testTenantSchema,
-        '/DIV_A/DIV_A1/',
-      );
+      const result = await service.getBreadcrumb(testTenantId, testTenantSchema, '/DIV_A/DIV_A1/');
 
       expect(result).toBeDefined();
       expect(result.length).toBeGreaterThanOrEqual(1);
@@ -199,7 +193,7 @@ describe('OrganizationService', () => {
       mockPrisma.tenant.findUnique.mockResolvedValue(null);
 
       await expect(
-        service.getBreadcrumb('non-existent', testTenantSchema, '/path/'),
+        service.getBreadcrumb('non-existent', testTenantSchema, '/path/')
       ).rejects.toThrow(NotFoundException);
     });
 
@@ -209,11 +203,7 @@ describe('OrganizationService', () => {
         .mockResolvedValueOnce([]) // No subsidiary match for T001
         .mockResolvedValueOnce([mockTalents[0]]); // Get talent for T001
 
-      const result = await service.getBreadcrumb(
-        testTenantId,
-        testTenantSchema,
-        '/DIV_A/T001/',
-      );
+      const result = await service.getBreadcrumb(testTenantId, testTenantSchema, '/DIV_A/T001/');
 
       expect(result.length).toBeGreaterThanOrEqual(1);
     });
@@ -223,14 +213,9 @@ describe('OrganizationService', () => {
         { ...mockSubsidiaries[0], name: localized('Division A', { zh_HANS: '部门A' }) },
       ]);
 
-      const result = await service.getBreadcrumb(
-        testTenantId,
-        testTenantSchema,
-        '/DIV_A/',
-        'zh',
-      );
+      const result = await service.getBreadcrumb(testTenantId, testTenantSchema, '/DIV_A/', 'zh');
 
-      const subsidiaryBreadcrumb = result.find(b => b.type === 'subsidiary');
+      const subsidiaryBreadcrumb = result.find((b) => b.type === 'subsidiary');
       if (subsidiaryBreadcrumb) {
         expect(subsidiaryBreadcrumb.name).toBe('部门A');
       }
@@ -272,7 +257,7 @@ describe('OrganizationService', () => {
 
       const result = await service.getChildren(testTenantSchema, null, { includeTalents: false });
 
-      const divisionA = result.subsidiaries.find(s => s.id === 'sub-1');
+      const divisionA = result.subsidiaries.find((s) => s.id === 'sub-1');
       expect(divisionA).toBeDefined();
       expect(divisionA?.talentCount).toBe(5);
     });
@@ -287,7 +272,7 @@ describe('OrganizationService', () => {
       await service.getChildren(testTenantSchema, null, { includeInactive: false });
 
       expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalledWith(
-        expect.stringContaining('is_active = true'),
+        expect.stringContaining('is_active = true')
       );
     });
   });
@@ -315,9 +300,9 @@ describe('OrganizationService', () => {
     it('should throw NotFoundException when tenant not found', async () => {
       mockPrisma.tenant.findUnique.mockResolvedValue(null);
 
-      await expect(
-        service.getRootNodes('non-existent', testTenantSchema),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.getRootNodes('non-existent', testTenantSchema)).rejects.toThrow(
+        NotFoundException
+      );
     });
   });
 
@@ -340,11 +325,7 @@ describe('OrganizationService', () => {
       mockPrisma.$queryRawUnsafe.mockReset();
       mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([mockSubsidiaries[0]]); // subsidiary for DIV_A
 
-      const result = await service.getBreadcrumb(
-        testTenantId,
-        testTenantSchema,
-        '/DIV_A/',
-      );
+      const result = await service.getBreadcrumb(testTenantId, testTenantSchema, '/DIV_A/');
 
       // tenant + 1 subsidiary = 2
       expect(result.length).toBe(2);
@@ -359,15 +340,10 @@ describe('OrganizationService', () => {
         { ...mockSubsidiaries[0], name: localized('Division A', { zh_HANS: '' }) },
       ]);
 
-      const result = await service.getBreadcrumb(
-        testTenantId,
-        testTenantSchema,
-        '/DIV_A/',
-        'zh',
-      );
+      const result = await service.getBreadcrumb(testTenantId, testTenantSchema, '/DIV_A/', 'zh');
 
       // Should fallback to English name
-      const subsidiaryBreadcrumb = result.find(b => b.type === 'subsidiary');
+      const subsidiaryBreadcrumb = result.find((b) => b.type === 'subsidiary');
       expect(subsidiaryBreadcrumb?.name).toBe('Division A');
     });
   });

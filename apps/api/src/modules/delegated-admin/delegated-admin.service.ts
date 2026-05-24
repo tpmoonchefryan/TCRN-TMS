@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+
 import { prisma } from '@tcrn/database';
 import { ErrorCodes } from '@tcrn/shared';
 
@@ -55,15 +55,18 @@ export class DelegatedAdminService {
       params.push(options.scopeId);
     }
 
-    const results = await prisma.$queryRawUnsafe<Array<{
-      id: string;
-      scopeType: DelegateScopeType;
-      scopeId: string;
-      adminUserId: string | null;
-      adminRoleId: string | null;
-      grantedAt: Date;
-      grantedBy: string;
-    }>>(`
+    const results = await prisma.$queryRawUnsafe<
+      Array<{
+        id: string;
+        scopeType: DelegateScopeType;
+        scopeId: string;
+        adminUserId: string | null;
+        adminRoleId: string | null;
+        grantedAt: Date;
+        grantedBy: string;
+      }>
+    >(
+      `
       SELECT 
         da.id,
         da.scope_type as "scopeType",
@@ -75,7 +78,9 @@ export class DelegatedAdminService {
       FROM "${tenantSchema}".delegated_admin da
       WHERE ${whereClause}
       ORDER BY da.granted_at DESC
-    `, ...params);
+    `,
+      ...params
+    );
 
     // Enrich with names
     const enrichedResults: DelegatedAdminData[] = [];
@@ -84,14 +89,20 @@ export class DelegatedAdminService {
       // Get scope name
       let scopeName: string | null = null;
       if (row.scopeType === 'subsidiary') {
-        const subs = await prisma.$queryRawUnsafe<Array<{ name: string }>>(`
+        const subs = await prisma.$queryRawUnsafe<Array<{ name: string }>>(
+          `
           SELECT ${localizedNameSql} as name FROM "${tenantSchema}".subsidiary WHERE id = $1::uuid
-        `, row.scopeId);
+        `,
+          row.scopeId
+        );
         scopeName = subs[0]?.name || null;
       } else if (row.scopeType === 'talent') {
-        const talents = await prisma.$queryRawUnsafe<Array<{ name: string }>>(`
+        const talents = await prisma.$queryRawUnsafe<Array<{ name: string }>>(
+          `
           SELECT display_name as name FROM "${tenantSchema}".talent WHERE id = $1::uuid
-        `, row.scopeId);
+        `,
+          row.scopeId
+        );
         scopeName = talents[0]?.name || null;
       }
 
@@ -103,23 +114,32 @@ export class DelegatedAdminService {
       if (row.adminUserId) {
         delegateType = 'user';
         delegateId = row.adminUserId;
-        const users = await prisma.$queryRawUnsafe<Array<{ name: string }>>(`
+        const users = await prisma.$queryRawUnsafe<Array<{ name: string }>>(
+          `
           SELECT COALESCE(display_name, username) as name FROM "${tenantSchema}".system_user WHERE id = $1::uuid
-        `, row.adminUserId);
+        `,
+          row.adminUserId
+        );
         delegateName = users[0]?.name || null;
       } else {
         delegateType = 'role';
         delegateId = row.adminRoleId!; // eslint-disable-line @typescript-eslint/no-non-null-assertion
-        const roles = await prisma.$queryRawUnsafe<Array<{ name: string }>>(`
+        const roles = await prisma.$queryRawUnsafe<Array<{ name: string }>>(
+          `
           SELECT ${localizedNameSql} as name FROM "${tenantSchema}".role WHERE id = $1::uuid
-        `, row.adminRoleId);
+        `,
+          row.adminRoleId
+        );
         delegateName = roles[0]?.name || null;
       }
 
       // Get grantor name
-      const grantors = await prisma.$queryRawUnsafe<Array<{ username: string }>>(`
+      const grantors = await prisma.$queryRawUnsafe<Array<{ username: string }>>(
+        `
         SELECT username FROM "${tenantSchema}".system_user WHERE id = $1::uuid
-      `, row.grantedBy);
+      `,
+        row.grantedBy
+      );
 
       enrichedResults.push({
         id: row.id,
@@ -153,9 +173,12 @@ export class DelegatedAdminService {
   ): Promise<DelegatedAdminData> {
     // Validate scope exists
     if (data.scopeType === 'subsidiary') {
-      const subs = await prisma.$queryRawUnsafe<Array<{ id: string }>>(`
+      const subs = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
+        `
         SELECT id FROM "${tenantSchema}".subsidiary WHERE id = $1::uuid
-      `, data.scopeId);
+      `,
+        data.scopeId
+      );
       if (subs.length === 0) {
         throw new NotFoundException({
           code: ErrorCodes.RES_NOT_FOUND,
@@ -163,9 +186,12 @@ export class DelegatedAdminService {
         });
       }
     } else if (data.scopeType === 'talent') {
-      const talents = await prisma.$queryRawUnsafe<Array<{ id: string }>>(`
+      const talents = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
+        `
         SELECT id FROM "${tenantSchema}".talent WHERE id = $1::uuid
-      `, data.scopeId);
+      `,
+        data.scopeId
+      );
       if (talents.length === 0) {
         throw new NotFoundException({
           code: ErrorCodes.RES_NOT_FOUND,
@@ -176,9 +202,12 @@ export class DelegatedAdminService {
 
     // Validate delegate exists
     if (data.delegateType === 'user') {
-      const users = await prisma.$queryRawUnsafe<Array<{ id: string }>>(`
+      const users = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
+        `
         SELECT id FROM "${tenantSchema}".system_user WHERE id = $1::uuid AND is_active = true
-      `, data.delegateId);
+      `,
+        data.delegateId
+      );
       if (users.length === 0) {
         throw new NotFoundException({
           code: ErrorCodes.RES_NOT_FOUND,
@@ -186,9 +215,12 @@ export class DelegatedAdminService {
         });
       }
     } else {
-      const roles = await prisma.$queryRawUnsafe<Array<{ id: string }>>(`
+      const roles = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
+        `
         SELECT id FROM "${tenantSchema}".role WHERE id = $1::uuid AND is_active = true
-      `, data.delegateId);
+      `,
+        data.delegateId
+      );
       if (roles.length === 0) {
         throw new NotFoundException({
           code: ErrorCodes.RES_NOT_FOUND,
@@ -199,10 +231,15 @@ export class DelegatedAdminService {
 
     // Check for duplicate delegation
     const existingField = data.delegateType === 'user' ? 'admin_user_id' : 'admin_role_id';
-    const existing = await prisma.$queryRawUnsafe<Array<{ id: string }>>(`
+    const existing = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
+      `
       SELECT id FROM "${tenantSchema}".delegated_admin
       WHERE scope_type = $1 AND scope_id = $2::uuid AND ${existingField} = $3::uuid
-    `, data.scopeType, data.scopeId, data.delegateId);
+    `,
+      data.scopeType,
+      data.scopeId,
+      data.delegateId
+    );
 
     if (existing.length > 0) {
       throw new BadRequestException({
@@ -215,17 +252,24 @@ export class DelegatedAdminService {
     const adminUserId = data.delegateType === 'user' ? data.delegateId : null;
     const adminRoleId = data.delegateType === 'role' ? data.delegateId : null;
 
-    const results = await prisma.$queryRawUnsafe<Array<{ id: string }>>(`
+    const results = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
+      `
       INSERT INTO "${tenantSchema}".delegated_admin 
         (id, scope_type, scope_id, admin_user_id, admin_role_id, granted_at, granted_by)
       VALUES 
         (gen_random_uuid(), $1, $2::uuid, $3::uuid, $4::uuid, now(), $5::uuid)
       RETURNING id
-    `, data.scopeType, data.scopeId, adminUserId, adminRoleId, grantedBy);
+    `,
+      data.scopeType,
+      data.scopeId,
+      adminUserId,
+      adminRoleId,
+      grantedBy
+    );
 
     // Fetch and return the created record
     const allDelegations = await this.list(tenantSchema, { scopeId: data.scopeId });
-    return allDelegations.find(d => d.id === results[0].id)!; // eslint-disable-line @typescript-eslint/no-non-null-assertion
+    return allDelegations.find((d) => d.id === results[0].id)!; // eslint-disable-line @typescript-eslint/no-non-null-assertion
   }
 
   /**
@@ -233,9 +277,12 @@ export class DelegatedAdminService {
    */
   async delete(id: string, tenantSchema: string): Promise<void> {
     // Check exists
-    const existing = await prisma.$queryRawUnsafe<Array<{ id: string }>>(`
+    const existing = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
+      `
       SELECT id FROM "${tenantSchema}".delegated_admin WHERE id = $1::uuid
-    `, id);
+    `,
+      id
+    );
 
     if (existing.length === 0) {
       throw new NotFoundException({
@@ -244,9 +291,12 @@ export class DelegatedAdminService {
       });
     }
 
-    await prisma.$executeRawUnsafe(`
+    await prisma.$executeRawUnsafe(
+      `
       DELETE FROM "${tenantSchema}".delegated_admin WHERE id = $1::uuid
-    `, id);
+    `,
+      id
+    );
   }
 
   /**
@@ -260,20 +310,26 @@ export class DelegatedAdminService {
     targetScopeId: string
   ): Promise<boolean> {
     // Check direct user delegation
-    const directDelegation = await prisma.$queryRawUnsafe<Array<{ id: string }>>(`
+    const directDelegation = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
+      `
       SELECT da.id
       FROM "${tenantSchema}".delegated_admin da
       WHERE da.admin_user_id = $1::uuid
         AND da.scope_type = $2
         AND da.scope_id = $3::uuid
-    `, userId, targetScopeType, targetScopeId);
+    `,
+      userId,
+      targetScopeType,
+      targetScopeId
+    );
 
     if (directDelegation.length > 0) {
       return true;
     }
 
     // Check role-based delegation (user has a role that has delegation)
-    const roleDelegation = await prisma.$queryRawUnsafe<Array<{ id: string }>>(`
+    const roleDelegation = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
+      `
       SELECT da.id
       FROM "${tenantSchema}".delegated_admin da
       JOIN "${tenantSchema}".user_role ur ON ur.role_id = da.admin_role_id
@@ -281,7 +337,11 @@ export class DelegatedAdminService {
         AND da.scope_type = $2
         AND da.scope_id = $3::uuid
         AND (ur.expires_at IS NULL OR ur.expires_at > NOW())
-    `, userId, targetScopeType, targetScopeId);
+    `,
+      userId,
+      targetScopeType,
+      targetScopeId
+    );
 
     if (roleDelegation.length > 0) {
       return true;
@@ -290,21 +350,32 @@ export class DelegatedAdminService {
     // Check if user has delegation for parent scope (inheritance)
     // For talents, check if user has delegation for their subsidiary
     if (targetScopeType === 'talent') {
-      const talents = await prisma.$queryRawUnsafe<Array<{ subsidiaryId: string | null }>>(`
+      const talents = await prisma.$queryRawUnsafe<Array<{ subsidiaryId: string | null }>>(
+        `
         SELECT subsidiary_id as "subsidiaryId" FROM "${tenantSchema}".talent WHERE id = $1::uuid
-      `, targetScopeId);
+      `,
+        targetScopeId
+      );
 
       if (talents.length > 0 && talents[0].subsidiaryId) {
         // Recursively check subsidiary
-        return this.hasDelegationForScope(tenantSchema, userId, 'subsidiary', talents[0].subsidiaryId);
+        return this.hasDelegationForScope(
+          tenantSchema,
+          userId,
+          'subsidiary',
+          talents[0].subsidiaryId
+        );
       }
     }
 
     // For subsidiaries, check parent subsidiaries
     if (targetScopeType === 'subsidiary') {
-      const subs = await prisma.$queryRawUnsafe<Array<{ parentId: string | null }>>(`
+      const subs = await prisma.$queryRawUnsafe<Array<{ parentId: string | null }>>(
+        `
         SELECT parent_id as "parentId" FROM "${tenantSchema}".subsidiary WHERE id = $1::uuid
-      `, targetScopeId);
+      `,
+        targetScopeId
+      );
 
       if (subs.length > 0 && subs[0].parentId) {
         return this.hasDelegationForScope(tenantSchema, userId, 'subsidiary', subs[0].parentId);
@@ -322,25 +393,35 @@ export class DelegatedAdminService {
     userId: string
   ): Promise<Array<{ scopeType: DelegateScopeType; scopeId: string }>> {
     // Get direct delegations
-    const directScopes = await prisma.$queryRawUnsafe<Array<{ scopeType: DelegateScopeType; scopeId: string }>>(`
+    const directScopes = await prisma.$queryRawUnsafe<
+      Array<{ scopeType: DelegateScopeType; scopeId: string }>
+    >(
+      `
       SELECT scope_type as "scopeType", scope_id as "scopeId"
       FROM "${tenantSchema}".delegated_admin
       WHERE admin_user_id = $1::uuid
-    `, userId);
+    `,
+      userId
+    );
 
     // Get role-based delegations
-    const roleScopes = await prisma.$queryRawUnsafe<Array<{ scopeType: DelegateScopeType; scopeId: string }>>(`
+    const roleScopes = await prisma.$queryRawUnsafe<
+      Array<{ scopeType: DelegateScopeType; scopeId: string }>
+    >(
+      `
       SELECT da.scope_type as "scopeType", da.scope_id as "scopeId"
       FROM "${tenantSchema}".delegated_admin da
       JOIN "${tenantSchema}".user_role ur ON ur.role_id = da.admin_role_id
       WHERE ur.user_id = $1::uuid
         AND (ur.expires_at IS NULL OR ur.expires_at > NOW())
-    `, userId);
+    `,
+      userId
+    );
 
     // Combine and deduplicate
     const allScopes = [...directScopes, ...roleScopes];
     const uniqueScopes = new Map<string, { scopeType: DelegateScopeType; scopeId: string }>();
-    
+
     for (const scope of allScopes) {
       const key = `${scope.scopeType}:${scope.scopeId}`;
       if (!uniqueScopes.has(key)) {

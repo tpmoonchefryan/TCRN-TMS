@@ -1,7 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { RequestContext } from '@tcrn/shared';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { CompanyCustomerApplicationService } from '../../application/company-customer.service';
 import {
@@ -51,15 +51,9 @@ describe('CompanyCustomerService', () => {
     };
     vi.mocked(mockApplicationService.create).mockResolvedValue(expected);
 
-    await expect(
-      service.create('talent-1', dto, context),
-    ).resolves.toEqual(expected);
+    await expect(service.create('talent-1', dto, context)).resolves.toEqual(expected);
 
-    expect(mockApplicationService.create).toHaveBeenCalledWith(
-      'talent-1',
-      dto,
-      context,
-    );
+    expect(mockApplicationService.create).toHaveBeenCalledWith('talent-1', dto, context);
   });
 
   it('delegates update to the application service', async () => {
@@ -77,15 +71,13 @@ describe('CompanyCustomerService', () => {
     };
     vi.mocked(mockApplicationService.update).mockResolvedValue(expected);
 
-    await expect(
-      service.update('customer-1', 'talent-1', dto, context),
-    ).resolves.toEqual(expected);
+    await expect(service.update('customer-1', 'talent-1', dto, context)).resolves.toEqual(expected);
 
     expect(mockApplicationService.update).toHaveBeenCalledWith(
       'customer-1',
       'talent-1',
       dto,
-      context,
+      context
     );
   });
 
@@ -97,13 +89,13 @@ describe('CompanyCustomerService', () => {
     vi.mocked(mockApplicationService.createPiiPortalSession).mockResolvedValue(expected);
 
     await expect(
-      service.createPiiPortalSession('customer-1', 'talent-1', context),
+      service.createPiiPortalSession('customer-1', 'talent-1', context)
     ).resolves.toEqual(expected);
 
     expect(mockApplicationService.createPiiPortalSession).toHaveBeenCalledWith(
       'customer-1',
       'talent-1',
-      context,
+      context
     );
   });
 });

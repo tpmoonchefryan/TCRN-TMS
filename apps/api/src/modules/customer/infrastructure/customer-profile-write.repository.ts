@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable } from '@nestjs/common';
+
 import { prisma } from '@tcrn/database';
 
 import type { CustomerProfileAccessRecord } from '../domain/customer-profile-write.policy';
@@ -11,7 +11,7 @@ export class CustomerProfileWriteRepository {
   async findAccessRecord(
     tenantSchema: string,
     customerId: string,
-    talentId: string,
+    talentId: string
   ): Promise<CustomerProfileAccessRecord | null> {
     const customers = await prisma.$queryRawUnsafe<CustomerProfileAccessRecord[]>(
       `SELECT
@@ -27,7 +27,7 @@ export class CustomerProfileWriteRepository {
          AND t.id = $2::uuid
          AND t.profile_store_id IS NOT NULL`,
       customerId,
-      talentId,
+      talentId
     );
 
     return customers[0] ?? null;
@@ -35,7 +35,7 @@ export class CustomerProfileWriteRepository {
 
   async findActiveInactivationReasonId(
     tenantSchema: string,
-    reasonCode: string,
+    reasonCode: string
   ): Promise<string | null> {
     const reasons = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
       `SELECT id
@@ -43,7 +43,7 @@ export class CustomerProfileWriteRepository {
        WHERE code = $1
          AND is_active = true
        LIMIT 1`,
-      reasonCode,
+      reasonCode
     );
 
     return reasons[0]?.id ?? null;
@@ -57,7 +57,7 @@ export class CustomerProfileWriteRepository {
       occurredAt: Date;
       talentId: string;
       userId: string;
-    },
+    }
   ) {
     return prisma.$executeRawUnsafe(
       `UPDATE "${tenantSchema}".customer_profile
@@ -73,7 +73,7 @@ export class CustomerProfileWriteRepository {
       args.inactivationReasonId,
       args.occurredAt,
       args.talentId,
-      args.userId,
+      args.userId
     );
   }
 
@@ -84,7 +84,7 @@ export class CustomerProfileWriteRepository {
       occurredAt: Date;
       talentId: string;
       userId: string;
-    },
+    }
   ) {
     return prisma.$executeRawUnsafe(
       `UPDATE "${tenantSchema}".customer_profile
@@ -99,7 +99,7 @@ export class CustomerProfileWriteRepository {
       args.customerId,
       args.talentId,
       args.userId,
-      args.occurredAt,
+      args.occurredAt
     );
   }
 
@@ -115,7 +115,7 @@ export class CustomerProfileWriteRepository {
       ipAddress?: string;
       userAgent?: string;
       requestId: string;
-    },
+    }
   ) {
     return prisma.$executeRawUnsafe(
       `INSERT INTO "${tenantSchema}".customer_access_log (
@@ -133,7 +133,7 @@ export class CustomerProfileWriteRepository {
       args.userName,
       args.ipAddress ?? '0.0.0.0',
       args.userAgent,
-      args.requestId,
+      args.requestId
     );
   }
 }

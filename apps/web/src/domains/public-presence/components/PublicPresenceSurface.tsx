@@ -1,7 +1,4 @@
-import {
-  type HTMLAttributes,
-  type ReactNode,
-} from 'react';
+import { type HTMLAttributes, type ReactNode } from 'react';
 
 import {
   getPublicPresenceMotionClasses,
@@ -37,9 +34,10 @@ export function PublicPresenceSurface({
         'relative overflow-hidden p-5 sm:p-6',
         publicPresenceTokens.radius.card,
         getPublicPresenceSurfaceClasses(variant),
-        interactive && 'hover:-translate-y-0.5 hover:shadow-[0_24px_50px_rgba(15,23,42,0.13)] focus-within:ring-2 focus-within:ring-rose-200/70 motion-reduce:hover:translate-y-0',
+        interactive &&
+          'focus-within:ring-2 focus-within:ring-rose-200/70 hover:-translate-y-0.5 hover:shadow-[0_24px_50px_rgba(15,23,42,0.13)] motion-reduce:hover:translate-y-0',
         interactive ? getPublicPresenceMotionClasses(motion) : undefined,
-        className,
+        className
       )}
       {...props}
     >

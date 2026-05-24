@@ -1,6 +1,6 @@
-import '@/styles/globals.css';
-
 import type { Metadata, Viewport } from 'next';
+
+import '@/styles/globals.css';
 
 import { Providers } from './providers';
 import {

@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { describe, expect, it } from 'vitest';
 
 import { getDefaultTelemetryConfig, isTelemetryEnabled } from '../init';
@@ -37,14 +36,14 @@ describe('telemetry init config', () => {
       isTelemetryEnabled({
         OTEL_ENABLED: 'true',
         OTEL_EXPORTER_OTLP_ENDPOINT: 'http://tempo:4318',
-      }),
+      })
     ).toBe(true);
 
     expect(
       isTelemetryEnabled({
         OTEL_ENABLED: 'true',
         OTEL_EXPORTER_OTLP_METRICS_ENDPOINT: 'http://otel-collector:4318',
-      }),
+      })
     ).toBe(false);
   });
 });

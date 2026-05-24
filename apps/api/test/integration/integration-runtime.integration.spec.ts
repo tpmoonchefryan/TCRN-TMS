@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
@@ -36,9 +35,7 @@ describe('Integration Runtime Integration', () => {
   let apiKeyService: ApiKeyService;
 
   const withAuth = (req: request.Test) =>
-    req
-      .set('Authorization', `Bearer ${accessToken}`)
-      .set('X-Tenant-ID', tenantFixture.tenant.id);
+    req.set('Authorization', `Bearer ${accessToken}`).set('X-Tenant-ID', tenantFixture.tenant.id);
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -54,7 +51,7 @@ describe('Integration Runtime Integration', () => {
       prisma,
       tenantFixture,
       `integration_user_${Date.now()}`,
-      ['ADMIN'],
+      ['ADMIN']
     );
 
     const subsidiary = await createTestSubsidiaryInTenant(prisma, tenantFixture, {
@@ -83,7 +80,7 @@ describe('Integration Runtime Integration', () => {
     }).token;
 
     const createPlatformResponse = await withAuth(
-      request(app.getHttpServer()).post('/api/v1/configuration-entity/social-platform'),
+      request(app.getHttpServer()).post('/api/v1/configuration-entity/social-platform')
     )
       .send({
         code: `INTEGRATION_${Date.now().toString(36).toUpperCase()}`,
@@ -97,7 +94,7 @@ describe('Integration Runtime Integration', () => {
 
     consumerCode = `INTEGRATION_CONSUMER_${Date.now().toString(36).toUpperCase()}`;
     const createConsumerResponse = await withAuth(
-      request(app.getHttpServer()).post('/api/v1/configuration-entity/consumer'),
+      request(app.getHttpServer()).post('/api/v1/configuration-entity/consumer')
     )
       .send({
         code: consumerCode,
@@ -118,21 +115,18 @@ describe('Integration Runtime Integration', () => {
 
   it('creates adapters through tenant-root and explicit owner-root routes without body owner carriers', async () => {
     const tenantResponse = await withAuth(
-      request(app.getHttpServer()).post('/api/v1/integration/adapters'),
-    )
-      .send({
-        platformId,
-        code: 'TENANT_ADAPTER',
-        name: createLocalizedText({ en: 'Tenant Adapter' }),
-        adapterType: 'oauth',
-      });
+      request(app.getHttpServer()).post('/api/v1/integration/adapters')
+    ).send({
+      platformId,
+      code: 'TENANT_ADAPTER',
+      name: createLocalizedText({ en: 'Tenant Adapter' }),
+      adapterType: 'oauth',
+    });
 
     expect(tenantResponse.status).toBe(201);
 
     const subsidiaryResponse = await withAuth(
-      request(app.getHttpServer()).post(
-        `/api/v1/subsidiaries/${subsidiaryId}/integration/adapters`,
-      ),
+      request(app.getHttpServer()).post(`/api/v1/subsidiaries/${subsidiaryId}/integration/adapters`)
     )
       .send({
         platformId,
@@ -143,7 +137,7 @@ describe('Integration Runtime Integration', () => {
       .expect(201);
 
     const talentResponse = await withAuth(
-      request(app.getHttpServer()).post(`/api/v1/talents/${talentId}/integration/adapters`),
+      request(app.getHttpServer()).post(`/api/v1/talents/${talentId}/integration/adapters`)
     )
       .send({
         platformId,
@@ -172,40 +166,36 @@ describe('Integration Runtime Integration', () => {
 
   it('lists only the canonical owner view for each route family', async () => {
     const tenantListResponse = await withAuth(
-      request(app.getHttpServer()).get('/api/v1/integration/adapters'),
+      request(app.getHttpServer()).get('/api/v1/integration/adapters')
     ).expect(200);
 
     const subsidiaryInheritedResponse = await withAuth(
-      request(app.getHttpServer()).get(
-        `/api/v1/subsidiaries/${subsidiaryId}/integration/adapters`,
-      ),
+      request(app.getHttpServer()).get(`/api/v1/subsidiaries/${subsidiaryId}/integration/adapters`)
     )
       .query({ includeInherited: true })
       .expect(200);
 
     const subsidiaryExactResponse = await withAuth(
-      request(app.getHttpServer()).get(
-        `/api/v1/subsidiaries/${subsidiaryId}/integration/adapters`,
-      ),
+      request(app.getHttpServer()).get(`/api/v1/subsidiaries/${subsidiaryId}/integration/adapters`)
     )
       .query({ includeInherited: false })
       .expect(200);
 
     const talentInheritedResponse = await withAuth(
-      request(app.getHttpServer()).get(`/api/v1/talents/${talentId}/integration/adapters`),
+      request(app.getHttpServer()).get(`/api/v1/talents/${talentId}/integration/adapters`)
     )
       .query({ includeInherited: true })
       .expect(200);
 
     const tenantCodes = tenantListResponse.body.data.map((item: { code: string }) => item.code);
     const subsidiaryInheritedCodes = subsidiaryInheritedResponse.body.data.map(
-      (item: { code: string }) => item.code,
+      (item: { code: string }) => item.code
     );
     const subsidiaryExactCodes = subsidiaryExactResponse.body.data.map(
-      (item: { code: string }) => item.code,
+      (item: { code: string }) => item.code
     );
     const talentInheritedCodes = talentInheritedResponse.body.data.map(
-      (item: { code: string }) => item.code,
+      (item: { code: string }) => item.code
     );
 
     expect(tenantCodes).toContain('TENANT_ADAPTER');
@@ -226,7 +216,7 @@ describe('Integration Runtime Integration', () => {
 
   it('creates and mutates webhooks through tenant-scoped integration routes', async () => {
     const createWebhookResponse = await withAuth(
-      request(app.getHttpServer()).post('/api/v1/integration/webhooks'),
+      request(app.getHttpServer()).post('/api/v1/integration/webhooks')
     )
       .send({
         code: 'TENANT_WEBHOOK',
@@ -247,15 +237,15 @@ describe('Integration Runtime Integration', () => {
     const webhookId = createWebhookResponse.body.data.id as string;
 
     const listWebhookResponse = await withAuth(
-      request(app.getHttpServer()).get('/api/v1/integration/webhooks'),
+      request(app.getHttpServer()).get('/api/v1/integration/webhooks')
     ).expect(200);
 
     const detailWebhookResponse = await withAuth(
-      request(app.getHttpServer()).get(`/api/v1/integration/webhooks/${webhookId}`),
+      request(app.getHttpServer()).get(`/api/v1/integration/webhooks/${webhookId}`)
     ).expect(200);
 
     const updateWebhookResponse = await withAuth(
-      request(app.getHttpServer()).patch(`/api/v1/integration/webhooks/${webhookId}`),
+      request(app.getHttpServer()).patch(`/api/v1/integration/webhooks/${webhookId}`)
     )
       .send({
         name: createLocalizedText({ en: 'Tenant Webhook Updated' }),
@@ -271,22 +261,22 @@ describe('Integration Runtime Integration', () => {
       .expect(200);
 
     const deactivateWebhookResponse = await withAuth(
-      request(app.getHttpServer()).post(`/api/v1/integration/webhooks/${webhookId}/deactivate`),
+      request(app.getHttpServer()).post(`/api/v1/integration/webhooks/${webhookId}/deactivate`)
     ).expect(201);
 
     const reactivateWebhookResponse = await withAuth(
-      request(app.getHttpServer()).post(`/api/v1/integration/webhooks/${webhookId}/reactivate`),
+      request(app.getHttpServer()).post(`/api/v1/integration/webhooks/${webhookId}/reactivate`)
     ).expect(201);
 
     const deleteWebhookResponse = await withAuth(
-      request(app.getHttpServer()).delete(`/api/v1/integration/webhooks/${webhookId}`),
+      request(app.getHttpServer()).delete(`/api/v1/integration/webhooks/${webhookId}`)
     ).expect(200);
 
     expect(
       listWebhookResponse.body.data.some(
         (item: { id: string; code: string }) =>
-          item.id === webhookId && item.code === 'TENANT_WEBHOOK',
-      ),
+          item.id === webhookId && item.code === 'TENANT_WEBHOOK'
+      )
     ).toBe(true);
     expect(detailWebhookResponse.body.data).toMatchObject({
       id: webhookId,
@@ -326,13 +316,15 @@ describe('Integration Runtime Integration', () => {
     });
 
     await withAuth(
-      request(app.getHttpServer()).get(`/api/v1/integration/webhooks/${webhookId}`),
+      request(app.getHttpServer()).get(`/api/v1/integration/webhooks/${webhookId}`)
     ).expect(404);
   });
 
   it('regenerates consumer API keys in the tenant schema and validates them through integration service lookup', async () => {
     const regenerateResponse = await withAuth(
-      request(app.getHttpServer()).post(`/api/v1/integration/consumers/${consumerId}/regenerate-key`),
+      request(app.getHttpServer()).post(
+        `/api/v1/integration/consumers/${consumerId}/regenerate-key`
+      )
     ).expect(201);
 
     const generatedApiKey = regenerateResponse.body.data.apiKey as string;
@@ -347,7 +339,7 @@ describe('Integration Runtime Integration', () => {
         FROM "${tenantFixture.schemaName}".consumer
         WHERE id = $1::uuid
       `,
-      consumerId,
+      consumerId
     );
 
     expect(storedConsumers[0]?.apiKeyPrefix).toBe(generatedPrefix);

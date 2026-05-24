@@ -1,6 +1,5 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 // Customer Module Zod Schemas - Validation rules for customer management
-
 import { z } from 'zod';
 
 import { SUPPORTED_UI_LOCALES } from '../../constants/locale';
@@ -10,8 +9,21 @@ import { PaginationSchema, UUIDSchema } from '../common.schema';
 // Enums
 // ============================================================================
 export const CustomerProfileTypeSchema = z.enum(['individual', 'company']);
-export const CustomerActionSchema = z.enum(['create', 'update', 'deactivate', 'reactivate', 'pii_view', 'pii_update']);
-export const BatchActionSchema = z.enum(['deactivate', 'reactivate', 'add_tags', 'remove_tags', 'update_membership']);
+export const CustomerActionSchema = z.enum([
+  'create',
+  'update',
+  'deactivate',
+  'reactivate',
+  'pii_view',
+  'pii_update',
+]);
+export const BatchActionSchema = z.enum([
+  'deactivate',
+  'reactivate',
+  'add_tags',
+  'remove_tags',
+  'update_membership',
+]);
 export const GenderSchema = z.enum(['male', 'female', 'other', 'undisclosed']);
 
 export type CustomerProfileType = z.infer<typeof CustomerProfileTypeSchema>;

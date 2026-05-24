@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { MembershipSchedulerApplicationService } from '../../application/membership-scheduler.service';
@@ -16,7 +15,7 @@ describe('MembershipSchedulerService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     service = new MembershipSchedulerService(
-      mockApplicationService as unknown as MembershipSchedulerApplicationService,
+      mockApplicationService as unknown as MembershipSchedulerApplicationService
     );
   });
 
@@ -36,9 +35,7 @@ describe('MembershipSchedulerService', () => {
       },
     ]);
 
-    await expect(
-      service.getUpcomingExpirations(7, 'tenant_test'),
-    ).resolves.toEqual([
+    await expect(service.getUpcomingExpirations(7, 'tenant_test')).resolves.toEqual([
       {
         customerId: 'customer-1',
         membershipLevelName: 'Gold',

@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import {
   BadRequestException,
   Body,
@@ -86,7 +85,10 @@ const EMAIL_ACTION_RESULT_SCHEMA = {
   required: ['success', 'message'],
 } as const;
 
-const createSuccessEnvelopeSchema = (dataSchema: Record<string, unknown>, exampleData: unknown) => ({
+const createSuccessEnvelopeSchema = (
+  dataSchema: Record<string, unknown>,
+  exampleData: unknown
+) => ({
   type: 'object',
   properties: {
     success: { type: 'boolean', example: true },
@@ -152,17 +154,17 @@ const EMAIL_ACTION_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(EMAIL_ACTION_RES
 
 const EMAIL_BAD_REQUEST_SCHEMA = createErrorEnvelopeSchema(
   'INVALID_CONFIG',
-  'Email provider configuration is invalid or incomplete',
+  'Email provider configuration is invalid or incomplete'
 );
 
 const EMAIL_UNAUTHORIZED_SCHEMA = createErrorEnvelopeSchema(
   'AUTH_UNAUTHORIZED',
-  'Authentication required',
+  'Authentication required'
 );
 
 const EMAIL_FORBIDDEN_SCHEMA = createErrorEnvelopeSchema(
   'AUTH_FORBIDDEN',
-  'Email configuration is only available for AC tenant administrators',
+  'Email configuration is only available for AC tenant administrators'
 );
 
 /**
@@ -178,7 +180,7 @@ export class EmailConfigController {
   constructor(
     private readonly emailConfigService: EmailConfigService,
     private readonly tencentSesClient: TencentSesClient,
-    private readonly smtpClient: SmtpClient,
+    private readonly smtpClient: SmtpClient
   ) {}
 
   /**
@@ -247,10 +249,7 @@ export class EmailConfigController {
     description: 'Only AC tenant administrators can save email configuration',
     schema: EMAIL_FORBIDDEN_SCHEMA,
   })
-  async saveConfig(
-    @CurrentUser() user: AuthenticatedUser,
-    @Body() dto: SaveEmailConfigDto,
-  ) {
+  async saveConfig(@CurrentUser() user: AuthenticatedUser, @Body() dto: SaveEmailConfigDto) {
     this.checkAcTenantAccess(user);
 
     // Validate that the selected provider config is provided
@@ -298,10 +297,7 @@ export class EmailConfigController {
     description: 'Only AC tenant administrators can send a test email',
     schema: EMAIL_FORBIDDEN_SCHEMA,
   })
-  async sendTestEmail(
-    @CurrentUser() user: AuthenticatedUser,
-    @Body() dto: TestEmailDto,
-  ) {
+  async sendTestEmail(@CurrentUser() user: AuthenticatedUser, @Body() dto: TestEmailDto) {
     this.checkAcTenantAccess(user);
 
     const config = await this.emailConfigService.getDecryptedConfig();

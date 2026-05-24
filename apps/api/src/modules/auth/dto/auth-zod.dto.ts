@@ -6,20 +6,20 @@
 //   - TypeScript types
 //   - Runtime validation
 //   - Swagger/OpenAPI documentation
+import { createZodDto } from 'nestjs-zod';
 
 import {
-    ChangePasswordSchema,
-    ForceResetPasswordSchema,
-    LoginSchema,
-    RecoveryCodeVerifySchema,
-    RefreshTokenSchema,
-    RegenerateRecoveryCodesSchema,
-    TotpDisableSchema,
-    TotpEnableSchema,
-    TotpVerifySchema,
-    UpdateUserProfileSchema,
+  ChangePasswordSchema,
+  ForceResetPasswordSchema,
+  LoginSchema,
+  RecoveryCodeVerifySchema,
+  RefreshTokenSchema,
+  RegenerateRecoveryCodesSchema,
+  TotpDisableSchema,
+  TotpEnableSchema,
+  TotpVerifySchema,
+  UpdateUserProfileSchema,
 } from '@tcrn/shared';
-import { createZodDto } from 'nestjs-zod';
 
 // ============================================================================
 // Auth Request DTOs (using Zod schemas)

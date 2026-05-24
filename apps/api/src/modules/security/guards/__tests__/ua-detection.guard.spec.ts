@@ -1,4 +1,4 @@
-import { type ExecutionContext,ForbiddenException } from '@nestjs/common';
+import { type ExecutionContext, ForbiddenException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import type { Request } from 'express';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -27,7 +27,7 @@ describe('UaDetectionGuard', () => {
 
     guard = new UaDetectionGuard(
       mockReflector as Reflector,
-      mockUaDetectionService as UaDetectionService,
+      mockUaDetectionService as UaDetectionService
     );
   });
 
@@ -75,9 +75,7 @@ describe('UaDetectionGuard', () => {
       },
     } as UaDetectionRequest;
 
-    expect(() => guard.canActivate(createContext(request))).toThrow(
-      ForbiddenException,
-    );
+    expect(() => guard.canActivate(createContext(request))).toThrow(ForbiddenException);
     expect(mockUaDetectionService.checkStrict).toHaveBeenCalledWith('blocked-agent');
   });
 

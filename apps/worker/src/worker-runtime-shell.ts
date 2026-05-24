@@ -1,10 +1,11 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 import { rm, writeFile } from 'node:fs/promises';
 
-import type { PrismaClient } from '@tcrn/database';
 import type { ConnectionOptions, Worker as BullWorker } from 'bullmq';
 import type { CronJob } from 'cron';
 import type Redis from 'ioredis';
+
+import type { PrismaClient } from '@tcrn/database';
 
 import { workerLogger as logger } from './logger';
 import { setupQueues } from './queues';

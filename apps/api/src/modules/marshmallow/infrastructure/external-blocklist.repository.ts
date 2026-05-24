@@ -1,10 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable } from '@nestjs/common';
 
-import {
-  stringifyLocalizedText,
-} from '../../../platform/persistence/localized-text.persistence';
+import { stringifyLocalizedText } from '../../../platform/persistence/localized-text.persistence';
 import { DatabaseService } from '../../database';
 import type {
   ExternalBlocklistDisableCandidate,
@@ -26,7 +23,7 @@ export class ExternalBlocklistRepository {
   async getScopeChain(
     tenantSchema: string,
     scopeType: OwnerType,
-    scopeId: string | null,
+    scopeId: string | null
   ): Promise<ExternalBlocklistScope[]> {
     const chain: ExternalBlocklistScope[] = [{ type: 'tenant' as OwnerType, id: null }];
 
@@ -41,7 +38,7 @@ export class ExternalBlocklistRepository {
           FROM "${tenantSchema}".subsidiary
           WHERE id = $1::uuid
         `,
-        scopeId,
+        scopeId
       );
 
       if (subsidiaries.length === 0) {
@@ -55,7 +52,7 @@ export class ExternalBlocklistRepository {
           WHERE $1 LIKE path || '%' AND path != $1
           ORDER BY length(path)
         `,
-        subsidiaries[0].path,
+        subsidiaries[0].path
       );
 
       for (const ancestor of ancestors) {
@@ -66,13 +63,15 @@ export class ExternalBlocklistRepository {
       return chain;
     }
 
-    const talents = await this.prisma.$queryRawUnsafe<Array<{ subsidiaryId: string | null; path: string }>>(
+    const talents = await this.prisma.$queryRawUnsafe<
+      Array<{ subsidiaryId: string | null; path: string }>
+    >(
       `
         SELECT subsidiary_id as "subsidiaryId", path
         FROM "${tenantSchema}".talent
         WHERE id = $1::uuid
       `,
-      scopeId,
+      scopeId
     );
 
     if (talents.length > 0 && talents[0].subsidiaryId) {
@@ -83,7 +82,7 @@ export class ExternalBlocklistRepository {
           WHERE $1 LIKE path || '%'
           ORDER BY length(path)
         `,
-        talents[0].path,
+        talents[0].path
       );
 
       for (const subsidiary of subsidiaries) {
@@ -101,7 +100,7 @@ export class ExternalBlocklistRepository {
     options: {
       category?: string;
       includeInactive?: boolean;
-    },
+    }
   ): Promise<number> {
     const { clause, params } = this.buildOwnerScopeClause(scopes);
     const whereConditions = [`(${clause})`];
@@ -121,7 +120,7 @@ export class ExternalBlocklistRepository {
         FROM "${tenantSchema}".external_blocklist_pattern
         WHERE ${whereConditions.join(' AND ')}
       `,
-      ...params,
+      ...params
     );
 
     return result[0]?.count ?? 0;
@@ -135,7 +134,7 @@ export class ExternalBlocklistRepository {
       includeInactive?: boolean;
       page: number;
       pageSize: number;
-    },
+    }
   ): Promise<RawExternalBlocklistPatternRecord[]> {
     const { clause, params } = this.buildOwnerScopeClause(scopes);
     const whereConditions = [`(${clause})`];
@@ -180,14 +179,14 @@ export class ExternalBlocklistRepository {
         ORDER BY sort_order ASC, severity DESC, created_at DESC
         LIMIT $${limitIndex} OFFSET $${offsetIndex}
       `,
-      ...params,
+      ...params
     );
   }
 
   async findWithInheritance(
     tenantSchema: string,
     scopeChain: ExternalBlocklistScope[],
-    currentScope: ExternalBlocklistScope,
+    currentScope: ExternalBlocklistScope
   ): Promise<RawExternalBlocklistPatternRecord[]> {
     const { clause, params } = this.buildInheritedScopeClause(scopeChain, currentScope);
 
@@ -219,13 +218,13 @@ export class ExternalBlocklistRepository {
           AND (${clause})
         ORDER BY sort_order ASC, severity DESC, created_at DESC
       `,
-      ...params,
+      ...params
     );
   }
 
   async findById(
     tenantSchema: string,
-    id: string,
+    id: string
   ): Promise<RawExternalBlocklistPatternRecord | null> {
     const items = await this.prisma.$queryRawUnsafe<RawExternalBlocklistPatternRecord[]>(
       `
@@ -253,7 +252,7 @@ export class ExternalBlocklistRepository {
         FROM "${tenantSchema}".external_blocklist_pattern
         WHERE id = $1::uuid
       `,
-      id,
+      id
     );
 
     return items[0] ?? null;
@@ -262,7 +261,7 @@ export class ExternalBlocklistRepository {
   async create(
     tenantSchema: string,
     dto: CreateExternalBlocklistDto & { extraData: Record<string, unknown> | null },
-    userId: string | null,
+    userId: string | null
   ): Promise<RawExternalBlocklistPatternRecord> {
     const id = crypto.randomUUID();
     const now = new Date().toISOString();
@@ -356,7 +355,7 @@ export class ExternalBlocklistRepository {
       dto.sortOrder ?? 0,
       dto.isForceUse ?? false,
       now,
-      userId,
+      userId
     );
 
     return items[0];
@@ -366,7 +365,7 @@ export class ExternalBlocklistRepository {
     tenantSchema: string,
     id: string,
     dto: UpdateExternalBlocklistDto & { extraData?: Record<string, unknown> | null },
-    userId: string | null,
+    userId: string | null
   ): Promise<RawExternalBlocklistPatternRecord | null> {
     const now = new Date().toISOString();
     const setClauses: string[] = [
@@ -377,7 +376,11 @@ export class ExternalBlocklistRepository {
     const params: Array<string | number | boolean | null> = [id, now, userId];
     let paramIndex = 4;
 
-    const fields: Array<{ key: keyof (UpdateExternalBlocklistDto & { extraData?: Record<string, unknown> | null }); column: string; cast?: string }> = [
+    const fields: Array<{
+      key: keyof (UpdateExternalBlocklistDto & { extraData?: Record<string, unknown> | null });
+      column: string;
+      cast?: string;
+    }> = [
       { key: 'pattern', column: 'pattern' },
       { key: 'patternType', column: 'pattern_type' },
       { key: 'name', column: 'name', cast: '::jsonb' },
@@ -402,7 +405,7 @@ export class ExternalBlocklistRepository {
         params.push(
           (key === 'extraData' || key === 'name') && value && typeof value === 'object'
             ? JSON.stringify(value)
-            : (value as string | number | boolean | null),
+            : (value as string | number | boolean | null)
         );
       }
     }
@@ -436,7 +439,7 @@ export class ExternalBlocklistRepository {
           updated_at as "updatedAt",
           version
       `,
-      ...params,
+      ...params
     );
 
     return items[0] ?? null;
@@ -445,7 +448,7 @@ export class ExternalBlocklistRepository {
   async delete(tenantSchema: string, id: string): Promise<void> {
     await this.prisma.$executeRawUnsafe(
       `DELETE FROM "${tenantSchema}".external_blocklist_pattern WHERE id = $1::uuid`,
-      id,
+      id
     );
   }
 
@@ -453,7 +456,7 @@ export class ExternalBlocklistRepository {
     tenantSchema: string,
     ids: string[],
     isActive: boolean,
-    userId: string | null,
+    userId: string | null
   ): Promise<number> {
     if (ids.length === 0) {
       return 0;
@@ -471,13 +474,13 @@ export class ExternalBlocklistRepository {
       isActive,
       now,
       userId,
-      ...ids,
+      ...ids
     ) as Promise<number>;
   }
 
   async findDisableCandidate(
     tenantSchema: string,
-    id: string,
+    id: string
   ): Promise<ExternalBlocklistDisableCandidate | null> {
     const items = await this.prisma.$queryRawUnsafe<ExternalBlocklistDisableCandidate[]>(
       `
@@ -490,7 +493,7 @@ export class ExternalBlocklistRepository {
         FROM "${tenantSchema}".external_blocklist_pattern
         WHERE id = $1::uuid
       `,
-      id,
+      id
     );
 
     return items[0] ?? null;
@@ -501,7 +504,7 @@ export class ExternalBlocklistRepository {
     id: string,
     scopeType: OwnerType,
     scopeId: string | null,
-    userId: string,
+    userId: string
   ): Promise<void> {
     await this.prisma.$executeRawUnsafe(
       `
@@ -515,7 +518,7 @@ export class ExternalBlocklistRepository {
       id,
       scopeType,
       scopeId,
-      userId,
+      userId
     );
   }
 
@@ -523,7 +526,7 @@ export class ExternalBlocklistRepository {
     tenantSchema: string,
     id: string,
     scopeType: OwnerType,
-    scopeId: string | null,
+    scopeId: string | null
   ): Promise<void> {
     await this.prisma.$executeRawUnsafe(
       `
@@ -535,14 +538,14 @@ export class ExternalBlocklistRepository {
       `,
       id,
       scopeType,
-      scopeId,
+      scopeId
     );
   }
 
   async getDisabledIds(
     tenantSchema: string,
     scopeType: OwnerType,
-    scopeId: string | null,
+    scopeId: string | null
   ): Promise<Set<string>> {
     const overrides = await this.prisma.$queryRawUnsafe<Array<{ entityId: string }>>(
       `
@@ -554,15 +557,16 @@ export class ExternalBlocklistRepository {
           AND is_disabled = true
       `,
       scopeType,
-      scopeId,
+      scopeId
     );
 
     return new Set(overrides.map((override) => override.entityId));
   }
 
-  private buildOwnerScopeClause(
-    scopes: ExternalBlocklistScope[],
-  ): { clause: string; params: Array<string | number | null> } {
+  private buildOwnerScopeClause(scopes: ExternalBlocklistScope[]): {
+    clause: string;
+    params: Array<string | number | null>;
+  } {
     const params: Array<string | number | null> = [];
     const scopeClauses = scopes.map((scope) => {
       const ownerTypeIndex = params.push(scope.type);
@@ -582,7 +586,7 @@ export class ExternalBlocklistRepository {
 
   private buildInheritedScopeClause(
     scopes: ExternalBlocklistScope[],
-    currentScope: ExternalBlocklistScope,
+    currentScope: ExternalBlocklistScope
   ): { clause: string; params: Array<string | number | null> } {
     const params: Array<string | number | null> = [];
     const scopeClauses = scopes.map((scope) => {

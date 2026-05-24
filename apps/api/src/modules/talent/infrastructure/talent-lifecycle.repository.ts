@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable } from '@nestjs/common';
+
 import { prisma } from '@tcrn/database';
 import type { ArtistLifecycleFlow } from '@tcrn/shared';
 
@@ -17,9 +17,7 @@ export interface ArtistStageLifecycleCatalogRecord {
 
 @Injectable()
 export class TalentLifecycleRepository {
-  async listArtistStages(
-    tenantSchema: string,
-  ): Promise<ArtistStageLifecycleCatalogRecord[]> {
+  async listArtistStages(tenantSchema: string): Promise<ArtistStageLifecycleCatalogRecord[]> {
     return prisma.$queryRawUnsafe<ArtistStageLifecycleCatalogRecord[]>(
       `SELECT
          id,
@@ -29,39 +27,34 @@ export class TalentLifecycleRepository {
        FROM "${tenantSchema}".artist_stage
        WHERE owner_type = 'tenant'
          AND owner_id IS NULL
-       ORDER BY sort_order ASC, code ASC`,
+       ORDER BY sort_order ASC, code ASC`
     );
   }
 
-  async readArtistLifecycleFlow(
-    tenantSchema: string,
-  ): Promise<ArtistLifecycleFlow> {
-    const tenants = await prisma.$queryRawUnsafe<Array<{
-      settings: Record<string, unknown> | null;
-    }>>(
+  async readArtistLifecycleFlow(tenantSchema: string): Promise<ArtistLifecycleFlow> {
+    const tenants = await prisma.$queryRawUnsafe<
+      Array<{
+        settings: Record<string, unknown> | null;
+      }>
+    >(
       `
         SELECT settings
         FROM public.tenant
         WHERE schema_name = $1
       `,
-      tenantSchema,
+      tenantSchema
     );
 
-    return normalizeStoredArtistLifecycleFlow(
-      tenants[0]?.settings?.artistLifecycleFlow,
-    );
+    return normalizeStoredArtistLifecycleFlow(tenants[0]?.settings?.artistLifecycleFlow);
   }
 
-  async hasActiveProfileStore(
-    profileStoreId: string,
-    tenantSchema: string,
-  ): Promise<boolean> {
+  async hasActiveProfileStore(profileStoreId: string, tenantSchema: string): Promise<boolean> {
     const results = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
       `SELECT id
        FROM "${tenantSchema}".profile_store
        WHERE id = $1::uuid
          AND is_active = true`,
-      profileStoreId,
+      profileStoreId
     );
 
     return results.length > 0;
@@ -72,7 +65,7 @@ export class TalentLifecycleRepository {
     tenantSchema: string,
     userId: string,
     targetStageId: string,
-    lifecycleStatus: TalentLifecycleStatus,
+    lifecycleStatus: TalentLifecycleStatus
   ): Promise<TalentData> {
     const results = await prisma.$queryRawUnsafe<TalentData[]>(
       `UPDATE "${tenantSchema}".talent
@@ -97,7 +90,7 @@ export class TalentLifecycleRepository {
       id,
       userId,
       targetStageId,
-      lifecycleStatus,
+      lifecycleStatus
     );
 
     return results[0];

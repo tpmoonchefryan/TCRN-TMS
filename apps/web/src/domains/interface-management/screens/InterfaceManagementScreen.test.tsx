@@ -2,8 +2,9 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { InterfaceManagementScreen } from '@/domains/interface-management/screens/InterfaceManagementScreen';
 import { SUPPORTED_UI_LOCALES, type SupportedUiLocale } from '@tcrn/shared';
+
+import { InterfaceManagementScreen } from '@/domains/interface-management/screens/InterfaceManagementScreen';
 
 const mockRequest = vi.fn();
 const mockReplace = vi.fn();
@@ -78,7 +79,9 @@ describe('InterfaceManagementScreen', () => {
 
     render(<InterfaceManagementScreen tenantId="tenant-1" />);
 
-    expect(await screen.findByRole('heading', { name: 'Interface Management' })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { name: 'Interface Management' })
+    ).toBeInTheDocument();
     await user.click(await screen.findByRole('button', { name: /Tenant root/i }));
 
     expect(await screen.findByText('No adapters configured')).toBeInTheDocument();
@@ -90,7 +93,9 @@ describe('InterfaceManagementScreen', () => {
 
     await waitFor(() => {
       expect(mockRequest).not.toHaveBeenCalledWith('/api/v1/integration/webhooks');
-      expect(mockRequest).not.toHaveBeenCalledWith('/api/v1/configuration-entity/consumer?includeInactive=true&page=1&pageSize=100');
+      expect(mockRequest).not.toHaveBeenCalledWith(
+        '/api/v1/configuration-entity/consumer?includeInactive=true&page=1&pageSize=100'
+      );
       expect(mockRequest).not.toHaveBeenCalledWith('/api/v1/email/config');
     });
   });
@@ -124,7 +129,7 @@ describe('InterfaceManagementScreen', () => {
     await user.click(await screen.findByRole('button', { name: /New adapter/i }));
 
     expect(mockReplace).toHaveBeenCalledWith(
-      '/tenant/tenant-1/interface-management/adapters/new?ownerType=tenant',
+      '/tenant/tenant-1/interface-management/adapters/new?ownerType=tenant'
     );
   });
 });

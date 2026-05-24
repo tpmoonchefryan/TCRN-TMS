@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable } from '@nestjs/common';
 
 import { DatabaseService } from '../../database';
@@ -14,9 +13,7 @@ interface MarshmallowExportTalentRecord {
 
 @Injectable()
 export class MarshmallowExportWriteRepository {
-  constructor(
-    private readonly databaseService: DatabaseService,
-  ) {}
+  constructor(private readonly databaseService: DatabaseService) {}
 
   private get prisma() {
     return this.databaseService.getPrisma();
@@ -24,13 +21,16 @@ export class MarshmallowExportWriteRepository {
 
   async findTalentForCreation(
     tenantSchema: string,
-    talentId: string,
+    talentId: string
   ): Promise<MarshmallowExportTalentRecord | null> {
-    const talents = await this.prisma.$queryRawUnsafe<MarshmallowExportTalentRecord[]>(`
+    const talents = await this.prisma.$queryRawUnsafe<MarshmallowExportTalentRecord[]>(
+      `
       SELECT id
       FROM "${tenantSchema}".talent
       WHERE id = $1::uuid
-    `, talentId);
+    `,
+      talentId
+    );
 
     return talents[0] ?? null;
   }
@@ -45,9 +45,10 @@ export class MarshmallowExportWriteRepository {
       filtersJson: string;
       createdAt: Date;
       userId: string;
-    },
+    }
   ): Promise<RawMarshmallowExportJobRecord> {
-    const jobs = await this.prisma.$queryRawUnsafe<RawMarshmallowExportJobRecord[]>(`
+    const jobs = await this.prisma.$queryRawUnsafe<RawMarshmallowExportJobRecord[]>(
+      `
       INSERT INTO "${tenantSchema}".${MARSHMALLOW_EXPORT_CURRENT_TABLE} (
         id,
         talent_id,
@@ -89,7 +90,7 @@ export class MarshmallowExportWriteRepository {
       params.status,
       params.filtersJson,
       params.createdAt,
-      params.userId,
+      params.userId
     );
 
     return jobs[0];

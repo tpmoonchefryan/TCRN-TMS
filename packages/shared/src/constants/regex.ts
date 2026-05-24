@@ -44,7 +44,8 @@ export const Regex = {
    * Password complexity (PRD §12.3)
    * At least 12 characters, 1 uppercase, 1 lowercase, 1 number, 1 special char
    */
-  PASSWORD_COMPLEXITY: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>])[A-Za-z\d!@#$%^&*(),.?":{}|<>]{12,}$/,
+  PASSWORD_COMPLEXITY:
+    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>])[A-Za-z\d!@#$%^&*(),.?":{}|<>]{12,}$/,
 
   /**
    * Username pattern

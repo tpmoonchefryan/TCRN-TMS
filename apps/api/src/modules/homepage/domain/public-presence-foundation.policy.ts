@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { createHash } from 'node:crypto';
 
 import {
@@ -183,9 +182,7 @@ function canonicalizeValue(value: unknown): unknown {
     return Object.keys(value as Record<string, unknown>)
       .sort((left, right) => left.localeCompare(right))
       .reduce<Record<string, unknown>>((accumulator, key) => {
-        accumulator[key] = canonicalizeValue(
-          (value as Record<string, unknown>)[key],
-        );
+        accumulator[key] = canonicalizeValue((value as Record<string, unknown>)[key]);
         return accumulator;
       }, {});
   }
@@ -194,7 +191,7 @@ function canonicalizeValue(value: unknown): unknown {
 }
 
 export function buildPublicPresenceHashableDocument(
-  document: PublicPresenceDocument,
+  document: PublicPresenceDocument
 ): Record<string, unknown> {
   return canonicalizeValue({
     schemaVersion: document.schemaVersion,
@@ -205,9 +202,7 @@ export function buildPublicPresenceHashableDocument(
   }) as Record<string, unknown>;
 }
 
-export function calculatePublicPresenceContentHash(
-  document: PublicPresenceDocument,
-): string {
+export function calculatePublicPresenceContentHash(document: PublicPresenceDocument): string {
   const algorithm = PUBLIC_PRESENCE_CONTENT_HASH_POLICY.algorithm;
 
   return createHash(algorithm)
@@ -216,17 +211,18 @@ export function calculatePublicPresenceContentHash(
 }
 
 export function derivePublicPresenceValidationState(
-  snapshot: PublicPresenceValidationSnapshot,
+  snapshot: PublicPresenceValidationSnapshot
 ): PublicPresenceValidationState {
-  return snapshot.issues
-    .map((issue) => issue.state)
-    .sort(
-      (left, right) => VALIDATION_STATE_ORDER[right] - VALIDATION_STATE_ORDER[left],
-    )[0] ?? 'validEditable';
+  return (
+    snapshot.issues
+      .map((issue) => issue.state)
+      .sort((left, right) => VALIDATION_STATE_ORDER[right] - VALIDATION_STATE_ORDER[left])[0] ??
+    'validEditable'
+  );
 }
 
 export function buildPublicPresenceSnapshotPersistencePayload(
-  snapshot: PublicPresenceValidationSnapshot,
+  snapshot: PublicPresenceValidationSnapshot
 ): PublicPresenceSnapshotPersistencePayload {
   return {
     acknowledgementIds: snapshot.acknowledgementIds,

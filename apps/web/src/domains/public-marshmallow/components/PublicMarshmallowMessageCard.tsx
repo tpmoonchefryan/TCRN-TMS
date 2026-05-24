@@ -1,10 +1,7 @@
 import type { SupportedUiLocale } from '@tcrn/shared';
 
 import { type PublicMarshmallowMessageRecord } from '@/domains/public-marshmallow/api/public-marshmallow.api';
-import {
-  PublicPresenceBadge,
-  PublicPresenceSurface,
-} from '@/domains/public-presence';
+import { PublicPresenceBadge, PublicPresenceSurface } from '@/domains/public-presence';
 import { useUiLocale } from '@/platform/runtime/locale/locale-provider';
 import {
   formatLocaleDateTime,
@@ -12,10 +9,14 @@ import {
   pickLocaleText,
 } from '@/platform/runtime/locale/locale-text';
 
-type MarshmallowLocale = SupportedUiLocale ;
+type MarshmallowLocale = SupportedUiLocale;
 type PublicMarshmallowCopy = ReturnType<typeof useUiLocale>['copy']['publicMarshmallow'];
 
-function formatReplyHeading(replyLabel: string, repliedBy: string | null, locale: MarshmallowLocale) {
+function formatReplyHeading(
+  replyLabel: string,
+  repliedBy: string | null,
+  locale: MarshmallowLocale
+) {
   if (!repliedBy) {
     return replyLabel;
   }
@@ -63,7 +64,8 @@ export function PublicMarshmallowMessageCard({
   pendingReaction: string | null;
 }>) {
   const activeReactions = new Set(message.userReactions);
-  const visibleReactions = allowedReactions.length > 0 ? allowedReactions : Object.keys(message.reactionCounts);
+  const visibleReactions =
+    allowedReactions.length > 0 ? allowedReactions : Object.keys(message.reactionCounts);
 
   return (
     <PublicPresenceSurface as="article" variant="note" className="p-5">
@@ -93,7 +95,9 @@ export function PublicMarshmallowMessageCard({
           <p className="text-xs font-semibold text-sky-800">
             {formatReplyHeading(copy.replyLabel, message.repliedBy?.displayName || null, locale)}
           </p>
-          <p className="mt-2 whitespace-pre-wrap text-sm leading-7 text-slate-700">{message.replyContent}</p>
+          <p className="mt-2 whitespace-pre-wrap text-sm leading-7 text-slate-700">
+            {message.replyContent}
+          </p>
         </div>
       ) : null}
       {reactionsEnabled && visibleReactions.length > 0 ? (

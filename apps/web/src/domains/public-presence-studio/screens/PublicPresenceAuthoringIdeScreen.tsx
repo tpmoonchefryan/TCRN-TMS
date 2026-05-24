@@ -1,6 +1,31 @@
 'use client';
 
 import {
+  AlertCircle,
+  CheckCircle2,
+  ChevronLeft,
+  Code2,
+  Eye,
+  FileJson2,
+  FileText,
+  LayoutTemplate,
+  Package2,
+  PlaySquare,
+  Smartphone,
+  Upload,
+} from 'lucide-react';
+import Link from 'next/link';
+import {
+  forwardRef,
+  useEffect,
+  useId,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+
+import {
   PUBLIC_PRESENCE_SAFETY_POLICY,
   ThemePreset,
   buildPublicPresenceComponentSourceManifest,
@@ -16,25 +41,13 @@ import {
   type PublicPresenceTemplateId,
   type SupportedUiLocale,
 } from '@tcrn/shared';
-import {
-  AlertCircle,
-  CheckCircle2,
-  ChevronLeft,
-  Code2,
-  Eye,
-  FileJson2,
-  FileText,
-  LayoutTemplate,
-  Package2,
-  PlaySquare,
-  Smartphone,
-  Upload,
-} from 'lucide-react';
-import Link from 'next/link';
-import { forwardRef, useEffect, useId, useImperativeHandle, useMemo, useRef, useState } from 'react';
 
-import { PublicPresenceBadge, PublicPresenceShell, PublicPresenceSurface } from '@/domains/public-presence';
 import { PublicHomepageProjectionRenderer } from '@/domains/public-homepage/components/PublicHomepageProjectionRenderer';
+import {
+  PublicPresenceBadge,
+  PublicPresenceShell,
+  PublicPresenceSurface,
+} from '@/domains/public-presence';
 import {
   readPublicPresenceAsset,
   savePublicPresenceAssetDraft,
@@ -46,11 +59,11 @@ import {
   savePublicPresenceWorkspaceDraft,
   type PublicPresenceStudioWorkspaceResponse,
 } from '@/domains/public-presence-studio/api/public-presence-studio.api';
-import { useOverlayFocusManager } from '@/domains/public-presence-studio/screens/public-presence-studio-overlay';
 import {
   buildComponentAuthoringManifest,
   buildTemplateAuthoringManifest,
 } from '@/domains/public-presence-studio/screens/public-presence-authoring-blueprint';
+import { useOverlayFocusManager } from '@/domains/public-presence-studio/screens/public-presence-studio-overlay';
 import {
   getHomepageSurfaceActionLabel,
   getPublicPresencePreviewPhaseLabel,
@@ -65,8 +78,8 @@ import {
   buildTenantSettingsPath,
   buildTalentSettingsPath,
 } from '@/platform/routing/workspace-paths';
-import { formatLocaleDateTime, pickLocaleText } from '@/platform/runtime/locale/locale-text';
 import { useUiLocale } from '@/platform/runtime/locale/locale-provider';
+import { formatLocaleDateTime, pickLocaleText } from '@/platform/runtime/locale/locale-text';
 import { useSession } from '@/platform/runtime/session/session-provider';
 
 type AuthoringTarget = 'template' | 'component' | 'advanced';
@@ -128,27 +141,28 @@ interface CustomHtmlPreviewState {
   srcDoc: string | null;
 }
 
-function normalizeAuthoringFileKind(
-  kind: string,
-): VirtualFile['kind'] {
-  return kind === 'doc'
-    || kind === 'fixture'
-    || kind === 'markup'
-    || kind === 'schema'
-    || kind === 'style'
-    || kind === 'test'
+function normalizeAuthoringFileKind(kind: string): VirtualFile['kind'] {
+  return kind === 'doc' ||
+    kind === 'fixture' ||
+    kind === 'markup' ||
+    kind === 'schema' ||
+    kind === 'style' ||
+    kind === 'test'
     ? kind
     : 'code';
 }
 
 function normalizeSourceBundleFiles(
-  sourceBundle: ReadonlyArray<{
-    contents: string;
-    kind: string;
-    language: string;
-    path: string;
-  }> | null | undefined,
-  fallbackFiles: VirtualFile[],
+  sourceBundle:
+    | ReadonlyArray<{
+        contents: string;
+        kind: string;
+        language: string;
+        path: string;
+      }>
+    | null
+    | undefined,
+  fallbackFiles: VirtualFile[]
 ): VirtualFile[] {
   if (!sourceBundle?.length) {
     return fallbackFiles;
@@ -163,7 +177,7 @@ function normalizeSourceBundleFiles(
 }
 
 function buildAuthoringValidationSummary(
-  validationItems: readonly ValidationItem[],
+  validationItems: readonly ValidationItem[]
 ): AuthoringValidationSummary {
   const warnCount = validationItems.filter((item) => item.level === 'warn').length;
   const passCount = validationItems.filter((item) => item.level === 'pass').length;
@@ -177,8 +191,7 @@ function buildAuthoringValidationSummary(
 
 const CUSTOM_HTML_URL_BYPASS_PATTERN =
   /(?:href|src)\s*=\s*["']?\s*(?:\/\/|\/\\|https?:\/\/[^"'\s]*@|https?:\/\/[^"'\s]*(?:%2f%2f|%5c%5c))/i;
-const CUSTOM_HTML_EXTERNAL_ASSET_PATTERN =
-  /^(?:https?:|data:|\/\/|\/\\|%2f%2f|%5c%5c)/i;
+const CUSTOM_HTML_EXTERNAL_ASSET_PATTERN = /^(?:https?:|data:|\/\/|\/\\|%2f%2f|%5c%5c)/i;
 const CUSTOM_HTML_CSS_ASSET_PATTERN =
   /@import|url\s*\(\s*['"]?\s*(?:https?:|data:|\/\/|\/\\|%2f%2f|%5c%5c)/i;
 const AUTHORING_WORKSPACE_INDEX_PATH = 'system/workspace.json';
@@ -193,13 +206,15 @@ const FOCUSABLE_SELECTOR = [
 ].join(', ');
 
 function getFocusableElements(container: HTMLElement) {
-  return Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter((element) => {
-    if (element.hasAttribute('disabled') || element.hidden) {
-      return false;
-    }
+  return Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(
+    (element) => {
+      if (element.hasAttribute('disabled') || element.hidden) {
+        return false;
+      }
 
-    return element.getAttribute('aria-hidden') !== 'true';
-  });
+      return element.getAttribute('aria-hidden') !== 'true';
+    }
+  );
 }
 
 function isWorkspaceIndexPath(path: string) {
@@ -294,7 +309,9 @@ function writeWorkspaceFolderIndex(files: VirtualFile[], folders: string[]): Vir
 }
 
 function getWorkspaceFolders(files: VirtualFile[]) {
-  const derivedFolders = getVisibleWorkspaceFiles(files).flatMap((file) => collectParentFolders(file.path));
+  const derivedFolders = getVisibleWorkspaceFiles(files).flatMap((file) =>
+    collectParentFolders(file.path)
+  );
   return [...new Set([...readWorkspaceFolderIndex(files), ...derivedFolders])].sort();
 }
 
@@ -308,10 +325,10 @@ function resolveWorkspaceGroupIdFromPath(path: string): VirtualFileGroupId {
   }
 
   if (
-    path.endsWith('.json')
-    || path.startsWith('fixtures/')
-    || path.startsWith('manifest')
-    || path.includes('schema')
+    path.endsWith('.json') ||
+    path.startsWith('fixtures/') ||
+    path.startsWith('manifest') ||
+    path.includes('schema')
   ) {
     return 'sidecars';
   }
@@ -354,23 +371,21 @@ function buildWorkspaceEntries(files: VirtualFile[]): WorkspaceEntry[] {
 
 function validateWorkspacePathInput(
   rawPath: string,
-  kind: WorkspaceEntryKind,
+  kind: WorkspaceEntryKind
 ): WorkspacePathValidationCode | null {
   const path = rawPath.trim();
 
   if (!path) {
-    return kind === 'folder'
-      ? 'missingFolderPath'
-      : 'missingFilePath';
+    return kind === 'folder' ? 'missingFolderPath' : 'missingFilePath';
   }
 
   if (
-    path === AUTHORING_WORKSPACE_INDEX_PATH
-    || path.startsWith('/')
-    || path.startsWith('~')
-    || /^[A-Za-z]:/.test(path)
-    || path.includes('\\')
-    || path.includes('//')
+    path === AUTHORING_WORKSPACE_INDEX_PATH ||
+    path.startsWith('/') ||
+    path.startsWith('~') ||
+    /^[A-Za-z]:/.test(path) ||
+    path.includes('\\') ||
+    path.includes('//')
   ) {
     return 'relativePathOnly';
   }
@@ -378,9 +393,9 @@ function validateWorkspacePathInput(
   const segments = path.split('/');
 
   if (
-    segments.some((segment) => segment.length === 0 || segment === '.' || segment === '..')
-    || segments.some((segment) => segment.startsWith('.'))
-    || segments.some((segment) => !WORKSPACE_PATH_SEGMENT_PATTERN.test(segment))
+    segments.some((segment) => segment.length === 0 || segment === '.' || segment === '..') ||
+    segments.some((segment) => segment.startsWith('.')) ||
+    segments.some((segment) => !WORKSPACE_PATH_SEGMENT_PATTERN.test(segment))
   ) {
     return 'invalidCharacters';
   }
@@ -388,10 +403,7 @@ function validateWorkspacePathInput(
   return null;
 }
 
-function getWorkspacePathValidationMessage(
-  locale: string,
-  code: WorkspacePathValidationCode,
-) {
+function getWorkspacePathValidationMessage(locale: string, code: WorkspacePathValidationCode) {
   switch (code) {
     case 'missingFolderPath':
       return pickLocaleText(locale, {
@@ -446,7 +458,7 @@ function createWorkspaceFile(files: VirtualFile[], path: string): VirtualFile[] 
         path: nextPath,
       },
     ],
-    nextFolders,
+    nextFolders
   );
 }
 
@@ -457,21 +469,21 @@ function createWorkspaceFolder(files: VirtualFile[], path: string): VirtualFile[
 function renameWorkspaceEntry(
   files: VirtualFile[],
   entry: { kind: WorkspaceEntryKind; path: string },
-  nextPathInput: string,
+  nextPathInput: string
 ): VirtualFile[] {
   const nextPath = nextPathInput.trim();
   const currentFolders = getWorkspaceFolders(files);
 
   if (entry.kind === 'file') {
     const nextFiles = getVisibleWorkspaceFiles(files).map((file) =>
-      file.path === entry.path ? { ...file, path: nextPath } : file,
+      file.path === entry.path ? { ...file, path: nextPath } : file
     );
 
     return writeWorkspaceFolderIndex(
       nextFiles,
       currentFolders
         .filter((folder) => folder !== entry.path)
-        .concat(collectParentFolders(nextPath)),
+        .concat(collectParentFolders(nextPath))
     );
   }
 
@@ -481,14 +493,14 @@ function renameWorkspaceEntry(
           ...file,
           path: `${nextPath}${file.path.slice(entry.path.length)}`,
         }
-      : file,
+      : file
   );
   const nextFolders = currentFolders
     .filter((folder) => folder !== entry.path && !folder.startsWith(`${entry.path}/`))
     .concat(
       currentFolders
         .filter((folder) => folder === entry.path || folder.startsWith(`${entry.path}/`))
-        .map((folder) => `${nextPath}${folder.slice(entry.path.length)}`),
+        .map((folder) => `${nextPath}${folder.slice(entry.path.length)}`)
     )
     .concat(collectParentFolders(nextPath));
 
@@ -497,83 +509,81 @@ function renameWorkspaceEntry(
 
 function deleteWorkspaceEntry(
   files: VirtualFile[],
-  entry: { kind: WorkspaceEntryKind; path: string },
+  entry: { kind: WorkspaceEntryKind; path: string }
 ): VirtualFile[] {
   if (entry.kind === 'file') {
     return writeWorkspaceFolderIndex(
       getVisibleWorkspaceFiles(files).filter((file) => file.path !== entry.path),
-      getWorkspaceFolders(files).filter((folder) => folder !== entry.path),
+      getWorkspaceFolders(files).filter((folder) => folder !== entry.path)
     );
   }
 
   return writeWorkspaceFolderIndex(
     getVisibleWorkspaceFiles(files).filter(
-      (file) => file.path !== entry.path && !file.path.startsWith(`${entry.path}/`),
+      (file) => file.path !== entry.path && !file.path.startsWith(`${entry.path}/`)
     ),
     getWorkspaceFolders(files).filter(
-      (folder) => folder !== entry.path && !folder.startsWith(`${entry.path}/`),
-    ),
+      (folder) => folder !== entry.path && !folder.startsWith(`${entry.path}/`)
+    )
   );
 }
 
-const StableSourceEditor = forwardRef<SourceEditorHandle, SourceEditorProps>(function StableSourceEditor(
-  {
-    className,
-    onChange,
-    path,
-    value,
-  },
-  ref,
-) {
-  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+const StableSourceEditor = forwardRef<SourceEditorHandle, SourceEditorProps>(
+  function StableSourceEditor({ className, onChange, path, value }, ref) {
+    const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
-  useImperativeHandle(ref, () => ({
-    focus: () => {
-      textareaRef.current?.focus();
-    },
-    getValue: () => textareaRef.current?.value ?? '',
-    setValue: (nextValue: string) => {
-      if (!textareaRef.current) {
-        return;
-      }
-
-      textareaRef.current.value = nextValue;
-    },
-  }), []);
-
-  return (
-    <div
-      className={`monaco-editor flex h-full flex-col bg-slate-950 text-slate-100 ${className ?? ''}`.trim()}
-      data-testid="monaco-editor-stub"
-    >
-      <div
-        aria-hidden="true"
-        className="view-lines h-8 shrink-0 border-b border-slate-800/80 bg-slate-950/95"
-        onMouseDown={(event) => {
-          event.preventDefault();
+    useImperativeHandle(
+      ref,
+      () => ({
+        focus: () => {
           textareaRef.current?.focus();
-        }}
-      />
-      <textarea
-        ref={textareaRef}
-        aria-label={path ?? 'Editor file'}
-        autoCapitalize="off"
-        autoCorrect="off"
-        className="inputarea min-h-0 flex-1 resize-none border-0 bg-slate-950 px-4 py-3 font-mono text-[13px] leading-6 text-slate-100 outline-none"
-        data-testid="monaco-inputarea-stub"
-        onChange={(event) => {
-          onChange?.(event.currentTarget.value);
-        }}
-        spellCheck={false}
-        value={value ?? ''}
-      />
-    </div>
-  );
-});
+        },
+        getValue: () => textareaRef.current?.value ?? '',
+        setValue: (nextValue: string) => {
+          if (!textareaRef.current) {
+            return;
+          }
+
+          textareaRef.current.value = nextValue;
+        },
+      }),
+      []
+    );
+
+    return (
+      <div
+        className={`monaco-editor flex h-full flex-col bg-slate-950 text-slate-100 ${className ?? ''}`.trim()}
+        data-testid="monaco-editor-stub"
+      >
+        <div
+          aria-hidden="true"
+          className="view-lines h-8 shrink-0 border-b border-slate-800/80 bg-slate-950/95"
+          onMouseDown={(event) => {
+            event.preventDefault();
+            textareaRef.current?.focus();
+          }}
+        />
+        <textarea
+          ref={textareaRef}
+          aria-label={path ?? 'Editor file'}
+          autoCapitalize="off"
+          autoCorrect="off"
+          className="inputarea min-h-0 flex-1 resize-none border-0 bg-slate-950 px-4 py-3 font-mono text-[13px] leading-6 text-slate-100 outline-none"
+          data-testid="monaco-inputarea-stub"
+          onChange={(event) => {
+            onChange?.(event.currentTarget.value);
+          }}
+          spellCheck={false}
+          value={value ?? ''}
+        />
+      </div>
+    );
+  }
+);
 
 function buildTemplatePreviewProjection(
   templateId: PublicPresenceTemplateId,
-  locale: string,
+  locale: string
 ): PublicPresencePublicProjection {
   const title =
     templateId === 'debutReveal'
@@ -738,7 +748,7 @@ function buildTemplatePreviewProjection(
 
 function buildComponentPreviewProjection(
   componentType: HomepageComponentType,
-  locale: string,
+  locale: string
 ): PublicPresencePublicProjection {
   const readableName = componentType.replace(/([a-z0-9])([A-Z])/g, '$1 $2');
   const sampleTitle = pickLocaleText(locale, {
@@ -830,7 +840,7 @@ function buildComponentPreviewProjection(
 function buildTemplateFiles(
   templateId: PublicPresenceTemplateId,
   locale: string,
-  linkedComponentDraftKeys: readonly string[] = [],
+  linkedComponentDraftKeys: readonly string[] = []
 ): VirtualFile[] {
   const definition = buildPublicPresenceTemplateSourceManifest(templateId);
 
@@ -870,9 +880,13 @@ function buildTemplateFiles(
       kind: 'schema',
       language: 'json',
       contents: JSON.stringify(
-        buildTemplateAuthoringManifest(templateId, locale as SupportedUiLocale, linkedComponentDraftKeys),
+        buildTemplateAuthoringManifest(
+          templateId,
+          locale as SupportedUiLocale,
+          linkedComponentDraftKeys
+        ),
         null,
-        2,
+        2
       ),
     },
     {
@@ -885,14 +899,14 @@ function buildTemplateFiles(
           homepageStarter: buildTemplateAuthoringManifest(
             templateId,
             locale as SupportedUiLocale,
-            linkedComponentDraftKeys,
+            linkedComponentDraftKeys
           ).authoring.homepageStarter,
           locale,
           previewPhase: templateId === 'debutReveal' ? 'countdown' : 'always',
           templateId,
         },
         null,
-        2,
+        2
       ),
     },
     {
@@ -904,10 +918,7 @@ function buildTemplateFiles(
   ];
 }
 
-function buildComponentFiles(
-  componentType: HomepageComponentType,
-  locale: string,
-): VirtualFile[] {
+function buildComponentFiles(componentType: HomepageComponentType, locale: string): VirtualFile[] {
   const definition = buildPublicPresenceComponentSourceManifest(componentType);
 
   return [
@@ -942,7 +953,7 @@ function buildComponentFiles(
       contents: JSON.stringify(
         buildComponentAuthoringManifest(componentType, locale as SupportedUiLocale),
         null,
-        2,
+        2
       ),
     },
     {
@@ -958,7 +969,7 @@ function buildComponentFiles(
           aiAllowlist: definition.aiPatchAllowlist,
         },
         null,
-        2,
+        2
       ),
     },
     {
@@ -971,13 +982,13 @@ function buildComponentFiles(
           fixture: 'default',
           homepageStarter: buildComponentAuthoringManifest(
             componentType,
-            locale as SupportedUiLocale,
+            locale as SupportedUiLocale
           ).authoring.homepageStarter,
           locale,
           visualSupport: definition.visualSupport,
         },
         null,
-        2,
+        2
       ),
     },
   ];
@@ -986,7 +997,7 @@ function buildComponentFiles(
 function buildAdvancedFiles(
   mode: AdvancedPageMode,
   templateId: PublicPresenceTemplateId,
-  locale: string,
+  locale: string
 ): VirtualFile[] {
   const template = buildPublicPresenceTemplateSourceManifest(templateId);
 
@@ -996,17 +1007,22 @@ function buildAdvancedFiles(
         path: 'src/index.html',
         kind: 'code',
         language: 'html',
-        contents: `<main class="fan-page">\n  <section class="hero">\n    <p class="eyebrow">${template.label}</p>\n    <h1>${pickLocaleText(locale, {
-          en: 'Design a safe custom fan page',
-          zh_HANS: '设计一个安全的定制粉丝页',
-          zh_HANT: '設計一個安全的客製粉絲頁',
-          ja: '安全なカスタムファンページを設計する',
-          ko: '안전한 커스텀 팬 페이지 만들기',
-          fr: 'Concevoir une fan page personnalisée et sûre',
-        })}</h1>\n    <p>${pickLocaleText(locale, {
+        contents: `<main class="fan-page">\n  <section class="hero">\n    <p class="eyebrow">${template.label}</p>\n    <h1>${pickLocaleText(
+          locale,
+          {
+            en: 'Design a safe custom fan page',
+            zh_HANS: '设计一个安全的定制粉丝页',
+            zh_HANT: '設計一個安全的客製粉絲頁',
+            ja: '安全なカスタムファンページを設計する',
+            ko: '안전한 커스텀 팬 페이지 만들기',
+            fr: 'Concevoir une fan page personnalisée et sûre',
+          }
+        )}</h1>\n    <p>${pickLocaleText(locale, {
           en: 'Use static HTML and CSS only. Scripts, event handlers, unsafe iframes, and hidden tracking are blocked.',
-          zh_HANS: '这里只允许静态 HTML 和 CSS。脚本、事件处理器、不安全 iframe 与隐藏追踪都会被阻止。',
-          zh_HANT: '這裡只允許靜態 HTML 與 CSS。腳本、事件處理器、不安全 iframe 與隱藏追蹤都會被阻止。',
+          zh_HANS:
+            '这里只允许静态 HTML 和 CSS。脚本、事件处理器、不安全 iframe 与隐藏追踪都会被阻止。',
+          zh_HANT:
+            '這裡只允許靜態 HTML 與 CSS。腳本、事件處理器、不安全 iframe 與隱藏追蹤都會被阻止。',
           ja: 'ここでは静的な HTML と CSS のみ利用できます。スクリプト、イベント属性、危険な iframe、隠れた追跡はブロックされます。',
           ko: '여기서는 정적 HTML과 CSS만 사용할 수 있습니다. 스크립트, 이벤트 핸들러, 위험한 iframe, 숨은 추적은 차단됩니다.',
           fr: 'Ici, seuls le HTML et le CSS statiques sont autorisés. Les scripts, attributs d’événement, iframes non sûres et traqueurs cachés sont bloqués.',
@@ -1075,7 +1091,11 @@ function buildAdvancedFiles(
         path: 'fixtures/default.json',
         kind: 'fixture',
         language: 'json',
-        contents: JSON.stringify({ mode, locale, templateId, inserted: ['SocialLinks', 'Schedule'] }, null, 2),
+        contents: JSON.stringify(
+          { mode, locale, templateId, inserted: ['SocialLinks', 'Schedule'] },
+          null,
+          2
+        ),
       },
       {
         path: 'manifest.json',
@@ -1105,7 +1125,7 @@ function buildAdvancedFiles(
           })),
         },
         null,
-        2,
+        2
       ),
     },
     {
@@ -1147,10 +1167,7 @@ function resolveFileIcon(file: VirtualFile) {
   return <FileJson2 className="h-4 w-4" aria-hidden="true" />;
 }
 
-function getVirtualFileKindLabel(
-  locale: string,
-  kind: VirtualFile['kind'],
-) {
+function getVirtualFileKindLabel(locale: string, kind: VirtualFile['kind']) {
   switch (kind) {
     case 'code':
       return pickLocaleText(locale, {
@@ -1240,10 +1257,7 @@ function resolveVirtualFileGroupId(file: VirtualFile): VirtualFileGroupId {
   return 'source';
 }
 
-function getVirtualFileGroupLabel(
-  locale: string,
-  groupId: VirtualFileGroupId,
-) {
+function getVirtualFileGroupLabel(locale: string, groupId: VirtualFileGroupId) {
   switch (groupId) {
     case 'source':
       return pickLocaleText(locale, {
@@ -1297,12 +1311,12 @@ function getAuthoringSubjectLabel(
   locale: string,
   target: AuthoringTarget,
   templateId: PublicPresenceTemplateId,
-  componentType: HomepageComponentType,
+  componentType: HomepageComponentType
 ) {
   if (target === 'template') {
     return getPublicPresenceTemplateLabel(
       locale,
-      buildPublicPresenceTemplateSourceManifest(templateId),
+      buildPublicPresenceTemplateSourceManifest(templateId)
     );
   }
 
@@ -1416,11 +1430,7 @@ function getAdvancedModeDescription(locale: string, mode: AdvancedPageMode) {
   }
 }
 
-function getPreviewSurfaceLabel(
-  locale: string,
-  target: AuthoringTarget,
-  mode: AdvancedPageMode,
-) {
+function getPreviewSurfaceLabel(locale: string, target: AuthoringTarget, mode: AdvancedPageMode) {
   if (target !== 'advanced') {
     return pickLocaleText(locale, {
       en: 'Live preview',
@@ -1474,12 +1484,12 @@ function buildCustomHtmlSrcDoc(html: string, css: string) {
 function buildCustomHtmlPreviewState(
   html: string,
   css: string,
-  locale: string,
+  locale: string
 ): CustomHtmlPreviewState {
   const issues: string[] = [];
   const loweredHtml = html.toLowerCase();
   const blockedPattern = PUBLIC_PRESENCE_SAFETY_POLICY.htmlRules.forbiddenPatterns.find((pattern) =>
-    loweredHtml.includes(pattern),
+    loweredHtml.includes(pattern)
   );
 
   if (CUSTOM_HTML_URL_BYPASS_PATTERN.test(html)) {
@@ -1491,7 +1501,7 @@ function buildCustomHtmlPreviewState(
         ja: 'プレビュー前に、プロトコル相対・認証情報付き・エンコード回避のリンクを削除してください。',
         ko: '미리보기 전에 프로토콜 상대, 자격 증명 포함, 인코딩 우회 링크를 제거하세요.',
         fr: 'Supprimez les liens relatifs au protocole, avec identifiants ou hôtes encodés avant l’aperçu.',
-      }),
+      })
     );
   }
 
@@ -1504,7 +1514,7 @@ function buildCustomHtmlPreviewState(
         ja: `ブロック対象のソース断片を検出しました: ${blockedPattern}`,
         ko: `차단된 소스 패턴을 감지했습니다: ${blockedPattern}`,
         fr: `Motif source bloqué détecté : ${blockedPattern}`,
-      }),
+      })
     );
   }
 
@@ -1517,16 +1527,21 @@ function buildCustomHtmlPreviewState(
         ja: 'CSS はこのページ内に留めてください。外部 import とリモート資産 URL はブロックされます。',
         ko: 'CSS는 이 페이지 안에서만 사용하세요. 외부 import와 원격 자산 URL은 차단됩니다.',
         fr: 'Gardez le CSS local à cette page. Les imports externes et URLs d’assets distants sont bloqués.',
-      }),
+      })
     );
   }
 
-  let excerpt = html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+  let excerpt = html
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
   let sanitizedHtml = html;
 
   if (typeof DOMParser !== 'undefined') {
     const document = new DOMParser().parseFromString(html, 'text/html');
-    const blockedNodes = document.querySelectorAll('script, iframe, object, embed, link, meta[http-equiv], audio, video, source');
+    const blockedNodes = document.querySelectorAll(
+      'script, iframe, object, embed, link, meta[http-equiv], audio, video, source'
+    );
 
     if (blockedNodes.length > 0) {
       issues.push(
@@ -1537,7 +1552,7 @@ function buildCustomHtmlPreviewState(
           ja: 'ここで使えるのは静的なファンページ用マークアップのみです。埋め込みや実行可能メディアは承認済みコンポーネントへ移してください。',
           ko: '여기서는 정적인 팬 페이지 마크업만 사용할 수 있습니다. 임베드와 실행 가능한 미디어는 승인된 컴포넌트로 옮기세요.',
           fr: 'Seul un balisage statique de fan page est autorisé ici. Déplacez embeds et médias exécutables vers des composants approuvés.',
-        }),
+        })
       );
       blockedNodes.forEach((node) => node.remove());
     }
@@ -1556,7 +1571,7 @@ function buildCustomHtmlPreviewState(
               ja: 'このモードではインラインイベント属性やインライン style は使えません。',
               ko: '이 모드에서는 인라인 이벤트 핸들러와 인라인 스타일을 사용할 수 없습니다.',
               fr: 'Les gestionnaires d’événement inline et styles inline sont interdits dans ce mode.',
-            }),
+            })
           );
           element.removeAttribute(attribute.name);
           return;
@@ -1572,7 +1587,7 @@ function buildCustomHtmlPreviewState(
                 ja: 'このモードではリモートのメディア資産を使えません。承認済みの管理資産か登録済みメディアブロックを利用してください。',
                 ko: '이 모드에서는 원격 미디어 자산을 사용할 수 없습니다. 승인된 관리 자산이나 등록된 미디어 블록을 사용하세요.',
                 fr: 'Les médias distants sont bloqués ici. Utilisez des assets gérés approuvés ou des blocs média enregistrés.',
-              }),
+              })
             );
             element.removeAttribute(attribute.name);
           }
@@ -1600,7 +1615,7 @@ function buildAdvancedPreviewProjection(
   mode: AdvancedPageMode,
   templateId: PublicPresenceTemplateId,
   locale: string,
-  files: VirtualFile[],
+  files: VirtualFile[]
 ): PublicPresencePublicProjection {
   const baseProjection = buildTemplatePreviewProjection(templateId, locale);
 
@@ -1670,7 +1685,7 @@ function buildAdvancedPreviewProjection(
 function buildCurrentHomepageSourceFiles(
   document: PublicPresenceDocument,
   templateId: PublicPresenceTemplateId,
-  locale: string,
+  locale: string
 ): VirtualFile[] {
   return buildAdvancedFiles('page-source', templateId, locale).map((file) =>
     file.path === 'src/page-source.json'
@@ -1678,14 +1693,14 @@ function buildCurrentHomepageSourceFiles(
           ...file,
           contents: JSON.stringify(document, null, 2),
         }
-      : file,
+      : file
   );
 }
 
-function readCurrentHomepageSourceDocument(
-  files: VirtualFile[],
-): PublicPresenceDocument {
-  return JSON.parse(readVirtualFileContents(files, 'src/page-source.json')) as PublicPresenceDocument;
+function readCurrentHomepageSourceDocument(files: VirtualFile[]): PublicPresenceDocument {
+  return JSON.parse(
+    readVirtualFileContents(files, 'src/page-source.json')
+  ) as PublicPresenceDocument;
 }
 
 function buildValidationItems(
@@ -1693,7 +1708,7 @@ function buildValidationItems(
   target: AuthoringTarget,
   fixtureMode: FixtureMode,
   viewport: PreviewViewport,
-  previewPhase: PublicPresencePhaseVisibility,
+  previewPhase: PublicPresencePhaseVisibility
 ) {
   return [
     {
@@ -1834,10 +1849,7 @@ function getMobileSurfaceStatusLabel(locale: string, mobileSurface: MobileAuthor
       });
 }
 
-function getAuthoringPhaseLabel(
-  locale: string,
-  previewPhase: PublicPresencePhaseVisibility,
-) {
+function getAuthoringPhaseLabel(locale: string, previewPhase: PublicPresencePhaseVisibility) {
   if (previewPhase === 'preRevealHold') {
     return pickLocaleText(locale, {
       en: 'Before reveal hold',
@@ -1941,21 +1953,19 @@ export function PublicPresenceAuthoringIdeScreen({
   const fileDrawerId = useId();
   const validationDrawerId = useId();
   const [resolvedTemplateId, setResolvedTemplateId] = useState<PublicPresenceTemplateId>(
-    (templateId ?? 'activeTalentHub') as PublicPresenceTemplateId,
+    (templateId ?? 'activeTalentHub') as PublicPresenceTemplateId
   );
   const [resolvedComponentType, setResolvedComponentType] = useState<HomepageComponentType>(
-    (componentType ?? 'SocialLinks') as HomepageComponentType,
+    (componentType ?? 'SocialLinks') as HomepageComponentType
   );
   const [assetDetail, setAssetDetail] = useState<PublicPresenceAssetDetail | null>(null);
   const [assetLabel, setAssetLabel] = useState<string | null>(null);
   const effectiveTemplateId = resolvedTemplateId;
   const effectiveComponentType = resolvedComponentType;
-  const effectiveAdvancedMode = advancedMode === 'page-source'
-    ? 'custom-html'
-    : (advancedMode ?? 'custom-html');
-  const [selectedAdvancedMode, setSelectedAdvancedMode] = useState<AdvancedPageMode>(
-    effectiveAdvancedMode,
-  );
+  const effectiveAdvancedMode =
+    advancedMode === 'page-source' ? 'custom-html' : (advancedMode ?? 'custom-html');
+  const [selectedAdvancedMode, setSelectedAdvancedMode] =
+    useState<AdvancedPageMode>(effectiveAdvancedMode);
   const initialFiles = useMemo(
     () =>
       target === 'template'
@@ -1963,13 +1973,7 @@ export function PublicPresenceAuthoringIdeScreen({
         : target === 'component'
           ? buildComponentFiles(effectiveComponentType, locale)
           : buildAdvancedFiles(selectedAdvancedMode, effectiveTemplateId, locale),
-    [
-      effectiveComponentType,
-      effectiveTemplateId,
-      locale,
-      selectedAdvancedMode,
-      target,
-    ],
+    [effectiveComponentType, effectiveTemplateId, locale, selectedAdvancedMode, target]
   );
   const [advancedWorkspace, setAdvancedWorkspace] =
     useState<PublicPresenceStudioWorkspaceResponse | null>(null);
@@ -1981,7 +1985,9 @@ export function PublicPresenceAuthoringIdeScreen({
   const [persistedFiles, setPersistedFiles] = useState<VirtualFile[]>(initialFiles);
   const [activePath, setActivePath] = useState(initialFiles[0]?.path ?? '');
   const [openTabs, setOpenTabs] = useState<string[]>(
-    getVisibleWorkspaceFiles(initialFiles).slice(0, 1).map((file) => file.path),
+    getVisibleWorkspaceFiles(initialFiles)
+      .slice(0, 1)
+      .map((file) => file.path)
   );
   const [selectedWorkspaceEntry, setSelectedWorkspaceEntry] = useState<{
     kind: WorkspaceEntryKind;
@@ -1992,7 +1998,7 @@ export function PublicPresenceAuthoringIdeScreen({
           kind: 'file',
           path: getVisibleWorkspaceFiles(initialFiles)[0]!.path,
         }
-      : null,
+      : null
   );
   const [workspaceCommand, setWorkspaceCommand] = useState<WorkspaceCommandKind | null>(null);
   const [workspacePathInput, setWorkspacePathInput] = useState('');
@@ -2002,11 +2008,13 @@ export function PublicPresenceAuthoringIdeScreen({
   const [editorDirty, setEditorDirty] = useState(false);
   const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
   const [lastValidatedAt, setLastValidatedAt] = useState<string | null>(null);
-  const [authoringAction, setAuthoringAction] = useState<'idle' | 'save' | 'submit' | 'validate'>('idle');
+  const [authoringAction, setAuthoringAction] = useState<'idle' | 'save' | 'submit' | 'validate'>(
+    'idle'
+  );
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'ready'>('idle');
   const [isWideDesktop, setIsWideDesktop] = useState(false);
   const [hydratedAuthoringKey, setHydratedAuthoringKey] = useState<string | null>(
-    target === 'advanced' ? 'advanced' : null,
+    target === 'advanced' ? 'advanced' : null
   );
   const activePathRef = useRef(activePath);
   const filesRef = useRef(files);
@@ -2017,15 +2025,14 @@ export function PublicPresenceAuthoringIdeScreen({
   const mobileUtilitySheetPanelRef = useRef<HTMLDivElement | null>(null);
   const sourceEditorRef = useRef<SourceEditorHandle | null>(null);
   const skipNextInitialFilesResetRef = useRef(false);
-  const syncEditorContentsRef = useRef<(path: string | undefined, value: string | undefined) => void>(
-    () => undefined,
-  );
+  const syncEditorContentsRef = useRef<
+    (path: string | undefined, value: string | undefined) => void
+  >(() => undefined);
   const mobileActionsOpen = mobileOverlay === 'actions';
-  const activeMobileUtilityOverlay = mobileOverlay === 'previewOptions'
-    || mobileOverlay === 'files'
-    || mobileOverlay === 'checks'
-    ? mobileOverlay
-    : null;
+  const activeMobileUtilityOverlay =
+    mobileOverlay === 'previewOptions' || mobileOverlay === 'files' || mobileOverlay === 'checks'
+      ? mobileOverlay
+      : null;
   const mobilePreviewOptionsOpen = activeMobileUtilityOverlay === 'previewOptions';
   const mobileActionsOverlay = useOverlayFocusManager({
     onClose: () => setMobileOverlay((current) => (current === 'actions' ? null : current)),
@@ -2034,9 +2041,7 @@ export function PublicPresenceAuthoringIdeScreen({
   const mobileUtilityOverlay = useOverlayFocusManager({
     onClose: () =>
       setMobileOverlay((current) =>
-        current === 'previewOptions' || current === 'files' || current === 'checks'
-          ? null
-          : current,
+        current === 'previewOptions' || current === 'files' || current === 'checks' ? null : current
       ),
     open: activeMobileUtilityOverlay !== null,
   });
@@ -2057,22 +2062,32 @@ export function PublicPresenceAuthoringIdeScreen({
       : target === 'component'
         ? componentType?.trim() || 'new'
         : null;
-  const authoringDraftKey = target === 'advanced'
-    ? 'advanced'
-    : isAssetMode
-      ? `asset:${target}:${authoringSubjectKey ?? 'missing'}`
-      : `${target}:${authoringSubjectKey ?? 'new'}`;
+  const authoringDraftKey =
+    target === 'advanced'
+      ? 'advanced'
+      : isAssetMode
+        ? `asset:${target}:${authoringSubjectKey ?? 'missing'}`
+        : `${target}:${authoringSubjectKey ?? 'new'}`;
 
   const visibleFiles = useMemo(() => getVisibleWorkspaceFiles(files), [files]);
-  const persistedVisibleFiles = useMemo(() => getVisibleWorkspaceFiles(persistedFiles), [persistedFiles]);
+  const persistedVisibleFiles = useMemo(
+    () => getVisibleWorkspaceFiles(persistedFiles),
+    [persistedFiles]
+  );
   const activeFile = visibleFiles.find((file) => file.path === activePath) ?? visibleFiles[0];
   const workspaceEntries = useMemo(() => buildWorkspaceEntries(files), [files]);
   const dirtyFilePaths = useMemo(() => {
     const currentFiles = new Map(
-      visibleFiles.map((file) => [file.path, JSON.stringify([file.kind, file.language, file.contents])]),
+      visibleFiles.map((file) => [
+        file.path,
+        JSON.stringify([file.kind, file.language, file.contents]),
+      ])
     );
     const savedFiles = new Map(
-      persistedVisibleFiles.map((file) => [file.path, JSON.stringify([file.kind, file.language, file.contents])]),
+      persistedVisibleFiles.map((file) => [
+        file.path,
+        JSON.stringify([file.kind, file.language, file.contents]),
+      ])
     );
     const nextDirtyPaths = new Set<string>();
 
@@ -2108,13 +2123,9 @@ export function PublicPresenceAuthoringIdeScreen({
     return nextDirtyFolders;
   }, [files, persistedFiles]);
   const desktopPreviewFit = usePreviewFit(720);
-  const authoringSubjectLabel = assetLabel
-    ?? getAuthoringSubjectLabel(
-      locale,
-      target,
-      effectiveTemplateId,
-      effectiveComponentType,
-    );
+  const authoringSubjectLabel =
+    assetLabel ??
+    getAuthoringSubjectLabel(locale, target, effectiveTemplateId, effectiveComponentType);
   const authoringSourceScopeLabel = getAuthoringSourceScopeLabel(locale, target);
   const mobileSurfaceStatusLabel = getMobileSurfaceStatusLabel(locale, mobileSurface);
   const previewProjection = useMemo<PublicPresencePublicProjection | PublicPresenceProjection>(
@@ -2129,7 +2140,7 @@ export function PublicPresenceAuthoringIdeScreen({
                 selectedAdvancedMode,
                 advancedWorkspace?.selectedTemplateId ?? effectiveTemplateId,
                 locale,
-                files,
+                files
               ),
     [
       advancedPreviewProjection,
@@ -2141,23 +2152,20 @@ export function PublicPresenceAuthoringIdeScreen({
       locale,
       selectedAdvancedMode,
       target,
-    ],
+    ]
   );
-  const customHtmlPreviewState = useMemo(
-    () => {
-      if (target !== 'advanced' || selectedAdvancedMode !== 'custom-html') {
-        return null;
-      }
+  const customHtmlPreviewState = useMemo(() => {
+    if (target !== 'advanced' || selectedAdvancedMode !== 'custom-html') {
+      return null;
+    }
 
-      const html = readVirtualFileContents(files, 'src/index.html');
-      const css = readVirtualFileContents(files, 'src/styles.css');
-      return buildCustomHtmlPreviewState(html, css, locale);
-    },
-    [files, locale, selectedAdvancedMode, target],
-  );
+    const html = readVirtualFileContents(files, 'src/index.html');
+    const css = readVirtualFileContents(files, 'src/styles.css');
+    return buildCustomHtmlPreviewState(html, css, locale);
+  }, [files, locale, selectedAdvancedMode, target]);
   const validationItems = useMemo(
     () => buildValidationItems(locale, target, fixtureMode, viewport, previewPhase),
-    [fixtureMode, locale, previewPhase, target, viewport],
+    [fixtureMode, locale, previewPhase, target, viewport]
   );
 
   filesRef.current = files;
@@ -2176,21 +2184,14 @@ export function PublicPresenceAuthoringIdeScreen({
     }
 
     setFiles((current) =>
-      current.map((file) =>
-        file.path === path
-          ? { ...file, contents: nextContents }
-          : file,
-      ),
+      current.map((file) => (file.path === path ? { ...file, contents: nextContents } : file))
     );
     setEditorDirty(true);
     setSubmitStatus('idle');
   };
 
   const flushActiveEditorContents = () => {
-    syncEditorContentsRef.current(
-      activePathRef.current,
-      sourceEditorRef.current?.getValue(),
-    );
+    syncEditorContentsRef.current(activePathRef.current, sourceEditorRef.current?.getValue());
   };
 
   useEffect(() => {
@@ -2231,14 +2232,18 @@ export function PublicPresenceAuthoringIdeScreen({
     setFiles(initialFiles);
     setPersistedFiles(initialFiles);
     setActivePath(initialFiles[0]?.path ?? '');
-    setOpenTabs(getVisibleWorkspaceFiles(initialFiles).slice(0, 1).map((file) => file.path));
+    setOpenTabs(
+      getVisibleWorkspaceFiles(initialFiles)
+        .slice(0, 1)
+        .map((file) => file.path)
+    );
     setSelectedWorkspaceEntry(
       getVisibleWorkspaceFiles(initialFiles)[0]
         ? {
             kind: 'file',
             path: getVisibleWorkspaceFiles(initialFiles)[0]!.path,
           }
-        : null,
+        : null
     );
     setWorkspaceCommand(null);
     setWorkspacePathInput('');
@@ -2275,14 +2280,10 @@ export function PublicPresenceAuthoringIdeScreen({
 
     let cancelled = false;
 
-    void readPublicPresenceAsset(
-      request,
-      assetId,
-      {
-        scopeId: assetScopeId ?? null,
-        scopeType: assetScopeType ?? undefined,
-      },
-    )
+    void readPublicPresenceAsset(request, assetId, {
+      scopeId: assetScopeId ?? null,
+      scopeType: assetScopeType ?? undefined,
+    })
       .then((result) => {
         if (cancelled || editorDirtyRef.current) {
           return;
@@ -2290,7 +2291,7 @@ export function PublicPresenceAuthoringIdeScreen({
 
         applyPersistedAssetDetail(
           result,
-          result.currentRevision?.validationState === 'ready' ? 'ready' : 'idle',
+          result.currentRevision?.validationState === 'ready' ? 'ready' : 'idle'
         );
       })
       .catch(() => {
@@ -2300,15 +2301,7 @@ export function PublicPresenceAuthoringIdeScreen({
     return () => {
       cancelled = true;
     };
-  }, [
-    assetId,
-    assetScopeId,
-    assetScopeType,
-    authoringDraftKey,
-    isAssetMode,
-    request,
-    target,
-  ]);
+  }, [assetId, assetScopeId, assetScopeType, authoringDraftKey, isAssetMode, request, target]);
 
   useEffect(() => {
     if (target !== 'advanced' || selectedAdvancedMode !== 'page-source') {
@@ -2333,46 +2326,46 @@ export function PublicPresenceAuthoringIdeScreen({
           const nextFiles = buildCurrentHomepageSourceFiles(
             currentDocument,
             workspaceResult.selectedTemplateId,
-            locale,
+            locale
           );
 
           setAdvancedHomepageFiles(nextFiles);
           setLastSavedAt(workspaceResult.draftVersion?.updatedAt ?? null);
           setLastValidatedAt(
-            workspaceResult.portal?.lastValidatedAt
-            ?? workspaceResult.draftVersion?.updatedAt
-            ?? null,
+            workspaceResult.portal?.lastValidatedAt ??
+              workspaceResult.draftVersion?.updatedAt ??
+              null
           );
-          setSubmitStatus(
-            workspaceResult.draftVersion?.validationSnapshot ? 'ready' : 'idle',
-          );
+          setSubmitStatus(workspaceResult.draftVersion?.validationSnapshot ? 'ready' : 'idle');
 
           if (!editorDirtyRef.current && selectedAdvancedMode === 'page-source') {
             setFiles(nextFiles);
             setPersistedFiles(nextFiles);
             setActivePath((current) =>
-              nextFiles.some((file) => file.path === current)
-                ? current
-                : (nextFiles[0]?.path ?? ''),
+              nextFiles.some((file) => file.path === current) ? current : (nextFiles[0]?.path ?? '')
             );
-            setOpenTabs(getVisibleWorkspaceFiles(nextFiles).slice(0, 1).map((file) => file.path));
+            setOpenTabs(
+              getVisibleWorkspaceFiles(nextFiles)
+                .slice(0, 1)
+                .map((file) => file.path)
+            );
             setSelectedWorkspaceEntry(
               getVisibleWorkspaceFiles(nextFiles)[0]
                 ? {
                     kind: 'file',
                     path: getVisibleWorkspaceFiles(nextFiles)[0]!.path,
                   }
-                : null,
+                : null
             );
           }
         }
 
-          const previewResult = await readPublicPresenceDraftPreview(
-            request,
-            resolvedTalentId,
-            'current',
-            workspaceResult.selectedTemplateId,
-          ).catch(() => null);
+        const previewResult = await readPublicPresenceDraftPreview(
+          request,
+          resolvedTalentId,
+          'current',
+          workspaceResult.selectedTemplateId
+        ).catch(() => null);
 
         if (!cancelled) {
           setAdvancedPreviewProjection(previewResult);
@@ -2391,7 +2384,7 @@ export function PublicPresenceAuthoringIdeScreen({
             ja: '現在のホームページソースを読み込めませんでした。',
             ko: '현재 홈페이지 소스를 불러오지 못했습니다.',
             fr: 'Impossible de charger la source actuelle de la homepage.',
-          }),
+          })
         );
       });
 
@@ -2402,10 +2395,10 @@ export function PublicPresenceAuthoringIdeScreen({
 
   useEffect(() => {
     if (
-      target !== 'advanced'
-      || selectedAdvancedMode !== 'page-source'
-      || !advancedHomepageFiles
-      || editorDirtyRef.current
+      target !== 'advanced' ||
+      selectedAdvancedMode !== 'page-source' ||
+      !advancedHomepageFiles ||
+      editorDirtyRef.current
     ) {
       return;
     }
@@ -2415,7 +2408,7 @@ export function PublicPresenceAuthoringIdeScreen({
     setActivePath((current) =>
       advancedHomepageFiles.some((file) => file.path === current)
         ? current
-        : (advancedHomepageFiles[0]?.path ?? ''),
+        : (advancedHomepageFiles[0]?.path ?? '')
     );
   }, [advancedHomepageFiles, selectedAdvancedMode, target]);
 
@@ -2429,7 +2422,7 @@ export function PublicPresenceAuthoringIdeScreen({
     }
 
     const scopedElements = Array.from(
-      workbench.querySelectorAll<HTMLElement>('[data-overlay-scope="true"]'),
+      workbench.querySelectorAll<HTMLElement>('[data-overlay-scope="true"]')
     );
 
     if (!mobileModalOpen) {
@@ -2461,9 +2454,10 @@ export function PublicPresenceAuthoringIdeScreen({
       return;
     }
 
-    const panel = mobileOverlay === 'actions'
-      ? mobileActionsSheetPanelRef.current
-      : mobileUtilitySheetPanelRef.current;
+    const panel =
+      mobileOverlay === 'actions'
+        ? mobileActionsSheetPanelRef.current
+        : mobileUtilitySheetPanelRef.current;
 
     if (!panel) {
       return;
@@ -2484,9 +2478,8 @@ export function PublicPresenceAuthoringIdeScreen({
 
       const firstElement = focusableElements[0];
       const lastElement = focusableElements[focusableElements.length - 1];
-      const activeElement = document.activeElement instanceof HTMLElement
-        ? document.activeElement
-        : null;
+      const activeElement =
+        document.activeElement instanceof HTMLElement ? document.activeElement : null;
 
       if (!activeElement || !panel.contains(activeElement)) {
         event.preventDefault();
@@ -2554,15 +2547,13 @@ export function PublicPresenceAuthoringIdeScreen({
       lastSavedAt: string | null;
       lastValidatedAt: string | null;
     },
-    nextSubmitStatus: 'idle' | 'ready',
+    nextSubmitStatus: 'idle' | 'ready'
   ) => {
     const nextFiles = normalizeSourceBundleFiles(sourceBundle, initialFiles);
     setFiles(nextFiles);
     setPersistedFiles(nextFiles);
     setActivePath((current) =>
-      nextFiles.some((file) => file.path === current)
-        ? current
-        : (nextFiles[0]?.path ?? '')
+      nextFiles.some((file) => file.path === current) ? current : (nextFiles[0]?.path ?? '')
     );
     setOpenTabs((current) => {
       const nextVisiblePaths = getVisibleWorkspaceFiles(nextFiles).map((file) => file.path);
@@ -2575,9 +2566,7 @@ export function PublicPresenceAuthoringIdeScreen({
     setSubmitStatus(nextSubmitStatus);
   };
 
-  const persistAdvancedHomepageSource = async (
-    nextSubmitStatus: 'idle' | 'ready',
-  ) => {
+  const persistAdvancedHomepageSource = async (nextSubmitStatus: 'idle' | 'ready') => {
     const nextDocument = readCurrentHomepageSourceDocument(buildAuthoringSourceBundle());
     const result = await savePublicPresenceWorkspaceDraft(request, resolvedTalentId, {
       document: nextDocument,
@@ -2586,7 +2575,7 @@ export function PublicPresenceAuthoringIdeScreen({
     const nextFiles = buildCurrentHomepageSourceFiles(
       result.draftVersion?.document ?? nextDocument,
       result.selectedTemplateId,
-      locale,
+      locale
     );
 
     setAdvancedWorkspace(result);
@@ -2595,9 +2584,7 @@ export function PublicPresenceAuthoringIdeScreen({
     setFiles(nextFiles);
     setPersistedFiles(nextFiles);
     setActivePath((current) =>
-      nextFiles.some((file) => file.path === current)
-        ? current
-        : (nextFiles[0]?.path ?? '')
+      nextFiles.some((file) => file.path === current) ? current : (nextFiles[0]?.path ?? '')
     );
     setOpenTabs((current) => {
       const nextVisiblePaths = getVisibleWorkspaceFiles(nextFiles).map((file) => file.path);
@@ -2607,9 +2594,7 @@ export function PublicPresenceAuthoringIdeScreen({
     setEditorDirty(false);
     setLastSavedAt(result.draftVersion?.updatedAt ?? new Date().toISOString());
     setLastValidatedAt(
-      result.portal?.lastValidatedAt
-      ?? result.draftVersion?.updatedAt
-      ?? new Date().toISOString(),
+      result.portal?.lastValidatedAt ?? result.draftVersion?.updatedAt ?? new Date().toISOString()
     );
     setSubmitStatus(nextSubmitStatus);
 
@@ -2617,7 +2602,7 @@ export function PublicPresenceAuthoringIdeScreen({
       request,
       resolvedTalentId,
       'current',
-      result.selectedTemplateId,
+      result.selectedTemplateId
     ).catch(() => null);
 
     setAdvancedPreviewProjection(previewResult);
@@ -2625,14 +2610,18 @@ export function PublicPresenceAuthoringIdeScreen({
 
   const applyPersistedAssetDetail = (
     result: PublicPresenceAssetDetail,
-    nextSubmitStatus: 'idle' | 'ready',
+    nextSubmitStatus: 'idle' | 'ready'
   ) => {
     const resolvedAssetTemplateId = result.asset.templateId ?? effectiveTemplateId;
     const resolvedAssetComponentType = result.asset.componentType ?? effectiveComponentType;
-    const fallbackFiles = result.asset.assetKind === 'template'
-      ? buildTemplateFiles(resolvedAssetTemplateId, locale)
-      : buildComponentFiles(resolvedAssetComponentType, locale);
-    const nextFiles = normalizeSourceBundleFiles(result.currentRevision?.sourceBundle, fallbackFiles);
+    const fallbackFiles =
+      result.asset.assetKind === 'template'
+        ? buildTemplateFiles(resolvedAssetTemplateId, locale)
+        : buildComponentFiles(resolvedAssetComponentType, locale);
+    const nextFiles = normalizeSourceBundleFiles(
+      result.currentRevision?.sourceBundle,
+      fallbackFiles
+    );
 
     setAssetDetail(result);
     setAssetLabel(pickLocaleText(locale, result.asset.name));
@@ -2642,9 +2631,7 @@ export function PublicPresenceAuthoringIdeScreen({
     setFiles(nextFiles);
     setPersistedFiles(nextFiles);
     setActivePath((current) =>
-      nextFiles.some((file) => file.path === current)
-        ? current
-        : (nextFiles[0]?.path ?? '')
+      nextFiles.some((file) => file.path === current) ? current : (nextFiles[0]?.path ?? '')
     );
     setOpenTabs((current) => {
       const nextVisiblePaths = getVisibleWorkspaceFiles(nextFiles).map((file) => file.path);
@@ -2657,7 +2644,7 @@ export function PublicPresenceAuthoringIdeScreen({
             kind: 'file',
             path: getVisibleWorkspaceFiles(nextFiles)[0]!.path,
           }
-        : null,
+        : null
     );
     setWorkspaceCommandError(null);
     setEditorDirty(false);
@@ -2673,36 +2660,30 @@ export function PublicPresenceAuthoringIdeScreen({
         ? buildTalentSettingsPath(tenantId, assetScopeId, { section: 'config-entities' })
         : buildTenantSettingsPath(tenantId, 'config-entities')
     : null;
-  const legacyCompatibilityEntry = !isAssetMode && (target === 'template' || target === 'component');
+  const legacyCompatibilityEntry =
+    !isAssetMode && (target === 'template' || target === 'component');
   const legacyCompatibilitySettingsHref = legacyCompatibilityEntry
     ? buildTalentSettingsPath(tenantId, resolvedTalentId, { section: 'config-entities' })
     : null;
 
-  const exitHref =
-    isAssetMode
-      ? (assetSettingsHref ?? buildTenantSettingsPath(tenantId, 'config-entities'))
-      : target === 'template'
+  const exitHref = isAssetMode
+    ? (assetSettingsHref ?? buildTenantSettingsPath(tenantId, 'config-entities'))
+    : target === 'template'
       ? buildPublicPresenceHomepageSurfacePath(tenantId, resolvedTalentId, 'templates')
       : target === 'component'
         ? buildPublicPresenceHomepageSurfacePath(tenantId, resolvedTalentId, 'components')
         : buildPublicPresenceStudioEditorPath(tenantId, resolvedTalentId, effectiveTemplateId);
-  const previewHref =
-    isAssetMode
-      ? undefined
-      : target === 'template'
+  const previewHref = isAssetMode
+    ? undefined
+    : target === 'template'
       ? buildPublicPresenceStudioPreviewPath(tenantId, resolvedTalentId, effectiveTemplateId)
       : buildPublicPresenceStudioPreviewPath(tenantId, resolvedTalentId);
   const retryAuthoringHref =
     isAssetMode && assetId
-      ? buildPublicPresenceAssetIdePath(
-          tenantId,
-          target,
-          assetId,
-          {
-            scopeId: assetScopeId ?? null,
-            scopeType: assetScopeType ?? undefined,
-          },
-        )
+      ? buildPublicPresenceAssetIdePath(tenantId, target, assetId, {
+          scopeId: assetScopeId ?? null,
+          scopeType: assetScopeType ?? undefined,
+        })
       : undefined;
   const saveStatusLabel = editorDirty
     ? pickLocaleText(locale, {
@@ -2721,39 +2702,48 @@ export function PublicPresenceAuthoringIdeScreen({
         ko: '드래프트 저장됨',
         fr: 'Brouillon enregistré',
       });
-  const validationStatusLabel = lastValidatedAt && !editorDirty
-    ? pickLocaleText(locale, {
-        en: 'Validation refreshed',
-        zh_HANS: '验证已刷新',
-        zh_HANT: '驗證已刷新',
-        ja: '検証を更新済み',
-        ko: '검증 갱신됨',
-        fr: 'Validation rafraîchie',
-      })
-    : pickLocaleText(locale, {
-        en: 'Validation needed',
-        zh_HANS: '需要验证',
-        zh_HANT: '需要驗證',
-        ja: '検証が必要',
-        ko: '검증 필요',
-        fr: 'Validation requise',
-      });
-  const formattedSavedAt = formatLocaleDateTime(locale, lastSavedAt, pickLocaleText(locale, {
-    en: 'Not saved in this session',
-    zh_HANS: '本会话尚未保存',
-    zh_HANT: '本工作階段尚未儲存',
-    ja: 'このセッションではまだ保存していません',
-    ko: '이번 세션에서는 아직 저장하지 않았습니다',
-    fr: 'Pas encore enregistré dans cette session',
-  }));
-  const formattedValidatedAt = formatLocaleDateTime(locale, lastValidatedAt, pickLocaleText(locale, {
-    en: 'Validation has not run yet',
-    zh_HANS: '尚未运行验证',
-    zh_HANT: '尚未執行驗證',
-    ja: 'まだ検証を実行していません',
-    ko: '아직 검증을 실행하지 않았습니다',
-    fr: 'La validation n’a pas encore été lancée',
-  }));
+  const validationStatusLabel =
+    lastValidatedAt && !editorDirty
+      ? pickLocaleText(locale, {
+          en: 'Validation refreshed',
+          zh_HANS: '验证已刷新',
+          zh_HANT: '驗證已刷新',
+          ja: '検証を更新済み',
+          ko: '검증 갱신됨',
+          fr: 'Validation rafraîchie',
+        })
+      : pickLocaleText(locale, {
+          en: 'Validation needed',
+          zh_HANS: '需要验证',
+          zh_HANT: '需要驗證',
+          ja: '検証が必要',
+          ko: '검증 필요',
+          fr: 'Validation requise',
+        });
+  const formattedSavedAt = formatLocaleDateTime(
+    locale,
+    lastSavedAt,
+    pickLocaleText(locale, {
+      en: 'Not saved in this session',
+      zh_HANS: '本会话尚未保存',
+      zh_HANT: '本工作階段尚未儲存',
+      ja: 'このセッションではまだ保存していません',
+      ko: '이번 세션에서는 아직 저장하지 않았습니다',
+      fr: 'Pas encore enregistré dans cette session',
+    })
+  );
+  const formattedValidatedAt = formatLocaleDateTime(
+    locale,
+    lastValidatedAt,
+    pickLocaleText(locale, {
+      en: 'Validation has not run yet',
+      zh_HANS: '尚未运行验证',
+      zh_HANT: '尚未執行驗證',
+      ja: 'まだ検証を実行していません',
+      ko: '아직 검증을 실행하지 않았습니다',
+      fr: 'La validation n’a pas encore été lancée',
+    })
+  );
   const groupedFiles = useMemo(
     () =>
       (['source', 'styles', 'docs', 'tests', 'sidecars'] as const)
@@ -2762,7 +2752,7 @@ export function PublicPresenceAuthoringIdeScreen({
           groupId,
         }))
         .filter((group) => group.entries.length > 0),
-    [workspaceEntries],
+    [workspaceEntries]
   );
   const showDesktopUtilityPanel = isWideDesktop && desktopUtilityPanel !== null;
   const ideGridClass = showDesktopUtilityPanel
@@ -2785,9 +2775,7 @@ export function PublicPresenceAuthoringIdeScreen({
   };
 
   const beginWorkspaceCommand = (kind: WorkspaceCommandKind) => {
-    const selectedPath = selectedWorkspaceEntry?.path
-      ?? activeFile?.path
-      ?? '';
+    const selectedPath = selectedWorkspaceEntry?.path ?? activeFile?.path ?? '';
     const nextInput =
       kind === 'rename'
         ? selectedPath
@@ -2823,7 +2811,10 @@ export function PublicPresenceAuthoringIdeScreen({
     const currentFilePaths = new Set(visibleFiles.map((file) => file.path));
     const currentFolderPaths = new Set(getWorkspaceFolders(files));
 
-    if (workspaceCommand === 'new-file' && (currentFilePaths.has(nextPath) || currentFolderPaths.has(nextPath))) {
+    if (
+      workspaceCommand === 'new-file' &&
+      (currentFilePaths.has(nextPath) || currentFolderPaths.has(nextPath))
+    ) {
       setWorkspaceCommandError(
         pickLocaleText(locale, {
           en: 'That path is already in this workspace.',
@@ -2832,12 +2823,15 @@ export function PublicPresenceAuthoringIdeScreen({
           ja: 'このパスはすでに現在のワークスペースで使われています。',
           ko: '이 경로는 이미 현재 워크스페이스에서 사용 중입니다.',
           fr: 'Ce chemin existe déjà dans ce workspace.',
-        }),
+        })
       );
       return;
     }
 
-    if (workspaceCommand === 'new-folder' && (currentFolderPaths.has(nextPath) || currentFilePaths.has(nextPath))) {
+    if (
+      workspaceCommand === 'new-folder' &&
+      (currentFolderPaths.has(nextPath) || currentFilePaths.has(nextPath))
+    ) {
       setWorkspaceCommandError(
         pickLocaleText(locale, {
           en: 'That folder path is already in this workspace.',
@@ -2846,7 +2840,7 @@ export function PublicPresenceAuthoringIdeScreen({
           ja: 'このフォルダパスはすでに現在のワークスペースで使われています。',
           ko: '이 폴더 경로는 이미 현재 워크스페이스에서 사용 중입니다.',
           fr: 'Ce dossier existe déjà dans ce workspace.',
-        }),
+        })
       );
       return;
     }
@@ -2860,16 +2854,16 @@ export function PublicPresenceAuthoringIdeScreen({
           ja: '先にファイルまたはフォルダを選んでください。',
           ko: '먼저 파일이나 폴더를 선택하세요.',
           fr: 'Choisissez d’abord un fichier ou un dossier.',
-        }),
+        })
       );
       return;
     }
 
     if (
-      workspaceCommand === 'rename'
-      && selectedWorkspaceEntry
-      && nextPath !== selectedWorkspaceEntry.path
-      && (currentFilePaths.has(nextPath) || currentFolderPaths.has(nextPath))
+      workspaceCommand === 'rename' &&
+      selectedWorkspaceEntry &&
+      nextPath !== selectedWorkspaceEntry.path &&
+      (currentFilePaths.has(nextPath) || currentFolderPaths.has(nextPath))
     ) {
       setWorkspaceCommandError(
         pickLocaleText(locale, {
@@ -2879,7 +2873,7 @@ export function PublicPresenceAuthoringIdeScreen({
           ja: '別のパスを指定してから名前を変更してください。',
           ko: '다른 경로를 지정한 뒤 이름을 바꾸세요.',
           fr: 'Choisissez un autre chemin avant de renommer.',
-        }),
+        })
       );
       return;
     }
@@ -2939,7 +2933,7 @@ export function PublicPresenceAuthoringIdeScreen({
             kind: 'file',
             path: nextActivePath,
           }
-        : null,
+        : null
     );
   };
 
@@ -2948,7 +2942,8 @@ export function PublicPresenceAuthoringIdeScreen({
       const nextTabs = current.filter((entryPath) => entryPath !== path);
 
       if (activePath === path) {
-        const nextActive = nextTabs[0] ?? visibleFiles.find((file) => file.path !== path)?.path ?? '';
+        const nextActive =
+          nextTabs[0] ?? visibleFiles.find((file) => file.path !== path)?.path ?? '';
         setActivePath(nextActive);
         setSelectedWorkspaceEntry(
           nextActive
@@ -2956,7 +2951,7 @@ export function PublicPresenceAuthoringIdeScreen({
                 kind: 'file',
                 path: nextActive,
               }
-            : null,
+            : null
         );
       }
 
@@ -2980,7 +2975,7 @@ export function PublicPresenceAuthoringIdeScreen({
           {
             scopeId: assetScopeId ?? null,
             scopeType: assetScopeType ?? undefined,
-          },
+          }
         );
         applyPersistedAssetDetail(result, 'idle');
       } catch {
@@ -3019,7 +3014,7 @@ export function PublicPresenceAuthoringIdeScreen({
           lastSavedAt: now,
           lastValidatedAt: null,
         },
-        'idle',
+        'idle'
       );
       return;
     }
@@ -3052,7 +3047,7 @@ export function PublicPresenceAuthoringIdeScreen({
           {
             scopeId: assetScopeId ?? null,
             scopeType: assetScopeType ?? undefined,
-          },
+          }
         );
         applyPersistedAssetDetail(result, 'ready');
         openValidationSurface();
@@ -3093,7 +3088,7 @@ export function PublicPresenceAuthoringIdeScreen({
           lastSavedAt: now,
           lastValidatedAt: now,
         },
-        'ready',
+        'ready'
       );
       openValidationSurface();
       return;
@@ -3128,56 +3123,75 @@ export function PublicPresenceAuthoringIdeScreen({
     setSubmitStatus('ready');
   };
 
-  const mobileUtilitySheetId = activeMobileUtilityOverlay === 'files'
-    ? fileDrawerId
-    : activeMobileUtilityOverlay === 'checks'
-      ? validationDrawerId
-      : mobilePreviewOptionsSheetId;
-  const mobileUtilitySheetLabel = activeMobileUtilityOverlay === 'files'
-    ? pickLocaleText(locale, {
-        en: 'Files sheet',
-        zh_HANS: '文件抽屉',
-        zh_HANT: '檔案抽屜',
-        ja: 'ファイルシート',
-        ko: '파일 시트',
-        fr: 'Feuille fichiers',
-      })
-    : activeMobileUtilityOverlay === 'checks'
+  const mobileUtilitySheetId =
+    activeMobileUtilityOverlay === 'files'
+      ? fileDrawerId
+      : activeMobileUtilityOverlay === 'checks'
+        ? validationDrawerId
+        : mobilePreviewOptionsSheetId;
+  const mobileUtilitySheetLabel =
+    activeMobileUtilityOverlay === 'files'
       ? pickLocaleText(locale, {
-          en: 'Validation checks sheet',
-          zh_HANS: '校验检查抽屉',
-          zh_HANT: '驗證檢查抽屜',
-          ja: '検証チェックシート',
-          ko: '검증 점검 시트',
-          fr: 'Feuille contrôles',
+          en: 'Files sheet',
+          zh_HANS: '文件抽屉',
+          zh_HANT: '檔案抽屜',
+          ja: 'ファイルシート',
+          ko: '파일 시트',
+          fr: 'Feuille fichiers',
         })
-      : pickLocaleText(locale, {
-          en: 'Preview options sheet',
-          zh_HANS: '预览选项抽屉',
-          zh_HANT: '預覽選項抽屜',
-          ja: 'プレビュー設定シート',
-          ko: '미리보기 옵션 시트',
-          fr: 'Feuille options aperçu',
-        });
-  const mobileUtilitySheetTestId = activeMobileUtilityOverlay === 'files'
-    ? 'ide-file-drawer'
-    : activeMobileUtilityOverlay === 'checks'
-      ? 'ide-validation-drawer'
-      : 'ide-mobile-preview-options-sheet';
+      : activeMobileUtilityOverlay === 'checks'
+        ? pickLocaleText(locale, {
+            en: 'Validation checks sheet',
+            zh_HANS: '校验检查抽屉',
+            zh_HANT: '驗證檢查抽屜',
+            ja: '検証チェックシート',
+            ko: '검증 점검 시트',
+            fr: 'Feuille contrôles',
+          })
+        : pickLocaleText(locale, {
+            en: 'Preview options sheet',
+            zh_HANS: '预览选项抽屉',
+            zh_HANT: '預覽選項抽屜',
+            ja: 'プレビュー設定シート',
+            ko: '미리보기 옵션 시트',
+            fr: 'Feuille options aperçu',
+          });
+  const mobileUtilitySheetTestId =
+    activeMobileUtilityOverlay === 'files'
+      ? 'ide-file-drawer'
+      : activeMobileUtilityOverlay === 'checks'
+        ? 'ide-validation-drawer'
+        : 'ide-mobile-preview-options-sheet';
 
   const ideBadgeLabel = pickLocaleText(locale, {
-    en: target === 'template' ? 'Template IDE' : target === 'component' ? 'Component IDE' : 'Advanced IDE',
+    en:
+      target === 'template'
+        ? 'Template IDE'
+        : target === 'component'
+          ? 'Component IDE'
+          : 'Advanced IDE',
     zh_HANS: target === 'template' ? '模板 IDE' : target === 'component' ? '组件 IDE' : '高级 IDE',
     zh_HANT: target === 'template' ? '模板 IDE' : target === 'component' ? '元件 IDE' : '進階 IDE',
-    ja: target === 'template' ? 'テンプレート IDE' : target === 'component' ? 'コンポーネント IDE' : '詳細 IDE',
+    ja:
+      target === 'template'
+        ? 'テンプレート IDE'
+        : target === 'component'
+          ? 'コンポーネント IDE'
+          : '詳細 IDE',
     ko: target === 'template' ? '템플릿 IDE' : target === 'component' ? '컴포넌트 IDE' : '고급 IDE',
-    fr: target === 'template' ? 'IDE Template' : target === 'component' ? 'IDE Composant' : 'IDE avancé',
+    fr:
+      target === 'template'
+        ? 'IDE Template'
+        : target === 'component'
+          ? 'IDE Composant'
+          : 'IDE avancé',
   });
-  const title = target === 'advanced'
-    ? advancedWorkspace?.draftVersion?.document.metadata?.title
-      ?? advancedWorkspace?.publicRoute?.canonicalPath
-      ?? authoringSubjectLabel
-    : authoringSubjectLabel;
+  const title =
+    target === 'advanced'
+      ? (advancedWorkspace?.draftVersion?.document.metadata?.title ??
+        advancedWorkspace?.publicRoute?.canonicalPath ??
+        authoringSubjectLabel)
+      : authoringSubjectLabel;
   const previewSurfaceLabel = getPreviewSurfaceLabel(locale, target, selectedAdvancedMode);
   const authoringActions = [
     {
@@ -3206,53 +3220,65 @@ export function PublicPresenceAuthoringIdeScreen({
       icon: <PlaySquare className="h-4 w-4" aria-hidden="true" />,
       kind: 'button' as const,
     },
-    ...(!isAssetMode ? [{
-      key: 'submit',
-      label: pickLocaleText(locale, {
-        en: 'Submit',
-        zh_HANS: '提交审核',
-        zh_HANT: '提交審核',
-        ja: 'レビュー提出',
-        ko: '검토 제출',
-        fr: 'Soumettre',
-      }),
-      icon: <Upload className="h-4 w-4" aria-hidden="true" />,
-      kind: 'button' as const,
-    }] : []),
-    ...(!isAssetMode && previewHref ? [{
-      key: 'preview-route',
-      label: pickLocaleText(locale, {
-        en: 'Preview',
-        zh_HANS: '预览',
-        zh_HANT: '預覽',
-        ja: 'プレビュー',
-        ko: '미리보기',
-        fr: 'Aperçu',
-      }),
-      icon: <Eye className="h-4 w-4" aria-hidden="true" />,
-      href: previewHref,
-      kind: 'link' as const,
-    }] : []),
-    ...(!isAssetMode ? [{
-      key: 'retry-authoring',
-      label:
-        target === 'template'
-          ? getHomepageSurfaceActionLabel(locale, 'createTemplate')
-          : target === 'component'
-            ? getHomepageSurfaceActionLabel(locale, 'createComponent')
-            : pickLocaleText(locale, {
-                en: 'Open Studio',
-                zh_HANS: '打开工作台',
-                zh_HANT: '打開工作台',
-                ja: 'Studio を開く',
-                ko: 'Studio 열기',
-                fr: 'Ouvrir le studio',
-              }),
-      icon: <Code2 className="h-4 w-4" aria-hidden="true" />,
-      href: retryAuthoringHref ?? exitHref,
-      kind: 'link' as const,
-      tone: 'rose' as const,
-    }] : []),
+    ...(!isAssetMode
+      ? [
+          {
+            key: 'submit',
+            label: pickLocaleText(locale, {
+              en: 'Submit',
+              zh_HANS: '提交审核',
+              zh_HANT: '提交審核',
+              ja: 'レビュー提出',
+              ko: '검토 제출',
+              fr: 'Soumettre',
+            }),
+            icon: <Upload className="h-4 w-4" aria-hidden="true" />,
+            kind: 'button' as const,
+          },
+        ]
+      : []),
+    ...(!isAssetMode && previewHref
+      ? [
+          {
+            key: 'preview-route',
+            label: pickLocaleText(locale, {
+              en: 'Preview',
+              zh_HANS: '预览',
+              zh_HANT: '預覽',
+              ja: 'プレビュー',
+              ko: '미리보기',
+              fr: 'Aperçu',
+            }),
+            icon: <Eye className="h-4 w-4" aria-hidden="true" />,
+            href: previewHref,
+            kind: 'link' as const,
+          },
+        ]
+      : []),
+    ...(!isAssetMode
+      ? [
+          {
+            key: 'retry-authoring',
+            label:
+              target === 'template'
+                ? getHomepageSurfaceActionLabel(locale, 'createTemplate')
+                : target === 'component'
+                  ? getHomepageSurfaceActionLabel(locale, 'createComponent')
+                  : pickLocaleText(locale, {
+                      en: 'Open Studio',
+                      zh_HANS: '打开工作台',
+                      zh_HANT: '打開工作台',
+                      ja: 'Studio を開く',
+                      ko: 'Studio 열기',
+                      fr: 'Ouvrir le studio',
+                    }),
+            icon: <Code2 className="h-4 w-4" aria-hidden="true" />,
+            href: retryAuthoringHref ?? exitHref,
+            kind: 'link' as const,
+            tone: 'rose' as const,
+          },
+        ]
+      : []),
     {
       key: 'exit',
       label: pickLocaleText(locale, {
@@ -3421,7 +3447,7 @@ export function PublicPresenceAuthoringIdeScreen({
               {getVirtualFileGroupLabel(locale, group.groupId)}
             </p>
             <div className="space-y-2">
-              {group.entries.map((entry) => (
+              {group.entries.map((entry) =>
                 entry.kind === 'folder' ? (
                   <button
                     key={`folder-${entry.path}`}
@@ -3429,7 +3455,8 @@ export function PublicPresenceAuthoringIdeScreen({
                     data-testid={`ide-folder-${entry.path}`}
                     onClick={() => selectWorkspaceFolder(entry.path)}
                     className={`flex w-full items-center gap-3 rounded-2xl border px-3 py-3 text-left text-sm font-medium transition ${
-                      selectedWorkspaceEntry?.kind === 'folder' && selectedWorkspaceEntry.path === entry.path
+                      selectedWorkspaceEntry?.kind === 'folder' &&
+                      selectedWorkspaceEntry.path === entry.path
                         ? 'border-rose-300 bg-rose-50 text-rose-800'
                         : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'
                     }`}
@@ -3463,12 +3490,15 @@ export function PublicPresenceAuthoringIdeScreen({
                     }`}
                     style={{ paddingLeft: `${0.75 + entry.depth * 0.75}rem` }}
                   >
-                    {resolveFileIcon(visibleFiles.find((file) => file.path === entry.path) ?? activeFile ?? {
-                      contents: '',
-                      kind: 'code',
-                      language: 'text',
-                      path: entry.path,
-                    })}
+                    {resolveFileIcon(
+                      visibleFiles.find((file) => file.path === entry.path) ??
+                        activeFile ?? {
+                          contents: '',
+                          kind: 'code',
+                          language: 'text',
+                          path: entry.path,
+                        }
+                    )}
                     <span className="truncate">{entry.label}</span>
                     {dirtyFilePaths.has(entry.path) ? (
                       <span className="ml-auto text-[11px] font-semibold uppercase tracking-[0.14em] text-amber-700">
@@ -3484,7 +3514,7 @@ export function PublicPresenceAuthoringIdeScreen({
                     ) : null}
                   </button>
                 )
-              ))}
+              )}
             </div>
           </div>
         ))}
@@ -3498,7 +3528,12 @@ export function PublicPresenceAuthoringIdeScreen({
       contentClassName="max-w-none"
       decorationDensity="calm"
     >
-      <div className="space-y-2" data-testid="ide-workbench" data-workbench-shell="true" ref={workbenchShellRef}>
+      <div
+        className="space-y-2"
+        data-testid="ide-workbench"
+        data-workbench-shell="true"
+        ref={workbenchShellRef}
+      >
         {legacyCompatibilityEntry && legacyCompatibilitySettingsHref ? (
           <PublicPresenceSurface
             className="border-sky-200 bg-sky-50 px-3 py-3 text-sky-900"
@@ -3540,8 +3575,10 @@ export function PublicPresenceAuthoringIdeScreen({
                 <p className="text-sm leading-6 text-sky-900/90">
                   {pickLocaleText(locale, {
                     en: 'Start new homepage asset work from Configuration Entity Management, then return here only when you need to inspect a legacy draft path.',
-                    zh_HANS: '新的主页资产工作请从配置实体管理开始；只有在需要检查旧草稿路径时才回到这里。',
-                    zh_HANT: '新的主頁資產工作請從配置實體管理開始；只有在需要檢查舊草稿路徑時才回到這裡。',
+                    zh_HANS:
+                      '新的主页资产工作请从配置实体管理开始；只有在需要检查旧草稿路径时才回到这里。',
+                    zh_HANT:
+                      '新的主頁資產工作請從配置實體管理開始；只有在需要檢查舊草稿路徑時才回到這裡。',
                     ja: '新しいホームページ資産作業は Configuration Entity Management から始め、旧ドラフト経路を確認する必要がある時だけここへ戻ってください。',
                     ko: '새 홈페이지 자산 작업은 Configuration Entity Management 에서 시작하고, 레거시 드래프트 경로를 확인해야 할 때만 여기로 돌아오세요.',
                     fr: 'Commencez le nouveau travail asset homepage depuis Configuration Entity Management, puis revenez ici seulement pour vérifier un ancien chemin de brouillon.',
@@ -3580,7 +3617,7 @@ export function PublicPresenceAuthoringIdeScreen({
           </PublicPresenceSurface>
         ) : null}
         <PublicPresenceSurface
-          className="sticky top-2 z-20 px-3 py-2 sm:px-3 sm:py-2 lg:px-3 lg:py-2 shadow-sm backdrop-blur"
+          className="sticky top-2 z-20 px-3 py-2 shadow-sm backdrop-blur sm:px-3 sm:py-2 lg:px-3 lg:py-2"
           data-overlay-scope="true"
           data-testid="ide-topbar"
         >
@@ -3621,14 +3658,16 @@ export function PublicPresenceAuthoringIdeScreen({
                 }}
                 className="inline-flex shrink-0 items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
               >
-                <span>{pickLocaleText(locale, {
-                  en: 'Actions',
-                  zh_HANS: '操作',
-                  zh_HANT: '操作',
-                  ja: '操作',
-                  ko: '작업',
-                  fr: 'Actions',
-                })}</span>
+                <span>
+                  {pickLocaleText(locale, {
+                    en: 'Actions',
+                    zh_HANS: '操作',
+                    zh_HANT: '操作',
+                    ja: '操作',
+                    ko: '작업',
+                    fr: 'Actions',
+                  })}
+                </span>
               </button>
             </div>
             <div className="grid grid-cols-2 gap-2">
@@ -3680,7 +3719,7 @@ export function PublicPresenceAuthoringIdeScreen({
               </button>
             </div>
             <div
-              className="rounded-2xl border border-slate-200 bg-white/96 px-3 py-2 text-sm font-medium text-slate-700"
+              className="bg-white/96 rounded-2xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700"
               data-testid="ide-mobile-surface-status"
               role="status"
             >
@@ -3709,10 +3748,7 @@ export function PublicPresenceAuthoringIdeScreen({
             <PublicPresenceBadge tone="slate" variant="outline">
               {title}
             </PublicPresenceBadge>
-            <PublicPresenceBadge
-              tone={editorDirty ? 'warning' : 'success'}
-              variant="outline"
-            >
+            <PublicPresenceBadge tone={editorDirty ? 'warning' : 'success'} variant="outline">
               {saveStatusLabel}
             </PublicPresenceBadge>
             <PublicPresenceBadge
@@ -3729,7 +3765,7 @@ export function PublicPresenceAuthoringIdeScreen({
             </PublicPresenceBadge>
             {target === 'advanced' ? (
               <PublicPresenceBadge tone="slate" variant="outline">
-                    {getAdvancedModeLabel(locale, selectedAdvancedMode)}
+                {getAdvancedModeLabel(locale, selectedAdvancedMode)}
               </PublicPresenceBadge>
             ) : null}
             <span className="h-5 w-px shrink-0 bg-slate-200" aria-hidden="true" />
@@ -3739,8 +3775,8 @@ export function PublicPresenceAuthoringIdeScreen({
                   key={action.key}
                   type="button"
                   disabled={
-                    authoringAction !== 'idle'
-                    || (action.key === 'save'
+                    authoringAction !== 'idle' ||
+                    (action.key === 'save'
                       ? !editorDirty
                       : action.key === 'submit'
                         ? editorDirty || !lastValidatedAt
@@ -3773,7 +3809,7 @@ export function PublicPresenceAuthoringIdeScreen({
                   {action.icon}
                   <span>{action.label}</span>
                 </Link>
-              ),
+              )
             )}
           </div>
         </PublicPresenceSurface>
@@ -3799,114 +3835,117 @@ export function PublicPresenceAuthoringIdeScreen({
               fr: 'Feuille actions authoring',
             })}
             aria-modal
-            className="!fixed inset-x-3 bottom-3 z-40 max-h-[72vh] overflow-auto rounded-[2rem] border border-slate-200/90 bg-white/97 p-4 shadow-xl xl:hidden"
+            className="bg-white/97 !fixed inset-x-3 bottom-3 z-40 max-h-[72vh] overflow-auto rounded-[2rem] border border-slate-200/90 p-4 shadow-xl xl:hidden"
             data-testid="ide-mobile-actions-sheet"
             id={mobileActionsSheetId}
             role="dialog"
             variant="inset"
           >
             <div ref={mobileActionsSheetPanelRef} tabIndex={-1}>
-            <div className="mb-4 flex items-center justify-between gap-3">
-              <div className="space-y-1">
-                <h2 className="text-base font-semibold text-slate-950">
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <div className="space-y-1">
+                  <h2 className="text-base font-semibold text-slate-950">
+                    {pickLocaleText(locale, {
+                      en: 'Authoring actions',
+                      zh_HANS: '创作操作',
+                      zh_HANT: '創作操作',
+                      ja: 'オーサリング操作',
+                      ko: '작성 작업',
+                      fr: 'Actions d’authoring',
+                    })}
+                  </h2>
+                  <p className="text-sm text-slate-600">
+                    {pickLocaleText(locale, {
+                      en: 'Use this sheet for save, review, preview, and route actions.',
+                      zh_HANS: '在这里处理保存、提审、预览与跳转操作。',
+                      zh_HANT: '在這裡處理儲存、送審、預覽與跳轉操作。',
+                      ja: 'ここで保存、レビュー、プレビュー、移動操作を行います。',
+                      ko: '이 시트에서 저장, 검토, 미리보기, 이동 작업을 진행합니다.',
+                      fr: 'Utilisez cette feuille pour enregistrer, réviser, prévisualiser ou naviguer.',
+                    })}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setMobileOverlay(null)}
+                  ref={mobileActionsOverlay.mobileInitialFocusRef}
+                  className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+                >
+                  <ChevronLeft className="h-4 w-4" aria-hidden="true" />
                   {pickLocaleText(locale, {
-                    en: 'Authoring actions',
-                    zh_HANS: '创作操作',
-                    zh_HANT: '創作操作',
-                    ja: 'オーサリング操作',
-                    ko: '작성 작업',
-                    fr: 'Actions d’authoring',
+                    en: 'Close',
+                    zh_HANS: '关闭',
+                    zh_HANT: '關閉',
+                    ja: '閉じる',
+                    ko: '닫기',
+                    fr: 'Fermer',
                   })}
-                </h2>
-                <p className="text-sm text-slate-600">
-                  {pickLocaleText(locale, {
-                    en: 'Use this sheet for save, review, preview, and route actions.',
-                    zh_HANS: '在这里处理保存、提审、预览与跳转操作。',
-                    zh_HANT: '在這裡處理儲存、送審、預覽與跳轉操作。',
-                    ja: 'ここで保存、レビュー、プレビュー、移動操作を行います。',
-                    ko: '이 시트에서 저장, 검토, 미리보기, 이동 작업을 진행합니다.',
-                    fr: 'Utilisez cette feuille pour enregistrer, réviser, prévisualiser ou naviguer.',
-                  })}
-                </p>
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => setMobileOverlay(null)}
-                ref={mobileActionsOverlay.mobileInitialFocusRef}
-                className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
-              >
-                <ChevronLeft className="h-4 w-4" aria-hidden="true" />
-                {pickLocaleText(locale, {
-                  en: 'Close',
-                  zh_HANS: '关闭',
-                  zh_HANT: '關閉',
-                  ja: '閉じる',
-                  ko: '닫기',
-                  fr: 'Fermer',
-                })}
-              </button>
-            </div>
-            <div className="mb-4 flex flex-wrap items-center gap-2">
-              <PublicPresenceBadge tone={editorDirty ? 'warning' : 'success'} variant="outline">
-                {saveStatusLabel}
-              </PublicPresenceBadge>
-              <PublicPresenceBadge tone={lastValidatedAt && !editorDirty ? 'success' : 'warning'} variant="outline">
-                {validationStatusLabel}
-              </PublicPresenceBadge>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              {authoringActions.map((action) =>
-                action.kind === 'button' ? (
-                  <button
-                    key={action.key}
-                    type="button"
-                    disabled={
-                      authoringAction !== 'idle'
-                      || (action.key === 'save'
-                        ? !editorDirty
-                        : action.key === 'submit'
-                          ? editorDirty || !lastValidatedAt
-                          : false)
-                    }
-                    onClick={() => {
-                      if (action.key === 'save') {
-                        void handleSaveDraft();
-                      } else if (action.key === 'validate') {
-                        void handleValidate();
-                      } else if (action.key === 'submit') {
-                        void handleSubmit();
+              <div className="mb-4 flex flex-wrap items-center gap-2">
+                <PublicPresenceBadge tone={editorDirty ? 'warning' : 'success'} variant="outline">
+                  {saveStatusLabel}
+                </PublicPresenceBadge>
+                <PublicPresenceBadge
+                  tone={lastValidatedAt && !editorDirty ? 'success' : 'warning'}
+                  variant="outline"
+                >
+                  {validationStatusLabel}
+                </PublicPresenceBadge>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {authoringActions.map((action) =>
+                  action.kind === 'button' ? (
+                    <button
+                      key={action.key}
+                      type="button"
+                      disabled={
+                        authoringAction !== 'idle' ||
+                        (action.key === 'save'
+                          ? !editorDirty
+                          : action.key === 'submit'
+                            ? editorDirty || !lastValidatedAt
+                            : false)
                       }
+                      onClick={() => {
+                        if (action.key === 'save') {
+                          void handleSaveDraft();
+                        } else if (action.key === 'validate') {
+                          void handleValidate();
+                        } else if (action.key === 'submit') {
+                          void handleSubmit();
+                        }
 
-                      setMobileOverlay((current) => (current === 'actions' ? null : current));
-                    }}
-                    className="inline-flex min-h-14 flex-col items-center justify-center gap-1 rounded-2xl border border-slate-200 bg-white px-2 py-2 text-center text-[11px] font-semibold leading-tight text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    {action.icon}
-                    <span>{action.label}</span>
-                  </button>
-                ) : (
-                  <Link
-                    key={action.key}
-                    href={action.href ?? '#'}
-                    className={`inline-flex min-h-14 flex-col items-center justify-center gap-1 rounded-2xl border px-2 py-2 text-center text-[11px] font-semibold leading-tight transition ${
-                      action.tone === 'rose'
-                        ? 'border-rose-200 bg-white text-rose-700 hover:border-rose-300 hover:bg-rose-50'
-                        : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'
-                    }`}
-                  >
-                    {action.icon}
-                    <span>{action.label}</span>
-                  </Link>
-                ),
-              )}
-            </div>
+                        setMobileOverlay((current) => (current === 'actions' ? null : current));
+                      }}
+                      className="inline-flex min-h-14 flex-col items-center justify-center gap-1 rounded-2xl border border-slate-200 bg-white px-2 py-2 text-center text-[11px] font-semibold leading-tight text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {action.icon}
+                      <span>{action.label}</span>
+                    </button>
+                  ) : (
+                    <Link
+                      key={action.key}
+                      href={action.href ?? '#'}
+                      className={`inline-flex min-h-14 flex-col items-center justify-center gap-1 rounded-2xl border px-2 py-2 text-center text-[11px] font-semibold leading-tight transition ${
+                        action.tone === 'rose'
+                          ? 'border-rose-200 bg-white text-rose-700 hover:border-rose-300 hover:bg-rose-50'
+                          : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'
+                      }`}
+                    >
+                      {action.icon}
+                      <span>{action.label}</span>
+                    </Link>
+                  )
+                )}
+              </div>
             </div>
           </PublicPresenceSurface>
         ) : null}
 
         <div className={`relative grid min-h-[calc(100vh-4.75rem)] gap-2 ${ideGridClass}`}>
           <PublicPresenceSurface
-            className="!fixed bottom-4 left-1/2 z-30 flex -translate-x-1/2 flex-row items-center gap-2 rounded-full border border-slate-200/90 bg-white/97 px-2 py-2 shadow-lg backdrop-blur md:!static md:bottom-auto md:left-auto md:z-auto md:h-full md:translate-x-0 md:flex-col md:rounded-[2rem] md:border-transparent md:bg-white md:px-1 md:py-2 md:shadow-none md:backdrop-blur-0"
+            className="bg-white/97 !fixed bottom-4 left-1/2 z-30 flex -translate-x-1/2 flex-row items-center gap-2 rounded-full border border-slate-200/90 px-2 py-2 shadow-lg backdrop-blur md:!static md:bottom-auto md:left-auto md:z-auto md:h-full md:translate-x-0 md:flex-col md:rounded-[2rem] md:border-transparent md:bg-white md:px-1 md:py-2 md:shadow-none md:backdrop-blur-0"
             data-overlay-scope="true"
             data-testid="ide-file-rail"
             variant="inset"
@@ -3949,13 +3988,15 @@ export function PublicPresenceAuthoringIdeScreen({
                   aria-expanded={isActive}
                   aria-label={item.label}
                   aria-pressed={isActive}
-                  ref={isActive
-                    ? isWideDesktop
-                      ? item.key === 'files'
-                        ? filesDrawerOverlay.fallbackTriggerRef
-                        : validationDrawerOverlay.fallbackTriggerRef
-                      : mobileUtilityOverlay.fallbackTriggerRef
-                    : undefined}
+                  ref={
+                    isActive
+                      ? isWideDesktop
+                        ? item.key === 'files'
+                          ? filesDrawerOverlay.fallbackTriggerRef
+                          : validationDrawerOverlay.fallbackTriggerRef
+                        : mobileUtilityOverlay.fallbackTriggerRef
+                      : undefined
+                  }
                   onClick={(event) => {
                     if (isWideDesktop) {
                       if (item.key === 'files') {
@@ -3965,14 +4006,14 @@ export function PublicPresenceAuthoringIdeScreen({
                       }
 
                       setDesktopUtilityPanel((current) =>
-                        current === item.key ? null : item.key as 'files' | 'checks',
+                        current === item.key ? null : (item.key as 'files' | 'checks')
                       );
                       return;
                     }
 
                     mobileUtilityOverlay.registerTrigger(event.currentTarget);
                     setMobileOverlay((current) =>
-                      current === item.key ? null : item.key as 'files' | 'checks',
+                      current === item.key ? null : (item.key as 'files' | 'checks')
                     );
                   }}
                   className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl border px-3 transition md:h-11 md:w-11 md:px-0 ${
@@ -4129,9 +4170,15 @@ export function PublicPresenceAuthoringIdeScreen({
                       >
                         <div className="flex items-start gap-3">
                           {item.level === 'pass' ? (
-                            <CheckCircle2 className="mt-0.5 h-4 w-4 text-emerald-600" aria-hidden="true" />
+                            <CheckCircle2
+                              className="mt-0.5 h-4 w-4 text-emerald-600"
+                              aria-hidden="true"
+                            />
                           ) : (
-                            <AlertCircle className="mt-0.5 h-4 w-4 text-amber-600" aria-hidden="true" />
+                            <AlertCircle
+                              className="mt-0.5 h-4 w-4 text-amber-600"
+                              aria-hidden="true"
+                            />
                           )}
                           <p className="text-sm leading-6 text-slate-700">{item.message}</p>
                         </div>
@@ -4152,7 +4199,7 @@ export function PublicPresenceAuthoringIdeScreen({
               data-testid="ide-editor-surface"
             >
               <div className="pointer-events-none absolute inset-x-3 top-3 z-10 flex justify-start sm:inset-x-4">
-                <div className="pointer-events-auto flex min-w-0 flex-wrap items-center gap-2 overflow-x-auto whitespace-nowrap rounded-full border border-slate-200/90 bg-white/96 px-3 py-2 text-sm shadow-sm [scrollbar-width:none]">
+                <div className="bg-white/96 pointer-events-auto flex min-w-0 flex-wrap items-center gap-2 overflow-x-auto whitespace-nowrap rounded-full border border-slate-200/90 px-3 py-2 text-sm shadow-sm [scrollbar-width:none]">
                   <PublicPresenceBadge tone="rose">
                     {target === 'advanced'
                       ? getAdvancedModeLabel(locale, selectedAdvancedMode)
@@ -4165,10 +4212,18 @@ export function PublicPresenceAuthoringIdeScreen({
                           fr: 'Editeur',
                         })}
                   </PublicPresenceBadge>
-                  <PublicPresenceBadge className="hidden sm:inline-flex" tone="slate" variant="outline">
+                  <PublicPresenceBadge
+                    className="hidden sm:inline-flex"
+                    tone="slate"
+                    variant="outline"
+                  >
                     {activeFile?.path}
                   </PublicPresenceBadge>
-                  <PublicPresenceBadge className="hidden lg:inline-flex" tone="slate" variant="outline">
+                  <PublicPresenceBadge
+                    className="hidden lg:inline-flex"
+                    tone="slate"
+                    variant="outline"
+                  >
                     {getVirtualFileKindLabel(locale, activeFile?.kind ?? 'code')}
                   </PublicPresenceBadge>
                   {target === 'advanced' ? (
@@ -4186,7 +4241,7 @@ export function PublicPresenceAuthoringIdeScreen({
                             const nextFiles = buildAdvancedFiles(
                               mode,
                               advancedWorkspace?.selectedTemplateId ?? effectiveTemplateId,
-                              locale,
+                              locale
                             );
                             skipNextInitialFilesResetRef.current = true;
                             setSelectedAdvancedMode(mode);
@@ -4283,11 +4338,9 @@ export function PublicPresenceAuthoringIdeScreen({
           >
             <div className="pointer-events-none absolute inset-x-3 top-3 z-10 flex justify-start sm:inset-x-4">
               {!isWideDesktop ? (
-                <div className="pointer-events-auto w-full rounded-[1.5rem] border border-slate-200/90 bg-white/96 px-3 py-2 text-sm shadow-sm">
+                <div className="bg-white/96 pointer-events-auto w-full rounded-[1.5rem] border border-slate-200/90 px-3 py-2 text-sm shadow-sm">
                   <div className="flex items-center justify-between gap-2">
-                    <PublicPresenceBadge tone="rose">
-                      {previewSurfaceLabel}
-                    </PublicPresenceBadge>
+                    <PublicPresenceBadge tone="rose">{previewSurfaceLabel}</PublicPresenceBadge>
                     <button
                       type="button"
                       data-testid="ide-mobile-preview-options-button"
@@ -4298,7 +4351,7 @@ export function PublicPresenceAuthoringIdeScreen({
                       onClick={(event) => {
                         mobileUtilityOverlay.registerTrigger(event.currentTarget);
                         setMobileOverlay((current) =>
-                          current === 'previewOptions' ? null : 'previewOptions',
+                          current === 'previewOptions' ? null : 'previewOptions'
                         );
                       }}
                       className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
@@ -4358,93 +4411,86 @@ export function PublicPresenceAuthoringIdeScreen({
                 </div>
               ) : null}
               {isWideDesktop ? (
-                <div className="pointer-events-auto min-w-0 flex-wrap items-center gap-2 rounded-[1.5rem] border border-slate-200/90 bg-white/96 px-3 py-2 text-sm shadow-sm xl:flex">
-                <PublicPresenceBadge tone="rose">
-                  {previewSurfaceLabel}
-                </PublicPresenceBadge>
-                <button
-                  type="button"
-                  aria-pressed={viewport === 'desktop'}
-                  onClick={() => setViewport('desktop')}
-                  className={`rounded-full border px-3 py-2 text-sm font-semibold transition ${
-                    viewport === 'desktop'
-                      ? 'border-rose-300 bg-rose-50 text-rose-700'
-                      : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'
-                  }`}
-                >
-                  <PlaySquare className="mr-2 inline-flex h-4 w-4" aria-hidden="true" />
-                  {pickLocaleText(locale, {
-                    en: 'Desktop',
-                    zh_HANS: '桌面端',
-                    zh_HANT: '桌面端',
-                    ja: 'デスクトップ',
-                    ko: '데스크톱',
-                    fr: 'Desktop',
-                  })}
-                </button>
-                <button
-                  type="button"
-                  aria-pressed={viewport === 'mobile'}
-                  onClick={() => setViewport('mobile')}
-                  className={`rounded-full border px-3 py-2 text-sm font-semibold transition ${
-                    viewport === 'mobile'
-                      ? 'border-rose-300 bg-rose-50 text-rose-700'
-                      : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'
-                  }`}
-                >
-                  <Smartphone className="mr-2 inline-flex h-4 w-4" aria-hidden="true" />
-                  {pickLocaleText(locale, {
-                    en: 'Mobile',
-                    zh_HANS: '移动端',
-                    zh_HANT: '行動端',
-                    ja: 'モバイル',
-                    ko: '모바일',
-                    fr: 'Mobile',
-                  })}
-                </button>
-                <label className="text-sm">
-                  <span className="sr-only">
-                    {getSampleContentLabel(locale)}
-                  </span>
-                  <select
-                    value={fixtureMode}
-                    onChange={(event) => setFixtureMode(event.target.value as FixtureMode)}
-                    className="rounded-full border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900"
+                <div className="bg-white/96 pointer-events-auto min-w-0 flex-wrap items-center gap-2 rounded-[1.5rem] border border-slate-200/90 px-3 py-2 text-sm shadow-sm xl:flex">
+                  <PublicPresenceBadge tone="rose">{previewSurfaceLabel}</PublicPresenceBadge>
+                  <button
+                    type="button"
+                    aria-pressed={viewport === 'desktop'}
+                    onClick={() => setViewport('desktop')}
+                    className={`rounded-full border px-3 py-2 text-sm font-semibold transition ${
+                      viewport === 'desktop'
+                        ? 'border-rose-300 bg-rose-50 text-rose-700'
+                        : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'
+                    }`}
                   >
-                    <option value="default">{getFixtureModeLabel(locale, 'default')}</option>
-                    <option value="unsafeFallback">{getFixtureModeLabel(locale, 'unsafeFallback')}</option>
-                  </select>
-                </label>
-                <label className="text-sm">
-                  <span className="sr-only">
-                    {getRevealStateLabel(locale)}
-                  </span>
-                  <select
-                    value={previewPhase}
-                    onChange={(event) =>
-                      setPreviewPhase(event.target.value as PublicPresencePhaseVisibility)
-                    }
-                    className="rounded-full border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900"
+                    <PlaySquare className="mr-2 inline-flex h-4 w-4" aria-hidden="true" />
+                    {pickLocaleText(locale, {
+                      en: 'Desktop',
+                      zh_HANS: '桌面端',
+                      zh_HANT: '桌面端',
+                      ja: 'デスクトップ',
+                      ko: '데스크톱',
+                      fr: 'Desktop',
+                    })}
+                  </button>
+                  <button
+                    type="button"
+                    aria-pressed={viewport === 'mobile'}
+                    onClick={() => setViewport('mobile')}
+                    className={`rounded-full border px-3 py-2 text-sm font-semibold transition ${
+                      viewport === 'mobile'
+                        ? 'border-rose-300 bg-rose-50 text-rose-700'
+                        : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'
+                    }`}
                   >
-                    {[
-                      'always',
-                      'teaser',
-                      'countdown',
-                      'preRevealHold',
-                      'revealed',
-                      'liveLaunch',
-                      'postLaunch',
-                      'expiredFallback',
-                    ].map((phase) => (
-                      <option key={phase} value={phase}>
-                        {getAuthoringPhaseLabel(
-                          locale,
-                          phase as PublicPresencePhaseVisibility,
-                        )}
+                    <Smartphone className="mr-2 inline-flex h-4 w-4" aria-hidden="true" />
+                    {pickLocaleText(locale, {
+                      en: 'Mobile',
+                      zh_HANS: '移动端',
+                      zh_HANT: '行動端',
+                      ja: 'モバイル',
+                      ko: '모바일',
+                      fr: 'Mobile',
+                    })}
+                  </button>
+                  <label className="text-sm">
+                    <span className="sr-only">{getSampleContentLabel(locale)}</span>
+                    <select
+                      value={fixtureMode}
+                      onChange={(event) => setFixtureMode(event.target.value as FixtureMode)}
+                      className="rounded-full border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900"
+                    >
+                      <option value="default">{getFixtureModeLabel(locale, 'default')}</option>
+                      <option value="unsafeFallback">
+                        {getFixtureModeLabel(locale, 'unsafeFallback')}
                       </option>
-                    ))}
-                  </select>
-                </label>
+                    </select>
+                  </label>
+                  <label className="text-sm">
+                    <span className="sr-only">{getRevealStateLabel(locale)}</span>
+                    <select
+                      value={previewPhase}
+                      onChange={(event) =>
+                        setPreviewPhase(event.target.value as PublicPresencePhaseVisibility)
+                      }
+                      className="rounded-full border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900"
+                    >
+                      {[
+                        'always',
+                        'teaser',
+                        'countdown',
+                        'preRevealHold',
+                        'revealed',
+                        'liveLaunch',
+                        'postLaunch',
+                        'expiredFallback',
+                      ].map((phase) => (
+                        <option key={phase} value={phase}>
+                          {getAuthoringPhaseLabel(locale, phase as PublicPresencePhaseVisibility)}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
                 </div>
               ) : null}
             </div>
@@ -4470,22 +4516,29 @@ export function PublicPresenceAuthoringIdeScreen({
                             fr: 'Sécurité HTML personnalisée',
                           })}
                         </p>
-                        <p className="mt-1">{customHtmlPreviewState?.issues.length ? customHtmlPreviewState.issues[0] : pickLocaleText(locale, {
-                          en: 'Static HTML and CSS preview are ready.',
-                          zh_HANS: '静态 HTML 与 CSS 预览已就绪。',
-                          zh_HANT: '靜態 HTML 與 CSS 預覽已就緒。',
-                          ja: '静的 HTML と CSS のプレビューが準備できました。',
-                          ko: '정적 HTML 및 CSS 미리보기가 준비되었습니다.',
-                          fr: 'L’aperçu HTML et CSS statique est prêt.',
-                        })}</p>
+                        <p className="mt-1">
+                          {customHtmlPreviewState?.issues.length
+                            ? customHtmlPreviewState.issues[0]
+                            : pickLocaleText(locale, {
+                                en: 'Static HTML and CSS preview are ready.',
+                                zh_HANS: '静态 HTML 与 CSS 预览已就绪。',
+                                zh_HANT: '靜態 HTML 與 CSS 預覽已就緒。',
+                                ja: '静的 HTML と CSS のプレビューが準備できました。',
+                                ko: '정적 HTML 및 CSS 미리보기가 준비되었습니다.',
+                                fr: 'L’aperçu HTML et CSS statique est prêt.',
+                              })}
+                        </p>
                       </div>
                       <iframe
                         title={previewSurfaceLabel}
                         data-testid="ide-custom-html-preview"
-                        srcDoc={customHtmlPreviewState?.srcDoc ?? buildCustomHtmlSrcDoc(
-                          readVirtualFileContents(files, 'src/index.html'),
-                          readVirtualFileContents(files, 'src/styles.css'),
-                        )}
+                        srcDoc={
+                          customHtmlPreviewState?.srcDoc ??
+                          buildCustomHtmlSrcDoc(
+                            readVirtualFileContents(files, 'src/index.html'),
+                            readVirtualFileContents(files, 'src/styles.css')
+                          )
+                        }
                         className="min-h-[34rem] w-full rounded-[1.5rem] border border-slate-200 bg-white"
                       />
                     </div>
@@ -4497,7 +4550,10 @@ export function PublicPresenceAuthoringIdeScreen({
                       />
                     </div>
                   ) : (
-                    <div ref={desktopPreviewFit.hostRef} className="mx-auto flex w-full justify-center overflow-hidden">
+                    <div
+                      ref={desktopPreviewFit.hostRef}
+                      className="mx-auto flex w-full justify-center overflow-hidden"
+                    >
                       <div
                         className="overflow-hidden"
                         style={{
@@ -4531,7 +4587,7 @@ export function PublicPresenceAuthoringIdeScreen({
             <PublicPresenceSurface
               aria-label={mobileUtilitySheetLabel}
               aria-modal
-              className="!fixed inset-x-3 bottom-3 z-40 max-h-[72vh] overflow-auto rounded-[2rem] border border-slate-200/90 bg-white/97 p-4 shadow-xl xl:hidden"
+              className="bg-white/97 !fixed inset-x-3 bottom-3 z-40 max-h-[72vh] overflow-auto rounded-[2rem] border border-slate-200/90 p-4 shadow-xl xl:hidden"
               data-testid={mobileUtilitySheetTestId}
               id={mobileUtilitySheetId}
               role="dialog"
@@ -4653,11 +4709,13 @@ export function PublicPresenceAuthoringIdeScreen({
                     <button
                       key={item.key}
                       type="button"
-                      aria-controls={item.key === 'previewOptions'
-                        ? mobilePreviewOptionsSheetId
-                        : item.key === 'files'
-                          ? fileDrawerId
-                          : validationDrawerId}
+                      aria-controls={
+                        item.key === 'previewOptions'
+                          ? mobilePreviewOptionsSheetId
+                          : item.key === 'files'
+                            ? fileDrawerId
+                            : validationDrawerId
+                      }
                       aria-expanded={activeMobileUtilityOverlay === item.key}
                       aria-pressed={activeMobileUtilityOverlay === item.key}
                       onClick={(event) => {
@@ -4686,7 +4744,9 @@ export function PublicPresenceAuthoringIdeScreen({
                         className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-900"
                       >
                         <option value="default">{getFixtureModeLabel(locale, 'default')}</option>
-                        <option value="unsafeFallback">{getFixtureModeLabel(locale, 'unsafeFallback')}</option>
+                        <option value="unsafeFallback">
+                          {getFixtureModeLabel(locale, 'unsafeFallback')}
+                        </option>
                       </select>
                     </label>
                     <label className="text-sm">
@@ -4711,10 +4771,7 @@ export function PublicPresenceAuthoringIdeScreen({
                           'expiredFallback',
                         ].map((phase) => (
                           <option key={phase} value={phase}>
-                            {getAuthoringPhaseLabel(
-                              locale,
-                              phase as PublicPresencePhaseVisibility,
-                            )}
+                            {getAuthoringPhaseLabel(locale, phase as PublicPresencePhaseVisibility)}
                           </option>
                         ))}
                       </select>

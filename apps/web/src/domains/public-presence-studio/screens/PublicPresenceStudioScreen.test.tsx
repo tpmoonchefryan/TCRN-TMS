@@ -1,7 +1,8 @@
-import type { SupportedUiLocale } from '@tcrn/shared';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import type { SupportedUiLocale } from '@tcrn/shared';
 import type { PublicPresenceProjection } from '@tcrn/shared';
 
 import { resetPublicHomepageProjectionMediaPreloadCache } from '@/domains/public-homepage/components/public-homepage-projection-media';
@@ -482,11 +483,7 @@ function buildWorkspace(overrides?: Record<string, unknown>) {
         label: 'Active Talent Hub',
         optionalSections: ['officialUpdatesFeed'],
         recommendedSections: ['fanActions'],
-        requiredSections: [
-          'firstEncounter',
-          'officialChannels',
-          'stageSchedule',
-        ],
+        requiredSections: ['firstEncounter', 'officialChannels', 'stageSchedule'],
         templateId: 'activeTalentHub',
         useCase: 'Always-on official public presence.',
       },
@@ -499,13 +496,17 @@ function buildWorkspace(overrides?: Record<string, unknown>) {
 type TestWorkspaceDocument = ReturnType<typeof buildWorkspace>['draftVersion']['document'];
 
 function isWorkspaceRequest(path: string) {
-  return path === '/api/v1/talents/talent-1/public-presence'
-    || path.startsWith('/api/v1/talents/talent-1/public-presence?templateId=');
+  return (
+    path === '/api/v1/talents/talent-1/public-presence' ||
+    path.startsWith('/api/v1/talents/talent-1/public-presence?templateId=')
+  );
 }
 
 function isPreviewRequest(path: string) {
-  return path === '/api/v1/talents/talent-1/public-presence/preview'
-    || path.startsWith('/api/v1/talents/talent-1/public-presence/preview?');
+  return (
+    path === '/api/v1/talents/talent-1/public-presence/preview' ||
+    path.startsWith('/api/v1/talents/talent-1/public-presence/preview?')
+  );
 }
 
 describe('PublicPresenceStudioScreen', () => {
@@ -543,17 +544,17 @@ describe('PublicPresenceStudioScreen', () => {
     });
 
     const { container } = render(
-      <PublicPresenceStudioScreen tenantId="tenant-1" talentId="talent-1" />,
+      <PublicPresenceStudioScreen tenantId="tenant-1" talentId="talent-1" />
     );
 
     expect(
-      await screen.findByTestId('canvas-stage', {}, { timeout: STUDIO_RENDER_TIMEOUT }),
+      await screen.findByTestId('canvas-stage', {}, { timeout: STUDIO_RENDER_TIMEOUT })
     ).toBeInTheDocument();
     expect(screen.queryByText(/Legacy Ops/i)).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Move up/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Move down/i })).not.toBeInTheDocument();
     expect(container.textContent).not.toMatch(
-      /projection|content hash|runtime|policy version|workflow event id|registry/i,
+      /projection|content hash|runtime|policy version|workflow event id|registry/i
     );
     expect(container.textContent).not.toMatch(ORDINARY_COPY_BOUNDARY_PATTERN);
   });
@@ -574,22 +575,35 @@ describe('PublicPresenceStudioScreen', () => {
     });
 
     const { unmount } = render(
-      <PublicPresenceStudioScreen tenantId="tenant-1" talentId="talent-1" />,
+      <PublicPresenceStudioScreen tenantId="tenant-1" talentId="talent-1" />
     );
 
     await screen.findByTestId('canvas-stage', {}, { timeout: STUDIO_RENDER_TIMEOUT });
-    expect(screen.getAllByRole('button', { name: 'Mobile' })[0]).toHaveAttribute('aria-pressed', 'true');
-    expect(screen.getAllByRole('button', { name: 'Preview focus' })[0]).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getAllByRole('button', { name: 'Mobile' })[0]).toHaveAttribute(
+      'aria-pressed',
+      'true'
+    );
+    expect(screen.getAllByRole('button', { name: 'Preview focus' })[0]).toHaveAttribute(
+      'aria-pressed',
+      'true'
+    );
     expect(screen.getByTestId('studio-mobile-preview-tools-sheet')).toBeInTheDocument();
 
     unmount();
-    currentSearch = 'viewport=cinema&previewFocus=banana&phase=broken&leftPanel=unknown&stagePanel=oops';
+    currentSearch =
+      'viewport=cinema&previewFocus=banana&phase=broken&leftPanel=unknown&stagePanel=oops';
 
     render(<PublicPresenceStudioScreen tenantId="tenant-1" talentId="talent-1" />);
 
     await screen.findByTestId('canvas-stage', {}, { timeout: STUDIO_RENDER_TIMEOUT });
-    expect(screen.getAllByRole('button', { name: 'Desktop' })[0]).toHaveAttribute('aria-pressed', 'true');
-    expect(screen.getAllByRole('button', { name: 'Preview focus' })[0]).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.getAllByRole('button', { name: 'Desktop' })[0]).toHaveAttribute(
+      'aria-pressed',
+      'true'
+    );
+    expect(screen.getAllByRole('button', { name: 'Preview focus' })[0]).toHaveAttribute(
+      'aria-pressed',
+      'false'
+    );
     await waitFor(() => {
       expect(currentSearch).toBe('');
     });
@@ -708,14 +722,15 @@ describe('PublicPresenceStudioScreen', () => {
       throw new Error(`Unhandled request: ${path}`);
     });
 
-    currentSearch = 'templateId=activeTalentHub&leftPanel=sections&stagePanel=edit%3AfirstEncounter';
+    currentSearch =
+      'templateId=activeTalentHub&leftPanel=sections&stagePanel=edit%3AfirstEncounter';
 
     render(
       <PublicPresenceStudioScreen
         initialTemplateId="activeTalentHub"
         talentId="talent-1"
         tenantId="tenant-1"
-      />,
+      />
     );
 
     await screen.findByTestId('canvas-stage', {}, { timeout: STUDIO_RENDER_TIMEOUT });
@@ -770,10 +785,10 @@ describe('PublicPresenceStudioScreen', () => {
       .map(([href]) => new URL(String(href), 'https://tcrn.local'));
 
     expect(
-      followUpUrls.some((url) => (
-        url.searchParams.get('leftPanel') === 'sections'
-        && !url.searchParams.has('stagePanel')
-      )),
+      followUpUrls.some(
+        (url) =>
+          url.searchParams.get('leftPanel') === 'sections' && !url.searchParams.has('stagePanel')
+      )
     ).toBe(false);
   });
 
@@ -799,7 +814,7 @@ describe('PublicPresenceStudioScreen', () => {
         initialTemplateId="activeTalentHub"
         talentId="talent-1"
         tenantId="tenant-1"
-      />,
+      />
     );
 
     await screen.findByTestId('canvas-stage', {}, { timeout: STUDIO_RENDER_TIMEOUT });
@@ -837,7 +852,7 @@ describe('PublicPresenceStudioScreen', () => {
         initialTemplateId="activeTalentHub"
         talentId="talent-1"
         tenantId="tenant-1"
-      />,
+      />
     );
 
     await screen.findByTestId('canvas-stage', {}, { timeout: STUDIO_RENDER_TIMEOUT });
@@ -846,7 +861,10 @@ describe('PublicPresenceStudioScreen', () => {
     const stagePanel = (await screen.findAllByTestId('stage-section-panel'))[0];
     const displayNameInput = within(stagePanel).getAllByRole('textbox')[0] as HTMLInputElement;
     displayNameInput.focus();
-    displayNameInput.setSelectionRange(displayNameInput.value.length, displayNameInput.value.length);
+    displayNameInput.setSelectionRange(
+      displayNameInput.value.length,
+      displayNameInput.value.length
+    );
 
     fireEvent.paste(displayNameInput, {
       clipboardData: {
@@ -888,9 +906,11 @@ describe('PublicPresenceStudioScreen', () => {
     await screen.findByTestId('canvas-stage', {}, { timeout: STUDIO_RENDER_TIMEOUT });
     expect(screen.getByTestId('studio-legacy-starter-notice')).toBeInTheDocument();
     expect(
-      screen.getByText(/Legacy template\/component draft query parameters are no longer used/i),
+      screen.getByText(/Legacy template\/component draft query parameters are no longer used/i)
     ).toBeInTheDocument();
-    expect(mockRequest.mock.calls.every(([path]) => !String(path).includes('/authoring/'))).toBe(true);
+    expect(mockRequest.mock.calls.every(([path]) => !String(path).includes('/authoring/'))).toBe(
+      true
+    );
   });
 
   it('does not expose source authoring tools inside the ordinary visual studio workbench', async () => {
@@ -911,7 +931,7 @@ describe('PublicPresenceStudioScreen', () => {
         initialTemplateId="activeTalentHub"
         talentId="talent-1"
         tenantId="tenant-1"
-      />,
+      />
     );
 
     await screen.findByTestId('canvas-stage', {}, { timeout: STUDIO_RENDER_TIMEOUT });
@@ -946,7 +966,7 @@ describe('PublicPresenceStudioScreen', () => {
         initialTemplateId="activeTalentHub"
         talentId="talent-1"
         tenantId="tenant-1"
-      />,
+      />
     );
 
     await screen.findByTestId('canvas-stage', {}, { timeout: STUDIO_RENDER_TIMEOUT });
@@ -963,7 +983,7 @@ describe('PublicPresenceStudioScreen', () => {
       () => {
         expect(screen.queryByText('Draft saved.')).not.toBeInTheDocument();
       },
-      { timeout: 7000 },
+      { timeout: 7000 }
     );
     expect(screen.getAllByText('Saved').length).toBeGreaterThan(0);
   });
@@ -1014,7 +1034,7 @@ describe('PublicPresenceStudioScreen', () => {
         initialTemplateId="activeTalentHub"
         talentId="talent-1"
         tenantId="tenant-1"
-      />,
+      />
     );
 
     await screen.findByTestId('canvas-stage', {}, { timeout: STUDIO_RENDER_TIMEOUT });
@@ -1039,7 +1059,7 @@ describe('PublicPresenceStudioScreen', () => {
     });
 
     const { container } = render(
-      <PublicPresenceStudioScreen tenantId="tenant-1" talentId="talent-1" />,
+      <PublicPresenceStudioScreen tenantId="tenant-1" talentId="talent-1" />
     );
 
     await screen.findByTestId('canvas-stage', {}, { timeout: STUDIO_RENDER_TIMEOUT });
@@ -1063,7 +1083,7 @@ describe('PublicPresenceStudioScreen', () => {
     });
 
     const { container } = render(
-      <PublicPresenceStudioScreen tenantId="tenant-1" talentId="talent-1" />,
+      <PublicPresenceStudioScreen tenantId="tenant-1" talentId="talent-1" />
     );
 
     await screen.findByTestId('canvas-stage', {}, { timeout: STUDIO_RENDER_TIMEOUT });
@@ -1103,7 +1123,7 @@ describe('PublicPresenceStudioScreen', () => {
     expect(currentSearch).toContain('sheet=preview-tools');
     expect(screen.getByRole('button', { name: 'Preview tools' })).toHaveAttribute(
       'aria-expanded',
-      'true',
+      'true'
     );
 
     fireEvent.click(within(previewToolsSheet).getByRole('button', { name: 'Manage' }));
@@ -1113,7 +1133,10 @@ describe('PublicPresenceStudioScreen', () => {
     });
 
     expect(screen.getByTestId('studio-mobile-manage-sheet')).toBeInTheDocument();
-    expect(screen.getByTestId('studio-mobile-manage-button')).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByTestId('studio-mobile-manage-button')).toHaveAttribute(
+      'aria-expanded',
+      'true'
+    );
     expect(currentSearch).toContain('sheet=manage');
   });
 
@@ -1139,13 +1162,17 @@ describe('PublicPresenceStudioScreen', () => {
     render(<PublicPresenceStudioScreen tenantId="tenant-1" talentId="talent-1" />);
 
     await screen.findByTestId('canvas-stage', {}, { timeout: STUDIO_RENDER_TIMEOUT });
-    fireEvent.click(within(screen.getByTestId('left-rail')).getByRole('button', { name: 'Stage Sections' }));
+    fireEvent.click(
+      within(screen.getByTestId('left-rail')).getByRole('button', { name: 'Stage Sections' })
+    );
 
     const sectionsSheet = screen.getByRole('dialog', { name: 'Stage sections panel' });
     fireEvent.click(within(sectionsSheet).getByTestId('stage-row-firstEncounter'));
 
     await waitFor(() => {
-      expect(screen.queryByRole('dialog', { name: 'Stage sections panel' })).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole('dialog', { name: 'Stage sections panel' })
+      ).not.toBeInTheDocument();
     });
 
     expect(screen.getByRole('dialog', { name: 'Edit section panel' })).toBeInTheDocument();
@@ -1170,7 +1197,7 @@ describe('PublicPresenceStudioScreen', () => {
 
     currentSearch = 'viewport=mobile&sheet=manage';
     const { unmount } = render(
-      <PublicPresenceStudioScreen tenantId="tenant-1" talentId="talent-1" />,
+      <PublicPresenceStudioScreen tenantId="tenant-1" talentId="talent-1" />
     );
 
     await screen.findByTestId('canvas-stage', {}, { timeout: STUDIO_RENDER_TIMEOUT });
@@ -1278,7 +1305,7 @@ describe('PublicPresenceStudioScreen', () => {
         initialTemplateId="activeTalentHub"
         talentId="talent-1"
         tenantId="tenant-1"
-      />,
+      />
     );
 
     await screen.findByTestId('canvas-stage', {}, { timeout: STUDIO_RENDER_TIMEOUT });
@@ -1292,16 +1319,16 @@ describe('PublicPresenceStudioScreen', () => {
     await waitFor(() => {
       expect(mockRequest).toHaveBeenCalledWith(
         '/api/v1/talents/talent-1/public-presence/publish',
-        expect.objectContaining({ method: 'POST' }),
+        expect.objectContaining({ method: 'POST' })
       );
     });
     expect(mockRequest).not.toHaveBeenCalledWith(
       '/api/v1/talents/talent-1/public-presence/review/submit',
-      expect.anything(),
+      expect.anything()
     );
     expect(mockRequest).not.toHaveBeenCalledWith(
       '/api/v1/talents/talent-1/public-presence/review/approve',
-      expect.anything(),
+      expect.anything()
     );
   });
 
@@ -1403,14 +1430,14 @@ describe('PublicPresenceStudioScreen', () => {
         initialTemplateId="debutReveal"
         talentId="talent-1"
         tenantId="tenant-1"
-      />,
+      />
     );
 
     await screen.findByTestId('canvas-stage', {}, { timeout: STUDIO_RENDER_TIMEOUT });
     await user.click(screen.getByRole('button', { name: 'Open readiness panel' }));
 
     expect(
-      screen.getByText('Approve the always-on hub before scheduling the debut switch.'),
+      screen.getByText('Approve the always-on hub before scheduling the debut switch.')
     ).toBeInTheDocument();
 
     const publishButton = screen.getByRole('button', { name: 'Publish now' });
@@ -1420,7 +1447,7 @@ describe('PublicPresenceStudioScreen', () => {
 
     await waitFor(() => {
       expect(mockRequest).toHaveBeenCalledWith(
-        '/api/v1/talents/talent-1/public-presence?templateId=activeTalentHub',
+        '/api/v1/talents/talent-1/public-presence?templateId=activeTalentHub'
       );
     });
   });

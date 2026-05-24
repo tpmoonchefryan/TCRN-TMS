@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable } from '@nestjs/common';
 
 import { DatabaseService } from '../../database';
@@ -40,7 +39,7 @@ export class MarshmallowReactionRepository {
               AND it.table_name = 'marshmallow_reaction'
           )
         ORDER BY t.schema_name
-      `,
+      `
     );
 
     return tenants.map((tenant) => tenant.schemaName);
@@ -48,7 +47,7 @@ export class MarshmallowReactionRepository {
 
   async findPublishedMessageAccessInTenant(
     tenantSchema: string,
-    messageId: string,
+    messageId: string
   ): Promise<MarshmallowReactionLookupRecord | null> {
     const prisma = this.databaseService.getPrisma();
     const messages = await prisma.$queryRawUnsafe<MarshmallowReactionLookupRecord[]>(
@@ -66,7 +65,7 @@ export class MarshmallowReactionRepository {
           AND c.is_enabled = true
           AND t.lifecycle_status = 'published'
       `,
-      messageId,
+      messageId
     );
 
     return messages[0] ?? null;
@@ -76,7 +75,7 @@ export class MarshmallowReactionRepository {
     tenantSchema: string,
     messageId: string,
     fingerprint: string,
-    reaction: string,
+    reaction: string
   ): Promise<string | null> {
     const prisma = this.databaseService.getPrisma();
     const reactions = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
@@ -89,7 +88,7 @@ export class MarshmallowReactionRepository {
       `,
       messageId,
       fingerprint,
-      reaction,
+      reaction
     );
 
     return reactions[0]?.id ?? null;
@@ -102,7 +101,7 @@ export class MarshmallowReactionRepository {
         DELETE FROM "${tenantSchema}".marshmallow_reaction
         WHERE id = $1::uuid
       `,
-      reactionId,
+      reactionId
     );
   }
 
@@ -110,7 +109,7 @@ export class MarshmallowReactionRepository {
     tenantSchema: string,
     messageId: string,
     reaction: string,
-    context: MarshmallowReactionContext,
+    context: MarshmallowReactionContext
   ): Promise<void> {
     const prisma = this.databaseService.getPrisma();
     await prisma.$executeRawUnsafe(
@@ -124,13 +123,13 @@ export class MarshmallowReactionRepository {
       messageId,
       reaction,
       context.fingerprint,
-      context.ip,
+      context.ip
     );
   }
 
   async findReactionCounts(
     tenantSchema: string,
-    messageId: string,
+    messageId: string
   ): Promise<MarshmallowReactionCountRow[]> {
     const prisma = this.databaseService.getPrisma();
     return prisma.$queryRawUnsafe<MarshmallowReactionCountRow[]>(
@@ -140,14 +139,14 @@ export class MarshmallowReactionRepository {
         WHERE message_id = $1::uuid
         GROUP BY reaction
       `,
-      messageId,
+      messageId
     );
   }
 
   async updateMessageReactionCounts(
     tenantSchema: string,
     messageId: string,
-    counts: Record<string, number>,
+    counts: Record<string, number>
   ): Promise<void> {
     const prisma = this.databaseService.getPrisma();
     await prisma.$executeRawUnsafe(
@@ -157,14 +156,14 @@ export class MarshmallowReactionRepository {
         WHERE id = $2::uuid
       `,
       JSON.stringify(counts),
-      messageId,
+      messageId
     );
   }
 
   async findUserReactions(
     tenantSchema: string,
     messageIds: string[],
-    fingerprint: string,
+    fingerprint: string
   ): Promise<MarshmallowUserReactionRow[]> {
     const prisma = this.databaseService.getPrisma();
     return prisma.$queryRawUnsafe<MarshmallowUserReactionRow[]>(
@@ -175,7 +174,7 @@ export class MarshmallowReactionRepository {
           AND fingerprint_hash = $2
       `,
       messageIds,
-      fingerprint,
+      fingerprint
     );
   }
 }

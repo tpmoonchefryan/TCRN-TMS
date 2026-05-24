@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable } from '@nestjs/common';
+
 import type { HealthCheckResponse } from '@tcrn/shared';
 
 import { DatabaseService } from '../database';
@@ -14,7 +14,7 @@ export class HealthService {
   constructor(
     private readonly databaseService: DatabaseService,
     private readonly redisService: RedisService,
-    private readonly minioService: MinioService,
+    private readonly minioService: MinioService
   ) {}
 
   async check(): Promise<HealthCheckResponse> {
@@ -59,7 +59,7 @@ export class HealthService {
       const start = Date.now();
       const isHealthy = await this.databaseService.isHealthy();
       const latency = Date.now() - start;
-      
+
       if (isHealthy) {
         return { status: 'up', latency };
       }
@@ -81,7 +81,7 @@ export class HealthService {
       const start = Date.now();
       const isHealthy = await this.redisService.isHealthy();
       const latency = Date.now() - start;
-      
+
       if (isHealthy) {
         return { status: 'up', latency };
       }
@@ -103,7 +103,7 @@ export class HealthService {
       const start = Date.now();
       const isHealthy = await this.minioService.isHealthy();
       const latency = Date.now() - start;
-      
+
       if (isHealthy) {
         return { status: 'up', latency };
       }

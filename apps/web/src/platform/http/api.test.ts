@@ -23,9 +23,9 @@ describe('readApiEnvelope', () => {
               traceId: 'trace_canonical_123',
             },
           },
-          503,
-        ),
-      ),
+          503
+        )
+      )
     ).rejects.toMatchObject({
       name: 'ApiRequestError',
       code: 'SYS_CUSTOM_DOMAIN_REGISTRY_UNAVAILABLE',
@@ -46,9 +46,9 @@ describe('readApiEnvelope', () => {
               requestId: 'req_only_123',
             },
           },
-          500,
-        ),
-      ),
+          500
+        )
+      )
     ).rejects.toMatchObject({
       requestId: 'req_only_123',
       traceId: undefined,

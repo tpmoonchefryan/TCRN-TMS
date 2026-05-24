@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 
 import {
@@ -19,7 +18,7 @@ export class EmailDispatchApplicationService {
 
   constructor(
     private readonly emailQueueGateway: EmailQueueGateway,
-    private readonly emailTemplateService: EmailTemplateApplicationService,
+    private readonly emailTemplateService: EmailTemplateApplicationService
   ) {}
 
   async send(dto: SendEmailDto): Promise<{ jobId: string }> {
@@ -40,7 +39,7 @@ export class EmailDispatchApplicationService {
     const result = await this.emailQueueGateway.enqueue(buildEmailJobData(dto));
 
     this.logger.log(
-      `Email job queued: ${result.jobId} (template: ${dto.templateCode}, tenant: ${dto.tenantSchema})`,
+      `Email job queued: ${result.jobId} (template: ${dto.templateCode}, tenant: ${dto.tenantSchema})`
     );
 
     return result;
@@ -50,7 +49,7 @@ export class EmailDispatchApplicationService {
     email: string,
     templateCode: string,
     locale: string = 'en',
-    variables: Record<string, string> = {},
+    variables: Record<string, string> = {}
   ): Promise<{ jobId: string }> {
     return this.send(buildSystemEmailDto(email, templateCode, locale, variables));
   }
@@ -60,16 +59,10 @@ export class EmailDispatchApplicationService {
     recipientEmail: string,
     templateCode: string,
     locale: string = 'en',
-    variables: Record<string, string> = {},
+    variables: Record<string, string> = {}
   ): Promise<{ jobId: string }> {
     return this.send(
-      buildBusinessEmailDto(
-        tenantSchema,
-        recipientEmail,
-        templateCode,
-        locale,
-        variables,
-      ),
+      buildBusinessEmailDto(tenantSchema, recipientEmail, templateCode, locale, variables)
     );
   }
 }

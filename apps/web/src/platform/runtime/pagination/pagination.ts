@@ -26,7 +26,7 @@ export function parsePageSizeParam(value: string | null): PageSizeOption {
 
 export function getPaginationRange(
   pagination: ApiPaginationMeta,
-  itemCount: number,
+  itemCount: number
 ): {
   start: number;
   end: number;
@@ -44,7 +44,7 @@ export function getPaginationRange(
 export function buildPaginationMeta(
   totalCount: number,
   page: number,
-  pageSize: number,
+  pageSize: number
 ): ApiPaginationMeta {
   const safeTotalCount = Math.max(0, totalCount);
   const totalPages = Math.max(1, Math.ceil(safeTotalCount / pageSize));

@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import type { PrismaClient } from '@prisma/client';
 
 export const TENANT_TEMPLATE_DIRECT_COPY_TABLES = [
@@ -41,18 +40,9 @@ function quoteIdentifier(value: string): string {
   return `"${value.replace(/"/g, '""')}"`;
 }
 
-function normalizeConstraintDefinition(
-  definition: string,
-  schemaName: string,
-): string {
-  const quotedSchemaPattern = new RegExp(
-    `"${escapeRegExp(schemaName)}"\\.`,
-    'g',
-  );
-  const unquotedSchemaPattern = new RegExp(
-    `\\b${escapeRegExp(schemaName)}\\.`,
-    'g',
-  );
+function normalizeConstraintDefinition(definition: string, schemaName: string): string {
+  const quotedSchemaPattern = new RegExp(`"${escapeRegExp(schemaName)}"\\.`, 'g');
+  const unquotedSchemaPattern = new RegExp(`\\b${escapeRegExp(schemaName)}\\.`, 'g');
 
   return definition
     .replace(quotedSchemaPattern, '"<SCHEMA>".')
@@ -62,16 +52,10 @@ function normalizeConstraintDefinition(
 function rewriteSchemaReference(
   definition: string,
   sourceSchemaName: string,
-  targetSchemaName: string,
+  targetSchemaName: string
 ): string {
-  const quotedSchemaPattern = new RegExp(
-    `"${escapeRegExp(sourceSchemaName)}"\\.`,
-    'g',
-  );
-  const unquotedSchemaPattern = new RegExp(
-    `\\b${escapeRegExp(sourceSchemaName)}\\.`,
-    'g',
-  );
+  const quotedSchemaPattern = new RegExp(`"${escapeRegExp(sourceSchemaName)}"\\.`, 'g');
+  const unquotedSchemaPattern = new RegExp(`\\b${escapeRegExp(sourceSchemaName)}\\.`, 'g');
   const targetSchemaReference = `${quoteIdentifier(targetSchemaName)}.`;
 
   return definition
@@ -79,30 +63,24 @@ function rewriteSchemaReference(
     .replace(unquotedSchemaPattern, targetSchemaReference);
 }
 
-function normalizeIndexDefinition(
-  definition: string,
-  schemaName: string,
-): string {
+function normalizeIndexDefinition(definition: string, schemaName: string): string {
   return normalizeConstraintDefinition(definition, schemaName).replace(
     /^CREATE(\s+UNIQUE)?\s+INDEX\s+"?[^"\s]+"?\s+ON\s+/i,
-    (_, uniqueClause: string | undefined) =>
-      `CREATE${uniqueClause ?? ''} INDEX <INDEX> ON `,
+    (_, uniqueClause: string | undefined) => `CREATE${uniqueClause ?? ''} INDEX <INDEX> ON `
   );
 }
 
 function hasAllTables(
   availableTables: ReadonlySet<string> | undefined,
-  requiredTables: readonly string[],
+  requiredTables: readonly string[]
 ): boolean {
-  return availableTables
-    ? requiredTables.every((table) => availableTables.has(table))
-    : true;
+  return availableTables ? requiredTables.every((table) => availableTables.has(table)) : true;
 }
 
 async function getSchemaConstraints(
   prisma: PrismaClient,
   schemaName: string,
-  tableNames: readonly string[],
+  tableNames: readonly string[]
 ): Promise<SchemaConstraintRow[]> {
   if (tableNames.length === 0) {
     return [];
@@ -123,14 +101,14 @@ async function getSchemaConstraints(
       ORDER BY rel.relname, con.conname
     `,
     schemaName,
-    tableNames,
+    tableNames
   );
 }
 
 async function getSchemaIndexes(
   prisma: PrismaClient,
   schemaName: string,
-  tableNames: readonly string[],
+  tableNames: readonly string[]
 ): Promise<SchemaIndexRow[]> {
   if (tableNames.length === 0) {
     return [];
@@ -153,14 +131,14 @@ async function getSchemaIndexes(
       ORDER BY rel.relname, idx.relname
     `,
     schemaName,
-    tableNames,
+    tableNames
   );
 }
 
 async function resolveSchemaTableNames(
   prisma: PrismaClient,
   schemaName: string,
-  availableTables?: readonly string[],
+  availableTables?: readonly string[]
 ): Promise<string[]> {
   if (availableTables) {
     return [...availableTables];
@@ -174,7 +152,7 @@ async function resolveSchemaTableNames(
         WHERE schemaname = $1
         ORDER BY tablename
       `,
-      schemaName,
+      schemaName
     )
   ).map(({ tablename }) => tablename);
 }
@@ -182,13 +160,9 @@ async function resolveSchemaTableNames(
 export async function copyTenantTemplateForeignKeys(
   prisma: PrismaClient,
   schemaName: string,
-  availableTables?: readonly string[],
+  availableTables?: readonly string[]
 ): Promise<void> {
-  const tableNames = await resolveSchemaTableNames(
-    prisma,
-    schemaName,
-    availableTables,
-  );
+  const tableNames = await resolveSchemaTableNames(prisma, schemaName, availableTables);
 
   if (tableNames.length === 0) {
     return;
@@ -200,33 +174,28 @@ export async function copyTenantTemplateForeignKeys(
   ]);
 
   const templateForeignKeys = templateConstraints.filter(
-    (constraint) => constraint.constraintType === 'f',
+    (constraint) => constraint.constraintType === 'f'
   );
   const targetForeignKeys = targetConstraints.filter(
-    (constraint) => constraint.constraintType === 'f',
+    (constraint) => constraint.constraintType === 'f'
   );
   const targetBySignature = new Map(
     targetForeignKeys.map((constraint) => [
       `${constraint.tableName}|${constraint.constraintType}|${normalizeConstraintDefinition(constraint.definition, schemaName)}`,
       constraint,
-    ]),
+    ])
   );
-  const targetNames = new Set(
-    targetForeignKeys.map((constraint) => constraint.constraintName),
-  );
+  const targetNames = new Set(targetForeignKeys.map((constraint) => constraint.constraintName));
 
   for (const templateConstraint of templateForeignKeys) {
     const signature = `${templateConstraint.tableName}|${templateConstraint.constraintType}|${normalizeConstraintDefinition(templateConstraint.definition, 'tenant_template')}`;
 
-    if (
-      targetBySignature.has(signature) ||
-      targetNames.has(templateConstraint.constraintName)
-    ) {
+    if (targetBySignature.has(signature) || targetNames.has(templateConstraint.constraintName)) {
       continue;
     }
 
     await prisma.$executeRawUnsafe(
-      `ALTER TABLE ${quoteIdentifier(schemaName)}.${quoteIdentifier(templateConstraint.tableName)} ADD CONSTRAINT ${quoteIdentifier(templateConstraint.constraintName)} ${rewriteSchemaReference(templateConstraint.definition, 'tenant_template', schemaName)}`,
+      `ALTER TABLE ${quoteIdentifier(schemaName)}.${quoteIdentifier(templateConstraint.tableName)} ADD CONSTRAINT ${quoteIdentifier(templateConstraint.constraintName)} ${rewriteSchemaReference(templateConstraint.definition, 'tenant_template', schemaName)}`
     );
 
     targetNames.add(templateConstraint.constraintName);
@@ -235,7 +204,7 @@ export async function copyTenantTemplateForeignKeys(
       definition: rewriteSchemaReference(
         templateConstraint.definition,
         'tenant_template',
-        schemaName,
+        schemaName
       ),
     });
   }
@@ -244,13 +213,9 @@ export async function copyTenantTemplateForeignKeys(
 export async function alignTenantTemplateConstraintNames(
   prisma: PrismaClient,
   schemaName: string,
-  availableTables?: readonly string[],
+  availableTables?: readonly string[]
 ): Promise<void> {
-  const tableNames = await resolveSchemaTableNames(
-    prisma,
-    schemaName,
-    availableTables,
-  );
+  const tableNames = await resolveSchemaTableNames(prisma, schemaName, availableTables);
 
   if (tableNames.length === 0) {
     return;
@@ -265,11 +230,9 @@ export async function alignTenantTemplateConstraintNames(
     targetConstraints.map((constraint) => [
       `${constraint.tableName}|${constraint.constraintType}|${normalizeConstraintDefinition(constraint.definition, schemaName)}`,
       constraint,
-    ]),
+    ])
   );
-  const targetNames = new Set(
-    targetConstraints.map((constraint) => constraint.constraintName),
-  );
+  const targetNames = new Set(targetConstraints.map((constraint) => constraint.constraintName));
 
   for (const templateConstraint of templateConstraints) {
     const signature = `${templateConstraint.tableName}|${templateConstraint.constraintType}|${normalizeConstraintDefinition(templateConstraint.definition, 'tenant_template')}`;
@@ -288,7 +251,7 @@ export async function alignTenantTemplateConstraintNames(
     }
 
     await prisma.$executeRawUnsafe(
-      `ALTER TABLE "${schemaName}"."${templateConstraint.tableName}" RENAME CONSTRAINT "${targetConstraint.constraintName}" TO "${templateConstraint.constraintName}"`,
+      `ALTER TABLE "${schemaName}"."${templateConstraint.tableName}" RENAME CONSTRAINT "${targetConstraint.constraintName}" TO "${templateConstraint.constraintName}"`
     );
 
     targetNames.delete(targetConstraint.constraintName);
@@ -299,13 +262,9 @@ export async function alignTenantTemplateConstraintNames(
 export async function alignTenantTemplateIndexNames(
   prisma: PrismaClient,
   schemaName: string,
-  availableTables?: readonly string[],
+  availableTables?: readonly string[]
 ): Promise<void> {
-  const tableNames = await resolveSchemaTableNames(
-    prisma,
-    schemaName,
-    availableTables,
-  );
+  const tableNames = await resolveSchemaTableNames(prisma, schemaName, availableTables);
 
   if (tableNames.length === 0) {
     return;
@@ -342,15 +301,15 @@ export async function alignTenantTemplateIndexNames(
     }
 
     const unmatchedTargets = [...targetGroup].sort((left, right) =>
-      left.indexName.localeCompare(right.indexName),
+      left.indexName.localeCompare(right.indexName)
     );
     const unmatchedTemplates: SchemaIndexRow[] = [];
 
     for (const templateIndex of [...templateGroup].sort((left, right) =>
-      left.indexName.localeCompare(right.indexName),
+      left.indexName.localeCompare(right.indexName)
     )) {
       const exactMatchIndex = unmatchedTargets.findIndex(
-        (targetIndex) => targetIndex.indexName === templateIndex.indexName,
+        (targetIndex) => targetIndex.indexName === templateIndex.indexName
       );
 
       if (exactMatchIndex >= 0) {
@@ -373,7 +332,7 @@ export async function alignTenantTemplateIndexNames(
       }
 
       await prisma.$executeRawUnsafe(
-        `ALTER INDEX ${quoteIdentifier(schemaName)}.${quoteIdentifier(targetIndex.indexName)} RENAME TO ${quoteIdentifier(templateIndex.indexName)}`,
+        `ALTER INDEX ${quoteIdentifier(schemaName)}.${quoteIdentifier(targetIndex.indexName)} RENAME TO ${quoteIdentifier(templateIndex.indexName)}`
       );
 
       targetNames.delete(targetIndex.indexName);
@@ -385,11 +344,9 @@ export async function alignTenantTemplateIndexNames(
 export async function copyTenantTemplateSeedData(
   prisma: PrismaClient,
   schemaName: string,
-  availableTables?: readonly string[],
+  availableTables?: readonly string[]
 ): Promise<void> {
-  const availableTableSet = availableTables
-    ? new Set(availableTables)
-    : undefined;
+  const availableTableSet = availableTables ? new Set(availableTables) : undefined;
 
   for (const table of TENANT_TEMPLATE_DIRECT_COPY_TABLES) {
     if (availableTableSet && !availableTableSet.has(table)) {

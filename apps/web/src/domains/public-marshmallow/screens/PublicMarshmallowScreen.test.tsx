@@ -1,7 +1,8 @@
-import { BROWSER_PUBLIC_CONSUMER_CODE, BROWSER_PUBLIC_CONSUMER_HEADER } from '@tcrn/shared';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { ReactElement } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { BROWSER_PUBLIC_CONSUMER_CODE, BROWSER_PUBLIC_CONSUMER_HEADER } from '@tcrn/shared';
 
 import { localizedFixture } from '@/domains/config-dictionary-settings/testing/localized-fixtures';
 import { PublicMarshmallowScreen } from '@/domains/public-marshmallow/screens/PublicMarshmallowScreen';
@@ -127,7 +128,10 @@ describe('PublicMarshmallowScreen', () => {
         });
       }
 
-      if (url.endsWith('/api/v1/public/marshmallow/aki-mailbox/submit') && init?.method === 'POST') {
+      if (
+        url.endsWith('/api/v1/public/marshmallow/aki-mailbox/submit') &&
+        init?.method === 'POST'
+      ) {
         feedVersion = 1;
         return jsonResponse({
           success: true,
@@ -165,12 +169,14 @@ describe('PublicMarshmallowScreen', () => {
         '/api/v1/public/marshmallow/aki-mailbox/submit',
         expect.objectContaining({
           method: 'POST',
-        }),
+        })
       );
     });
 
     const headers = new Headers(
-      mockFetch.mock.calls.find((call) => call[0] === '/api/v1/public/marshmallow/aki-mailbox/submit')?.[1]?.headers,
+      mockFetch.mock.calls.find(
+        (call) => call[0] === '/api/v1/public/marshmallow/aki-mailbox/submit'
+      )?.[1]?.headers
     );
     expect(headers.get(BROWSER_PUBLIC_CONSUMER_HEADER)).toBe(BROWSER_PUBLIC_CONSUMER_CODE);
   });
@@ -228,7 +234,9 @@ describe('PublicMarshmallowScreen', () => {
     renderWithLocale(<PublicMarshmallowScreen path="aki-mailbox" turnstileSiteKey="site-key" />);
 
     expect(await screen.findByRole('heading', { name: 'Ask Aki' })).toBeInTheDocument();
-    expect(screen.getByText('Submission is temporarily unavailable. Please try again later.')).toBeInTheDocument();
+    expect(
+      screen.getByText('Submission is temporarily unavailable. Please try again later.')
+    ).toBeInTheDocument();
     expect(screen.queryByText('Turnstile verification')).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Send message' })).toBeDisabled();
   });
@@ -280,7 +288,10 @@ describe('PublicMarshmallowScreen', () => {
         });
       }
 
-      if (url.endsWith('/api/v1/public/marshmallow/aki-mailbox/submit') && init?.method === 'POST') {
+      if (
+        url.endsWith('/api/v1/public/marshmallow/aki-mailbox/submit') &&
+        init?.method === 'POST'
+      ) {
         return jsonResponse({
           success: true,
           data: {
@@ -310,16 +321,18 @@ describe('PublicMarshmallowScreen', () => {
 
     expect(await screen.findByText('Question received.')).toBeInTheDocument();
     const submitCall = mockFetch.mock.calls.find((call) =>
-      String(call[0]).endsWith('/api/v1/public/marshmallow/aki-mailbox/submit'),
+      String(call[0]).endsWith('/api/v1/public/marshmallow/aki-mailbox/submit')
     );
     expect(JSON.parse(String(submitCall?.[1]?.body))).not.toHaveProperty('turnstileToken');
   });
 
   it('renders the Turnstile widget path and submits the token when required config is ready', async () => {
-    const renderTurnstile = vi.fn((_: HTMLElement, options: { callback: (token: string) => void }) => {
-      options.callback('turnstile-token');
-      return 'widget-1';
-    });
+    const renderTurnstile = vi.fn(
+      (_: HTMLElement, options: { callback: (token: string) => void }) => {
+        options.callback('turnstile-token');
+        return 'widget-1';
+      }
+    );
     vi.stubGlobal('turnstile', {
       render: renderTurnstile,
       reset: vi.fn(),
@@ -372,7 +385,10 @@ describe('PublicMarshmallowScreen', () => {
         });
       }
 
-      if (url.endsWith('/api/v1/public/marshmallow/aki-mailbox/submit') && init?.method === 'POST') {
+      if (
+        url.endsWith('/api/v1/public/marshmallow/aki-mailbox/submit') &&
+        init?.method === 'POST'
+      ) {
         return jsonResponse({
           success: true,
           data: {
@@ -402,8 +418,8 @@ describe('PublicMarshmallowScreen', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Send message' }));
 
     await waitFor(() => {
-      const submitCall = mockFetch.mock.calls.find(
-        (call) => String(call[0]).endsWith('/api/v1/public/marshmallow/aki-mailbox/submit'),
+      const submitCall = mockFetch.mock.calls.find((call) =>
+        String(call[0]).endsWith('/api/v1/public/marshmallow/aki-mailbox/submit')
       );
       expect(JSON.parse(String(submitCall?.[1]?.body))).toMatchObject({
         turnstileToken: 'turnstile-token',
@@ -412,10 +428,12 @@ describe('PublicMarshmallowScreen', () => {
   });
 
   it('uses the tenant Turnstile Site Key from the public config contract', async () => {
-    const renderTurnstile = vi.fn((_: HTMLElement, options: { callback: (token: string) => void }) => {
-      options.callback('turnstile-token');
-      return 'widget-1';
-    });
+    const renderTurnstile = vi.fn(
+      (_: HTMLElement, options: { callback: (token: string) => void }) => {
+        options.callback('turnstile-token');
+        return 'widget-1';
+      }
+    );
     vi.stubGlobal('turnstile', {
       render: renderTurnstile,
       reset: vi.fn(),
@@ -481,7 +499,7 @@ describe('PublicMarshmallowScreen', () => {
         expect.any(HTMLElement),
         expect.objectContaining({
           sitekey: 'tenant-public-site-key',
-        }),
+        })
       );
     });
   });
@@ -496,8 +514,8 @@ describe('PublicMarshmallowScreen', () => {
             message: 'Page not found',
           },
         },
-        404,
-      ),
+        404
+      )
     );
     mockFetch.mockResolvedValueOnce(
       jsonResponse(
@@ -508,14 +526,18 @@ describe('PublicMarshmallowScreen', () => {
             message: 'Page not found',
           },
         },
-        404,
-      ),
+        404
+      )
     );
 
     renderWithLocale(<PublicMarshmallowScreen path="missing-mailbox" turnstileSiteKey="" />);
 
     expect(await screen.findByText('Public marshmallow unavailable')).toBeInTheDocument();
-    expect(screen.getByText('The public marshmallow page is not published, not enabled, or no longer reachable.')).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'The public marshmallow page is not published, not enabled, or no longer reachable.'
+      )
+    ).toBeInTheDocument();
     expect(screen.queryByText('Page not found')).not.toBeInTheDocument();
   });
 
@@ -534,8 +556,8 @@ describe('PublicMarshmallowScreen', () => {
             message: '',
           },
         },
-        404,
-      ),
+        404
+      )
     );
     mockFetch.mockResolvedValueOnce(
       jsonResponse(
@@ -546,14 +568,16 @@ describe('PublicMarshmallowScreen', () => {
             message: '',
           },
         },
-        404,
-      ),
+        404
+      )
     );
 
     renderWithLocale(<PublicMarshmallowScreen path="missing-mailbox" turnstileSiteKey="" />);
 
     expect(await screen.findByText('公开棉花糖不可用')).toBeInTheDocument();
-    expect(screen.getByText('当前公开棉花糖页面尚未发布、未启用，或暂时不可达。')).toBeInTheDocument();
+    expect(
+      screen.getByText('当前公开棉花糖页面尚未发布、未启用，或暂时不可达。')
+    ).toBeInTheDocument();
   });
 
   it('selects locale-aware runtime copy and legal fallback content', async () => {
@@ -607,7 +631,9 @@ describe('PublicMarshmallowScreen', () => {
 
     renderWithLocale(<PublicMarshmallowScreen path="aki-mailbox" turnstileSiteKey="" />);
 
-    expect(await screen.findByRole('heading', { name: 'Aki Rosenthal マシュマロ' })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { name: 'Aki Rosenthal マシュマロ' })
+    ).toBeInTheDocument();
     expect(screen.getByText('公開マシュマロ')).toBeInTheDocument();
     expect(screen.getByText('記名投稿のみ')).toBeInTheDocument();
     expect(screen.getByText('CAPTCHA モード: 自動')).toBeInTheDocument();
@@ -694,10 +720,7 @@ describe('PublicMarshmallowScreen', () => {
   });
 
   it('shows a load-more affordance while keeping the public count incremental', async () => {
-    window.localStorage.setItem(
-      'tcrn.public.marshmallow.fingerprint.aki-mailbox',
-      'fp_test',
-    );
+    window.localStorage.setItem('tcrn.public.marshmallow.fingerprint.aki-mailbox', 'fp_test');
 
     mockFetch.mockImplementation(async (input: RequestInfo | URL) => {
       const url = String(input);
@@ -728,7 +751,9 @@ describe('PublicMarshmallowScreen', () => {
         });
       }
 
-      if (url.endsWith('/api/v1/public/marshmallow/aki-mailbox/messages?fingerprint=fp_test&limit=20')) {
+      if (
+        url.endsWith('/api/v1/public/marshmallow/aki-mailbox/messages?fingerprint=fp_test&limit=20')
+      ) {
         return jsonResponse({
           success: true,
           data: {
@@ -759,7 +784,7 @@ describe('PublicMarshmallowScreen', () => {
 
       if (
         url.endsWith(
-          '/api/v1/public/marshmallow/aki-mailbox/messages?fingerprint=fp_test&cursor=2026-04-17T12%3A00%3A00.000Z&limit=20',
+          '/api/v1/public/marshmallow/aki-mailbox/messages?fingerprint=fp_test&cursor=2026-04-17T12%3A00%3A00.000Z&limit=20'
         )
       ) {
         return jsonResponse({

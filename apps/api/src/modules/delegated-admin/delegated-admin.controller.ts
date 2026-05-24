@@ -1,16 +1,15 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import {
-    Body,
-    Controller,
-    Delete,
-    Get,
-    HttpCode,
-    HttpStatus,
-    Param,
-    Post,
-    Query,
-    Req,
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  Post,
+  Query,
+  Req,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { IsEnum, IsOptional, IsString } from 'class-validator';
@@ -67,7 +66,7 @@ export class DelegatedAdminController {
   async list(
     @CurrentUser() user: AuthenticatedUser,
     @Query() query: ListDelegatedAdminsQueryDto,
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     const language = getRequestUiLocale(req);
 
@@ -77,7 +76,7 @@ export class DelegatedAdminController {
         scopeType: query.scopeType,
         scopeId: query.scopeId,
       },
-      language,
+      language
     );
 
     const data = delegations.map((d) => ({
@@ -89,10 +88,12 @@ export class DelegatedAdminController {
       delegateId: d.delegateId,
       delegateName: d.delegateName,
       grantedAt: d.grantedAt.toISOString(),
-      grantedBy: d.grantedById ? {
-        id: d.grantedById,
-        username: d.grantedByUsername,
-      } : null,
+      grantedBy: d.grantedById
+        ? {
+            id: d.grantedById,
+            username: d.grantedByUsername,
+          }
+        : null,
     }));
 
     return success(data);
@@ -105,10 +106,7 @@ export class DelegatedAdminController {
   @Post()
   @RequirePermissions({ resource: 'tenant.manage', action: 'create' })
   @ApiOperation({ summary: 'Create delegated admin' })
-  async create(
-    @CurrentUser() user: AuthenticatedUser,
-    @Body() dto: CreateDelegatedAdminDto,
-  ) {
+  async create(@CurrentUser() user: AuthenticatedUser, @Body() dto: CreateDelegatedAdminDto) {
     const delegation = await this.delegatedAdminService.create(
       user.tenantSchema,
       {
@@ -117,7 +115,7 @@ export class DelegatedAdminController {
         delegateType: dto.delegateType,
         delegateId: dto.delegateId,
       },
-      user.id,
+      user.id
     );
 
     return success({
@@ -140,10 +138,7 @@ export class DelegatedAdminController {
   @HttpCode(HttpStatus.OK)
   @RequirePermissions({ resource: 'tenant.manage', action: 'delete' })
   @ApiOperation({ summary: 'Remove delegated admin' })
-  async delete(
-    @CurrentUser() user: AuthenticatedUser,
-    @Param('id') id: string,
-  ) {
+  async delete(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string) {
     await this.delegatedAdminService.delete(id, user.tenantSchema);
 
     return success({
@@ -161,7 +156,7 @@ export class DelegatedAdminController {
   async getMyScopes(@CurrentUser() user: AuthenticatedUser) {
     const scopes = await this.delegatedAdminService.getUserDelegatedScopes(
       user.tenantSchema,
-      user.id,
+      user.id
     );
 
     return success(scopes);

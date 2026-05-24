@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { HttpModule } from '@nestjs/axios';
 import { forwardRef, Module } from '@nestjs/common';
 
@@ -22,8 +21,8 @@ import {
   MarshmallowController,
   PublicMarshmallowController,
 } from './controllers';
-import { ExternalBlocklistRepository } from './infrastructure/external-blocklist.repository';
 import { ExternalBlocklistCacheRepository } from './infrastructure/external-blocklist-cache.repository';
+import { ExternalBlocklistRepository } from './infrastructure/external-blocklist.repository';
 import { MarshmallowConfigRepository } from './infrastructure/marshmallow-config.repository';
 import { MarshmallowExportReadRepository } from './infrastructure/marshmallow-export-read.repository';
 import { MarshmallowExportStateRepository } from './infrastructure/marshmallow-export-state.repository';

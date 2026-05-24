@@ -1,12 +1,8 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { ConflictException, NotFoundException } from '@nestjs/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type {
-  CreateEmailTemplateDto,
-  UpdateEmailTemplateDto,
-} from '../dto/email-template.dto';
+import type { CreateEmailTemplateDto, UpdateEmailTemplateDto } from '../dto/email-template.dto';
 import { EmailTemplateService } from './email-template.service';
 
 describe('EmailTemplateService', () => {
@@ -72,7 +68,7 @@ describe('EmailTemplateService', () => {
     expect(
       service.renderTemplate(baseTemplate, 'ja', {
         name: 'Aki',
-      }),
+      })
     ).toEqual({
       subject: 'Welcome Aki',
       htmlBody: '<p>Hello Aki</p>',
@@ -82,17 +78,17 @@ describe('EmailTemplateService', () => {
     expect(
       service.renderTemplate(baseTemplate, 'zh_HANS', {
         name: 'Mio',
-      }),
+      })
     ).toEqual({
       subject: '欢迎 Mio',
       htmlBody: '<p>你好 Mio</p>',
-        textBody: 'Hello Mio',
-      });
+      textBody: 'Hello Mio',
+    });
 
     expect(
       service.renderTemplate(baseTemplate, 'fr', {
         name: 'Marine',
-      }),
+      })
     ).toEqual({
       subject: 'Bienvenue Marine',
       htmlBody: '<p>Bonjour Marine</p>',
@@ -102,7 +98,7 @@ describe('EmailTemplateService', () => {
     expect(
       service.renderTemplate(baseTemplate, 'zh_HANT', {
         name: 'Suisei',
-      }),
+      })
     ).toEqual({
       subject: '歡迎 Suisei',
       htmlBody: '<p>您好 Suisei</p>',
@@ -113,9 +109,7 @@ describe('EmailTemplateService', () => {
   it('fills missing preview variables with placeholders', async () => {
     mockRepository.findByCode.mockResolvedValue(baseTemplate);
 
-    await expect(
-      service.preview('WELCOME_EMAIL', 'en', { name: 'Sora' }),
-    ).resolves.toEqual({
+    await expect(service.preview('WELCOME_EMAIL', 'en', { name: 'Sora' })).resolves.toEqual({
       subject: 'Welcome Sora',
       htmlBody: '<p>Hello Sora</p>',
       textBody: 'Hello Sora',
@@ -132,7 +126,7 @@ describe('EmailTemplateService', () => {
         subject: baseTemplate.subject,
         bodyHtml: baseTemplate.bodyHtml,
         category: 'system',
-      } as CreateEmailTemplateDto),
+      } as CreateEmailTemplateDto)
     ).rejects.toThrow(ConflictException);
   });
 
@@ -142,7 +136,7 @@ describe('EmailTemplateService', () => {
     await expect(
       service.update('MISSING', {
         name: { en: 'Updated' },
-      } as UpdateEmailTemplateDto),
+      } as UpdateEmailTemplateDto)
     ).rejects.toThrow(NotFoundException);
   });
 });

@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { HomepageSchedulerApplicationService } from '../application/homepage-scheduler.service';
@@ -17,7 +16,7 @@ describe('HomepageSchedulerService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     service = new HomepageSchedulerService(
-      mockApplicationService as unknown as HomepageSchedulerApplicationService,
+      mockApplicationService as unknown as HomepageSchedulerApplicationService
     );
   });
 

@@ -1,8 +1,4 @@
-import type {
-  ReportFormat,
-  ReportJobStatus,
-  SupportedUiLocale,
-} from '@tcrn/shared';
+import type { ReportFormat, ReportJobStatus, SupportedUiLocale } from '@tcrn/shared';
 
 import { useUiLocale } from '@/platform/runtime/locale/locale-provider';
 import {
@@ -37,7 +33,8 @@ const COPY = {
     header: {
       eyebrow: 'Reports',
       title: 'Reports Management',
-      description: 'Browse available reports, draft exports, and review run history for the current talent scope.',
+      description:
+        'Browse available reports, draft exports, and review run history for the current talent scope.',
       workspaceSettings: 'Talent settings',
       draftJob: 'Draft report',
       refreshJobs: 'Refresh jobs',
@@ -75,7 +72,8 @@ const COPY = {
     },
     preview: {
       title: 'Preview',
-      description: 'Preview matches use the current MFR job draft and return a small sample of the result set.',
+      description:
+        'Preview matches use the current MFR job draft and return a small sample of the result set.',
       unavailableTitle: 'Preview unavailable',
       matchedRowsLabel: 'Matched Rows',
       matchedRowsHint: 'Estimated row count before queueing.',
@@ -90,7 +88,8 @@ const COPY = {
       emptyTitle: 'No MFR rows matched',
       emptyDescription: 'Adjust the filter draft and run another preview.',
       noPreviewTitle: 'No preview requested yet',
-      noPreviewDescription: 'Open the MFR job drawer to preview matched rows before queueing a new report job.',
+      noPreviewDescription:
+        'Open the MFR job drawer to preview matched rows before queueing a new report job.',
       unnamedCustomer: 'Unnamed customer',
       openEnded: 'open-ended',
     },
@@ -123,27 +122,35 @@ const COPY = {
       description: 'Review catalog availability and delivery handling for this workspace.',
       scopeLabel: 'Scope',
       scopeValue: 'Talent scope',
-      scopeHint: 'Published reports in this workspace currently run against the selected talent scope.',
+      scopeHint:
+        'Published reports in this workspace currently run against the selected talent scope.',
       sensitiveDeliveryLabel: 'Delivery',
       sensitiveDeliveryValue: 'Linked download',
-      sensitiveDeliveryHint: 'When a download link is available, that run opens there instead of downloading directly on this page.',
+      sensitiveDeliveryHint:
+        'When a download link is available, that run opens there instead of downloading directly on this page.',
       workflowLabel: 'Workflow',
       workflowValue: 'Directory + history',
-      workflowHint: 'Start from the report directory, then track queued runs and downloads in history.',
+      workflowHint:
+        'Start from the report directory, then track queued runs and downloads in history.',
     },
     drawer: {
       title: 'Create MFR Job',
-      description: 'Queue a new member-feedback export with optional scope filters. Preview uses the same draft state as job creation.',
+      description:
+        'Queue a new member-feedback export with optional scope filters. Preview uses the same draft state as job creation.',
       draftGuideTitle: 'Preview first, then queue',
-      draftGuideDescription: 'Filters are generated from the selected report catalog schema. Use Preview rows to confirm the draft before creating the job.',
+      draftGuideDescription:
+        'Filters are generated from the selected report catalog schema. Use Preview rows to confirm the draft before creating the job.',
       codeFiltersTitle: 'Catalog filters',
-      codeFiltersDescription: 'Use the report catalog filter schema for primary filters. Leave fields blank for all values.',
+      codeFiltersDescription:
+        'Use the report catalog filter schema for primary filters. Leave fields blank for all values.',
       validityTitle: 'Validity window',
-      validityDescription: 'Limit memberships by valid-from / valid-to dates and decide whether expired or inactive memberships should be included.',
+      validityDescription:
+        'Limit memberships by valid-from / valid-to dates and decide whether expired or inactive memberships should be included.',
       outputTitle: 'Output',
       outputDescription: 'Choose the generated file format before queueing the job.',
       advancedTitle: 'Advanced',
-      advancedDescription: 'Raw code entry is reserved for advanced fallback fields published by the catalog schema.',
+      advancedDescription:
+        'Raw code entry is reserved for advanced fallback fields published by the catalog schema.',
       cancel: 'Cancel',
       closeLabel: 'Close MFR job drawer',
       previewRows: 'Preview rows',
@@ -172,7 +179,8 @@ const COPY = {
     },
     detail: {
       title: 'Report Job Detail',
-      description: 'Inspect the request snapshot, status timeline, failure reason, and artifacts for this run.',
+      description:
+        'Inspect the request snapshot, status timeline, failure reason, and artifacts for this run.',
       closeLabel: 'Close report job detail',
       loading: 'Loading report job detail…',
       unavailableTitle: 'Report job detail unavailable',
@@ -282,7 +290,8 @@ const COPY = {
     portal: {
       badge: '外部 PII 交接',
       title: 'PII 平台交接已就绪',
-      description: '本次运行通过外部 PII 平台交付。TMS 不存储报表文件本体；请在交接链接过期前打开外部平台，然后回到运行历史查看 TMS 侧状态。',
+      description:
+        '本次运行通过外部 PII 平台交付。TMS 不存储报表文件本体；请在交接链接过期前打开外部平台，然后回到运行历史查看 TMS 侧状态。',
       expiresPrefix: '链接过期时间',
       estimatedPrefix: '预计',
       estimatedSuffix: '行将由外部平台处理。',
@@ -359,7 +368,8 @@ const COPY = {
       codeFiltersTitle: '目录筛选',
       codeFiltersDescription: '使用报表目录 filter schema 中的主要筛选项；留空表示包含全部值。',
       validityTitle: '有效期窗口',
-      validityDescription: '按 valid-from / valid-to 日期限制会员范围，并决定是否包含已过期或未激活会员。',
+      validityDescription:
+        '按 valid-from / valid-to 日期限制会员范围，并决定是否包含已过期或未激活会员。',
       outputTitle: '输出',
       outputDescription: '排队任务前选择生成文件格式。',
       advancedTitle: '高级',
@@ -502,7 +512,8 @@ const COPY = {
     portal: {
       badge: '外部 PII 交接',
       title: 'PII 平台交接已就绪',
-      description: '本次运行通过外部 PII 平台交付。TMS 不存储报表文件本体；请在交接链接过期前打开外部平台，然后回到运行历史查看 TMS 侧状态。',
+      description:
+        '本次运行通过外部 PII 平台交付。TMS 不存储报表文件本体；请在交接链接过期前打开外部平台，然后回到运行历史查看 TMS 侧状态。',
       expiresPrefix: '链接过期时间',
       estimatedPrefix: '预计',
       estimatedSuffix: '行将由外部平台处理。',
@@ -579,7 +590,8 @@ const COPY = {
       codeFiltersTitle: '目录筛选',
       codeFiltersDescription: '使用报表目录 filter schema 中的主要筛选项；留空表示包含全部值。',
       validityTitle: '有效期窗口',
-      validityDescription: '按 valid-from / valid-to 日期限制会员范围，并决定是否包含已过期或未激活会员。',
+      validityDescription:
+        '按 valid-from / valid-to 日期限制会员范围，并决定是否包含已过期或未激活会员。',
       outputTitle: '输出',
       outputDescription: '排队任务前选择生成文件格式。',
       advancedTitle: '高级',
@@ -699,7 +711,8 @@ const COPY = {
     header: {
       eyebrow: 'レポート',
       title: 'レポート管理',
-      description: '現在のタレント範囲で利用できるレポートを確認し、エクスポートを起票し、実行履歴を確認します。',
+      description:
+        '現在のタレント範囲で利用できるレポートを確認し、エクスポートを起票し、実行履歴を確認します。',
       workspaceSettings: 'タレント設定',
       draftJob: 'レポートを起票',
       refreshJobs: 'ジョブを更新',
@@ -752,13 +765,15 @@ const COPY = {
       emptyTitle: '一致する MFR 行はありません',
       emptyDescription: 'フィルター草稿を調整して、もう一度プレビューしてください。',
       noPreviewTitle: 'まだプレビューは要求されていません',
-      noPreviewDescription: 'まず MFR ジョブドロワーを開き、一致行を確認してからレポートジョブを作成してください。',
+      noPreviewDescription:
+        'まず MFR ジョブドロワーを開き、一致行を確認してからレポートジョブを作成してください。',
       unnamedCustomer: '名称未設定の顧客',
       openEnded: '終了日なし',
     },
     ledger: {
       title: 'MFR ジョブ',
-      description: '現在ページのキュー済みジョブを追跡し、取消可能な要求を停止し、完了済み成果物をダウンロードします。',
+      description:
+        '現在ページのキュー済みジョブを追跡し、取消可能な要求を停止し、完了済み成果物をダウンロードします。',
       filterLabel: 'ジョブ状態フィルター',
       showingPrefix: '現在のページに',
       showingJobsSuffix: '件表示、合計',
@@ -788,24 +803,30 @@ const COPY = {
       scopeHint: 'このワークスペースで公開中のレポートは、現在選択中のタレント範囲で実行されます。',
       sensitiveDeliveryLabel: 'ダウンロード方式',
       sensitiveDeliveryValue: 'リンクダウンロード',
-      sensitiveDeliveryHint: 'ダウンロードリンクが利用できる場合、その実行結果はこのページで直接ダウンロードする代わりにリンク先を開きます。',
+      sensitiveDeliveryHint:
+        'ダウンロードリンクが利用できる場合、その実行結果はこのページで直接ダウンロードする代わりにリンク先を開きます。',
       workflowLabel: 'ワークフロー',
       workflowValue: 'ディレクトリ + 履歴',
       workflowHint: 'レポートディレクトリから起票し、履歴でキューとダウンロードを追跡します。',
     },
     drawer: {
       title: 'MFR ジョブを作成',
-      description: '任意のスコープフィルター付きで新しい会員フィードバックエクスポートを作成します。プレビューはジョブ作成と同じ草稿状態を使用します。',
+      description:
+        '任意のスコープフィルター付きで新しい会員フィードバックエクスポートを作成します。プレビューはジョブ作成と同じ草稿状態を使用します。',
       draftGuideTitle: '先にプレビューし、その後キューに追加',
-      draftGuideDescription: 'フィルターは選択したレポートカタログ schema から生成されます。ジョブ作成前にプレビュー行で草稿を確認してください。',
+      draftGuideDescription:
+        'フィルターは選択したレポートカタログ schema から生成されます。ジョブ作成前にプレビュー行で草稿を確認してください。',
       codeFiltersTitle: 'カタログフィルター',
-      codeFiltersDescription: 'レポートカタログの filter schema にある主要フィルターを使用します。空欄の場合はすべての値を含めます。',
+      codeFiltersDescription:
+        'レポートカタログの filter schema にある主要フィルターを使用します。空欄の場合はすべての値を含めます。',
       validityTitle: '有効期間',
-      validityDescription: 'valid-from / valid-to の日付で会員範囲を絞り、期限切れまたは非アクティブ会員を含めるかを決めます。',
+      validityDescription:
+        'valid-from / valid-to の日付で会員範囲を絞り、期限切れまたは非アクティブ会員を含めるかを決めます。',
       outputTitle: '出力',
       outputDescription: 'ジョブをキューに入れる前に生成ファイル形式を選択します。',
       advancedTitle: '詳細設定',
-      advancedDescription: '生コード入力はカタログ schema が公開する詳細フォールバック項目に限定されます。',
+      advancedDescription:
+        '生コード入力はカタログ schema が公開する詳細フォールバック項目に限定されます。',
       cancel: 'キャンセル',
       closeLabel: 'MFR ジョブドロワーを閉じる',
       previewRows: '行をプレビュー',
@@ -834,7 +855,8 @@ const COPY = {
     },
     detail: {
       title: 'レポートジョブ詳細',
-      description: 'この実行のリクエストスナップショット、状態タイムライン、失敗理由、成果物を確認します。',
+      description:
+        'この実行のリクエストスナップショット、状態タイムライン、失敗理由、成果物を確認します。',
       closeLabel: 'レポートジョブ詳細を閉じる',
       loading: 'レポートジョブ詳細を読み込み中…',
       unavailableTitle: 'レポートジョブ詳細を利用できません',
@@ -921,7 +943,8 @@ const COPY = {
     header: {
       eyebrow: 'Reports',
       title: 'Reports Management',
-      description: 'Browse available reports, draft exports, and review run history for the current talent scope.',
+      description:
+        'Browse available reports, draft exports, and review run history for the current talent scope.',
       workspaceSettings: 'Talent settings',
       draftJob: 'Draft report',
       refreshJobs: 'Refresh jobs',
@@ -959,7 +982,8 @@ const COPY = {
     },
     preview: {
       title: 'Preview',
-      description: 'Preview matches use the current MFR job draft and return a small sample of the result set.',
+      description:
+        'Preview matches use the current MFR job draft and return a small sample of the result set.',
       unavailableTitle: 'Preview unavailable',
       matchedRowsLabel: 'Matched Rows',
       matchedRowsHint: 'Estimated row count before queueing.',
@@ -974,7 +998,8 @@ const COPY = {
       emptyTitle: 'No MFR rows matched',
       emptyDescription: 'Adjust the filter draft and run another preview.',
       noPreviewTitle: 'No preview requested yet',
-      noPreviewDescription: 'Open the MFR job drawer to preview matched rows before queueing a new report job.',
+      noPreviewDescription:
+        'Open the MFR job drawer to preview matched rows before queueing a new report job.',
       unnamedCustomer: 'Unnamed customer',
       openEnded: 'open-ended',
     },
@@ -1007,27 +1032,35 @@ const COPY = {
       description: 'Review catalog availability and delivery handling for this workspace.',
       scopeLabel: 'Scope',
       scopeValue: 'Talent scope',
-      scopeHint: 'Published reports in this workspace currently run against the selected talent scope.',
+      scopeHint:
+        'Published reports in this workspace currently run against the selected talent scope.',
       sensitiveDeliveryLabel: 'Delivery',
       sensitiveDeliveryValue: 'Linked download',
-      sensitiveDeliveryHint: 'When a download link is available, that run opens there instead of downloading directly on this page.',
+      sensitiveDeliveryHint:
+        'When a download link is available, that run opens there instead of downloading directly on this page.',
       workflowLabel: 'Workflow',
       workflowValue: 'Directory + history',
-      workflowHint: 'Start from the report directory, then track queued runs and downloads in history.',
+      workflowHint:
+        'Start from the report directory, then track queued runs and downloads in history.',
     },
     drawer: {
       title: 'Create MFR Job',
-      description: 'Queue a new member-feedback export with optional scope filters. Preview uses the same draft state as job creation.',
+      description:
+        'Queue a new member-feedback export with optional scope filters. Preview uses the same draft state as job creation.',
       draftGuideTitle: 'Preview first, then queue',
-      draftGuideDescription: 'Filters are generated from the selected report catalog schema. Use Preview rows to confirm the draft before creating the job.',
+      draftGuideDescription:
+        'Filters are generated from the selected report catalog schema. Use Preview rows to confirm the draft before creating the job.',
       codeFiltersTitle: 'Catalog filters',
-      codeFiltersDescription: 'Use the report catalog filter schema for primary filters. Leave fields blank for all values.',
+      codeFiltersDescription:
+        'Use the report catalog filter schema for primary filters. Leave fields blank for all values.',
       validityTitle: 'Validity window',
-      validityDescription: 'Limit memberships by valid-from / valid-to dates and decide whether expired or inactive memberships should be included.',
+      validityDescription:
+        'Limit memberships by valid-from / valid-to dates and decide whether expired or inactive memberships should be included.',
       outputTitle: 'Output',
       outputDescription: 'Choose the generated file format before queueing the job.',
       advancedTitle: 'Advanced',
-      advancedDescription: 'Raw code entry is reserved for advanced fallback fields published by the catalog schema.',
+      advancedDescription:
+        'Raw code entry is reserved for advanced fallback fields published by the catalog schema.',
       cancel: 'Cancel',
       closeLabel: 'Close MFR job drawer',
       previewRows: 'Preview rows',
@@ -1056,7 +1089,8 @@ const COPY = {
     },
     detail: {
       title: 'Report Job Detail',
-      description: 'Inspect the request snapshot, status timeline, failure reason, and artifacts for this run.',
+      description:
+        'Inspect the request snapshot, status timeline, failure reason, and artifacts for this run.',
       closeLabel: 'Close report job detail',
       loading: 'Loading report job detail…',
       unavailableTitle: 'Report job detail unavailable',
@@ -1143,7 +1177,8 @@ const COPY = {
     header: {
       eyebrow: 'Reports',
       title: 'Reports Management',
-      description: 'Browse available reports, draft exports, and review run history for the current talent scope.',
+      description:
+        'Browse available reports, draft exports, and review run history for the current talent scope.',
       workspaceSettings: 'Talent settings',
       draftJob: 'Draft report',
       refreshJobs: 'Refresh jobs',
@@ -1181,7 +1216,8 @@ const COPY = {
     },
     preview: {
       title: 'Preview',
-      description: 'Preview matches use the current MFR job draft and return a small sample of the result set.',
+      description:
+        'Preview matches use the current MFR job draft and return a small sample of the result set.',
       unavailableTitle: 'Preview unavailable',
       matchedRowsLabel: 'Matched Rows',
       matchedRowsHint: 'Estimated row count before queueing.',
@@ -1196,7 +1232,8 @@ const COPY = {
       emptyTitle: 'No MFR rows matched',
       emptyDescription: 'Adjust the filter draft and run another preview.',
       noPreviewTitle: 'No preview requested yet',
-      noPreviewDescription: 'Open the MFR job drawer to preview matched rows before queueing a new report job.',
+      noPreviewDescription:
+        'Open the MFR job drawer to preview matched rows before queueing a new report job.',
       unnamedCustomer: 'Unnamed customer',
       openEnded: 'open-ended',
     },
@@ -1229,27 +1266,35 @@ const COPY = {
       description: 'Review catalog availability and delivery handling for this workspace.',
       scopeLabel: 'Scope',
       scopeValue: 'Talent scope',
-      scopeHint: 'Published reports in this workspace currently run against the selected talent scope.',
+      scopeHint:
+        'Published reports in this workspace currently run against the selected talent scope.',
       sensitiveDeliveryLabel: 'Delivery',
       sensitiveDeliveryValue: 'Linked download',
-      sensitiveDeliveryHint: 'When a download link is available, that run opens there instead of downloading directly on this page.',
+      sensitiveDeliveryHint:
+        'When a download link is available, that run opens there instead of downloading directly on this page.',
       workflowLabel: 'Workflow',
       workflowValue: 'Directory + history',
-      workflowHint: 'Start from the report directory, then track queued runs and downloads in history.',
+      workflowHint:
+        'Start from the report directory, then track queued runs and downloads in history.',
     },
     drawer: {
       title: 'Create MFR Job',
-      description: 'Queue a new member-feedback export with optional scope filters. Preview uses the same draft state as job creation.',
+      description:
+        'Queue a new member-feedback export with optional scope filters. Preview uses the same draft state as job creation.',
       draftGuideTitle: 'Preview first, then queue',
-      draftGuideDescription: 'Filters are generated from the selected report catalog schema. Use Preview rows to confirm the draft before creating the job.',
+      draftGuideDescription:
+        'Filters are generated from the selected report catalog schema. Use Preview rows to confirm the draft before creating the job.',
       codeFiltersTitle: 'Catalog filters',
-      codeFiltersDescription: 'Use the report catalog filter schema for primary filters. Leave fields blank for all values.',
+      codeFiltersDescription:
+        'Use the report catalog filter schema for primary filters. Leave fields blank for all values.',
       validityTitle: 'Validity window',
-      validityDescription: 'Limit memberships by valid-from / valid-to dates and decide whether expired or inactive memberships should be included.',
+      validityDescription:
+        'Limit memberships by valid-from / valid-to dates and decide whether expired or inactive memberships should be included.',
       outputTitle: 'Output',
       outputDescription: 'Choose the generated file format before queueing the job.',
       advancedTitle: 'Advanced',
-      advancedDescription: 'Raw code entry is reserved for advanced fallback fields published by the catalog schema.',
+      advancedDescription:
+        'Raw code entry is reserved for advanced fallback fields published by the catalog schema.',
       cancel: 'Cancel',
       closeLabel: 'Close MFR job drawer',
       previewRows: 'Preview rows',
@@ -1278,7 +1323,8 @@ const COPY = {
     },
     detail: {
       title: 'Report Job Detail',
-      description: 'Inspect the request snapshot, status timeline, failure reason, and artifacts for this run.',
+      description:
+        'Inspect the request snapshot, status timeline, failure reason, and artifacts for this run.',
       closeLabel: 'Close report job detail',
       loading: 'Loading report job detail…',
       unavailableTitle: 'Report job detail unavailable',
@@ -1350,7 +1396,10 @@ const COPY_BY_LOCALE = COPY as unknown as Record<SupportedUiLocale, ReportsManag
 export function useReportsManagementCopy() {
   const { locale } = useUiLocale();
   const effectiveSelectedLocale = locale;
-  const copy = resolveLocaleRecord(effectiveSelectedLocale, COPY_BY_LOCALE) as ReportsManagementCopy;
+  const copy = resolveLocaleRecord(
+    effectiveSelectedLocale,
+    COPY_BY_LOCALE
+  ) as ReportsManagementCopy;
 
   return {
     locale: effectiveSelectedLocale,
@@ -1374,17 +1423,17 @@ export function useReportsManagementCopy() {
 }
 
 export function formatReportsDateTime(
-  locale: SupportedUiLocale ,
+  locale: SupportedUiLocale,
   value: string | null,
-  fallback: string,
+  fallback: string
 ) {
   return formatLocaleDateTime(locale, value, fallback);
 }
 
 export function formatReportsNumber(
-  locale: SupportedUiLocale ,
+  locale: SupportedUiLocale,
   value: number | null,
-  pendingLabel: string,
+  pendingLabel: string
 ) {
   if (value === null) {
     return pendingLabel;
@@ -1393,9 +1442,8 @@ export function formatReportsNumber(
   return formatLocaleNumber(locale, value);
 }
 
-export function getReportsJobStatusLabel(
-  locale: SupportedUiLocale ,
-  status: ReportJobStatus,
-) {
-  return (resolveLocaleRecord(locale, COPY_BY_LOCALE) as ReportsManagementCopy).options.jobState[status];
+export function getReportsJobStatusLabel(locale: SupportedUiLocale, status: ReportJobStatus) {
+  return (resolveLocaleRecord(locale, COPY_BY_LOCALE) as ReportsManagementCopy).options.jobState[
+    status
+  ];
 }

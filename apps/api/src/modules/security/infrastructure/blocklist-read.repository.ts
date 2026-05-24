@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable } from '@nestjs/common';
 
 import { DatabaseService } from '../../database';
@@ -23,7 +22,7 @@ export class BlocklistReadRepository {
   async getScopeChain(
     tenantSchema: string,
     scopeType: OwnerType,
-    scopeId: string | null,
+    scopeId: string | null
   ): Promise<BlocklistScopeRef[]> {
     const prisma = this.databaseService.getPrisma();
     const chain: BlocklistScopeRef[] = [{ type: 'tenant', id: null }];
@@ -33,16 +32,18 @@ export class BlocklistReadRepository {
     }
 
     if (scopeType === 'subsidiary' && scopeId) {
-      const subsidiaries = await prisma.$queryRawUnsafe<Array<{
-        id: string;
-        path: string;
-      }>>(
+      const subsidiaries = await prisma.$queryRawUnsafe<
+        Array<{
+          id: string;
+          path: string;
+        }>
+      >(
         `
           SELECT id, path
           FROM "${tenantSchema}".subsidiary
           WHERE id = $1::uuid
         `,
-        scopeId,
+        scopeId
       );
 
       if (subsidiaries.length > 0) {
@@ -53,7 +54,7 @@ export class BlocklistReadRepository {
             WHERE $1 LIKE path || '%' AND path != $1
             ORDER BY length(path)
           `,
-          subsidiaries[0].path,
+          subsidiaries[0].path
         );
 
         for (const ancestor of ancestors) {
@@ -73,7 +74,7 @@ export class BlocklistReadRepository {
           FROM "${tenantSchema}".talent
           WHERE id = $1::uuid
         `,
-        scopeId,
+        scopeId
       );
 
       if (talents.length > 0 && talents[0].subsidiaryId) {
@@ -84,7 +85,7 @@ export class BlocklistReadRepository {
             WHERE $1 LIKE path || '%'
             ORDER BY length(path)
           `,
-          talents[0].path,
+          talents[0].path
         );
 
         for (const subsidiary of subsidiaries) {
@@ -101,7 +102,7 @@ export class BlocklistReadRepository {
   async countMany(
     tenantSchema: string,
     options: BlocklistListOptions,
-    scopeChain: BlocklistScopeRef[],
+    scopeChain: BlocklistScopeRef[]
   ): Promise<number> {
     const prisma = this.databaseService.getPrisma();
     const { params, whereClause } = this.buildWhereClause(options, scopeChain);
@@ -111,7 +112,7 @@ export class BlocklistReadRepository {
         FROM "${tenantSchema}".blocklist_entry
         WHERE ${whereClause}
       `,
-      ...params,
+      ...params
     );
 
     return result[0]?.count ?? 0;
@@ -120,7 +121,7 @@ export class BlocklistReadRepository {
   async findMany(
     tenantSchema: string,
     options: BlocklistListOptions,
-    scopeChain: BlocklistScopeRef[],
+    scopeChain: BlocklistScopeRef[]
   ): Promise<BlocklistListRow[]> {
     const prisma = this.databaseService.getPrisma();
     const { params, whereClause } = this.buildWhereClause(options, scopeChain);
@@ -159,14 +160,14 @@ export class BlocklistReadRepository {
       `,
       ...params,
       options.pageSize,
-      offset,
+      offset
     );
   }
 
   async getDisabledIds(
     tenantSchema: string,
     scopeType: OwnerType,
-    scopeId: string | null,
+    scopeId: string | null
   ): Promise<Set<string>> {
     const prisma = this.databaseService.getPrisma();
     const overrides = await prisma.$queryRawUnsafe<Array<{ entityId: string }>>(
@@ -180,16 +181,13 @@ export class BlocklistReadRepository {
           AND is_disabled = true
       `,
       scopeType,
-      scopeId,
+      scopeId
     );
 
     return new Set(overrides.map((override) => override.entityId));
   }
 
-  async findById(
-    tenantSchema: string,
-    id: string,
-  ): Promise<BlocklistDetailRow | null> {
+  async findById(tenantSchema: string, id: string): Promise<BlocklistDetailRow | null> {
     const prisma = this.databaseService.getPrisma();
     const entries = await prisma.$queryRawUnsafe<BlocklistDetailRow[]>(
       `
@@ -223,7 +221,7 @@ export class BlocklistReadRepository {
         WHERE id = $1::uuid
         LIMIT 1
       `,
-      id,
+      id
     );
 
     return entries[0] ?? null;
@@ -231,7 +229,7 @@ export class BlocklistReadRepository {
 
   private buildWhereClause(
     options: BlocklistListOptions,
-    scopeChain: BlocklistScopeRef[],
+    scopeChain: BlocklistScopeRef[]
   ): BlocklistWhereClause {
     const params: unknown[] = [];
     const scopeRefs = options.includeInherited

@@ -1,9 +1,9 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { InjectQueue } from '@nestjs/bullmq';
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { ErrorCodes, LogSeverity, type RequestContext, TechEventType } from '@tcrn/shared';
 import type { Queue } from 'bullmq';
+
+import { ErrorCodes, LogSeverity, type RequestContext, TechEventType } from '@tcrn/shared';
 
 import { TechEventLogService } from '../../log';
 import { QUEUE_NAMES } from '../../queue';
@@ -23,17 +23,17 @@ export class MarshmallowExportWriteApplicationService {
     private readonly marshmallowExportWriteRepository: MarshmallowExportWriteRepository,
     private readonly techEventLogService: TechEventLogService,
     @InjectQueue(QUEUE_NAMES.MARSHMALLOW_EXPORT)
-    private readonly marshmallowExportQueue: Queue,
+    private readonly marshmallowExportQueue: Queue
   ) {}
 
   async createJob(
     talentId: string,
     dto: ExportMessagesDto,
-    context: RequestContext,
+    context: RequestContext
   ): Promise<MarshmallowExportJobCreateResponse> {
     const talent = await this.marshmallowExportWriteRepository.findTalentForCreation(
       context.tenantSchema,
-      talentId,
+      talentId
     );
 
     if (!talent) {
@@ -63,17 +63,20 @@ export class MarshmallowExportWriteApplicationService {
       filters,
     } satisfies MarshmallowExportJobData);
 
-    await this.techEventLogService.log({
-      eventType: TechEventType.EXPORT_JOB_STARTED,
-      scope: 'marshmallow',
-      severity: LogSeverity.INFO,
-      traceId: job.id,
-      payload: {
-        job_id: job.id,
-        talent_id: talentId,
-        format: dto.format,
+    await this.techEventLogService.log(
+      {
+        eventType: TechEventType.EXPORT_JOB_STARTED,
+        scope: 'marshmallow',
+        severity: LogSeverity.INFO,
+        traceId: job.id,
+        payload: {
+          job_id: job.id,
+          talent_id: talentId,
+          format: dto.format,
+        },
       },
-    }, context);
+      context
+    );
 
     return {
       jobId: job.id,

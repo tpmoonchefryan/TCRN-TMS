@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import type { LocalizedText } from '../../constants/locale';
 
 // --- Enums ---
@@ -369,8 +368,10 @@ const aiAdapterCreateDefinition: IntegrationAdapterDefinition = {
   },
   description: {
     en: 'Generic token-only AI provider configuration. Choose OpenAI, Anthropic, or Gemini inside the form. AI invocation is not implemented yet.',
-    zh_HANS: '通用 Token-only AI 提供商配置。在表单内选择 OpenAI、Anthropic 或 Gemini。当前尚未实现 AI 调用。',
-    zh_HANT: '通用 Token-only AI 供應商設定。在表單內選擇 OpenAI、Anthropic 或 Gemini。目前尚未實作 AI 呼叫。',
+    zh_HANS:
+      '通用 Token-only AI 提供商配置。在表单内选择 OpenAI、Anthropic 或 Gemini。当前尚未实现 AI 调用。',
+    zh_HANT:
+      '通用 Token-only AI 供應商設定。在表單內選擇 OpenAI、Anthropic 或 Gemini。目前尚未實作 AI 呼叫。',
     ja: 'トークン専用の汎用 AI プロバイダー設定です。フォーム内で OpenAI、Anthropic、Gemini を選びます。AI 呼び出しはまだ実装されていません。',
     ko: '토큰 전용 일반 AI 제공자 설정입니다. 양식 안에서 OpenAI, Anthropic 또는 Gemini를 선택합니다. AI 호출은 아직 구현되지 않았습니다.',
     fr: "Configuration générique de fournisseur IA par jeton uniquement. Choisissez OpenAI, Anthropic ou Gemini dans le formulaire. L'appel IA n'est pas encore implémenté.",
@@ -390,12 +391,7 @@ const aiAdapterCreateDefinition: IntegrationAdapterDefinition = {
     iconUrl: null,
     color: '#6366F1',
   },
-  configFields: [
-    providerField,
-    endpointPathField,
-    modelField,
-    tokenField,
-  ],
+  configFields: [providerField, endpointPathField, modelField, tokenField],
   protocol: {
     family: 'generic-rest',
     payloadFormat: 'official-provider-protocol',
@@ -618,11 +614,7 @@ const LEGACY_INTEGRATION_ADAPTER_DEFINITIONS: IntegrationAdapterDefinition[] = [
       iconUrl: null,
       color: '#10A37F',
     },
-    configFields: [
-      { ...endpointPathField, defaultValue: '/v1/responses' },
-      modelField,
-      tokenField,
-    ],
+    configFields: [{ ...endpointPathField, defaultValue: '/v1/responses' }, modelField, tokenField],
     protocol: {
       family: 'openai-responses',
       payloadFormat: 'official-provider-protocol',
@@ -667,11 +659,7 @@ const LEGACY_INTEGRATION_ADAPTER_DEFINITIONS: IntegrationAdapterDefinition[] = [
       iconUrl: null,
       color: '#D97757',
     },
-    configFields: [
-      { ...endpointPathField, defaultValue: '/v1/messages' },
-      modelField,
-      tokenField,
-    ],
+    configFields: [{ ...endpointPathField, defaultValue: '/v1/messages' }, modelField, tokenField],
     protocol: {
       family: 'anthropic-messages',
       payloadFormat: 'official-provider-protocol',

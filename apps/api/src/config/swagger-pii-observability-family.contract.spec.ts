@@ -1,14 +1,9 @@
 import 'reflect-metadata';
-
 import { describe, expect, it } from 'vitest';
 
 import { LogSearchController } from '../modules/log/controllers/log-search.controller';
-import {
-  PiiServiceConfigController,
-} from '../modules/pii-config/controllers/pii-service-config.controller';
-import {
-  ProfileStoreController,
-} from '../modules/pii-config/controllers/profile-store.controller';
+import { PiiServiceConfigController } from '../modules/pii-config/controllers/pii-service-config.controller';
+import { ProfileStoreController } from '../modules/pii-config/controllers/profile-store.controller';
 import {
   CreatePiiServiceConfigDto,
   CreateProfileStoreDto,
@@ -24,28 +19,20 @@ const API_MODEL_PROPERTIES_ARRAY_METADATA_KEY = 'swagger/apiModelPropertiesArray
 
 type ControllerClass = { prototype: object };
 
-const getResponseStatuses = (
-  controllerClass: ControllerClass,
-  methodName: string,
-): string[] => {
+const getResponseStatuses = (controllerClass: ControllerClass, methodName: string): string[] => {
   const prototype = controllerClass.prototype as Record<string, unknown>;
-  const metadata = Reflect.getMetadata(
-    API_RESPONSE_METADATA_KEY,
-    prototype[methodName],
-  ) as Record<string, unknown> | undefined;
+  const metadata = Reflect.getMetadata(API_RESPONSE_METADATA_KEY, prototype[methodName]) as
+    | Record<string, unknown>
+    | undefined;
 
   return Object.keys(metadata ?? {}).sort();
 };
 
-const getPathParamNames = (
-  controllerClass: ControllerClass,
-  methodName: string,
-): string[] => {
+const getPathParamNames = (controllerClass: ControllerClass, methodName: string): string[] => {
   const prototype = controllerClass.prototype as Record<string, unknown>;
-  const metadata = Reflect.getMetadata(
-    API_PARAMETERS_METADATA_KEY,
-    prototype[methodName],
-  ) as Array<{ in?: string; name?: string }> | undefined;
+  const metadata = Reflect.getMetadata(API_PARAMETERS_METADATA_KEY, prototype[methodName]) as
+    | Array<{ in?: string; name?: string }>
+    | undefined;
 
   return (metadata ?? [])
     .filter((parameter) => parameter.in === 'path' && typeof parameter.name === 'string')
@@ -53,15 +40,11 @@ const getPathParamNames = (
     .sort();
 };
 
-const getQueryParamNames = (
-  controllerClass: ControllerClass,
-  methodName: string,
-): string[] => {
+const getQueryParamNames = (controllerClass: ControllerClass, methodName: string): string[] => {
   const prototype = controllerClass.prototype as Record<string, unknown>;
-  const metadata = Reflect.getMetadata(
-    API_PARAMETERS_METADATA_KEY,
-    prototype[methodName],
-  ) as Array<{ in?: string; name?: string }> | undefined;
+  const metadata = Reflect.getMetadata(API_PARAMETERS_METADATA_KEY, prototype[methodName]) as
+    | Array<{ in?: string; name?: string }>
+    | undefined;
 
   return (metadata ?? [])
     .filter((parameter) => parameter.in === 'query' && typeof parameter.name === 'string')
@@ -72,7 +55,7 @@ const getQueryParamNames = (
 const getDocumentedDtoProperties = (dtoClass: { prototype: object }): string[] => {
   const metadata = Reflect.getMetadata(
     API_MODEL_PROPERTIES_ARRAY_METADATA_KEY,
-    dtoClass.prototype,
+    dtoClass.prototype
   ) as string[] | undefined;
 
   return (metadata ?? []).map((property) => property.replace(/^:/, '')).sort();

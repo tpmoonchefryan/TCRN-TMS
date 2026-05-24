@@ -1,7 +1,4 @@
-import type {
-  LocalizedText,
-  PartialLocalizedText,
-} from '@tcrn/shared';
+import type { LocalizedText, PartialLocalizedText } from '@tcrn/shared';
 
 export interface OrganizationTalent {
   id: string;
@@ -120,59 +117,51 @@ function buildJsonRequestInit(method: 'POST' | 'PATCH', body?: unknown): Request
   };
 }
 
-export function readOrganizationTree(
-  request: RequestFn,
-  options: OrganizationTreeOptions = {},
-) {
+export function readOrganizationTree(request: RequestFn, options: OrganizationTreeOptions = {}) {
   const params = new URLSearchParams();
   params.set('includeInactive', String(options.includeInactive ?? false));
   if (options.search) {
     params.set('search', options.search);
   }
 
-  return request<OrganizationTreeResponse>(
-    `/api/v1/organization/tree?${params.toString()}`,
-  );
+  return request<OrganizationTreeResponse>(`/api/v1/organization/tree?${params.toString()}`);
 }
 
-export function createOrganizationTalent(
-  request: RequestFn,
-  input: CreateOrganizationTalentInput,
-) {
+export function createOrganizationTalent(request: RequestFn, input: CreateOrganizationTalentInput) {
   return request<OrganizationTalentCreateResponse>(
     '/api/v1/talents',
-    buildJsonRequestInit('POST', input),
+    buildJsonRequestInit('POST', input)
   );
 }
 
 export function createOrganizationSubsidiary(
   request: RequestFn,
-  input: CreateOrganizationSubsidiaryInput,
+  input: CreateOrganizationSubsidiaryInput
 ) {
   return request<OrganizationSubsidiaryCreateResponse>(
     '/api/v1/subsidiaries',
-    buildJsonRequestInit('POST', input),
+    buildJsonRequestInit('POST', input)
   );
 }
 
 export function disableOrganizationTalent(
   request: RequestFn,
   talentId: string,
-  input: OrganizationTalentLifecycleInput,
+  input: OrganizationTalentLifecycleInput
 ) {
   return request<OrganizationTalentLifecycleResponse>(
     `/api/v1/talents/${talentId}/disable`,
-    buildJsonRequestInit('POST', input),
+    buildJsonRequestInit('POST', input)
   );
 }
 
 export function reEnableOrganizationTalent(
   request: RequestFn,
   talentId: string,
-  input: OrganizationTalentLifecycleInput,
+  input: OrganizationTalentLifecycleInput
 ) {
   return request<OrganizationTalentLifecycleResponse>(
     `/api/v1/talents/${talentId}/re-enable`,
-    buildJsonRequestInit('POST', input),
+    buildJsonRequestInit('POST', input)
   );
 }

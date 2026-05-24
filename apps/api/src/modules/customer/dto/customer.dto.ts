@@ -1,26 +1,26 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { SUPPORTED_UI_LOCALES } from '@tcrn/shared';
 import { Type } from 'class-transformer';
 import {
-    IsArray,
-    IsBoolean,
-    IsDateString,
-    IsEmail,
-    IsEnum,
-    IsIn,
-    IsInt,
-    IsOptional,
-    IsString,
-    IsUrl,
-    IsUUID,
-    Max,
-    MaxLength,
-    Min,
-    ValidateIf,
-    ValidateNested,
+  IsArray,
+  IsBoolean,
+  IsDateString,
+  IsEmail,
+  IsEnum,
+  IsIn,
+  IsInt,
+  IsOptional,
+  IsString,
+  IsUrl,
+  IsUUID,
+  Max,
+  MaxLength,
+  Min,
+  ValidateIf,
+  ValidateNested,
 } from 'class-validator';
+
+import { SUPPORTED_UI_LOCALES } from '@tcrn/shared';
 
 // ============================================================================
 // Enums
@@ -52,7 +52,13 @@ export class PaginationDto {
   @Min(1)
   page?: number = 1;
 
-  @ApiPropertyOptional({ description: 'Items per page', example: 20, minimum: 1, maximum: 100, default: 20 })
+  @ApiPropertyOptional({
+    description: 'Items per page',
+    example: 20,
+    minimum: 1,
+    maximum: 100,
+    default: 20,
+  })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
@@ -66,12 +72,19 @@ export class PaginationDto {
 // ============================================================================
 
 export class CustomerListQueryDto extends PaginationDto {
-  @ApiPropertyOptional({ description: 'Filter by profile type', enum: ProfileType, example: ProfileType.INDIVIDUAL })
+  @ApiPropertyOptional({
+    description: 'Filter by profile type',
+    enum: ProfileType,
+    example: ProfileType.INDIVIDUAL,
+  })
   @IsOptional()
   @IsEnum(ProfileType)
   profileType?: ProfileType;
 
-  @ApiPropertyOptional({ description: 'Filter by status ID', example: '550e8400-e29b-41d4-a716-446655440001' })
+  @ApiPropertyOptional({
+    description: 'Filter by status ID',
+    example: '550e8400-e29b-41d4-a716-446655440001',
+  })
   @IsOptional()
   @IsUUID()
   statusId?: string;
@@ -82,12 +95,19 @@ export class CustomerListQueryDto extends PaginationDto {
   @IsBoolean()
   isActive?: boolean;
 
-  @ApiPropertyOptional({ description: 'Search keyword for nickname or other fields', example: 'John' })
+  @ApiPropertyOptional({
+    description: 'Search keyword for nickname or other fields',
+    example: 'John',
+  })
   @IsOptional()
   @IsString()
   search?: string;
 
-  @ApiPropertyOptional({ description: 'Filter by tags', example: ['VIP', 'Premium'], type: [String] })
+  @ApiPropertyOptional({
+    description: 'Filter by tags',
+    example: ['VIP', 'Premium'],
+    type: [String],
+  })
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
@@ -207,7 +227,11 @@ export class PiiDataDto {
   @MaxLength(64)
   familyName?: string;
 
-  @ApiPropertyOptional({ description: 'Gender', enum: ['male', 'female', 'other', 'undisclosed'], example: 'male' })
+  @ApiPropertyOptional({
+    description: 'Gender',
+    enum: ['male', 'female', 'other', 'undisclosed'],
+    example: 'male',
+  })
   @IsOptional()
   @IsEnum(['male', 'female', 'other', 'undisclosed'])
   gender?: string;
@@ -240,19 +264,31 @@ export class PiiDataDto {
 }
 
 export class CompanyPiiDataDto {
-  @ApiPropertyOptional({ description: 'Primary contact name', example: 'John Smith', maxLength: 128 })
+  @ApiPropertyOptional({
+    description: 'Primary contact name',
+    example: 'John Smith',
+    maxLength: 128,
+  })
   @IsOptional()
   @IsString()
   @MaxLength(128)
   contactName?: string;
 
-  @ApiPropertyOptional({ description: 'Primary contact phone', example: '+81-3-1234-5678', maxLength: 32 })
+  @ApiPropertyOptional({
+    description: 'Primary contact phone',
+    example: '+81-3-1234-5678',
+    maxLength: 32,
+  })
   @IsOptional()
   @IsString()
   @MaxLength(32)
   contactPhone?: string;
 
-  @ApiPropertyOptional({ description: 'Primary contact email', example: 'contact@acme.com', maxLength: 255 })
+  @ApiPropertyOptional({
+    description: 'Primary contact email',
+    example: 'contact@acme.com',
+    maxLength: 255,
+  })
   @IsOptional()
   @ValidateIf((_, value) => value !== '')
   @IsEmail()
@@ -267,12 +303,21 @@ export class CompanyPiiDataDto {
 }
 
 export class CreateIndividualCustomerDto {
-  @ApiProperty({ description: 'Customer nickname/display name', example: 'John Doe', maxLength: 128 })
+  @ApiProperty({
+    description: 'Customer nickname/display name',
+    example: 'John Doe',
+    maxLength: 128,
+  })
   @IsString()
   @MaxLength(128)
   nickname!: string;
 
-  @ApiPropertyOptional({ description: 'Primary UI locale code', enum: SUPPORTED_UI_LOCALES, example: 'zh_HANS', maxLength: 16 })
+  @ApiPropertyOptional({
+    description: 'Primary UI locale code',
+    enum: SUPPORTED_UI_LOCALES,
+    example: 'zh_HANS',
+    maxLength: 16,
+  })
   @IsOptional()
   @IsString()
   @IsIn(SUPPORTED_UI_LOCALES)
@@ -284,19 +329,31 @@ export class CreateIndividualCustomerDto {
   @IsString()
   statusCode?: string;
 
-  @ApiPropertyOptional({ description: 'Customer tags', example: ['VIP', 'Premium'], type: [String] })
+  @ApiPropertyOptional({
+    description: 'Customer tags',
+    example: ['VIP', 'Premium'],
+    type: [String],
+  })
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
   tags?: string[];
 
-  @ApiPropertyOptional({ description: 'Customer acquisition source', example: 'Twitter', maxLength: 64 })
+  @ApiPropertyOptional({
+    description: 'Customer acquisition source',
+    example: 'Twitter',
+    maxLength: 64,
+  })
   @IsOptional()
   @IsString()
   @MaxLength(64)
   source?: string;
 
-  @ApiPropertyOptional({ description: 'Additional notes', example: 'Important customer', maxLength: 2000 })
+  @ApiPropertyOptional({
+    description: 'Additional notes',
+    example: 'Important customer',
+    maxLength: 2000,
+  })
   @IsOptional()
   @IsString()
   @MaxLength(2000)
@@ -321,13 +378,22 @@ export class CreateIndividualCustomerDto {
 }
 
 export class UpdateIndividualCustomerDto {
-  @ApiPropertyOptional({ description: 'Customer nickname/display name', example: 'John Doe', maxLength: 128 })
+  @ApiPropertyOptional({
+    description: 'Customer nickname/display name',
+    example: 'John Doe',
+    maxLength: 128,
+  })
   @IsOptional()
   @IsString()
   @MaxLength(128)
   nickname?: string;
 
-  @ApiPropertyOptional({ description: 'Primary UI locale code', enum: SUPPORTED_UI_LOCALES, example: 'zh_HANS', maxLength: 16 })
+  @ApiPropertyOptional({
+    description: 'Primary UI locale code',
+    enum: SUPPORTED_UI_LOCALES,
+    example: 'zh_HANS',
+    maxLength: 16,
+  })
   @IsOptional()
   @IsString()
   @IsIn(SUPPORTED_UI_LOCALES)
@@ -339,13 +405,21 @@ export class UpdateIndividualCustomerDto {
   @IsString()
   statusCode?: string;
 
-  @ApiPropertyOptional({ description: 'Customer tags', example: ['VIP', 'Premium'], type: [String] })
+  @ApiPropertyOptional({
+    description: 'Customer tags',
+    example: ['VIP', 'Premium'],
+    type: [String],
+  })
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
   tags?: string[];
 
-  @ApiPropertyOptional({ description: 'Additional notes', example: 'Important customer', maxLength: 2000 })
+  @ApiPropertyOptional({
+    description: 'Additional notes',
+    example: 'Important customer',
+    maxLength: 2000,
+  })
   @IsOptional()
   @IsString()
   @MaxLength(2000)
@@ -372,12 +446,21 @@ export class UpdateIndividualPiiDto {
 // ============================================================================
 
 export class CreateCompanyCustomerDto {
-  @ApiProperty({ description: 'Company nickname/display name', example: 'Acme Corp', maxLength: 128 })
+  @ApiProperty({
+    description: 'Company nickname/display name',
+    example: 'Acme Corp',
+    maxLength: 128,
+  })
   @IsString()
   @MaxLength(128)
   nickname!: string;
 
-  @ApiPropertyOptional({ description: 'Primary UI locale code', enum: SUPPORTED_UI_LOCALES, example: 'zh_HANS', maxLength: 16 })
+  @ApiPropertyOptional({
+    description: 'Primary UI locale code',
+    enum: SUPPORTED_UI_LOCALES,
+    example: 'zh_HANS',
+    maxLength: 16,
+  })
   @IsOptional()
   @IsString()
   @IsIn(SUPPORTED_UI_LOCALES)
@@ -389,25 +472,41 @@ export class CreateCompanyCustomerDto {
   @IsString()
   statusCode?: string;
 
-  @ApiPropertyOptional({ description: 'Customer tags', example: ['B2B', 'Enterprise'], type: [String] })
+  @ApiPropertyOptional({
+    description: 'Customer tags',
+    example: ['B2B', 'Enterprise'],
+    type: [String],
+  })
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
   tags?: string[];
 
-  @ApiPropertyOptional({ description: 'Customer acquisition source', example: 'Trade Show', maxLength: 64 })
+  @ApiPropertyOptional({
+    description: 'Customer acquisition source',
+    example: 'Trade Show',
+    maxLength: 64,
+  })
   @IsOptional()
   @IsString()
   @MaxLength(64)
   source?: string;
 
-  @ApiPropertyOptional({ description: 'Additional notes', example: 'Key enterprise client', maxLength: 2000 })
+  @ApiPropertyOptional({
+    description: 'Additional notes',
+    example: 'Key enterprise client',
+    maxLength: 2000,
+  })
   @IsOptional()
   @IsString()
   @MaxLength(2000)
   notes?: string;
 
-  @ApiPropertyOptional({ description: 'External system ID', example: 'CRM-CORP-12345', maxLength: 128 })
+  @ApiPropertyOptional({
+    description: 'External system ID',
+    example: 'CRM-CORP-12345',
+    maxLength: 128,
+  })
   @IsOptional()
   @IsString()
   @MaxLength(128)
@@ -419,7 +518,11 @@ export class CreateCompanyCustomerDto {
   consumerCode?: string;
 
   // Company-specific fields
-  @ApiProperty({ description: 'Company legal name', example: 'Acme Corporation Ltd.', maxLength: 255 })
+  @ApiProperty({
+    description: 'Company legal name',
+    example: 'Acme Corporation Ltd.',
+    maxLength: 255,
+  })
   @IsString()
   @MaxLength(255)
   companyLegalName!: string;
@@ -430,7 +533,11 @@ export class CreateCompanyCustomerDto {
   @MaxLength(128)
   companyShortName?: string;
 
-  @ApiPropertyOptional({ description: 'Business registration number', example: '1234-5678-9012', maxLength: 64 })
+  @ApiPropertyOptional({
+    description: 'Business registration number',
+    example: '1234-5678-9012',
+    maxLength: 64,
+  })
   @IsOptional()
   @IsString()
   @MaxLength(64)
@@ -452,13 +559,20 @@ export class CreateCompanyCustomerDto {
   @IsString()
   businessSegmentCode?: string;
 
-  @ApiPropertyOptional({ description: 'Company website URL', example: 'https://www.acme.com', maxLength: 512 })
+  @ApiPropertyOptional({
+    description: 'Company website URL',
+    example: 'https://www.acme.com',
+    maxLength: 512,
+  })
   @IsOptional()
   @IsUrl()
   @MaxLength(512)
   website?: string;
 
-  @ApiPropertyOptional({ description: 'Company contact PII managed by TCRN PII Platform', type: CompanyPiiDataDto })
+  @ApiPropertyOptional({
+    description: 'Company contact PII managed by TCRN PII Platform',
+    type: CompanyPiiDataDto,
+  })
   @IsOptional()
   @ValidateNested()
   @Type(() => CompanyPiiDataDto)

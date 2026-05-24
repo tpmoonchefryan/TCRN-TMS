@@ -1,16 +1,12 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import {
   BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import {
-  ErrorCodes,
-  mergeLocalizedText,
-  normalizeLocalizedText,
-} from '@tcrn/shared';
+
+import { ErrorCodes, mergeLocalizedText, normalizeLocalizedText } from '@tcrn/shared';
 
 import type { TalentData } from '../domain/talent-read.policy';
 import {
@@ -30,19 +26,14 @@ import { TalentReadService } from './talent-read.service';
 export class TalentWriteService {
   constructor(
     private readonly talentReadService: TalentReadService,
-    private readonly talentWriteRepository: TalentWriteRepository,
+    private readonly talentWriteRepository: TalentWriteRepository
   ) {}
 
-  async create(
-    tenantSchema: string,
-    data: TalentCreateInput,
-    userId: string,
-  ): Promise<TalentData> {
-    const hasActiveProfileStore =
-      await this.talentWriteRepository.hasActiveProfileStore(
-        tenantSchema,
-        data.profileStoreId,
-      );
+  async create(tenantSchema: string, data: TalentCreateInput, userId: string): Promise<TalentData> {
+    const hasActiveProfileStore = await this.talentWriteRepository.hasActiveProfileStore(
+      tenantSchema,
+      data.profileStoreId
+    );
 
     if (!hasActiveProfileStore) {
       throw new BadRequestException({
@@ -53,7 +44,7 @@ export class TalentWriteService {
 
     const artistStage = await this.talentWriteRepository.findActiveArtistStage(
       tenantSchema,
-      data.artistStageId,
+      data.artistStageId
     );
 
     if (!artistStage) {
@@ -63,10 +54,7 @@ export class TalentWriteService {
       });
     }
 
-    const existingByCode = await this.talentReadService.findByCode(
-      data.code,
-      tenantSchema,
-    );
+    const existingByCode = await this.talentReadService.findByCode(data.code, tenantSchema);
     if (existingByCode) {
       throw new BadRequestException({
         code: ErrorCodes.CODE_ALREADY_EXISTS,
@@ -77,7 +65,7 @@ export class TalentWriteService {
     if (data.homepagePath) {
       const existingByPath = await this.talentReadService.findByHomepagePath(
         data.homepagePath,
-        tenantSchema,
+        tenantSchema
       );
       if (existingByPath) {
         throw new BadRequestException({
@@ -88,10 +76,7 @@ export class TalentWriteService {
     }
 
     const subsidiaryPath = data.subsidiaryId
-      ? await this.talentWriteRepository.findSubsidiaryPath(
-          tenantSchema,
-          data.subsidiaryId,
-        )
+      ? await this.talentWriteRepository.findSubsidiaryPath(tenantSchema, data.subsidiaryId)
       : null;
 
     if (data.subsidiaryId && !subsidiaryPath) {
@@ -111,7 +96,7 @@ export class TalentWriteService {
         path: buildTalentPath(data.code, subsidiaryPath),
         settings: buildTalentDefaultSettings(data.settings),
       },
-      userId,
+      userId
     );
   }
 
@@ -119,7 +104,7 @@ export class TalentWriteService {
     id: string,
     tenantSchema: string,
     data: TalentUpdateInput,
-    userId: string,
+    userId: string
   ): Promise<TalentData> {
     const current = await this.talentReadService.findById(id, tenantSchema);
 
@@ -137,13 +122,10 @@ export class TalentWriteService {
       });
     }
 
-    if (
-      data.homepagePath &&
-      data.homepagePath !== current.homepagePath
-    ) {
+    if (data.homepagePath && data.homepagePath !== current.homepagePath) {
       const existingByPath = await this.talentReadService.findByHomepagePath(
         data.homepagePath,
-        tenantSchema,
+        tenantSchema
       );
       if (existingByPath && existingByPath.id !== id) {
         throw new BadRequestException({
@@ -160,20 +142,23 @@ export class TalentWriteService {
         ...data,
         name: data.name ? mergeLocalizedText(current.name, data.name) : undefined,
         description: data.description
-          ? normalizeLocalizedText({
-              ...current.description,
-              ...data.description,
-            }, current.description.en)
+          ? normalizeLocalizedText(
+              {
+                ...current.description,
+                ...data.description,
+              },
+              current.description.en
+            )
           : undefined,
       },
-      userId,
+      userId
     );
   }
 
   async delete(
     id: string,
     tenantSchema: string,
-    data: TalentDeleteInput,
+    data: TalentDeleteInput
   ): Promise<TalentDeleteResult> {
     const current = await this.talentReadService.findById(id, tenantSchema);
 
@@ -204,7 +189,7 @@ export class TalentWriteService {
     const result = await this.talentWriteRepository.deleteDraftTalent(
       tenantSchema,
       id,
-      data.version,
+      data.version
     );
 
     switch (result.outcome) {
@@ -240,9 +225,7 @@ export class TalentWriteService {
           message:
             'Draft talent cannot be hard-deleted because protected dependent data already exists.',
           details: {
-            dependencies: buildTalentDeleteBlockedDependencies(
-              result.dependencies,
-            ),
+            dependencies: buildTalentDeleteBlockedDependencies(result.dependencies),
           },
         });
     }

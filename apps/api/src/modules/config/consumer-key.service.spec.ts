@@ -1,10 +1,8 @@
-import { prisma } from '@tcrn/database';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import {
-  getApiKeyStoredPrefix,
-  hashApiKey,
-} from '../integration/domain/api-key.policy';
+import { prisma } from '@tcrn/database';
+
+import { getApiKeyStoredPrefix, hashApiKey } from '../integration/domain/api-key.policy';
 import { ConsumerKeyService } from './consumer-key.service';
 
 vi.mock('@tcrn/database', () => ({
@@ -40,7 +38,7 @@ describe('ConsumerKeyService', () => {
       'consumer-1',
       hashApiKey(result.apiKey),
       result.apiKeyPrefix,
-      'user-1',
+      'user-1'
     );
   });
 
@@ -69,7 +67,7 @@ describe('ConsumerKeyService', () => {
     });
     expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalledWith(
       expect.stringContaining('FROM "tenant_test".consumer'),
-      getApiKeyStoredPrefix(apiKey),
+      getApiKeyStoredPrefix(apiKey)
     );
   });
 });

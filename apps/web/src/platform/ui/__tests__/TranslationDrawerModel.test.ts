@@ -1,5 +1,6 @@
-import type { PartialLocalizedText, SupportedUiLocale } from '@tcrn/shared';
 import { describe, expect, it } from 'vitest';
+
+import type { PartialLocalizedText, SupportedUiLocale } from '@tcrn/shared';
 
 import {
   buildTranslationSavePayload,
@@ -26,7 +27,7 @@ describe('translation drawer model', () => {
         fallbackLabel: 'Fallback label',
         legacyFieldLabel: 'Legacy label',
         translations: { fr: 'Base FR' },
-      }),
+      })
     ).toEqual([
       {
         id: 'default',
@@ -86,7 +87,7 @@ describe('translation drawer model', () => {
         fields: [{ id: 'default', label: 'Name', baseValue: 'Base', translations: {} }],
         isLegacyMode: true,
         localData: { fr: { default: ' Nom ' }, ko: { default: '   ' } },
-      }),
+      })
     ).toEqual({ fr: ' Nom ' });
 
     expect(
@@ -94,14 +95,19 @@ describe('translation drawer model', () => {
         activeLocaleList: ['fr', 'ko'],
         fields: [
           { id: 'name', label: 'Name', baseValue: 'Base', translations: {} },
-          { id: 'description', label: 'Description', baseValue: 'Base description', translations: {} },
+          {
+            id: 'description',
+            label: 'Description',
+            baseValue: 'Base description',
+            translations: {},
+          },
         ],
         isLegacyMode: false,
         localData: {
           fr: { name: 'Nom', description: '' },
           ko: { name: 'Name KO', description: 'Description KO' },
         },
-      }),
+      })
     ).toEqual({
       name: { fr: 'Nom', ko: 'Name KO' },
       description: { ko: 'Description KO' },

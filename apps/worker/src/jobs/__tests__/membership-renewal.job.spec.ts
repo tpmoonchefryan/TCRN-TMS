@@ -1,9 +1,12 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import type { Job } from 'bullmq';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { MembershipRenewalJobData, membershipRenewalJobProcessor, MembershipRenewalJobResult } from '../membership-renewal.job';
+import {
+  MembershipRenewalJobData,
+  membershipRenewalJobProcessor,
+  MembershipRenewalJobResult,
+} from '../membership-renewal.job';
 
 // Mock PrismaClient
 const mockPrisma = {
@@ -57,7 +60,12 @@ describe('MembershipRenewalJobProcessor', () => {
           autoRenew: true,
           isExpired: false,
           customer: { id: 'customer-1', nickname: 'TestUser', isActive: true },
-          membershipType: { id: 'type-1', code: 'YOUTUBE', defaultRenewalDays: 30, externalControl: false },
+          membershipType: {
+            id: 'type-1',
+            code: 'YOUTUBE',
+            defaultRenewalDays: 30,
+            externalControl: false,
+          },
           membershipLevel: { id: 'level-1', code: 'LEVEL_1' },
         },
       ]);
@@ -140,7 +148,7 @@ describe('MembershipRenewalJobProcessor', () => {
   describe('scheduleMembershipRenewalJob', () => {
     it('should schedule a renewal job', async () => {
       const { scheduleMembershipRenewalJob } = await import('../membership-renewal.job');
-      
+
       const mockQueue = {
         add: vi.fn().mockResolvedValue({}),
       };
@@ -161,7 +169,7 @@ describe('MembershipRenewalJobProcessor', () => {
         }),
         expect.objectContaining({
           jobId: 'renewal_tenant-123_2026-05-12',
-        }),
+        })
       );
       expect(jobId).toBe('renewal_tenant-123_2026-05-12');
     });

@@ -1,8 +1,8 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { NotFoundException } from '@nestjs/common';
-import type { RequestContext } from '@tcrn/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import type { RequestContext } from '@tcrn/shared';
 
 import type { DatabaseService } from '../../database';
 import { ProfileType } from '../dto/customer.dto';
@@ -48,7 +48,7 @@ describe('MembershipRecordApplicationService', () => {
   const service = new MembershipRecordApplicationService(
     mockRepository,
     mockDatabaseService,
-    mockCustomerArchiveAccessService,
+    mockCustomerArchiveAccessService
   );
 
   const customerArchiveAccessRecord = {
@@ -81,18 +81,18 @@ describe('MembershipRecordApplicationService', () => {
   });
 
   it('throws NotFoundException when the customer access check fails on the read path', async () => {
-    vi.mocked(
-      mockCustomerArchiveAccessService.requireCustomerArchiveAccess,
-    ).mockRejectedValue(new NotFoundException());
+    vi.mocked(mockCustomerArchiveAccessService.requireCustomerArchiveAccess).mockRejectedValue(
+      new NotFoundException()
+    );
 
-    await expect(
-      service.findByCustomer('customer-1', 'talent-1', {}, context),
-    ).rejects.toThrow(NotFoundException);
+    await expect(service.findByCustomer('customer-1', 'talent-1', {}, context)).rejects.toThrow(
+      NotFoundException
+    );
   });
 
   it('returns mapped membership rows with pagination and summary metadata', async () => {
     vi.mocked(mockCustomerArchiveAccessService.requireCustomerArchiveAccess).mockResolvedValue(
-      customerArchiveAccessRecord,
+      customerArchiveAccessRecord
     );
     vi.mocked(mockRepository.findByCustomer).mockResolvedValue([
       {
@@ -120,9 +120,7 @@ describe('MembershipRecordApplicationService', () => {
     vi.mocked(mockRepository.countActiveByCustomer).mockResolvedValue(1);
     vi.mocked(mockRepository.countExpiredByCustomer).mockResolvedValue(0);
 
-    await expect(
-      service.findByCustomer('customer-1', 'talent-1', {}, context),
-    ).resolves.toEqual({
+    await expect(service.findByCustomer('customer-1', 'talent-1', {}, context)).resolves.toEqual({
       items: [
         {
           id: 'membership-1',
@@ -173,7 +171,7 @@ describe('MembershipRecordApplicationService', () => {
 
   it('throws NotFoundException when create cannot resolve the platform', async () => {
     vi.mocked(mockCustomerArchiveAccessService.requireCustomerArchiveAccess).mockResolvedValue(
-      customerArchiveAccessRecord,
+      customerArchiveAccessRecord
     );
     vi.mocked(mockRepository.findActivePlatformByCode).mockResolvedValue(null);
 
@@ -186,14 +184,14 @@ describe('MembershipRecordApplicationService', () => {
           membershipLevelCode: 'GOLD',
           validFrom: '2026-04-14T00:00:00.000Z',
         },
-        context,
-      ),
+        context
+      )
     ).rejects.toThrow(NotFoundException);
   });
 
   it('throws NotFoundException when create cannot resolve the membership level', async () => {
     vi.mocked(mockCustomerArchiveAccessService.requireCustomerArchiveAccess).mockResolvedValue(
-      customerArchiveAccessRecord,
+      customerArchiveAccessRecord
     );
     vi.mocked(mockRepository.findActivePlatformByCode).mockResolvedValue({
       id: 'platform-1',
@@ -211,14 +209,14 @@ describe('MembershipRecordApplicationService', () => {
           membershipLevelCode: 'INVALID',
           validFrom: '2026-04-14T00:00:00.000Z',
         },
-        context,
-      ),
+        context
+      )
     ).rejects.toThrow(NotFoundException);
   });
 
   it('creates a membership record and writes the raw change-log payload', async () => {
     vi.mocked(mockCustomerArchiveAccessService.requireCustomerArchiveAccess).mockResolvedValue(
-      customerArchiveAccessRecord,
+      customerArchiveAccessRecord
     );
     vi.mocked(mockRepository.findActivePlatformByCode).mockResolvedValue({
       id: 'platform-1',
@@ -257,8 +255,8 @@ describe('MembershipRecordApplicationService', () => {
           membershipLevelCode: 'GOLD',
           validFrom: '2026-04-14T00:00:00.000Z',
         },
-        context,
-      ),
+        context
+      )
     ).resolves.toEqual({
       id: 'membership-1',
       platform: {
@@ -294,7 +292,7 @@ describe('MembershipRecordApplicationService', () => {
 
   it('throws NotFoundException when update cannot resolve the record', async () => {
     vi.mocked(mockCustomerArchiveAccessService.requireCustomerArchiveAccess).mockResolvedValue(
-      customerArchiveAccessRecord,
+      customerArchiveAccessRecord
     );
     vi.mocked(mockRepository.findOwnedRecord).mockResolvedValue(null);
 
@@ -306,14 +304,14 @@ describe('MembershipRecordApplicationService', () => {
         {
           autoRenew: true,
         },
-        context,
-      ),
+        context
+      )
     ).rejects.toThrow(NotFoundException);
   });
 
   it('updates the membership record and writes the raw change-log payload', async () => {
     vi.mocked(mockCustomerArchiveAccessService.requireCustomerArchiveAccess).mockResolvedValue(
-      customerArchiveAccessRecord,
+      customerArchiveAccessRecord
     );
     vi.mocked(mockRepository.findOwnedRecord).mockResolvedValue({
       id: 'record-1',
@@ -341,8 +339,8 @@ describe('MembershipRecordApplicationService', () => {
           autoRenew: true,
           note: 'VIP',
         },
-        context,
-      ),
+        context
+      )
     ).resolves.toEqual({
       id: 'record-1',
       validTo: null,
@@ -377,8 +375,6 @@ describe('MembershipRecordApplicationService', () => {
     vi.mocked(mockRepository.countActiveByCustomer).mockResolvedValue(0);
     vi.mocked(mockRepository.countTotalByCustomer).mockResolvedValue(0);
 
-    await expect(
-      service.getSummary('customer-1', context),
-    ).resolves.toBeNull();
+    await expect(service.getSummary('customer-1', context)).resolves.toBeNull();
   });
 });

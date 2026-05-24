@@ -30,26 +30,14 @@ const LANGUAGE_OPTIONS = SUPPORTED_UI_LOCALES.map((value) => ({
   label: LANGUAGE_LABELS[value],
 }));
 
-const TIMEZONE_OPTIONS = [
-  'Asia/Shanghai',
-  'Asia/Tokyo',
-  'UTC',
-  'America/Los_Angeles',
-];
+const TIMEZONE_OPTIONS = ['Asia/Shanghai', 'Asia/Tokyo', 'UTC', 'America/Los_Angeles'];
 
-const DATE_FORMAT_OPTIONS = [
-  'YYYY-MM-DD',
-  'DD/MM/YYYY',
-  'MM/DD/YYYY',
-  'YYYY/MM/DD',
-];
+const DATE_FORMAT_OPTIONS = ['YYYY-MM-DD', 'DD/MM/YYYY', 'MM/DD/YYYY', 'YYYY/MM/DD'];
 
 const CURRENCY_OPTIONS = ['USD', 'CNY', 'JPY', 'KRW', 'EUR'];
 
 function boolLabel(value: boolean, text: TextFn) {
-  return value
-    ? text('Enabled', '已启用', '有効')
-    : text('Disabled', '已停用', '無効');
+  return value ? text('Enabled', '已启用', '有効') : text('Disabled', '已停用', '無効');
 }
 
 function SettingsFieldRow({
@@ -64,8 +52,14 @@ function SettingsFieldRow({
   return (
     <div className="min-w-0 rounded-2xl border border-slate-200 bg-white/80 px-4 py-4 shadow-sm">
       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{label}</p>
-      <p className="mt-2 min-w-0 whitespace-normal break-all text-base font-semibold text-slate-950">{value}</p>
-      {hint ? <p className="mt-2 min-w-0 whitespace-normal break-all text-sm leading-6 text-slate-600">{hint}</p> : null}
+      <p className="mt-2 min-w-0 whitespace-normal break-all text-base font-semibold text-slate-950">
+        {value}
+      </p>
+      {hint ? (
+        <p className="mt-2 min-w-0 whitespace-normal break-all text-sm leading-6 text-slate-600">
+          {hint}
+        </p>
+      ) : null}
     </div>
   );
 }
@@ -150,7 +144,7 @@ export function SettingsDefaultsSummaryGrid({
         value={text(
           `${draft.passwordPolicy.minLength} chars / ${draft.passwordPolicy.maxAgeDays} days`,
           `${draft.passwordPolicy.minLength} 位 / ${draft.passwordPolicy.maxAgeDays} 天`,
-          `${draft.passwordPolicy.minLength} 文字 / ${draft.passwordPolicy.maxAgeDays} 日`,
+          `${draft.passwordPolicy.minLength} 文字 / ${draft.passwordPolicy.maxAgeDays} 日`
         )}
         hint={getSourceHint('passwordPolicy')}
       />
@@ -167,10 +161,14 @@ export function SettingsDefaultsFormFields({
   return (
     <div className="space-y-6">
       <div className="space-y-3">
-        <p className="text-sm font-semibold text-slate-950">{text('Localization', '本地化', 'ローカライズ')}</p>
+        <p className="text-sm font-semibold text-slate-950">
+          {text('Localization', '本地化', 'ローカライズ')}
+        </p>
         <div className="grid gap-4 md:grid-cols-2">
           <label className="space-y-2">
-            <span className="text-sm font-semibold text-slate-900">{text('Default language', '默认语言', '既定言語')}</span>
+            <span className="text-sm font-semibold text-slate-900">
+              {text('Default language', '默认语言', '既定言語')}
+            </span>
             <select
               aria-label={text('Default language', '默认语言', '既定言語')}
               value={draft.defaultLanguage}
@@ -192,7 +190,9 @@ export function SettingsDefaultsFormFields({
           </label>
 
           <label className="space-y-2">
-            <span className="text-sm font-semibold text-slate-900">{text('Default timezone', '默认时区', '既定タイムゾーン')}</span>
+            <span className="text-sm font-semibold text-slate-900">
+              {text('Default timezone', '默认时区', '既定タイムゾーン')}
+            </span>
             <select
               aria-label={text('Default timezone', '默认时区', '既定タイムゾーン')}
               value={draft.timezone}
@@ -214,7 +214,9 @@ export function SettingsDefaultsFormFields({
           </label>
 
           <label className="space-y-2">
-            <span className="text-sm font-semibold text-slate-900">{text('Date format', '日期格式', '日付形式')}</span>
+            <span className="text-sm font-semibold text-slate-900">
+              {text('Date format', '日期格式', '日付形式')}
+            </span>
             <select
               aria-label={text('Date format', '日期格式', '日付形式')}
               value={draft.dateFormat}
@@ -236,7 +238,9 @@ export function SettingsDefaultsFormFields({
           </label>
 
           <label className="space-y-2">
-            <span className="text-sm font-semibold text-slate-900">{text('Currency', '币种', '通貨')}</span>
+            <span className="text-sm font-semibold text-slate-900">
+              {text('Currency', '币种', '通貨')}
+            </span>
             <select
               aria-label={text('Currency', '币种', '通貨')}
               value={draft.currency}
@@ -260,7 +264,9 @@ export function SettingsDefaultsFormFields({
       </div>
 
       <div className="space-y-3">
-        <p className="text-sm font-semibold text-slate-950">{text('Public surfaces', '公开入口', '公開サーフェス')}</p>
+        <p className="text-sm font-semibold text-slate-950">
+          {text('Public surfaces', '公开入口', '公開サーフェス')}
+        </p>
         <div className="grid gap-4 md:grid-cols-2">
           <ToggleField
             checked={draft.allowMarshmallow}
@@ -277,7 +283,9 @@ export function SettingsDefaultsFormFields({
       </div>
 
       <div className="space-y-3">
-        <p className="text-sm font-semibold text-slate-950">{text('Customer import', '客户导入', '顧客インポート')}</p>
+        <p className="text-sm font-semibold text-slate-950">
+          {text('Customer import', '客户导入', '顧客インポート')}
+        </p>
         <div className="grid gap-4 md:grid-cols-2">
           <ToggleField
             checked={draft.customerImportEnabled}
@@ -291,7 +299,9 @@ export function SettingsDefaultsFormFields({
             }
           />
           <label className="space-y-2">
-            <span className="text-sm font-semibold text-slate-900">{text('Max import rows', '最大导入行数', '最大インポート行数')}</span>
+            <span className="text-sm font-semibold text-slate-900">
+              {text('Max import rows', '最大导入行数', '最大インポート行数')}
+            </span>
             <input
               aria-label={text('Max import rows', '最大导入行数', '最大インポート行数')}
               type="number"
@@ -311,11 +321,17 @@ export function SettingsDefaultsFormFields({
       </div>
 
       <div className="space-y-3">
-        <p className="text-sm font-semibold text-slate-950">{text('Security', '安全', 'セキュリティ')}</p>
+        <p className="text-sm font-semibold text-slate-950">
+          {text('Security', '安全', 'セキュリティ')}
+        </p>
         <div className="grid gap-4 md:grid-cols-2">
           <ToggleField
             checked={draft.totpRequiredForAll}
-            label={text('Require TOTP for all users', '要求所有用户启用 TOTP', '全ユーザーに TOTP を要求')}
+            label={text(
+              'Require TOTP for all users',
+              '要求所有用户启用 TOTP',
+              '全ユーザーに TOTP を要求'
+            )}
             description={getSourceHint('totpRequiredForAll')}
             onChange={(checked) =>
               onDraftChange((current) => ({
@@ -339,7 +355,9 @@ export function SettingsDefaultsFormFields({
             }
           />
           <label className="space-y-2">
-            <span className="text-sm font-semibold text-slate-900">{text('Minimum password length', '密码最小长度', '最小パスワード長')}</span>
+            <span className="text-sm font-semibold text-slate-900">
+              {text('Minimum password length', '密码最小长度', '最小パスワード長')}
+            </span>
             <input
               aria-label={text('Minimum password length', '密码最小长度', '最小パスワード長')}
               type="number"
@@ -359,9 +377,15 @@ export function SettingsDefaultsFormFields({
             <p className="text-xs text-slate-500">{getSourceHint('passwordPolicy')}</p>
           </label>
           <label className="space-y-2">
-            <span className="text-sm font-semibold text-slate-900">{text('Password max age days', '密码最长有效天数', 'パスワード最大有効日数')}</span>
+            <span className="text-sm font-semibold text-slate-900">
+              {text('Password max age days', '密码最长有效天数', 'パスワード最大有効日数')}
+            </span>
             <input
-              aria-label={text('Password max age days', '密码最长有效天数', 'パスワード最大有効日数')}
+              aria-label={text(
+                'Password max age days',
+                '密码最长有效天数',
+                'パスワード最大有効日数'
+              )}
               type="number"
               min={1}
               value={draft.passwordPolicy.maxAgeDays}

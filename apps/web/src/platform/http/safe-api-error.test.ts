@@ -17,9 +17,9 @@ describe('toSafeApiErrorView', () => {
         503,
         undefined,
         'req_legacy_123',
-        'trace_canonical_123',
+        'trace_canonical_123'
       ),
-      copy,
+      copy
     );
 
     expect(view).toMatchObject({
@@ -33,7 +33,7 @@ describe('toSafeApiErrorView', () => {
   it('falls back to requestId when traceId is absent', () => {
     const view = toSafeApiErrorView(
       new ApiRequestError('Request failed.', 'SYS_DATABASE_ERROR', 500, undefined, 'req_only_123'),
-      copy,
+      copy
     );
 
     expect(view.traceId).toBe('req_only_123');
@@ -46,12 +46,14 @@ describe('toSafeApiErrorView', () => {
         'SYS_DATABASE_ERROR',
         503,
         undefined,
-        'req_storage_123',
+        'req_storage_123'
       ),
-      copy,
+      copy
     );
 
     expect(view.description).toBe(copy.fallbackDescription);
-    expect(view.description).not.toMatch(/Prisma|public\.custom_domain_binding|\$queryRawUnsafe|SQL/i);
+    expect(view.description).not.toMatch(
+      /Prisma|public\.custom_domain_binding|\$queryRawUnsafe|SQL/i
+    );
   });
 });

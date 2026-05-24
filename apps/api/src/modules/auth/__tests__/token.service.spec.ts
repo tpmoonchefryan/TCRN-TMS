@@ -1,10 +1,12 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { prisma } from '@tcrn/database';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { prisma } from '@tcrn/database';
+
+import { TokenService } from '../token.service';
 
 // Mock @tcrn/database
 vi.mock('@tcrn/database', () => ({
@@ -13,8 +15,6 @@ vi.mock('@tcrn/database', () => ({
     $executeRawUnsafe: vi.fn(),
   },
 }));
-
-import { TokenService } from '../token.service';
 
 const mockPrisma = prisma as unknown as {
   $queryRawUnsafe: ReturnType<typeof vi.fn>;
@@ -52,10 +52,7 @@ describe('TokenService', () => {
       }),
     };
 
-    service = new TokenService(
-      mockJwtService as JwtService,
-      mockConfigService as ConfigService,
-    );
+    service = new TokenService(mockJwtService as JwtService, mockConfigService as ConfigService);
   });
 
   afterEach(() => {
@@ -81,7 +78,7 @@ describe('TokenService', () => {
         }),
         expect.objectContaining({
           expiresIn: 900,
-        }),
+        })
       );
     });
 
@@ -113,9 +110,7 @@ describe('TokenService', () => {
         type: 'refresh', // Wrong type
       });
 
-      expect(() => service.verifyAccessToken('invalid_type_token')).toThrow(
-        UnauthorizedException,
-      );
+      expect(() => service.verifyAccessToken('invalid_type_token')).toThrow(UnauthorizedException);
     });
 
     it('should throw when JWT verification fails', () => {
@@ -135,7 +130,7 @@ describe('TokenService', () => {
         'user-123',
         'tenant_test',
         'Chrome/120',
-        '127.0.0.1',
+        '127.0.0.1'
       );
 
       expect(result.token).toMatch(/^rt_/);
@@ -163,7 +158,7 @@ describe('TokenService', () => {
 
       const newService = new TokenService(
         mockJwtService as JwtService,
-        mockConfigService as ConfigService,
+        mockConfigService as ConfigService
       );
 
       const result = newService.generateAccessToken({
@@ -185,7 +180,7 @@ describe('TokenService', () => {
 
       const newService = new TokenService(
         mockJwtService as JwtService,
-        mockConfigService as ConfigService,
+        mockConfigService as ConfigService
       );
 
       const result = newService.generateAccessToken({
@@ -207,7 +202,7 @@ describe('TokenService', () => {
 
       const newService = new TokenService(
         mockJwtService as JwtService,
-        mockConfigService as ConfigService,
+        mockConfigService as ConfigService
       );
 
       const result = newService.generateAccessToken({
@@ -229,7 +224,7 @@ describe('TokenService', () => {
 
       const newService = new TokenService(
         mockJwtService as JwtService,
-        mockConfigService as ConfigService,
+        mockConfigService as ConfigService
       );
 
       const result = newService.generateAccessToken({

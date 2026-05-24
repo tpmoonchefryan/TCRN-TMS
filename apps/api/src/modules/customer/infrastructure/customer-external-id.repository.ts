@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable } from '@nestjs/common';
+
 import { prisma } from '@tcrn/database';
 
 import type {
@@ -13,7 +13,7 @@ export class CustomerExternalIdRepository {
   async findCustomerAccessRecord(
     tenantSchema: string,
     customerId: string,
-    talentId: string,
+    talentId: string
   ): Promise<CustomerExternalIdAccessRecord | null> {
     const customers = await prisma.$queryRawUnsafe<CustomerExternalIdAccessRecord[]>(
       `SELECT
@@ -26,16 +26,13 @@ export class CustomerExternalIdRepository {
          AND t.id = $2::uuid
          AND t.profile_store_id IS NOT NULL`,
       customerId,
-      talentId,
+      talentId
     );
 
     return customers[0] ?? null;
   }
 
-  findByCustomer(
-    tenantSchema: string,
-    customerId: string,
-  ): Promise<CustomerExternalIdRecord[]> {
+  findByCustomer(tenantSchema: string, customerId: string): Promise<CustomerExternalIdRecord[]> {
     return prisma.$queryRawUnsafe<CustomerExternalIdRecord[]>(
       `SELECT
          cei.id,
@@ -49,24 +46,26 @@ export class CustomerExternalIdRepository {
        JOIN "${tenantSchema}".consumer c ON c.id = cei.consumer_id
        WHERE cei.customer_id = $1::uuid
        ORDER BY cei.created_at DESC`,
-      customerId,
+      customerId
     );
   }
 
   async findActiveConsumerByCode(
     tenantSchema: string,
-    consumerCode: string,
+    consumerCode: string
   ): Promise<{ id: string; code: string; name: string } | null> {
-    const consumers = await prisma.$queryRawUnsafe<Array<{
-      id: string;
-      code: string;
-      name: string;
-    }>>(
+    const consumers = await prisma.$queryRawUnsafe<
+      Array<{
+        id: string;
+        code: string;
+        name: string;
+      }>
+    >(
       `SELECT id, code, name->>'en' as name
        FROM "${tenantSchema}".consumer
        WHERE code = $1
          AND is_active = true`,
-      consumerCode,
+      consumerCode
     );
 
     return consumers[0] ?? null;
@@ -76,7 +75,7 @@ export class CustomerExternalIdRepository {
     tenantSchema: string,
     profileStoreId: string,
     consumerId: string,
-    externalId: string,
+    externalId: string
   ): Promise<{ id: string } | null> {
     const records = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
       `SELECT id
@@ -86,7 +85,7 @@ export class CustomerExternalIdRepository {
          AND external_id = $3`,
       profileStoreId,
       consumerId,
-      externalId,
+      externalId
     );
 
     return records[0] ?? null;
@@ -100,13 +99,15 @@ export class CustomerExternalIdRepository {
       consumerId: string;
       externalId: string;
       userId: string;
-    },
+    }
   ): Promise<{ id: string; externalId: string; createdAt: Date }> {
-    const records = await prisma.$queryRawUnsafe<Array<{
-      id: string;
-      externalId: string;
-      createdAt: Date;
-    }>>(
+    const records = await prisma.$queryRawUnsafe<
+      Array<{
+        id: string;
+        externalId: string;
+        createdAt: Date;
+      }>
+    >(
       `INSERT INTO "${tenantSchema}".customer_external_id (
          id, customer_id, profile_store_id, consumer_id, external_id, created_by, created_at
        ) VALUES (
@@ -117,7 +118,7 @@ export class CustomerExternalIdRepository {
       args.profileStoreId,
       args.consumerId,
       args.externalId,
-      args.userId,
+      args.userId
     );
 
     return records[0];
@@ -132,7 +133,7 @@ export class CustomerExternalIdRepository {
       diff: string;
       userId: string;
       ipAddress?: string;
-    },
+    }
   ) {
     return prisma.$executeRawUnsafe(
       `INSERT INTO "${tenantSchema}".change_log (
@@ -145,20 +146,22 @@ export class CustomerExternalIdRepository {
       args.objectName,
       args.diff,
       args.userId,
-      args.ipAddress ?? '0.0.0.0',
+      args.ipAddress ?? '0.0.0.0'
     );
   }
 
   async findOwnedExternalId(
     tenantSchema: string,
     customerId: string,
-    externalIdId: string,
+    externalIdId: string
   ): Promise<{ id: string; externalId: string; consumerCode: string } | null> {
-    const records = await prisma.$queryRawUnsafe<Array<{
-      id: string;
-      externalId: string;
-      consumerCode: string;
-    }>>(
+    const records = await prisma.$queryRawUnsafe<
+      Array<{
+        id: string;
+        externalId: string;
+        consumerCode: string;
+      }>
+    >(
       `SELECT
          cei.id,
          cei.external_id as "externalId",
@@ -168,7 +171,7 @@ export class CustomerExternalIdRepository {
        WHERE cei.id = $1::uuid
          AND cei.customer_id = $2::uuid`,
       externalIdId,
-      customerId,
+      customerId
     );
 
     return records[0] ?? null;
@@ -177,7 +180,7 @@ export class CustomerExternalIdRepository {
   delete(tenantSchema: string, externalIdId: string) {
     return prisma.$executeRawUnsafe(
       `DELETE FROM "${tenantSchema}".customer_external_id WHERE id = $1::uuid`,
-      externalIdId,
+      externalIdId
     );
   }
 
@@ -185,13 +188,15 @@ export class CustomerExternalIdRepository {
     tenantSchema: string,
     consumerCode: string,
     externalId: string,
-    profileStoreId: string,
+    profileStoreId: string
   ): Promise<{ id: string; nickname: string; profileStoreId: string } | null> {
-    const records = await prisma.$queryRawUnsafe<Array<{
-      id: string;
-      nickname: string;
-      profileStoreId: string;
-    }>>(
+    const records = await prisma.$queryRawUnsafe<
+      Array<{
+        id: string;
+        nickname: string;
+        profileStoreId: string;
+      }>
+    >(
       `SELECT
          cp.id,
          cp.nickname,
@@ -204,7 +209,7 @@ export class CustomerExternalIdRepository {
          AND cei.external_id = $3`,
       profileStoreId,
       consumerCode,
-      externalId,
+      externalId
     );
 
     return records[0] ?? null;
@@ -214,7 +219,7 @@ export class CustomerExternalIdRepository {
     tenantSchema: string,
     consumerCode: string,
     externalId: string,
-    profileStoreId: string,
+    profileStoreId: string
   ): Promise<boolean> {
     const countResult = await prisma.$queryRawUnsafe<Array<{ count: bigint }>>(
       `SELECT COUNT(*) as count
@@ -225,7 +230,7 @@ export class CustomerExternalIdRepository {
          AND cei.external_id = $3`,
       profileStoreId,
       consumerCode,
-      externalId,
+      externalId
     );
 
     return Number(countResult[0]?.count ?? 0) > 0;

@@ -1,12 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable, Logger } from '@nestjs/common';
-import {
-  LogSeverity,
-  type RequestContext,
-  TechEventScope,
-  TechEventType,
-} from '@tcrn/shared';
+
+import { LogSeverity, type RequestContext, TechEventScope, TechEventType } from '@tcrn/shared';
 
 import { DatabaseService } from '../../database';
 import { LogMaskingService } from './log-masking.service';
@@ -35,7 +30,7 @@ export class TechEventLogService {
 
   constructor(
     private readonly databaseService: DatabaseService,
-    private readonly maskingService: LogMaskingService,
+    private readonly maskingService: LogMaskingService
   ) {}
 
   /**
@@ -55,10 +50,11 @@ export class TechEventLogService {
       const prisma = this.databaseService.getPrisma();
       const schema = context?.tenantSchema || 'public';
       const scope = data.scope || TechEventScope.GENERAL;
-      const errorStack = process.env.NODE_ENV === 'development' ? data.errorStack ?? null : null;
+      const errorStack = process.env.NODE_ENV === 'development' ? (data.errorStack ?? null) : null;
       const traceId = data.traceId ?? context?.traceId ?? context?.requestId ?? null;
 
-      await prisma.$executeRawUnsafe(`
+      await prisma.$executeRawUnsafe(
+        `
         INSERT INTO "${schema}".technical_event_log (
           id, occurred_at, severity, event_type, scope, trace_id, span_id, source, message, payload_json, error_code, error_stack
         ) VALUES (
@@ -74,13 +70,13 @@ export class TechEventLogService {
         data.message ?? null,
         maskedPayload ? JSON.stringify(maskedPayload) : null,
         data.errorCode ?? null,
-        errorStack,
+        errorStack
       );
     } catch (error) {
       // Log error but don't throw
       this.logger.error(
         `Failed to log tech event: ${error instanceof Error ? error.message : String(error)}`,
-        error instanceof Error ? error.stack : undefined,
+        error instanceof Error ? error.stack : undefined
       );
     }
   }
@@ -94,14 +90,17 @@ export class TechEventLogService {
     eventType: TechEventType | string,
     message: string,
     payload?: Record<string, unknown>,
-    context?: RequestContext,
+    context?: RequestContext
   ): Promise<void> {
-    await this.log({
-      severity: LogSeverity.INFO,
-      eventType,
-      message,
-      payload,
-    }, context);
+    await this.log(
+      {
+        severity: LogSeverity.INFO,
+        eventType,
+        message,
+        payload,
+      },
+      context
+    );
   }
 
   /**
@@ -111,14 +110,17 @@ export class TechEventLogService {
     eventType: TechEventType | string,
     message: string,
     payload?: Record<string, unknown>,
-    context?: RequestContext,
+    context?: RequestContext
   ): Promise<void> {
-    await this.log({
-      severity: LogSeverity.WARN,
-      eventType,
-      message,
-      payload,
-    }, context);
+    await this.log(
+      {
+        severity: LogSeverity.WARN,
+        eventType,
+        message,
+        payload,
+      },
+      context
+    );
   }
 
   /**
@@ -129,16 +131,19 @@ export class TechEventLogService {
     message: string,
     error?: Error,
     payload?: Record<string, unknown>,
-    context?: RequestContext,
+    context?: RequestContext
   ): Promise<void> {
-    await this.log({
-      severity: LogSeverity.ERROR,
-      eventType,
-      message,
-      payload,
-      errorCode: (error as Error & { code?: string })?.code,
-      errorStack: error?.stack,
-    }, context);
+    await this.log(
+      {
+        severity: LogSeverity.ERROR,
+        eventType,
+        message,
+        payload,
+        errorCode: (error as Error & { code?: string })?.code,
+        errorStack: error?.stack,
+      },
+      context
+    );
   }
 
   /**
@@ -148,15 +153,18 @@ export class TechEventLogService {
     eventType: TechEventType | string,
     message: string,
     payload?: Record<string, unknown>,
-    context?: RequestContext,
+    context?: RequestContext
   ): Promise<void> {
-    await this.log({
-      severity: LogSeverity.INFO,
-      eventType,
-      scope: TechEventScope.SECURITY,
-      message,
-      payload,
-    }, context);
+    await this.log(
+      {
+        severity: LogSeverity.INFO,
+        eventType,
+        scope: TechEventScope.SECURITY,
+        message,
+        payload,
+      },
+      context
+    );
   }
 
   /**
@@ -166,15 +174,18 @@ export class TechEventLogService {
     eventType: TechEventType | string,
     message: string,
     payload?: Record<string, unknown>,
-    context?: RequestContext,
+    context?: RequestContext
   ): Promise<void> {
-    await this.log({
-      severity: LogSeverity.INFO,
-      eventType,
-      scope: TechEventScope.PII,
-      message,
-      payload,
-    }, context);
+    await this.log(
+      {
+        severity: LogSeverity.INFO,
+        eventType,
+        scope: TechEventScope.PII,
+        message,
+        payload,
+      },
+      context
+    );
   }
 
   /**
@@ -184,15 +195,18 @@ export class TechEventLogService {
     eventType: TechEventType | string,
     message: string,
     payload?: Record<string, unknown>,
-    context?: RequestContext,
+    context?: RequestContext
   ): Promise<void> {
-    await this.log({
-      severity: LogSeverity.INFO,
-      eventType,
-      scope: TechEventScope.IMPORT,
-      message,
-      payload,
-    }, context);
+    await this.log(
+      {
+        severity: LogSeverity.INFO,
+        eventType,
+        scope: TechEventScope.IMPORT,
+        message,
+        payload,
+      },
+      context
+    );
   }
 
   /**
@@ -202,15 +216,18 @@ export class TechEventLogService {
     eventType: TechEventType | string,
     message: string,
     payload?: Record<string, unknown>,
-    context?: RequestContext,
+    context?: RequestContext
   ): Promise<void> {
-    await this.log({
-      severity: LogSeverity.INFO,
-      eventType,
-      scope: TechEventScope.PERMISSION,
-      message,
-      payload,
-    }, context);
+    await this.log(
+      {
+        severity: LogSeverity.INFO,
+        eventType,
+        scope: TechEventScope.PERMISSION,
+        message,
+        payload,
+      },
+      context
+    );
   }
 }
 
@@ -238,7 +255,7 @@ export class TechEventLogQueryService {
       page?: number;
       pageSize?: number;
     },
-    tenantSchema: string,
+    tenantSchema: string
   ) {
     const prisma = this.databaseService.getPrisma();
     const page = query.page || 1;
@@ -284,12 +301,12 @@ export class TechEventLogQueryService {
          ${whereClause}
          ORDER BY occurred_at DESC
          LIMIT ${pageSize} OFFSET ${offset}`,
-        ...params,
+        ...params
       );
 
       const countResult = await prisma.$queryRawUnsafe<{ count: bigint }[]>(
         `SELECT COUNT(*) as count FROM "${tenantSchema}".technical_event_log ${whereClause}`,
-        ...params,
+        ...params
       );
       const total = Number(countResult[0]?.count || 0);
 
@@ -301,7 +318,9 @@ export class TechEventLogQueryService {
         totalPages: Math.ceil(total / pageSize),
       };
     } catch (error) {
-      this.queryLogger.error(`Failed to query tech event logs: ${error instanceof Error ? error.message : String(error)}`);
+      this.queryLogger.error(
+        `Failed to query tech event logs: ${error instanceof Error ? error.message : String(error)}`
+      );
       return {
         items: [],
         total: 0,
@@ -323,11 +342,13 @@ export class TechEventLogQueryService {
          FROM "${tenantSchema}".technical_event_log
          WHERE trace_id = $1
          ORDER BY occurred_at ASC`,
-        traceId,
+        traceId
       );
       return items.map((item) => this.formatEntry(item));
     } catch (error) {
-      this.queryLogger.error(`Failed to find by trace ID: ${error instanceof Error ? error.message : String(error)}`);
+      this.queryLogger.error(
+        `Failed to find by trace ID: ${error instanceof Error ? error.message : String(error)}`
+      );
       return [];
     }
   }

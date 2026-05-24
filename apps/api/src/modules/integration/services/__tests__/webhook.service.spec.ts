@@ -1,18 +1,13 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
-import 'reflect-metadata';
-
 import { ConfigService } from '@nestjs/config';
-import { ErrorCodes, createLocalizedText } from '@tcrn/shared';
+import 'reflect-metadata';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { ErrorCodes, createLocalizedText } from '@tcrn/shared';
 
 import { DatabaseService } from '../../../database';
 import { ChangeLogService } from '../../../log';
-import {
-  CreateWebhookDto,
-  UpdateWebhookDto,
-  WebhookEventType,
-} from '../../dto/integration.dto';
+import { CreateWebhookDto, UpdateWebhookDto, WebhookEventType } from '../../dto/integration.dto';
 import { AdapterCryptoService } from '../adapter-crypto.service';
 import { WebhookService } from '../webhook.service';
 
@@ -102,7 +97,7 @@ describe('WebhookService', () => {
       mockDatabaseService as DatabaseService,
       mockCryptoService as AdapterCryptoService,
       mockChangeLogService as ChangeLogService,
-      mockConfigService as ConfigService,
+      mockConfigService as ConfigService
     );
   });
 
@@ -117,7 +112,7 @@ describe('WebhookService', () => {
           max_retries: 5,
           backoff_ms: 2500,
         },
-      }),
+      })
     );
 
     const result = await service.findById('webhook-1');
@@ -180,13 +175,11 @@ describe('WebhookService', () => {
   });
 
   it('serializes create retry policy to camelCase JSON with defaults', async () => {
-    mockPrisma.webhook.findUnique
-      .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce(
-        buildWebhookRecord({
-          retryPolicy: { maxRetries: 5, backoffMs: 1000 },
-        }),
-      );
+    mockPrisma.webhook.findUnique.mockResolvedValueOnce(null).mockResolvedValueOnce(
+      buildWebhookRecord({
+        retryPolicy: { maxRetries: 5, backoffMs: 1000 },
+      })
+    );
 
     const dto = {
       code: 'TEST_WEBHOOK',
@@ -206,26 +199,27 @@ describe('WebhookService', () => {
             backoffMs: 1000,
           },
         }),
-      }),
+      })
     );
   });
 
   it('creates webhooks from supported definitions and rejects events outside that definition', async () => {
-    mockPrisma.webhook.findUnique
-      .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce(
-        buildWebhookRecord({
-          code: 'CUSTOMER_LIFECYCLE',
-          events: ['customer.created', 'customer.updated'],
-          extraData: { definitionKey: 'customer-lifecycle' },
-        }),
-      );
+    mockPrisma.webhook.findUnique.mockResolvedValueOnce(null).mockResolvedValueOnce(
+      buildWebhookRecord({
+        code: 'CUSTOMER_LIFECYCLE',
+        events: ['customer.created', 'customer.updated'],
+        extraData: { definitionKey: 'customer-lifecycle' },
+      })
+    );
 
-    await service.create({
-      definitionKey: 'customer-lifecycle',
-      url: 'https://example.com/webhook',
-      monitoredTalentIds: ['11111111-1111-4111-8111-111111111111'],
-    } as CreateWebhookDto, mockContext);
+    await service.create(
+      {
+        definitionKey: 'customer-lifecycle',
+        url: 'https://example.com/webhook',
+        monitoredTalentIds: ['11111111-1111-4111-8111-111111111111'],
+      } as CreateWebhookDto,
+      mockContext
+    );
 
     expect(mockPrisma.webhook.create).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -238,17 +232,20 @@ describe('WebhookService', () => {
             monitoredTalentIds: ['11111111-1111-4111-8111-111111111111'],
           }),
         }),
-      }),
+      })
     );
 
     await expect(
-      service.create({
-        definitionKey: 'customer-lifecycle',
-        code: 'CUSTOMER_LIFECYCLE_BAD',
-        name: createLocalizedText({ en: 'Bad lifecycle' }),
-        url: 'https://example.com/webhook',
-        events: [WebhookEventType.REPORT_FAILED],
-      } as CreateWebhookDto, mockContext),
+      service.create(
+        {
+          definitionKey: 'customer-lifecycle',
+          code: 'CUSTOMER_LIFECYCLE_BAD',
+          name: createLocalizedText({ en: 'Bad lifecycle' }),
+          url: 'https://example.com/webhook',
+          events: [WebhookEventType.REPORT_FAILED],
+        } as CreateWebhookDto,
+        mockContext
+      )
     ).rejects.toMatchObject({
       response: {
         code: ErrorCodes.VALIDATION_FAILED,
@@ -257,11 +254,14 @@ describe('WebhookService', () => {
     });
 
     await expect(
-      service.create({
-        definitionKey: 'customer-lifecycle',
-        url: 'https://example.com/webhook',
-        events: ['customer.created', 'customer.updated', 'customer.deactivated'],
-      } as CreateWebhookDto, mockContext),
+      service.create(
+        {
+          definitionKey: 'customer-lifecycle',
+          url: 'https://example.com/webhook',
+          events: ['customer.created', 'customer.updated', 'customer.deactivated'],
+        } as CreateWebhookDto,
+        mockContext
+      )
     ).rejects.toMatchObject({
       response: {
         code: ErrorCodes.VALIDATION_FAILED,
@@ -277,7 +277,7 @@ describe('WebhookService', () => {
         buildWebhookRecord({
           retryPolicy: { maxRetries: 3, backoffMs: 2400 },
           version: 4,
-        }),
+        })
       );
 
     const dto = {
@@ -297,19 +297,21 @@ describe('WebhookService', () => {
           updatedBy: 'user-1',
           version: { increment: 1 },
         }),
-      }),
+      })
     );
   });
 
   it('preserves monitored talent metadata when update omits the field', async () => {
     mockPrisma.webhook.findUnique
-      .mockResolvedValueOnce(buildWebhookRecord({
-        version: 3,
-        extraData: {
-          definitionKey: 'customer-lifecycle',
-          monitoredTalentIds: ['11111111-1111-4111-8111-111111111111'],
-        },
-      }))
+      .mockResolvedValueOnce(
+        buildWebhookRecord({
+          version: 3,
+          extraData: {
+            definitionKey: 'customer-lifecycle',
+            monitoredTalentIds: ['11111111-1111-4111-8111-111111111111'],
+          },
+        })
+      )
       .mockResolvedValueOnce(
         buildWebhookRecord({
           version: 4,
@@ -317,13 +319,17 @@ describe('WebhookService', () => {
             definitionKey: 'customer-lifecycle',
             monitoredTalentIds: ['11111111-1111-4111-8111-111111111111'],
           },
-        }),
+        })
       );
 
-    await service.update('webhook-1', {
-      version: 3,
-      url: 'https://example.com/updated-webhook',
-    } as UpdateWebhookDto, mockContext);
+    await service.update(
+      'webhook-1',
+      {
+        version: 3,
+        url: 'https://example.com/updated-webhook',
+      } as UpdateWebhookDto,
+      mockContext
+    );
 
     expect(mockPrisma.webhook.update).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -333,7 +339,7 @@ describe('WebhookService', () => {
             monitoredTalentIds: ['11111111-1111-4111-8111-111111111111'],
           }),
         }),
-      }),
+      })
     );
   });
 
@@ -341,7 +347,7 @@ describe('WebhookService', () => {
     mockPrisma.webhook.findUnique.mockResolvedValue(
       buildWebhookRecord({
         consecutiveFailures: 2,
-      }),
+      })
     );
 
     const result = await service.deactivate('webhook-1', mockContext);
@@ -359,7 +365,7 @@ describe('WebhookService', () => {
           updatedBy: 'user-1',
           version: { increment: 1 },
         }),
-      }),
+      })
     );
   });
 });

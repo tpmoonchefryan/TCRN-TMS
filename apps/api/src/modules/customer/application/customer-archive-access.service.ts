@@ -1,10 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
 import { ErrorCodes, type RequestContext } from '@tcrn/shared';
 
 import {
@@ -17,9 +13,7 @@ import { CustomerArchiveRepository } from '../infrastructure/customer-archive.re
 
 @Injectable()
 export class CustomerArchiveAccessService {
-  constructor(
-    private readonly customerArchiveRepository: CustomerArchiveRepository,
-  ) {}
+  constructor(private readonly customerArchiveRepository: CustomerArchiveRepository) {}
 
   async requireTalentArchiveTarget(
     talentId: string,
@@ -27,11 +21,11 @@ export class CustomerArchiveAccessService {
     options?: {
       missingTalentMessage?: string;
       missingArchiveMessage?: string;
-    },
+    }
   ): Promise<{ talentId: string; profileStoreId: string }> {
     const binding = await this.customerArchiveRepository.findTalentArchiveBinding(
       context.tenantSchema,
-      talentId,
+      talentId
     );
 
     if (!binding) {
@@ -44,8 +38,7 @@ export class CustomerArchiveAccessService {
     if (!binding.profileStoreId) {
       throw new BadRequestException({
         code: ErrorCodes.VALIDATION_FAILED,
-        message:
-          options?.missingArchiveMessage ?? 'Talent has no profile store configured',
+        message: options?.missingArchiveMessage ?? 'Talent has no profile store configured',
       });
     }
 
@@ -57,11 +50,11 @@ export class CustomerArchiveAccessService {
 
   async getTalentArchiveReadiness(
     talentId: string,
-    tenantSchema: string,
+    tenantSchema: string
   ): Promise<TalentArchiveReadiness> {
     const binding = await this.customerArchiveRepository.findTalentArchiveBinding(
       tenantSchema,
-      talentId,
+      talentId
     );
 
     return {
@@ -78,12 +71,12 @@ export class CustomerArchiveAccessService {
     options?: {
       expectedProfileType?: ProfileType;
       notFoundMessage?: string;
-    },
+    }
   ): Promise<CustomerArchiveAccessRecord> {
     const customer = await this.customerArchiveRepository.findCustomerArchiveAccess(
       context.tenantSchema,
       customerId,
-      talentId,
+      talentId
     );
 
     if (!customer) {
@@ -93,10 +86,7 @@ export class CustomerArchiveAccessService {
       });
     }
 
-    if (
-      options?.expectedProfileType &&
-      customer.profileType !== options.expectedProfileType
-    ) {
+    if (options?.expectedProfileType && customer.profileType !== options.expectedProfileType) {
       throw new BadRequestException({
         code: ErrorCodes.VALIDATION_FAILED,
         message: `Customer is not a ${options.expectedProfileType} profile`,

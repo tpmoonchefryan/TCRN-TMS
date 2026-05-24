@@ -205,7 +205,10 @@ export function TenantEditorScreen({
     } catch (reason) {
       setNotice({
         tone: 'error',
-        message: getErrorMessage(reason, mode === 'create' ? editorCopy.createError : editorCopy.updateError),
+        message: getErrorMessage(
+          reason,
+          mode === 'create' ? editorCopy.createError : editorCopy.updateError
+        ),
       });
     } finally {
       setSubmitting(false);
@@ -240,7 +243,10 @@ export function TenantEditorScreen({
     } catch (reason) {
       setNotice({
         tone: 'error',
-        message: getErrorMessage(reason, nextState === 'activate' ? editorCopy.reactivateError : editorCopy.deactivateError),
+        message: getErrorMessage(
+          reason,
+          nextState === 'activate' ? editorCopy.reactivateError : editorCopy.deactivateError
+        ),
       });
     } finally {
       setSubmitting(false);
@@ -248,29 +254,31 @@ export function TenantEditorScreen({
   }
 
   function handleSendingDomainStatusChange(domainId: string, status: ManagedSendingDomainStatus) {
-    setSendingDomains((current) => current.map((domain) => (
-      domain.id === domainId ? { ...domain, status } : domain
-    )));
+    setSendingDomains((current) =>
+      current.map((domain) => (domain.id === domainId ? { ...domain, status } : domain))
+    );
     setSendingDomainsNotice(null);
   }
 
   function handleSendingDomainDomainChange(domainId: string, value: string) {
-    setSendingDomains((current) => current.map((domain) => (
-      domain.id === domainId
-        ? {
-            ...domain,
-            domain: value,
-            dnsRecords: domain.dnsRecords.map((record) => (
-              value.trim()
-                ? {
-                    ...record,
-                    host: `_tcrn-email.${value.trim().toLowerCase()}`,
-                  }
-                : record
-            )),
-          }
-        : domain
-    )));
+    setSendingDomains((current) =>
+      current.map((domain) =>
+        domain.id === domainId
+          ? {
+              ...domain,
+              domain: value,
+              dnsRecords: domain.dnsRecords.map((record) =>
+                value.trim()
+                  ? {
+                      ...record,
+                      host: `_tcrn-email.${value.trim().toLowerCase()}`,
+                    }
+                  : record
+              ),
+            }
+          : domain
+      )
+    );
     setSendingDomainsNotice(null);
   }
 
@@ -348,11 +356,19 @@ export function TenantEditorScreen({
   }
 
   if (mode === 'edit' && (loadError || !tenantState)) {
-    return <StateView status="error" title={editorCopy.tenantEditorFallbackTitle} description={loadError || undefined} />;
+    return (
+      <StateView
+        status="error"
+        title={editorCopy.tenantEditorFallbackTitle}
+        description={loadError || undefined}
+      />
+    );
   }
 
   const editorTitle =
-    mode === 'create' ? editorCopy.provisionTitle : tenantState?.name || editorCopy.tenantEditorFallbackTitle;
+    mode === 'create'
+      ? editorCopy.provisionTitle
+      : tenantState?.name || editorCopy.tenantEditorFallbackTitle;
 
   return (
     <div className="space-y-6">
@@ -371,9 +387,7 @@ export function TenantEditorScreen({
             </p>
             <h1 className="text-3xl font-semibold text-slate-950">{editorTitle}</h1>
             <p className="max-w-3xl text-sm leading-6 text-slate-600">
-              {mode === 'create'
-                ? editorCopy.createDescription
-                : editorCopy.editDescription}
+              {mode === 'create' ? editorCopy.createDescription : editorCopy.editDescription}
             </p>
             <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
               {session?.tenantName || copy.currentAcTenantFallback}
@@ -408,12 +422,16 @@ export function TenantEditorScreen({
         <div className="grid gap-4 md:grid-cols-2">
           <Field
             label={editorCopy.tenantCodeLabel}
-            hint={mode === 'create' ? editorCopy.tenantCodeHintCreate : editorCopy.tenantCodeHintEdit}
+            hint={
+              mode === 'create' ? editorCopy.tenantCodeHintCreate : editorCopy.tenantCodeHintEdit
+            }
           >
             <input
               aria-label={editorCopy.tenantCodeLabel}
               value={draft.code}
-              onChange={(event) => setDraft((current) => ({ ...current, code: event.target.value.toUpperCase() }))}
+              onChange={(event) =>
+                setDraft((current) => ({ ...current, code: event.target.value.toUpperCase() }))
+              }
               disabled={mode === 'edit'}
               className={inputClassName}
               placeholder={editorCopy.tenantCodePlaceholder}
@@ -424,7 +442,9 @@ export function TenantEditorScreen({
             <input
               aria-label={editorCopy.tenantNameLabel}
               value={draft.name}
-              onChange={(event) => setDraft((current) => ({ ...current, name: event.target.value }))}
+              onChange={(event) =>
+                setDraft((current) => ({ ...current, name: event.target.value }))
+              }
               className={inputClassName}
               placeholder={editorCopy.tenantNamePlaceholder}
             />
@@ -434,7 +454,9 @@ export function TenantEditorScreen({
             <input
               aria-label={editorCopy.maxTalentsLabel}
               value={draft.maxTalents}
-              onChange={(event) => setDraft((current) => ({ ...current, maxTalents: event.target.value }))}
+              onChange={(event) =>
+                setDraft((current) => ({ ...current, maxTalents: event.target.value }))
+              }
               className={inputClassName}
               inputMode="numeric"
               placeholder={editorCopy.maxTalentsPlaceholder}
@@ -445,7 +467,9 @@ export function TenantEditorScreen({
             <input
               aria-label={editorCopy.maxCustomersLabel}
               value={draft.maxCustomersPerTalent}
-              onChange={(event) => setDraft((current) => ({ ...current, maxCustomersPerTalent: event.target.value }))}
+              onChange={(event) =>
+                setDraft((current) => ({ ...current, maxCustomersPerTalent: event.target.value }))
+              }
               className={inputClassName}
               inputMode="numeric"
               placeholder={editorCopy.maxCustomersPlaceholder}
@@ -456,7 +480,9 @@ export function TenantEditorScreen({
             <input
               aria-label={editorCopy.featuresLabel}
               value={draft.featuresText}
-              onChange={(event) => setDraft((current) => ({ ...current, featuresText: event.target.value }))}
+              onChange={(event) =>
+                setDraft((current) => ({ ...current, featuresText: event.target.value }))
+              }
               className={inputClassName}
               placeholder={editorCopy.featuresPlaceholder}
             />
@@ -468,8 +494,13 @@ export function TenantEditorScreen({
               {editorCopy.currentSelection}
             </div>
             <div className="mt-3 space-y-2 text-sm text-slate-600">
-              <p>{editorCopy.tenantSelectionLabel}: {tenantState?.name || editorCopy.newTenant}</p>
-              <p>{editorCopy.tenantCodeLabel}: {tenantState?.code || draft.code || editorCopy.newTenant}</p>
+              <p>
+                {editorCopy.tenantSelectionLabel}: {tenantState?.name || editorCopy.newTenant}
+              </p>
+              <p>
+                {editorCopy.tenantCodeLabel}:{' '}
+                {tenantState?.code || draft.code || editorCopy.newTenant}
+              </p>
               <p>
                 {editorCopy.selectionTierLabel}:{' '}
                 {tenantState
@@ -480,7 +511,8 @@ export function TenantEditorScreen({
               </p>
               {tenantState ? (
                 <p>
-                  {editorCopy.updatedLabel}: {formatTenantDateTime(tenantState.updatedAt, locale, editorCopy.updatedLabel)}
+                  {editorCopy.updatedLabel}:{' '}
+                  {formatTenantDateTime(tenantState.updatedAt, locale, editorCopy.updatedLabel)}
                 </p>
               ) : null}
             </div>
@@ -492,7 +524,9 @@ export function TenantEditorScreen({
                 <input
                   aria-label={editorCopy.adminUsernameLabel}
                   value={draft.adminUsername}
-                  onChange={(event) => setDraft((current) => ({ ...current, adminUsername: event.target.value }))}
+                  onChange={(event) =>
+                    setDraft((current) => ({ ...current, adminUsername: event.target.value }))
+                  }
                   className={inputClassName}
                   placeholder={editorCopy.adminUsernamePlaceholder}
                 />
@@ -502,7 +536,9 @@ export function TenantEditorScreen({
                 <input
                   aria-label={editorCopy.adminEmailLabel}
                   value={draft.adminEmail}
-                  onChange={(event) => setDraft((current) => ({ ...current, adminEmail: event.target.value }))}
+                  onChange={(event) =>
+                    setDraft((current) => ({ ...current, adminEmail: event.target.value }))
+                  }
                   className={inputClassName}
                   placeholder={editorCopy.adminEmailPlaceholder}
                 />
@@ -513,7 +549,9 @@ export function TenantEditorScreen({
                   aria-label={editorCopy.adminPasswordLabel}
                   type="password"
                   value={draft.adminPassword}
-                  onChange={(event) => setDraft((current) => ({ ...current, adminPassword: event.target.value }))}
+                  onChange={(event) =>
+                    setDraft((current) => ({ ...current, adminPassword: event.target.value }))
+                  }
                   className={inputClassName}
                   placeholder={editorCopy.adminPasswordPlaceholder}
                 />
@@ -523,7 +561,9 @@ export function TenantEditorScreen({
                 <input
                   aria-label={editorCopy.adminDisplayNameLabel}
                   value={draft.adminDisplayName}
-                  onChange={(event) => setDraft((current) => ({ ...current, adminDisplayName: event.target.value }))}
+                  onChange={(event) =>
+                    setDraft((current) => ({ ...current, adminDisplayName: event.target.value }))
+                  }
                   className={inputClassName}
                   placeholder={editorCopy.adminDisplayNamePlaceholder}
                 />
@@ -537,14 +577,17 @@ export function TenantEditorScreen({
             <div className="flex flex-wrap items-center gap-2">
               <ToneBadge
                 tone={tenantState.tier === 'ac' ? 'info' : 'neutral'}
-                label={tenantState.tier === 'ac' ? editorCopy.acTierLabel : editorCopy.standardTierLabel}
+                label={
+                  tenantState.tier === 'ac' ? editorCopy.acTierLabel : editorCopy.standardTierLabel
+                }
               />
               <ToneBadge
                 tone={tenantState.isActive ? 'success' : 'warning'}
                 label={tenantState.isActive ? editorCopy.activeStatus : editorCopy.inactiveStatus}
               />
               <p className="text-sm text-slate-600">
-                {editorCopy.createdLabel} {formatDateTime(tenantState.createdAt, locale, editorCopy.createdLabel)}
+                {editorCopy.createdLabel}{' '}
+                {formatDateTime(tenantState.createdAt, locale, editorCopy.createdLabel)}
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -589,7 +632,9 @@ export function TenantEditorScreen({
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="space-y-2">
                 <h2 className="text-xl font-semibold text-slate-950">{sendingDomainCopy.title}</h2>
-                <p className="max-w-3xl text-sm leading-6 text-slate-600">{sendingDomainCopy.description}</p>
+                <p className="max-w-3xl text-sm leading-6 text-slate-600">
+                  {sendingDomainCopy.description}
+                </p>
               </div>
               <div className="flex flex-wrap gap-2">
                 <input
@@ -612,8 +657,12 @@ export function TenantEditorScreen({
             {sendingDomainsLoading ? (
               <p className="text-sm font-medium text-slate-500">{sendingDomainCopy.loading}</p>
             ) : null}
-            {sendingDomainsError ? <p className="text-sm font-medium text-red-600">{sendingDomainsError}</p> : null}
-            {sendingDomainsNotice ? <p className="text-sm font-medium text-emerald-700">{sendingDomainsNotice}</p> : null}
+            {sendingDomainsError ? (
+              <p className="text-sm font-medium text-red-600">{sendingDomainsError}</p>
+            ) : null}
+            {sendingDomainsNotice ? (
+              <p className="text-sm font-medium text-emerald-700">{sendingDomainsNotice}</p>
+            ) : null}
 
             {!sendingDomainsLoading && sendingDomains.length === 0 ? (
               <p className="rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-600">
@@ -622,22 +671,34 @@ export function TenantEditorScreen({
             ) : (
               <div className="grid gap-4">
                 {sendingDomains.map((domain) => (
-                  <div key={domain.id} className="rounded-2xl border border-slate-200 bg-white/80 px-4 py-4 shadow-sm">
+                  <div
+                    key={domain.id}
+                    className="rounded-2xl border border-slate-200 bg-white/80 px-4 py-4 shadow-sm"
+                  >
                     <div className="flex flex-wrap items-start justify-between gap-4">
                       <div className="space-y-2">
-                        <p className="break-all text-sm font-semibold text-slate-950">{domain.domain}</p>
+                        <p className="break-all text-sm font-semibold text-slate-950">
+                          {domain.domain}
+                        </p>
                         <label className="block space-y-2">
-                          <span className="text-sm font-semibold text-slate-900">{sendingDomainCopy.hostnameLabel}</span>
+                          <span className="text-sm font-semibold text-slate-900">
+                            {sendingDomainCopy.hostnameLabel}
+                          </span>
                           <input
                             aria-label={`${sendingDomainCopy.hostnameLabel}: ${domain.domain}`}
                             value={domain.domain}
-                            onChange={(event) => handleSendingDomainDomainChange(domain.id, event.target.value)}
+                            onChange={(event) =>
+                              handleSendingDomainDomainChange(domain.id, event.target.value)
+                            }
                             className={inputClassName}
                           />
                         </label>
                         <div className="space-y-1">
                           {domain.dnsRecords.map((record) => (
-                            <div key={`${domain.id}-${record.host}-${record.value}`} className="rounded-xl bg-slate-50 px-3 py-2 text-xs text-slate-700">
+                            <div
+                              key={`${domain.id}-${record.host}-${record.value}`}
+                              className="rounded-xl bg-slate-50 px-3 py-2 text-xs text-slate-700"
+                            >
                               <p className="font-semibold">{record.type}</p>
                               <p className="break-all">{record.host}</p>
                               <p className="break-all">{record.value}</p>
@@ -646,14 +707,18 @@ export function TenantEditorScreen({
                         </div>
                       </div>
                       <label className="space-y-2">
-                        <span className="text-sm font-semibold text-slate-900">{sendingDomainCopy.statusLabel}</span>
+                        <span className="text-sm font-semibold text-slate-900">
+                          {sendingDomainCopy.statusLabel}
+                        </span>
                         <select
                           aria-label={`${sendingDomainCopy.statusLabel}: ${domain.domain}`}
                           value={domain.status}
-                          onChange={(event) => handleSendingDomainStatusChange(
-                            domain.id,
-                            event.target.value as ManagedSendingDomainStatus,
-                          )}
+                          onChange={(event) =>
+                            handleSendingDomainStatusChange(
+                              domain.id,
+                              event.target.value as ManagedSendingDomainStatus
+                            )
+                          }
                           className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm transition focus:border-indigo-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/40"
                         >
                           <option value="pending_dns">{sendingDomainCopy.pendingDnsStatus}</option>

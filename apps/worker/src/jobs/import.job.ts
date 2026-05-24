@@ -1,16 +1,17 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 // Import Job Processor (PRD §11.7)
-
-import { PrismaClient } from '@tcrn/database';
-import { SUPPORTED_UI_LOCALES, isSupportedUiLocale } from '@tcrn/shared';
-import type { Job, Processor } from 'bullmq';
-import { parse } from 'csv-parse';
 import * as fs from 'fs';
-import * as Minio from 'minio';
 import * as os from 'os';
 import * as path from 'path';
 import { pipeline } from 'stream/promises';
+
+import type { Job, Processor } from 'bullmq';
+import { parse } from 'csv-parse';
+import * as Minio from 'minio';
 import { v4 as uuidv4 } from 'uuid';
+
+import { PrismaClient } from '@tcrn/database';
+import { SUPPORTED_UI_LOCALES, isSupportedUiLocale } from '@tcrn/shared';
 
 import { importLogger as logger } from '../logger';
 
@@ -218,15 +219,13 @@ export const importJobProcessor: Processor<ImportJobData, ImportJobResult> = asy
     const lookupData = await loadLookupData(prisma, tenantSchemaName);
 
     // 4. Stream CSV and process rows
-    const parser = fs
-      .createReadStream(tempFilePath)
-      .pipe(
-        parse({
-          columns: true,
-          skip_empty_lines: true,
-          trim: true,
-        })
-      );
+    const parser = fs.createReadStream(tempFilePath).pipe(
+      parse({
+        columns: true,
+        skip_empty_lines: true,
+        trim: true,
+      })
+    );
 
     let rowNumber = 1; // Start after header
 
@@ -241,19 +240,19 @@ export const importJobProcessor: Processor<ImportJobData, ImportJobResult> = asy
           lookupData,
           rowNumber,
           defaultProfileType,
-          consumerCode,
+          consumerCode
         );
-        
+
         if (validation.warnings.length > 0) {
           result.warningRows++;
-          validation.warnings.forEach(w => {
+          validation.warnings.forEach((w) => {
             result.warnings.push({ row: rowNumber, message: w });
           });
         }
 
         if (!validation.valid) {
           result.failedRows++;
-          validation.errors.forEach(e => {
+          validation.errors.forEach((e) => {
             result.errors.push({ row: rowNumber, message: e });
           });
           await insertImportJobErrors(
@@ -265,7 +264,7 @@ export const importJobProcessor: Processor<ImportJobData, ImportJobResult> = asy
               errorCode: 'VALIDATION_ERROR',
               errorMessage: message,
               originalData: JSON.stringify(row),
-            })),
+            }))
           );
           continue;
         }
@@ -291,21 +290,26 @@ export const importJobProcessor: Processor<ImportJobData, ImportJobResult> = asy
             result.successRows++;
             break;
 
-            case 'customer_update': {
-              const updated = await processCustomerUpdate(prisma, tenantSchemaName, row as CustomerCsvRow, {
+          case 'customer_update': {
+            const updated = await processCustomerUpdate(
+              prisma,
+              tenantSchemaName,
+              row as CustomerCsvRow,
+              {
                 talentId,
                 profileStoreId,
                 userId,
                 lookupData,
-              });
-              if (updated) {
-                result.successRows++;
-              } else {
-                result.skippedRows++;
-                result.warnings.push({ row: rowNumber, message: 'Customer not found for update' });
               }
-              break;
+            );
+            if (updated) {
+              result.successRows++;
+            } else {
+              result.skippedRows++;
+              result.warnings.push({ row: rowNumber, message: 'Customer not found for update' });
             }
+            break;
+          }
           case 'membership_sync':
             await processMembershipSync(prisma, tenantSchemaName, row as CustomerCsvRow, {
               talentId,
@@ -345,9 +349,11 @@ export const importJobProcessor: Processor<ImportJobData, ImportJobResult> = asy
           processedRows,
           result.successRows,
           result.failedRows,
-          result.warningRows,
+          result.warningRows
         );
-        logger.info(`Progress: Row ${rowNumber}, Success: ${result.successRows}, Failed: ${result.failedRows}`);
+        logger.info(
+          `Progress: Row ${rowNumber}, Success: ${result.successRows}, Failed: ${result.failedRows}`
+        );
       }
     }
 
@@ -356,7 +362,9 @@ export const importJobProcessor: Processor<ImportJobData, ImportJobResult> = asy
 
     const duration = Date.now() - startTime;
     logger.info(`Import job ${jobId} completed in ${duration}ms`);
-    logger.info(`Total: ${result.totalRows}, Success: ${result.successRows}, Failed: ${result.failedRows}, Skipped: ${result.skippedRows}`);
+    logger.info(
+      `Total: ${result.totalRows}, Success: ${result.successRows}, Failed: ${result.failedRows}, Skipped: ${result.skippedRows}`
+    );
 
     return result;
   } catch (error) {
@@ -389,42 +397,46 @@ async function loadLookupData(prisma: PrismaClient, schemaName: string) {
     consumers,
   ] = await Promise.all([
     prisma.$queryRawUnsafe<Array<{ id: string; code: string }>>(
-      `SELECT id, code FROM ${tenantTable(schemaName, 'social_platform')} WHERE is_active = true`,
+      `SELECT id, code FROM ${tenantTable(schemaName, 'social_platform')} WHERE is_active = true`
     ),
     prisma.$queryRawUnsafe<Array<{ id: string; code: string }>>(
-      `SELECT id, code FROM ${tenantTable(schemaName, 'membership_class')} WHERE is_active = true`,
+      `SELECT id, code FROM ${tenantTable(schemaName, 'membership_class')} WHERE is_active = true`
     ),
     prisma.$queryRawUnsafe<Array<{ id: string; code: string; membershipClassId: string }>>(
       `
         SELECT id, code, membership_class_id as "membershipClassId"
         FROM ${tenantTable(schemaName, 'membership_type')}
         WHERE is_active = true
-      `,
+      `
     ),
     prisma.$queryRawUnsafe<Array<{ id: string; code: string; membershipTypeId: string }>>(
       `
         SELECT id, code, membership_type_id as "membershipTypeId"
         FROM ${tenantTable(schemaName, 'membership_level')}
         WHERE is_active = true
-      `,
+      `
     ),
     prisma.$queryRawUnsafe<Array<{ id: string; code: string }>>(
-      `SELECT id, code FROM ${tenantTable(schemaName, 'customer_status')} WHERE is_active = true`,
+      `SELECT id, code FROM ${tenantTable(schemaName, 'customer_status')} WHERE is_active = true`
     ),
     prisma.$queryRawUnsafe<Array<{ id: string; code: string }>>(
-      `SELECT id, code FROM ${tenantTable(schemaName, 'business_segment')} WHERE is_active = true`,
+      `SELECT id, code FROM ${tenantTable(schemaName, 'business_segment')} WHERE is_active = true`
     ),
     prisma.$queryRawUnsafe<Array<{ id: string; code: string }>>(
-      `SELECT id, code FROM ${tenantTable(schemaName, 'consumer')} WHERE is_active = true`,
+      `SELECT id, code FROM ${tenantTable(schemaName, 'consumer')} WHERE is_active = true`
     ),
   ]);
 
   return {
-    platforms: new Map(platforms.map(p => [p.code, p.id])),
-    membershipClasses: new Map(membershipClasses.map(m => [m.code, m.id])),
-    membershipTypes: new Map(membershipTypes.map(m => [`${m.membershipClassId}:${m.code}`, m.id])),
-    membershipLevels: new Map(membershipLevels.map(m => [`${m.membershipTypeId}:${m.code}`, m.id])),
-    customerStatuses: new Map(customerStatuses.map(s => [s.code, s.id])),
+    platforms: new Map(platforms.map((p) => [p.code, p.id])),
+    membershipClasses: new Map(membershipClasses.map((m) => [m.code, m.id])),
+    membershipTypes: new Map(
+      membershipTypes.map((m) => [`${m.membershipClassId}:${m.code}`, m.id])
+    ),
+    membershipLevels: new Map(
+      membershipLevels.map((m) => [`${m.membershipTypeId}:${m.code}`, m.id])
+    ),
+    customerStatuses: new Map(customerStatuses.map((s) => [s.code, s.id])),
     businessSegments: new Map(businessSegments.map((segment) => [segment.code, segment.id])),
     consumers: new Map(consumers.map((consumer) => [consumer.code, consumer.id])),
   };
@@ -438,7 +450,7 @@ function validateRow(
   lookupData: LookupData,
   _rowNumber: number,
   defaultProfileType?: 'individual' | 'company',
-  consumerCode?: string,
+  consumerCode?: string
 ): ValidationResult {
   const errors: string[] = [];
   const warnings: string[] = [];
@@ -467,7 +479,7 @@ function validateRow(
 
   if (prohibitedFields.length > 0) {
     errors.push(
-      `PII import columns are retired from TMS and must be handled by TCRN PII Platform: ${prohibitedFields.join(', ')}`,
+      `PII import columns are retired from TMS and must be handled by TCRN PII Platform: ${prohibitedFields.join(', ')}`
     );
   }
 
@@ -504,7 +516,7 @@ function validateRow(
 
   if (row.primary_language && !isSupportedUiLocale(row.primary_language)) {
     errors.push(
-      `Invalid primary_language: ${row.primary_language}. Must be one of ${SUPPORTED_UI_LOCALES.join(', ')}`,
+      `Invalid primary_language: ${row.primary_language}. Must be one of ${SUPPORTED_UI_LOCALES.join(', ')}`
     );
   }
 
@@ -526,7 +538,10 @@ function validateRow(
   }
 
   if (row.email_address) {
-    const emailAddresses = row.email_address.split('|').map((part) => part.trim()).filter(Boolean);
+    const emailAddresses = row.email_address
+      .split('|')
+      .map((part) => part.trim())
+      .filter(Boolean);
     for (const email of emailAddresses) {
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
         warnings.push(`Invalid email_address format: ${email}`);
@@ -543,7 +558,7 @@ function validateRow(
 
 function findProvidedImportFields(
   row: CustomerCsvRow,
-  keys: Array<keyof CustomerCsvRow>,
+  keys: Array<keyof CustomerCsvRow>
 ): string[] {
   return keys.filter((key) => hasMeaningfulValue(row[key])).map((key) => key.toString());
 }
@@ -624,11 +639,14 @@ async function processCustomerCreate(
     row.nickname,
     row.primary_language || null,
     statusId,
-    row.tags?.split(',').map((tag) => tag.trim()).filter(Boolean) || [],
+    row.tags
+      ?.split(',')
+      .map((tag) => tag.trim())
+      .filter(Boolean) || [],
     row.source || 'import',
     row.notes ?? null,
     options.userId,
-    options.userId,
+    options.userId
   );
 
   if (profileType === 'company') {
@@ -667,7 +685,7 @@ async function processCustomerCreate(
       row.business_segment_code
         ? (options.lookupData.businessSegments.get(row.business_segment_code) ?? null)
         : null,
-      row.website || null,
+      row.website || null
     );
   }
 
@@ -694,7 +712,7 @@ async function processCustomerCreate(
         options.profileStoreId,
         consumerId,
         row.external_id,
-        options.userId,
+        options.userId
       );
     }
   }
@@ -725,7 +743,7 @@ async function processCustomerCreate(
         `,
         customerId,
         platformId,
-        row.platform_uid,
+        row.platform_uid
       );
     }
   }
@@ -734,8 +752,12 @@ async function processCustomerCreate(
   if (row.membership_class_code && row.membership_type_code && row.membership_level_code) {
     const classId = options.lookupData.membershipClasses.get(row.membership_class_code);
     const typeId = options.lookupData.membershipTypes.get(`${classId}:${row.membership_type_code}`);
-    const levelId = options.lookupData.membershipLevels.get(`${typeId}:${row.membership_level_code}`);
-    const platformId = row.platform_code ? options.lookupData.platforms.get(row.platform_code) : null;
+    const levelId = options.lookupData.membershipLevels.get(
+      `${typeId}:${row.membership_level_code}`
+    );
+    const platformId = row.platform_code
+      ? options.lookupData.platforms.get(row.platform_code)
+      : null;
 
     if (classId && typeId && levelId && platformId) {
       await prisma.$executeRawUnsafe(
@@ -776,7 +798,7 @@ async function processCustomerCreate(
         row.valid_from ? new Date(row.valid_from) : new Date(),
         row.valid_to ? new Date(row.valid_to) : null,
         options.userId,
-        options.userId,
+        options.userId
       );
     }
   }
@@ -806,12 +828,14 @@ async function processCustomerUpdate(
     return false;
   }
 
-  const identities = await prisma.$queryRawUnsafe<Array<{
-    customerId: string;
-    nickname: string;
-    tags: string[];
-    notes: string | null;
-  }>>(
+  const identities = await prisma.$queryRawUnsafe<
+    Array<{
+      customerId: string;
+      nickname: string;
+      tags: string[];
+      notes: string | null;
+    }>
+  >(
     `
       SELECT
         pi.customer_id as "customerId",
@@ -828,7 +852,7 @@ async function processCustomerUpdate(
     `,
     platformId,
     row.platform_uid,
-    options.talentId,
+    options.talentId
   );
   const identity = identities[0];
 
@@ -850,11 +874,14 @@ async function processCustomerUpdate(
     `,
     row.nickname || identity.nickname,
     row.tags
-      ? row.tags.split(',').map((tag) => tag.trim()).filter(Boolean)
+      ? row.tags
+          .split(',')
+          .map((tag) => tag.trim())
+          .filter(Boolean)
       : identity.tags,
     row.notes || identity.notes,
     options.userId,
-    identity.customerId,
+    identity.customerId
   );
 
   return true;
@@ -899,7 +926,7 @@ async function processMembershipSync(
     `,
     platformId,
     row.platform_uid,
-    options.talentId,
+    options.talentId
   );
   const identity = identities[0];
 
@@ -909,9 +936,17 @@ async function processMembershipSync(
   }
 
   // Upsert membership record
-  const classId = row.membership_class_code ? options.lookupData.membershipClasses.get(row.membership_class_code) : undefined;
-  const typeId = classId && row.membership_type_code ? options.lookupData.membershipTypes.get(`${classId}:${row.membership_type_code}`) : undefined;
-  const levelId = typeId && row.membership_level_code ? options.lookupData.membershipLevels.get(`${typeId}:${row.membership_level_code}`) : undefined;
+  const classId = row.membership_class_code
+    ? options.lookupData.membershipClasses.get(row.membership_class_code)
+    : undefined;
+  const typeId =
+    classId && row.membership_type_code
+      ? options.lookupData.membershipTypes.get(`${classId}:${row.membership_type_code}`)
+      : undefined;
+  const levelId =
+    typeId && row.membership_level_code
+      ? options.lookupData.membershipLevels.get(`${typeId}:${row.membership_level_code}`)
+      : undefined;
 
   if (classId && typeId && levelId) {
     // Find existing membership record
@@ -926,7 +961,7 @@ async function processMembershipSync(
       `,
       identity.customerId,
       platformId,
-      typeId,
+      typeId
     );
     const existingRecord = existingRecords[0];
 
@@ -944,7 +979,7 @@ async function processMembershipSync(
         levelId,
         row.valid_to ? new Date(row.valid_to) : null,
         new Date(),
-        existingRecord.id,
+        existingRecord.id
       );
     } else {
       // Create new
@@ -981,7 +1016,7 @@ async function processMembershipSync(
         levelId,
         row.valid_from ? new Date(row.valid_from) : new Date(),
         row.valid_to ? new Date(row.valid_to) : null,
-        new Date(),
+        new Date()
       );
     }
   }
@@ -1001,13 +1036,19 @@ async function updateJobStatus(
   const now = new Date();
 
   if (status === 'running') {
-    await prisma.$executeRawUnsafe(`
+    await prisma.$executeRawUnsafe(
+      `
       UPDATE "${schemaName}".import_job
       SET status = $1, started_at = $2
       WHERE id = $3::uuid
-    `, 'running', now, jobId);
+    `,
+      'running',
+      now,
+      jobId
+    );
   } else if (status === 'completed') {
-    const processedRows = (result?.successRows || 0) + (result?.failedRows || 0) + (result?.skippedRows || 0);
+    const processedRows =
+      (result?.successRows || 0) + (result?.failedRows || 0) + (result?.skippedRows || 0);
     const finalStatus =
       (result?.failedRows || 0) === 0
         ? 'success'
@@ -1015,7 +1056,8 @@ async function updateJobStatus(
           ? 'failed'
           : 'partial';
 
-    await prisma.$executeRawUnsafe(`
+    await prisma.$executeRawUnsafe(
+      `
       UPDATE "${schemaName}".import_job
       SET status = $1, 
           completed_at = $2, 
@@ -1025,11 +1067,19 @@ async function updateJobStatus(
           failed_rows = $6,
           warning_rows = $7
       WHERE id = $8::uuid
-    `, finalStatus, now, result?.totalRows || 0, processedRows,
-       result?.successRows || 0, result?.failedRows || 0, result?.warningRows || 0,
-       jobId);
+    `,
+      finalStatus,
+      now,
+      result?.totalRows || 0,
+      processedRows,
+      result?.successRows || 0,
+      result?.failedRows || 0,
+      result?.warningRows || 0,
+      jobId
+    );
   } else if (status === 'failed') {
-    await prisma.$executeRawUnsafe(`
+    await prisma.$executeRawUnsafe(
+      `
       UPDATE "${schemaName}".import_job
       SET status = $1, 
           completed_at = $2,
@@ -1038,12 +1088,15 @@ async function updateJobStatus(
           failed_rows = $5,
           warning_rows = $6
       WHERE id = $7::uuid
-    `, 'failed', now,
-       (result?.successRows || 0) + (result?.failedRows || 0) + (result?.skippedRows || 0),
-       result?.successRows || 0,
-       (result?.failedRows || 0) || 1,
-       result?.warningRows || 0,
-       jobId);
+    `,
+      'failed',
+      now,
+      (result?.successRows || 0) + (result?.failedRows || 0) + (result?.skippedRows || 0),
+      result?.successRows || 0,
+      result?.failedRows || 0 || 1,
+      result?.warningRows || 0,
+      jobId
+    );
 
     if (errorMessage) {
       await insertImportJobErrors(prisma, schemaName, jobId, 0, [
@@ -1064,9 +1117,10 @@ async function updateJobProgress(
   processedRows: number,
   successRows: number,
   failedRows: number,
-  warningRows: number,
+  warningRows: number
 ): Promise<void> {
-  await prisma.$executeRawUnsafe(`
+  await prisma.$executeRawUnsafe(
+    `
       UPDATE "${schemaName}".import_job
       SET processed_rows = $1,
           success_rows = $2,
@@ -1075,7 +1129,13 @@ async function updateJobProgress(
           status = 'running',
           started_at = COALESCE(started_at, NOW())
       WHERE id = $5::uuid
-    `, processedRows, successRows, failedRows, warningRows, jobId);
+    `,
+    processedRows,
+    successRows,
+    failedRows,
+    warningRows,
+    jobId
+  );
 }
 
 async function insertImportJobErrors(
@@ -1087,16 +1147,23 @@ async function insertImportJobErrors(
     errorCode: string;
     errorMessage: string;
     originalData: string;
-  }>,
+  }>
 ): Promise<void> {
   for (const error of errors) {
-    await prisma.$executeRawUnsafe(`
+    await prisma.$executeRawUnsafe(
+      `
       INSERT INTO "${schemaName}".import_job_error (
         id, import_job_id, row_number, error_code, error_message, original_data, created_at
       )
       VALUES (
         gen_random_uuid(), $1::uuid, $2, $3, $4, $5, NOW()
       )
-    `, jobId, rowNumber, error.errorCode, error.errorMessage, error.originalData);
+    `,
+      jobId,
+      rowNumber,
+      error.errorCode,
+      error.errorMessage,
+      error.originalData
+    );
   }
 }

@@ -41,7 +41,7 @@ describe('workspace-paths', () => {
       buildDefaultWorkspacePath({
         tenantId: 'tenant-1',
         tenantTier: 'standard',
-      }),
+      })
     ).toBe('/tenant/tenant-1');
   });
 
@@ -50,7 +50,7 @@ describe('workspace-paths', () => {
       buildDefaultWorkspacePath({
         tenantId: 'tenant-ac',
         tenantTier: 'ac',
-      }),
+      })
     ).toBe('/ac/tenant-ac/tenants');
   });
 
@@ -59,30 +59,34 @@ describe('workspace-paths', () => {
       resolvePostLoginPath('/tenant/tenant-1/profile?tab=security#totp', {
         tenantId: 'tenant-1',
         tenantTier: 'standard',
-      }),
+      })
     ).toBe('/tenant/tenant-1/profile?tab=security#totp');
 
     expect(
       resolvePostLoginPath('https://evil.example/steal', {
         tenantId: 'tenant-1',
         tenantTier: 'standard',
-      }),
+      })
     ).toBe('/tenant/tenant-1');
 
     expect(
       resolvePostLoginPath('//evil.example/steal', {
         tenantId: 'tenant-ac',
         tenantTier: 'ac',
-      }),
+      })
     ).toBe('/ac/tenant-ac/tenants');
   });
 
   it('exposes the explicit tenant and ac helpers', () => {
     expect(buildTenantWorkspacePath('tenant-2')).toBe('/tenant/tenant-2');
-    expect(buildTenantOrganizationStructurePath('tenant-2')).toBe('/tenant/tenant-2/organization-structure');
+    expect(buildTenantOrganizationStructurePath('tenant-2')).toBe(
+      '/tenant/tenant-2/organization-structure'
+    );
     expect(buildAcWorkspacePath('tenant-ac-2')).toBe('/ac/tenant-ac-2/tenants');
     expect(buildTenantBusinessPath('tenant-2')).toBe('/tenant/tenant-2/business');
-    expect(buildSubsidiaryBusinessPath('tenant-2', 'sub-4')).toBe('/tenant/tenant-2/subsidiary/sub-4/business');
+    expect(buildSubsidiaryBusinessPath('tenant-2', 'sub-4')).toBe(
+      '/tenant/tenant-2/subsidiary/sub-4/business'
+    );
   });
 
   it('builds profile and security routes for tenant and ac shells', () => {
@@ -95,84 +99,106 @@ describe('workspace-paths', () => {
   it('builds tenant and ac user-management editor routes', () => {
     expect(buildTenantUserManagementPath('tenant-2')).toBe('/tenant/tenant-2/user-management');
     expect(buildTenantUserCreatePath('tenant-2')).toBe('/tenant/tenant-2/user-management/new');
-    expect(buildTenantUserEditorPath('tenant-2', 'user-1')).toBe('/tenant/tenant-2/user-management/user-1');
-    expect(buildTenantRoleCreatePath('tenant-2')).toBe('/tenant/tenant-2/user-management/roles/new');
-    expect(buildTenantRoleEditorPath('tenant-2', 'role-7')).toBe('/tenant/tenant-2/user-management/roles/role-7');
+    expect(buildTenantUserEditorPath('tenant-2', 'user-1')).toBe(
+      '/tenant/tenant-2/user-management/user-1'
+    );
+    expect(buildTenantRoleCreatePath('tenant-2')).toBe(
+      '/tenant/tenant-2/user-management/roles/new'
+    );
+    expect(buildTenantRoleEditorPath('tenant-2', 'role-7')).toBe(
+      '/tenant/tenant-2/user-management/roles/role-7'
+    );
 
     expect(buildAcUserManagementPath('tenant-ac-2')).toBe('/ac/tenant-ac-2/user-management');
     expect(buildAcUserCreatePath('tenant-ac-2')).toBe('/ac/tenant-ac-2/user-management/new');
-    expect(buildAcUserEditorPath('tenant-ac-2', 'user-4')).toBe('/ac/tenant-ac-2/user-management/user-4');
+    expect(buildAcUserEditorPath('tenant-ac-2', 'user-4')).toBe(
+      '/ac/tenant-ac-2/user-management/user-4'
+    );
     expect(buildAcRoleCreatePath('tenant-ac-2')).toBe('/ac/tenant-ac-2/user-management/roles/new');
-    expect(buildAcRoleEditorPath('tenant-ac-2', 'role-9')).toBe('/ac/tenant-ac-2/user-management/roles/role-9');
+    expect(buildAcRoleEditorPath('tenant-ac-2', 'role-9')).toBe(
+      '/ac/tenant-ac-2/user-management/roles/role-9'
+    );
   });
 
   it('builds talent workspace paths', () => {
-    expect(buildTalentWorkspacePath('tenant-3', 'talent-8')).toBe('/tenant/tenant-3/talent/talent-8');
-    expect(buildTalentWorkspaceSectionPath('tenant-3', 'talent-8', 'overview')).toBe('/tenant/tenant-3/talent/talent-8');
+    expect(buildTalentWorkspacePath('tenant-3', 'talent-8')).toBe(
+      '/tenant/tenant-3/talent/talent-8'
+    );
+    expect(buildTalentWorkspaceSectionPath('tenant-3', 'talent-8', 'overview')).toBe(
+      '/tenant/tenant-3/talent/talent-8'
+    );
     expect(buildTalentWorkspaceSectionPath('tenant-3', 'talent-8', 'homepage')).toBe(
-      '/tenant/tenant-3/talent/talent-8/homepage',
+      '/tenant/tenant-3/talent/talent-8/homepage'
     );
     expect(buildTalentWorkspaceSectionPath('tenant-3', 'talent-8', 'reports')).toBe(
-      '/tenant/tenant-3/talent/talent-8/reports',
+      '/tenant/tenant-3/talent/talent-8/reports'
     );
     expect(buildPublicPresenceStudioEditorPath('tenant-3', 'talent-8')).toBe(
-      '/studio/public-presence/tenant-3/talent-8',
+      '/studio/public-presence/tenant-3/talent-8'
     );
     expect(buildPublicPresenceStudioEditorPath('tenant-3', 'talent-8', 'debutReveal')).toBe(
-      '/studio/public-presence/tenant-3/talent-8?templateId=debutReveal',
+      '/studio/public-presence/tenant-3/talent-8?templateId=debutReveal'
     );
-    expect(buildPublicPresenceStudioEditorPath('tenant-3', 'talent-8', 'debutReveal', 'release')).toBe(
-      '/studio/public-presence/tenant-3/talent-8?templateId=debutReveal&focus=release',
-    );
+    expect(
+      buildPublicPresenceStudioEditorPath('tenant-3', 'talent-8', 'debutReveal', 'release')
+    ).toBe('/studio/public-presence/tenant-3/talent-8?templateId=debutReveal&focus=release');
     expect(
       mergePathSearchParams(
         buildPublicPresenceStudioEditorPath('tenant-3', 'talent-8', 'activeTalentHub'),
         {
           leftPanel: 'sections',
           stagePanel: 'edit:firstEncounter',
-        },
-      ),
+        }
+      )
     ).toBe(
-      '/studio/public-presence/tenant-3/talent-8?templateId=activeTalentHub&leftPanel=sections&stagePanel=edit%3AfirstEncounter',
+      '/studio/public-presence/tenant-3/talent-8?templateId=activeTalentHub&leftPanel=sections&stagePanel=edit%3AfirstEncounter'
     );
     expect(buildPublicPresenceStudioPreviewPath('tenant-3', 'talent-8', 'activeTalentHub')).toBe(
-      '/studio/public-presence/tenant-3/talent-8/preview?templateId=activeTalentHub',
+      '/studio/public-presence/tenant-3/talent-8/preview?templateId=activeTalentHub'
     );
     expect(buildPublicPresenceHomepageSurfacePath('tenant-3', 'talent-8')).toBe(
-      '/tenant/tenant-3/talent/talent-8/homepage',
+      '/tenant/tenant-3/talent/talent-8/homepage'
     );
     expect(buildPublicPresenceHomepageSurfacePath('tenant-3', 'talent-8', 'templates')).toBe(
-      '/tenant/tenant-3/talent/talent-8/homepage',
+      '/tenant/tenant-3/talent/talent-8/homepage'
     );
     expect(buildPublicPresenceHomepageSurfacePath('tenant-3', 'talent-8', 'components')).toBe(
-      '/tenant/tenant-3/talent/talent-8/homepage',
+      '/tenant/tenant-3/talent/talent-8/homepage'
     );
     expect(
       buildPublicPresenceAssetIdePath('tenant-3', 'template', 'asset-1', {
         scopeType: 'tenant',
-      }),
+      })
     ).toBe('/studio/public-presence/tenant-3/assets/template/asset-1?scopeType=tenant');
     expect(
       buildPublicPresenceAssetIdePath('tenant-3', 'component', 'asset-2', {
         scopeId: 'sub-7',
         scopeType: 'subsidiary',
-      }),
-    ).toBe('/studio/public-presence/tenant-3/assets/component/asset-2?scopeType=subsidiary&scopeId=sub-7');
+      })
+    ).toBe(
+      '/studio/public-presence/tenant-3/assets/component/asset-2?scopeType=subsidiary&scopeId=sub-7'
+    );
   });
 
   it('builds talent settings paths with optional section focus state', () => {
     expect(buildTenantSettingsPath('tenant-3')).toBe('/tenant/tenant-3/settings');
-    expect(buildTenantSettingsPath('tenant-3', 'config-entities')).toBe('/tenant/tenant-3/settings?section=config-entities');
-    expect(buildSubsidiarySettingsPath('tenant-3', 'sub-7')).toBe('/tenant/tenant-3/subsidiary/sub-7/settings');
-    expect(buildSubsidiarySettingsPath('tenant-3', 'sub-7', 'config-entities')).toBe(
-      '/tenant/tenant-3/subsidiary/sub-7/settings?section=config-entities',
+    expect(buildTenantSettingsPath('tenant-3', 'config-entities')).toBe(
+      '/tenant/tenant-3/settings?section=config-entities'
     );
-    expect(buildTalentSettingsPath('tenant-3', 'talent-8')).toBe('/tenant/tenant-3/talent/talent-8/settings');
+    expect(buildSubsidiarySettingsPath('tenant-3', 'sub-7')).toBe(
+      '/tenant/tenant-3/subsidiary/sub-7/settings'
+    );
+    expect(buildSubsidiarySettingsPath('tenant-3', 'sub-7', 'config-entities')).toBe(
+      '/tenant/tenant-3/subsidiary/sub-7/settings?section=config-entities'
+    );
+    expect(buildTalentSettingsPath('tenant-3', 'talent-8')).toBe(
+      '/tenant/tenant-3/talent/talent-8/settings'
+    );
     expect(
       buildTalentSettingsPath('tenant-3', 'talent-8', {
         section: 'settings',
         focus: 'marshmallow-routing',
-      }),
+      })
     ).toBe('/tenant/tenant-3/talent/talent-8/settings?section=settings&focus=marshmallow-routing');
   });
 
@@ -183,11 +209,13 @@ describe('workspace-paths', () => {
       section: 'overview',
     });
 
-    expect(resolveTalentWorkspaceRoute('/tenant/tenant-9/talent/talent-5/homepage/editor')).toEqual({
-      tenantId: 'tenant-9',
-      talentId: 'talent-5',
-      section: 'homepage',
-    });
+    expect(resolveTalentWorkspaceRoute('/tenant/tenant-9/talent/talent-5/homepage/editor')).toEqual(
+      {
+        tenantId: 'tenant-9',
+        talentId: 'talent-5',
+        section: 'homepage',
+      }
+    );
   });
 
   it('returns null for non-talent routes and unsupported sections', () => {

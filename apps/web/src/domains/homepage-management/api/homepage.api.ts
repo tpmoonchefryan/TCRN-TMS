@@ -166,7 +166,7 @@ export function readHomepage(request: RequestFn, talentId: string) {
 export function listHomepageVersions(
   request: RequestFn,
   talentId: string,
-  options: ListHomepageVersionsOptions = {},
+  options: ListHomepageVersionsOptions = {}
 ) {
   const query = buildQueryString({
     page: options.page ?? 1,
@@ -174,7 +174,9 @@ export function listHomepageVersions(
     status: options.status,
   });
 
-  return request<HomepageVersionListResponse>(`/api/v1/talents/${talentId}/homepage/versions${query}`);
+  return request<HomepageVersionListResponse>(
+    `/api/v1/talents/${talentId}/homepage/versions${query}`
+  );
 }
 
 export function publishHomepage(request: RequestFn, talentId: string) {
@@ -194,19 +196,24 @@ export function unpublishHomepage(request: RequestFn, talentId: string) {
 }
 
 export function restoreHomepageVersion(request: RequestFn, talentId: string, versionId: string) {
-  return request<HomepageRestoreResponse>(`/api/v1/talents/${talentId}/homepage/versions/${versionId}/restore`, {
-    method: 'POST',
-  });
+  return request<HomepageRestoreResponse>(
+    `/api/v1/talents/${talentId}/homepage/versions/${versionId}/restore`,
+    {
+      method: 'POST',
+    }
+  );
 }
 
 export function readHomepageVersion(request: RequestFn, talentId: string, versionId: string) {
-  return request<HomepageVersionDetailResponse>(`/api/v1/talents/${talentId}/homepage/versions/${versionId}`);
+  return request<HomepageVersionDetailResponse>(
+    `/api/v1/talents/${talentId}/homepage/versions/${versionId}`
+  );
 }
 
 export function saveHomepageDraft(
   request: RequestFn,
   talentId: string,
-  input: SaveHomepageDraftInput,
+  input: SaveHomepageDraftInput
 ) {
   return request<SaveHomepageDraftResponse>(`/api/v1/talents/${talentId}/homepage/draft`, {
     method: 'PATCH',
@@ -217,11 +224,7 @@ export function saveHomepageDraft(
   });
 }
 
-export function uploadHomepageAsset(
-  request: RequestFn,
-  talentId: string,
-  file: File,
-) {
+export function uploadHomepageAsset(request: RequestFn, talentId: string, file: File) {
   const formData = new FormData();
   formData.set('file', file);
 
@@ -234,7 +237,7 @@ export function uploadHomepageAsset(
 export function updateHomepageSettings(
   request: RequestFn,
   talentId: string,
-  input: UpdateHomepageSettingsInput,
+  input: UpdateHomepageSettingsInput
 ) {
   return request<HomepageResponse>(`/api/v1/talents/${talentId}/homepage/settings`, {
     method: 'PATCH',

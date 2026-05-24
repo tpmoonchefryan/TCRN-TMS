@@ -3,7 +3,7 @@ export const PUBLIC_PRESENCE_ROUTE_LOADING_TIMEOUT_MS = 8_000;
 export async function withPublicPresenceRouteTimeout<T>(
   promise: Promise<T>,
   errorMessage: string,
-  timeoutMs = PUBLIC_PRESENCE_ROUTE_LOADING_TIMEOUT_MS,
+  timeoutMs = PUBLIC_PRESENCE_ROUTE_LOADING_TIMEOUT_MS
 ): Promise<T> {
   let timeoutId: ReturnType<typeof setTimeout> | null = null;
 

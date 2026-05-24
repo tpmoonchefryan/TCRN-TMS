@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { ErrorCodes, SUPPORTED_UI_LOCALES } from '@tcrn/shared';
 
 const createErrorEnvelopeSchema = (code: string, message: string) => ({
@@ -26,7 +25,7 @@ const createSuccessEnvelopeSchema = (
   dataSchema: Record<string, unknown>,
   exampleData: unknown,
   metaSchema?: Record<string, unknown>,
-  exampleMeta?: unknown,
+  exampleMeta?: unknown
 ) => {
   const properties: Record<string, unknown> = {
     success: { type: 'boolean', example: true },
@@ -71,7 +70,12 @@ export const CUSTOMER_LIST_ITEM_SCHEMA = {
     id: { type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440100' },
     profileType: { type: 'string', example: 'individual' },
     nickname: { type: 'string', example: 'Aki' },
-    primaryLanguage: { type: 'string', nullable: true, enum: [...SUPPORTED_UI_LOCALES], example: 'zh_HANS' },
+    primaryLanguage: {
+      type: 'string',
+      nullable: true,
+      enum: [...SUPPORTED_UI_LOCALES],
+      example: 'zh_HANS',
+    },
     status: {
       type: 'object',
       nullable: true,
@@ -180,7 +184,7 @@ export const CUSTOMER_LIST_SCHEMA = createSuccessEnvelopeSchema(
       hasNext: false,
       hasPrev: false,
     },
-  },
+  }
 );
 
 export const CUSTOMER_DETAIL_SCHEMA = {
@@ -190,7 +194,12 @@ export const CUSTOMER_DETAIL_SCHEMA = {
     profileType: { type: 'string', example: 'individual' },
     talentId: { type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440200' },
     nickname: { type: 'string', example: 'Aki' },
-    primaryLanguage: { type: 'string', nullable: true, enum: [...SUPPORTED_UI_LOCALES], example: 'zh_HANS' },
+    primaryLanguage: {
+      type: 'string',
+      nullable: true,
+      enum: [...SUPPORTED_UI_LOCALES],
+      example: 'zh_HANS',
+    },
     status: CUSTOMER_LIST_ITEM_SCHEMA.properties.status,
     inactivationReason: {
       type: 'object',
@@ -249,7 +258,11 @@ export const CUSTOMER_DETAIL_SCHEMA = {
           talent: {
             type: 'object',
             properties: {
-              id: { type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440200' },
+              id: {
+                type: 'string',
+                format: 'uuid',
+                example: '550e8400-e29b-41d4-a716-446655440200',
+              },
               displayName: { type: 'string', example: 'Main Talent' },
             },
             required: ['id', 'displayName'],
@@ -259,7 +272,11 @@ export const CUSTOMER_DETAIL_SCHEMA = {
             type: 'object',
             nullable: true,
             properties: {
-              id: { type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440010' },
+              id: {
+                type: 'string',
+                format: 'uuid',
+                example: '550e8400-e29b-41d4-a716-446655440010',
+              },
               username: { type: 'string', example: 'admin' },
             },
             required: ['id', 'username'],
@@ -288,7 +305,12 @@ export const CUSTOMER_DETAIL_SCHEMA = {
         companyShortName: { type: 'string', nullable: true, example: 'Acme' },
         registrationNumber: { type: 'string', nullable: true, example: '1234-5678' },
         vatId: { type: 'string', nullable: true, example: 'JP1234567890' },
-        establishmentDate: { type: 'string', format: 'date-time', nullable: true, example: '2010-04-01T00:00:00.000Z' },
+        establishmentDate: {
+          type: 'string',
+          format: 'date-time',
+          nullable: true,
+          example: '2010-04-01T00:00:00.000Z',
+        },
         website: { type: 'string', nullable: true, example: 'https://www.acme.com' },
         businessSegment: {
           type: 'object',
@@ -448,7 +470,10 @@ export const CUSTOMER_UPDATE_SCHEMA = {
 export const CUSTOMER_PII_PORTAL_SESSION_SCHEMA = {
   type: 'object',
   properties: {
-    redirectUrl: { type: 'string', example: 'https://pii-platform.example.cn/portal/session/abc123' },
+    redirectUrl: {
+      type: 'string',
+      example: 'https://pii-platform.example.cn/portal/session/abc123',
+    },
     expiresAt: { type: 'string', format: 'date-time', example: '2026-04-14T15:00:00.000Z' },
   },
   required: ['redirectUrl', 'expiresAt'],
@@ -495,7 +520,11 @@ export const CUSTOMER_BATCH_RESULT_SCHEMA = {
       items: {
         type: 'object',
         properties: {
-          customerId: { type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440101' },
+          customerId: {
+            type: 'string',
+            format: 'uuid',
+            example: '550e8400-e29b-41d4-a716-446655440101',
+          },
           error: { type: 'string', example: 'Membership level not found' },
         },
         required: ['customerId', 'error'],
@@ -516,7 +545,10 @@ export const CUSTOMER_BATCH_QUEUED_SCHEMA = {
   type: 'object',
   properties: {
     jobId: { type: 'string', example: 'job_12345' },
-    message: { type: 'string', example: 'Batch operation queued for 80 customers. Check job status for progress.' },
+    message: {
+      type: 'string',
+      example: 'Batch operation queued for 80 customers. Check job status for progress.',
+    },
   },
   required: ['jobId', 'message'],
   example: {
@@ -609,12 +641,21 @@ export const MEMBERSHIP_ITEM_SCHEMA = {
         name: { type: 'string', example: 'Gold' },
         rank: { type: 'integer', example: 2 },
         color: { type: 'string', nullable: true, example: '#f59e0b' },
-        badgeUrl: { type: 'string', nullable: true, example: 'https://cdn.tcrn.app/badges/gold.png' },
+        badgeUrl: {
+          type: 'string',
+          nullable: true,
+          example: 'https://cdn.tcrn.app/badges/gold.png',
+        },
       },
       required: ['code', 'name', 'rank'],
     },
     validFrom: { type: 'string', format: 'date-time', example: '2026-01-01T00:00:00.000Z' },
-    validTo: { type: 'string', format: 'date-time', nullable: true, example: '2026-12-31T23:59:59.000Z' },
+    validTo: {
+      type: 'string',
+      format: 'date-time',
+      nullable: true,
+      example: '2026-12-31T23:59:59.000Z',
+    },
     autoRenew: { type: 'boolean', example: true },
     isExpired: { type: 'boolean', example: false },
     note: { type: 'string', nullable: true, example: 'Primary supporter membership' },
@@ -719,7 +760,12 @@ export const MEMBERSHIP_CREATE_SCHEMA = {
       required: ['code', 'name'],
     },
     validFrom: { type: 'string', format: 'date-time', example: '2026-01-01T00:00:00.000Z' },
-    validTo: { type: 'string', format: 'date-time', nullable: true, example: '2026-12-31T23:59:59.000Z' },
+    validTo: {
+      type: 'string',
+      format: 'date-time',
+      nullable: true,
+      example: '2026-12-31T23:59:59.000Z',
+    },
     autoRenew: { type: 'boolean', example: true },
     createdAt: { type: 'string', format: 'date-time', example: '2026-04-13T10:15:00.000Z' },
   },
@@ -745,14 +791,22 @@ export const PLATFORM_IDENTITY_ITEM_SCHEMA = {
         id: { type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440601' },
         code: { type: 'string', example: 'youtube' },
         name: { type: 'string', example: 'YouTube' },
-        iconUrl: { type: 'string', nullable: true, example: 'https://cdn.tcrn.app/platforms/youtube.svg' },
+        iconUrl: {
+          type: 'string',
+          nullable: true,
+          example: 'https://cdn.tcrn.app/platforms/youtube.svg',
+        },
         color: { type: 'string', nullable: true, example: '#ff0000' },
       },
       required: ['id', 'code', 'name'],
     },
     platformUid: { type: 'string', example: 'UC123456' },
     platformNickname: { type: 'string', nullable: true, example: 'AkiChannel' },
-    platformAvatarUrl: { type: 'string', nullable: true, example: 'https://cdn.tcrn.app/avatars/aki.jpg' },
+    platformAvatarUrl: {
+      type: 'string',
+      nullable: true,
+      example: 'https://cdn.tcrn.app/avatars/aki.jpg',
+    },
     profileUrl: { type: 'string', nullable: true, example: 'https://youtube.com/@AkiChannel' },
     isVerified: { type: 'boolean', example: true },
     isCurrent: { type: 'boolean', example: true },
@@ -856,7 +910,11 @@ export const PLATFORM_IDENTITY_HISTORY_SCHEMA = {
         type: 'object',
         properties: {
           id: { type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440650' },
-          identityId: { type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440600' },
+          identityId: {
+            type: 'string',
+            format: 'uuid',
+            example: '550e8400-e29b-41d4-a716-446655440600',
+          },
           platform: {
             type: 'object',
             properties: {
@@ -869,7 +927,11 @@ export const PLATFORM_IDENTITY_HISTORY_SCHEMA = {
           oldValue: { type: 'string', nullable: true, example: 'AkiChannel' },
           newValue: { type: 'string', nullable: true, example: 'AkiOfficial' },
           capturedAt: { type: 'string', format: 'date-time', example: '2026-04-13T10:35:00.000Z' },
-          capturedBy: { type: 'string', nullable: true, example: '550e8400-e29b-41d4-a716-446655440010' },
+          capturedBy: {
+            type: 'string',
+            nullable: true,
+            example: '550e8400-e29b-41d4-a716-446655440010',
+          },
         },
         required: ['id', 'identityId', 'platform', 'changeType', 'capturedAt'],
       },
@@ -911,30 +973,30 @@ export const PLATFORM_IDENTITY_HISTORY_SCHEMA = {
 
 export const CUSTOMER_BAD_REQUEST_SCHEMA = createErrorEnvelopeSchema(
   ErrorCodes.VALIDATION_FAILED,
-  'Request validation failed',
+  'Request validation failed'
 );
 
 export const CUSTOMER_UNAUTHORIZED_SCHEMA = createErrorEnvelopeSchema(
   'AUTH_UNAUTHORIZED',
-  'Authentication required',
+  'Authentication required'
 );
 
 export const CUSTOMER_FORBIDDEN_SCHEMA = createErrorEnvelopeSchema(
   ErrorCodes.PERM_ACCESS_DENIED,
-  'Access denied',
+  'Access denied'
 );
 
 export const CUSTOMER_NOT_FOUND_SCHEMA = createErrorEnvelopeSchema(
   ErrorCodes.RES_NOT_FOUND,
-  'Customer not found',
+  'Customer not found'
 );
 
 export const CUSTOMER_CONFLICT_SCHEMA = createErrorEnvelopeSchema(
   ErrorCodes.RES_VERSION_MISMATCH,
-  'Data has been modified by another user',
+  'Data has been modified by another user'
 );
 
 export const CUSTOMER_ALREADY_EXISTS_SCHEMA = createErrorEnvelopeSchema(
   ErrorCodes.RES_ALREADY_EXISTS,
-  'Resource already exists',
+  'Resource already exists'
 );

@@ -8,14 +8,20 @@ describe('TableShell', () => {
 
   it('renders table structure with children', () => {
     render(
-      <TableShell ariaLabel="User table" columns={columns} dataLength={1} emptyTitle="No Users" emptyDescription="No users are available.">
+      <TableShell
+        ariaLabel="User table"
+        columns={columns}
+        dataLength={1}
+        emptyTitle="No Users"
+        emptyDescription="No users are available."
+      >
         <tr>
           <td>Alice</td>
           <td>Admin</td>
         </tr>
       </TableShell>
     );
-    
+
     expect(screen.getByRole('table')).toBeInTheDocument();
     expect(screen.getByText('Name')).toBeInTheDocument();
     expect(screen.getByText('Alice')).toBeInTheDocument();
@@ -23,11 +29,18 @@ describe('TableShell', () => {
 
   it('renders StateView when empty and not loading', () => {
     render(
-      <TableShell ariaLabel="User table" columns={columns} dataLength={0} isEmpty={true} emptyTitle="No Users" emptyDescription="Invite a user to get started.">
+      <TableShell
+        ariaLabel="User table"
+        columns={columns}
+        dataLength={0}
+        isEmpty={true}
+        emptyTitle="No Users"
+        emptyDescription="Invite a user to get started."
+      >
         <tr />
       </TableShell>
     );
-    
+
     expect(screen.queryByRole('table')).not.toBeInTheDocument();
     expect(screen.getByText('No Users')).toBeInTheDocument();
   });
@@ -37,7 +50,10 @@ describe('TableShell', () => {
       <TableShell
         ariaLabel="User table"
         caption="Users"
-        columns={[{ id: 'name', header: 'Name', width: '12rem' }, { id: 'actions', header: 'Actions', align: 'right' }]}
+        columns={[
+          { id: 'name', header: 'Name', width: '12rem' },
+          { id: 'actions', header: 'Actions', align: 'right' },
+        ]}
         dataLength={1}
         emptyTitle="No Users"
         emptyDescription="No users are available."
@@ -47,7 +63,7 @@ describe('TableShell', () => {
           <td>Alice</td>
           <td>Edit</td>
         </tr>
-      </TableShell>,
+      </TableShell>
     );
 
     expect(screen.getByRole('table', { name: 'User table' })).toBeInTheDocument();
@@ -71,7 +87,8 @@ describe('TableShell', () => {
         sort={{
           state: { columnId: 'name', direction: 'ascending' },
           onChange: onSortChange,
-          getSortButtonLabel: (column, direction) => `${String(column.header)} ${direction ?? 'none'}`,
+          getSortButtonLabel: (column, direction) =>
+            `${String(column.header)} ${direction ?? 'none'}`,
           getSortIndicator: (direction) => (direction === 'ascending' ? '↑' : '↓'),
         }}
       >
@@ -79,10 +96,13 @@ describe('TableShell', () => {
           <td>Alice</td>
           <td>Admin</td>
         </tr>
-      </TableShell>,
+      </TableShell>
     );
 
-    expect(screen.getByRole('columnheader', { name: 'Name' })).toHaveAttribute('aria-sort', 'ascending');
+    expect(screen.getByRole('columnheader', { name: 'Name' })).toHaveAttribute(
+      'aria-sort',
+      'ascending'
+    );
     fireEvent.click(screen.getByRole('button', { name: 'Name ascending' }));
     expect(onSortChange).toHaveBeenCalledWith({ columnId: 'name', direction: 'descending' });
   });
@@ -124,7 +144,7 @@ describe('TableShell', () => {
             </tr>
           </>
         )}
-      </TableShell>,
+      </TableShell>
     );
 
     expect(screen.getByRole('toolbar', { name: 'Selected rows' })).toHaveTextContent('1 selected');
@@ -134,5 +154,4 @@ describe('TableShell', () => {
     expect(onAllVisibleToggle).toHaveBeenCalledWith(true);
     expect(screen.getByRole('button', { name: 'Delete selected' })).toBeInTheDocument();
   });
-
 });

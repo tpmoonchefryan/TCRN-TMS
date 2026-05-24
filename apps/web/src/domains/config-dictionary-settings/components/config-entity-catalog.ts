@@ -109,7 +109,8 @@ export const CONFIG_ENTITY_CATALOG: Record<ScopedConfigEntityType, ConfigEntityC
         label: 'Homepage policy key',
         kind: 'text',
         placeholder: 'active-talent-hub',
-        description: 'Reference key used by tenant lifecycle policy to decide homepage availability.',
+        description:
+          'Reference key used by tenant lifecycle policy to decide homepage availability.',
       },
     ],
   },
@@ -219,13 +220,15 @@ export const CONFIG_ENTITY_CATALOG: Record<ScopedConfigEntityType, ConfigEntityC
   'profile-store': {
     type: 'profile-store',
     label: 'Profile Store',
-    description: 'Tenant-level customer archive boundaries used by talent publishing and customer access.',
+    description:
+      'Tenant-level customer archive boundaries used by talent publishing and customer access.',
     fields: [],
   },
   'custom-domain': {
     type: 'custom-domain',
     label: 'Custom Domain',
-    description: 'Tenant, subsidiary, and talent owned public-domain bindings with inheritance and DNS verification.',
+    description:
+      'Tenant, subsidiary, and talent owned public-domain bindings with inheritance and DNS verification.',
     fields: [],
   },
   consent: {
@@ -261,7 +264,8 @@ export const CONFIG_ENTITY_CATALOG: Record<ScopedConfigEntityType, ConfigEntityC
         key: 'isRequired',
         label: 'Required before continue',
         kind: 'boolean',
-        description: 'Controls whether this consent must be acknowledged before the related workflow continues.',
+        description:
+          'Controls whether this consent must be acknowledged before the related workflow continues.',
       },
       {
         key: 'contentMarkdownBase',

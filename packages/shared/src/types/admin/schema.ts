@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { CustomerProfileBase } from '../customer/schema';
 import { Consumer } from '../integration/schema';
 
@@ -12,7 +11,7 @@ export interface Tenant {
   contact_email?: string;
   created_at: string;
   updated_at: string;
-  
+
   // Stats (Mock)
   talent_count: number;
   customer_count: number;

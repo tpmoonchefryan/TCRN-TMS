@@ -10,15 +10,13 @@ import {
   getActiveTenants,
 } from '../worker-schedules';
 
-const {
-  addLogCleanupJob,
-  membershipRenewalQueue,
-  scheduleMembershipRenewalJob,
-} = vi.hoisted(() => ({
-  addLogCleanupJob: vi.fn(),
-  membershipRenewalQueue: { add: vi.fn() },
-  scheduleMembershipRenewalJob: vi.fn(),
-}));
+const { addLogCleanupJob, membershipRenewalQueue, scheduleMembershipRenewalJob } = vi.hoisted(
+  () => ({
+    addLogCleanupJob: vi.fn(),
+    membershipRenewalQueue: { add: vi.fn() },
+    scheduleMembershipRenewalJob: vi.fn(),
+  })
+);
 
 vi.mock('../jobs/membership-renewal.job', () => ({
   scheduleMembershipRenewalJob,
@@ -102,7 +100,7 @@ describe('scheduled job handlers', () => {
 
     expect(scheduleLock.acquire).toHaveBeenCalledWith(
       buildScheduleWindowLockKey('membership-renewal', Date.parse('2026-05-12T00:00:00.000Z')),
-      26 * 60 * 60,
+      26 * 60 * 60
     );
 
     expect(scheduleMembershipRenewalJob).toHaveBeenNthCalledWith(
@@ -137,7 +135,7 @@ describe('scheduled job handlers', () => {
       prisma as never,
       logger,
       () => Date.parse('2026-05-12T00:00:00.000Z'),
-      scheduleLock,
+      scheduleLock
     )();
 
     expect(addLogCleanupJob).toHaveBeenCalledWith(
@@ -161,7 +159,7 @@ describe('scheduled job handlers', () => {
     expect(prisma.tenant.findMany).not.toHaveBeenCalled();
     expect(scheduleMembershipRenewalJob).not.toHaveBeenCalled();
     expect(logger.info).toHaveBeenCalledWith(
-      'Skipping membership renewal schedule for window 2026-05-12: another worker already acquired the daily lock',
+      'Skipping membership renewal schedule for window 2026-05-12: another worker already acquired the daily lock'
     );
   });
 });

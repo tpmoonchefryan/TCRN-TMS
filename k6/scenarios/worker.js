@@ -1,8 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 // Worker Queue Performance Test
-
-import http from 'k6/http';
 import { check, sleep, group } from 'k6';
+import http from 'k6/http';
 import { Rate, Trend, Counter } from 'k6/metrics';
 
 // Custom metrics
@@ -130,10 +129,9 @@ export default function (data) {
     // 30% - Import jobs (simulated)
     group('Queue Import Job', () => {
       // Simulate import job queue check
-      const listRes = http.get(
-        `${BASE_URL}/api/v1/import/jobs?status=pending&page=1&pageSize=10`,
-        { headers }
-      );
+      const listRes = http.get(`${BASE_URL}/api/v1/import/jobs?status=pending&page=1&pageSize=10`, {
+        headers,
+      });
 
       // May return 404 if endpoint doesn't exist, that's ok
       check(listRes, {
@@ -148,10 +146,9 @@ export default function (data) {
     // 30% - Export jobs (simulated)
     group('Queue Export Job', () => {
       // Simulate export job queue check
-      const listRes = http.get(
-        `${BASE_URL}/api/v1/export/jobs?status=pending&page=1&pageSize=10`,
-        { headers }
-      );
+      const listRes = http.get(`${BASE_URL}/api/v1/export/jobs?status=pending&page=1&pageSize=10`, {
+        headers,
+      });
 
       check(listRes, {
         'export jobs list ok': (r) => r.status === 200 || r.status === 404,

@@ -3,7 +3,11 @@ import type { SupportedUiLocale } from '@tcrn/shared';
 import type { ProfileStoreListItem } from '@/domains/config-dictionary-settings/api/settings.api';
 import type { OrganizationTalent } from '@/domains/organization-access/api/organization.api';
 import { useUiLocale } from '@/platform/runtime/locale/locale-provider';
-import { pickLocaleText, resolveLocaleRecord, resolveLocalizedLabel } from '@/platform/runtime/locale/locale-text';
+import {
+  pickLocaleText,
+  resolveLocaleRecord,
+  resolveLocalizedLabel,
+} from '@/platform/runtime/locale/locale-text';
 
 interface OrganizationStructureCopy {
   state: {
@@ -198,7 +202,8 @@ const copyByLocale: Record<SupportedUiLocale, OrganizationStructureCopy> = {
       tenantDescription: 'All tenant talents appear here. Select a subsidiary to narrow the list.',
       scopedDescription: 'Talents under the selected subsidiary branch appear here.',
       emptyTitle: 'No talents in this branch',
-      emptyDescription: 'Create a talent in this branch or switch to another branch from the left tree.',
+      emptyDescription:
+        'Create a talent in this branch or switch to another branch from the left tree.',
       tenantRootTalent: 'Tenant-root talent',
     },
     form: {
@@ -221,8 +226,10 @@ const copyByLocale: Record<SupportedUiLocale, OrganizationStructureCopy> = {
       legalNamePlaceholder: 'Tokino Sora',
       homepagePathPlaceholder: 'sora',
       timezonePlaceholder: 'Asia/Shanghai',
-      noProfileStores: 'No profile stores are available yet. Add one before creating the first talent.',
-      noArtistStages: 'No active artist stages are available yet. Add one in tenant settings before creating a talent.',
+      noProfileStores:
+        'No profile stores are available yet. Add one before creating the first talent.',
+      noArtistStages:
+        'No active artist stages are available yet. Add one in tenant settings before creating a talent.',
       createPending: 'Creating…',
       submit: 'Create talent',
       subsidiaryRootTitle: 'Create top-level subsidiary',
@@ -230,7 +237,8 @@ const copyByLocale: Record<SupportedUiLocale, OrganizationStructureCopy> = {
       subsidiaryRootDescription: 'Create a new subsidiary directly under the tenant root.',
       subsidiaryScopeDescriptionPrefix: 'Create a child subsidiary under',
       subsidiarySectionTitle: 'Subsidiary details',
-      subsidiarySectionDescriptionRoot: 'This subsidiary will be created at the top level of the tenant tree.',
+      subsidiarySectionDescriptionRoot:
+        'This subsidiary will be created at the top level of the tenant tree.',
       subsidiarySectionDescriptionScopePrefix: 'This subsidiary will be created under',
       subsidiaryCodeLabel: 'Subsidiary code',
       subsidiaryNameLabel: 'Subsidiary name',
@@ -250,7 +258,8 @@ const copyByLocale: Record<SupportedUiLocale, OrganizationStructureCopy> = {
       talentNameEmpty: 'Only the English name is configured right now.',
       subsidiaryNameTitle: 'Subsidiary name translations',
       subsidiaryNameTrigger: 'Manage translations',
-      subsidiaryNameSummary: (count) => `${count} locale variants configured for the subsidiary name.`,
+      subsidiaryNameSummary: (count) =>
+        `${count} locale variants configured for the subsidiary name.`,
       subsidiaryNameEmpty: 'Only the English name is configured right now.',
       baseValueLabel: 'Base value (English)',
       save: 'Save translations',
@@ -282,13 +291,15 @@ const copyByLocale: Record<SupportedUiLocale, OrganizationStructureCopy> = {
       disabled: 'Disabled',
       confirmFallback: 'Confirm organization action',
       disableTitlePrefix: 'Disable',
-      disableDescription: 'This removes the talent from the default organization view until inactive scopes are shown or the talent is re-enabled.',
+      disableDescription:
+        'This removes the talent from the default organization view until inactive scopes are shown or the talent is re-enabled.',
       disableConfirm: 'Disable workspace',
       disablePending: 'Disabling…',
       disableSuccessSuffix: 'was disabled.',
       disableError: 'Failed to disable the talent.',
       reEnableTitlePrefix: 'Re-enable',
-      reEnableDescription: 'This returns the talent to active organization views and restores access to business pages.',
+      reEnableDescription:
+        'This returns the talent to active organization views and restores access to business pages.',
       reEnableConfirm: 'Re-enable workspace',
       reEnablePending: 'Re-enabling…',
       reEnableSuccessSuffix: 'was re-enabled.',
@@ -627,10 +638,12 @@ const copyByLocale: Record<SupportedUiLocale, OrganizationStructureCopy> = {
     },
     inventory: {
       title: 'タレント一覧',
-      tenantDescription: 'テナント配下の全タレントを表示します。左側で配下スコープを選ぶと一覧を絞り込めます。',
+      tenantDescription:
+        'テナント配下の全タレントを表示します。左側で配下スコープを選ぶと一覧を絞り込めます。',
       scopedDescription: '選択中の配下スコープ配下に属するタレントのみを表示します。',
       emptyTitle: '現在のスコープにタレントがありません',
-      emptyDescription: 'このスコープでタレントを作成するか、左のツリーで別の枝を選択してください。',
+      emptyDescription:
+        'このスコープでタレントを作成するか、左のツリーで別の枝を選択してください。',
       tenantRootTalent: 'テナントルートのタレント',
     },
     form: {
@@ -653,8 +666,10 @@ const copyByLocale: Record<SupportedUiLocale, OrganizationStructureCopy> = {
       legalNamePlaceholder: 'Tokino Sora',
       homepagePathPlaceholder: 'sora',
       timezonePlaceholder: 'Asia/Tokyo',
-      noProfileStores: '利用可能なプロフィールストアがまだありません。最初のタレントを作成する前に準備してください。',
-      noArtistStages: '有効なアーティスト段階がまだありません。タレントを作成する前にテナント設定で追加してください。',
+      noProfileStores:
+        '利用可能なプロフィールストアがまだありません。最初のタレントを作成する前に準備してください。',
+      noArtistStages:
+        '有効なアーティスト段階がまだありません。タレントを作成する前にテナント設定で追加してください。',
       createPending: '作成中…',
       submit: 'タレントを作成',
       subsidiaryRootTitle: 'トップレベルの配下スコープを作成',
@@ -663,7 +678,8 @@ const copyByLocale: Record<SupportedUiLocale, OrganizationStructureCopy> = {
       subsidiaryScopeDescriptionPrefix: '次の配下スコープの下に子スコープを作成:',
       subsidiarySectionTitle: '配下スコープ情報',
       subsidiarySectionDescriptionRoot: 'この配下スコープはテナントルート直下に作成されます。',
-      subsidiarySectionDescriptionScopePrefix: 'この配下スコープは次の親スコープの下に作成されます:',
+      subsidiarySectionDescriptionScopePrefix:
+        'この配下スコープは次の親スコープの下に作成されます:',
       subsidiaryCodeLabel: '配下スコープコード',
       subsidiaryNameLabel: '配下スコープ名',
       subsidiaryDescriptionLabel: '説明（任意）',
@@ -682,7 +698,8 @@ const copyByLocale: Record<SupportedUiLocale, OrganizationStructureCopy> = {
       talentNameEmpty: '現在は英語名のみ設定されています。',
       subsidiaryNameTitle: '配下スコープ名の翻訳',
       subsidiaryNameTrigger: '翻訳管理',
-      subsidiaryNameSummary: (count) => `配下スコープ名に ${count} 件の言語バリアントを設定済みです。`,
+      subsidiaryNameSummary: (count) =>
+        `配下スコープ名に ${count} 件の言語バリアントを設定済みです。`,
       subsidiaryNameEmpty: '現在は英語名のみ設定されています。',
       baseValueLabel: '基本値（英語）',
       save: '翻訳を保存',
@@ -714,13 +731,15 @@ const copyByLocale: Record<SupportedUiLocale, OrganizationStructureCopy> = {
       disabled: '無効',
       confirmFallback: '組織操作を確認',
       disableTitlePrefix: '無効化:',
-      disableDescription: 'この操作により、無効なスコープを表示するまでタレントは既定の組織ビューから外れます。',
+      disableDescription:
+        'この操作により、無効なスコープを表示するまでタレントは既定の組織ビューから外れます。',
       disableConfirm: 'ワークスペースを無効化',
       disablePending: '無効化中…',
       disableSuccessSuffix: 'を無効化しました。',
       disableError: 'タレントの無効化に失敗しました。',
       reEnableTitlePrefix: '再有効化:',
-      reEnableDescription: 'この操作により、タレントは組織ビューに戻り、下流モジュールへのアクセスが再開されます。',
+      reEnableDescription:
+        'この操作により、タレントは組織ビューに戻り、下流モジュールへのアクセスが再開されます。',
       reEnableConfirm: 'ワークスペースを再有効化',
       reEnablePending: '再有効化中…',
       reEnableSuccessSuffix: 'を再有効化しました。',
@@ -774,7 +793,8 @@ const copyByLocale: Record<SupportedUiLocale, OrganizationStructureCopy> = {
       tenantDescription: 'All tenant talents appear here. Select a subsidiary to narrow the list.',
       scopedDescription: 'Talents under the selected subsidiary branch appear here.',
       emptyTitle: 'No talents in this branch',
-      emptyDescription: 'Create a talent in this branch or switch to another branch from the left tree.',
+      emptyDescription:
+        'Create a talent in this branch or switch to another branch from the left tree.',
       tenantRootTalent: 'Tenant-root talent',
     },
     form: {
@@ -797,8 +817,10 @@ const copyByLocale: Record<SupportedUiLocale, OrganizationStructureCopy> = {
       legalNamePlaceholder: 'Tokino Sora',
       homepagePathPlaceholder: 'sora',
       timezonePlaceholder: 'Asia/Shanghai',
-      noProfileStores: 'No profile stores are available yet. Add one before creating the first talent.',
-      noArtistStages: 'No active artist stages are available yet. Add one in tenant settings before creating a talent.',
+      noProfileStores:
+        'No profile stores are available yet. Add one before creating the first talent.',
+      noArtistStages:
+        'No active artist stages are available yet. Add one in tenant settings before creating a talent.',
       createPending: 'Creating…',
       submit: 'Create talent',
       subsidiaryRootTitle: 'Create top-level subsidiary',
@@ -806,7 +828,8 @@ const copyByLocale: Record<SupportedUiLocale, OrganizationStructureCopy> = {
       subsidiaryRootDescription: 'Create a new subsidiary directly under the tenant root.',
       subsidiaryScopeDescriptionPrefix: 'Create a child subsidiary under',
       subsidiarySectionTitle: 'Subsidiary details',
-      subsidiarySectionDescriptionRoot: 'This subsidiary will be created at the top level of the tenant tree.',
+      subsidiarySectionDescriptionRoot:
+        'This subsidiary will be created at the top level of the tenant tree.',
       subsidiarySectionDescriptionScopePrefix: 'This subsidiary will be created under',
       subsidiaryCodeLabel: 'Subsidiary code',
       subsidiaryNameLabel: 'Subsidiary name',
@@ -826,7 +849,8 @@ const copyByLocale: Record<SupportedUiLocale, OrganizationStructureCopy> = {
       talentNameEmpty: 'Only the English name is configured right now.',
       subsidiaryNameTitle: 'Subsidiary name translations',
       subsidiaryNameTrigger: 'Manage translations',
-      subsidiaryNameSummary: (count) => `${count} locale variants configured for the subsidiary name.`,
+      subsidiaryNameSummary: (count) =>
+        `${count} locale variants configured for the subsidiary name.`,
       subsidiaryNameEmpty: 'Only the English name is configured right now.',
       baseValueLabel: 'Base value (English)',
       save: 'Save translations',
@@ -858,13 +882,15 @@ const copyByLocale: Record<SupportedUiLocale, OrganizationStructureCopy> = {
       disabled: 'Disabled',
       confirmFallback: 'Confirm organization action',
       disableTitlePrefix: 'Disable',
-      disableDescription: 'This removes the talent from the default organization view until inactive scopes are shown or the talent is re-enabled.',
+      disableDescription:
+        'This removes the talent from the default organization view until inactive scopes are shown or the talent is re-enabled.',
       disableConfirm: 'Disable workspace',
       disablePending: 'Disabling…',
       disableSuccessSuffix: 'was disabled.',
       disableError: 'Failed to disable the talent.',
       reEnableTitlePrefix: 'Re-enable',
-      reEnableDescription: 'This returns the talent to active organization views and restores access to business pages.',
+      reEnableDescription:
+        'This returns the talent to active organization views and restores access to business pages.',
       reEnableConfirm: 'Re-enable workspace',
       reEnablePending: 'Re-enabling…',
       reEnableSuccessSuffix: 'was re-enabled.',
@@ -918,7 +944,8 @@ const copyByLocale: Record<SupportedUiLocale, OrganizationStructureCopy> = {
       tenantDescription: 'All tenant talents appear here. Select a subsidiary to narrow the list.',
       scopedDescription: 'Talents under the selected subsidiary branch appear here.',
       emptyTitle: 'No talents in this branch',
-      emptyDescription: 'Create a talent in this branch or switch to another branch from the left tree.',
+      emptyDescription:
+        'Create a talent in this branch or switch to another branch from the left tree.',
       tenantRootTalent: 'Tenant-root talent',
     },
     form: {
@@ -941,8 +968,10 @@ const copyByLocale: Record<SupportedUiLocale, OrganizationStructureCopy> = {
       legalNamePlaceholder: 'Tokino Sora',
       homepagePathPlaceholder: 'sora',
       timezonePlaceholder: 'Asia/Shanghai',
-      noProfileStores: 'No profile stores are available yet. Add one before creating the first talent.',
-      noArtistStages: 'No active artist stages are available yet. Add one in tenant settings before creating a talent.',
+      noProfileStores:
+        'No profile stores are available yet. Add one before creating the first talent.',
+      noArtistStages:
+        'No active artist stages are available yet. Add one in tenant settings before creating a talent.',
       createPending: 'Creating…',
       submit: 'Create talent',
       subsidiaryRootTitle: 'Create top-level subsidiary',
@@ -950,7 +979,8 @@ const copyByLocale: Record<SupportedUiLocale, OrganizationStructureCopy> = {
       subsidiaryRootDescription: 'Create a new subsidiary directly under the tenant root.',
       subsidiaryScopeDescriptionPrefix: 'Create a child subsidiary under',
       subsidiarySectionTitle: 'Subsidiary details',
-      subsidiarySectionDescriptionRoot: 'This subsidiary will be created at the top level of the tenant tree.',
+      subsidiarySectionDescriptionRoot:
+        'This subsidiary will be created at the top level of the tenant tree.',
       subsidiarySectionDescriptionScopePrefix: 'This subsidiary will be created under',
       subsidiaryCodeLabel: 'Subsidiary code',
       subsidiaryNameLabel: 'Subsidiary name',
@@ -970,7 +1000,8 @@ const copyByLocale: Record<SupportedUiLocale, OrganizationStructureCopy> = {
       talentNameEmpty: 'Only the English name is configured right now.',
       subsidiaryNameTitle: 'Subsidiary name translations',
       subsidiaryNameTrigger: 'Manage translations',
-      subsidiaryNameSummary: (count) => `${count} locale variants configured for the subsidiary name.`,
+      subsidiaryNameSummary: (count) =>
+        `${count} locale variants configured for the subsidiary name.`,
       subsidiaryNameEmpty: 'Only the English name is configured right now.',
       baseValueLabel: 'Base value (English)',
       save: 'Save translations',
@@ -994,7 +1025,8 @@ const copyByLocale: Record<SupportedUiLocale, OrganizationStructureCopy> = {
       subsidiaryCreatedInTenantRoot: 'was created at tenant root.',
       subsidiaryCreatedInScopePrefix: 'was created under',
       createdTalentReadyTitle: 'Nouveau talent prêt',
-      createdTalentWorkflowHint: 'Poursuivez immédiatement dans la gestion de la page d’accueil ou dans le studio.',
+      createdTalentWorkflowHint:
+        'Poursuivez immédiatement dans la gestion de la page d’accueil ou dans le studio.',
     },
     lifecycle: {
       draft: 'Draft',
@@ -1002,13 +1034,15 @@ const copyByLocale: Record<SupportedUiLocale, OrganizationStructureCopy> = {
       disabled: 'Disabled',
       confirmFallback: 'Confirm organization action',
       disableTitlePrefix: 'Disable',
-      disableDescription: 'This removes the talent from the default organization view until inactive scopes are shown or the talent is re-enabled.',
+      disableDescription:
+        'This removes the talent from the default organization view until inactive scopes are shown or the talent is re-enabled.',
       disableConfirm: 'Disable workspace',
       disablePending: 'Disabling…',
       disableSuccessSuffix: 'was disabled.',
       disableError: 'Failed to disable the talent.',
       reEnableTitlePrefix: 'Re-enable',
-      reEnableDescription: 'This returns the talent to active organization views and restores access to business pages.',
+      reEnableDescription:
+        'This returns the talent to active organization views and restores access to business pages.',
       reEnableConfirm: 'Re-enable workspace',
       reEnablePending: 'Re-enabling…',
       reEnableSuccessSuffix: 'was re-enabled.',
@@ -1025,38 +1059,61 @@ export function useOrganizationStructureCopy() {
     locale: effectiveSelectedLocale,
     copy: resolveLocaleRecord(
       effectiveSelectedLocale,
-      copyByLocale as Record<SupportedUiLocale, OrganizationStructureCopy>,
+      copyByLocale as Record<SupportedUiLocale, OrganizationStructureCopy>
     ) as OrganizationStructureCopy,
   };
 }
 
-export function formatOrganizationTalentCount(locale: SupportedUiLocale , count: number) {
-  return pickLocaleText(locale, { en: `${count} talent${count === 1 ? '' : 's'}`, zh_HANS: `${count} 名艺人`, zh_HANT: `${count} 名艺人`, ja: `${count} 人のタレント`, ko: `${count} talent${count === 1 ? '' : 's'}`, fr: `${count} talent${count === 1 ? '' : 's'}` });
+export function formatOrganizationTalentCount(locale: SupportedUiLocale, count: number) {
+  return pickLocaleText(locale, {
+    en: `${count} talent${count === 1 ? '' : 's'}`,
+    zh_HANS: `${count} 名艺人`,
+    zh_HANT: `${count} 名艺人`,
+    ja: `${count} 人のタレント`,
+    ko: `${count} talent${count === 1 ? '' : 's'}`,
+    fr: `${count} talent${count === 1 ? '' : 's'}`,
+  });
 }
 
-export function formatOrganizationSubsidiaryCount(locale: SupportedUiLocale , count: number) {
-  return pickLocaleText(locale, { en: `${count} subsidiar${count === 1 ? 'y' : 'ies'}`, zh_HANS: `${count} 个分目录`, zh_HANT: `${count} 个分目录`, ja: `${count} 件の配下スコープ`, ko: `${count} subsidiar${count === 1 ? 'y' : 'ies'}`, fr: `${count} subsidiar${count === 1 ? 'y' : 'ies'}` });
+export function formatOrganizationSubsidiaryCount(locale: SupportedUiLocale, count: number) {
+  return pickLocaleText(locale, {
+    en: `${count} subsidiar${count === 1 ? 'y' : 'ies'}`,
+    zh_HANS: `${count} 个分目录`,
+    zh_HANT: `${count} 个分目录`,
+    ja: `${count} 件の配下スコープ`,
+    ko: `${count} subsidiar${count === 1 ? 'y' : 'ies'}`,
+    fr: `${count} subsidiar${count === 1 ? 'y' : 'ies'}`,
+  });
 }
 
-export function formatOrganizationDirectSubsidiaryCount(locale: SupportedUiLocale , count: number) {
-  return pickLocaleText(locale, { en: `${count} direct subsidiar${count === 1 ? 'y' : 'ies'}`, zh_HANS: `${count} 个直属分目录`, zh_HANT: `${count} 个直属分目录`, ja: `${count} 件の直属配下スコープ`, ko: `${count} direct subsidiar${count === 1 ? 'y' : 'ies'}`, fr: `${count} direct subsidiar${count === 1 ? 'y' : 'ies'}` });
+export function formatOrganizationDirectSubsidiaryCount(locale: SupportedUiLocale, count: number) {
+  return pickLocaleText(locale, {
+    en: `${count} direct subsidiar${count === 1 ? 'y' : 'ies'}`,
+    zh_HANS: `${count} 个直属分目录`,
+    zh_HANT: `${count} 个直属分目录`,
+    ja: `${count} 件の直属配下スコープ`,
+    ko: `${count} direct subsidiar${count === 1 ? 'y' : 'ies'}`,
+    fr: `${count} direct subsidiar${count === 1 ? 'y' : 'ies'}`,
+  });
 }
 
 export function pickLocalizedProfileStoreName(
   profileStore: ProfileStoreListItem,
-  locale: SupportedUiLocale ,
+  locale: SupportedUiLocale
 ) {
   return resolveLocalizedLabel(profileStore.name, locale, profileStore.code);
 }
 
 export function getOrganizationLifecycleLabel(
   lifecycleStatus: OrganizationTalent['lifecycleStatus'],
-  locale: SupportedUiLocale ,
+  locale: SupportedUiLocale
 ) {
-  const copy = (resolveLocaleRecord(
-    locale,
-    copyByLocale as Record<SupportedUiLocale, OrganizationStructureCopy>,
-  ) as OrganizationStructureCopy).lifecycle;
+  const copy = (
+    resolveLocaleRecord(
+      locale,
+      copyByLocale as Record<SupportedUiLocale, OrganizationStructureCopy>
+    ) as OrganizationStructureCopy
+  ).lifecycle;
 
   switch (lifecycleStatus) {
     case 'published':
@@ -1071,14 +1128,23 @@ export function getOrganizationLifecycleLabel(
 
 export function getOrganizationTalentScopeLabel(
   talent: OrganizationTalent,
-  locale: SupportedUiLocale ,
+  locale: SupportedUiLocale
 ) {
   if (!talent.subsidiaryName) {
-    return (resolveLocaleRecord(
-      locale,
-      copyByLocale as Record<SupportedUiLocale, OrganizationStructureCopy>,
-    ) as OrganizationStructureCopy).inventory.tenantRootTalent;
+    return (
+      resolveLocaleRecord(
+        locale,
+        copyByLocale as Record<SupportedUiLocale, OrganizationStructureCopy>
+      ) as OrganizationStructureCopy
+    ).inventory.tenantRootTalent;
   }
 
-  return pickLocaleText(locale, { en: `Subsidiary: ${talent.subsidiaryName}`, zh_HANS: `分目录：${talent.subsidiaryName}`, zh_HANT: `分目录：${talent.subsidiaryName}`, ja: `配下スコープ: ${talent.subsidiaryName}`, ko: `Subsidiary: ${talent.subsidiaryName}`, fr: `Subsidiary: ${talent.subsidiaryName}` });
+  return pickLocaleText(locale, {
+    en: `Subsidiary: ${talent.subsidiaryName}`,
+    zh_HANS: `分目录：${talent.subsidiaryName}`,
+    zh_HANT: `分目录：${talent.subsidiaryName}`,
+    ja: `配下スコープ: ${talent.subsidiaryName}`,
+    ko: `Subsidiary: ${talent.subsidiaryName}`,
+    fr: `Subsidiary: ${talent.subsidiaryName}`,
+  });
 }

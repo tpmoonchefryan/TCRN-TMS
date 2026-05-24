@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable } from '@nestjs/common';
 
 import { DatabaseService } from '../../database';
@@ -24,7 +23,7 @@ export class HomepageVersionRepository {
         FROM "${schema}".talent_homepage
         WHERE talent_id = $1::uuid
       `,
-      talentId,
+      talentId
     );
 
     return homepages[0]?.id ?? null;
@@ -33,13 +32,10 @@ export class HomepageVersionRepository {
   async findHomepageVersions(
     schema: string,
     homepageId: string,
-    query: VersionListQueryDto,
+    query: VersionListQueryDto
   ): Promise<HomepageVersionListRecord[]> {
     const prisma = this.databaseService.getPrisma();
-    const pagination = this.databaseService.buildPagination(
-      query.page ?? 1,
-      query.pageSize ?? 20,
-    );
+    const pagination = this.databaseService.buildPagination(query.page ?? 1, query.pageSize ?? 20);
     const { params, whereClause } = this.buildHomepageVersionFilter(homepageId, query.status);
 
     return prisma.$queryRawUnsafe<HomepageVersionListRecord[]>(
@@ -58,14 +54,14 @@ export class HomepageVersionRepository {
         ORDER BY version_number DESC
         LIMIT ${pagination.take} OFFSET ${pagination.skip}
       `,
-      ...params,
+      ...params
     );
   }
 
   async countHomepageVersions(
     schema: string,
     homepageId: string,
-    status?: 'draft' | 'published' | 'archived',
+    status?: 'draft' | 'published' | 'archived'
   ): Promise<number> {
     const prisma = this.databaseService.getPrisma();
     const { params, whereClause } = this.buildHomepageVersionFilter(homepageId, status);
@@ -75,7 +71,7 @@ export class HomepageVersionRepository {
         FROM "${schema}".homepage_version
         WHERE ${whereClause}
       `,
-      ...params,
+      ...params
     );
 
     return Number(totals[0]?.count ?? 0);
@@ -83,7 +79,7 @@ export class HomepageVersionRepository {
 
   async findSystemUsersByIds(
     schema: string,
-    userIds: string[],
+    userIds: string[]
   ): Promise<HomepageVersionActorRecord[]> {
     if (userIds.length === 0) {
       return [];
@@ -96,14 +92,14 @@ export class HomepageVersionRepository {
         FROM "${schema}".system_user
         WHERE id = ANY($1::uuid[])
       `,
-      userIds,
+      userIds
     );
   }
 
   async findHomepageVersionDetail(
     schema: string,
     homepageId: string,
-    versionId: string,
+    versionId: string
   ): Promise<HomepageVersionDetailRecord | null> {
     const prisma = this.databaseService.getPrisma();
     const versions = await prisma.$queryRawUnsafe<HomepageVersionDetailRecord[]>(
@@ -123,7 +119,7 @@ export class HomepageVersionRepository {
           AND homepage_id = $2::uuid
       `,
       versionId,
-      homepageId,
+      homepageId
     );
 
     return versions[0] ?? null;
@@ -132,7 +128,7 @@ export class HomepageVersionRepository {
   async findHomepageVersionRestoreSource(
     schema: string,
     homepageId: string,
-    versionId: string,
+    versionId: string
   ): Promise<HomepageVersionRestoreSourceRecord | null> {
     const prisma = this.databaseService.getPrisma();
     const versions = await prisma.$queryRawUnsafe<HomepageVersionRestoreSourceRecord[]>(
@@ -148,7 +144,7 @@ export class HomepageVersionRepository {
           AND homepage_id = $2::uuid
       `,
       versionId,
-      homepageId,
+      homepageId
     );
 
     return versions[0] ?? null;
@@ -164,7 +160,7 @@ export class HomepageVersionRepository {
         ORDER BY version_number DESC
         LIMIT 1
       `,
-      homepageId,
+      homepageId
     );
 
     return versions[0]?.versionNumber ?? 0;
@@ -195,7 +191,7 @@ export class HomepageVersionRepository {
       JSON.stringify(content),
       JSON.stringify(theme),
       contentHash,
-      userId,
+      userId
     );
 
     return versions[0];
@@ -211,7 +207,7 @@ export class HomepageVersionRepository {
         WHERE id = $2::uuid
       `,
       versionId,
-      homepageId,
+      homepageId
     );
   }
 
@@ -237,13 +233,13 @@ export class HomepageVersionRepository {
       versionLabel,
       diffJson,
       userId,
-      ipAddress,
+      ipAddress
     );
   }
 
   private buildHomepageVersionFilter(
     homepageId: string,
-    status?: 'draft' | 'published' | 'archived',
+    status?: 'draft' | 'published' | 'archived'
   ): {
     whereClause: string;
     params: unknown[];

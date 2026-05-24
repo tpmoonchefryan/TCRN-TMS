@@ -1,15 +1,20 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { UnauthorizedException } from '@nestjs/common';
 import { authenticator } from 'otplib';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { TotpService } from '../totp.service';
 
 // Mock external dependencies
 vi.mock('otplib', () => ({
   authenticator: {
     options: {},
     generateSecret: vi.fn().mockReturnValue('JBSWY3DPEHPK3PXP'),
-    keyuri: vi.fn().mockReturnValue('otpauth://totp/TCRN%20TMS:test@example.com?secret=JBSWY3DPEHPK3PXP&issuer=TCRN%20TMS'),
+    keyuri: vi
+      .fn()
+      .mockReturnValue(
+        'otpauth://totp/TCRN%20TMS:test@example.com?secret=JBSWY3DPEHPK3PXP&issuer=TCRN%20TMS'
+      ),
     verify: vi.fn().mockReturnValue(true),
   },
 }));
@@ -17,8 +22,6 @@ vi.mock('otplib', () => ({
 vi.mock('qrcode', () => ({
   toDataURL: vi.fn().mockResolvedValue('data:image/png;base64,qrcode_data'),
 }));
-
-import { TotpService } from '../totp.service';
 
 describe('TotpService', () => {
   let service: TotpService;
@@ -55,7 +58,11 @@ describe('TotpService', () => {
     it('should use provided secret if given', async () => {
       const _result = await service.generateSetupInfo('test@example.com', 'CUSTOM_SECRET');
 
-      expect(authenticator.keyuri).toHaveBeenCalledWith('test@example.com', 'TCRN TMS', 'CUSTOM_SECRET');
+      expect(authenticator.keyuri).toHaveBeenCalledWith(
+        'test@example.com',
+        'TCRN TMS',
+        'CUSTOM_SECRET'
+      );
     });
   });
 
@@ -170,9 +177,7 @@ describe('TotpService', () => {
       const secret = 'MY_SECRET_KEY';
       const encrypted = service.encryptSecret(secret, 'correct_key');
 
-      expect(() => service.decryptSecret(encrypted, 'wrong_key')).toThrow(
-        UnauthorizedException,
-      );
+      expect(() => service.decryptSecret(encrypted, 'wrong_key')).toThrow(UnauthorizedException);
     });
   });
 });

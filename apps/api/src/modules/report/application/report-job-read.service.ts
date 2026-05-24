@@ -1,12 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import {
-  ErrorCodes,
-  LogSeverity,
-  type RequestContext,
-  TechEventType,
-} from '@tcrn/shared';
+
+import { ErrorCodes, LogSeverity, type RequestContext, TechEventType } from '@tcrn/shared';
 
 import { TechEventLogService } from '../../log';
 import { BUCKETS, MinioService } from '../../minio';
@@ -26,19 +21,11 @@ export class ReportJobReadApplicationService {
   constructor(
     private readonly reportJobReadRepository: ReportJobReadRepository,
     private readonly techEventLog: TechEventLogService,
-    private readonly minioService: MinioService,
+    private readonly minioService: MinioService
   ) {}
 
-  async findById(
-    jobId: string,
-    talentId: string,
-    context: RequestContext,
-  ) {
-    const job = await this.reportJobReadRepository.findById(
-      context.tenantSchema,
-      jobId,
-      talentId,
-    );
+  async findById(jobId: string, talentId: string, context: RequestContext) {
+    const job = await this.reportJobReadRepository.findById(context.tenantSchema, jobId, talentId);
 
     if (!job) {
       throw new NotFoundException({
@@ -52,7 +39,7 @@ export class ReportJobReadApplicationService {
 
   async findMany(
     query: ReportJobListQueryDto,
-    context: RequestContext,
+    context: RequestContext
   ): Promise<{ items: ReturnType<typeof mapReportJobListItem>[]; total: number }> {
     const filters = this.buildFilters(query);
     const pagination = this.buildPagination(query.page, query.pageSize);
@@ -67,15 +54,11 @@ export class ReportJobReadApplicationService {
     };
   }
 
-  async getDownloadUrl(
-    jobId: string,
-    talentId: string,
-    context: RequestContext,
-  ) {
+  async getDownloadUrl(jobId: string, talentId: string, context: RequestContext) {
     const job = await this.reportJobReadRepository.findDownloadTarget(
       context.tenantSchema,
       jobId,
-      talentId,
+      talentId
     );
 
     if (!job) {
@@ -110,20 +93,23 @@ export class ReportJobReadApplicationService {
     const downloadUrl = await this.minioService.getPresignedUrl(
       BUCKETS.TEMP_REPORTS,
       job.file_path,
-      REPORT_JOB_DOWNLOAD_URL_EXPIRY_SECONDS,
+      REPORT_JOB_DOWNLOAD_URL_EXPIRY_SECONDS
     );
 
-    await this.techEventLog.log({
-      eventType: TechEventType.SYSTEM_INFO,
-      scope: 'export',
-      severity: LogSeverity.INFO,
-      traceId: jobId,
-      payload: {
-        action: 'report_downloaded',
-        jobId,
-        fileName: job.file_name,
+    await this.techEventLog.log(
+      {
+        eventType: TechEventType.SYSTEM_INFO,
+        scope: 'export',
+        severity: LogSeverity.INFO,
+        traceId: jobId,
+        payload: {
+          action: 'report_downloaded',
+          jobId,
+          fileName: job.file_name,
+        },
       },
-    }, context);
+      context
+    );
 
     return {
       downloadUrl,

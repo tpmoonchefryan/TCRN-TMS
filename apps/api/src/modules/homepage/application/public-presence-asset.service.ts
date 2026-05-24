@@ -1,11 +1,11 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import {
   BadRequestException,
   ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+
 import {
   buildBlankPublicPresenceAssetSourceBundle,
   buildPublicPresenceComponentAssetManifest,
@@ -28,6 +28,11 @@ import {
   type PublicPresenceTemplateId,
   type RequestContext,
 } from '@tcrn/shared';
+
+import {
+  derivePublicPresenceAssetManifestFromSourceManifest,
+  parsePublicPresenceAssetSourceManifest,
+} from '../domain/public-presence-asset-runtime.policy';
 import {
   appendPublicPresenceAssetCopySuffix,
   assertManifestMatchesAssetRecord,
@@ -41,11 +46,6 @@ import {
   parsePublicPresenceAssetManifest,
   parsePublicPresenceSourceBundle,
 } from '../domain/public-presence-asset.policy';
-import {
-  derivePublicPresenceAssetManifestFromSourceManifest,
-  parsePublicPresenceAssetSourceManifest,
-} from '../domain/public-presence-asset-runtime.policy';
-
 import {
   type PublicPresenceAssetRevisionRow,
   type PublicPresenceAssetRow,
@@ -91,30 +91,28 @@ interface DuplicateAssetInput {
 
 @Injectable()
 export class PublicPresenceAssetService {
-  constructor(
-    private readonly publicPresenceAssetRepository: PublicPresenceAssetRepository,
-  ) {}
+  constructor(private readonly publicPresenceAssetRepository: PublicPresenceAssetRepository) {}
 
   async listAssets(
     tenantSchema: string,
     input: ListAssetsInput = {},
-    actorId?: string | null,
+    actorId?: string | null
   ): Promise<PublicPresenceAssetListEntry[]> {
     const scope = normalizePublicPresenceAssetScope(input.scopeType, input.scopeId);
     await this.ensureSystemSeeds(tenantSchema, actorId ?? null);
     const visibleScopes = await this.publicPresenceAssetRepository.resolveScopeChain(
       tenantSchema,
       scope.scopeType,
-      scope.scopeId,
+      scope.scopeId
     );
     const assets = await this.publicPresenceAssetRepository.listVisibleAssets(
       tenantSchema,
       visibleScopes,
-      input.assetKind,
+      input.assetKind
     );
     const revisions = await this.publicPresenceAssetRepository.listCurrentRevisionsByAssetIds(
       tenantSchema,
-      assets.map((asset) => asset.id),
+      assets.map((asset) => asset.id)
     );
     const revisionMap = new Map(revisions.map((revision) => [revision.assetId, revision]));
 
@@ -123,8 +121,8 @@ export class PublicPresenceAssetService {
         asset,
         revisionMap.get(asset.id) ?? null,
         scope.scopeType,
-        scope.scopeId,
-      ),
+        scope.scopeId
+      )
     );
   }
 
@@ -132,23 +130,23 @@ export class PublicPresenceAssetService {
     tenantSchema: string,
     assetId: string,
     input: ListAssetsInput = {},
-    actorId?: string | null,
+    actorId?: string | null
   ): Promise<PublicPresenceAssetDetail> {
     const scope = normalizePublicPresenceAssetScope(input.scopeType, input.scopeId);
     await this.ensureSystemSeeds(tenantSchema, actorId ?? null);
     const visibleScopes = await this.publicPresenceAssetRepository.resolveScopeChain(
       tenantSchema,
       scope.scopeType,
-      scope.scopeId,
+      scope.scopeId
     );
     const asset = await this.requireVisibleAsset(tenantSchema, assetId, visibleScopes);
     const currentRevision = await this.publicPresenceAssetRepository.findCurrentRevision(
       tenantSchema,
-      asset.id,
+      asset.id
     );
     const revisions = await this.publicPresenceAssetRepository.listRevisions(
       tenantSchema,
-      asset.id,
+      asset.id
     );
 
     return {
@@ -160,7 +158,7 @@ export class PublicPresenceAssetService {
   async createAsset(
     tenantSchema: string,
     context: RequestContext,
-    input: CreateAssetInput,
+    input: CreateAssetInput
   ): Promise<PublicPresenceAssetDetail> {
     this.assertSupportedAssetKind(input.assetKind);
     const scope = normalizePublicPresenceAssetScope(input.scopeType, input.scopeId);
@@ -172,24 +170,21 @@ export class PublicPresenceAssetService {
     const seedText = this.getSeedTextForAssetKind(
       input.assetKind,
       input.templateId ?? null,
-      input.componentType ?? null,
+      input.componentType ?? null
     );
     const name = this.resolveLocalizedText(input.name, seedText.name);
-    const description = this.resolveLocalizedDescription(
-      input.description,
-      seedText.description,
-    );
+    const description = this.resolveLocalizedDescription(input.description, seedText.description);
     const code = await this.createUniqueScopedCode(
       tenantSchema,
       ownerType,
       ownerId,
       normalizePublicPresenceAssetCode(
-        input.code
-          ?? requestedManifest.assetCode
-          ?? (input.assetKind === 'template'
-            ? input.templateId ?? 'template'
-            : input.componentType ?? 'component'),
-      ),
+        input.code ??
+          requestedManifest.assetCode ??
+          (input.assetKind === 'template'
+            ? (input.templateId ?? 'template')
+            : (input.componentType ?? 'component'))
+      )
     );
     const seedManifest = this.hydrateManifest(requestedManifest, {
       assetCode: code,
@@ -209,7 +204,7 @@ export class PublicPresenceAssetService {
         name,
         ownerId,
         ownerType,
-      },
+      }
     );
     this.assertCreateAssetInputConsistency(input, hydratedManifest);
     const draftSummary = buildDraftPublicPresenceAssetSummary();
@@ -225,9 +220,8 @@ export class PublicPresenceAssetService {
         artifactStatus: 'draft',
         assetKind: input.assetKind,
         code,
-        componentType: hydratedManifest.assetKind === 'component'
-          ? hydratedManifest.componentType
-          : null,
+        componentType:
+          hydratedManifest.assetKind === 'component' ? hydratedManifest.componentType : null,
         description,
         manifest: hydratedManifest,
         name,
@@ -236,12 +230,10 @@ export class PublicPresenceAssetService {
         sourceBundle,
         sourceHash,
         status: 'draft',
-        templateId: hydratedManifest.assetKind === 'template'
-          ? hydratedManifest.templateId
-          : null,
+        templateId: hydratedManifest.assetKind === 'template' ? hydratedManifest.templateId : null,
         validationState: draftSummary.validationState,
         validationSummary: draftSummary.validationSummary,
-      },
+      }
     );
 
     return this.getAssetDetail(tenantSchema, asset.id, scope, context.userId ?? null);
@@ -251,51 +243,37 @@ export class PublicPresenceAssetService {
     tenantSchema: string,
     assetId: string,
     context: RequestContext,
-    input: SaveAssetRevisionInput,
+    input: SaveAssetRevisionInput
   ): Promise<PublicPresenceAssetDetail> {
-    return this.persistRevision(
-      tenantSchema,
-      assetId,
-      context,
-      input,
-      'draft',
-      false,
-    );
+    return this.persistRevision(tenantSchema, assetId, context, input, 'draft', false);
   }
 
   async validateAsset(
     tenantSchema: string,
     assetId: string,
     context: RequestContext,
-    input: SaveAssetRevisionInput,
+    input: SaveAssetRevisionInput
   ): Promise<PublicPresenceAssetDetail> {
-    return this.persistRevision(
-      tenantSchema,
-      assetId,
-      context,
-      input,
-      'validated',
-      true,
-    );
+    return this.persistRevision(tenantSchema, assetId, context, input, 'validated', true);
   }
 
   async duplicateAsset(
     tenantSchema: string,
     assetId: string,
     context: RequestContext,
-    input: DuplicateAssetInput = {},
+    input: DuplicateAssetInput = {}
   ): Promise<PublicPresenceAssetDetail> {
     const scope = normalizePublicPresenceAssetScope(input.scopeType, input.scopeId);
     await this.ensureSystemSeeds(tenantSchema, context.userId ?? null);
     const visibleScopes = await this.publicPresenceAssetRepository.resolveScopeChain(
       tenantSchema,
       scope.scopeType,
-      scope.scopeId,
+      scope.scopeId
     );
     const sourceAsset = await this.requireVisibleAsset(tenantSchema, assetId, visibleScopes);
     const sourceRevision = await this.publicPresenceAssetRepository.findCurrentRevision(
       tenantSchema,
-      assetId,
+      assetId
     );
 
     if (!sourceRevision) {
@@ -309,29 +287,26 @@ export class PublicPresenceAssetService {
     const ownerId = scope.scopeId;
     const name = this.resolveLocalizedText(
       input.name,
-      appendPublicPresenceAssetCopySuffix(sourceAsset.name),
+      appendPublicPresenceAssetCopySuffix(sourceAsset.name)
     );
     const description = this.resolveLocalizedDescription(
       input.description,
-      sourceAsset.description,
+      sourceAsset.description
     );
     const code = await this.createUniqueScopedCode(
       tenantSchema,
       ownerType,
       ownerId,
-      normalizePublicPresenceAssetCode(input.code ?? `${sourceAsset.code}-copy`),
+      normalizePublicPresenceAssetCode(input.code ?? `${sourceAsset.code}-copy`)
     );
     const sourceBundle = parsePublicPresenceSourceBundle(sourceRevision.sourceBundle);
-    const manifest = this.hydrateManifest(
-      this.deriveManifestFromSourceBundle(sourceBundle),
-      {
-        assetCode: code,
-        description,
-        name,
-        ownerId,
-        ownerType,
-      },
-    );
+    const manifest = this.hydrateManifest(this.deriveManifestFromSourceBundle(sourceBundle), {
+      assetCode: code,
+      description,
+      name,
+      ownerId,
+      ownerType,
+    });
     const validation = buildValidatedPublicPresenceAssetSummary(sourceBundle);
     const asset = await this.publicPresenceAssetRepository.createAssetWithCurrentRevision(
       tenantSchema,
@@ -355,7 +330,7 @@ export class PublicPresenceAssetService {
         templateId: sourceAsset.templateId,
         validationState: validation.validationState,
         validationSummary: validation.validationSummary,
-      },
+      }
     );
 
     return this.getAssetDetail(tenantSchema, asset.id, scope, context.userId ?? null);
@@ -367,37 +342,31 @@ export class PublicPresenceAssetService {
     context: RequestContext,
     input: SaveAssetRevisionInput,
     artifactStatus: PublicPresenceAssetStatus,
-    runValidation: boolean,
+    runValidation: boolean
   ): Promise<PublicPresenceAssetDetail> {
     const scope = normalizePublicPresenceAssetScope(input.scopeType, input.scopeId);
     await this.ensureSystemSeeds(tenantSchema, context.userId ?? null);
     const visibleScopes = await this.publicPresenceAssetRepository.resolveScopeChain(
       tenantSchema,
       scope.scopeType,
-      scope.scopeId,
+      scope.scopeId
     );
     const asset = await this.requireVisibleAsset(tenantSchema, assetId, visibleScopes);
 
     this.assertAssetEditable(asset, scope.scopeType, scope.scopeId);
 
     const name = this.resolveLocalizedText(input.name, asset.name);
-    const description = this.resolveLocalizedDescription(
-      input.description,
-      asset.description,
-    );
+    const description = this.resolveLocalizedDescription(input.description, asset.description);
     const sourceBundle = parsePublicPresenceSourceBundle(input.sourceBundle);
-    const manifest = this.hydrateManifest(
-      this.deriveManifestFromSourceBundle(sourceBundle),
-      {
-        assetCode: asset.code,
-        assetId: asset.id,
-        assetRevisionId: null,
-        description,
-        name,
-        ownerId: asset.ownerId,
-        ownerType: asset.ownerType,
-      },
-    );
+    const manifest = this.hydrateManifest(this.deriveManifestFromSourceBundle(sourceBundle), {
+      assetCode: asset.code,
+      assetId: asset.id,
+      assetRevisionId: null,
+      description,
+      name,
+      ownerId: asset.ownerId,
+      ownerType: asset.ownerType,
+    });
 
     if (input.manifest) {
       const explicitManifest = this.hydrateManifest(
@@ -410,7 +379,7 @@ export class PublicPresenceAssetService {
           name,
           ownerId: asset.ownerId,
           ownerType: asset.ownerType,
-        },
+        }
       );
 
       if (JSON.stringify(explicitManifest) !== JSON.stringify(manifest)) {
@@ -432,49 +401,38 @@ export class PublicPresenceAssetService {
     const validation = runValidation
       ? buildValidatedPublicPresenceAssetSummary(sourceBundle)
       : buildDraftPublicPresenceAssetSummary();
-    await this.publicPresenceAssetRepository.createRevisionAndAssignCurrent(
-      tenantSchema,
-      {
-        actorId: context.userId ?? null,
-        artifactStatus,
-        assetId: asset.id,
-        description,
+    await this.publicPresenceAssetRepository.createRevisionAndAssignCurrent(tenantSchema, {
+      actorId: context.userId ?? null,
+      artifactStatus,
+      assetId: asset.id,
+      description,
+      manifest,
+      name,
+      sourceBundle,
+      sourceHash: calculatePublicPresenceAssetSourceHash({
         manifest,
-        name,
         sourceBundle,
-        sourceHash: calculatePublicPresenceAssetSourceHash({
-          manifest,
-          sourceBundle,
-        }),
-        status: artifactStatus,
-        validationState: validation.validationState,
-        validationSummary: validation.validationSummary,
-      },
-    );
+      }),
+      status: artifactStatus,
+      validationState: validation.validationState,
+      validationSummary: validation.validationSummary,
+    });
 
     return this.getAssetDetail(tenantSchema, asset.id, scope, context.userId ?? null);
   }
 
-  private async ensureSystemSeeds(
-    tenantSchema: string,
-    actorId: string | null,
-  ) {
+  private async ensureSystemSeeds(tenantSchema: string, actorId: string | null) {
     for (const seed of getPublicPresenceSystemAssetSeeds()) {
       const existing = await this.publicPresenceAssetRepository.findAssetByCodeAtScope(
         tenantSchema,
         'system',
         null,
-        seed.code,
+        seed.code
       );
 
       if (existing) {
         if (existing.currentRevisionId === null) {
-          await this.repairSystemSeedCurrentRevision(
-            tenantSchema,
-            existing,
-            seed,
-            actorId,
-          );
+          await this.repairSystemSeedCurrentRevision(tenantSchema, existing, seed, actorId);
         }
 
         continue;
@@ -496,22 +454,19 @@ export class PublicPresenceAssetService {
     tenantSchema: string,
     asset: PublicPresenceAssetRow,
     seed: ReturnType<typeof getPublicPresenceSystemAssetSeeds>[number],
-    actorId: string | null,
+    actorId: string | null
   ) {
     const repairInput = this.buildSystemSeedRevisionInput(seed, actorId);
 
-    await this.publicPresenceAssetRepository.createRevisionAndAssignCurrent(
-      tenantSchema,
-      {
-        ...repairInput,
-        assetId: asset.id,
-      },
-    );
+    await this.publicPresenceAssetRepository.createRevisionAndAssignCurrent(tenantSchema, {
+      ...repairInput,
+      assetId: asset.id,
+    });
   }
 
   private buildSystemSeedRevisionInput(
     seed: ReturnType<typeof getPublicPresenceSystemAssetSeeds>[number],
-    actorId: string | null,
+    actorId: string | null
   ): Pick<
     Parameters<PublicPresenceAssetRepository['createAssetWithCurrentRevision']>[1],
     | 'actorId'
@@ -547,7 +502,7 @@ export class PublicPresenceAssetService {
   private buildManifestForNewAsset(
     input: CreateAssetInput,
     ownerType: PublicPresenceAssetOwnerType,
-    ownerId: string | null,
+    ownerId: string | null
   ): PublicPresenceAssetManifest {
     if (input.manifest) {
       return parsePublicPresenceAssetManifest(input.manifest);
@@ -586,7 +541,9 @@ export class PublicPresenceAssetService {
     });
   }
 
-  private assertSupportedAssetKind(assetKind: string): asserts assetKind is PublicPresenceAssetKind {
+  private assertSupportedAssetKind(
+    assetKind: string
+  ): asserts assetKind is PublicPresenceAssetKind {
     if (assetKind !== 'template' && assetKind !== 'component') {
       throw new BadRequestException({
         code: ErrorCodes.VALIDATION_FAILED,
@@ -597,7 +554,7 @@ export class PublicPresenceAssetService {
 
   private assertCreateAssetInputConsistency(
     input: CreateAssetInput,
-    manifest: PublicPresenceAssetManifest,
+    manifest: PublicPresenceAssetManifest
   ) {
     if (manifest.assetKind !== input.assetKind) {
       throw new BadRequestException({
@@ -621,10 +578,7 @@ export class PublicPresenceAssetService {
         });
       }
 
-      if (
-        manifest.assetKind === 'template'
-        && manifest.templateId !== input.templateId
-      ) {
+      if (manifest.assetKind === 'template' && manifest.templateId !== input.templateId) {
         throw new BadRequestException({
           code: ErrorCodes.VALIDATION_FAILED,
           message: 'Template asset manifest templateId does not match the requested templateId.',
@@ -648,13 +602,11 @@ export class PublicPresenceAssetService {
       });
     }
 
-    if (
-      manifest.assetKind !== 'component'
-      || manifest.componentType !== input.componentType
-    ) {
+    if (manifest.assetKind !== 'component' || manifest.componentType !== input.componentType) {
       throw new BadRequestException({
         code: ErrorCodes.VALIDATION_FAILED,
-        message: 'Component asset manifest componentType does not match the requested componentType.',
+        message:
+          'Component asset manifest componentType does not match the requested componentType.',
       });
     }
   }
@@ -663,7 +615,7 @@ export class PublicPresenceAssetService {
     assetKind: PublicPresenceAssetKind,
     code: string,
     manifest: PublicPresenceAssetManifest,
-    name: LocalizedText,
+    name: LocalizedText
   ) {
     return buildBlankPublicPresenceAssetSourceBundle({
       assetCode: code,
@@ -676,15 +628,14 @@ export class PublicPresenceAssetService {
   }
 
   private deriveManifestFromSourceBundle(
-    sourceBundle: PublicPresenceSourceBundleFile[],
+    sourceBundle: PublicPresenceSourceBundleFile[]
   ): PublicPresenceAssetManifest {
     const sourceManifest = parsePublicPresenceAssetSourceManifest(sourceBundle);
 
     if (!sourceManifest) {
       throw new BadRequestException({
         code: ErrorCodes.VALIDATION_FAILED,
-        message:
-          'Asset source bundle must include a valid manifest.json runtime contract.',
+        message: 'Asset source bundle must include a valid manifest.json runtime contract.',
       });
     }
 
@@ -694,34 +645,40 @@ export class PublicPresenceAssetService {
   private buildDefaultManifestFromAsset(
     asset: PublicPresenceAssetRow,
     name: LocalizedText,
-    description: LocalizedText,
+    description: LocalizedText
   ) {
     if (asset.assetKind === 'template' && asset.templateId) {
-      return buildPublicPresenceTemplateAssetManifest(asset.templateId as PublicPresenceTemplateId, {
-        assetCode: asset.code,
-        assetId: asset.id,
-        description,
-        name,
-        ownerId: asset.ownerId,
-        ownerType: asset.ownerType,
-      });
+      return buildPublicPresenceTemplateAssetManifest(
+        asset.templateId as PublicPresenceTemplateId,
+        {
+          assetCode: asset.code,
+          assetId: asset.id,
+          description,
+          name,
+          ownerId: asset.ownerId,
+          ownerType: asset.ownerType,
+        }
+      );
     }
 
     if (asset.assetKind === 'component' && asset.componentType) {
-      return buildPublicPresenceComponentAssetManifest(asset.componentType as HomepageComponentType, {
-        assetCode: asset.code,
-        assetId: asset.id,
-        description,
-        name,
-        ownerId: asset.ownerId,
-        ownerType: asset.ownerType,
-      });
+      return buildPublicPresenceComponentAssetManifest(
+        asset.componentType as HomepageComponentType,
+        {
+          assetCode: asset.code,
+          assetId: asset.id,
+          description,
+          name,
+          ownerId: asset.ownerId,
+          ownerType: asset.ownerType,
+        }
+      );
     }
 
-      throw new NotFoundException({
-        code: ErrorCodes.RES_NOT_FOUND,
-        message: 'Asset manifest metadata could not be reconstructed.',
-      });
+    throw new NotFoundException({
+      code: ErrorCodes.RES_NOT_FOUND,
+      message: 'Asset manifest metadata could not be reconstructed.',
+    });
   }
 
   private hydrateManifest(
@@ -734,7 +691,7 @@ export class PublicPresenceAssetService {
       name: LocalizedText;
       ownerId: string | null;
       ownerType: PublicPresenceAssetOwnerType;
-    },
+    }
   ): PublicPresenceAssetManifest {
     return {
       ...manifest,
@@ -751,7 +708,7 @@ export class PublicPresenceAssetService {
   private getSeedTextForAssetKind(
     assetKind: PublicPresenceAssetKind,
     templateId: PublicPresenceTemplateId | null,
-    componentType: HomepageComponentType | null,
+    componentType: HomepageComponentType | null
   ) {
     if (assetKind === 'template' && templateId) {
       return getPublicPresenceTemplateSeedText(templateId);
@@ -770,12 +727,9 @@ export class PublicPresenceAssetService {
   private async requireVisibleAsset(
     tenantSchema: string,
     assetId: string,
-    visibleScopes: PublicPresenceAssetScopeRef[],
+    visibleScopes: PublicPresenceAssetScopeRef[]
   ) {
-    const asset = await this.publicPresenceAssetRepository.findAssetById(
-      tenantSchema,
-      assetId,
-    );
+    const asset = await this.publicPresenceAssetRepository.findAssetById(tenantSchema, assetId);
 
     if (!asset || !visibleScopes.some((scope) => this.isScopeOwnerMatch(asset, scope))) {
       throw new NotFoundException({
@@ -790,7 +744,7 @@ export class PublicPresenceAssetService {
   private assertAssetEditable(
     asset: PublicPresenceAssetRow,
     scopeType: PublicPresenceAssetScopeType,
-    scopeId: string | null,
+    scopeId: string | null
   ) {
     if (asset.isSystem) {
       throw new ForbiddenException({
@@ -802,7 +756,8 @@ export class PublicPresenceAssetService {
     if (asset.ownerType !== scopeType || asset.ownerId !== scopeId) {
       throw new ForbiddenException({
         code: ErrorCodes.PERM_ACCESS_DENIED,
-        message: 'This Public Presence asset is inherited. Switch to its owner scope or duplicate it.',
+        message:
+          'This Public Presence asset is inherited. Switch to its owner scope or duplicate it.',
       });
     }
   }
@@ -811,14 +766,10 @@ export class PublicPresenceAssetService {
     tenantSchema: string,
     ownerType: PublicPresenceAssetOwnerType,
     ownerId: string | null,
-    baseCode: string,
+    baseCode: string
   ) {
     const existingCodes = new Set(
-      await this.publicPresenceAssetRepository.listCodesAtScope(
-        tenantSchema,
-        ownerType,
-        ownerId,
-      ),
+      await this.publicPresenceAssetRepository.listCodesAtScope(tenantSchema, ownerType, ownerId)
     );
 
     if (!existingCodes.has(baseCode)) {
@@ -837,7 +788,7 @@ export class PublicPresenceAssetService {
     asset: PublicPresenceAssetRow,
     currentRevision: PublicPresenceAssetRevisionRow | null,
     scopeType: PublicPresenceAssetScopeType,
-    scopeId: string | null,
+    scopeId: string | null
   ): PublicPresenceAssetListEntry {
     const canEdit = !asset.isSystem && asset.ownerType === scopeType && asset.ownerId === scopeId;
 
@@ -892,16 +843,13 @@ export class PublicPresenceAssetService {
     };
   }
 
-  private isScopeOwnerMatch(
-    asset: PublicPresenceAssetRow,
-    scope: PublicPresenceAssetScopeRef,
-  ) {
+  private isScopeOwnerMatch(asset: PublicPresenceAssetRow, scope: PublicPresenceAssetScopeRef) {
     return asset.ownerType === scope.ownerType && asset.ownerId === scope.ownerId;
   }
 
   private resolveLocalizedText(
     input: Partial<LocalizedText> | null | undefined,
-    fallback: LocalizedText,
+    fallback: LocalizedText
   ) {
     if (!input) {
       return fallback;
@@ -912,7 +860,7 @@ export class PublicPresenceAssetService {
 
   private resolveLocalizedDescription(
     input: Partial<LocalizedText> | null | undefined,
-    fallback: LocalizedText,
+    fallback: LocalizedText
   ) {
     if (!input) {
       return fallback;

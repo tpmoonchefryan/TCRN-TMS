@@ -1,7 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+import path from 'path';
 
 import { transform } from '@swc/core';
-import path from 'path';
 import type { Plugin } from 'vite';
 import { defineConfig } from 'vitest/config';
 
@@ -52,10 +52,7 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     setupFiles: ['./test/integration/vitest.setup.ts'],
-    include: [
-      'test/integration/**/*.{test,spec}.ts',
-      'src/testing/isolation/**/*.{test,spec}.ts',
-    ],
+    include: ['test/integration/**/*.{test,spec}.ts', 'src/testing/isolation/**/*.{test,spec}.ts'],
     exclude: ['**/node_modules/**', '**/dist/**'],
     // These suites exercise real integration boundaries and can need local services.
     // Keep them single-worker to avoid Redis/queue/schema cross-test interference.

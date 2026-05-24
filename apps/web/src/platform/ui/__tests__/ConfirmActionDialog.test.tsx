@@ -18,7 +18,7 @@ describe('ConfirmActionDialog', () => {
     vi.useFakeTimers();
     Object.defineProperty(window, 'matchMedia', {
       writable: true,
-      value: vi.fn().mockImplementation(_query => ({
+      value: vi.fn().mockImplementation((_query) => ({
         matches: false,
       })),
     });
@@ -46,29 +46,29 @@ describe('ConfirmActionDialog', () => {
   it('calls onConfirm when confirm is clicked', async () => {
     render(<ConfirmActionDialog {...defaultProps} />);
     const confirmButton = screen.getByText('Confirm');
-    
+
     await act(async () => {
       fireEvent.click(confirmButton);
     });
-    
+
     expect(defaultProps.onConfirm).toHaveBeenCalled();
   });
 
   it('maintains body scroll lock until exit animation completes', () => {
     const { rerender } = render(<ConfirmActionDialog {...defaultProps} />);
-    
+
     expect(document.body.style.overflow).toBe('hidden');
-    
+
     // Trigger close
     rerender(<ConfirmActionDialog {...defaultProps} open={false} />);
-    
+
     // Still hidden because of 150ms delay
     expect(document.body.style.overflow).toBe('hidden');
-    
+
     act(() => {
       vi.advanceTimersByTime(150);
     });
-    
+
     // Now unlocked
     expect(document.body.style.overflow).toBe('');
   });
@@ -89,7 +89,7 @@ describe('ConfirmActionDialog', () => {
     expect(footer).toHaveClass('flex-col');
     expect(footer).not.toHaveClass('flex-col-reverse');
     expect(Array.from(footer?.children ?? []).indexOf(cancelButton)).toBeLessThan(
-      Array.from(footer?.children ?? []).indexOf(confirmButton),
+      Array.from(footer?.children ?? []).indexOf(confirmButton)
     );
   });
 
@@ -98,7 +98,7 @@ describe('ConfirmActionDialog', () => {
       <>
         <button type="button">Delete trigger</button>
         <ConfirmActionDialog {...defaultProps} open={false} />
-      </>,
+      </>
     );
 
     screen.getByRole('button', { name: 'Delete trigger' }).focus();
@@ -108,7 +108,7 @@ describe('ConfirmActionDialog', () => {
         <>
           <button type="button">Delete trigger</button>
           <ConfirmActionDialog {...defaultProps} />
-        </>,
+        </>
       );
     });
 
@@ -131,7 +131,7 @@ describe('ConfirmActionDialog', () => {
         <>
           <button type="button">Delete trigger</button>
           <ConfirmActionDialog {...defaultProps} open={false} />
-        </>,
+        </>
       );
     });
 
@@ -141,5 +141,4 @@ describe('ConfirmActionDialog', () => {
       vi.advanceTimersByTime(150);
     });
   });
-
 });

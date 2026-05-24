@@ -1,8 +1,8 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { NotFoundException } from '@nestjs/common';
-import { ErrorCodes, type RequestContext } from '@tcrn/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { ErrorCodes, type RequestContext } from '@tcrn/shared';
 
 import { ProfileType } from '../dto/customer.dto';
 import { CustomerExternalIdRepository } from '../infrastructure/customer-external-id.repository';
@@ -38,7 +38,7 @@ describe('CustomerExternalIdApplicationService', () => {
 
   const service = new CustomerExternalIdApplicationService(
     mockCustomerArchiveAccessService,
-    mockRepository,
+    mockRepository
   );
 
   const customerArchiveAccessRecord = {
@@ -59,18 +59,18 @@ describe('CustomerExternalIdApplicationService', () => {
   });
 
   it('throws NotFoundException when findByCustomer cannot resolve customer access', async () => {
-    vi.mocked(
-      mockCustomerArchiveAccessService.requireCustomerArchiveAccess,
-    ).mockRejectedValue(new NotFoundException());
+    vi.mocked(mockCustomerArchiveAccessService.requireCustomerArchiveAccess).mockRejectedValue(
+      new NotFoundException()
+    );
 
-    await expect(
-      service.findByCustomer('customer-1', 'talent-1', context),
-    ).rejects.toThrow(NotFoundException);
+    await expect(service.findByCustomer('customer-1', 'talent-1', context)).rejects.toThrow(
+      NotFoundException
+    );
   });
 
   it('maps external-id records on the read path', async () => {
     vi.mocked(mockCustomerArchiveAccessService.requireCustomerArchiveAccess).mockResolvedValue(
-      customerArchiveAccessRecord,
+      customerArchiveAccessRecord
     );
     vi.mocked(mockRepository.findByCustomer).mockResolvedValue([
       {
@@ -84,9 +84,7 @@ describe('CustomerExternalIdApplicationService', () => {
       },
     ]);
 
-    await expect(
-      service.findByCustomer('customer-1', 'talent-1', context),
-    ).resolves.toEqual([
+    await expect(service.findByCustomer('customer-1', 'talent-1', context)).resolves.toEqual([
       {
         id: 'external-id-1',
         consumer: {
@@ -103,7 +101,7 @@ describe('CustomerExternalIdApplicationService', () => {
 
   it('throws NotFoundException with RES_NOT_FOUND when create cannot resolve the consumer', async () => {
     vi.mocked(mockCustomerArchiveAccessService.requireCustomerArchiveAccess).mockResolvedValue(
-      customerArchiveAccessRecord,
+      customerArchiveAccessRecord
     );
     vi.mocked(mockRepository.findActiveConsumerByCode).mockResolvedValue(null);
 
@@ -112,8 +110,8 @@ describe('CustomerExternalIdApplicationService', () => {
         'customer-1',
         'talent-1',
         { consumerCode: 'CRM', externalId: 'EXT-1' },
-        context,
-      ),
+        context
+      )
     ).rejects.toMatchObject({
       response: {
         code: ErrorCodes.RES_NOT_FOUND,
@@ -124,7 +122,7 @@ describe('CustomerExternalIdApplicationService', () => {
 
   it('throws ConflictException with legacy duplicate semantics when create sees an existing external id', async () => {
     vi.mocked(mockCustomerArchiveAccessService.requireCustomerArchiveAccess).mockResolvedValue(
-      customerArchiveAccessRecord,
+      customerArchiveAccessRecord
     );
     vi.mocked(mockRepository.findActiveConsumerByCode).mockResolvedValue({
       id: 'consumer-1',
@@ -140,8 +138,8 @@ describe('CustomerExternalIdApplicationService', () => {
         'customer-1',
         'talent-1',
         { consumerCode: 'CRM', externalId: 'EXT-1' },
-        context,
-      ),
+        context
+      )
     ).rejects.toMatchObject({
       response: {
         code: ErrorCodes.RES_ALREADY_EXISTS,
@@ -152,7 +150,7 @@ describe('CustomerExternalIdApplicationService', () => {
 
   it('creates the external id and writes the raw change-log payload', async () => {
     vi.mocked(mockCustomerArchiveAccessService.requireCustomerArchiveAccess).mockResolvedValue(
-      customerArchiveAccessRecord,
+      customerArchiveAccessRecord
     );
     vi.mocked(mockRepository.findActiveConsumerByCode).mockResolvedValue({
       id: 'consumer-1',
@@ -172,8 +170,8 @@ describe('CustomerExternalIdApplicationService', () => {
         'customer-1',
         'talent-1',
         { consumerCode: 'CRM', externalId: 'EXT-1' },
-        context,
-      ),
+        context
+      )
     ).resolves.toEqual({
       id: 'external-id-1',
       consumer: {
@@ -210,18 +208,18 @@ describe('CustomerExternalIdApplicationService', () => {
 
   it('throws NotFoundException when delete cannot resolve the owned external id', async () => {
     vi.mocked(mockCustomerArchiveAccessService.requireCustomerArchiveAccess).mockResolvedValue(
-      customerArchiveAccessRecord,
+      customerArchiveAccessRecord
     );
     vi.mocked(mockRepository.findOwnedExternalId).mockResolvedValue(null);
 
     await expect(
-      service.delete('customer-1', 'external-id-1', 'talent-1', context),
+      service.delete('customer-1', 'external-id-1', 'talent-1', context)
     ).rejects.toThrow(NotFoundException);
   });
 
   it('deletes the external id and records the delete change-log payload', async () => {
     vi.mocked(mockCustomerArchiveAccessService.requireCustomerArchiveAccess).mockResolvedValue(
-      customerArchiveAccessRecord,
+      customerArchiveAccessRecord
     );
     vi.mocked(mockRepository.findOwnedExternalId).mockResolvedValue({
       id: 'external-id-1',
@@ -232,7 +230,7 @@ describe('CustomerExternalIdApplicationService', () => {
     vi.mocked(mockRepository.insertChangeLog).mockResolvedValue(1 as never);
 
     await expect(
-      service.delete('customer-1', 'external-id-1', 'talent-1', context),
+      service.delete('customer-1', 'external-id-1', 'talent-1', context)
     ).resolves.toBeUndefined();
 
     expect(mockRepository.delete).toHaveBeenCalledWith('tenant_test', 'external-id-1');
@@ -260,27 +258,27 @@ describe('CustomerExternalIdApplicationService', () => {
     vi.mocked(mockRepository.existsInProfileStore).mockResolvedValue(true);
 
     await expect(
-      service.findCustomerByExternalId('CRM', 'EXT-1', 'store-1', context),
+      service.findCustomerByExternalId('CRM', 'EXT-1', 'store-1', context)
     ).resolves.toEqual({
       id: 'customer-1',
       nickname: 'Acme',
       profileStoreId: 'store-1',
     });
-    await expect(
-      service.existsInProfileStore('CRM', 'EXT-1', 'store-1', context),
-    ).resolves.toBe(true);
+    await expect(service.existsInProfileStore('CRM', 'EXT-1', 'store-1', context)).resolves.toBe(
+      true
+    );
 
     expect(mockRepository.findCustomerByExternalId).toHaveBeenCalledWith(
       'tenant_test',
       'CRM',
       'EXT-1',
-      'store-1',
+      'store-1'
     );
     expect(mockRepository.existsInProfileStore).toHaveBeenCalledWith(
       'tenant_test',
       'CRM',
       'EXT-1',
-      'store-1',
+      'store-1'
     );
   });
 });

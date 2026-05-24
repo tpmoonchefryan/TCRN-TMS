@@ -16,7 +16,7 @@ describe('customer primary language schema', () => {
         talentId,
         nickname: 'Aki fan',
         primaryLanguage: 'zh_HANS',
-      }).primaryLanguage,
+      }).primaryLanguage
     ).toBe('zh_HANS');
     expect(
       CreateCompanyCustomerSchema.parse({
@@ -24,19 +24,19 @@ describe('customer primary language schema', () => {
         nickname: 'Aki Corp',
         companyLegalName: 'Aki Corporation',
         primaryLanguage: 'zh_HANT',
-      }).primaryLanguage,
+      }).primaryLanguage
     ).toBe('zh_HANT');
     expect(
       UpdateIndividualCustomerSchema.parse({
         version: 1,
         primaryLanguage: 'ko',
-      }).primaryLanguage,
+      }).primaryLanguage
     ).toBe('ko');
     expect(
       UpdateCompanyCustomerSchema.parse({
         version: 1,
         primaryLanguage: 'fr',
-      }).primaryLanguage,
+      }).primaryLanguage
     ).toBe('fr');
   });
 
@@ -46,7 +46,7 @@ describe('customer primary language schema', () => {
         talentId,
         nickname: 'Aki fan',
         primaryLanguage: 'zh',
-      }),
+      })
     ).toThrow();
   });
 });

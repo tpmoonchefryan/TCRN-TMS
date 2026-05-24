@@ -3,4 +3,3 @@
 export { SettingsController } from './settings.controller';
 export { SettingsModule } from './settings.module';
 export { ScopeSettings, SettingsService } from './settings.service';
-

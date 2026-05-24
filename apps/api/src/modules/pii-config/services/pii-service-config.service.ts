@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable } from '@nestjs/common';
+
 import { type RequestContext } from '@tcrn/shared';
 
 import { PiiServiceConfigApplicationService } from '../application/pii-service-config.service';
@@ -13,7 +13,7 @@ import {
 @Injectable()
 export class PiiServiceConfigService {
   constructor(
-    private readonly piiServiceConfigApplicationService: PiiServiceConfigApplicationService,
+    private readonly piiServiceConfigApplicationService: PiiServiceConfigApplicationService
   ) {}
 
   /**
@@ -40,11 +40,7 @@ export class PiiServiceConfigService {
   /**
    * Update PII service config (multi-tenant aware - using raw SQL for proper schema support)
    */
-  update(
-    id: string,
-    dto: UpdatePiiServiceConfigDto,
-    context: RequestContext,
-  ) {
+  update(id: string, dto: UpdatePiiServiceConfigDto, context: RequestContext) {
     return this.piiServiceConfigApplicationService.update(id, dto, context);
   }
 

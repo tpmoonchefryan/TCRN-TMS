@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import {
   Body,
   Controller,
@@ -21,7 +20,10 @@ import {
   SaveTenantSenderDomainsDto,
 } from '../dto/tenant-sending-domain.dto';
 
-const createSuccessEnvelopeSchema = (dataSchema: Record<string, unknown>, exampleData: Record<string, unknown>) => ({
+const createSuccessEnvelopeSchema = (
+  dataSchema: Record<string, unknown>,
+  exampleData: Record<string, unknown>
+) => ({
   type: 'object',
   properties: {
     success: { type: 'boolean', example: true },
@@ -115,7 +117,7 @@ const MANAGED_TENANT_SENDING_DOMAINS_SUCCESS_SCHEMA = createSuccessEnvelopeSchem
       },
     ],
     defaultDomainId: 'domain-1',
-  },
+  }
 );
 
 const TENANT_SENDER_DOMAIN_OPTION_SCHEMA = {
@@ -155,12 +157,12 @@ const TENANT_SENDER_DOMAINS_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
     defaultDomainId: 'domain-1',
     fromName: 'Acme Support',
     replyTo: 'support@acme.example.com',
-  },
+  }
 );
 
 const AC_TENANT_ONLY_SCHEMA = createErrorEnvelopeSchema(
   'AC_TENANT_ONLY',
-  'Tenant sending-domain provisioning is only available for AC tenant administrators',
+  'Tenant sending-domain provisioning is only available for AC tenant administrators'
 );
 
 @ApiTags('Ops - Email Sending Domains')
@@ -174,7 +176,8 @@ export class TenantSendingDomainController {
     if (user.tenantSchema !== 'tenant_ac') {
       throw new ForbiddenException({
         code: 'AC_TENANT_ONLY',
-        message: 'Tenant sending-domain provisioning is only available for AC tenant administrators',
+        message:
+          'Tenant sending-domain provisioning is only available for AC tenant administrators',
       });
     }
   }
@@ -195,7 +198,7 @@ export class TenantSendingDomainController {
   })
   async getManagedTenantSendingDomains(
     @CurrentUser() user: AuthenticatedUser,
-    @Param('tenantId', ParseUUIDPipe) tenantId: string,
+    @Param('tenantId', ParseUUIDPipe) tenantId: string
   ) {
     this.checkAcTenantAccess(user);
     return success(await this.tenantSendingDomainService.getManagedTenantSendingDomains(tenantId));
@@ -218,10 +221,12 @@ export class TenantSendingDomainController {
   async saveManagedTenantSendingDomains(
     @CurrentUser() user: AuthenticatedUser,
     @Param('tenantId', ParseUUIDPipe) tenantId: string,
-    @Body() dto: SaveManagedTenantSendingDomainsDto,
+    @Body() dto: SaveManagedTenantSendingDomainsDto
   ) {
     this.checkAcTenantAccess(user);
-    return success(await this.tenantSendingDomainService.saveManagedTenantSendingDomains(tenantId, dto));
+    return success(
+      await this.tenantSendingDomainService.saveManagedTenantSendingDomains(tenantId, dto)
+    );
   }
 
   @Get('sender-domains')
@@ -233,7 +238,9 @@ export class TenantSendingDomainController {
     schema: TENANT_SENDER_DOMAINS_SUCCESS_SCHEMA,
   })
   async getTenantSenderDomains(@CurrentUser() user: AuthenticatedUser) {
-    return success(await this.tenantSendingDomainService.getTenantSenderSelection(user.tenantSchema));
+    return success(
+      await this.tenantSendingDomainService.getTenantSenderSelection(user.tenantSchema)
+    );
   }
 
   @Patch('sender-domains')
@@ -246,8 +253,10 @@ export class TenantSendingDomainController {
   })
   async saveTenantSenderDomains(
     @CurrentUser() user: AuthenticatedUser,
-    @Body() dto: SaveTenantSenderDomainsDto,
+    @Body() dto: SaveTenantSenderDomainsDto
   ) {
-    return success(await this.tenantSendingDomainService.saveTenantSenderSelection(user.tenantSchema, dto));
+    return success(
+      await this.tenantSendingDomainService.saveTenantSenderSelection(user.tenantSchema, dto)
+    );
   }
 }

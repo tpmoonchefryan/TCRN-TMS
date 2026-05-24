@@ -100,7 +100,7 @@ describe('PrivateShell', () => {
         <PrivateShell tenantId="tenant-ac">
           <div>Private content</div>
         </PrivateShell>
-      </UiLocaleProvider>,
+      </UiLocaleProvider>
     );
 
     await waitFor(() => {
@@ -116,7 +116,7 @@ describe('PrivateShell', () => {
         <PrivateShell tenantId="tenant-1">
           <div>Private content</div>
         </PrivateShell>
-      </UiLocaleProvider>,
+      </UiLocaleProvider>
     );
 
     fireEvent.click(screen.getByRole('button', { name: 'Account menu' }));
@@ -137,7 +137,7 @@ describe('PrivateShell', () => {
         <PrivateShell tenantId="tenant-1">
           <div>Private content</div>
         </PrivateShell>
-      </UiLocaleProvider>,
+      </UiLocaleProvider>
     );
 
     await waitFor(() => {

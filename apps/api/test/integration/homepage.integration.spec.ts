@@ -1,13 +1,14 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 // Homepage Module Integration Tests
-
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+
+import { PrismaClient } from '@tcrn/database';
+
 import { AppModule } from '../../src/app.module';
 import { bootstrapTestApp } from '../../src/testing/bootstrap-test-app';
-import { PrismaClient } from '@tcrn/database';
 
 // Check if database is available
 const checkDatabaseConnection = async (): Promise<boolean> => {
@@ -48,7 +49,7 @@ describeFn('Homepage Integration Tests', () => {
 
   afterAll(async () => {
     if (!dbAvailable) return;
-    
+
     await prisma?.$disconnect();
     await app?.close();
   });
@@ -57,8 +58,9 @@ describeFn('Homepage Integration Tests', () => {
     it('should return 404 for non-existent homepage path', async () => {
       if (!dbAvailable) return;
 
-      const response = await request(app.getHttpServer())
-        .get('/api/v1/external/homepage/non-existent-path-12345');
+      const response = await request(app.getHttpServer()).get(
+        '/api/v1/external/homepage/non-existent-path-12345'
+      );
 
       // Should return 404 for non-existent path
       expect([404, 200]).toContain(response.status);
@@ -69,8 +71,9 @@ describeFn('Homepage Integration Tests', () => {
 
       // Valid paths: lowercase alphanumeric with hyphens
       const invalidPath = 'UPPERCASE_PATH';
-      const response = await request(app.getHttpServer())
-        .get(`/api/v1/external/homepage/${invalidPath}`);
+      const response = await request(app.getHttpServer()).get(
+        `/api/v1/external/homepage/${invalidPath}`
+      );
 
       // May return 400 for invalid format or 404 for not found
       expect([400, 404]).toContain(response.status);
@@ -109,9 +112,9 @@ describeFn('Homepage Integration Tests', () => {
       // Messages should pass through profanity filter
       const profaneWords = ['badword1', 'badword2'];
       const cleanMessage = 'Hello, I am a fan!';
-      
+
       // Clean message should not contain profane words
-      profaneWords.forEach(word => {
+      profaneWords.forEach((word) => {
         expect(cleanMessage.toLowerCase()).not.toContain(word);
       });
     });
@@ -121,8 +124,8 @@ describeFn('Homepage Integration Tests', () => {
 describe('Homepage Theme Validation', () => {
   it('should define valid theme options', () => {
     const validThemes = ['default', 'dark', 'light', 'custom'];
-    
-    validThemes.forEach(theme => {
+
+    validThemes.forEach((theme) => {
       expect(['default', 'dark', 'light', 'custom']).toContain(theme);
     });
   });
@@ -132,11 +135,11 @@ describe('Homepage Theme Validation', () => {
     const validColors = ['#FF0000', '#00ff00', '#0000FF', '#ffffff'];
     const invalidColors = ['red', 'FF0000', '#GGG', '#12345'];
 
-    validColors.forEach(color => {
+    validColors.forEach((color) => {
       expect(/^#[0-9A-Fa-f]{6}$/.test(color)).toBe(true);
     });
 
-    invalidColors.forEach(color => {
+    invalidColors.forEach((color) => {
       expect(/^#[0-9A-Fa-f]{6}$/.test(color)).toBe(false);
     });
   });
@@ -167,9 +170,9 @@ describe('Homepage Section Types', () => {
       { type: 'marshmallow', order: 2 },
     ];
 
-    const orders = sections.map(s => s.order);
+    const orders = sections.map((s) => s.order);
     const uniqueOrders = new Set(orders);
-    
+
     expect(uniqueOrders.size).toBe(orders.length);
   });
 });

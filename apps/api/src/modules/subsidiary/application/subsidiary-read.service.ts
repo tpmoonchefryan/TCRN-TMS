@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable } from '@nestjs/common';
 
 import {
@@ -10,9 +9,7 @@ import { SubsidiaryReadRepository } from '../infrastructure/subsidiary-read.repo
 
 @Injectable()
 export class SubsidiaryReadApplicationService {
-  constructor(
-    private readonly subsidiaryReadRepository: SubsidiaryReadRepository,
-  ) {}
+  constructor(private readonly subsidiaryReadRepository: SubsidiaryReadRepository) {}
 
   findById(id: string, tenantSchema: string) {
     return this.subsidiaryReadRepository.findById(id, tenantSchema);
@@ -22,10 +19,7 @@ export class SubsidiaryReadApplicationService {
     return this.subsidiaryReadRepository.findByCode(code, tenantSchema);
   }
 
-  async list(
-    tenantSchema: string,
-    options: SubsidiaryListOptions = {},
-  ) {
+  async list(tenantSchema: string, options: SubsidiaryListOptions = {}) {
     const query = buildSubsidiaryListQuery(options);
     const data = await this.subsidiaryReadRepository.list(tenantSchema, query);
     const total = await this.subsidiaryReadRepository.count(tenantSchema, query);

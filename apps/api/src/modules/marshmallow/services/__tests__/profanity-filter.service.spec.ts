@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ProfanityFilterService } from '../profanity-filter.service';
@@ -33,10 +32,7 @@ describe('ProfanityFilterService', () => {
     mockRedisService.get.mockResolvedValue(null);
     mockRedisService.set.mockResolvedValue(undefined);
 
-    service = new ProfanityFilterService(
-      mockDatabaseService as never,
-      mockRedisService as never,
-    );
+    service = new ProfanityFilterService(mockDatabaseService as never, mockRedisService as never);
   });
 
   afterEach(() => {
@@ -80,16 +76,18 @@ describe('ProfanityFilterService', () => {
   });
 
   it('uses cached external patterns to reject matching domains', async () => {
-    mockRedisService.get.mockResolvedValueOnce(JSON.stringify([
-      {
-        id: 'pattern-1',
-        pattern: 'spam.com',
-        patternType: 'domain',
-        action: 'reject',
-        replacement: null,
-        severity: 'high',
-      },
-    ]));
+    mockRedisService.get.mockResolvedValueOnce(
+      JSON.stringify([
+        {
+          id: 'pattern-1',
+          pattern: 'spam.com',
+          patternType: 'domain',
+          action: 'reject',
+          replacement: null,
+          severity: 'high',
+        },
+      ])
+    );
 
     const result = await service.filter('Visit https://spam.com now', 'talent-123', {
       profanityFilterEnabled: false,
@@ -133,7 +131,7 @@ describe('ProfanityFilterService', () => {
           severity: 'medium',
         },
       ]),
-      300,
+      300
     );
   });
 

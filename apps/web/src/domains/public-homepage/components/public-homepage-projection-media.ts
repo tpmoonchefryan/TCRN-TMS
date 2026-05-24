@@ -4,11 +4,7 @@ import type {
   PublicPresencePublicProjection,
 } from '@tcrn/shared';
 
-type ProjectionLike =
-  | PublicPresenceProjection
-  | PublicPresencePublicProjection
-  | null
-  | undefined;
+type ProjectionLike = PublicPresenceProjection | PublicPresencePublicProjection | null | undefined;
 
 const preloadedProjectionMediaUrls = new Set<string>();
 
@@ -26,9 +22,7 @@ function collectSectionImageUrls(section: PublicPresenceProjectedSection): strin
   }
 }
 
-export function collectPublicHomepageProjectionImageUrls(
-  projection: ProjectionLike,
-): string[] {
+export function collectPublicHomepageProjectionImageUrls(projection: ProjectionLike): string[] {
   if (!projection) {
     return [];
   }
@@ -50,14 +44,14 @@ export function resetPublicHomepageProjectionMediaPreloadCache() {
 
 export async function preloadPublicHomepageProjectionMedia(
   projection: ProjectionLike,
-  imageFactory: () => HTMLImageElement = () => new Image(),
+  imageFactory: () => HTMLImageElement = () => new Image()
 ): Promise<void> {
   if (typeof window === 'undefined') {
     return;
   }
 
   const pendingUrls = collectPublicHomepageProjectionImageUrls(projection).filter(
-    (url) => !preloadedProjectionMediaUrls.has(url),
+    (url) => !preloadedProjectionMediaUrls.has(url)
   );
 
   if (pendingUrls.length === 0) {
@@ -93,7 +87,7 @@ export async function preloadPublicHomepageProjectionMedia(
           if (image.complete && image.naturalWidth > 0) {
             settle(true);
           }
-        }),
-    ),
+        })
+    )
   );
 }

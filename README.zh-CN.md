@@ -194,12 +194,12 @@ Loki 集成支持跨所有日志的全文搜索。
 
 当前真实运行时的性能抓手：
 
-| 特性           | 实现方式                                  |
-| -------------- | ----------------------------------------- |
+| 特性           | 实现方式                                   |
+| -------------- | ------------------------------------------ |
 | **异步工作流** | BullMQ Worker 承接邮件、导入导出、报表任务 |
-| **权限缓存**   | Redis 权限快照与限流                      |
-| **租户隔离**   | tenant-specific PostgreSQL schemas        |
-| **文件分发**   | MinIO 预签名 URL 下载                     |
+| **权限缓存**   | Redis 权限快照与限流                       |
+| **租户隔离**   | tenant-specific PostgreSQL schemas         |
+| **文件分发**   | MinIO 预签名 URL 下载                      |
 
 ### 浏览器运行时边界
 
@@ -281,23 +281,23 @@ Loki 集成支持跨所有日志的全文搜索。
 
 ## 🛠️ 技术栈
 
-| 层级           | 技术               | 版本    |
-| -------------- | ------------------ | ------- |
-| **API Runtime** | NestJS            | 11.1.6  |
-|                | TypeScript         | 5.9.3   |
-| **Worker**     | BullMQ             | 5.66.5  |
-| **契约 / Schema** | Zod             | 4.x     |
-|                | Prisma ORM         | 6.14.0  |
-| **数据库**     | PostgreSQL         | 16      |
-|                | Redis              | 7       |
-| **存储**       | MinIO              | Latest  |
-| **消息**       | NATS JetStream     | 2       |
-| **可观测性**   | OpenTelemetry      | -       |
-|                | Prometheus         | -       |
-|                | Grafana Loki       | 2.9.0   |
-|                | Grafana Tempo      | -       |
-| **部署**       | Docker             | -       |
-|                | Kubernetes         | -       |
+| 层级              | 技术           | 版本   |
+| ----------------- | -------------- | ------ |
+| **API Runtime**   | NestJS         | 11.1.6 |
+|                   | TypeScript     | 5.9.3  |
+| **Worker**        | BullMQ         | 5.66.5 |
+| **契约 / Schema** | Zod            | 4.x    |
+|                   | Prisma ORM     | 6.14.0 |
+| **数据库**        | PostgreSQL     | 16     |
+|                   | Redis          | 7      |
+| **存储**          | MinIO          | Latest |
+| **消息**          | NATS JetStream | 2      |
+| **可观测性**      | OpenTelemetry  | -      |
+|                   | Prometheus     | -      |
+|                   | Grafana Loki   | 2.9.0  |
+|                   | Grafana Tempo  | -      |
+| **部署**          | Docker         | -      |
+|                   | Kubernetes     | -      |
 
 以上基础设施的当前运行状态如下：
 

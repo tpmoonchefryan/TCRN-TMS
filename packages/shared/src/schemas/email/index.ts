@@ -1,6 +1,5 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 // Email Module Zod Schemas
-
 import { z } from 'zod';
 
 import { SUPPORTED_UI_LOCALES } from '../../constants/locale';
@@ -43,19 +42,21 @@ export const TenantEmailSenderOverrideSchema = z.object({
   replyTo: z.string().email('Invalid reply-to address').optional(),
 });
 
-export const SaveEmailConfigSchema = z.object({
-  provider: EmailProviderSchema,
-  tencentSes: TencentSesConfigSchema.optional(),
-  smtp: SmtpConfigSchema.optional(),
-  tenantSenderOverrides: z.record(z.string(), TenantEmailSenderOverrideSchema).optional(),
-}).refine(
-  (data) => {
-    if (data.provider === 'tencent_ses') return !!data.tencentSes;
-    if (data.provider === 'smtp') return !!data.smtp;
-    return true;
-  },
-  { message: 'Configuration must match selected provider' }
-);
+export const SaveEmailConfigSchema = z
+  .object({
+    provider: EmailProviderSchema,
+    tencentSes: TencentSesConfigSchema.optional(),
+    smtp: SmtpConfigSchema.optional(),
+    tenantSenderOverrides: z.record(z.string(), TenantEmailSenderOverrideSchema).optional(),
+  })
+  .refine(
+    (data) => {
+      if (data.provider === 'tencent_ses') return !!data.tencentSes;
+      if (data.provider === 'smtp') return !!data.smtp;
+      return true;
+    },
+    { message: 'Configuration must match selected provider' }
+  );
 
 export const TestEmailSchema = z.object({
   testEmail: z.string().email('Invalid email address'),

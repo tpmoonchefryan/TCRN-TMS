@@ -21,7 +21,7 @@ describe('buildTalentEffectiveCustomDomains', () => {
         legacyConfig,
         bindingRecords: [],
         selectedInheritedDomainIds: [],
-      }),
+      })
     ).toEqual([
       expect.objectContaining({
         id: 'legacy:legacy.example.com',

@@ -1,5 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 import { Injectable } from '@nestjs/common';
+
 import { type RequestContext } from '@tcrn/shared';
 
 import { CustomerArchiveAccessService } from '../../customer/application/customer-archive-access.service';
@@ -29,21 +30,17 @@ export class ImportJobService {
     techEventLogService: TechEventLogService,
     private readonly importJobReadApplicationService: ImportJobReadApplicationService = new ImportJobReadApplicationService(
       new ImportJobReadRepository(databaseService),
-      new CustomerArchiveAccessService(
-        new CustomerArchiveRepository(databaseService),
-      ),
+      new CustomerArchiveAccessService(new CustomerArchiveRepository(databaseService))
     ),
     private readonly importJobWriteApplicationService: ImportJobWriteApplicationService = new ImportJobWriteApplicationService(
       new ImportJobWriteRepository(databaseService),
       techEventLogService,
-      new CustomerArchiveAccessService(
-        new CustomerArchiveRepository(databaseService),
-      ),
+      new CustomerArchiveAccessService(new CustomerArchiveRepository(databaseService))
     ),
     private readonly importJobStateApplicationService: ImportJobStateApplicationService = new ImportJobStateApplicationService(
       new ImportJobStateRepository(databaseService),
-      techEventLogService,
-    ),
+      techEventLogService
+    )
   ) {
     void minioService;
   }
@@ -58,7 +55,7 @@ export class ImportJobService {
     fileSize: number,
     totalRows: number,
     consumerCode: string | undefined,
-    context: RequestContext,
+    context: RequestContext
   ): Promise<CreatedImportJobResult> {
     return this.importJobWriteApplicationService.createJob(
       jobType,
@@ -67,14 +64,18 @@ export class ImportJobService {
       fileSize,
       totalRows,
       consumerCode,
-      context,
+      context
     );
   }
 
   /**
    * Get import job by ID (multi-tenant aware)
    */
-  async findById(jobId: string, talentId: string, context: RequestContext): Promise<ImportJobResponse> {
+  async findById(
+    jobId: string,
+    talentId: string,
+    context: RequestContext
+  ): Promise<ImportJobResponse> {
     return this.importJobReadApplicationService.findById(jobId, talentId, context);
   }
 
@@ -84,7 +85,7 @@ export class ImportJobService {
   async findMany(
     talentId: string,
     query: ImportJobQueryDto,
-    context: RequestContext,
+    context: RequestContext
   ): Promise<{ items: ImportJobResponse[]; total: number }> {
     return this.importJobReadApplicationService.findMany(talentId, query, context);
   }
@@ -98,7 +99,7 @@ export class ImportJobService {
     successRows: number,
     failedRows: number,
     warningRows: number,
-    tenantSchema: string,
+    tenantSchema: string
   ): Promise<void> {
     await this.importJobStateApplicationService.updateProgress(
       jobId,
@@ -106,7 +107,7 @@ export class ImportJobService {
       successRows,
       failedRows,
       warningRows,
-      tenantSchema,
+      tenantSchema
     );
   }
 
@@ -118,14 +119,14 @@ export class ImportJobService {
     successRows: number,
     failedRows: number,
     warningRows: number,
-    tenantSchema: string,
+    tenantSchema: string
   ): Promise<void> {
     await this.importJobStateApplicationService.completeJob(
       jobId,
       successRows,
       failedRows,
       warningRows,
-      tenantSchema,
+      tenantSchema
     );
   }
 
@@ -145,7 +146,7 @@ export class ImportJobService {
     errorCode: string,
     errorMessage: string,
     originalData: string,
-    tenantSchema: string,
+    tenantSchema: string
   ): Promise<void> {
     await this.importJobStateApplicationService.addError(
       jobId,
@@ -153,14 +154,18 @@ export class ImportJobService {
       errorCode,
       errorMessage,
       originalData,
-      tenantSchema,
+      tenantSchema
     );
   }
 
   /**
    * Get job errors (multi-tenant aware)
    */
-  async getErrors(jobId: string, talentId: string, context: RequestContext): Promise<ImportError[]> {
+  async getErrors(
+    jobId: string,
+    talentId: string,
+    context: RequestContext
+  ): Promise<ImportError[]> {
     return this.importJobReadApplicationService.getErrors(jobId, talentId, context);
   }
 }

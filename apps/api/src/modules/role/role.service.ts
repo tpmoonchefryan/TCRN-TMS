@@ -1,6 +1,11 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { prisma } from '@tcrn/database';
 import {
   ErrorCodes,
@@ -77,7 +82,8 @@ export class RoleService {
       orderBy = `${dbField} ${isDesc ? 'DESC' : 'ASC'}`;
     }
 
-    const roles = await prisma.$queryRawUnsafe<RoleData[]>(`
+    const roles = await prisma.$queryRawUnsafe<RoleData[]>(
+      `
       SELECT 
         id, code, name,
         description, is_system as "isSystem", is_active as "isActive",
@@ -85,18 +91,26 @@ export class RoleService {
       FROM "${tenantSchema}".role
       WHERE ${whereClause}
       ORDER BY ${orderBy}
-    `, ...params);
+    `,
+      ...params
+    );
 
     // Get permission and user counts
     const result = await Promise.all(
       roles.map(async (role) => {
         const [permCount, userCount] = await Promise.all([
-          prisma.$queryRawUnsafe<Array<{ count: bigint }>>(`
+          prisma.$queryRawUnsafe<Array<{ count: bigint }>>(
+            `
             SELECT COUNT(*) as count FROM "${tenantSchema}".role_policy WHERE role_id = $1::uuid
-          `, role.id),
-          prisma.$queryRawUnsafe<Array<{ count: bigint }>>(`
+          `,
+            role.id
+          ),
+          prisma.$queryRawUnsafe<Array<{ count: bigint }>>(
+            `
             SELECT COUNT(DISTINCT user_id) as count FROM "${tenantSchema}".user_role WHERE role_id = $1::uuid
-          `, role.id),
+          `,
+            role.id
+          ),
         ]);
 
         return {
@@ -114,14 +128,17 @@ export class RoleService {
    * Find role by ID
    */
   async findById(id: string, tenantSchema: string): Promise<RoleData | null> {
-    const results = await prisma.$queryRawUnsafe<RoleData[]>(`
+    const results = await prisma.$queryRawUnsafe<RoleData[]>(
+      `
       SELECT 
         id, code, name,
         description, is_system as "isSystem", is_active as "isActive",
         created_at as "createdAt", updated_at as "updatedAt", version
       FROM "${tenantSchema}".role
       WHERE id = $1::uuid
-    `, id);
+    `,
+      id
+    );
     return results[0] || null;
   }
 
@@ -129,28 +146,38 @@ export class RoleService {
    * Find role by code
    */
   async findByCode(code: string, tenantSchema: string): Promise<RoleData | null> {
-    const results = await prisma.$queryRawUnsafe<RoleData[]>(`
+    const results = await prisma.$queryRawUnsafe<RoleData[]>(
+      `
       SELECT 
         id, code, name,
         description, is_system as "isSystem", is_active as "isActive",
         created_at as "createdAt", updated_at as "updatedAt", version
       FROM "${tenantSchema}".role
       WHERE code = $1
-    `, code);
+    `,
+      code
+    );
     return results[0] || null;
   }
 
   /**
    * Get role permissions
    */
-  async getRolePermissions(roleId: string, tenantSchema: string, language: string = 'en'): Promise<RolePermission[]> {
-    const permissions = await prisma.$queryRawUnsafe<Array<{
-      id: string;
-      resourceCode: string;
-      action: string;
-      effect: RolePermission['effect'];
-      name: string;
-    }>>(`
+  async getRolePermissions(
+    roleId: string,
+    tenantSchema: string,
+    language: string = 'en'
+  ): Promise<RolePermission[]> {
+    const permissions = await prisma.$queryRawUnsafe<
+      Array<{
+        id: string;
+        resourceCode: string;
+        action: string;
+        effect: RolePermission['effect'];
+        name: string;
+      }>
+    >(
+      `
       SELECT 
         p.id,
         r.code as "resourceCode",
@@ -162,7 +189,9 @@ export class RoleService {
       JOIN "${tenantSchema}".resource r ON p.resource_id = r.id
       WHERE rp.role_id = $1::uuid
       ORDER BY r.code, p.action
-    `, roleId);
+    `,
+      roleId
+    );
 
     return permissions.flatMap((permission) => {
       const resourceDefinition = getRbacResourceDefinition(permission.resourceCode);
@@ -174,12 +203,14 @@ export class RoleService {
         return [];
       }
 
-      return [{
-        ...permission,
-        resourceCode: resourceDefinition.code,
-        action: permission.action,
-        name: pickLocalizedText(resourceDefinition.name, language),
-      }];
+      return [
+        {
+          ...permission,
+          resourceCode: resourceDefinition.code,
+          action: permission.action,
+          name: pickLocalizedText(resourceDefinition.name, language),
+        },
+      ];
     });
   }
 
@@ -206,7 +237,8 @@ export class RoleService {
     }
 
     // Create role
-    const results = await prisma.$queryRawUnsafe<RoleData[]>(`
+    const results = await prisma.$queryRawUnsafe<RoleData[]>(
+      `
       INSERT INTO "${tenantSchema}".role 
         (id, code, name, description, is_system, is_active, 
          created_at, updated_at, created_by, updated_by, version)
@@ -216,17 +248,26 @@ export class RoleService {
         id, code, name,
         description, is_system as "isSystem", is_active as "isActive",
         created_at as "createdAt", updated_at as "updatedAt", version
-    `, data.code, JSON.stringify(data.name), data.description || null, userId);
+    `,
+      data.code,
+      JSON.stringify(data.name),
+      data.description || null,
+      userId
+    );
 
     const role = results[0];
 
     // Add permissions
     if (data.permissionIds.length > 0) {
       for (const permId of data.permissionIds) {
-        await prisma.$executeRawUnsafe(`
+        await prisma.$executeRawUnsafe(
+          `
           INSERT INTO "${tenantSchema}".role_policy (id, role_id, policy_id, created_at)
           VALUES (gen_random_uuid(), $1::uuid, $2::uuid, now())
-        `, role.id, permId);
+        `,
+          role.id,
+          permId
+        );
       }
     }
 
@@ -278,7 +319,8 @@ export class RoleService {
     updates.push('updated_by = $2::uuid');
     updates.push('version = version + 1');
 
-    const results = await prisma.$queryRawUnsafe<RoleData[]>(`
+    const results = await prisma.$queryRawUnsafe<RoleData[]>(
+      `
       UPDATE "${tenantSchema}".role
       SET ${updates.join(', ')}
       WHERE id = $1
@@ -286,7 +328,9 @@ export class RoleService {
         id, code, name,
         description, is_system as "isSystem", is_active as "isActive",
         created_at as "createdAt", updated_at as "updatedAt", version
-    `, ...params);
+    `,
+      ...params
+    );
 
     return results[0];
   }
@@ -324,24 +368,35 @@ export class RoleService {
     }
 
     // Delete existing permissions
-    await prisma.$executeRawUnsafe(`
+    await prisma.$executeRawUnsafe(
+      `
       DELETE FROM "${tenantSchema}".role_policy WHERE role_id = $1::uuid
-    `, roleId);
+    `,
+      roleId
+    );
 
     // Insert new permissions
     for (const permId of permissionIds) {
-      await prisma.$executeRawUnsafe(`
+      await prisma.$executeRawUnsafe(
+        `
         INSERT INTO "${tenantSchema}".role_policy (id, role_id, policy_id, created_at)
         VALUES (gen_random_uuid(), $1::uuid, $2::uuid, now())
-      `, roleId, permId);
+      `,
+        roleId,
+        permId
+      );
     }
 
     // Update role version
-    await prisma.$executeRawUnsafe(`
+    await prisma.$executeRawUnsafe(
+      `
       UPDATE "${tenantSchema}".role 
       SET updated_at = now(), updated_by = $2::uuid, version = version + 1
       WHERE id = $1
-    `, roleId, userId);
+    `,
+      roleId,
+      userId
+    );
 
     // Refresh permission snapshots for affected users
     const affectedUsers = await this.snapshotService.refreshRoleSnapshots(tenantSchema, roleId);
@@ -359,7 +414,12 @@ export class RoleService {
   /**
    * Deactivate role
    */
-  async deactivate(roleId: string, tenantSchema: string, version: number, userId: string): Promise<RoleData> {
+  async deactivate(
+    roleId: string,
+    tenantSchema: string,
+    version: number,
+    userId: string
+  ): Promise<RoleData> {
     const current = await this.findById(roleId, tenantSchema);
     if (!current) {
       throw new NotFoundException({
@@ -382,11 +442,15 @@ export class RoleService {
       });
     }
 
-    await prisma.$executeRawUnsafe(`
+    await prisma.$executeRawUnsafe(
+      `
       UPDATE "${tenantSchema}".role
       SET is_active = false, updated_at = now(), updated_by = $2::uuid, version = version + 1
       WHERE id = $1
-    `, roleId, userId);
+    `,
+      roleId,
+      userId
+    );
 
     // Refresh snapshots
     await this.snapshotService.refreshRoleSnapshots(tenantSchema, roleId);
@@ -404,7 +468,12 @@ export class RoleService {
   /**
    * Reactivate role
    */
-  async reactivate(roleId: string, tenantSchema: string, version: number, userId: string): Promise<RoleData> {
+  async reactivate(
+    roleId: string,
+    tenantSchema: string,
+    version: number,
+    userId: string
+  ): Promise<RoleData> {
     const current = await this.findById(roleId, tenantSchema);
     if (!current) {
       throw new NotFoundException({
@@ -420,11 +489,15 @@ export class RoleService {
       });
     }
 
-    await prisma.$executeRawUnsafe(`
+    await prisma.$executeRawUnsafe(
+      `
       UPDATE "${tenantSchema}".role
       SET is_active = true, updated_at = now(), updated_by = $2::uuid, version = version + 1
       WHERE id = $1
-    `, roleId, userId);
+    `,
+      roleId,
+      userId
+    );
 
     // Refresh snapshots
     await this.snapshotService.refreshRoleSnapshots(tenantSchema, roleId);

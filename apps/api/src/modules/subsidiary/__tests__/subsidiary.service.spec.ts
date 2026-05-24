@@ -1,8 +1,10 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { prisma } from '@tcrn/database';
 import { ErrorCodes, createLocalizedText } from '@tcrn/shared';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { SubsidiaryService } from '../subsidiary.service';
 
 // Mock @tcrn/database
 vi.mock('@tcrn/database', () => ({
@@ -11,8 +13,6 @@ vi.mock('@tcrn/database', () => ({
     $executeRawUnsafe: vi.fn(),
   },
 }));
-
-import { SubsidiaryService } from '../subsidiary.service';
 
 const mockPrisma = prisma as unknown as {
   $queryRawUnsafe: ReturnType<typeof vi.fn>;

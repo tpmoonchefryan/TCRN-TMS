@@ -1,13 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
-import {
-    Controller,
-    Get,
-    NotFoundException,
-    Query,
-    UseGuards,
-} from '@nestjs/common';
+import { Controller, Get, NotFoundException, Query, UseGuards } from '@nestjs/common';
 import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+
 import { ErrorCodes } from '@tcrn/shared';
 
 import { Public } from '../../../common/decorators';
@@ -84,13 +78,18 @@ export class DomainLookupController {
   @UseGuards(RateLimiterGuard)
   @ApiOperation({ summary: 'Lookup custom domain routing' })
   @ApiQuery({ name: 'domain', required: true, description: 'The custom domain to lookup' })
-  @ApiQuery({ name: 'talentCode', required: false, description: 'Talent code required for tenant/subsidiary inherited domains' })
+  @ApiQuery({
+    name: 'talentCode',
+    required: false,
+    description: 'Talent code required for tenant/subsidiary inherited domains',
+  })
   @ApiResponse({ status: 200, description: 'Domain mapping found', schema: DOMAIN_LOOKUP_SCHEMA })
-  @ApiResponse({ status: 404, description: 'Domain not found or not verified', schema: DOMAIN_LOOKUP_NOT_FOUND_SCHEMA })
-  async lookupDomain(
-    @Query('domain') domain: string,
-    @Query('talentCode') talentCode?: string,
-  ) {
+  @ApiResponse({
+    status: 404,
+    description: 'Domain not found or not verified',
+    schema: DOMAIN_LOOKUP_NOT_FOUND_SCHEMA,
+  })
+  async lookupDomain(@Query('domain') domain: string, @Query('talentCode') talentCode?: string) {
     if (!domain || domain.trim().length === 0) {
       throw new NotFoundException({
         code: ErrorCodes.RES_NOT_FOUND,

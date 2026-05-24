@@ -1,14 +1,8 @@
 import 'reflect-metadata';
-
 import { describe, expect, it } from 'vitest';
 
-import {
-  GlobalConfigController,
-  SetConfigDto,
-} from '../modules/config/global-config.controller';
-import {
-  EmailConfigController,
-} from '../modules/email/controllers/email-config.controller';
+import { GlobalConfigController, SetConfigDto } from '../modules/config/global-config.controller';
+import { EmailConfigController } from '../modules/email/controllers/email-config.controller';
 import {
   SaveEmailConfigDto,
   SmtpConfigDto,
@@ -27,28 +21,20 @@ const API_MODEL_PROPERTIES_ARRAY_METADATA_KEY = 'swagger/apiModelPropertiesArray
 
 type ControllerClass = { prototype: object };
 
-const getResponseStatuses = (
-  controllerClass: ControllerClass,
-  methodName: string,
-): string[] => {
+const getResponseStatuses = (controllerClass: ControllerClass, methodName: string): string[] => {
   const prototype = controllerClass.prototype as Record<string, unknown>;
-  const metadata = Reflect.getMetadata(
-    API_RESPONSE_METADATA_KEY,
-    prototype[methodName],
-  ) as Record<string, unknown> | undefined;
+  const metadata = Reflect.getMetadata(API_RESPONSE_METADATA_KEY, prototype[methodName]) as
+    | Record<string, unknown>
+    | undefined;
 
   return Object.keys(metadata ?? {}).sort();
 };
 
-const getPathParamNames = (
-  controllerClass: ControllerClass,
-  methodName: string,
-): string[] => {
+const getPathParamNames = (controllerClass: ControllerClass, methodName: string): string[] => {
   const prototype = controllerClass.prototype as Record<string, unknown>;
-  const metadata = Reflect.getMetadata(
-    API_PARAMETERS_METADATA_KEY,
-    prototype[methodName],
-  ) as Array<{ in?: string; name?: string }> | undefined;
+  const metadata = Reflect.getMetadata(API_PARAMETERS_METADATA_KEY, prototype[methodName]) as
+    | Array<{ in?: string; name?: string }>
+    | undefined;
 
   return (metadata ?? [])
     .filter((parameter) => parameter.in === 'path' && typeof parameter.name === 'string')
@@ -59,7 +45,7 @@ const getPathParamNames = (
 const getDocumentedDtoProperties = (dtoClass: { prototype: object }): string[] => {
   const metadata = Reflect.getMetadata(
     API_MODEL_PROPERTIES_ARRAY_METADATA_KEY,
-    dtoClass.prototype,
+    dtoClass.prototype
   ) as string[] | undefined;
 
   return (metadata ?? []).map((property) => property.replace(/^:/, '')).sort();
@@ -110,7 +96,9 @@ describe('Swagger tenant-root config family contract', () => {
   });
 
   it('documents path params for settings scope routes', () => {
-    expect(getPathParamNames(SettingsController, 'getSubsidiarySettings')).toEqual(['subsidiaryId']);
+    expect(getPathParamNames(SettingsController, 'getSubsidiarySettings')).toEqual([
+      'subsidiaryId',
+    ]);
     expect(getPathParamNames(SettingsController, 'updateSubsidiarySettings')).toEqual([
       'subsidiaryId',
     ]);

@@ -1,15 +1,13 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 /**
  * Config Entity Types and Interfaces
  * NOTE: All entity types use singular form (e.g., 'customer-status' not 'customer-statuses')
  */
-
 import type { LocalizedText, PartialLocalizedText } from '@tcrn/shared';
 
 export type OwnerType = 'tenant' | 'subsidiary' | 'talent';
 
-export type ConfigEntityType = 
+export type ConfigEntityType =
   | 'channel-category'
   | 'artist-stage'
   | 'social-platform'
@@ -169,8 +167,8 @@ export const CONFIG_TABLE_NAMES: Record<ConfigEntityType, string> = {
   'membership-class': 'membership_class',
   'membership-type': 'membership_type',
   'membership-level': 'membership_level',
-  'consent': 'consent',
-  'consumer': 'consumer',
+  consent: 'consent',
+  consumer: 'consumer',
   'blocklist-entry': 'blocklist_entry',
   'profile-store': 'profile_store',
 };
@@ -189,9 +187,35 @@ export const CONFIG_EXTRA_FIELDS: Record<ConfigEntityType, string[]> = {
   'membership-class': [],
   'membership-type': ['membership_class_id', 'external_control', 'default_renewal_days'],
   'membership-level': ['membership_type_id', 'rank', 'color', 'badge_url'],
-  'consent': ['consent_version', 'effective_from', 'expires_at', 'content_markdown', 'content_url', 'is_required'],
-  'consumer': ['consumer_category', 'contact_name', 'contact_email', 'api_key_hash', 'api_key_prefix', 'allowed_ips', 'rate_limit', 'notes'],
-  'blocklist-entry': ['pattern', 'pattern_type', 'action', 'replacement', 'scope', 'severity', 'category', 'match_count', 'last_matched_at'],
+  consent: [
+    'consent_version',
+    'effective_from',
+    'expires_at',
+    'content_markdown',
+    'content_url',
+    'is_required',
+  ],
+  consumer: [
+    'consumer_category',
+    'contact_name',
+    'contact_email',
+    'api_key_hash',
+    'api_key_prefix',
+    'allowed_ips',
+    'rate_limit',
+    'notes',
+  ],
+  'blocklist-entry': [
+    'pattern',
+    'pattern_type',
+    'action',
+    'replacement',
+    'scope',
+    'severity',
+    'category',
+    'match_count',
+    'last_matched_at',
+  ],
   'profile-store': ['pii_proxy_url', 'pii_service_config_id', 'is_default'],
 };
 
@@ -347,6 +371,4 @@ export const CONFIG_HAS_AUDIT: Set<ConfigEntityType> = new Set([
   'profile-store',
 ]);
 
-export const CONFIG_TENANT_ONLY_SCOPED_ENTITIES: Set<ConfigEntityType> = new Set([
-  'artist-stage',
-]);
+export const CONFIG_TENANT_ONLY_SCOPED_ENTITIES: Set<ConfigEntityType> = new Set(['artist-stage']);

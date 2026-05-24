@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+
 import { Prisma, prisma } from '@tcrn/database';
 import {
   ErrorCodes,
@@ -78,9 +78,11 @@ export interface SystemDictionaryType {
 @Injectable()
 export class DictionaryService {
   async getTypes(
-    language = 'en',
+    language = 'en'
   ): Promise<Array<{ type: string; name: string; description: string | null; count: number }>> {
-    const types = await prisma.$queryRawUnsafe<Array<StoredSystemDictionaryTypeRaw & { itemCount: bigint }>>(
+    const types = await prisma.$queryRawUnsafe<
+      Array<StoredSystemDictionaryTypeRaw & { itemCount: bigint }>
+    >(
       `
         SELECT
           d.id,
@@ -99,7 +101,7 @@ export class DictionaryService {
         WHERE d.is_active = true
         GROUP BY d.id
         ORDER BY d.sort_order ASC, d.code ASC
-      `,
+      `
     );
 
     return types.map((type) => {
@@ -131,7 +133,7 @@ export class DictionaryService {
         WHERE code = $1
         LIMIT 1
       `,
-      typeCode,
+      typeCode
     );
 
     return results[0] ? this.decorateType(results[0], language) : null;
@@ -145,20 +147,14 @@ export class DictionaryService {
       page?: number;
       pageSize?: number;
       search?: string;
-    } = {},
+    } = {}
   ): Promise<{ data: SystemDictionaryItem[]; total: number } | null> {
     const typeExists = await this.hasType(typeCode);
     if (!typeExists) {
       return null;
     }
 
-    const {
-      search,
-      language = 'en',
-      includeInactive = false,
-      page = 1,
-      pageSize = 500,
-    } = options;
+    const { search, language = 'en', includeInactive = false, page = 1, pageSize = 500 } = options;
     let whereClause = 'dictionary_code = $1';
     const params: unknown[] = [typeCode];
     let paramIndex = 2;
@@ -179,7 +175,7 @@ export class DictionaryService {
         FROM public.system_dictionary_item
         WHERE ${whereClause}
       `,
-      ...params,
+      ...params
     );
     const total = Number(countResult[0]?.count ?? 0);
 
@@ -203,7 +199,7 @@ export class DictionaryService {
         ORDER BY sort_order ASC, code ASC
         LIMIT ${pageSize} OFFSET ${offset}
       `,
-      ...params,
+      ...params
     );
 
     return {
@@ -215,7 +211,7 @@ export class DictionaryService {
   async getItem(
     typeCode: string,
     itemCode: string,
-    language = 'en',
+    language = 'en'
   ): Promise<SystemDictionaryItem | null> {
     const results = await prisma.$queryRawUnsafe<StoredSystemDictionaryItemRaw[]>(
       `
@@ -236,7 +232,7 @@ export class DictionaryService {
         LIMIT 1
       `,
       typeCode,
-      itemCode,
+      itemCode
     );
 
     return results[0] ? this.decorateItem(results[0], language) : null;
@@ -261,7 +257,7 @@ export class DictionaryService {
         WHERE id = $1::uuid
         LIMIT 1
       `,
-      id,
+      id
     );
 
     return results[0] ? this.decorateItem(results[0], language) : null;
@@ -274,7 +270,7 @@ export class DictionaryService {
           SELECT 1 FROM public.system_dictionary WHERE code = $1 AND is_active = true
         ) as exists
       `,
-      typeCode,
+      typeCode
     );
     return results[0]?.exists ?? false;
   }
@@ -293,7 +289,7 @@ export class DictionaryService {
         WHERE code = $1
         LIMIT 1
       `,
-      data.code,
+      data.code
     );
 
     if (existing.length > 0) {
@@ -350,7 +346,7 @@ export class DictionaryService {
       stringifyLocalizedText(name),
       stringifyLocalizedText(normalizeLocalizedText(data.description, name.en)),
       data.extraData ? JSON.stringify(data.extraData) : null,
-      data.sortOrder ?? 0,
+      data.sortOrder ?? 0
     );
 
     return this.decorateType(results[0], 'en');
@@ -364,7 +360,7 @@ export class DictionaryService {
       name?: PartialLocalizedText;
       sortOrder?: number;
       version: number;
-    },
+    }
   ): Promise<SystemDictionaryType> {
     const current = await this.getType(code);
     if (!current) {
@@ -394,10 +390,11 @@ export class DictionaryService {
 
     if (data.description !== undefined) {
       updates.push(`description = $${paramIndex++}::jsonb`);
-      params.push(stringifyLocalizedText(normalizeLocalizedText(
-        { ...current.description, ...data.description },
-        nextName.en,
-      )));
+      params.push(
+        stringifyLocalizedText(
+          normalizeLocalizedText({ ...current.description, ...data.description }, nextName.en)
+        )
+      );
     }
 
     if (data.extraData !== undefined) {
@@ -434,7 +431,7 @@ export class DictionaryService {
           updated_at as "updatedAt",
           version
       `,
-      ...params,
+      ...params
     );
 
     return this.decorateType(results[0], 'en');
@@ -448,7 +445,7 @@ export class DictionaryService {
       extraData?: Record<string, unknown>;
       name: LocalizedText;
       sortOrder?: number;
-    },
+    }
   ): Promise<SystemDictionaryItem> {
     const typeExists = await this.hasType(typeCode);
     if (!typeExists) {
@@ -466,7 +463,7 @@ export class DictionaryService {
         LIMIT 1
       `,
       typeCode,
-      data.code,
+      data.code
     );
 
     if (existing.length > 0) {
@@ -527,7 +524,7 @@ export class DictionaryService {
       stringifyLocalizedText(name),
       stringifyLocalizedText(normalizeLocalizedText(data.description, name.en)),
       data.sortOrder ?? 0,
-      data.extraData ? JSON.stringify(data.extraData) : null,
+      data.extraData ? JSON.stringify(data.extraData) : null
     );
 
     return this.decorateItem(results[0], 'en');
@@ -541,7 +538,7 @@ export class DictionaryService {
       name?: PartialLocalizedText;
       sortOrder?: number;
       version: number;
-    },
+    }
   ): Promise<SystemDictionaryItem> {
     const current = await this.getItemById(id);
     if (!current) {
@@ -571,10 +568,11 @@ export class DictionaryService {
 
     if (data.description !== undefined) {
       updates.push(`description = $${paramIndex++}::jsonb`);
-      params.push(stringifyLocalizedText(normalizeLocalizedText(
-        { ...current.description, ...data.description },
-        nextName.en,
-      )));
+      params.push(
+        stringifyLocalizedText(
+          normalizeLocalizedText({ ...current.description, ...data.description }, nextName.en)
+        )
+      );
     }
 
     if (data.sortOrder !== undefined) {
@@ -612,7 +610,7 @@ export class DictionaryService {
           updated_at as "updatedAt",
           version
       `,
-      ...params,
+      ...params
     );
 
     return this.decorateItem(results[0], 'en');
@@ -652,7 +650,7 @@ export class DictionaryService {
           updated_at as "updatedAt",
           version
       `,
-      id,
+      id
     );
 
     return this.decorateItem(results[0], 'en');
@@ -692,7 +690,7 @@ export class DictionaryService {
           updated_at as "updatedAt",
           version
       `,
-      id,
+      id
     );
 
     return this.decorateItem(results[0], 'en');
@@ -700,7 +698,7 @@ export class DictionaryService {
 
   private decorateType(
     entity: StoredSystemDictionaryTypeRaw,
-    language: string,
+    language: string
   ): SystemDictionaryType {
     const name = readLocalizedText(entity.name, 'system_dictionary.name');
     const description = readLocalizedText(entity.description, 'system_dictionary.description');
@@ -716,7 +714,7 @@ export class DictionaryService {
 
   private decorateItem(
     entity: StoredSystemDictionaryItemRaw,
-    language: string,
+    language: string
   ): SystemDictionaryItem {
     const name = readLocalizedText(entity.name, 'system_dictionary_item.name');
     const description = readLocalizedText(entity.description, 'system_dictionary_item.description');

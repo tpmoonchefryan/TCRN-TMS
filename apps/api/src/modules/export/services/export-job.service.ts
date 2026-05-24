@@ -1,11 +1,9 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { InjectQueue } from '@nestjs/bullmq';
-import {
-  Injectable,
-} from '@nestjs/common';
-import { type RequestContext } from '@tcrn/shared';
+import { Injectable } from '@nestjs/common';
 import type { Queue } from 'bullmq';
+
+import { type RequestContext } from '@tcrn/shared';
 
 import { CustomerArchiveAccessService } from '../../customer/application/customer-archive-access.service';
 import { CustomerArchiveRepository } from '../../customer/infrastructure/customer-archive.repository';
@@ -22,9 +20,7 @@ import {
   type ExportJobResponse,
 } from '../dto/export.dto';
 import { ExportJobReadRepository } from '../infrastructure/export-job-read.repository';
-import {
-  ExportJobStateRepository,
-} from '../infrastructure/export-job-state.repository';
+import { ExportJobStateRepository } from '../infrastructure/export-job-state.repository';
 import { ExportJobWriteRepository } from '../infrastructure/export-job-write.repository';
 
 @Injectable()
@@ -36,23 +32,19 @@ export class ExportJobService {
     @InjectQueue(QUEUE_NAMES.EXPORT) private readonly exportQueue: Queue,
     private readonly exportJobReadApplicationService: ExportJobReadApplicationService = new ExportJobReadApplicationService(
       new ExportJobReadRepository(databaseService),
-      new CustomerArchiveAccessService(
-        new CustomerArchiveRepository(databaseService),
-      ),
-      minioService,
+      new CustomerArchiveAccessService(new CustomerArchiveRepository(databaseService)),
+      minioService
     ),
     private readonly exportJobWriteApplicationService: ExportJobWriteApplicationService = new ExportJobWriteApplicationService(
       new ExportJobWriteRepository(databaseService),
       techEventLogService,
-      new CustomerArchiveAccessService(
-        new CustomerArchiveRepository(databaseService),
-      ),
-      exportQueue,
+      new CustomerArchiveAccessService(new CustomerArchiveRepository(databaseService)),
+      exportQueue
     ),
     private readonly exportJobStateApplicationService: ExportJobStateApplicationService = new ExportJobStateApplicationService(
       new ExportJobStateRepository(databaseService),
-      techEventLogService,
-    ),
+      techEventLogService
+    )
   ) {}
 
   /**
@@ -61,7 +53,7 @@ export class ExportJobService {
   async createJob(
     talentId: string,
     dto: CreateExportJobDto,
-    context: RequestContext,
+    context: RequestContext
   ): Promise<ExportJobResponse> {
     return this.exportJobWriteApplicationService.createJob(talentId, dto, context);
   }
@@ -79,7 +71,7 @@ export class ExportJobService {
   async findMany(
     talentId: string,
     query: ExportJobQueryDto,
-    context: RequestContext,
+    context: RequestContext
   ): Promise<{ items: ExportJobResponse[]; total: number }> {
     return this.exportJobReadApplicationService.findMany(talentId, query, context);
   }
@@ -105,13 +97,13 @@ export class ExportJobService {
     jobId: string,
     totalRecords: number,
     processedRecords: number,
-    tenantSchema: string,
+    tenantSchema: string
   ): Promise<void> {
     await this.exportJobStateApplicationService.updateProgress(
       jobId,
       totalRecords,
       processedRecords,
-      tenantSchema,
+      tenantSchema
     );
   }
 
@@ -123,14 +115,14 @@ export class ExportJobService {
     filePath: string,
     fileName: string,
     totalRecords: number,
-    tenantSchema: string,
+    tenantSchema: string
   ): Promise<void> {
     await this.exportJobStateApplicationService.completeJob(
       jobId,
       filePath,
       fileName,
       totalRecords,
-      tenantSchema,
+      tenantSchema
     );
   }
 

@@ -3,7 +3,10 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
-import { readTalentDetail, type TalentDetailResponse } from '@/domains/config-dictionary-settings/api/settings.api';
+import {
+  readTalentDetail,
+  type TalentDetailResponse,
+} from '@/domains/config-dictionary-settings/api/settings.api';
 import { ApiRequestError } from '@/platform/http/api';
 import { useUiLocale } from '@/platform/runtime/locale/locale-provider';
 import { pickLocaleText } from '@/platform/runtime/locale/locale-text';
@@ -119,7 +122,7 @@ export function TalentBusinessAccessGate({
               ja: 'タレントの状態確認に失敗しました。',
               ko: '탤런트 상태를 확인하지 못했습니다.',
               fr: 'Impossible de vérifier l’état du talent.',
-            }),
+            })
           ),
         });
       }
@@ -184,8 +187,8 @@ export function TalentBusinessAccessGate({
   }
 
   if (
-    state.detail.lifecycleStatus === 'published'
-    || (allowDraft && state.detail.lifecycleStatus === 'draft')
+    state.detail.lifecycleStatus === 'published' ||
+    (allowDraft && state.detail.lifecycleStatus === 'draft')
   ) {
     return <>{children}</>;
   }

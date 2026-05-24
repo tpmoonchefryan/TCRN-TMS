@@ -14,7 +14,12 @@ export interface BreadcrumbProps {
   className?: string;
 }
 
-export const Breadcrumb: React.FC<BreadcrumbProps> = ({ items, ariaLabel, onNavigate, className = '' }) => {
+export const Breadcrumb: React.FC<BreadcrumbProps> = ({
+  items,
+  ariaLabel,
+  onNavigate,
+  className = '',
+}) => {
   const visibleItems = items.filter((item) => item.label.trim().length > 0);
 
   if (visibleItems.length === 0) {
@@ -46,12 +51,12 @@ export const Breadcrumb: React.FC<BreadcrumbProps> = ({ items, ariaLabel, onNavi
                   className={contentClass}
                   onClick={(event) => {
                     if (
-                      !onNavigate
-                      || event.button !== 0
-                      || event.ctrlKey
-                      || event.metaKey
-                      || event.shiftKey
-                      || event.altKey
+                      !onNavigate ||
+                      event.button !== 0 ||
+                      event.ctrlKey ||
+                      event.metaKey ||
+                      event.shiftKey ||
+                      event.altKey
                     ) {
                       return;
                     }

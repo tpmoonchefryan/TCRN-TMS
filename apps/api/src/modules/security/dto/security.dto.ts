@@ -1,23 +1,23 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import type { LocalizedText, PartialLocalizedText } from '@tcrn/shared';
 import { Type } from 'class-transformer';
 import {
-    IsArray,
-    IsBoolean,
-    IsEnum,
-    IsInt,
-    IsObject,
-    IsOptional,
-    IsString,
-    IsUUID,
-    Matches,
-    Max,
-    MaxLength,
-    Min,
-    ValidateNested,
+  IsArray,
+  IsBoolean,
+  IsEnum,
+  IsInt,
+  IsObject,
+  IsOptional,
+  IsString,
+  IsUUID,
+  Matches,
+  Max,
+  MaxLength,
+  Min,
+  ValidateNested,
 } from 'class-validator';
+
+import type { LocalizedText, PartialLocalizedText } from '@tcrn/shared';
 
 // =============================================================================
 // Enums
@@ -67,7 +67,8 @@ export enum BlocklistSurfaceScope {
 
 export class BlocklistStructuredScopeEntryDto {
   @ApiProperty({
-    description: 'Structured scope category. Only surface entries affect the current runtime matcher.',
+    description:
+      'Structured scope category. Only surface entries affect the current runtime matcher.',
     enum: BlocklistScopeCategory,
     example: BlocklistScopeCategory.SURFACE,
   })
@@ -86,7 +87,8 @@ export class BlocklistStructuredScopeEntryDto {
 
 export class BlocklistStructuredScopeDto {
   @ApiProperty({
-    description: 'Allow-list structured scope entries. Owner categories are descriptive; surface entries normalize to scope[].',
+    description:
+      'Allow-list structured scope entries. Owner categories are descriptive; surface entries normalize to scope[].',
     type: [BlocklistStructuredScopeEntryDto],
     example: [
       { category: BlocklistScopeCategory.TENANT },
@@ -104,12 +106,19 @@ export class BlocklistStructuredScopeDto {
 // =============================================================================
 
 export class BlocklistListQueryDto {
-  @ApiPropertyOptional({ description: 'Scope type', enum: ['tenant', 'subsidiary', 'talent'], example: 'tenant' })
+  @ApiPropertyOptional({
+    description: 'Scope type',
+    enum: ['tenant', 'subsidiary', 'talent'],
+    example: 'tenant',
+  })
   @IsOptional()
   @IsEnum(['tenant', 'subsidiary', 'talent'])
   scopeType?: 'tenant' | 'subsidiary' | 'talent' = 'tenant';
 
-  @ApiPropertyOptional({ description: 'Scope ID (UUID)', example: '550e8400-e29b-41d4-a716-446655440000' })
+  @ApiPropertyOptional({
+    description: 'Scope ID (UUID)',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+  })
   @IsOptional()
   @IsUUID()
   scopeId?: string;
@@ -154,7 +163,13 @@ export class BlocklistListQueryDto {
   @Min(1)
   page?: number = 1;
 
-  @ApiPropertyOptional({ description: 'Items per page', example: 20, minimum: 1, maximum: 100, default: 20 })
+  @ApiPropertyOptional({
+    description: 'Items per page',
+    example: 20,
+    minimum: 1,
+    maximum: 100,
+    default: 20,
+  })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
@@ -238,7 +253,8 @@ export class CreateBlocklistDto {
   scope?: string[];
 
   @ApiPropertyOptional({
-    description: 'Structured allow-list scope payload. Normalized to the legacy scope[] runtime tokens before persistence.',
+    description:
+      'Structured allow-list scope payload. Normalized to the legacy scope[] runtime tokens before persistence.',
     type: BlocklistStructuredScopeDto,
   })
   @IsOptional()
@@ -313,7 +329,8 @@ export class UpdateBlocklistDto {
   scope?: string[];
 
   @ApiPropertyOptional({
-    description: 'Structured allow-list scope payload. Normalized to the legacy scope[] runtime tokens before persistence.',
+    description:
+      'Structured allow-list scope payload. Normalized to the legacy scope[] runtime tokens before persistence.',
     type: BlocklistStructuredScopeDto,
   })
   @IsOptional()

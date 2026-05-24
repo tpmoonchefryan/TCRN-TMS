@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import type { Request } from 'express';
 import { describe, expect, it } from 'vitest';
 
@@ -39,7 +38,7 @@ describe('request locale helpers', () => {
 
   it('builds JSONB localized text SQL from the normalized UI locale', () => {
     expect(buildLocalizedJsonTextSql('name', 'fr-FR')).toBe(
-      "COALESCE(NULLIF(name->>'fr', ''), NULLIF(name->>'en', ''), name->>'en')",
+      "COALESCE(NULLIF(name->>'fr', ''), NULLIF(name->>'en', ''), name->>'en')"
     );
   });
 });

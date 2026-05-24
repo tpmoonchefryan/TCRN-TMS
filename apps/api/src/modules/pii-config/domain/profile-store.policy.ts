@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import {
   mergeLocalizedText,
   normalizeLocalizedText,
@@ -7,10 +6,7 @@ import {
   type PartialLocalizedText,
 } from '@tcrn/shared';
 
-import type {
-  CreateProfileStoreDto,
-  UpdateProfileStoreDto,
-} from '../dto/pii-config.dto';
+import type { CreateProfileStoreDto, UpdateProfileStoreDto } from '../dto/pii-config.dto';
 
 export interface ProfileStoreListRow {
   id: string;
@@ -64,7 +60,7 @@ export interface ProfileStoreFieldChange {
 }
 
 export const buildProfileStoreCreatePayload = (
-  dto: CreateProfileStoreDto,
+  dto: CreateProfileStoreDto
 ): ProfileStoreCreatePayload => ({
   code: dto.code,
   name: dto.name,
@@ -75,7 +71,7 @@ export const buildProfileStoreCreatePayload = (
 export const buildProfileStoreListItem = (
   row: ProfileStoreListRow,
   talentCount: number,
-  customerCount: number,
+  customerCount: number
 ) => ({
   id: row.id,
   code: row.code,
@@ -91,7 +87,7 @@ export const buildProfileStoreListItem = (
 export const buildProfileStoreDetailResponse = (
   row: ProfileStoreDetailRow,
   talentCount: number,
-  customerCount: number,
+  customerCount: number
 ) => ({
   id: row.id,
   code: row.code,
@@ -116,7 +112,7 @@ export const buildProfileStoreCreateResponse = (row: ProfileStoreCreateRow) => (
 
 export const buildProfileStoreUpdateChanges = (
   dto: UpdateProfileStoreDto,
-  current: ProfileStoreUpdateLookupRow,
+  current: ProfileStoreUpdateLookupRow
 ): ProfileStoreFieldChange[] => {
   const changes: ProfileStoreFieldChange[] = [];
 
@@ -135,7 +131,7 @@ export const buildProfileStoreUpdateChanges = (
           ...current.description,
           ...(dto.description as PartialLocalizedText),
         },
-        current.description.en,
+        current.description.en
       ),
     });
   }
@@ -156,7 +152,7 @@ export const buildProfileStoreUpdateChanges = (
 
 export const buildProfileStoreUpdateAudit = (
   previous: ProfileStoreUpdateLookupRow,
-  updated: ProfileStoreUpdateRow,
+  updated: ProfileStoreUpdateRow
 ) => ({
   oldValue: {
     name: previous.name,

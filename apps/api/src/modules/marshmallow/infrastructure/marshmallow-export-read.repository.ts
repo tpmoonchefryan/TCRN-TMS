@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable } from '@nestjs/common';
 
 import { DatabaseService } from '../../database';
@@ -13,9 +12,7 @@ import {
 
 @Injectable()
 export class MarshmallowExportReadRepository {
-  constructor(
-    private readonly databaseService: DatabaseService,
-  ) {}
+  constructor(private readonly databaseService: DatabaseService) {}
 
   private get prisma() {
     return this.databaseService.getPrisma();
@@ -24,9 +21,10 @@ export class MarshmallowExportReadRepository {
   async findById(
     tenantSchema: string,
     talentId: string,
-    jobId: string,
+    jobId: string
   ): Promise<RawMarshmallowExportJobRecord | null> {
-    const currentJobs = await this.prisma.$queryRawUnsafe<RawMarshmallowExportJobRecord[]>(`
+    const currentJobs = await this.prisma.$queryRawUnsafe<RawMarshmallowExportJobRecord[]>(
+      `
       SELECT
         id,
         status,
@@ -41,13 +39,17 @@ export class MarshmallowExportReadRepository {
       FROM "${tenantSchema}".${MARSHMALLOW_EXPORT_CURRENT_TABLE}
       WHERE id = $1::uuid
         AND talent_id = $2::uuid
-    `, jobId, talentId);
+    `,
+      jobId,
+      talentId
+    );
 
     if (currentJobs[0]) {
       return currentJobs[0];
     }
 
-    const legacyJobs = await this.prisma.$queryRawUnsafe<RawMarshmallowExportJobRecord[]>(`
+    const legacyJobs = await this.prisma.$queryRawUnsafe<RawMarshmallowExportJobRecord[]>(
+      `
       SELECT
         id,
         status,
@@ -63,7 +65,11 @@ export class MarshmallowExportReadRepository {
       WHERE id = $1::uuid
         AND talent_id = $2::uuid
         AND job_type = $3
-    `, jobId, talentId, MARSHMALLOW_EXPORT_QUEUE_JOB_NAME);
+    `,
+      jobId,
+      talentId,
+      MARSHMALLOW_EXPORT_QUEUE_JOB_NAME
+    );
 
     return legacyJobs[0] ?? null;
   }
@@ -71,26 +77,35 @@ export class MarshmallowExportReadRepository {
   async findDownloadTarget(
     tenantSchema: string,
     talentId: string,
-    jobId: string,
+    jobId: string
   ): Promise<MarshmallowExportDownloadTarget | null> {
-    const currentJobs = await this.prisma.$queryRawUnsafe<MarshmallowExportDownloadTarget[]>(`
+    const currentJobs = await this.prisma.$queryRawUnsafe<MarshmallowExportDownloadTarget[]>(
+      `
       SELECT id, status, file_path
       FROM "${tenantSchema}".${MARSHMALLOW_EXPORT_CURRENT_TABLE}
       WHERE id = $1::uuid
         AND talent_id = $2::uuid
-    `, jobId, talentId);
+    `,
+      jobId,
+      talentId
+    );
 
     if (currentJobs[0]) {
       return currentJobs[0];
     }
 
-    const legacyJobs = await this.prisma.$queryRawUnsafe<MarshmallowExportDownloadTarget[]>(`
+    const legacyJobs = await this.prisma.$queryRawUnsafe<MarshmallowExportDownloadTarget[]>(
+      `
       SELECT id, status, file_path
       FROM "${tenantSchema}".${MARSHMALLOW_EXPORT_LEGACY_TABLE}
       WHERE id = $1::uuid
         AND talent_id = $2::uuid
         AND job_type = $3
-    `, jobId, talentId, MARSHMALLOW_EXPORT_QUEUE_JOB_NAME);
+    `,
+      jobId,
+      talentId,
+      MARSHMALLOW_EXPORT_QUEUE_JOB_NAME
+    );
 
     return legacyJobs[0] ?? null;
   }

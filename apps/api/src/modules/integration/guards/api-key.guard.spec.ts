@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { type ExecutionContext, ForbiddenException, UnauthorizedException } from '@nestjs/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -37,7 +36,7 @@ describe('ApiKeyGuard', () => {
 
     guard = new ApiKeyGuard(
       mockApiKeyService as ApiKeyService,
-      mockIntegrationLogService as IntegrationLogService,
+      mockIntegrationLogService as IntegrationLogService
     );
   });
 
@@ -103,7 +102,7 @@ describe('ApiKeyGuard', () => {
         responseStatus: 403,
         errorMessage: 'IP not allowed',
         traceId: 'trace-123',
-      }),
+      })
     );
   });
 
@@ -125,7 +124,7 @@ describe('ApiKeyGuard', () => {
         consumerCode: undefined,
         responseStatus: 401,
         errorMessage: 'Missing API Key',
-      }),
+      })
     );
     expect(mockApiKeyService.validateApiKey).not.toHaveBeenCalled();
   });

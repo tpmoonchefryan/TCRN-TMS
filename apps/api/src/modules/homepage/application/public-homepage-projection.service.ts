@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) - PolyForm Noncommercial License
-
 import { Injectable, NotFoundException } from '@nestjs/common';
+
 import {
   ErrorCodes,
   PublicPresenceDocumentSchema,
@@ -28,12 +28,10 @@ export class PublicHomepageProjectionService {
     private readonly publicHomepageService: PublicHomepageService,
     private readonly publicHomepageReadRepository: PublicHomepageReadRepository,
     private readonly publicPresenceFoundationRepository: PublicPresenceFoundationRepository,
-    private readonly homepageAdminRepository: HomepageAdminRepository,
+    private readonly homepageAdminRepository: HomepageAdminRepository
   ) {}
 
-  async getPublishedHomepageProjectionOrThrow(
-    path: string,
-  ): Promise<PublicPresenceProjection> {
+  async getPublishedHomepageProjectionOrThrow(path: string): Promise<PublicPresenceProjection> {
     const resolved = await this.resolveTalentByLegacyPath(path);
 
     if (resolved) {
@@ -43,7 +41,7 @@ export class PublicHomepageProjectionService {
         {
           canonicalPath: `/p/${path}`,
           legacyPath: path,
-        },
+        }
       );
 
       if (liveProjection) {
@@ -61,7 +59,7 @@ export class PublicHomepageProjectionService {
 
   async getPublishedHomepageProjectionByCodesOrThrow(
     tenantCode: string,
-    talentCode: string,
+    talentCode: string
   ): Promise<PublicPresenceProjection> {
     const tenantSchema =
       await this.publicHomepageReadRepository.findActiveTenantSchemaByCode(tenantCode);
@@ -69,19 +67,15 @@ export class PublicHomepageProjectionService {
     if (tenantSchema) {
       const talent = await this.publicHomepageReadRepository.findPublishedTalentByCode(
         tenantSchema,
-        talentCode,
+        talentCode
       );
 
       if (talent) {
-        const liveProjection = await this.buildLiveProjectionForTalent(
-          tenantSchema,
-          talent,
-          {
-            canonicalPath: `/${tenantCode}/${talentCode}/homepage`,
-            tenantCode,
-            talentCode,
-          },
-        );
+        const liveProjection = await this.buildLiveProjectionForTalent(tenantSchema, talent, {
+          canonicalPath: `/${tenantCode}/${talentCode}/homepage`,
+          tenantCode,
+          talentCode,
+        });
 
         if (liveProjection) {
           return liveProjection;
@@ -91,7 +85,7 @@ export class PublicHomepageProjectionService {
 
     const data = await this.publicHomepageService.getPublishedHomepageByCodesOrThrow(
       tenantCode,
-      talentCode,
+      talentCode
     );
 
     return buildPublicHomepageProjection(data, {
@@ -105,12 +99,9 @@ export class PublicHomepageProjectionService {
     talentId: string,
     tenantSchema: string,
     revealPhaseOverride?: PublicPresencePhaseVisibility | 'current' | null,
-    templateIdInput?: string | null,
+    templateIdInput?: string | null
   ): Promise<PublicPresenceProjection> {
-    const talent = await this.homepageAdminRepository.findTalentById(
-      tenantSchema,
-      talentId,
-    );
+    const talent = await this.homepageAdminRepository.findTalentById(tenantSchema, talentId);
 
     if (!talent) {
       throw new NotFoundException({
@@ -119,11 +110,10 @@ export class PublicHomepageProjectionService {
       });
     }
 
-    const portal =
-      await this.publicPresenceFoundationRepository.findPortalByTalentId(
-        tenantSchema,
-        talentId,
-      );
+    const portal = await this.publicPresenceFoundationRepository.findPortalByTalentId(
+      tenantSchema,
+      talentId
+    );
 
     if (!portal) {
       throw new NotFoundException({
@@ -133,24 +123,23 @@ export class PublicHomepageProjectionService {
     }
 
     const requestedTemplateId = templateIdInput?.trim();
-    const version =
-      requestedTemplateId
-        ? await this.publicPresenceFoundationRepository.findLatestVersionByTemplate(
+    const version = requestedTemplateId
+      ? await this.publicPresenceFoundationRepository.findLatestVersionByTemplate(
+          tenantSchema,
+          portal.id,
+          requestedTemplateId
+        )
+      : portal.draftVersionId
+        ? await this.publicPresenceFoundationRepository.findDocumentVersionById(
             tenantSchema,
-            portal.id,
-            requestedTemplateId,
+            portal.draftVersionId
           )
-        : portal.draftVersionId
+        : portal.liveVersionId
           ? await this.publicPresenceFoundationRepository.findDocumentVersionById(
               tenantSchema,
-              portal.draftVersionId,
+              portal.liveVersionId
             )
-          : portal.liveVersionId
-            ? await this.publicPresenceFoundationRepository.findDocumentVersionById(
-                tenantSchema,
-                portal.liveVersionId,
-              )
-            : null;
+          : null;
 
     if (!version) {
       throw new NotFoundException({
@@ -160,11 +149,10 @@ export class PublicHomepageProjectionService {
     }
 
     const tenantCode =
-      (await this.homepageAdminRepository.findTenantCodeBySchema(tenantSchema))
-      ?? tenantSchema;
+      (await this.homepageAdminRepository.findTenantCodeBySchema(tenantSchema)) ?? tenantSchema;
     const validationSnapshot = await this.loadValidationSnapshot(
       tenantSchema,
-      version.lastValidationSnapshotId,
+      version.lastValidationSnapshotId
     );
 
     return buildPublicPresenceProjectionFromDocument({
@@ -190,20 +178,16 @@ export class PublicHomepageProjectionService {
     });
   }
 
-  async getPublishedPublicHomepageOrThrow(
-    path: string,
-  ): Promise<PublicPresencePublicProjection> {
-    return this.toPublicProjection(
-      await this.getPublishedHomepageProjectionOrThrow(path),
-    );
+  async getPublishedPublicHomepageOrThrow(path: string): Promise<PublicPresencePublicProjection> {
+    return this.toPublicProjection(await this.getPublishedHomepageProjectionOrThrow(path));
   }
 
   async getPublishedPublicHomepageByCodesOrThrow(
     tenantCode: string,
-    talentCode: string,
+    talentCode: string
   ): Promise<PublicPresencePublicProjection> {
     return this.toPublicProjection(
-      await this.getPublishedHomepageProjectionByCodesOrThrow(tenantCode, talentCode),
+      await this.getPublishedHomepageProjectionByCodesOrThrow(tenantCode, talentCode)
     );
   }
 
@@ -216,7 +200,7 @@ export class PublicHomepageProjectionService {
     for (const schema of tenantSchemas) {
       const talent = await this.publicHomepageReadRepository.findPublishedTalentByPath(
         schema,
-        path,
+        path
       );
 
       if (talent) {
@@ -230,30 +214,28 @@ export class PublicHomepageProjectionService {
   private async buildLiveProjectionForTalent(
     schema: string,
     talent: PublicHomepageTalentRecord,
-    route: BuildPublicHomepageProjectionRouteInput,
+    route: BuildPublicHomepageProjectionRouteInput
   ): Promise<PublicPresenceProjection | null> {
-    const portal =
-      await this.publicPresenceFoundationRepository.findPortalByTalentId(
-        schema,
-        talent.id,
-      );
+    const portal = await this.publicPresenceFoundationRepository.findPortalByTalentId(
+      schema,
+      talent.id
+    );
 
     if (!portal?.liveVersionId) {
       return null;
     }
 
-    const liveVersion =
-      await this.publicPresenceFoundationRepository.findDocumentVersionById(
-        schema,
-        portal.liveVersionId,
-      );
+    const liveVersion = await this.publicPresenceFoundationRepository.findDocumentVersionById(
+      schema,
+      portal.liveVersionId
+    );
 
     if (!liveVersion) {
       return null;
     }
     const validationSnapshot = await this.loadValidationSnapshot(
       schema,
-      liveVersion.lastValidationSnapshotId,
+      liveVersion.lastValidationSnapshotId
     );
 
     return buildPublicPresenceProjectionFromDocument({
@@ -279,17 +261,16 @@ export class PublicHomepageProjectionService {
 
   private async loadValidationSnapshot(
     tenantSchema: string,
-    validationSnapshotId: string | null,
+    validationSnapshotId: string | null
   ): Promise<PublicPresenceValidationSnapshot | null> {
     if (!validationSnapshotId) {
       return null;
     }
 
-    const record =
-      await this.publicPresenceFoundationRepository.findValidationSnapshotById(
-        tenantSchema,
-        validationSnapshotId,
-      );
+    const record = await this.publicPresenceFoundationRepository.findValidationSnapshotById(
+      tenantSchema,
+      validationSnapshotId
+    );
 
     if (!record) {
       return null;
@@ -302,9 +283,7 @@ export class PublicHomepageProjectionService {
     }) as PublicPresenceValidationSnapshot;
   }
 
-  toPublicProjection(
-    projection: PublicPresenceProjection,
-  ): PublicPresencePublicProjection {
+  toPublicProjection(projection: PublicPresenceProjection): PublicPresencePublicProjection {
     return {
       projectionSchemaVersion: projection.projectionSchemaVersion,
       resolvedRevealPhase: projection.resolvedRevealPhase,

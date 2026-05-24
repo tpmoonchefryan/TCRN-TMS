@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable } from '@nestjs/common';
 
 import { DatabaseService } from '../../database';
@@ -23,9 +22,7 @@ export interface CancelableReportJobRecord {
 
 @Injectable()
 export class ReportJobWriteRepository {
-  constructor(
-    private readonly databaseService: DatabaseService,
-  ) {}
+  constructor(private readonly databaseService: DatabaseService) {}
 
   private get prisma() {
     return this.databaseService.getPrisma();
@@ -33,13 +30,16 @@ export class ReportJobWriteRepository {
 
   async findTalentForCreation(
     tenantSchema: string,
-    talentId: string,
+    talentId: string
   ): Promise<ReportJobCreationTalentRecord | null> {
-    const talents = await this.prisma.$queryRawUnsafe<ReportJobCreationTalentRecord[]>(`
+    const talents = await this.prisma.$queryRawUnsafe<ReportJobCreationTalentRecord[]>(
+      `
       SELECT id, subsidiary_id, profile_store_id
       FROM "${tenantSchema}".talent
       WHERE id = $1::uuid
-    `, talentId);
+    `,
+      talentId
+    );
 
     return talents[0] ?? null;
   }
@@ -55,9 +55,10 @@ export class ReportJobWriteRepository {
       status: string;
       estimatedRows: number;
       userId: string;
-    },
+    }
   ): Promise<CreatedReportJobRecord> {
-    const jobs = await this.prisma.$queryRawUnsafe<CreatedReportJobRecord[]>(`
+    const jobs = await this.prisma.$queryRawUnsafe<CreatedReportJobRecord[]>(
+      `
       INSERT INTO "${tenantSchema}".report_job (
         id, talent_id, profile_store_id, report_type, filter_criteria, format,
         status, total_rows, queued_at, created_by, created_at, updated_at
@@ -74,7 +75,7 @@ export class ReportJobWriteRepository {
       params.format,
       params.status,
       params.estimatedRows,
-      params.userId,
+      params.userId
     );
 
     return jobs[0];
@@ -83,14 +84,18 @@ export class ReportJobWriteRepository {
   async findCancelableJob(
     tenantSchema: string,
     jobId: string,
-    talentId: string,
+    talentId: string
   ): Promise<CancelableReportJobRecord | null> {
-    const jobs = await this.prisma.$queryRawUnsafe<CancelableReportJobRecord[]>(`
+    const jobs = await this.prisma.$queryRawUnsafe<CancelableReportJobRecord[]>(
+      `
       SELECT id, status
       FROM "${tenantSchema}".report_job
       WHERE id = $1::uuid
         AND talent_id = $2::uuid
-    `, jobId, talentId);
+    `,
+      jobId,
+      talentId
+    );
 
     return jobs[0] ?? null;
   }
@@ -101,9 +106,10 @@ export class ReportJobWriteRepository {
     params: {
       errorCode: string;
       errorMessage: string;
-    },
+    }
   ) {
-    return this.prisma.$executeRawUnsafe(`
+    return this.prisma.$executeRawUnsafe(
+      `
       UPDATE "${tenantSchema}".report_job
       SET status = 'failed',
           error_code = $2,
@@ -111,20 +117,24 @@ export class ReportJobWriteRepository {
           completed_at = NOW(),
           updated_at = NOW()
       WHERE id = $1::uuid
-    `, jobId, params.errorCode, params.errorMessage);
+    `,
+      jobId,
+      params.errorCode,
+      params.errorMessage
+    );
   }
 
-  cancelJob(
-    tenantSchema: string,
-    jobId: string,
-  ) {
-    return this.prisma.$executeRawUnsafe(`
+  cancelJob(tenantSchema: string, jobId: string) {
+    return this.prisma.$executeRawUnsafe(
+      `
       UPDATE "${tenantSchema}".report_job
       SET status = 'cancelled',
           completed_at = NOW(),
           updated_at = NOW()
       WHERE id = $1::uuid
-    `, jobId);
+    `,
+      jobId
+    );
   }
 
   insertCancellationChangeLog(
@@ -135,9 +145,10 @@ export class ReportJobWriteRepository {
       operatorId: string;
       ipAddress: string;
       cancelledStatus: string;
-    },
+    }
   ) {
-    return this.prisma.$executeRawUnsafe(`
+    return this.prisma.$executeRawUnsafe(
+      `
       INSERT INTO "${tenantSchema}".change_log (
         id, action, object_type, object_id, object_name, diff, operator_id, ip_address, occurred_at
       ) VALUES (
@@ -150,7 +161,7 @@ export class ReportJobWriteRepository {
         new: { status: params.cancelledStatus },
       }),
       params.operatorId,
-      params.ipAddress,
+      params.ipAddress
     );
   }
 }

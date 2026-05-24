@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { prisma } from '../prisma/client';
 import {
   alignTenantTemplateConstraintNames,
@@ -17,10 +16,7 @@ export async function setTenantSchema(tenantSchema: string): Promise<void> {
   await prisma.$executeRawUnsafe(`SET search_path TO "${tenantSchema}", public`);
 }
 
-export async function withTenantContext<T>(
-  tenantSchema: string,
-  fn: () => Promise<T>,
-): Promise<T> {
+export async function withTenantContext<T>(tenantSchema: string, fn: () => Promise<T>): Promise<T> {
   await setTenantSchema(tenantSchema);
   try {
     return await fn();

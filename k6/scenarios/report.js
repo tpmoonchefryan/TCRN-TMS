@@ -1,8 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 // Report Module Performance Test
-
-import http from 'k6/http';
 import { check, sleep, group } from 'k6';
+import http from 'k6/http';
 import { Rate, Trend, Counter } from 'k6/metrics';
 
 // Custom metrics

@@ -24,11 +24,9 @@ describe('public-presence-asset.policy', () => {
     });
 
     expect(() => normalizePublicPresenceAssetScope('tenant', 'talent-1')).toThrow(
-      BadRequestException,
+      BadRequestException
     );
-    expect(() => normalizePublicPresenceAssetScope('subsidiary')).toThrow(
-      BadRequestException,
-    );
+    expect(() => normalizePublicPresenceAssetScope('subsidiary')).toThrow(BadRequestException);
   });
 
   it('keeps source hashes stable across manifest key order and file order changes', () => {
@@ -107,14 +105,16 @@ describe('public-presence-asset.policy', () => {
       validationRules: [...manifest.validationRules],
     });
 
-    expect(calculatePublicPresenceAssetSourceHash({
-      manifest,
-      sourceBundle: bundleA,
-    })).toBe(
+    expect(
+      calculatePublicPresenceAssetSourceHash({
+        manifest,
+        sourceBundle: bundleA,
+      })
+    ).toBe(
       calculatePublicPresenceAssetSourceHash({
         manifest: reorderedManifest,
         sourceBundle: bundleB,
-      }),
+      })
     );
   });
 
@@ -128,26 +128,28 @@ describe('public-presence-asset.policy', () => {
       },
     });
 
-    expect(buildValidatedPublicPresenceAssetSummary([
-      {
-        path: 'manifest.json',
-        kind: 'schema',
-        language: 'json',
-        contents: '{}',
-      },
-      {
-        path: 'fixtures/default.json',
-        kind: 'fixture',
-        language: 'json',
-        contents: '{}',
-      },
-      {
-        path: 'src/index.tsx',
-        kind: 'code',
-        language: 'tsx',
-        contents: 'export const x = 1;\n',
-      },
-    ])).toEqual({
+    expect(
+      buildValidatedPublicPresenceAssetSummary([
+        {
+          path: 'manifest.json',
+          kind: 'schema',
+          language: 'json',
+          contents: '{}',
+        },
+        {
+          path: 'fixtures/default.json',
+          kind: 'fixture',
+          language: 'json',
+          contents: '{}',
+        },
+        {
+          path: 'src/index.tsx',
+          kind: 'code',
+          language: 'tsx',
+          contents: 'export const x = 1;\n',
+        },
+      ])
+    ).toEqual({
       validationState: 'ready',
       validationSummary: {
         issueCount: 0,
@@ -157,13 +159,15 @@ describe('public-presence-asset.policy', () => {
     });
 
     expect(normalizePublicPresenceAssetCode('  Hero Banner  ')).toBe('hero-banner');
-    expect(appendPublicPresenceAssetCopySuffix({
-      en: 'Hero Banner',
-      zh_HANS: '主页横幅',
-      zh_HANT: '主頁橫幅',
-      ja: 'ヒーローバナー',
-      ko: '히어로 배너',
-      fr: 'Banniere hero',
-    }).ja).toBe('ヒーローバナーコピー');
+    expect(
+      appendPublicPresenceAssetCopySuffix({
+        en: 'Hero Banner',
+        zh_HANS: '主页横幅',
+        zh_HANT: '主頁橫幅',
+        ja: 'ヒーローバナー',
+        ko: '히어로 배너',
+        fr: 'Banniere hero',
+      }).ja
+    ).toBe('ヒーローバナーコピー');
   });
 });

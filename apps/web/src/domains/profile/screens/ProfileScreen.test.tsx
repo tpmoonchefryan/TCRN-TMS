@@ -110,24 +110,28 @@ vi.mock('@/domains/profile/screens/profile.copy', () => ({
       },
       totp: {
         title: 'TOTP & Recovery Codes',
-        description: 'Prepare, enable, disable, and rotate second-factor material from the same workspace.',
+        description:
+          'Prepare, enable, disable, and rotate second-factor material from the same workspace.',
         manageAction: 'Manage TOTP',
         closeDrawerLabel: 'Close TOTP drawer',
         disabledTitle: 'TOTP is currently disabled',
-        disabledDescription: 'Generate a setup secret first, then verify one authenticator code to enable it.',
+        disabledDescription:
+          'Generate a setup secret first, then verify one authenticator code to enable it.',
         prepareAction: 'Prepare TOTP setup',
         preparePending: 'Preparing…',
         prepared: 'TOTP setup prepared. Enter the code from your authenticator app to enable it.',
         prepareError: 'Failed to prepare TOTP setup.',
         setupMaterialTitle: 'Setup material',
         qrCodeLabel: 'QR code',
-        qrCodeHint: 'Scan this QR code with your authenticator app, or use the secret and OTPAuth URL below.',
+        qrCodeHint:
+          'Scan this QR code with your authenticator app, or use the secret and OTPAuth URL below.',
         qrCodeAlt: 'TOTP setup QR code',
         accountLabel: 'Account',
         secretLabel: 'Secret',
         otpAuthUrlLabel: 'OTPAuth URL',
         enableTitle: 'Enable TOTP',
-        enableDescription: 'Enter the current code from your authenticator app to complete enablement and issue recovery codes.',
+        enableDescription:
+          'Enter the current code from your authenticator app to complete enablement and issue recovery codes.',
         codeLabel: 'TOTP verification code',
         codePlaceholder: '123456',
         enableAction: 'Enable TOTP',
@@ -135,14 +139,16 @@ vi.mock('@/domains/profile/screens/profile.copy', () => ({
         enabled: 'TOTP enabled. Save the new recovery codes now.',
         enableError: 'Failed to enable TOTP.',
         disableTitle: 'Disable TOTP',
-        disableDescription: 'Enter the current password to turn off the second factor and invalidate recovery codes.',
+        disableDescription:
+          'Enter the current password to turn off the second factor and invalidate recovery codes.',
         disablePasswordLabel: 'Disable TOTP password',
         disableAction: 'Disable TOTP',
         disablePending: 'Disabling…',
         disabled: 'TOTP disabled.',
         disableError: 'Failed to disable TOTP.',
         regenerateTitle: 'Regenerate recovery codes',
-        regenerateDescription: 'Use the current password to invalidate the old set and mint a new recovery pack.',
+        regenerateDescription:
+          'Use the current password to invalidate the old set and mint a new recovery pack.',
         regeneratePasswordLabel: 'Recovery codes password',
         regenerateAction: 'Regenerate recovery codes',
         regeneratePending: 'Regenerating…',
@@ -167,7 +173,8 @@ vi.mock('@/domains/profile/screens/profile.copy', () => ({
         deleteSuccess: 'Avatar deleted successfully.',
         deleteError: 'Failed to delete avatar.',
         emailTitle: 'Email change',
-        emailDescription: 'Request a verification email to a new address, then confirm it with the returned token.',
+        emailDescription:
+          'Request a verification email to a new address, then confirm it with the returned token.',
         newEmailLabel: 'New email',
         newEmailPlaceholder: 'new-email@example.com',
         requestAction: 'Request email change',
@@ -209,7 +216,8 @@ vi.mock('@/domains/profile/screens/profile.copy', () => ({
       },
     },
   }),
-  formatProfileDateTime: (value: string | null | undefined, _locale: string, fallback: string) => value ?? fallback,
+  formatProfileDateTime: (value: string | null | undefined, _locale: string, fallback: string) =>
+    value ?? fallback,
 }));
 
 function buildProfile(overrides: Record<string, unknown> = {}) {
@@ -235,7 +243,7 @@ function renderProfileScreen(props: ComponentProps<typeof ProfileScreen>) {
   return render(
     <UiLocaleProvider>
       <ProfileScreen {...props} />
-    </UiLocaleProvider>,
+    </UiLocaleProvider>
   );
 }
 
@@ -312,7 +320,7 @@ describe('ProfileScreen', () => {
         '/api/v1/users/me',
         expect.objectContaining({
           method: 'PATCH',
-        }),
+        })
       );
     });
 
@@ -323,7 +331,7 @@ describe('ProfileScreen', () => {
         expect.objectContaining({
           displayName: 'Operator Alice',
           preferredLanguage: 'ja',
-        }),
+        })
       );
     });
     await waitFor(() => {
@@ -363,7 +371,9 @@ describe('ProfileScreen', () => {
 
     expect(await screen.findByRole('heading', { name: 'Account Security' })).toBeInTheDocument();
     expect(document.getElementById('security-controls')).toBeInTheDocument();
-    const securityHeadings = screen.getAllByRole('heading', { name: 'Localized security controls' });
+    const securityHeadings = screen.getAllByRole('heading', {
+      name: 'Localized security controls',
+    });
     expect(securityHeadings).toHaveLength(2);
     expect(securityHeadings.some((heading) => heading.classList.contains('sr-only'))).toBe(true);
     expect(screen.getByText('Password')).toBeInTheDocument();
@@ -420,7 +430,9 @@ describe('ProfileScreen', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
 
-    expect(mockRouterReplace).toHaveBeenCalledWith('/tenant/tenant-1/profile/security?sessionsPage=2');
+    expect(mockRouterReplace).toHaveBeenCalledWith(
+      '/tenant/tenant-1/profile/security?sessionsPage=2'
+    );
     expect(await screen.findByText('Device 21')).toBeInTheDocument();
     expect(screen.queryByText('Device 1')).not.toBeInTheDocument();
     expect(screen.getByText('Page 2 of 2')).toBeInTheDocument();
@@ -635,7 +647,7 @@ describe('ProfileScreen', () => {
         '/api/v1/users/me/sessions/sess-old',
         expect.objectContaining({
           method: 'DELETE',
-        }),
+        })
       );
     });
 

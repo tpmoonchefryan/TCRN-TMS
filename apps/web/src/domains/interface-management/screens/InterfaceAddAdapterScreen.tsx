@@ -1,9 +1,10 @@
 'use client';
 
-import type { IntegrationAdapterDefinition } from '@tcrn/shared';
 import { ChevronLeft, Plus } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
+
+import type { IntegrationAdapterDefinition } from '@tcrn/shared';
 
 import { useIntegrationManagementCopy } from '@/domains/integration-management/screens/integration-management.copy';
 import {
@@ -15,12 +16,7 @@ import {
 } from '@/domains/interface-management/api/interface-management.api';
 import { pickLocaleText } from '@/platform/runtime/locale/locale-text';
 import { useSession } from '@/platform/runtime/session/session-provider';
-import {
-  AsyncSubmitButton,
-  FormSection,
-  GlassSurface,
-  StateView,
-} from '@/platform/ui';
+import { AsyncSubmitButton, FormSection, GlassSurface, StateView } from '@/platform/ui';
 
 type PanelState<T> = {
   data: T;
@@ -70,7 +66,7 @@ function resolveScope(searchParams: URLSearchParams): IntegrationAdapterScope {
 function buildListHref(
   tenantId: string,
   workspaceKind: 'tenant' | 'ac',
-  scope: IntegrationAdapterScope,
+  scope: IntegrationAdapterScope
 ) {
   const params = new URLSearchParams();
   params.set('ownerType', scope.ownerType);
@@ -80,9 +76,10 @@ function buildListHref(
   }
 
   const query = params.toString();
-  const path = workspaceKind === 'ac'
-    ? `/ac/${encodeURIComponent(tenantId)}/interface-management`
-    : `/tenant/${encodeURIComponent(tenantId)}/interface-management`;
+  const path =
+    workspaceKind === 'ac'
+      ? `/ac/${encodeURIComponent(tenantId)}/interface-management`
+      : `/tenant/${encodeURIComponent(tenantId)}/interface-management`;
 
   return query ? `${path}?${query}` : path;
 }
@@ -90,15 +87,12 @@ function buildListHref(
 function pickDefinitionText(
   locale: string,
   value: IntegrationAdapterDefinition['name'] | IntegrationAdapterDefinition['description'],
-  fallback = '',
+  fallback = ''
 ) {
   return pickLocaleText(locale, value) || fallback;
 }
 
-function findProviderDefinition(
-  definition: IntegrationAdapterDefinition | null,
-  provider: string,
-) {
+function findProviderDefinition(definition: IntegrationAdapterDefinition | null, provider: string) {
   return definition?.aiProviders?.find((item) => item.provider === provider) ?? null;
 }
 
@@ -190,9 +184,9 @@ export function InterfaceAddAdapterScreen({
   const searchParams = useSearchParams();
   const { request } = useSession();
   const { locale, text } = useIntegrationManagementCopy();
-  const [definitionsPanel, setDefinitionsPanel] = useState<PanelState<IntegrationAdapterDefinition[]>>(
-    createPanelState<IntegrationAdapterDefinition[]>([]),
-  );
+  const [definitionsPanel, setDefinitionsPanel] = useState<
+    PanelState<IntegrationAdapterDefinition[]>
+  >(createPanelState<IntegrationAdapterDefinition[]>([]));
   const [definitionKey, setDefinitionKey] = useState('');
   const [provider, setProvider] = useState('');
   const [endpointPath, setEndpointPath] = useState('');
@@ -206,13 +200,14 @@ export function InterfaceAddAdapterScreen({
   const listHref = buildListHref(tenantId, workspaceKind, scope);
   const selectedDefinition = useMemo(
     () => definitionsPanel.data.find((definition) => definition.key === definitionKey) ?? null,
-    [definitionKey, definitionsPanel.data],
+    [definitionKey, definitionsPanel.data]
   );
   const providerDefinition = findProviderDefinition(selectedDefinition, provider);
-  const providerOptions = selectedDefinition?.aiProviders?.map((item) => ({
-    value: item.provider,
-    label: pickDefinitionText(locale, item.label, item.provider),
-  })) ?? [];
+  const providerOptions =
+    selectedDefinition?.aiProviders?.map((item) => ({
+      value: item.provider,
+      label: pickDefinitionText(locale, item.label, item.provider),
+    })) ?? [];
   const adapterDefinitionLoadError = text({
     en: 'Failed to load adapter definitions.',
     zh_HANS: '加载适配器定义失败。',
@@ -258,10 +253,7 @@ export function InterfaceAddAdapterScreen({
         setDefinitionsPanel({
           data: [],
           loading: false,
-          error: getErrorMessage(
-            reason,
-            adapterDefinitionLoadError,
-          ),
+          error: getErrorMessage(reason, adapterDefinitionLoadError),
         });
       }
     }
@@ -274,7 +266,8 @@ export function InterfaceAddAdapterScreen({
   }, [adapterDefinitionLoadError, request]);
 
   function handleDefinitionChange(nextDefinitionKey: string) {
-    const nextDefinition = definitionsPanel.data.find((definition) => definition.key === nextDefinitionKey) ?? null;
+    const nextDefinition =
+      definitionsPanel.data.find((definition) => definition.key === nextDefinitionKey) ?? null;
     const nextProvider = nextDefinition?.aiProviders?.[0] ?? null;
 
     setDefinitionKey(nextDefinitionKey);
@@ -371,7 +364,7 @@ export function InterfaceAddAdapterScreen({
             ja: 'アダプターの作成に失敗しました。',
             ko: '어댑터 생성에 실패했습니다.',
             fr: 'Échec de la création de l’adaptateur.',
-          }),
+          })
         ),
       });
     } finally {
@@ -379,9 +372,10 @@ export function InterfaceAddAdapterScreen({
     }
   }
 
-  const noticeClasses = notice?.tone === 'success'
-    ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
-    : 'border-rose-200 bg-rose-50 text-rose-800';
+  const noticeClasses =
+    notice?.tone === 'success'
+      ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
+      : 'border-rose-200 bg-rose-50 text-rose-800';
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
@@ -423,14 +417,16 @@ export function InterfaceAddAdapterScreen({
 
       <div className="grid gap-6 lg:grid-cols-[220px_minmax(0,1fr)]">
         <GlassSurface className="p-4">
-          <nav aria-label={text({
-            en: 'Add adapter sections',
-            zh_HANS: '新增适配器分区',
-            zh_HANT: '新增適配器分區',
-            ja: 'アダプター追加セクション',
-            ko: '어댑터 추가 섹션',
-            fr: 'Sections d’ajout d’adaptateur',
-          })}>
+          <nav
+            aria-label={text({
+              en: 'Add adapter sections',
+              zh_HANS: '新增适配器分区',
+              zh_HANT: '新增適配器分區',
+              ja: 'アダプター追加セクション',
+              ko: '어댑터 추가 섹션',
+              fr: 'Sections d’ajout d’adaptateur',
+            })}
+          >
             <div className="flex gap-2 overflow-x-auto lg:flex-col lg:overflow-visible">
               {[
                 {
@@ -485,7 +481,10 @@ export function InterfaceAddAdapterScreen({
           ) : null}
 
           {notice ? (
-            <div role="status" className={`rounded-2xl border px-4 py-3 text-sm font-medium ${noticeClasses}`}>
+            <div
+              role="status"
+              className={`rounded-2xl border px-4 py-3 text-sm font-medium ${noticeClasses}`}
+            >
               {notice.message}
             </div>
           ) : null}

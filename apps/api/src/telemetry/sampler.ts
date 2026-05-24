@@ -187,9 +187,7 @@ export class TcrnSampler implements Sampler {
     const shouldSample = this.traceIdBasedSample(traceId, 0.01);
 
     return {
-      decision: shouldSample
-        ? SamplingDecision.RECORD_AND_SAMPLED
-        : SamplingDecision.NOT_RECORD,
+      decision: shouldSample ? SamplingDecision.RECORD_AND_SAMPLED : SamplingDecision.NOT_RECORD,
       attributes: shouldSample
         ? {
             'sampling.reason': 'default',

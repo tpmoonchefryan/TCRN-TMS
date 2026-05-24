@@ -1,12 +1,10 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import type { Job } from 'bullmq';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const {
-  customerExportJobProcessor,
-  marshmallowExportJobProcessor,
-} = vi.hoisted(() => ({
+import { exportJobProcessor } from '../export.job';
+
+const { customerExportJobProcessor, marshmallowExportJobProcessor } = vi.hoisted(() => ({
   customerExportJobProcessor: vi.fn(),
   marshmallowExportJobProcessor: vi.fn(),
 }));
@@ -18,8 +16,6 @@ vi.mock('../customer-export.job', () => ({
 vi.mock('../marshmallow-export.job', () => ({
   marshmallowExportJobProcessor,
 }));
-
-import { exportJobProcessor } from '../export.job';
 
 describe('exportJobProcessor', () => {
   beforeEach(() => {
@@ -36,7 +32,7 @@ describe('exportJobProcessor', () => {
       expect(customerExportJobProcessor).toHaveBeenCalledTimes(1);
       expect(marshmallowExportJobProcessor).not.toHaveBeenCalled();
       expect(result).toEqual({ kind: 'customer' });
-    },
+    }
   );
 
   it.each(['marshmallow_export', 'marshmallow-export'])(
@@ -49,12 +45,12 @@ describe('exportJobProcessor', () => {
       expect(marshmallowExportJobProcessor).toHaveBeenCalledTimes(1);
       expect(customerExportJobProcessor).not.toHaveBeenCalled();
       expect(result).toEqual({ kind: 'marshmallow' });
-    },
+    }
   );
 
   it('rejects unknown export job names', async () => {
     await expect(exportJobProcessor({ name: 'unknown-export' } as Job)).rejects.toThrow(
-      'Unknown export job type: unknown-export',
+      'Unknown export job type: unknown-export'
     );
   });
 });

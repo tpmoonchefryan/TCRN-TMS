@@ -1,17 +1,18 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
+import { Controller, Get, Param, Query, Req } from '@nestjs/common';
 import {
-  Controller,
-  Get,
-  Param,
-  Query,
-  Req,
-} from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiParam, ApiPropertyOptional, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { ErrorCodes, resolveRbacPermission } from '@tcrn/shared';
+  ApiBearerAuth,
+  ApiOperation,
+  ApiParam,
+  ApiPropertyOptional,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { IsBoolean, IsOptional, IsString } from 'class-validator';
 import type { Request } from 'express';
+
+import { ErrorCodes, resolveRbacPermission } from '@tcrn/shared';
 
 import { AuthenticatedUser, CurrentUser } from '../../common/decorators/current-user.decorator';
 import { getPrimaryAcceptLanguage } from '../../common/request-locale.util';
@@ -22,7 +23,11 @@ import { OrganizationService } from './organization.service';
 
 // DTOs
 class GetTreeQueryDto {
-  @ApiPropertyOptional({ description: 'Include talents in tree nodes', example: true, default: true })
+  @ApiPropertyOptional({
+    description: 'Include talents in tree nodes',
+    example: true,
+    default: true,
+  })
   @IsOptional()
   @IsBoolean()
   @Type(() => Boolean)
@@ -41,7 +46,10 @@ class GetTreeQueryDto {
 }
 
 class GetChildrenQueryDto {
-  @ApiPropertyOptional({ description: 'Parent node ID (null for root)', example: '550e8400-e29b-41d4-a716-446655440000' })
+  @ApiPropertyOptional({
+    description: 'Parent node ID (null for root)',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+  })
   @IsOptional()
   @IsString()
   parentId?: string;
@@ -125,24 +133,21 @@ const mapTreeNode = (
   path: node.path,
   talents: (node.talents ?? []).map((talent) =>
     mapTreeTalent(talent, {
-      canManageLifecycleMaintenance:
-        lifecycleMaintenanceAccess.get(talent.id) ?? false,
+      canManageLifecycleMaintenance: lifecycleMaintenanceAccess.get(talent.id) ?? false,
       subsidiaryId: node.id,
       subsidiaryName: node.name,
       path: `${node.path}${talent.code}/`,
     })
   ),
-  children: node.children.map((child) =>
-    mapTreeNode(child, lifecycleMaintenanceAccess, node.id),
-  ),
+  children: node.children.map((child) => mapTreeNode(child, lifecycleMaintenanceAccess, node.id)),
 });
 
-const TALENT_LIFECYCLE_MAINTENANCE_ACTION = resolveRbacPermission(
-  'talent',
-  'update',
-).checkedAction;
+const TALENT_LIFECYCLE_MAINTENANCE_ACTION = resolveRbacPermission('talent', 'update').checkedAction;
 
-const createSuccessEnvelopeSchema = (dataSchema: Record<string, unknown>, exampleData: unknown) => ({
+const createSuccessEnvelopeSchema = (
+  dataSchema: Record<string, unknown>,
+  exampleData: unknown
+) => ({
   type: 'object',
   properties: {
     success: { type: 'boolean', example: true },
@@ -183,12 +188,26 @@ const ORGANIZATION_TREE_TALENT_SCHEMA = {
     name: { type: 'string', example: 'Tokino Sora' },
     displayName: { type: 'string', example: 'Sora' },
     avatarUrl: { type: 'string', nullable: true, example: 'https://cdn.tcrn.app/avatar/sora.jpg' },
-    subsidiaryId: { type: 'string', format: 'uuid', nullable: true, example: '550e8400-e29b-41d4-a716-446655440100' },
+    subsidiaryId: {
+      type: 'string',
+      format: 'uuid',
+      nullable: true,
+      example: '550e8400-e29b-41d4-a716-446655440100',
+    },
     subsidiaryName: { type: 'string', nullable: true, example: 'Tokyo Branch' },
     path: { type: 'string', example: '/TOKYO/SORA/' },
     homepagePath: { type: 'string', nullable: true, example: 'sora' },
-    lifecycleStatus: { type: 'string', enum: ['draft', 'published', 'disabled'], example: 'published' },
-    publishedAt: { type: 'string', nullable: true, format: 'date-time', example: '2026-04-13T09:00:00.000Z' },
+    lifecycleStatus: {
+      type: 'string',
+      enum: ['draft', 'published', 'disabled'],
+      example: 'published',
+    },
+    publishedAt: {
+      type: 'string',
+      nullable: true,
+      format: 'date-time',
+      example: '2026-04-13T09:00:00.000Z',
+    },
     isActive: { type: 'boolean', example: true },
     lifecycleMaintenance: {
       type: 'object',
@@ -198,7 +217,20 @@ const ORGANIZATION_TREE_TALENT_SCHEMA = {
       required: ['canManage'],
     },
   },
-  required: ['id', 'code', 'name', 'displayName', 'avatarUrl', 'subsidiaryId', 'path', 'homepagePath', 'lifecycleStatus', 'publishedAt', 'isActive', 'lifecycleMaintenance'],
+  required: [
+    'id',
+    'code',
+    'name',
+    'displayName',
+    'avatarUrl',
+    'subsidiaryId',
+    'path',
+    'homepagePath',
+    'lifecycleStatus',
+    'publishedAt',
+    'isActive',
+    'lifecycleMaintenance',
+  ],
 };
 
 const ORGANIZATION_TREE_SUBSIDIARY_SCHEMA: Record<string, unknown> = {
@@ -276,7 +308,7 @@ const ORGANIZATION_TREE_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
       },
     ],
     directTalents: [],
-  },
+  }
 );
 
 const ORGANIZATION_CHILD_NODE_SCHEMA = {
@@ -291,7 +323,16 @@ const ORGANIZATION_CHILD_NODE_SCHEMA = {
     hasChildren: { type: 'boolean', example: true },
     talentCount: { type: 'integer', example: 5 },
   },
-  required: ['id', 'code', 'displayName', 'path', 'depth', 'isActive', 'hasChildren', 'talentCount'],
+  required: [
+    'id',
+    'code',
+    'displayName',
+    'path',
+    'depth',
+    'isActive',
+    'hasChildren',
+    'talentCount',
+  ],
 };
 
 const ORGANIZATION_ROOT_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
@@ -319,13 +360,35 @@ const ORGANIZATION_ROOT_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
             id: { type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440300' },
             code: { type: 'string', example: 'SORA' },
             displayName: { type: 'string', example: 'Sora' },
-            avatarUrl: { type: 'string', nullable: true, example: 'https://cdn.tcrn.app/avatar/sora.jpg' },
+            avatarUrl: {
+              type: 'string',
+              nullable: true,
+              example: 'https://cdn.tcrn.app/avatar/sora.jpg',
+            },
             homepagePath: { type: 'string', nullable: true, example: 'sora' },
-            lifecycleStatus: { type: 'string', enum: ['draft', 'published', 'disabled'], example: 'published' },
-            publishedAt: { type: 'string', nullable: true, format: 'date-time', example: '2026-04-13T09:00:00.000Z' },
+            lifecycleStatus: {
+              type: 'string',
+              enum: ['draft', 'published', 'disabled'],
+              example: 'published',
+            },
+            publishedAt: {
+              type: 'string',
+              nullable: true,
+              format: 'date-time',
+              example: '2026-04-13T09:00:00.000Z',
+            },
             isActive: { type: 'boolean', example: true },
           },
-          required: ['id', 'code', 'displayName', 'avatarUrl', 'homepagePath', 'lifecycleStatus', 'publishedAt', 'isActive'],
+          required: [
+            'id',
+            'code',
+            'displayName',
+            'avatarUrl',
+            'homepagePath',
+            'lifecycleStatus',
+            'publishedAt',
+            'isActive',
+          ],
         },
       },
     },
@@ -350,14 +413,19 @@ const ORGANIZATION_ROOT_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
       },
     ],
     directTalents: [],
-  },
+  }
 );
 
 const ORGANIZATION_CHILDREN_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
   {
     type: 'object',
     properties: {
-      parentId: { type: 'string', format: 'uuid', nullable: true, example: '550e8400-e29b-41d4-a716-446655440100' },
+      parentId: {
+        type: 'string',
+        format: 'uuid',
+        nullable: true,
+        example: '550e8400-e29b-41d4-a716-446655440100',
+      },
       subsidiaries: {
         type: 'array',
         items: ORGANIZATION_CHILD_NODE_SCHEMA,
@@ -370,13 +438,35 @@ const ORGANIZATION_CHILDREN_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
             id: { type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440300' },
             code: { type: 'string', example: 'SORA' },
             displayName: { type: 'string', example: 'Sora' },
-            avatarUrl: { type: 'string', nullable: true, example: 'https://cdn.tcrn.app/avatar/sora.jpg' },
+            avatarUrl: {
+              type: 'string',
+              nullable: true,
+              example: 'https://cdn.tcrn.app/avatar/sora.jpg',
+            },
             homepagePath: { type: 'string', nullable: true, example: 'sora' },
-            lifecycleStatus: { type: 'string', enum: ['draft', 'published', 'disabled'], example: 'published' },
-            publishedAt: { type: 'string', nullable: true, format: 'date-time', example: '2026-04-13T09:00:00.000Z' },
+            lifecycleStatus: {
+              type: 'string',
+              enum: ['draft', 'published', 'disabled'],
+              example: 'published',
+            },
+            publishedAt: {
+              type: 'string',
+              nullable: true,
+              format: 'date-time',
+              example: '2026-04-13T09:00:00.000Z',
+            },
             isActive: { type: 'boolean', example: true },
           },
-          required: ['id', 'code', 'displayName', 'avatarUrl', 'homepagePath', 'lifecycleStatus', 'publishedAt', 'isActive'],
+          required: [
+            'id',
+            'code',
+            'displayName',
+            'avatarUrl',
+            'homepagePath',
+            'lifecycleStatus',
+            'publishedAt',
+            'isActive',
+          ],
         },
       },
     },
@@ -397,7 +487,7 @@ const ORGANIZATION_CHILDREN_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
       },
     ],
     talents: [],
-  },
+  }
 );
 
 const ORGANIZATION_BREADCRUMB_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
@@ -457,17 +547,17 @@ const ORGANIZATION_BREADCRUMB_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
         name: 'Sora',
       },
     ],
-  },
+  }
 );
 
 const ORGANIZATION_UNAUTHORIZED_SCHEMA = createErrorEnvelopeSchema(
   'AUTH_UNAUTHORIZED',
-  'Authentication required',
+  'Authentication required'
 );
 
 const ORGANIZATION_NOT_FOUND_SCHEMA = createErrorEnvelopeSchema(
   ErrorCodes.RES_NOT_FOUND,
-  'Tenant not found',
+  'Tenant not found'
 );
 
 /**
@@ -480,7 +570,7 @@ const ORGANIZATION_NOT_FOUND_SCHEMA = createErrorEnvelopeSchema(
 export class OrganizationController {
   constructor(
     private readonly organizationService: OrganizationService,
-    private readonly permissionSnapshotService: PermissionSnapshotService,
+    private readonly permissionSnapshotService: PermissionSnapshotService
   ) {}
 
   /**
@@ -488,53 +578,51 @@ export class OrganizationController {
    * Get organization tree
    */
   @Get('tree')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Get organization tree',
     description: `Returns the full organization tree structure including subsidiaries and talents.
     
 The tree is filtered based on the authenticated user's access permissions.
 Use this for initial page load. For lazy loading, use /tree/root and /tree/children.`,
   })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Returns organization tree',
     schema: ORGANIZATION_TREE_SUCCESS_SCHEMA,
   })
-  @ApiResponse({ status: 401, description: 'Unauthorized', schema: ORGANIZATION_UNAUTHORIZED_SCHEMA })
-  @ApiResponse({ status: 404, description: 'Tenant was not found', schema: ORGANIZATION_NOT_FOUND_SCHEMA })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized',
+    schema: ORGANIZATION_UNAUTHORIZED_SCHEMA,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Tenant was not found',
+    schema: ORGANIZATION_NOT_FOUND_SCHEMA,
+  })
   async getTree(
     @CurrentUser() user: AuthenticatedUser,
     @Query() query: GetTreeQueryDto,
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     const language = getPrimaryAcceptLanguage(req);
 
-    const tree = await this.organizationService.getTree(
-      user.tenantId,
-      user.tenantSchema,
-      {
-        includeTalents: query.includeTalents ?? true,
-        includeInactive: query.includeInactive ?? false,
-        search: query.search,
-        language,
-        userId: user.id, // Pass user ID for access filtering
-      }
-    );
+    const tree = await this.organizationService.getTree(user.tenantId, user.tenantSchema, {
+      includeTalents: query.includeTalents ?? true,
+      includeInactive: query.includeInactive ?? false,
+      search: query.search,
+      language,
+      userId: user.id, // Pass user ID for access filtering
+    });
 
-    const lifecycleMaintenanceAccess = await this.resolveLifecycleMaintenanceAccess(
-      user,
-      tree,
-    );
+    const lifecycleMaintenanceAccess = await this.resolveLifecycleMaintenanceAccess(user, tree);
 
     return success({
       tenantId: tree.tenant.id,
-      subsidiaries: tree.tree.map((node) =>
-        mapTreeNode(node, lifecycleMaintenanceAccess),
-      ),
+      subsidiaries: tree.tree.map((node) => mapTreeNode(node, lifecycleMaintenanceAccess)),
       directTalents: tree.talentsWithoutSubsidiary.map((talent) =>
         mapTreeTalent(talent, {
-          canManageLifecycleMaintenance:
-            lifecycleMaintenanceAccess.get(talent.id) ?? false,
+          canManageLifecycleMaintenance: lifecycleMaintenanceAccess.get(talent.id) ?? false,
           subsidiaryId: null,
           path: `/${talent.code}/`,
         })
@@ -547,7 +635,7 @@ Use this for initial page load. For lazy loading, use /tree/root and /tree/child
     tree: {
       tree: TreeNode[];
       talentsWithoutSubsidiary: TalentSummary[];
-    },
+    }
   ): Promise<Map<string, boolean>> {
     const talentIds = new Set<string>();
     const collectTalentIds = (nodes: TreeNode[]) => {
@@ -571,7 +659,7 @@ Use this for initial page load. For lazy loading, use /tree/root and /tree/child
     const hasTenantLevelLifecycleAccess = await this.checkLifecycleMaintenanceAccess(
       user,
       'tenant',
-      null,
+      null
     );
 
     if (hasTenantLevelLifecycleAccess) {
@@ -579,10 +667,10 @@ Use this for initial page load. For lazy loading, use /tree/root and /tree/child
     }
 
     const entries = await Promise.all(
-      Array.from(talentIds).map(async (talentId) => [
-        talentId,
-        await this.checkLifecycleMaintenanceAccess(user, 'talent', talentId),
-      ] as const),
+      Array.from(talentIds).map(
+        async (talentId) =>
+          [talentId, await this.checkLifecycleMaintenanceAccess(user, 'talent', talentId)] as const
+      )
     );
 
     return new Map(entries);
@@ -591,7 +679,7 @@ Use this for initial page load. For lazy loading, use /tree/root and /tree/child
   private async checkLifecycleMaintenanceAccess(
     user: AuthenticatedUser,
     scopeType: 'tenant' | 'talent',
-    scopeId: string | null,
+    scopeId: string | null
   ): Promise<boolean> {
     const cachedAllowed = await this.permissionSnapshotService.checkPermission(
       user.tenantSchema,
@@ -599,7 +687,7 @@ Use this for initial page load. For lazy loading, use /tree/root and /tree/child
       'talent',
       TALENT_LIFECYCLE_MAINTENANCE_ACTION,
       scopeType,
-      scopeId,
+      scopeId
     );
 
     if (cachedAllowed) {
@@ -612,7 +700,7 @@ Use this for initial page load. For lazy loading, use /tree/root and /tree/child
       'talent',
       TALENT_LIFECYCLE_MAINTENANCE_ACTION,
       scopeType,
-      scopeId,
+      scopeId
     );
   }
 
@@ -627,28 +715,32 @@ Use this for initial page load. For lazy loading, use /tree/root and /tree/child
     description: 'Returns root-level organization nodes for lazy loading',
     schema: ORGANIZATION_ROOT_SUCCESS_SCHEMA,
   })
-  @ApiResponse({ status: 401, description: 'Unauthorized', schema: ORGANIZATION_UNAUTHORIZED_SCHEMA })
-  @ApiResponse({ status: 404, description: 'Tenant was not found', schema: ORGANIZATION_NOT_FOUND_SCHEMA })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized',
+    schema: ORGANIZATION_UNAUTHORIZED_SCHEMA,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Tenant was not found',
+    schema: ORGANIZATION_NOT_FOUND_SCHEMA,
+  })
   async getRootNodes(
     @CurrentUser() user: AuthenticatedUser,
     @Query() query: GetChildrenQueryDto,
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     const language = getPrimaryAcceptLanguage(req);
 
-    const result = await this.organizationService.getRootNodes(
-      user.tenantId,
-      user.tenantSchema,
-      {
-        includeTalents: query.includeTalents ?? true,
-        includeInactive: query.includeInactive ?? false,
-        language,
-      }
-    );
+    const result = await this.organizationService.getRootNodes(user.tenantId, user.tenantSchema, {
+      includeTalents: query.includeTalents ?? true,
+      includeInactive: query.includeInactive ?? false,
+      language,
+    });
 
     return success({
       tenant: result.tenant,
-      subsidiaries: result.subsidiaries.map(sub => ({
+      subsidiaries: result.subsidiaries.map((sub) => ({
         id: sub.id,
         code: sub.code,
         displayName: sub.name,
@@ -658,7 +750,7 @@ Use this for initial page load. For lazy loading, use /tree/root and /tree/child
         hasChildren: sub.hasChildren,
         talentCount: sub.talentCount,
       })),
-      directTalents: result.directTalents.map(t => ({
+      directTalents: result.directTalents.map((t) => ({
         id: t.id,
         code: t.code,
         displayName: t.displayName,
@@ -682,11 +774,15 @@ Use this for initial page load. For lazy loading, use /tree/root and /tree/child
     description: 'Returns direct child subsidiaries and talents for lazy loading',
     schema: ORGANIZATION_CHILDREN_SUCCESS_SCHEMA,
   })
-  @ApiResponse({ status: 401, description: 'Unauthorized', schema: ORGANIZATION_UNAUTHORIZED_SCHEMA })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized',
+    schema: ORGANIZATION_UNAUTHORIZED_SCHEMA,
+  })
   async getChildren(
     @CurrentUser() user: AuthenticatedUser,
     @Query() query: GetChildrenQueryDto,
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     const language = getPrimaryAcceptLanguage(req);
 
@@ -702,7 +798,7 @@ Use this for initial page load. For lazy loading, use /tree/root and /tree/child
 
     return success({
       parentId: query.parentId || null,
-      subsidiaries: result.subsidiaries.map(sub => ({
+      subsidiaries: result.subsidiaries.map((sub) => ({
         id: sub.id,
         code: sub.code,
         displayName: sub.name,
@@ -712,7 +808,7 @@ Use this for initial page load. For lazy loading, use /tree/root and /tree/child
         hasChildren: sub.hasChildren,
         talentCount: sub.talentCount,
       })),
-      talents: result.talents.map(t => ({
+      talents: result.talents.map((t) => ({
         id: t.id,
         code: t.code,
         displayName: t.displayName,
@@ -741,12 +837,20 @@ Use this for initial page load. For lazy loading, use /tree/root and /tree/child
     description: 'Returns current node and breadcrumb for the requested organization path',
     schema: ORGANIZATION_BREADCRUMB_SUCCESS_SCHEMA,
   })
-  @ApiResponse({ status: 401, description: 'Unauthorized', schema: ORGANIZATION_UNAUTHORIZED_SCHEMA })
-  @ApiResponse({ status: 404, description: 'Tenant was not found', schema: ORGANIZATION_NOT_FOUND_SCHEMA })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized',
+    schema: ORGANIZATION_UNAUTHORIZED_SCHEMA,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Tenant was not found',
+    schema: ORGANIZATION_NOT_FOUND_SCHEMA,
+  })
   async getByPath(
     @CurrentUser() user: AuthenticatedUser,
     @Param('subpath') pathParam: string,
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     const language = getPrimaryAcceptLanguage(req);
     const path = '/' + pathParam + (pathParam.endsWith('/') ? '' : '/');

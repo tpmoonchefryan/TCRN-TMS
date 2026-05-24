@@ -1,13 +1,10 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { BadRequestException, NotFoundException } from '@nestjs/common';
-import type { RequestContext } from '@tcrn/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import {
-  ImportJobStatus,
-  ImportJobType,
-} from '../dto/import.dto';
+import type { RequestContext } from '@tcrn/shared';
+
+import { ImportJobStatus, ImportJobType } from '../dto/import.dto';
 import { ImportJobService } from './import-job.service';
 
 const mockPrisma = {
@@ -45,7 +42,7 @@ describe('ImportJobService', () => {
     service = new ImportJobService(
       mockDatabaseService as never,
       mockMinioService as never,
-      mockTechEventLogService as never,
+      mockTechEventLogService as never
     );
   });
 
@@ -54,29 +51,35 @@ describe('ImportJobService', () => {
       const createdAt = new Date('2026-04-13T12:00:00Z');
 
       mockPrisma.$queryRawUnsafe
-        .mockResolvedValueOnce([{
-          id: 'talent-123',
-          profileStoreId: 'store-123',
-          profileStoreIsActive: true,
-        }])
-        .mockResolvedValueOnce([{
-          id: 'consumer-123',
-        }])
-        .mockResolvedValueOnce([{
-          id: 'job-123',
-          job_type: ImportJobType.INDIVIDUAL_IMPORT,
-          status: ImportJobStatus.PENDING,
-          file_name: 'customers.csv',
-          total_rows: 12,
-          processed_rows: 0,
-          success_rows: 0,
-          failed_rows: 0,
-          warning_rows: 0,
-          started_at: null,
-          completed_at: null,
-          created_at: createdAt,
-          created_by: 'user-123',
-        }]);
+        .mockResolvedValueOnce([
+          {
+            id: 'talent-123',
+            profileStoreId: 'store-123',
+            profileStoreIsActive: true,
+          },
+        ])
+        .mockResolvedValueOnce([
+          {
+            id: 'consumer-123',
+          },
+        ])
+        .mockResolvedValueOnce([
+          {
+            id: 'job-123',
+            job_type: ImportJobType.INDIVIDUAL_IMPORT,
+            status: ImportJobStatus.PENDING,
+            file_name: 'customers.csv',
+            total_rows: 12,
+            processed_rows: 0,
+            success_rows: 0,
+            failed_rows: 0,
+            warning_rows: 0,
+            started_at: null,
+            completed_at: null,
+            created_at: createdAt,
+            created_by: 'user-123',
+          },
+        ]);
 
       await expect(
         service.createJob(
@@ -86,8 +89,8 @@ describe('ImportJobService', () => {
           2048,
           12,
           'CRM_SYSTEM',
-          mockContext,
-        ),
+          mockContext
+        )
       ).resolves.toEqual({
         id: 'job-123',
         status: ImportJobStatus.PENDING,
@@ -106,16 +109,18 @@ describe('ImportJobService', () => {
             talent_id: 'talent-123',
           }),
         }),
-        mockContext,
+        mockContext
       );
     });
 
     it('throws when the talent has no profile store configured', async () => {
-      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([{
-        id: 'talent-123',
-        profileStoreId: null,
-        profileStoreIsActive: null,
-      }]);
+      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([
+        {
+          id: 'talent-123',
+          profileStoreId: null,
+          profileStoreIsActive: null,
+        },
+      ]);
 
       await expect(
         service.createJob(
@@ -125,30 +130,32 @@ describe('ImportJobService', () => {
           1024,
           3,
           undefined,
-          mockContext,
-        ),
+          mockContext
+        )
       ).rejects.toThrow(BadRequestException);
     });
   });
 
   describe('findById', () => {
     it('returns the mapped import job detail', async () => {
-      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([{
-        id: 'job-123',
-        job_type: ImportJobType.INDIVIDUAL_IMPORT,
-        status: ImportJobStatus.SUCCESS,
-        file_name: 'customers.csv',
-        total_rows: 10,
-        processed_rows: 10,
-        success_rows: 9,
-        failed_rows: 1,
-        warning_rows: 1,
-        started_at: new Date('2026-04-13T12:00:05Z'),
-        completed_at: new Date('2026-04-13T12:00:30Z'),
-        created_at: new Date('2026-04-13T12:00:00Z'),
-        created_by: 'user-123',
-        consumer_code: 'CRM_SYSTEM',
-      }]);
+      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([
+        {
+          id: 'job-123',
+          job_type: ImportJobType.INDIVIDUAL_IMPORT,
+          status: ImportJobStatus.SUCCESS,
+          file_name: 'customers.csv',
+          total_rows: 10,
+          processed_rows: 10,
+          success_rows: 9,
+          failed_rows: 1,
+          warning_rows: 1,
+          started_at: new Date('2026-04-13T12:00:05Z'),
+          completed_at: new Date('2026-04-13T12:00:30Z'),
+          created_at: new Date('2026-04-13T12:00:00Z'),
+          created_by: 'user-123',
+          consumer_code: 'CRM_SYSTEM',
+        },
+      ]);
 
       await expect(service.findById('job-123', 'talent-123', mockContext)).resolves.toEqual({
         id: 'job-123',
@@ -179,7 +186,7 @@ describe('ImportJobService', () => {
       mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([]);
 
       await expect(service.findById('job-404', 'talent-123', mockContext)).rejects.toThrow(
-        NotFoundException,
+        NotFoundException
       );
     });
   });
@@ -187,72 +194,80 @@ describe('ImportJobService', () => {
   describe('findMany', () => {
     it('returns mapped paginated items and total count', async () => {
       mockPrisma.$queryRawUnsafe
-        .mockResolvedValueOnce([{
-          id: 'talent-123',
-          profileStoreId: 'store-123',
-          profileStoreIsActive: true,
-        }])
-        .mockResolvedValueOnce([{
-          id: 'job-123',
-          job_type: ImportJobType.COMPANY_IMPORT,
-          status: ImportJobStatus.PENDING,
-          file_name: 'companies.csv',
-          total_rows: 5,
-          processed_rows: 0,
-          success_rows: 0,
-          failed_rows: 0,
-          warning_rows: 0,
-          started_at: null,
-          completed_at: null,
-          created_at: new Date('2026-04-13T12:00:00Z'),
-          created_by: 'user-123',
-          consumer_code: null,
-        }])
+        .mockResolvedValueOnce([
+          {
+            id: 'talent-123',
+            profileStoreId: 'store-123',
+            profileStoreIsActive: true,
+          },
+        ])
+        .mockResolvedValueOnce([
+          {
+            id: 'job-123',
+            job_type: ImportJobType.COMPANY_IMPORT,
+            status: ImportJobStatus.PENDING,
+            file_name: 'companies.csv',
+            total_rows: 5,
+            processed_rows: 0,
+            success_rows: 0,
+            failed_rows: 0,
+            warning_rows: 0,
+            started_at: null,
+            completed_at: null,
+            created_at: new Date('2026-04-13T12:00:00Z'),
+            created_by: 'user-123',
+            consumer_code: null,
+          },
+        ])
         .mockResolvedValueOnce([{ count: 1n }]);
 
       await expect(
         service.findMany(
           'talent-123',
           { status: ImportJobStatus.PENDING, page: 2, pageSize: 1 },
-          mockContext,
-        ),
+          mockContext
+        )
       ).resolves.toEqual({
-        items: [{
-          id: 'job-123',
-          jobType: ImportJobType.COMPANY_IMPORT,
-          status: ImportJobStatus.PENDING,
-          fileName: 'companies.csv',
-          consumerCode: null,
-          progress: {
-            totalRows: 5,
-            processedRows: 0,
-            successRows: 0,
-            failedRows: 0,
-            warningRows: 0,
-            percentage: 0,
+        items: [
+          {
+            id: 'job-123',
+            jobType: ImportJobType.COMPANY_IMPORT,
+            status: ImportJobStatus.PENDING,
+            fileName: 'companies.csv',
+            consumerCode: null,
+            progress: {
+              totalRows: 5,
+              processedRows: 0,
+              successRows: 0,
+              failedRows: 0,
+              warningRows: 0,
+              percentage: 0,
+            },
+            startedAt: null,
+            completedAt: null,
+            estimatedRemainingSeconds: null,
+            createdAt: '2026-04-13T12:00:00.000Z',
+            createdBy: {
+              id: 'user-123',
+              username: 'unknown',
+            },
           },
-          startedAt: null,
-          completedAt: null,
-          estimatedRemainingSeconds: null,
-          createdAt: '2026-04-13T12:00:00.000Z',
-          createdBy: {
-            id: 'user-123',
-            username: 'unknown',
-          },
-        }],
+        ],
         total: 1,
       });
     });
 
     it('returns an empty list when the talent has no profile store', async () => {
-      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([{
-        id: 'talent-123',
-        profileStoreId: null,
-        profileStoreIsActive: null,
-      }]);
+      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([
+        {
+          id: 'talent-123',
+          profileStoreId: null,
+          profileStoreIsActive: null,
+        },
+      ]);
 
       await expect(
-        service.findMany('talent-123', { page: 1, pageSize: 20 }, mockContext),
+        service.findMany('talent-123', { page: 1, pageSize: 20 }, mockContext)
       ).resolves.toEqual({
         items: [],
         total: 0,
@@ -284,14 +299,16 @@ describe('ImportJobService', () => {
 
   describe('cancelJob', () => {
     it('cancels a pending import job through the layered write path', async () => {
-      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([{
-        id: 'job-123',
-        status: ImportJobStatus.PENDING,
-      }]);
+      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([
+        {
+          id: 'job-123',
+          status: ImportJobStatus.PENDING,
+        },
+      ]);
       mockPrisma.$executeRawUnsafe.mockResolvedValueOnce(1);
 
       await expect(
-        service.cancelJob('job-123', 'talent-123', mockContext),
+        service.cancelJob('job-123', 'talent-123', mockContext)
       ).resolves.toBeUndefined();
 
       const cancelCall = mockPrisma.$executeRawUnsafe.mock.calls[0];
@@ -303,18 +320,20 @@ describe('ImportJobService', () => {
       mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([]);
 
       await expect(service.cancelJob('job-404', 'talent-123', mockContext)).rejects.toThrow(
-        NotFoundException,
+        NotFoundException
       );
     });
 
     it('throws BadRequestException when cancelling a completed import job', async () => {
-      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([{
-        id: 'job-123',
-        status: ImportJobStatus.SUCCESS,
-      }]);
+      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([
+        {
+          id: 'job-123',
+          status: ImportJobStatus.SUCCESS,
+        },
+      ]);
 
       await expect(service.cancelJob('job-123', 'talent-123', mockContext)).rejects.toThrow(
-        BadRequestException,
+        BadRequestException
       );
     });
   });
@@ -324,7 +343,7 @@ describe('ImportJobService', () => {
       mockPrisma.$executeRawUnsafe.mockResolvedValueOnce(1);
 
       await expect(
-        service.updateProgress('job-123', 20, 18, 2, 1, 'tenant_test'),
+        service.updateProgress('job-123', 20, 18, 2, 1, 'tenant_test')
       ).resolves.toBeUndefined();
 
       const updateCall = mockPrisma.$executeRawUnsafe.mock.calls[0];
@@ -358,38 +377,36 @@ describe('ImportJobService', () => {
         warningRows: 0,
         expectedStatus: ImportJobStatus.FAILED,
       },
-    ])('completes an import job with $name status through the layered state path', async ({
-      successRows,
-      failedRows,
-      warningRows,
-      expectedStatus,
-    }) => {
-      mockPrisma.$executeRawUnsafe.mockResolvedValueOnce(1);
+    ])(
+      'completes an import job with $name status through the layered state path',
+      async ({ successRows, failedRows, warningRows, expectedStatus }) => {
+        mockPrisma.$executeRawUnsafe.mockResolvedValueOnce(1);
 
-      await expect(
-        service.completeJob('job-123', successRows, failedRows, warningRows, 'tenant_test'),
-      ).resolves.toBeUndefined();
+        await expect(
+          service.completeJob('job-123', successRows, failedRows, warningRows, 'tenant_test')
+        ).resolves.toBeUndefined();
 
-      const completeCall = mockPrisma.$executeRawUnsafe.mock.calls[0];
-      expect(completeCall[1]).toBe(expectedStatus);
-      expect(completeCall[2]).toBe(successRows + failedRows);
-      expect(completeCall[3]).toBe(successRows);
-      expect(completeCall[4]).toBe(failedRows);
-      expect(completeCall[5]).toBe(warningRows);
-      expect(completeCall[6]).toBe('job-123');
+        const completeCall = mockPrisma.$executeRawUnsafe.mock.calls[0];
+        expect(completeCall[1]).toBe(expectedStatus);
+        expect(completeCall[2]).toBe(successRows + failedRows);
+        expect(completeCall[3]).toBe(successRows);
+        expect(completeCall[4]).toBe(failedRows);
+        expect(completeCall[5]).toBe(warningRows);
+        expect(completeCall[6]).toBe('job-123');
 
-      expect(mockTechEventLogService.log).toHaveBeenCalledWith(
-        expect.objectContaining({
-          traceId: 'job-123',
-          payload: expect.objectContaining({
-            status: expectedStatus,
-            success_rows: successRows,
-            failed_rows: failedRows,
-            warning_rows: warningRows,
-          }),
-        }),
-      );
-    });
+        expect(mockTechEventLogService.log).toHaveBeenCalledWith(
+          expect.objectContaining({
+            traceId: 'job-123',
+            payload: expect.objectContaining({
+              status: expectedStatus,
+              success_rows: successRows,
+              failed_rows: failedRows,
+              warning_rows: warningRows,
+            }),
+          })
+        );
+      }
+    );
 
     it('persists import-job row errors through the layered state path', async () => {
       mockPrisma.$executeRawUnsafe.mockResolvedValueOnce(1);
@@ -401,8 +418,8 @@ describe('ImportJobService', () => {
           'VALIDATION_ERROR',
           'Nickname is required',
           '{"nickname":""}',
-          'tenant_test',
-        ),
+          'tenant_test'
+        )
       ).resolves.toBeUndefined();
 
       const addErrorCall = mockPrisma.$executeRawUnsafe.mock.calls[0];

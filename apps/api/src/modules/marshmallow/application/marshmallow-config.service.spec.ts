@@ -1,9 +1,9 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { ConflictException, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { createLocalizedText } from '@tcrn/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { createLocalizedText } from '@tcrn/shared';
 
 import { ChangeLogService } from '../../log';
 import { MarshmallowConfigRepository } from '../infrastructure/marshmallow-config.repository';
@@ -93,7 +93,7 @@ describe('MarshmallowConfigApplicationService', () => {
     service = new MarshmallowConfigApplicationService(
       mockRepository as unknown as MarshmallowConfigRepository,
       mockChangeLogService as unknown as ChangeLogService,
-      mockConfigService as unknown as ConfigService,
+      mockConfigService as unknown as ConfigService
     );
   });
 
@@ -118,9 +118,7 @@ describe('MarshmallowConfigApplicationService', () => {
       homepagePath: 'demo',
     });
 
-    await expect(
-      service.getOrCreate('talent-123', 'tenant_test'),
-    ).resolves.toMatchObject({
+    await expect(service.getOrCreate('talent-123', 'tenant_test')).resolves.toMatchObject({
       id: 'config-123',
       talentId: 'talent-123',
       stats: {
@@ -181,9 +179,9 @@ describe('MarshmallowConfigApplicationService', () => {
     mockRepository.findConfigByTalentId.mockResolvedValueOnce(null);
     mockRepository.findActiveTalent.mockResolvedValue(null);
 
-    await expect(
-      service.getOrCreate('missing-talent', 'tenant_test'),
-    ).rejects.toThrow(NotFoundException);
+    await expect(service.getOrCreate('missing-talent', 'tenant_test')).rejects.toThrow(
+      NotFoundException
+    );
   });
 
   it('updates config fields and writes a change log through the layered boundaries', async () => {
@@ -214,8 +212,8 @@ describe('MarshmallowConfigApplicationService', () => {
           tenantId: 'tenant-123',
           tenantSchema: 'tenant_test',
           userId: 'user-123',
-        },
-      ),
+        }
+      )
     ).resolves.toMatchObject({
       id: 'config-123',
       isEnabled: false,
@@ -238,8 +236,8 @@ describe('MarshmallowConfigApplicationService', () => {
           tenantId: 'tenant-123',
           tenantSchema: 'tenant_test',
           userId: 'user-123',
-        },
-      ),
+        }
+      )
     ).rejects.toThrow(ConflictException);
   });
 });

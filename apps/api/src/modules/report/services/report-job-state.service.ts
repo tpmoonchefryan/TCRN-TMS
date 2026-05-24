@@ -1,8 +1,5 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
-import {
-    Injectable,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 
 import { DatabaseService } from '../../database';
@@ -18,8 +15,8 @@ export class ReportJobStateService {
     techEventLog: TechEventLogService,
     private readonly reportJobStateApplicationService: ReportJobStateApplicationService = new ReportJobStateApplicationService(
       new ReportJobStateRepository(databaseService),
-      techEventLog,
-    ),
+      techEventLog
+    )
   ) {}
 
   /**
@@ -28,28 +25,16 @@ export class ReportJobStateService {
   async transition(
     jobId: string,
     targetStatus: ReportJobStatus,
-    updates?: Record<string, unknown>,
+    updates?: Record<string, unknown>
   ) {
-    return this.reportJobStateApplicationService.transition(
-      jobId,
-      targetStatus,
-      updates,
-    );
+    return this.reportJobStateApplicationService.transition(jobId, targetStatus, updates);
   }
 
   /**
    * Update job progress
    */
-  async updateProgress(
-    jobId: string,
-    processedRows: number,
-    totalRows: number,
-  ) {
-    await this.reportJobStateApplicationService.updateProgress(
-      jobId,
-      processedRows,
-      totalRows,
-    );
+  async updateProgress(jobId: string, processedRows: number, totalRows: number) {
+    await this.reportJobStateApplicationService.updateProgress(jobId, processedRows, totalRows);
   }
 
   /**

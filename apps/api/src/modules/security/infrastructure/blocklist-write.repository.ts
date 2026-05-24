@@ -1,11 +1,9 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable } from '@nestjs/common';
+
 import { Prisma } from '@tcrn/database';
 
-import {
-  stringifyLocalizedText,
-} from '../../../platform/persistence/localized-text.persistence';
+import { stringifyLocalizedText } from '../../../platform/persistence/localized-text.persistence';
 import { DatabaseService } from '../../database';
 import type {
   BlocklistScopeEntryRow,
@@ -21,7 +19,7 @@ export class BlocklistWriteRepository {
     tx: Prisma.TransactionClient,
     tenantSchema: string,
     dto: CreateBlocklistDto & { extraData: Record<string, unknown> | null },
-    userId: string,
+    userId: string
   ): Promise<{ id: string }> {
     const entries = await tx.$queryRawUnsafe<Array<{ id: string }>>(
       `
@@ -93,16 +91,13 @@ export class BlocklistWriteRepository {
       dto.inherit ?? true,
       dto.sortOrder ?? 0,
       dto.isForceUse ?? false,
-      userId,
+      userId
     );
 
     return entries[0];
   }
 
-  async findForWrite(
-    tenantSchema: string,
-    id: string,
-  ): Promise<BlocklistWriteLookupRow | null> {
+  async findForWrite(tenantSchema: string, id: string): Promise<BlocklistWriteLookupRow | null> {
     const prisma = this.databaseService.getPrisma();
     const entries = await prisma.$queryRawUnsafe<BlocklistWriteLookupRow[]>(
       `
@@ -115,7 +110,7 @@ export class BlocklistWriteRepository {
         WHERE id = $1::uuid
         LIMIT 1
       `,
-      id,
+      id
     );
 
     return entries[0] ?? null;
@@ -126,7 +121,7 @@ export class BlocklistWriteRepository {
     tenantSchema: string,
     id: string,
     data: Record<string, unknown>,
-    userId: string | null | undefined,
+    userId: string | null | undefined
   ): Promise<void> {
     const columnMappings: Record<string, { column: string; cast?: string }> = {
       pattern: { column: 'pattern' },
@@ -158,11 +153,9 @@ export class BlocklistWriteRepository {
           ? JSON.stringify(value)
           : key === 'name' && value && typeof value === 'object'
             ? JSON.stringify(value)
-          : value,
+            : value
       );
-      assignments.push(
-        `${mapping.column} = $${params.length}${mapping.cast ?? ''}`,
-      );
+      assignments.push(`${mapping.column} = $${params.length}${mapping.cast ?? ''}`);
     }
 
     params.push(userId ?? null);
@@ -178,7 +171,7 @@ export class BlocklistWriteRepository {
         ].join(', ')}
         WHERE id = $1::uuid
       `,
-      ...params,
+      ...params
     );
   }
 
@@ -186,7 +179,7 @@ export class BlocklistWriteRepository {
     tx: Prisma.TransactionClient,
     tenantSchema: string,
     id: string,
-    userId: string | null | undefined,
+    userId: string | null | undefined
   ): Promise<void> {
     await tx.$executeRawUnsafe(
       `
@@ -198,13 +191,13 @@ export class BlocklistWriteRepository {
         WHERE id = $1::uuid
       `,
       id,
-      userId ?? null,
+      userId ?? null
     );
   }
 
   async findScopeEntryById(
     tenantSchema: string,
-    id: string,
+    id: string
   ): Promise<BlocklistScopeEntryRow | null> {
     const prisma = this.databaseService.getPrisma();
     const entries = await prisma.$queryRawUnsafe<BlocklistScopeEntryRow[]>(
@@ -218,7 +211,7 @@ export class BlocklistWriteRepository {
         FROM "${tenantSchema}".blocklist_entry
         WHERE id = $1::uuid
       `,
-      id,
+      id
     );
 
     return entries[0] ?? null;
@@ -229,7 +222,7 @@ export class BlocklistWriteRepository {
     id: string,
     scopeType: string,
     scopeId: string | null | undefined,
-    userId: string,
+    userId: string
   ): Promise<void> {
     const prisma = this.databaseService.getPrisma();
     await prisma.$executeRawUnsafe(
@@ -245,7 +238,7 @@ export class BlocklistWriteRepository {
       id,
       scopeType,
       scopeId ?? null,
-      userId,
+      userId
     );
   }
 
@@ -253,7 +246,7 @@ export class BlocklistWriteRepository {
     tenantSchema: string,
     id: string,
     scopeType: string,
-    scopeId: string | null | undefined,
+    scopeId: string | null | undefined
   ): Promise<void> {
     const prisma = this.databaseService.getPrisma();
     await prisma.$executeRawUnsafe(
@@ -267,7 +260,7 @@ export class BlocklistWriteRepository {
       `,
       id,
       scopeType,
-      scopeId ?? null,
+      scopeId ?? null
     );
   }
 }

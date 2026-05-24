@@ -1,6 +1,7 @@
-import type { SupportedUiLocale } from '@tcrn/shared';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import type { SupportedUiLocale } from '@tcrn/shared';
 
 import { TenantWorkspaceLandingScreen } from '@/domains/talent-workspace/screens/TenantWorkspaceLandingScreen';
 
@@ -11,7 +12,6 @@ let currentSearch = '';
 const localeState = {
   locale: 'en' as SupportedUiLocale,
 };
-
 
 vi.mock('next/navigation', () => ({
   usePathname: () => pathname,
@@ -71,7 +71,9 @@ describe('TenantWorkspaceLandingScreen', () => {
 
     render(<TenantWorkspaceLandingScreen tenantId="tenant-1" />);
 
-    expect(await screen.findByRole('heading', { name: 'Choose a published talent' })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { name: 'Choose a published talent' })
+    ).toBeInTheDocument();
     expect(screen.getByText('Talent 01')).toBeInTheDocument();
     expect(screen.getByText('Talent 20')).toBeInTheDocument();
     expect(screen.queryByText('Talent 21')).not.toBeInTheDocument();

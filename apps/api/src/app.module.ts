@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { MiddlewareConsumer, Module, NestModule, RequestMethod } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
@@ -57,74 +56,74 @@ import { repoEnvFilePaths } from './repo-env';
         abortEarly: false,
       },
     }),
-    
+
     // Schedule module for cron jobs
     ScheduleModule.forRoot(),
-    
+
     // Core infrastructure modules
     DatabaseModule,
     RedisModule,
     MinioModule,
     TenantModule,
-    
+
     // Feature modules
     HealthModule,
     AuthModule,
-    
+
     // Organization modules
     SubsidiaryModule,
     TalentModule,
     OrganizationModule,
-    
+
     // Permission & Role modules
     PermissionModule,
     RoleModule,
     DelegatedAdminModule,
     SystemUserModule,
     SystemRoleModule,
-    
+
     // Dictionary & Config modules
     DictionaryModule,
     AppConfigModule,
-    
+
     // Log module
     LogModule,
-    
+
     // Customer module
     CustomerModule,
-    
+
     // PII module
     PiiModule,
-    
+
     // PII Config module
     PiiConfigModule,
-    
+
     // Queue module (for background jobs)
     QueueModule,
-    
+
     // Import/Export modules
     ImportModule,
     ExportModule,
-    
+
     // Homepage module
     HomepageModule,
-    
+
     // Marshmallow module
     MarshmallowModule,
-    
+
     // Report module
     ReportModule,
-    
+
     // Integration module
     IntegrationModule,
     PublicModule,
-    
+
     // Security module
     SecurityModule,
-    
+
     // Email module
     EmailModule,
-    
+
     // Settings module
     SettingsModule,
   ],
@@ -166,7 +165,7 @@ export class AppModule implements NestModule {
     consumer
       .apply(GlobalRateLimitMiddleware)
       .forRoutes({ path: 'api/v1/*path', method: RequestMethod.ALL });
-    
+
     // Apply tenant middleware to all routes except excluded ones
     consumer
       .apply(TenantMiddleware)
@@ -174,7 +173,7 @@ export class AppModule implements NestModule {
         { path: 'health', method: RequestMethod.ALL },
         { path: 'health/*path', method: RequestMethod.ALL },
         { path: 'api/docs', method: RequestMethod.ALL },
-        { path: 'api/docs/*path', method: RequestMethod.ALL },
+        { path: 'api/docs/*path', method: RequestMethod.ALL }
       )
       .forRoutes({ path: '*path', method: RequestMethod.ALL });
   }

@@ -1,32 +1,16 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
-import {
-  Body,
-  Controller,
-  Get,
-  Param,
-  ParseUUIDPipe,
-  Post,
-  Query,
-  Req,
-} from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseUUIDPipe, Post, Query, Req } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import type { RequestContext } from '@tcrn/shared';
 import { Request } from 'express';
 
-import { CurrentUser, RequirePermissions } from '../../../common/decorators';
-import {
-  AdapterListQueryDto,
-  CreateAdapterDto,
-  OwnerType,
-} from '../dto/integration.dto';
-import { AdapterService } from '../services/adapter.service';
-import { AdapterResolutionService } from '../services/adapter-resolution.service';
+import type { RequestContext } from '@tcrn/shared';
 
-function parseBooleanQueryValue(
-  value: string | string[] | undefined,
-  fallback: boolean,
-): boolean {
+import { CurrentUser, RequirePermissions } from '../../../common/decorators';
+import { AdapterListQueryDto, CreateAdapterDto, OwnerType } from '../dto/integration.dto';
+import { AdapterResolutionService } from '../services/adapter-resolution.service';
+import { AdapterService } from '../services/adapter.service';
+
+function parseBooleanQueryValue(value: string | string[] | undefined, fallback: boolean): boolean {
   const rawValue = Array.isArray(value) ? value[0] : value;
 
   if (rawValue === undefined) {
@@ -52,7 +36,7 @@ function parseBooleanQueryValue(
 export class SubsidiaryIntegrationAdapterController {
   constructor(
     private readonly adapterService: AdapterService,
-    private readonly adapterResolutionService: AdapterResolutionService,
+    private readonly adapterResolutionService: AdapterResolutionService
   ) {}
 
   @Get('/')
@@ -62,7 +46,7 @@ export class SubsidiaryIntegrationAdapterController {
     @Param('subsidiaryId', ParseUUIDPipe) subsidiaryId: string,
     @Query() query: AdapterListQueryDto,
     @CurrentUser() user: { id: string; username: string; tenantId?: string; tenantSchema?: string },
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     return this.adapterService.findMany(
       { ownerType: OwnerType.SUBSIDIARY, ownerId: subsidiaryId },
@@ -70,14 +54,14 @@ export class SubsidiaryIntegrationAdapterController {
         ...query,
         includeInherited: parseBooleanQueryValue(
           req.query.includeInherited as string | string[] | undefined,
-          query.includeInherited ?? true,
+          query.includeInherited ?? true
         ),
         includeDisabled: parseBooleanQueryValue(
           req.query.includeDisabled as string | string[] | undefined,
-          query.includeDisabled ?? false,
+          query.includeDisabled ?? false
         ),
       },
-      this.buildContext(user, req),
+      this.buildContext(user, req)
     );
   }
 
@@ -88,13 +72,12 @@ export class SubsidiaryIntegrationAdapterController {
     @Param('subsidiaryId', ParseUUIDPipe) subsidiaryId: string,
     @Body() dto: CreateAdapterDto,
     @CurrentUser() user: { id: string; username: string; tenantId?: string; tenantSchema?: string },
-    @Req() req: Request,
+    @Req() req: Request
   ) {
-    return this.adapterService.create(
-      dto,
-      this.buildContext(user, req),
-      { ownerType: OwnerType.SUBSIDIARY, ownerId: subsidiaryId },
-    );
+    return this.adapterService.create(dto, this.buildContext(user, req), {
+      ownerType: OwnerType.SUBSIDIARY,
+      ownerId: subsidiaryId,
+    });
   }
 
   @Get('effective/:platformCode')
@@ -105,7 +88,7 @@ export class SubsidiaryIntegrationAdapterController {
     @Param('platformCode') platformCode: string,
     @Query('adapterType') adapterType: string | undefined,
     @CurrentUser() user: { id: string; username: string; tenantId?: string; tenantSchema?: string },
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     return this.adapterResolutionService.resolveEffectiveAdapter(
       {
@@ -114,7 +97,7 @@ export class SubsidiaryIntegrationAdapterController {
         platformCode,
         adapterType,
       },
-      this.buildContext(user, req),
+      this.buildContext(user, req)
     );
   }
 
@@ -125,12 +108,12 @@ export class SubsidiaryIntegrationAdapterController {
     @Param('subsidiaryId', ParseUUIDPipe) subsidiaryId: string,
     @Param('adapterId', ParseUUIDPipe) adapterId: string,
     @CurrentUser() user: { id: string; username: string; tenantId?: string; tenantSchema?: string },
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     return this.adapterService.disableInherited(
       adapterId,
       { ownerType: OwnerType.SUBSIDIARY, ownerId: subsidiaryId },
-      this.buildContext(user, req),
+      this.buildContext(user, req)
     );
   }
 
@@ -141,18 +124,18 @@ export class SubsidiaryIntegrationAdapterController {
     @Param('subsidiaryId', ParseUUIDPipe) subsidiaryId: string,
     @Param('adapterId', ParseUUIDPipe) adapterId: string,
     @CurrentUser() user: { id: string; username: string; tenantId?: string; tenantSchema?: string },
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     return this.adapterService.enableInherited(
       adapterId,
       { ownerType: OwnerType.SUBSIDIARY, ownerId: subsidiaryId },
-      this.buildContext(user, req),
+      this.buildContext(user, req)
     );
   }
 
   private buildContext(
     user: { id: string; username: string; tenantId?: string; tenantSchema?: string },
-    req: Request,
+    req: Request
   ): RequestContext {
     const requestUser = req as Request & {
       user?: { tenantId?: string; tenantSchema?: string };
@@ -176,7 +159,7 @@ export class SubsidiaryIntegrationAdapterController {
 export class TalentIntegrationAdapterController {
   constructor(
     private readonly adapterService: AdapterService,
-    private readonly adapterResolutionService: AdapterResolutionService,
+    private readonly adapterResolutionService: AdapterResolutionService
   ) {}
 
   @Get('/')
@@ -186,7 +169,7 @@ export class TalentIntegrationAdapterController {
     @Param('talentId', ParseUUIDPipe) talentId: string,
     @Query() query: AdapterListQueryDto,
     @CurrentUser() user: { id: string; username: string; tenantId?: string; tenantSchema?: string },
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     return this.adapterService.findMany(
       { ownerType: OwnerType.TALENT, ownerId: talentId },
@@ -194,14 +177,14 @@ export class TalentIntegrationAdapterController {
         ...query,
         includeInherited: parseBooleanQueryValue(
           req.query.includeInherited as string | string[] | undefined,
-          query.includeInherited ?? true,
+          query.includeInherited ?? true
         ),
         includeDisabled: parseBooleanQueryValue(
           req.query.includeDisabled as string | string[] | undefined,
-          query.includeDisabled ?? false,
+          query.includeDisabled ?? false
         ),
       },
-      this.buildContext(user, req),
+      this.buildContext(user, req)
     );
   }
 
@@ -212,13 +195,12 @@ export class TalentIntegrationAdapterController {
     @Param('talentId', ParseUUIDPipe) talentId: string,
     @Body() dto: CreateAdapterDto,
     @CurrentUser() user: { id: string; username: string; tenantId?: string; tenantSchema?: string },
-    @Req() req: Request,
+    @Req() req: Request
   ) {
-    return this.adapterService.create(
-      dto,
-      this.buildContext(user, req),
-      { ownerType: OwnerType.TALENT, ownerId: talentId },
-    );
+    return this.adapterService.create(dto, this.buildContext(user, req), {
+      ownerType: OwnerType.TALENT,
+      ownerId: talentId,
+    });
   }
 
   @Get('effective/:platformCode')
@@ -229,7 +211,7 @@ export class TalentIntegrationAdapterController {
     @Param('platformCode') platformCode: string,
     @Query('adapterType') adapterType: string | undefined,
     @CurrentUser() user: { id: string; username: string; tenantId?: string; tenantSchema?: string },
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     return this.adapterResolutionService.resolveEffectiveAdapter(
       {
@@ -238,7 +220,7 @@ export class TalentIntegrationAdapterController {
         platformCode,
         adapterType,
       },
-      this.buildContext(user, req),
+      this.buildContext(user, req)
     );
   }
 
@@ -249,12 +231,12 @@ export class TalentIntegrationAdapterController {
     @Param('talentId', ParseUUIDPipe) talentId: string,
     @Param('adapterId', ParseUUIDPipe) adapterId: string,
     @CurrentUser() user: { id: string; username: string; tenantId?: string; tenantSchema?: string },
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     return this.adapterService.disableInherited(
       adapterId,
       { ownerType: OwnerType.TALENT, ownerId: talentId },
-      this.buildContext(user, req),
+      this.buildContext(user, req)
     );
   }
 
@@ -265,18 +247,18 @@ export class TalentIntegrationAdapterController {
     @Param('talentId', ParseUUIDPipe) talentId: string,
     @Param('adapterId', ParseUUIDPipe) adapterId: string,
     @CurrentUser() user: { id: string; username: string; tenantId?: string; tenantSchema?: string },
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     return this.adapterService.enableInherited(
       adapterId,
       { ownerType: OwnerType.TALENT, ownerId: talentId },
-      this.buildContext(user, req),
+      this.buildContext(user, req)
     );
   }
 
   private buildContext(
     user: { id: string; username: string; tenantId?: string; tenantSchema?: string },
-    req: Request,
+    req: Request
   ): RequestContext {
     const requestUser = req as Request & {
       user?: { tenantId?: string; tenantSchema?: string };

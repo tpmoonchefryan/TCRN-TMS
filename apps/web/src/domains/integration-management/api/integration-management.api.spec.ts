@@ -68,19 +68,31 @@ describe('integration-management.api pagination helpers', () => {
       throw new Error(`Unexpected request path: ${path}`);
     });
 
-    await expect(listAdapterDefinitions(request as never)).resolves.toEqual([{ key: 'ai-adapter' }]);
-    await expect(listWebhookDefinitions(request as never)).resolves.toEqual([{ key: 'customer-lifecycle' }]);
+    await expect(listAdapterDefinitions(request as never)).resolves.toEqual([
+      { key: 'ai-adapter' },
+    ]);
+    await expect(listWebhookDefinitions(request as never)).resolves.toEqual([
+      { key: 'customer-lifecycle' },
+    ]);
   });
 
   it('loads additional social-platform pages when the first page is full', async () => {
-    const firstPage = Array.from({ length: 100 }, (_, index) => buildSocialPlatform(`platform-${index + 1}`));
+    const firstPage = Array.from({ length: 100 }, (_, index) =>
+      buildSocialPlatform(`platform-${index + 1}`)
+    );
     const secondPage = [buildSocialPlatform('platform-101')];
     const request = vi.fn(async (path: string) => {
-      if (path === '/api/v1/configuration-entity/social-platform?includeInactive=false&page=1&pageSize=100') {
+      if (
+        path ===
+        '/api/v1/configuration-entity/social-platform?includeInactive=false&page=1&pageSize=100'
+      ) {
         return firstPage;
       }
 
-      if (path === '/api/v1/configuration-entity/social-platform?includeInactive=false&page=2&pageSize=100') {
+      if (
+        path ===
+        '/api/v1/configuration-entity/social-platform?includeInactive=false&page=2&pageSize=100'
+      ) {
         return secondPage;
       }
 
@@ -97,7 +109,9 @@ describe('integration-management.api pagination helpers', () => {
   it('stops after the first consumer page when the batch is not full', async () => {
     const firstPage = [buildConsumer('consumer-1')];
     const request = vi.fn(async (path: string) => {
-      if (path === '/api/v1/configuration-entity/consumer?includeInactive=true&page=1&pageSize=100') {
+      if (
+        path === '/api/v1/configuration-entity/consumer?includeInactive=true&page=1&pageSize=100'
+      ) {
         return firstPage;
       }
 
@@ -155,7 +169,7 @@ describe('integration-management.api pagination helpers', () => {
           name,
           consumerCategory: 'external',
         }),
-      }),
+      })
     );
   });
 
@@ -182,7 +196,7 @@ describe('integration-management.api pagination helpers', () => {
           name,
           consumerCategory: 'external',
         }),
-      }),
+      })
     );
   });
 
@@ -226,7 +240,7 @@ describe('integration-management.api pagination helpers', () => {
           name,
           adapterType: 'api_key',
         }),
-      }),
+      })
     );
   });
 
@@ -273,7 +287,7 @@ describe('integration-management.api pagination helpers', () => {
             { configKey: 'token', configValue: 'provider-token' },
           ],
         }),
-      }),
+      })
     );
   });
 
@@ -313,7 +327,7 @@ describe('integration-management.api pagination helpers', () => {
           version: 2,
           name,
         }),
-      }),
+      })
     );
   });
 
@@ -354,7 +368,7 @@ describe('integration-management.api pagination helpers', () => {
           events: ['customer.created'],
           monitoredTalentIds: ['11111111-1111-4111-8111-111111111111'],
         }),
-      }),
+      })
     );
   });
 
@@ -388,7 +402,7 @@ describe('integration-management.api pagination helpers', () => {
           url: 'https://example.com/webhook',
           monitoredTalentIds: ['11111111-1111-4111-8111-111111111111'],
         }),
-      }),
+      })
     );
   });
 
@@ -429,7 +443,7 @@ describe('integration-management.api pagination helpers', () => {
           events: ['customer.created'],
           monitoredTalentIds: ['11111111-1111-4111-8111-111111111111'],
         }),
-      }),
+      })
     );
   });
 
@@ -481,7 +495,7 @@ describe('integration-management.api pagination helpers', () => {
           bodyText,
           category: 'system',
         }),
-      }),
+      })
     );
   });
 
@@ -528,7 +542,7 @@ describe('integration-management.api pagination helpers', () => {
           bodyText,
           category: 'system',
         }),
-      }),
+      })
     );
   });
 });

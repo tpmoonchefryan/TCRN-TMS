@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) - PolyForm Noncommercial License
-
 import { Controller, Get, Param, Res, UseGuards } from '@nestjs/common';
 import { ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Response } from 'express';
@@ -22,13 +21,7 @@ const PUBLIC_HOMEPAGE_SCHEMA = {
         talentCode: { type: 'string', nullable: true, example: 'aki' },
         domainHostname: { type: 'string', nullable: true, example: null },
       },
-      required: [
-        'canonicalPath',
-        'legacyPath',
-        'tenantCode',
-        'talentCode',
-        'domainHostname',
-      ],
+      required: ['canonicalPath', 'legacyPath', 'tenantCode', 'talentCode', 'domainHostname'],
     },
     metadata: {
       type: 'object',
@@ -141,9 +134,7 @@ const PUBLIC_HOMEPAGE_NOT_FOUND_SCHEMA = {
 @ApiTags('Public - Homepage')
 @Controller('public/homepage')
 export class PublicHomepageController {
-  constructor(
-    private readonly publicHomepageProjectionService: PublicHomepageProjectionService,
-  ) {}
+  constructor(private readonly publicHomepageProjectionService: PublicHomepageProjectionService) {}
 
   @Get(':tenantCode/:talentCode')
   @Public()
@@ -161,15 +152,14 @@ export class PublicHomepageController {
   async getPublicHomepageByCodes(
     @Param('tenantCode') tenantCode: string,
     @Param('talentCode') talentCode: string,
-    @Res({ passthrough: true }) res: Response,
+    @Res({ passthrough: true }) res: Response
   ) {
     const internalProjection =
       await this.publicHomepageProjectionService.getPublishedHomepageProjectionByCodesOrThrow(
         tenantCode,
-        talentCode,
+        talentCode
       );
-    const projection =
-      this.publicHomepageProjectionService.toPublicProjection(internalProjection);
+    const projection = this.publicHomepageProjectionService.toPublicProjection(internalProjection);
 
     res.set({
       'Cache-Control': 'public, max-age=300, s-maxage=900',
@@ -195,14 +185,11 @@ export class PublicHomepageController {
   })
   async getPublicHomepageByLegacyPath(
     @Param('path') path: string,
-    @Res({ passthrough: true }) res: Response,
+    @Res({ passthrough: true }) res: Response
   ) {
     const internalProjection =
-      await this.publicHomepageProjectionService.getPublishedHomepageProjectionOrThrow(
-        path,
-      );
-    const projection =
-      this.publicHomepageProjectionService.toPublicProjection(internalProjection);
+      await this.publicHomepageProjectionService.getPublishedHomepageProjectionOrThrow(path);
+    const projection = this.publicHomepageProjectionService.toPublicProjection(internalProjection);
 
     res.set({
       'Cache-Control': 'public, max-age=300, s-maxage=900',

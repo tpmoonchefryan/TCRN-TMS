@@ -1,7 +1,4 @@
-import {
-  BROWSER_PUBLIC_CONSUMER_CODE,
-  BROWSER_PUBLIC_CONSUMER_HEADER,
-} from '@tcrn/shared';
+import { BROWSER_PUBLIC_CONSUMER_CODE, BROWSER_PUBLIC_CONSUMER_HEADER } from '@tcrn/shared';
 
 export interface ApiEnvelopeError {
   code: string;
@@ -59,7 +56,7 @@ export class ApiRequestError extends Error {
     status: number,
     details?: unknown,
     requestId?: string,
-    traceId?: string,
+    traceId?: string
   ) {
     super(message);
     this.name = 'ApiRequestError';
@@ -82,7 +79,7 @@ export async function readApiEnvelope<T>(response: Response): Promise<ApiSuccess
       response.status,
       error?.details,
       error?.requestId,
-      error?.traceId,
+      error?.traceId
     );
   }
 
@@ -97,7 +94,7 @@ export async function readApiData<T>(response: Response): Promise<T> {
 export function buildFallbackPagination(
   itemCount: number,
   page: number,
-  pageSize: number,
+  pageSize: number
 ): ApiPaginationMeta {
   const totalCount = itemCount;
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
@@ -116,7 +113,7 @@ export function resolveApiPagination(
   meta: ApiEnvelopeMeta | undefined,
   page: number,
   pageSize: number,
-  itemCount: number,
+  itemCount: number
 ): ApiPaginationMeta {
   return meta?.pagination ?? buildFallbackPagination(itemCount, page, pageSize);
 }

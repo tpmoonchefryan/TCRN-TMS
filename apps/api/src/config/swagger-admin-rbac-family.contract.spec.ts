@@ -1,5 +1,4 @@
 import 'reflect-metadata';
-
 import { describe, expect, it } from 'vitest';
 
 import { PERMISSIONS_KEY } from '../common/decorators/require-permissions.decorator';
@@ -25,28 +24,20 @@ const API_MODEL_PROPERTIES_ARRAY_METADATA_KEY = 'swagger/apiModelPropertiesArray
 
 type ControllerClass = { prototype: object };
 
-const getResponseStatuses = (
-  controllerClass: ControllerClass,
-  methodName: string,
-): string[] => {
+const getResponseStatuses = (controllerClass: ControllerClass, methodName: string): string[] => {
   const prototype = controllerClass.prototype as Record<string, unknown>;
-  const metadata = Reflect.getMetadata(
-    API_RESPONSE_METADATA_KEY,
-    prototype[methodName],
-  ) as Record<string, unknown> | undefined;
+  const metadata = Reflect.getMetadata(API_RESPONSE_METADATA_KEY, prototype[methodName]) as
+    | Record<string, unknown>
+    | undefined;
 
   return Object.keys(metadata ?? {}).sort();
 };
 
-const getPathParamNames = (
-  controllerClass: ControllerClass,
-  methodName: string,
-): string[] => {
+const getPathParamNames = (controllerClass: ControllerClass, methodName: string): string[] => {
   const prototype = controllerClass.prototype as Record<string, unknown>;
-  const metadata = Reflect.getMetadata(
-    API_PARAMETERS_METADATA_KEY,
-    prototype[methodName],
-  ) as Array<{ in?: string; name?: string }> | undefined;
+  const metadata = Reflect.getMetadata(API_PARAMETERS_METADATA_KEY, prototype[methodName]) as
+    | Array<{ in?: string; name?: string }>
+    | undefined;
 
   return (metadata ?? [])
     .filter((parameter) => parameter.in === 'path' && typeof parameter.name === 'string')
@@ -57,7 +48,7 @@ const getPathParamNames = (
 const getDocumentedDtoProperties = (dtoClass: { prototype: object }): string[] => {
   const metadata = Reflect.getMetadata(
     API_MODEL_PROPERTIES_ARRAY_METADATA_KEY,
-    dtoClass.prototype,
+    dtoClass.prototype
   ) as string[] | undefined;
 
   return (metadata ?? []).map((property) => property.replace(/^:/, '')).sort();
@@ -88,12 +79,7 @@ describe('Swagger admin RBAC family contract', () => {
       '403',
       '404',
     ]);
-    expect(getResponseStatuses(RoleController, 'reactivate')).toEqual([
-      '200',
-      '400',
-      '401',
-      '404',
-    ]);
+    expect(getResponseStatuses(RoleController, 'reactivate')).toEqual(['200', '400', '401', '404']);
   });
 
   it('documents response status coverage for system-user routes', () => {
@@ -106,21 +92,9 @@ describe('Swagger admin RBAC family contract', () => {
       '401',
       '404',
     ]);
-    expect(getResponseStatuses(SystemUserController, 'deactivate')).toEqual([
-      '200',
-      '401',
-      '404',
-    ]);
-    expect(getResponseStatuses(SystemUserController, 'reactivate')).toEqual([
-      '200',
-      '401',
-      '404',
-    ]);
-    expect(getResponseStatuses(SystemUserController, 'forceTotp')).toEqual([
-      '200',
-      '401',
-      '404',
-    ]);
+    expect(getResponseStatuses(SystemUserController, 'deactivate')).toEqual(['200', '401', '404']);
+    expect(getResponseStatuses(SystemUserController, 'reactivate')).toEqual(['200', '401', '404']);
+    expect(getResponseStatuses(SystemUserController, 'forceTotp')).toEqual(['200', '401', '404']);
     expect(getResponseStatuses(SystemUserController, 'getScopeAccess')).toEqual(['200', '401']);
     expect(getResponseStatuses(SystemUserController, 'setScopeAccess')).toEqual(['200', '401']);
   });
@@ -171,11 +145,7 @@ describe('Swagger admin RBAC family contract', () => {
       'name',
       'permissionIds',
     ]);
-    expect(getDocumentedDtoProperties(UpdateRoleDto)).toEqual([
-      'description',
-      'name',
-      'version',
-    ]);
+    expect(getDocumentedDtoProperties(UpdateRoleDto)).toEqual(['description', 'name', 'version']);
     expect(getDocumentedDtoProperties(SetPermissionsDto)).toEqual(['permissionIds', 'version']);
     expect(getDocumentedDtoProperties(RoleActivationDto)).toEqual(['version']);
 

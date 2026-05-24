@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable } from '@nestjs/common';
+
 import { Prisma } from '@tcrn/database';
 
 import { DatabaseService } from '../../database';
@@ -13,13 +13,9 @@ interface ConsumerLookupRecord {
 
 @Injectable()
 export class ApiKeyRepository {
-  constructor(
-    private readonly databaseService: DatabaseService,
-  ) {}
+  constructor(private readonly databaseService: DatabaseService) {}
 
-  withTransaction<T>(
-    operation: (prisma: Prisma.TransactionClient) => Promise<T>,
-  ): Promise<T> {
+  withTransaction<T>(operation: (prisma: Prisma.TransactionClient) => Promise<T>): Promise<T> {
     return this.databaseService.getPrisma().$transaction((prisma) => operation(prisma));
   }
 
@@ -29,7 +25,7 @@ export class ApiKeyRepository {
         SELECT schema_name as "schemaName"
         FROM public.tenant
         WHERE is_active = true
-      `,
+      `
     );
 
     return tenants.map((tenant) => tenant.schemaName);
@@ -39,7 +35,7 @@ export class ApiKeyRepository {
     prisma: Prisma.TransactionClient,
     tenantSchema: string,
     prefix: string,
-    hash: string,
+    hash: string
   ): Promise<ValidatedConsumerRow | null> {
     const consumers = await prisma.$queryRawUnsafe<Array<ValidatedConsumerRow>>(
       `
@@ -58,7 +54,7 @@ export class ApiKeyRepository {
       `,
       prefix,
       hash,
-      tenantSchema,
+      tenantSchema
     );
 
     return consumers[0] ?? null;
@@ -67,7 +63,7 @@ export class ApiKeyRepository {
   async findConsumerForRegeneration(
     prisma: Prisma.TransactionClient,
     consumerId: string,
-    tenantSchema: string | null,
+    tenantSchema: string | null
   ): Promise<ConsumerLookupRecord | null> {
     if (tenantSchema) {
       const consumers = await prisma.$queryRawUnsafe<Array<ConsumerLookupRecord>>(
@@ -77,7 +73,7 @@ export class ApiKeyRepository {
           WHERE id = $1::uuid
           LIMIT 1
         `,
-        consumerId,
+        consumerId
       );
 
       return consumers[0] ?? null;
@@ -98,7 +94,7 @@ export class ApiKeyRepository {
     tenantSchema: string | null,
     hash: string,
     prefix: string,
-    userId: string | null,
+    userId: string | null
   ): Promise<void> {
     if (tenantSchema) {
       await prisma.$executeRawUnsafe(
@@ -115,7 +111,7 @@ export class ApiKeyRepository {
         consumerId,
         hash,
         prefix,
-        userId,
+        userId
       );
 
       return;

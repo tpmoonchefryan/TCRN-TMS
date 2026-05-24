@@ -1,11 +1,9 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { InjectQueue } from '@nestjs/bullmq';
-import {
-  Injectable,
-} from '@nestjs/common';
-import { type RequestContext } from '@tcrn/shared';
+import { Injectable } from '@nestjs/common';
 import type { Queue } from 'bullmq';
+
+import { type RequestContext } from '@tcrn/shared';
 
 import { DatabaseService } from '../../database';
 import { TechEventLogService } from '../../log';
@@ -38,14 +36,14 @@ export class ReportJobService {
     private readonly reportJobReadApplicationService: ReportJobReadApplicationService = new ReportJobReadApplicationService(
       new ReportJobReadRepository(databaseService),
       techEventLog,
-      minioService,
+      minioService
     ),
     private readonly reportJobWriteApplicationService: ReportJobWriteApplicationService = new ReportJobWriteApplicationService(
       new ReportJobWriteRepository(databaseService),
       techEventLog,
       reportQueue,
-      reportPiiPlatformApplicationService,
-    ),
+      reportPiiPlatformApplicationService
+    )
   ) {}
 
   /**
@@ -57,7 +55,7 @@ export class ReportJobService {
     filters: MfrFilterCriteriaDto,
     format: ReportFormat,
     estimatedRows: number,
-    context: RequestContext,
+    context: RequestContext
   ): Promise<ReportCreateResponse> {
     return this.reportJobWriteApplicationService.create(
       reportType,
@@ -65,7 +63,7 @@ export class ReportJobService {
       filters,
       format,
       estimatedRows,
-      context,
+      context
     );
   }
 

@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import {
   Body,
   ConflictException,
@@ -13,14 +12,15 @@ import {
   Req,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { ErrorCodes } from '@tcrn/shared';
 import { Request } from 'express';
+
+import { ErrorCodes } from '@tcrn/shared';
 
 import { CurrentUser, RequirePermissions } from '../../../common/decorators';
 import {
-    CreatePiiServiceConfigDto,
-    PaginationQueryDto,
-    UpdatePiiServiceConfigDto,
+  CreatePiiServiceConfigDto,
+  PaginationQueryDto,
+  UpdatePiiServiceConfigDto,
 } from '../dto/pii-config.dto';
 import { PiiServiceConfigService } from '../services/pii-service-config.service';
 
@@ -46,17 +46,17 @@ const createErrorEnvelopeSchema = (code: string, message: string) => ({
 
 const PII_SERVICE_UNAUTHORIZED_SCHEMA = createErrorEnvelopeSchema(
   'AUTH_UNAUTHORIZED',
-  'Authentication required',
+  'Authentication required'
 );
 
 const PII_SERVICE_FORBIDDEN_SCHEMA = createErrorEnvelopeSchema(
   ErrorCodes.PERM_ACCESS_DENIED,
-  'Access denied',
+  'Access denied'
 );
 
 const PII_SERVICE_CONFIG_RETIRED_SCHEMA = createErrorEnvelopeSchema(
   ErrorCodes.RES_CONFLICT,
-  'PII service config management has been retired from TMS. Use TCRN_PII_PLATFORM integration adapters instead.',
+  'PII service config management has been retired from TMS. Use TCRN_PII_PLATFORM integration adapters instead.'
 );
 
 @ApiTags('System - PII')
@@ -71,13 +71,25 @@ export class PiiServiceConfigController {
   @Get()
   @RequirePermissions({ resource: 'config.pii_service', action: 'read' })
   @ApiOperation({ summary: 'Retired: list PII service configs' })
-  @ApiResponse({ status: 401, description: 'Authentication is required to list PII service configs', schema: PII_SERVICE_UNAUTHORIZED_SCHEMA })
-  @ApiResponse({ status: 403, description: 'Insufficient permissions to list PII service configs', schema: PII_SERVICE_FORBIDDEN_SCHEMA })
-  @ApiResponse({ status: 409, description: 'PII service-config management has been retired', schema: PII_SERVICE_CONFIG_RETIRED_SCHEMA })
+  @ApiResponse({
+    status: 401,
+    description: 'Authentication is required to list PII service configs',
+    schema: PII_SERVICE_UNAUTHORIZED_SCHEMA,
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Insufficient permissions to list PII service configs',
+    schema: PII_SERVICE_FORBIDDEN_SCHEMA,
+  })
+  @ApiResponse({
+    status: 409,
+    description: 'PII service-config management has been retired',
+    schema: PII_SERVICE_CONFIG_RETIRED_SCHEMA,
+  })
   async list(
     @Query() _query: PaginationQueryDto,
     @CurrentUser() _user: { id: string; username: string; tenantSchema?: string },
-    @Req() _req: Request,
+    @Req() _req: Request
   ) {
     this.throwRetired();
   }
@@ -93,13 +105,25 @@ export class PiiServiceConfigController {
     description: 'PII service-config identifier',
     schema: { type: 'string', format: 'uuid' },
   })
-  @ApiResponse({ status: 401, description: 'Authentication is required to read PII service configs', schema: PII_SERVICE_UNAUTHORIZED_SCHEMA })
-  @ApiResponse({ status: 403, description: 'Insufficient permissions to read PII service configs', schema: PII_SERVICE_FORBIDDEN_SCHEMA })
-  @ApiResponse({ status: 409, description: 'PII service-config management has been retired', schema: PII_SERVICE_CONFIG_RETIRED_SCHEMA })
+  @ApiResponse({
+    status: 401,
+    description: 'Authentication is required to read PII service configs',
+    schema: PII_SERVICE_UNAUTHORIZED_SCHEMA,
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Insufficient permissions to read PII service configs',
+    schema: PII_SERVICE_FORBIDDEN_SCHEMA,
+  })
+  @ApiResponse({
+    status: 409,
+    description: 'PII service-config management has been retired',
+    schema: PII_SERVICE_CONFIG_RETIRED_SCHEMA,
+  })
   async getById(
     @Param('id', ParseUUIDPipe) _id: string,
     @CurrentUser() _user: { id: string; username: string; tenantSchema?: string },
-    @Req() _req: Request,
+    @Req() _req: Request
   ) {
     this.throwRetired();
   }
@@ -110,13 +134,25 @@ export class PiiServiceConfigController {
   @Post()
   @RequirePermissions({ resource: 'config.pii_service', action: 'create' })
   @ApiOperation({ summary: 'Retired: create PII service config' })
-  @ApiResponse({ status: 401, description: 'Authentication is required to create PII service configs', schema: PII_SERVICE_UNAUTHORIZED_SCHEMA })
-  @ApiResponse({ status: 403, description: 'Insufficient permissions to create PII service configs', schema: PII_SERVICE_FORBIDDEN_SCHEMA })
-  @ApiResponse({ status: 409, description: 'PII service-config management has been retired', schema: PII_SERVICE_CONFIG_RETIRED_SCHEMA })
+  @ApiResponse({
+    status: 401,
+    description: 'Authentication is required to create PII service configs',
+    schema: PII_SERVICE_UNAUTHORIZED_SCHEMA,
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Insufficient permissions to create PII service configs',
+    schema: PII_SERVICE_FORBIDDEN_SCHEMA,
+  })
+  @ApiResponse({
+    status: 409,
+    description: 'PII service-config management has been retired',
+    schema: PII_SERVICE_CONFIG_RETIRED_SCHEMA,
+  })
   async create(
     @Body() _dto: CreatePiiServiceConfigDto,
     @CurrentUser() _user: { id: string; username: string; tenantSchema?: string },
-    @Req() _req: Request,
+    @Req() _req: Request
   ) {
     this.throwRetired();
   }
@@ -132,14 +168,26 @@ export class PiiServiceConfigController {
     description: 'PII service-config identifier',
     schema: { type: 'string', format: 'uuid' },
   })
-  @ApiResponse({ status: 401, description: 'Authentication is required to update PII service configs', schema: PII_SERVICE_UNAUTHORIZED_SCHEMA })
-  @ApiResponse({ status: 403, description: 'Insufficient permissions to update PII service configs', schema: PII_SERVICE_FORBIDDEN_SCHEMA })
-  @ApiResponse({ status: 409, description: 'PII service-config management has been retired', schema: PII_SERVICE_CONFIG_RETIRED_SCHEMA })
+  @ApiResponse({
+    status: 401,
+    description: 'Authentication is required to update PII service configs',
+    schema: PII_SERVICE_UNAUTHORIZED_SCHEMA,
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Insufficient permissions to update PII service configs',
+    schema: PII_SERVICE_FORBIDDEN_SCHEMA,
+  })
+  @ApiResponse({
+    status: 409,
+    description: 'PII service-config management has been retired',
+    schema: PII_SERVICE_CONFIG_RETIRED_SCHEMA,
+  })
   async update(
     @Param('id', ParseUUIDPipe) _id: string,
     @Body() _dto: UpdatePiiServiceConfigDto,
     @CurrentUser() _user: { id: string; username: string; tenantSchema?: string },
-    @Req() _req: Request,
+    @Req() _req: Request
   ) {
     this.throwRetired();
   }
@@ -155,13 +203,25 @@ export class PiiServiceConfigController {
     description: 'PII service-config identifier',
     schema: { type: 'string', format: 'uuid' },
   })
-  @ApiResponse({ status: 401, description: 'Authentication is required to test PII service configs', schema: PII_SERVICE_UNAUTHORIZED_SCHEMA })
-  @ApiResponse({ status: 403, description: 'Insufficient permissions to test PII service configs', schema: PII_SERVICE_FORBIDDEN_SCHEMA })
-  @ApiResponse({ status: 409, description: 'PII service-config management has been retired', schema: PII_SERVICE_CONFIG_RETIRED_SCHEMA })
+  @ApiResponse({
+    status: 401,
+    description: 'Authentication is required to test PII service configs',
+    schema: PII_SERVICE_UNAUTHORIZED_SCHEMA,
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Insufficient permissions to test PII service configs',
+    schema: PII_SERVICE_FORBIDDEN_SCHEMA,
+  })
+  @ApiResponse({
+    status: 409,
+    description: 'PII service-config management has been retired',
+    schema: PII_SERVICE_CONFIG_RETIRED_SCHEMA,
+  })
   async testConnection(
     @Param('id', ParseUUIDPipe) _id: string,
     @CurrentUser() _user: { id: string; username: string; tenantSchema?: string },
-    @Req() _req: Request,
+    @Req() _req: Request
   ) {
     this.throwRetired();
   }

@@ -67,7 +67,7 @@ export function paginated<T>(
   extraMeta?: Record<string, unknown>
 ): SuccessResponse<T[]> {
   const totalPages = Math.ceil(pagination.totalCount / pagination.pageSize);
-  
+
   return {
     success: true,
     data,
@@ -121,11 +121,11 @@ export function toCamelCase<T>(obj: T): T {
   if (obj === null || obj === undefined) {
     return obj;
   }
-  
+
   if (Array.isArray(obj)) {
     return obj.map(toCamelCase) as T;
   }
-  
+
   if (typeof obj === 'object') {
     const result: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(obj as Record<string, unknown>)) {
@@ -134,7 +134,7 @@ export function toCamelCase<T>(obj: T): T {
     }
     return result as T;
   }
-  
+
   return obj;
 }
 
@@ -145,11 +145,11 @@ export function toSnakeCase<T>(obj: T): T {
   if (obj === null || obj === undefined) {
     return obj;
   }
-  
+
   if (Array.isArray(obj)) {
     return obj.map(toSnakeCase) as T;
   }
-  
+
   if (typeof obj === 'object') {
     const result: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(obj as Record<string, unknown>)) {
@@ -158,6 +158,6 @@ export function toSnakeCase<T>(obj: T): T {
     }
     return result as T;
   }
-  
+
   return obj;
 }

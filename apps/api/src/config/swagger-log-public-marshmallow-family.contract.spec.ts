@@ -1,5 +1,4 @@
 import 'reflect-metadata';
-
 import { describe, expect, it } from 'vitest';
 
 import { ChangeLogController } from '../modules/log/controllers/change-log.controller';
@@ -23,39 +22,32 @@ const API_MODEL_PROPERTIES_ARRAY_METADATA_KEY = 'swagger/apiModelPropertiesArray
 type ControllerClass = { prototype: object };
 type SwaggerResponseMetadata = Record<string, { schema?: unknown; content?: unknown }>;
 
-const getResponseStatuses = (
-  controllerClass: ControllerClass,
-  methodName: string,
-): string[] => {
+const getResponseStatuses = (controllerClass: ControllerClass, methodName: string): string[] => {
   const prototype = controllerClass.prototype as Record<string, unknown>;
-  const metadata = Reflect.getMetadata(
-    API_RESPONSE_METADATA_KEY,
-    prototype[methodName],
-  ) as Record<string, unknown> | undefined;
+  const metadata = Reflect.getMetadata(API_RESPONSE_METADATA_KEY, prototype[methodName]) as
+    | Record<string, unknown>
+    | undefined;
 
   return Object.keys(metadata ?? {}).sort();
 };
 
 const getResponseMetadata = (
   controllerClass: ControllerClass,
-  methodName: string,
+  methodName: string
 ): SwaggerResponseMetadata => {
   const prototype = controllerClass.prototype as Record<string, unknown>;
-  return ((Reflect.getMetadata(
-    API_RESPONSE_METADATA_KEY,
-    prototype[methodName],
-  ) as SwaggerResponseMetadata | undefined) ?? {});
+  return (
+    (Reflect.getMetadata(API_RESPONSE_METADATA_KEY, prototype[methodName]) as
+      | SwaggerResponseMetadata
+      | undefined) ?? {}
+  );
 };
 
-const getPathParamNames = (
-  controllerClass: ControllerClass,
-  methodName: string,
-): string[] => {
+const getPathParamNames = (controllerClass: ControllerClass, methodName: string): string[] => {
   const prototype = controllerClass.prototype as Record<string, unknown>;
-  const metadata = Reflect.getMetadata(
-    API_PARAMETERS_METADATA_KEY,
-    prototype[methodName],
-  ) as Array<{ in?: string; name?: string }> | undefined;
+  const metadata = Reflect.getMetadata(API_PARAMETERS_METADATA_KEY, prototype[methodName]) as
+    | Array<{ in?: string; name?: string }>
+    | undefined;
 
   return (metadata ?? [])
     .filter((parameter) => parameter.in === 'path' && typeof parameter.name === 'string')
@@ -66,7 +58,7 @@ const getPathParamNames = (
 const getDocumentedDtoProperties = (dtoClass: { prototype: object }): string[] => {
   const metadata = Reflect.getMetadata(
     API_MODEL_PROPERTIES_ARRAY_METADATA_KEY,
-    dtoClass.prototype,
+    dtoClass.prototype
   ) as string[] | undefined;
 
   return (metadata ?? []).map((property) => property.replace(/^:/, '')).sort();
@@ -79,7 +71,20 @@ describe('Swagger log and public marshmallow family contract', () => {
       [IntegrationLogController, ['list', 'getByTraceId', 'getFailed']],
       [TechEventLogController, ['list', 'getByTraceId']],
       [ComplianceReportController, ['generateReport']],
-      [PublicMarshmallowController, ['getConfig', 'getMessages', 'submitMessage', 'previewImage', 'toggleReaction', 'markAsRead', 'validateSsoToken', 'markAsReadAuth', 'replyAuth']],
+      [
+        PublicMarshmallowController,
+        [
+          'getConfig',
+          'getMessages',
+          'submitMessage',
+          'previewImage',
+          'toggleReaction',
+          'markAsRead',
+          'validateSsoToken',
+          'markAsReadAuth',
+          'replyAuth',
+        ],
+      ],
     ];
 
     for (const [controllerClass, methodNames] of controllerMethods) {
@@ -87,9 +92,7 @@ describe('Swagger log and public marshmallow family contract', () => {
         const responseEntries = Object.values(getResponseMetadata(controllerClass, methodName));
         expect(responseEntries.length).toBeGreaterThan(0);
         expect(
-          responseEntries.every(
-            (response) => Boolean(response?.schema || response?.content),
-          ),
+          responseEntries.every((response) => Boolean(response?.schema || response?.content))
         ).toBe(true);
       }
     }
@@ -108,11 +111,7 @@ describe('Swagger log and public marshmallow family contract', () => {
       '403',
     ]);
 
-    expect(getResponseStatuses(IntegrationLogController, 'list')).toEqual([
-      '200',
-      '401',
-      '403',
-    ]);
+    expect(getResponseStatuses(IntegrationLogController, 'list')).toEqual(['200', '401', '403']);
     expect(getResponseStatuses(IntegrationLogController, 'getByTraceId')).toEqual([
       '200',
       '401',
@@ -124,11 +123,7 @@ describe('Swagger log and public marshmallow family contract', () => {
       '403',
     ]);
 
-    expect(getResponseStatuses(TechEventLogController, 'list')).toEqual([
-      '200',
-      '401',
-      '403',
-    ]);
+    expect(getResponseStatuses(TechEventLogController, 'list')).toEqual(['200', '401', '403']);
     expect(getResponseStatuses(TechEventLogController, 'getByTraceId')).toEqual([
       '200',
       '401',
@@ -143,10 +138,7 @@ describe('Swagger log and public marshmallow family contract', () => {
   });
 
   it('documents response status coverage for public marshmallow routes', () => {
-    expect(getResponseStatuses(PublicMarshmallowController, 'getConfig')).toEqual([
-      '200',
-      '404',
-    ]);
+    expect(getResponseStatuses(PublicMarshmallowController, 'getConfig')).toEqual(['200', '404']);
     expect(getResponseStatuses(PublicMarshmallowController, 'getMessages')).toEqual([
       '200',
       '400',
@@ -203,9 +195,7 @@ describe('Swagger log and public marshmallow family contract', () => {
     expect(getPathParamNames(PublicMarshmallowController, 'getConfig')).toEqual(['path']);
     expect(getPathParamNames(PublicMarshmallowController, 'getMessages')).toEqual(['path']);
     expect(getPathParamNames(PublicMarshmallowController, 'submitMessage')).toEqual(['path']);
-    expect(getPathParamNames(PublicMarshmallowController, 'toggleReaction')).toEqual([
-      'messageId',
-    ]);
+    expect(getPathParamNames(PublicMarshmallowController, 'toggleReaction')).toEqual(['messageId']);
     expect(getPathParamNames(PublicMarshmallowController, 'markAsRead')).toEqual([
       'messageId',
       'path',

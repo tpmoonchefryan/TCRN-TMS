@@ -1,6 +1,7 @@
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
-import { createLocalizedText } from '@tcrn/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { createLocalizedText } from '@tcrn/shared';
 
 import { DatabaseService } from '../../database';
 import { TechEventLogService } from '../../log';
@@ -16,7 +17,10 @@ describe('PublicMarshmallowService', () => {
   let mockDatabaseService: Pick<DatabaseService, 'getPrisma'>;
   let mockCaptchaService: Pick<
     CaptchaService,
-    'getTurnstileConfigStatus' | 'getTurnstileConfigStatusForTenant' | 'shouldRequireCaptcha' | 'verifyTurnstile'
+    | 'getTurnstileConfigStatus'
+    | 'getTurnstileConfigStatusForTenant'
+    | 'shouldRequireCaptcha'
+    | 'verifyTurnstile'
   >;
   let mockRateLimitService: Pick<MarshmallowRateLimitService, 'checkRateLimit'>;
   let mockProfanityFilter: Pick<ProfanityFilterService, 'filter'>;
@@ -84,7 +88,7 @@ describe('PublicMarshmallowService', () => {
       {} as MarshmallowReactionService,
       mockTechEventLog as TechEventLogService,
       mockTrustScoreService as TrustScoreService,
-      { get: vi.fn() } as any,
+      { get: vi.fn() } as any
     );
   });
 
@@ -137,7 +141,7 @@ describe('PublicMarshmallowService', () => {
     expect(mockPrisma.$queryRawUnsafe).toHaveBeenNthCalledWith(
       2,
       expect.stringContaining(`AND lifecycle_status = 'published'`),
-      'demo',
+      'demo'
     );
   });
 
@@ -208,8 +212,8 @@ describe('PublicMarshmallowService', () => {
           isAnonymous: true,
           fingerprint: 'fp-test',
         },
-        { ip: '127.0.0.1', userAgent: 'Mozilla/5.0 Chrome/120.0' },
-      ),
+        { ip: '127.0.0.1', userAgent: 'Mozilla/5.0 Chrome/120.0' }
+      )
     ).resolves.toMatchObject({
       id: 'message-1',
       message: 'Question received.',
@@ -234,7 +238,7 @@ describe('PublicMarshmallowService', () => {
           isAnonymous: true,
           fingerprint: 'fp-test',
         },
-        { ip: '127.0.0.1', userAgent: 'Mozilla/5.0 Chrome/120.0' },
+        { ip: '127.0.0.1', userAgent: 'Mozilla/5.0 Chrome/120.0' }
       );
     } catch (error) {
       caught = error;
@@ -258,18 +262,18 @@ describe('PublicMarshmallowService', () => {
         talentId: '550e8400-e29b-41d4-a716-446655440000',
         tenantSchema: 'tenant_demo',
         ip: '127.0.0.1',
-      }),
+      })
     ).rejects.toThrow(NotFoundException);
 
     expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalledWith(
       expect.stringContaining(`AND c.is_enabled = true`),
       '550e8400-e29b-41d4-a716-446655440010',
-      'demo',
+      'demo'
     );
     expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalledWith(
       expect.stringContaining(`AND t.lifecycle_status = 'published'`),
       '550e8400-e29b-41d4-a716-446655440010',
-      'demo',
+      'demo'
     );
   });
 
@@ -329,9 +333,7 @@ describe('PublicMarshmallowService', () => {
         },
       ]);
 
-    await expect(
-      service.getMessages('demo', { limit: 20 }),
-    ).resolves.toMatchObject({
+    await expect(service.getMessages('demo', { limit: 20 })).resolves.toMatchObject({
       messages: [
         {
           repliedBy: {
@@ -351,7 +353,7 @@ describe('PublicMarshmallowService', () => {
       service.markAsRead('demo', '550e8400-e29b-41d4-a716-446655440010', {
         fingerprint: 'fp-demo',
         ip: '127.0.0.1',
-      }),
+      })
     ).rejects.toThrow(ForbiddenException);
 
     expect(mockPrisma.$queryRawUnsafe).not.toHaveBeenCalled();
@@ -361,7 +363,7 @@ describe('PublicMarshmallowService', () => {
       }),
       expect.objectContaining({
         ipAddress: '127.0.0.1',
-      }),
+      })
     );
   });
 });

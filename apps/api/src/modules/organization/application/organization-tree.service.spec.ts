@@ -1,17 +1,15 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { NotFoundException } from '@nestjs/common';
-import { createLocalizedText, type PartialLocalizedText } from '@tcrn/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { createLocalizedText, type PartialLocalizedText } from '@tcrn/shared';
 
 import { OrganizationTreeRepository } from '../infrastructure/organization-tree.repository';
 import { OrganizationTreeService } from './organization-tree.service';
 
 describe('OrganizationTreeService', () => {
-  const localized = (
-    en: string,
-    patch: PartialLocalizedText = {},
-  ) => createLocalizedText({ en, ...patch });
+  const localized = (en: string, patch: PartialLocalizedText = {}) =>
+    createLocalizedText({ en, ...patch });
 
   const mockRepository = {
     findTenant: vi.fn(),
@@ -122,18 +120,14 @@ describe('OrganizationTreeService', () => {
 
   it('builds the full organization tree and preserves direct talents', async () => {
     vi.mocked(mockRepository.findTenant).mockResolvedValue(tenant);
-    vi.mocked(mockRepository.findAllSubsidiaries).mockResolvedValue(
-      subsidiaries.slice(0, 2),
-    );
+    vi.mocked(mockRepository.findAllSubsidiaries).mockResolvedValue(subsidiaries.slice(0, 2));
     vi.mocked(mockRepository.countTalentsBySubsidiary).mockResolvedValue([
       { subsidiary_id: 'sub-2', count: BigInt(1) },
     ]);
-    vi.mocked(mockRepository.findTalentsForTree).mockResolvedValue(
-      talents.slice(0, 2),
-    );
+    vi.mocked(mockRepository.findTalentsForTree).mockResolvedValue(talents.slice(0, 2));
 
     await expect(
-      service.getTree(tenant.id, 'tenant_test', { language: 'zh-CN' }),
+      service.getTree(tenant.id, 'tenant_test', { language: 'zh-CN' })
     ).resolves.toMatchObject({
       tenant: treeTenant,
       tree: [
@@ -174,7 +168,7 @@ describe('OrganizationTreeService', () => {
     ]);
 
     await expect(
-      service.getTree(tenant.id, 'tenant_test', { language: 'zh_HANT' }),
+      service.getTree(tenant.id, 'tenant_test', { language: 'zh_HANT' })
     ).resolves.toMatchObject({
       tree: [
         {
@@ -186,7 +180,7 @@ describe('OrganizationTreeService', () => {
     });
 
     await expect(
-      service.getTree(tenant.id, 'tenant_test', { language: 'ko' }),
+      service.getTree(tenant.id, 'tenant_test', { language: 'ko' })
     ).resolves.toMatchObject({
       tree: [
         {
@@ -203,9 +197,7 @@ describe('OrganizationTreeService', () => {
     vi.mocked(mockRepository.findMatchedTalentSubsidiaryIds).mockResolvedValue([]);
     vi.mocked(mockRepository.findDirectTalents).mockResolvedValue([talents[1]]);
 
-    await expect(
-      service.getTree(tenant.id, 'tenant_test', { search: 'Direct' }),
-    ).resolves.toEqual({
+    await expect(service.getTree(tenant.id, 'tenant_test', { search: 'Direct' })).resolves.toEqual({
       tenant: treeTenant,
       tree: [],
       talentsWithoutSubsidiary: [
@@ -238,12 +230,10 @@ describe('OrganizationTreeService', () => {
     vi.mocked(mockRepository.findTalentSubsidiaryIds).mockResolvedValue([
       { id: 'talent-1', subsidiary_id: 'sub-2' },
     ]);
-    vi.mocked(mockRepository.findAncestorSubsidiaryIds).mockResolvedValue(
-      new Set(['sub-1']),
-    );
+    vi.mocked(mockRepository.findAncestorSubsidiaryIds).mockResolvedValue(new Set(['sub-1']));
 
     await expect(
-      service.getTree(tenant.id, 'tenant_test', { userId: 'user-1' }),
+      service.getTree(tenant.id, 'tenant_test', { userId: 'user-1' })
     ).resolves.toMatchObject({
       tenant: treeTenant,
       tree: [
@@ -263,15 +253,11 @@ describe('OrganizationTreeService', () => {
 
   it('returns the unfiltered tree when tenant access includes subunits', async () => {
     vi.mocked(mockRepository.findTenant).mockResolvedValue(tenant);
-    vi.mocked(mockRepository.findAllSubsidiaries).mockResolvedValue(
-      subsidiaries.slice(0, 2),
-    );
+    vi.mocked(mockRepository.findAllSubsidiaries).mockResolvedValue(subsidiaries.slice(0, 2));
     vi.mocked(mockRepository.countTalentsBySubsidiary).mockResolvedValue([
       { subsidiary_id: 'sub-2', count: BigInt(1) },
     ]);
-    vi.mocked(mockRepository.findTalentsForTree).mockResolvedValue(
-      talents.slice(0, 2),
-    );
+    vi.mocked(mockRepository.findTalentsForTree).mockResolvedValue(talents.slice(0, 2));
     vi.mocked(mockRepository.findUserScopeAccesses).mockResolvedValue([
       {
         scope_type: 'tenant',
@@ -282,7 +268,7 @@ describe('OrganizationTreeService', () => {
     vi.mocked(mockRepository.findUserRoleScopeAccesses).mockResolvedValue([]);
 
     await expect(
-      service.getTree(tenant.id, 'tenant_test', { userId: 'user-1' }),
+      service.getTree(tenant.id, 'tenant_test', { userId: 'user-1' })
     ).resolves.toMatchObject({
       tenant: treeTenant,
       tree: [
@@ -299,15 +285,11 @@ describe('OrganizationTreeService', () => {
 
   it('falls back to role-derived tenant scope when user_scope_access is empty', async () => {
     vi.mocked(mockRepository.findTenant).mockResolvedValue(tenant);
-    vi.mocked(mockRepository.findAllSubsidiaries).mockResolvedValue(
-      subsidiaries.slice(0, 2),
-    );
+    vi.mocked(mockRepository.findAllSubsidiaries).mockResolvedValue(subsidiaries.slice(0, 2));
     vi.mocked(mockRepository.countTalentsBySubsidiary).mockResolvedValue([
       { subsidiary_id: 'sub-2', count: BigInt(1) },
     ]);
-    vi.mocked(mockRepository.findTalentsForTree).mockResolvedValue(
-      talents.slice(0, 2),
-    );
+    vi.mocked(mockRepository.findTalentsForTree).mockResolvedValue(talents.slice(0, 2));
     vi.mocked(mockRepository.findUserScopeAccesses).mockResolvedValue([]);
     vi.mocked(mockRepository.findUserRoleScopeAccesses).mockResolvedValue([
       {
@@ -318,7 +300,7 @@ describe('OrganizationTreeService', () => {
     ]);
 
     await expect(
-      service.getTree(tenant.id, 'tenant_test', { userId: 'user-1' }),
+      service.getTree(tenant.id, 'tenant_test', { userId: 'user-1' })
     ).resolves.toMatchObject({
       tenant: treeTenant,
       tree: [
@@ -347,9 +329,7 @@ describe('OrganizationTreeService', () => {
       },
     ]);
 
-    await expect(
-      service.getUserAccessibleScopes('tenant_test', 'user-1'),
-    ).resolves.toMatchObject({
+    await expect(service.getUserAccessibleScopes('tenant_test', 'user-1')).resolves.toMatchObject({
       tenantAccess: true,
       tenantIncludeSubunits: true,
     });
@@ -358,8 +338,8 @@ describe('OrganizationTreeService', () => {
   it('fails closed when the tenant does not exist', async () => {
     vi.mocked(mockRepository.findTenant).mockResolvedValue(null);
 
-    await expect(
-      service.getTree('missing-tenant', 'tenant_test'),
-    ).rejects.toThrow(NotFoundException);
+    await expect(service.getTree('missing-tenant', 'tenant_test')).rejects.toThrow(
+      NotFoundException
+    );
   });
 });

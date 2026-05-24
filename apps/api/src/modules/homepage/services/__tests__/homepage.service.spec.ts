@@ -1,14 +1,13 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import type { RequestContext } from '@tcrn/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import type { RequestContext } from '@tcrn/shared';
 
 import { HomepageAdminService } from '../../application/homepage-admin.service';
 import { HomepageAdminRepository } from '../../infrastructure/homepage-admin.repository';
 import { CdnPurgeService } from '../cdn-purge.service';
-
 
 describe('HomepageAdminService', () => {
   let service: HomepageAdminService;
@@ -125,7 +124,7 @@ describe('HomepageAdminService', () => {
     service = new HomepageAdminService(
       mockHomepageAdminRepository as unknown as HomepageAdminRepository,
       mockConfigService as ConfigService,
-      mockCdnPurgeService as CdnPurgeService,
+      mockCdnPurgeService as CdnPurgeService
     );
   });
 
@@ -148,7 +147,12 @@ describe('HomepageAdminService', () => {
     });
 
     it('should create homepage if not exists', async () => {
-      const createdHomepage = { ...mockHomepage, id: 'new-homepage-123', draftVersionId: null, publishedVersionId: null };
+      const createdHomepage = {
+        ...mockHomepage,
+        id: 'new-homepage-123',
+        draftVersionId: null,
+        publishedVersionId: null,
+      };
 
       mockHomepageAdminRepository.findTalentById.mockResolvedValue(mockTalent);
       mockHomepageAdminRepository.findHomepageByTalentId.mockResolvedValue(null);
@@ -163,13 +167,17 @@ describe('HomepageAdminService', () => {
     it('should throw NotFoundException when talent not found', async () => {
       mockHomepageAdminRepository.findTalentById.mockResolvedValue(null);
 
-      await expect(
-        service.getOrCreate('nonexistent', 'tenant_test123'),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.getOrCreate('nonexistent', 'tenant_test123')).rejects.toThrow(
+        NotFoundException
+      );
     });
 
     it('should include homepage URL with path', async () => {
-      const homepageWithNoVersions = { ...mockHomepage, draftVersionId: null, publishedVersionId: null };
+      const homepageWithNoVersions = {
+        ...mockHomepage,
+        draftVersionId: null,
+        publishedVersionId: null,
+      };
 
       mockHomepageAdminRepository.findTalentById.mockResolvedValue(mockTalent);
       mockHomepageAdminRepository.findHomepageByTalentId.mockResolvedValue(homepageWithNoVersions);
@@ -201,7 +209,7 @@ describe('HomepageAdminService', () => {
         {
           content: { version: '1.0', components: [] },
         },
-        testContext,
+        testContext
       );
 
       expect(result).toBeDefined();
@@ -234,7 +242,7 @@ describe('HomepageAdminService', () => {
         {
           content: { version: '1.0', components: [] },
         },
-        testContext,
+        testContext
       );
 
       // Since hashes don't match, it should create new version
@@ -246,7 +254,11 @@ describe('HomepageAdminService', () => {
       mockHomepageAdminRepository.findHomepageDraftPointer.mockResolvedValue(null);
 
       await expect(
-        service.saveDraft('talent-123', { content: { version: '1.0', components: [] } }, testContext),
+        service.saveDraft(
+          'talent-123',
+          { content: { version: '1.0', components: [] } },
+          testContext
+        )
       ).rejects.toThrow(NotFoundException);
     });
   });
@@ -299,7 +311,7 @@ describe('HomepageAdminService', () => {
       await service.saveDraft(
         'talent-123',
         { content: { version: '1.0', components: [] } },
-        testContext,
+        testContext
       );
 
       expect(mockHomepageAdminRepository.createDraftVersionAndAssign).toHaveBeenCalledWith(
@@ -307,7 +319,7 @@ describe('HomepageAdminService', () => {
           theme: expect.objectContaining({
             preset: expect.any(String),
           }),
-        }),
+        })
       );
     });
 
@@ -333,13 +345,13 @@ describe('HomepageAdminService', () => {
       await service.saveDraft(
         'talent-123',
         { content: { version: '1.0', components: [] }, theme: customTheme as any },
-        testContext,
+        testContext
       );
 
       expect(mockHomepageAdminRepository.createDraftVersionAndAssign).toHaveBeenCalledWith(
         expect.objectContaining({
           theme: customTheme,
-        }),
+        })
       );
     });
   });
@@ -347,12 +359,12 @@ describe('HomepageAdminService', () => {
   describe('Error Handling', () => {
     it('should surface repository errors gracefully', async () => {
       mockHomepageAdminRepository.findTalentById.mockRejectedValueOnce(
-        new Error('Database connection failed'),
+        new Error('Database connection failed')
       );
 
-      await expect(
-        service.getOrCreate('talent-123', 'tenant_test123'),
-      ).rejects.toThrow('Database connection failed');
+      await expect(service.getOrCreate('talent-123', 'tenant_test123')).rejects.toThrow(
+        'Database connection failed'
+      );
     });
   });
 
@@ -374,7 +386,7 @@ describe('HomepageAdminService', () => {
       const result = await service.saveDraft(
         'talent-123',
         { content: { version: '1.0', components: [] } },
-        testContext,
+        testContext
       );
 
       expect(result.draftVersion.versionNumber).toBe(6);
@@ -397,7 +409,7 @@ describe('HomepageAdminService', () => {
       const result = await service.saveDraft(
         'talent-123',
         { content: { version: '1.0', components: [] } },
-        testContext,
+        testContext
       );
 
       expect(result.draftVersion.versionNumber).toBe(1);
@@ -428,7 +440,7 @@ describe('HomepageAdminService', () => {
       expect(result.cdnPurgeStatus).toBe('success');
       expect(mockCdnPurgeService.purgeHomepage).toHaveBeenCalledWith(
         'test-talent',
-        'demo.example.com',
+        'demo.example.com'
       );
     });
 
@@ -487,7 +499,7 @@ describe('HomepageAdminService', () => {
       await expect(service.unpublish('talent-123', testContext)).resolves.toBeUndefined();
       expect(mockHomepageAdminRepository.markHomepageUnpublished).toHaveBeenCalledWith(
         'tenant_test123',
-        'homepage-123',
+        'homepage-123'
       );
     });
   });
@@ -526,18 +538,18 @@ describe('HomepageAdminService', () => {
           seoTitle: 'New Title',
           version: 1,
         },
-        testContext,
+        testContext
       );
 
       expect(mockHomepageAdminRepository.updateTalentHomepagePath).toHaveBeenCalledWith(
         'tenant_test123',
         'talent-123',
-        'shiori',
+        'shiori'
       );
       expect(mockHomepageAdminRepository.updateHomepageSettings).toHaveBeenCalledWith(
         expect.objectContaining({
           seoTitle: 'New Title',
-        }),
+        })
       );
       expect(result.homepagePath).toBe('shiori');
     });
@@ -546,7 +558,7 @@ describe('HomepageAdminService', () => {
       mockHomepageAdminRepository.findHomepageSettings.mockResolvedValue(null);
 
       await expect(
-        service.updateSettings('talent-123', { version: 1 }, testContext),
+        service.updateSettings('talent-123', { version: 1 }, testContext)
       ).rejects.toThrow(NotFoundException);
     });
 
@@ -561,7 +573,7 @@ describe('HomepageAdminService', () => {
       });
 
       await expect(
-        service.updateSettings('talent-123', { version: 1 }, testContext),
+        service.updateSettings('talent-123', { version: 1 }, testContext)
       ).rejects.toThrow('Homepage was modified by another user');
     });
 
@@ -582,8 +594,8 @@ describe('HomepageAdminService', () => {
             homepagePath: 'next-homepage',
             version: 1,
           },
-          testContext,
-        ),
+          testContext
+        )
       ).rejects.toThrow('Homepage was modified by another user');
 
       expect(mockHomepageAdminRepository.findTalentIdByHomepagePath).not.toHaveBeenCalled();
@@ -609,8 +621,8 @@ describe('HomepageAdminService', () => {
             homepagePath: 'taken',
             version: 1,
           },
-          testContext,
-        ),
+          testContext
+        )
       ).rejects.toThrow('Homepage path already taken');
     });
   });

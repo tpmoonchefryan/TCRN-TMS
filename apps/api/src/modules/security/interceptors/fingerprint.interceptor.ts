@@ -1,11 +1,5 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
-import {
-  CallHandler,
-  ExecutionContext,
-  Injectable,
-  NestInterceptor,
-} from '@nestjs/common';
+import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from '@nestjs/common';
 import { Response } from 'express';
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
@@ -33,8 +27,10 @@ export class FingerprintInterceptor implements NestInterceptor {
           const userId = user.id;
 
           if (tenantId && userId) {
-            const { fingerprint, version } =
-              this.fingerprintService.generateVersionedFingerprint(tenantId, userId);
+            const { fingerprint, version } = this.fingerprintService.generateVersionedFingerprint(
+              tenantId,
+              userId
+            );
 
             response.setHeader('X-TCRN-FP', fingerprint);
             response.setHeader('X-TCRN-FP-Version', version);
@@ -42,7 +38,7 @@ export class FingerprintInterceptor implements NestInterceptor {
         } catch {
           // Silent fail - fingerprint is optional
         }
-      }),
+      })
     );
   }
 }

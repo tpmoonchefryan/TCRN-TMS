@@ -13,7 +13,7 @@ describe('AppFrame', () => {
         mobileSidebarCloseLabel="Close workspace navigation"
       >
         <div>Main content</div>
-      </AppFrame>,
+      </AppFrame>
     );
 
     const main = screen.getByRole('main');
@@ -49,7 +49,7 @@ describe('AppFrame', () => {
         mobileSidebarCloseLabel="Close workspace navigation"
       >
         <div>Main content</div>
-      </AppFrame>,
+      </AppFrame>
     );
 
     const mobileDialog = screen.getByRole('dialog', { name: 'Mobile workspace navigation' });
@@ -74,7 +74,7 @@ describe('AppFrame', () => {
         mobileSidebarCloseLabel="Close workspace navigation"
       >
         <div>Main content</div>
-      </AppFrame>,
+      </AppFrame>
     );
 
     fireEvent.keyDown(document, { key: 'Escape' });

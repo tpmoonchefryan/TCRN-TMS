@@ -1,5 +1,6 @@
-import type { SupportedUiLocale } from '@tcrn/shared';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+
+import type { SupportedUiLocale } from '@tcrn/shared';
 
 import { TenantManagementScreen } from '@/domains/platform-tenant-management/screens/TenantManagementScreen';
 
@@ -149,15 +150,15 @@ describe('TenantManagementScreen', () => {
     expect(await screen.findByRole('heading', { name: 'Tenant Management' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Create tenant' })).toHaveAttribute(
       'href',
-      '/ac/tenant-ac/tenants/new',
+      '/ac/tenant-ac/tenants/new'
     );
     expect(screen.getAllByRole('link', { name: 'Edit tenant' })[0]).toHaveAttribute(
       'href',
-      '/ac/tenant-ac/tenants/tenant-ac',
+      '/ac/tenant-ac/tenants/tenant-ac'
     );
     expect(screen.getAllByRole('link', { name: 'Edit tenant' })[1]).toHaveAttribute(
       'href',
-      '/ac/tenant-ac/tenants/tenant-new',
+      '/ac/tenant-ac/tenants/tenant-new'
     );
     expect(screen.queryByPlaceholderText('ACME_CORP')).not.toBeInTheDocument();
 
@@ -230,7 +231,7 @@ describe('TenantManagementScreen', () => {
         '/api/v1/tenants/tenant-1/deactivate',
         expect.objectContaining({
           method: 'POST',
-        }),
+        })
       );
     });
   });

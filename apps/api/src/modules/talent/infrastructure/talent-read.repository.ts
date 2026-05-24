@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable } from '@nestjs/common';
+
 import { Prisma, prisma } from '@tcrn/database';
 
 import { readLocalizedText } from '../../../platform/persistence/localized-text.persistence';
@@ -30,7 +30,7 @@ const mapTalentData = (row: TalentRawData): TalentData => ({
 });
 
 const mapTalentProfileStoreRecord = (
-  row: TalentProfileStoreRawRecord,
+  row: TalentProfileStoreRawRecord
 ): TalentProfileStoreRecord => ({
   ...row,
   name: readLocalizedText(row.name, 'profile_store.name'),
@@ -44,52 +44,43 @@ export class TalentReadRepository {
         ${TALENT_SELECT_FIELDS}
        FROM "${tenantSchema}".talent
        WHERE id = $1::uuid`,
-      id,
+      id
     );
 
     return results[0] ? mapTalentData(results[0]) : null;
   }
 
-  async findByCode(
-    code: string,
-    tenantSchema: string,
-  ): Promise<TalentData | null> {
+  async findByCode(code: string, tenantSchema: string): Promise<TalentData | null> {
     const results = await prisma.$queryRawUnsafe<TalentRawData[]>(
       `SELECT
         ${TALENT_SELECT_FIELDS}
        FROM "${tenantSchema}".talent
        WHERE code = $1`,
-      code,
+      code
     );
 
     return results[0] ? mapTalentData(results[0]) : null;
   }
 
-  async findByHomepagePath(
-    homepagePath: string,
-    tenantSchema: string,
-  ): Promise<TalentData | null> {
+  async findByHomepagePath(homepagePath: string, tenantSchema: string): Promise<TalentData | null> {
     const results = await prisma.$queryRawUnsafe<TalentRawData[]>(
       `SELECT
         ${TALENT_SELECT_FIELDS}
        FROM "${tenantSchema}".talent
        WHERE homepage_path = $1`,
-      homepagePath,
+      homepagePath
     );
 
     return results[0] ? mapTalentData(results[0]) : null;
   }
 
-  async findByCustomDomain(
-    customDomain: string,
-    tenantSchema: string,
-  ): Promise<TalentData | null> {
+  async findByCustomDomain(customDomain: string, tenantSchema: string): Promise<TalentData | null> {
     const results = await prisma.$queryRawUnsafe<TalentRawData[]>(
       `SELECT
         ${TALENT_SELECT_FIELDS}
        FROM "${tenantSchema}".talent
        WHERE custom_domain = $1 AND custom_domain_verified = true`,
-      customDomain.toLowerCase(),
+      customDomain.toLowerCase()
     );
 
     return results[0] ? mapTalentData(results[0]) : null;
@@ -97,7 +88,7 @@ export class TalentReadRepository {
 
   async getProfileStoreById(
     profileStoreId: string,
-    tenantSchema: string,
+    tenantSchema: string
   ): Promise<TalentProfileStoreRecord | null> {
     try {
       const results = await prisma.$queryRawUnsafe<TalentProfileStoreRawRecord[]>(
@@ -109,7 +100,7 @@ export class TalentReadRepository {
           pii_proxy_url as "piiProxyUrl"
          FROM "${tenantSchema}".profile_store
          WHERE id = $1::uuid`,
-        profileStoreId,
+        profileStoreId
       );
 
       return results[0] ? mapTalentProfileStoreRecord(results[0]) : null;
@@ -118,10 +109,7 @@ export class TalentReadRepository {
     }
   }
 
-  async getTalentStats(
-    talentId: string,
-    tenantSchema: string,
-  ): Promise<TalentStats> {
+  async getTalentStats(talentId: string, tenantSchema: string): Promise<TalentStats> {
     try {
       const [customerResult, messageResult] = await Promise.all([
         prisma
@@ -129,7 +117,7 @@ export class TalentReadRepository {
             `SELECT COUNT(*)::bigint as count
              FROM "${tenantSchema}".customer_profile
              WHERE talent_id = $1::uuid`,
-            talentId,
+            talentId
           )
           .catch(() => [{ count: BigInt(0) }]),
         prisma
@@ -137,7 +125,7 @@ export class TalentReadRepository {
             `SELECT COUNT(*)::bigint as count
              FROM "${tenantSchema}".marshmallow_message
              WHERE talent_id = $1::uuid AND status = 'pending'`,
-            talentId,
+            talentId
           )
           .catch(() => [{ count: BigInt(0) }]),
       ]);
@@ -153,7 +141,7 @@ export class TalentReadRepository {
 
   async getExternalPagesDomainConfig(
     talentId: string,
-    tenantSchema: string,
+    tenantSchema: string
   ): Promise<TalentExternalPagesDomainConfig> {
     try {
       const [homepageResult, marshmallowResult] = await Promise.all([
@@ -173,7 +161,7 @@ export class TalentReadRepository {
               custom_domain_verification_token as "customDomainVerificationToken"
              FROM "${tenantSchema}".talent_homepage
              WHERE talent_id = $1::uuid`,
-            talentId,
+            talentId
           )
           .catch(() => []),
         prisma
@@ -195,7 +183,7 @@ export class TalentReadRepository {
              FROM "${tenantSchema}".marshmallow_config mc
              LEFT JOIN "${tenantSchema}".talent t ON t.id = mc.talent_id
              WHERE mc.talent_id = $1::uuid`,
-            talentId,
+            talentId
           )
           .catch(() => []),
       ]);
@@ -211,14 +199,14 @@ export class TalentReadRepository {
 
   async list(
     tenantSchema: string,
-    options: TalentListOptions = {},
+    options: TalentListOptions = {}
   ): Promise<{ data: TalentData[]; total: number }> {
     const query = buildTalentListQuery(options);
     const countResult = await prisma.$queryRawUnsafe<Array<{ count: bigint }>>(
       `SELECT COUNT(*) as count
        FROM "${tenantSchema}".talent
        WHERE ${query.whereClause}`,
-      ...query.params,
+      ...query.params
     );
     const rows = await prisma.$queryRawUnsafe<TalentRawData[]>(
       `SELECT
@@ -227,7 +215,7 @@ export class TalentReadRepository {
        WHERE ${query.whereClause}
        ORDER BY ${query.orderBy}
        LIMIT ${query.limit} OFFSET ${query.offset}`,
-      ...query.params,
+      ...query.params
     );
 
     return {

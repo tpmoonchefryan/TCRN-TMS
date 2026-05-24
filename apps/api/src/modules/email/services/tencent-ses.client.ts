@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as tencentcloud from 'tencentcloud-sdk-nodejs-ses';
@@ -46,7 +45,7 @@ export class TencentSesClient {
       this.logger.log(`Tencent SES client initialized (region: ${region})`);
     } else {
       this.logger.warn(
-        'Tencent SES credentials not configured. Emails will be logged instead of sent.',
+        'Tencent SES credentials not configured. Emails will be logged instead of sent.'
       );
     }
   }
@@ -111,7 +110,10 @@ export class TencentSesClient {
   /**
    * Send email via Tencent Cloud SES with dynamic configuration (from database)
    */
-  async sendEmailWithConfig(params: SendEmailParams, config: TencentSesConfig): Promise<{ messageId: string }> {
+  async sendEmailWithConfig(
+    params: SendEmailParams,
+    config: TencentSesConfig
+  ): Promise<{ messageId: string }> {
     const client = this.createDynamicClient(config);
 
     try {

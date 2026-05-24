@@ -1,34 +1,34 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import {
-    Body,
-    Controller,
-    ForbiddenException,
-    Get,
-    HttpCode,
-    Param,
-    ParseUUIDPipe,
-    Post,
-    Query,
-    Req,
-    Res,
-    UseGuards,
+  Body,
+  Controller,
+  ForbiddenException,
+  Get,
+  HttpCode,
+  Param,
+  ParseUUIDPipe,
+  Post,
+  Query,
+  Req,
+  Res,
+  UseGuards,
 } from '@nestjs/common';
 import { ApiBody, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { ErrorCodes } from '@tcrn/shared';
 import { Request, Response } from 'express';
+
+import { ErrorCodes } from '@tcrn/shared';
 
 import { Public } from '../../../common/decorators';
 import { RateLimiterGuard } from '../../../common/guards/rate-limiter.guard';
 import { TokenService } from '../../auth/token.service';
 import { UaDetectionGuard } from '../../homepage/guards/ua-detection.guard';
 import {
-    MarkReadDto,
-    PublicMessagesQueryDto,
-    ReactDto,
-    SsoMarkReadDto,
-    SsoReplyDto,
-    SubmitMessageDto,
+  MarkReadDto,
+  PublicMessagesQueryDto,
+  ReactDto,
+  SsoMarkReadDto,
+  SsoReplyDto,
+  SubmitMessageDto,
 } from '../dto/marshmallow.dto';
 import { MarshmallowReactionService } from '../services/marshmallow-reaction.service';
 import { PublicMarshmallowService } from '../services/public-marshmallow.service';
@@ -53,7 +53,7 @@ export class PublicMarshmallowController {
   constructor(
     private readonly publicService: PublicMarshmallowService,
     private readonly reactionService: MarshmallowReactionService,
-    private readonly tokenService: TokenService,
+    private readonly tokenService: TokenService
   ) {}
 
   /**
@@ -64,12 +64,20 @@ export class PublicMarshmallowController {
   @ApiOperation({ summary: 'Get public marshmallow config via canonical shared-domain route' })
   @ApiParam({ name: 'tenantCode', description: 'Tenant code', schema: { type: 'string' } })
   @ApiParam({ name: 'talentCode', description: 'Talent code', schema: { type: 'string' } })
-  @ApiResponse({ status: 200, description: 'Returns config', schema: PUBLIC_MARSHMALLOW_CONFIG_SCHEMA })
-  @ApiResponse({ status: 404, description: 'Public marshmallow page was not found', schema: PUBLIC_MARSHMALLOW_NOT_FOUND_SCHEMA })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns config',
+    schema: PUBLIC_MARSHMALLOW_CONFIG_SCHEMA,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Public marshmallow page was not found',
+    schema: PUBLIC_MARSHMALLOW_NOT_FOUND_SCHEMA,
+  })
   async getConfigByCodes(
     @Param('tenantCode') tenantCode: string,
     @Param('talentCode') talentCode: string,
-    @Res({ passthrough: true }) res: Response,
+    @Res({ passthrough: true }) res: Response
   ) {
     const data = await this.publicService.getConfigByCodes(tenantCode, talentCode);
 
@@ -84,12 +92,17 @@ export class PublicMarshmallowController {
   @Public()
   @ApiOperation({ summary: 'Get public marshmallow config' })
   @ApiParam({ name: 'path', description: 'Public marshmallow path', schema: { type: 'string' } })
-  @ApiResponse({ status: 200, description: 'Returns config', schema: PUBLIC_MARSHMALLOW_CONFIG_SCHEMA })
-  @ApiResponse({ status: 404, description: 'Public marshmallow page was not found', schema: PUBLIC_MARSHMALLOW_NOT_FOUND_SCHEMA })
-  async getConfig(
-    @Param('path') path: string,
-    @Res({ passthrough: true }) res: Response,
-  ) {
+  @ApiResponse({
+    status: 200,
+    description: 'Returns config',
+    schema: PUBLIC_MARSHMALLOW_CONFIG_SCHEMA,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Public marshmallow page was not found',
+    schema: PUBLIC_MARSHMALLOW_NOT_FOUND_SCHEMA,
+  })
+  async getConfig(@Param('path') path: string, @Res({ passthrough: true }) res: Response) {
     const data = await this.publicService.getConfig(path);
 
     res.set({
@@ -107,22 +120,34 @@ export class PublicMarshmallowController {
   @ApiOperation({ summary: 'Get public messages via canonical shared-domain route' })
   @ApiParam({ name: 'tenantCode', description: 'Tenant code', schema: { type: 'string' } })
   @ApiParam({ name: 'talentCode', description: 'Talent code', schema: { type: 'string' } })
-  @ApiResponse({ status: 200, description: 'Returns messages', schema: PUBLIC_MARSHMALLOW_MESSAGES_SCHEMA })
-  @ApiResponse({ status: 400, description: 'Public-marshmallow message query is invalid', schema: PUBLIC_MARSHMALLOW_BAD_REQUEST_SCHEMA })
-  @ApiResponse({ status: 404, description: 'Public marshmallow page was not found', schema: PUBLIC_MARSHMALLOW_NOT_FOUND_SCHEMA })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns messages',
+    schema: PUBLIC_MARSHMALLOW_MESSAGES_SCHEMA,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Public-marshmallow message query is invalid',
+    schema: PUBLIC_MARSHMALLOW_BAD_REQUEST_SCHEMA,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Public marshmallow page was not found',
+    schema: PUBLIC_MARSHMALLOW_NOT_FOUND_SCHEMA,
+  })
   async getMessagesByCodes(
     @Param('tenantCode') tenantCode: string,
     @Param('talentCode') talentCode: string,
     @Query() query: PublicMessagesQueryDto,
-    @Res({ passthrough: true }) res: Response,
+    @Res({ passthrough: true }) res: Response
   ) {
     const data = await this.publicService.getMessagesByCodes(tenantCode, talentCode, query);
 
     if (query._t) {
       res.set({
         'Cache-Control': 'no-cache, no-store, must-revalidate',
-        'Pragma': 'no-cache',
-        'Expires': '0',
+        Pragma: 'no-cache',
+        Expires: '0',
       });
     } else {
       res.set({
@@ -137,13 +162,25 @@ export class PublicMarshmallowController {
   @Public()
   @ApiOperation({ summary: 'Get public messages' })
   @ApiParam({ name: 'path', description: 'Public marshmallow path', schema: { type: 'string' } })
-  @ApiResponse({ status: 200, description: 'Returns messages', schema: PUBLIC_MARSHMALLOW_MESSAGES_SCHEMA })
-  @ApiResponse({ status: 400, description: 'Public-marshmallow message query is invalid', schema: PUBLIC_MARSHMALLOW_BAD_REQUEST_SCHEMA })
-  @ApiResponse({ status: 404, description: 'Public marshmallow page was not found', schema: PUBLIC_MARSHMALLOW_NOT_FOUND_SCHEMA })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns messages',
+    schema: PUBLIC_MARSHMALLOW_MESSAGES_SCHEMA,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Public-marshmallow message query is invalid',
+    schema: PUBLIC_MARSHMALLOW_BAD_REQUEST_SCHEMA,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Public marshmallow page was not found',
+    schema: PUBLIC_MARSHMALLOW_NOT_FOUND_SCHEMA,
+  })
   async getMessages(
     @Param('path') path: string,
     @Query() query: PublicMessagesQueryDto,
-    @Res({ passthrough: true }) res: Response,
+    @Res({ passthrough: true }) res: Response
   ) {
     const data = await this.publicService.getMessages(path, query);
 
@@ -151,8 +188,8 @@ export class PublicMarshmallowController {
     if (query._t) {
       res.set({
         'Cache-Control': 'no-cache, no-store, must-revalidate',
-        'Pragma': 'no-cache',
-        'Expires': '0',
+        Pragma: 'no-cache',
+        Expires: '0',
       });
     } else {
       res.set({
@@ -171,15 +208,31 @@ export class PublicMarshmallowController {
   @ApiOperation({ summary: 'Submit marshmallow message via canonical shared-domain route' })
   @ApiParam({ name: 'tenantCode', description: 'Tenant code', schema: { type: 'string' } })
   @ApiParam({ name: 'talentCode', description: 'Talent code', schema: { type: 'string' } })
-  @ApiResponse({ status: 201, description: 'Message submitted', schema: PUBLIC_MARSHMALLOW_SUBMIT_SCHEMA })
-  @ApiResponse({ status: 400, description: 'Public-marshmallow submission is invalid', schema: PUBLIC_MARSHMALLOW_BAD_REQUEST_SCHEMA })
-  @ApiResponse({ status: 403, description: 'Public-marshmallow submission is not allowed for this talent', schema: PUBLIC_MARSHMALLOW_FORBIDDEN_SCHEMA })
-  @ApiResponse({ status: 404, description: 'Public marshmallow page was not found', schema: PUBLIC_MARSHMALLOW_NOT_FOUND_SCHEMA })
+  @ApiResponse({
+    status: 201,
+    description: 'Message submitted',
+    schema: PUBLIC_MARSHMALLOW_SUBMIT_SCHEMA,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Public-marshmallow submission is invalid',
+    schema: PUBLIC_MARSHMALLOW_BAD_REQUEST_SCHEMA,
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Public-marshmallow submission is not allowed for this talent',
+    schema: PUBLIC_MARSHMALLOW_FORBIDDEN_SCHEMA,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Public marshmallow page was not found',
+    schema: PUBLIC_MARSHMALLOW_NOT_FOUND_SCHEMA,
+  })
   async submitMessageByCodes(
     @Param('tenantCode') tenantCode: string,
     @Param('talentCode') talentCode: string,
     @Body() dto: SubmitMessageDto,
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     const ip = this.getClientIp(req);
     const userAgent = req.headers['user-agent'] ?? '';
@@ -194,14 +247,30 @@ export class PublicMarshmallowController {
   @Public()
   @ApiOperation({ summary: 'Submit marshmallow message' })
   @ApiParam({ name: 'path', description: 'Public marshmallow path', schema: { type: 'string' } })
-  @ApiResponse({ status: 201, description: 'Message submitted', schema: PUBLIC_MARSHMALLOW_SUBMIT_SCHEMA })
-  @ApiResponse({ status: 400, description: 'Public-marshmallow submission is invalid', schema: PUBLIC_MARSHMALLOW_BAD_REQUEST_SCHEMA })
-  @ApiResponse({ status: 403, description: 'Public-marshmallow submission is not allowed for this talent', schema: PUBLIC_MARSHMALLOW_FORBIDDEN_SCHEMA })
-  @ApiResponse({ status: 404, description: 'Public marshmallow page was not found', schema: PUBLIC_MARSHMALLOW_NOT_FOUND_SCHEMA })
+  @ApiResponse({
+    status: 201,
+    description: 'Message submitted',
+    schema: PUBLIC_MARSHMALLOW_SUBMIT_SCHEMA,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Public-marshmallow submission is invalid',
+    schema: PUBLIC_MARSHMALLOW_BAD_REQUEST_SCHEMA,
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Public-marshmallow submission is not allowed for this talent',
+    schema: PUBLIC_MARSHMALLOW_FORBIDDEN_SCHEMA,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Public marshmallow page was not found',
+    schema: PUBLIC_MARSHMALLOW_NOT_FOUND_SCHEMA,
+  })
   async submitMessage(
     @Param('path') path: string,
     @Body() dto: SubmitMessageDto,
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     const ip = this.getClientIp(req);
     const userAgent = req.headers['user-agent'] ?? '';
@@ -226,14 +295,20 @@ export class PublicMarshmallowController {
       required: ['url'],
     },
   })
-  @ApiResponse({ status: 200, description: 'Returns image URL', schema: PUBLIC_MARSHMALLOW_PREVIEW_IMAGE_SCHEMA })
-  @ApiResponse({ status: 400, description: 'Preview-image payload is invalid', schema: PUBLIC_MARSHMALLOW_BAD_REQUEST_SCHEMA })
-  async previewImage(
-    @Body() body: { url: string },
-  ) {
+  @ApiResponse({
+    status: 200,
+    description: 'Returns image URL',
+    schema: PUBLIC_MARSHMALLOW_PREVIEW_IMAGE_SCHEMA,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Preview-image payload is invalid',
+    schema: PUBLIC_MARSHMALLOW_BAD_REQUEST_SCHEMA,
+  })
+  async previewImage(@Body() body: { url: string }) {
     const images = await this.publicService.resolveBilibiliImages(body.url);
     if (!images || images.length === 0) {
-        return { images: [], error: 'Could not resolve images' };
+      return { images: [], error: 'Could not resolve images' };
     }
     return { images };
   }
@@ -245,14 +320,30 @@ export class PublicMarshmallowController {
   @Public()
   @HttpCode(200)
   @ApiOperation({ summary: 'Toggle reaction on message' })
-  @ApiParam({ name: 'messageId', description: 'Public marshmallow-message identifier', schema: { type: 'string', format: 'uuid' } })
-  @ApiResponse({ status: 200, description: 'Reaction toggled', schema: PUBLIC_MARSHMALLOW_REACTION_SCHEMA })
-  @ApiResponse({ status: 400, description: 'Reaction payload is invalid', schema: PUBLIC_MARSHMALLOW_BAD_REQUEST_SCHEMA })
-  @ApiResponse({ status: 404, description: 'Public marshmallow message was not found', schema: PUBLIC_MARSHMALLOW_NOT_FOUND_SCHEMA })
+  @ApiParam({
+    name: 'messageId',
+    description: 'Public marshmallow-message identifier',
+    schema: { type: 'string', format: 'uuid' },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Reaction toggled',
+    schema: PUBLIC_MARSHMALLOW_REACTION_SCHEMA,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Reaction payload is invalid',
+    schema: PUBLIC_MARSHMALLOW_BAD_REQUEST_SCHEMA,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Public marshmallow message was not found',
+    schema: PUBLIC_MARSHMALLOW_NOT_FOUND_SCHEMA,
+  })
   async toggleReaction(
     @Param('messageId', ParseUUIDPipe) messageId: string,
     @Body() dto: ReactDto,
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     const ip = this.getClientIp(req);
 
@@ -270,16 +361,36 @@ export class PublicMarshmallowController {
   @HttpCode(200)
   @ApiOperation({ summary: 'Mark message as read' })
   @ApiParam({ name: 'path', description: 'Public marshmallow path', schema: { type: 'string' } })
-  @ApiParam({ name: 'messageId', description: 'Public marshmallow-message identifier', schema: { type: 'string', format: 'uuid' } })
-  @ApiResponse({ status: 200, description: 'Message marked as read', schema: PUBLIC_MARSHMALLOW_MARK_READ_SCHEMA })
-  @ApiResponse({ status: 400, description: 'Mark-read payload is invalid', schema: PUBLIC_MARSHMALLOW_BAD_REQUEST_SCHEMA })
-  @ApiResponse({ status: 403, description: 'Public mark-read is no longer available', schema: PUBLIC_MARSHMALLOW_FORBIDDEN_SCHEMA })
-  @ApiResponse({ status: 404, description: 'Public marshmallow message or path was not found', schema: PUBLIC_MARSHMALLOW_NOT_FOUND_SCHEMA })
+  @ApiParam({
+    name: 'messageId',
+    description: 'Public marshmallow-message identifier',
+    schema: { type: 'string', format: 'uuid' },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Message marked as read',
+    schema: PUBLIC_MARSHMALLOW_MARK_READ_SCHEMA,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Mark-read payload is invalid',
+    schema: PUBLIC_MARSHMALLOW_BAD_REQUEST_SCHEMA,
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Public mark-read is no longer available',
+    schema: PUBLIC_MARSHMALLOW_FORBIDDEN_SCHEMA,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Public marshmallow message or path was not found',
+    schema: PUBLIC_MARSHMALLOW_NOT_FOUND_SCHEMA,
+  })
   async markAsRead(
     @Param('path') path: string,
     @Param('messageId', ParseUUIDPipe) messageId: string,
     @Body() dto: MarkReadDto,
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     const ip = this.getClientIp(req);
     return this.publicService.markAsRead(path, messageId, {
@@ -308,11 +419,17 @@ export class PublicMarshmallowController {
       required: ['token'],
     },
   })
-  @ApiResponse({ status: 200, description: 'Token validation result', schema: PUBLIC_MARSHMALLOW_VALIDATE_SSO_SCHEMA })
-  @ApiResponse({ status: 400, description: 'SSO validation payload is invalid', schema: PUBLIC_MARSHMALLOW_BAD_REQUEST_SCHEMA })
-  async validateSsoToken(
-    @Body() body: { token: string },
-  ) {
+  @ApiResponse({
+    status: 200,
+    description: 'Token validation result',
+    schema: PUBLIC_MARSHMALLOW_VALIDATE_SSO_SCHEMA,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'SSO validation payload is invalid',
+    schema: PUBLIC_MARSHMALLOW_BAD_REQUEST_SCHEMA,
+  })
+  async validateSsoToken(@Body() body: { token: string }) {
     const payload = this.tokenService.verifyMarshmallowSsoToken(body.token);
     if (!payload) {
       return { valid: false, user: null };
@@ -337,16 +454,36 @@ export class PublicMarshmallowController {
   @HttpCode(200)
   @ApiOperation({ summary: 'Mark message as read (SSO authenticated)' })
   @ApiParam({ name: 'path', description: 'Public marshmallow path', schema: { type: 'string' } })
-  @ApiParam({ name: 'messageId', description: 'Public marshmallow-message identifier', schema: { type: 'string', format: 'uuid' } })
-  @ApiResponse({ status: 200, description: 'Message marked as read', schema: PUBLIC_MARSHMALLOW_MARK_READ_SCHEMA })
-  @ApiResponse({ status: 400, description: 'SSO mark-read payload is invalid', schema: PUBLIC_MARSHMALLOW_BAD_REQUEST_SCHEMA })
-  @ApiResponse({ status: 403, description: 'SSO token is invalid or message access is forbidden', schema: PUBLIC_MARSHMALLOW_FORBIDDEN_SCHEMA })
-  @ApiResponse({ status: 404, description: 'Public marshmallow message or path was not found', schema: PUBLIC_MARSHMALLOW_NOT_FOUND_SCHEMA })
+  @ApiParam({
+    name: 'messageId',
+    description: 'Public marshmallow-message identifier',
+    schema: { type: 'string', format: 'uuid' },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Message marked as read',
+    schema: PUBLIC_MARSHMALLOW_MARK_READ_SCHEMA,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'SSO mark-read payload is invalid',
+    schema: PUBLIC_MARSHMALLOW_BAD_REQUEST_SCHEMA,
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'SSO token is invalid or message access is forbidden',
+    schema: PUBLIC_MARSHMALLOW_FORBIDDEN_SCHEMA,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Public marshmallow message or path was not found',
+    schema: PUBLIC_MARSHMALLOW_NOT_FOUND_SCHEMA,
+  })
   async markAsReadAuth(
     @Param('path') path: string,
     @Param('messageId', ParseUUIDPipe) messageId: string,
     @Body() dto: SsoMarkReadDto,
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     const ip = this.getClientIp(req);
 
@@ -376,16 +513,32 @@ export class PublicMarshmallowController {
   @HttpCode(200)
   @ApiOperation({ summary: 'Reply to message (SSO authenticated)' })
   @ApiParam({ name: 'path', description: 'Public marshmallow path', schema: { type: 'string' } })
-  @ApiParam({ name: 'messageId', description: 'Public marshmallow-message identifier', schema: { type: 'string', format: 'uuid' } })
+  @ApiParam({
+    name: 'messageId',
+    description: 'Public marshmallow-message identifier',
+    schema: { type: 'string', format: 'uuid' },
+  })
   @ApiResponse({ status: 200, description: 'Reply sent', schema: PUBLIC_MARSHMALLOW_REPLY_SCHEMA })
-  @ApiResponse({ status: 400, description: 'SSO reply payload is invalid', schema: PUBLIC_MARSHMALLOW_BAD_REQUEST_SCHEMA })
-  @ApiResponse({ status: 403, description: 'SSO token is invalid or message access is forbidden', schema: PUBLIC_MARSHMALLOW_FORBIDDEN_SCHEMA })
-  @ApiResponse({ status: 404, description: 'Public marshmallow message or path was not found', schema: PUBLIC_MARSHMALLOW_NOT_FOUND_SCHEMA })
+  @ApiResponse({
+    status: 400,
+    description: 'SSO reply payload is invalid',
+    schema: PUBLIC_MARSHMALLOW_BAD_REQUEST_SCHEMA,
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'SSO token is invalid or message access is forbidden',
+    schema: PUBLIC_MARSHMALLOW_FORBIDDEN_SCHEMA,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Public marshmallow message or path was not found',
+    schema: PUBLIC_MARSHMALLOW_NOT_FOUND_SCHEMA,
+  })
   async replyAuth(
     @Param('path') path: string,
     @Param('messageId', ParseUUIDPipe) messageId: string,
     @Body() dto: SsoReplyDto,
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     const ip = this.getClientIp(req);
 

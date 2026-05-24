@@ -73,7 +73,7 @@ describe('TalentBusinessShell', () => {
         >
           <div>Talent content</div>
         </TalentBusinessShell>
-      </UiLocaleProvider>,
+      </UiLocaleProvider>
     );
 
     expect(screen.getAllByText('Customer Management')).toHaveLength(2);
@@ -90,7 +90,7 @@ describe('TalentBusinessShell', () => {
     expect(screen.queryByRole('button', { name: '設定' })).not.toBeInTheDocument();
     expect(screen.getByRole('link', { name: '組織構造' })).toHaveAttribute(
       'href',
-      '/tenant/tenant-1/organization-structure',
+      '/tenant/tenant-1/organization-structure'
     );
     expect(screen.getByRole('navigation', { name: 'メインナビゲーション' })).toBeInTheDocument();
 
@@ -103,30 +103,29 @@ describe('TalentBusinessShell', () => {
     expect(onSignOut).toHaveBeenCalledTimes(1);
   });
 
-  it.each([
-    ['homepage'],
-    ['marshmallow'],
-    ['reports'],
-  ] as const)('keeps the organization footer entry mounted in the %s section', async (section) => {
-    render(
-      <UiLocaleProvider>
-        <TalentBusinessShell
-          tenantId="tenant-1"
-          talentId="talent-9"
-          section={section}
-          session={baseSession}
-          onNavigate={vi.fn()}
-          onSignOut={vi.fn().mockResolvedValue(undefined)}
-        >
-          <div>Talent content</div>
-        </TalentBusinessShell>
-      </UiLocaleProvider>,
-    );
+  it.each([['homepage'], ['marshmallow'], ['reports']] as const)(
+    'keeps the organization footer entry mounted in the %s section',
+    async (section) => {
+      render(
+        <UiLocaleProvider>
+          <TalentBusinessShell
+            tenantId="tenant-1"
+            talentId="talent-9"
+            section={section}
+            session={baseSession}
+            onNavigate={vi.fn()}
+            onSignOut={vi.fn().mockResolvedValue(undefined)}
+          >
+            <div>Talent content</div>
+          </TalentBusinessShell>
+        </UiLocaleProvider>
+      );
 
-    expect(await screen.findAllByText('Tokino Sora')).toHaveLength(1);
-    expect(screen.getByRole('link', { name: 'Organization Structure' })).toHaveAttribute(
-      'href',
-      '/tenant/tenant-1/organization-structure',
-    );
-  });
+      expect(await screen.findAllByText('Tokino Sora')).toHaveLength(1);
+      expect(screen.getByRole('link', { name: 'Organization Structure' })).toHaveAttribute(
+        'href',
+        '/tenant/tenant-1/organization-structure'
+      );
+    }
+  );
 });

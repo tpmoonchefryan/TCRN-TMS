@@ -1,8 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 // Stress Test: Run before releases, validate system limits
-
-import http from 'k6/http';
 import { check, sleep, group } from 'k6';
+import http from 'k6/http';
 import { Rate, Trend } from 'k6/metrics';
 
 const errorRate = new Rate('errors');
@@ -51,10 +50,7 @@ export default function (data) {
   if (scenario < 0.4) {
     // 40%: Customer operations
     group('Customer Operations', () => {
-      const listRes = http.get(
-        `${BASE_URL}/api/v1/customers?page=1&pageSize=20`,
-        { headers }
-      );
+      const listRes = http.get(`${BASE_URL}/api/v1/customers?page=1&pageSize=20`, { headers });
       check(listRes, { 'customer list ok': (r) => r.status === 200 });
       apiLatency.add(listRes.timings.duration);
       errorRate.add(listRes.status >= 400);

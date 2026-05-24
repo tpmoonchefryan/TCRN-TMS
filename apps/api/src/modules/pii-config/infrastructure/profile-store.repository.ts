@@ -1,14 +1,14 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable } from '@nestjs/common';
+
 import { Prisma } from '@tcrn/database';
 
-import { DatabaseService } from '../../database';
 import {
   localizedTextSearchExpression,
   readLocalizedText,
   stringifyLocalizedText,
 } from '../../../platform/persistence/localized-text.persistence';
+import { DatabaseService } from '../../database';
 import type {
   ProfileStoreCreatePayload,
   ProfileStoreCreateRow,
@@ -47,32 +47,26 @@ const mapProfileStoreListRow = (row: ProfileStoreListRawRow): ProfileStoreListRo
   name: readLocalizedText(row.name, 'profile_store.name'),
 });
 
-const mapProfileStoreDetailRow = (
-  row: ProfileStoreDetailRawRow,
-): ProfileStoreDetailRow => ({
+const mapProfileStoreDetailRow = (row: ProfileStoreDetailRawRow): ProfileStoreDetailRow => ({
   ...row,
   name: readLocalizedText(row.name, 'profile_store.name'),
   description: readLocalizedText(row.description, 'profile_store.description'),
 });
 
-const mapProfileStoreCreateRow = (
-  row: ProfileStoreCreateRawRow,
-): ProfileStoreCreateRow => ({
+const mapProfileStoreCreateRow = (row: ProfileStoreCreateRawRow): ProfileStoreCreateRow => ({
   ...row,
   name: readLocalizedText(row.name, 'profile_store.name'),
 });
 
 const mapProfileStoreUpdateLookupRow = (
-  row: ProfileStoreUpdateLookupRawRow,
+  row: ProfileStoreUpdateLookupRawRow
 ): ProfileStoreUpdateLookupRow => ({
   ...row,
   name: readLocalizedText(row.name, 'profile_store.name'),
   description: readLocalizedText(row.description, 'profile_store.description'),
 });
 
-const mapProfileStoreUpdateRow = (
-  row: ProfileStoreUpdateRawRow,
-): ProfileStoreUpdateRow => ({
+const mapProfileStoreUpdateRow = (row: ProfileStoreUpdateRawRow): ProfileStoreUpdateRow => ({
   ...row,
   name: readLocalizedText(row.name, 'profile_store.name'),
   description: readLocalizedText(row.description, 'profile_store.description'),
@@ -87,7 +81,7 @@ export class ProfileStoreRepository {
     includeInactive: boolean,
     search: string | undefined,
     pageSize: number,
-    offset: number,
+    offset: number
   ): Promise<ProfileStoreListRow[]> {
     const prisma = this.databaseService.getPrisma();
     const whereClauses: string[] = [];
@@ -104,7 +98,7 @@ export class ProfileStoreRepository {
           ps.code ILIKE $${paramIndex}
           OR ${localizedTextSearchExpression('ps.name', `$${paramIndex}`)}
           OR COALESCE(ps.extra_data::text, '') ILIKE $${paramIndex}
-        )`,
+        )`
       );
       params.push(`%${search}%`);
       paramIndex += 1;
@@ -131,17 +125,13 @@ export class ProfileStoreRepository {
         ORDER BY ps.is_default DESC, ps.created_at DESC
         LIMIT $${limitParamIndex} OFFSET $${offsetParamIndex}
       `,
-      ...params,
+      ...params
     );
 
     return rows.map(mapProfileStoreListRow);
   }
 
-  async countMany(
-    schema: string,
-    includeInactive: boolean,
-    search?: string,
-  ): Promise<number> {
+  async countMany(schema: string, includeInactive: boolean, search?: string): Promise<number> {
     const prisma = this.databaseService.getPrisma();
     const whereClauses: string[] = [];
     const params: unknown[] = [];
@@ -157,7 +147,7 @@ export class ProfileStoreRepository {
           ps.code ILIKE $${paramIndex}
           OR ${localizedTextSearchExpression('ps.name', `$${paramIndex}`)}
           OR COALESCE(ps.extra_data::text, '') ILIKE $${paramIndex}
-        )`,
+        )`
       );
       params.push(`%${search}%`);
     }
@@ -169,7 +159,7 @@ export class ProfileStoreRepository {
         FROM "${schema}".profile_store ps
         WHERE ${whereClause}
       `,
-      ...params,
+      ...params
     );
 
     return Number(result[0]?.count ?? 0);
@@ -183,16 +173,13 @@ export class ProfileStoreRepository {
         FROM "${schema}".talent
         WHERE profile_store_id = $1::uuid
       `,
-      storeId,
+      storeId
     );
 
     return Number(result[0]?.count ?? 0);
   }
 
-  async countCustomerByStoreId(
-    schema: string,
-    storeId: string,
-  ): Promise<number> {
+  async countCustomerByStoreId(schema: string, storeId: string): Promise<number> {
     const prisma = this.databaseService.getPrisma();
     const result = await prisma.$queryRawUnsafe<Array<{ count: bigint }>>(
       `
@@ -200,16 +187,13 @@ export class ProfileStoreRepository {
         FROM "${schema}".customer_profile
         WHERE profile_store_id = $1::uuid
       `,
-      storeId,
+      storeId
     );
 
     return Number(result[0]?.count ?? 0);
   }
 
-  async findById(
-    schema: string,
-    id: string,
-  ): Promise<ProfileStoreDetailRow | null> {
+  async findById(schema: string, id: string): Promise<ProfileStoreDetailRow | null> {
     const prisma = this.databaseService.getPrisma();
     const result = await prisma.$queryRawUnsafe<ProfileStoreDetailRawRow[]>(
       `
@@ -227,16 +211,13 @@ export class ProfileStoreRepository {
         FROM "${schema}".profile_store ps
         WHERE ps.id = $1::uuid
       `,
-      id,
+      id
     );
 
     return result[0] ? mapProfileStoreDetailRow(result[0]) : null;
   }
 
-  async findByCode(
-    schema: string,
-    code: string,
-  ): Promise<{ id: string } | null> {
+  async findByCode(schema: string, code: string): Promise<{ id: string } | null> {
     const prisma = this.databaseService.getPrisma();
     const result = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
       `
@@ -244,7 +225,7 @@ export class ProfileStoreRepository {
         FROM "${schema}".profile_store
         WHERE code = $1
       `,
-      code,
+      code
     );
 
     return result[0] ?? null;
@@ -262,7 +243,7 @@ export class ProfileStoreRepository {
   async create(
     schema: string,
     payload: ProfileStoreCreatePayload,
-    userId: string,
+    userId: string
   ): Promise<ProfileStoreCreateRow> {
     const prisma = this.databaseService.getPrisma();
     const result = await prisma.$queryRawUnsafe<ProfileStoreCreateRawRow[]>(
@@ -305,16 +286,13 @@ export class ProfileStoreRepository {
       stringifyLocalizedText(payload.name),
       stringifyLocalizedText(payload.description),
       payload.isDefault,
-      userId,
+      userId
     );
 
     return mapProfileStoreCreateRow(result[0]);
   }
 
-  async findForUpdate(
-    schema: string,
-    id: string,
-  ): Promise<ProfileStoreUpdateLookupRow | null> {
+  async findForUpdate(schema: string, id: string): Promise<ProfileStoreUpdateLookupRow | null> {
     const prisma = this.databaseService.getPrisma();
     const result = await prisma.$queryRawUnsafe<ProfileStoreUpdateLookupRawRow[]>(
       `
@@ -330,7 +308,7 @@ export class ProfileStoreRepository {
         FROM "${schema}".profile_store
         WHERE id = $1::uuid
       `,
-      id,
+      id
     );
 
     return result[0] ? mapProfileStoreUpdateLookupRow(result[0]) : null;
@@ -340,7 +318,7 @@ export class ProfileStoreRepository {
     schema: string,
     id: string,
     changes: ProfileStoreFieldChange[],
-    userId: string,
+    userId: string
   ): Promise<ProfileStoreUpdateRow> {
     const prisma = this.databaseService.getPrisma();
     const updates: string[] = [
@@ -354,7 +332,9 @@ export class ProfileStoreRepository {
     for (const change of changes) {
       const cast = change.field === 'name' || change.field === 'description' ? '::jsonb' : '';
       updates.push(`${this.toSnakeCase(change.field)} = $${paramIndex}${cast}`);
-      params.push(cast ? stringifyLocalizedText(change.value as ProfileStoreUpdateRow['name']) : change.value);
+      params.push(
+        cast ? stringifyLocalizedText(change.value as ProfileStoreUpdateRow['name']) : change.value
+      );
       paramIndex++;
     }
 
@@ -374,7 +354,7 @@ export class ProfileStoreRepository {
           version,
           updated_at as "updatedAt"
       `,
-      ...params,
+      ...params
     );
 
     return mapProfileStoreUpdateRow(result[0]);

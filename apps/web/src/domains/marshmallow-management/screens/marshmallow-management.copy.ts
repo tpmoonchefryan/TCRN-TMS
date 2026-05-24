@@ -114,15 +114,18 @@ const COPY = {
         secretKeyLabel: 'Secret key',
         configured: 'Configured',
         missing: 'Missing',
-        readyHint: 'Site key and secret key are configured. Public pages can render and verify Turnstile.',
+        readyHint:
+          'Site key and secret key are configured. Public pages can render and verify Turnstile.',
         unavailableHint:
           'Captcha mode may require Turnstile, but runtime configuration is incomplete. Public submission is disabled until the missing key is configured.',
-        notRequiredHint: 'Captcha mode is disabled, so public submissions are not blocked by Turnstile.',
+        notRequiredHint:
+          'Captcha mode is disabled, so public submissions are not blocked by Turnstile.',
       },
     },
     moderation: {
       title: 'Moderation Queue',
-      description: 'Review pending or rejected messages, mark queue hygiene flags, and keep mailbox state explicit.',
+      description:
+        'Review pending or rejected messages, mark queue hygiene flags, and keep mailbox state explicit.',
       filters: {
         keywordSearch: 'Keyword search',
         messageStatus: 'Message status filter',
@@ -156,7 +159,8 @@ const COPY = {
         restoreSuccess: 'Marshmallow message restored to pending.',
         restoreError: 'Failed to restore the selected marshmallow message.',
         rejectTitle: 'Reject this message?',
-        rejectDescription: 'This uses the manual moderation path and removes the message from public approval flow.',
+        rejectDescription:
+          'This uses the manual moderation path and removes the message from public approval flow.',
         rejectConfirm: 'Reject',
         rejectSuccess: 'Marshmallow message rejected.',
         rejectError: 'Failed to reject the selected marshmallow message.',
@@ -181,7 +185,8 @@ const COPY = {
         expires: 'Expires',
       },
       noJobTitle: 'No export job created in this session',
-      noJobDescription: 'Create an export job here, then refresh the latest job until the download becomes available.',
+      noJobDescription:
+        'Create an export job here, then refresh the latest job until the download becomes available.',
     },
     options: {
       captcha: {
@@ -281,7 +286,8 @@ const COPY = {
       title: '配置',
       description: '管理信箱行为、审核规则与运营策略。',
       publicRouteTitle: '公开路由设置',
-      publicRouteDescription: '可在艺人设置中启用或停用公开棉花糖页面，这里会显示当前线上信箱链接以便核对。',
+      publicRouteDescription:
+        '可在艺人设置中启用或停用公开棉花糖页面，这里会显示当前线上信箱链接以便核对。',
       fields: {
         title: '标题',
         allowedReactions: '允许的反应',
@@ -311,7 +317,8 @@ const COPY = {
       },
       turnstile: {
         title: 'Turnstile 运行状态',
-        description: 'Turnstile 密钥来自部署配置。这里仅显示公开组件 site key 与服务端校验 secret 是否存在，不显示密钥值。',
+        description:
+          'Turnstile 密钥来自部署配置。这里仅显示公开组件 site key 与服务端校验 secret 是否存在，不显示密钥值。',
         summaryLabel: 'Turnstile',
         ready: '已就绪',
         unavailable: '提交不可用',
@@ -321,7 +328,8 @@ const COPY = {
         configured: '已配置',
         missing: '缺失',
         readyHint: 'Site key 与 secret key 均已配置，公开页面可以渲染并校验 Turnstile。',
-        unavailableHint: '验证码模式可能要求 Turnstile，但当前运行配置不完整。缺失密钥配置前，公开提交会被禁用。',
+        unavailableHint:
+          '验证码模式可能要求 Turnstile，但当前运行配置不完整。缺失密钥配置前，公开提交会被禁用。',
         notRequiredHint: '验证码模式已关闭，公开提交不会被 Turnstile 阻断。',
       },
     },
@@ -484,7 +492,8 @@ const COPY = {
       title: '配置',
       description: '管理信箱行为、审核规则与运营策略。',
       publicRouteTitle: '公开路由设置',
-      publicRouteDescription: '可在艺人设置中启用或停用公开棉花糖页面，这里会显示当前线上信箱链接以便核对。',
+      publicRouteDescription:
+        '可在艺人设置中启用或停用公开棉花糖页面，这里会显示当前线上信箱链接以便核对。',
       fields: {
         title: '标题',
         allowedReactions: '允许的反应',
@@ -514,7 +523,8 @@ const COPY = {
       },
       turnstile: {
         title: 'Turnstile 运行状态',
-        description: 'Turnstile 密钥来自部署配置。这里仅显示公开组件 site key 与服务端校验 secret 是否存在，不显示密钥值。',
+        description:
+          'Turnstile 密钥来自部署配置。这里仅显示公开组件 site key 与服务端校验 secret 是否存在，不显示密钥值。',
         summaryLabel: 'Turnstile',
         ready: '已就绪',
         unavailable: '提交不可用',
@@ -524,7 +534,8 @@ const COPY = {
         configured: '已配置',
         missing: '缺失',
         readyHint: 'Site key 与 secret key 均已配置，公开页面可以渲染并校验 Turnstile。',
-        unavailableHint: '验证码模式可能要求 Turnstile，但当前运行配置不完整。缺失密钥配置前，公开提交会被禁用。',
+        unavailableHint:
+          '验证码模式可能要求 Turnstile，但当前运行配置不完整。缺失密钥配置前，公开提交会被禁用。',
         notRequiredHint: '验证码模式已关闭，公开提交不会被 Turnstile 阻断。',
       },
     },
@@ -728,7 +739,8 @@ const COPY = {
         secretKeyLabel: 'Secret key',
         configured: '設定済み',
         missing: '未設定',
-        readyHint: 'Site key と secret key が設定済みです。公開ページで Turnstile を表示し検証できます。',
+        readyHint:
+          'Site key と secret key が設定済みです。公開ページで Turnstile を表示し検証できます。',
         unavailableHint:
           'CAPTCHA モードで Turnstile が必要になる可能性がありますが、ランタイム設定が不完全です。不足キーが設定されるまで公開送信は無効です。',
         notRequiredHint: 'CAPTCHA モードが無効なため、公開送信は Turnstile でブロックされません。',
@@ -736,7 +748,8 @@ const COPY = {
     },
     moderation: {
       title: 'モデレーションキュー',
-      description: '保留または拒否されたメッセージを確認し、キューフラグを整理しながらメールボックス状態を明確に保ちます。',
+      description:
+        '保留または拒否されたメッセージを確認し、キューフラグを整理しながらメールボックス状態を明確に保ちます。',
       filters: {
         keywordSearch: 'キーワード検索',
         messageStatus: 'メッセージ状態フィルター',
@@ -759,7 +772,8 @@ const COPY = {
       },
       dialogs: {
         approveTitle: 'このメッセージを承認しますか？',
-        approveDescription: '公開可視性が許可されていれば、承認済みマシュマロは公開ページに表示されます。',
+        approveDescription:
+          '公開可視性が許可されていれば、承認済みマシュマロは公開ページに表示されます。',
         approveConfirm: '承認',
         approveSuccess: 'マシュマロメッセージを承認しました。',
         approveError: '選択したマシュマロメッセージの承認に失敗しました。',
@@ -769,7 +783,8 @@ const COPY = {
         restoreSuccess: 'マシュマロメッセージを保留に戻しました。',
         restoreError: '選択したマシュマロメッセージの復元に失敗しました。',
         rejectTitle: 'このメッセージを拒否しますか？',
-        rejectDescription: '手動モデレーション経路を使い、このメッセージを公開承認フローから外します。',
+        rejectDescription:
+          '手動モデレーション経路を使い、このメッセージを公開承認フローから外します。',
         rejectConfirm: '拒否',
         rejectSuccess: 'マシュマロメッセージを拒否しました。',
         rejectError: '選択したマシュマロメッセージの拒否に失敗しました。',
@@ -794,7 +809,8 @@ const COPY = {
         expires: '期限',
       },
       noJobTitle: 'このセッションではまだエクスポートジョブが作成されていません',
-      noJobDescription: 'ここでエクスポートジョブを作成し、ダウンロード可能になるまで最新ジョブを更新してください。',
+      noJobDescription:
+        'ここでエクスポートジョブを作成し、ダウンロード可能になるまで最新ジョブを更新してください。',
     },
     options: {
       captcha: {
@@ -935,15 +951,18 @@ const COPY = {
         secretKeyLabel: 'Secret key',
         configured: 'Configured',
         missing: 'Missing',
-        readyHint: 'Site key and secret key are configured. Public pages can render and verify Turnstile.',
+        readyHint:
+          'Site key and secret key are configured. Public pages can render and verify Turnstile.',
         unavailableHint:
           'Captcha mode may require Turnstile, but runtime configuration is incomplete. Public submission is disabled until the missing key is configured.',
-        notRequiredHint: 'Captcha mode is disabled, so public submissions are not blocked by Turnstile.',
+        notRequiredHint:
+          'Captcha mode is disabled, so public submissions are not blocked by Turnstile.',
       },
     },
     moderation: {
       title: 'Moderation Queue',
-      description: 'Review pending or rejected messages, mark queue hygiene flags, and keep mailbox state explicit.',
+      description:
+        'Review pending or rejected messages, mark queue hygiene flags, and keep mailbox state explicit.',
       filters: {
         keywordSearch: 'Keyword search',
         messageStatus: 'Message status filter',
@@ -977,7 +996,8 @@ const COPY = {
         restoreSuccess: 'Marshmallow message restored to pending.',
         restoreError: 'Failed to restore the selected marshmallow message.',
         rejectTitle: 'Reject this message?',
-        rejectDescription: 'This uses the manual moderation path and removes the message from public approval flow.',
+        rejectDescription:
+          'This uses the manual moderation path and removes the message from public approval flow.',
         rejectConfirm: 'Reject',
         rejectSuccess: 'Marshmallow message rejected.',
         rejectError: 'Failed to reject the selected marshmallow message.',
@@ -1002,7 +1022,8 @@ const COPY = {
         expires: 'Expires',
       },
       noJobTitle: 'No export job created in this session',
-      noJobDescription: 'Create an export job here, then refresh the latest job until the download becomes available.',
+      noJobDescription:
+        'Create an export job here, then refresh the latest job until the download becomes available.',
     },
     options: {
       captcha: {
@@ -1143,15 +1164,18 @@ const COPY = {
         secretKeyLabel: 'Secret key',
         configured: 'Configured',
         missing: 'Missing',
-        readyHint: 'Site key and secret key are configured. Public pages can render and verify Turnstile.',
+        readyHint:
+          'Site key and secret key are configured. Public pages can render and verify Turnstile.',
         unavailableHint:
           'Captcha mode may require Turnstile, but runtime configuration is incomplete. Public submission is disabled until the missing key is configured.',
-        notRequiredHint: 'Captcha mode is disabled, so public submissions are not blocked by Turnstile.',
+        notRequiredHint:
+          'Captcha mode is disabled, so public submissions are not blocked by Turnstile.',
       },
     },
     moderation: {
       title: 'Moderation Queue',
-      description: 'Review pending or rejected messages, mark queue hygiene flags, and keep mailbox state explicit.',
+      description:
+        'Review pending or rejected messages, mark queue hygiene flags, and keep mailbox state explicit.',
       filters: {
         keywordSearch: 'Keyword search',
         messageStatus: 'Message status filter',
@@ -1185,7 +1209,8 @@ const COPY = {
         restoreSuccess: 'Marshmallow message restored to pending.',
         restoreError: 'Failed to restore the selected marshmallow message.',
         rejectTitle: 'Reject this message?',
-        rejectDescription: 'This uses the manual moderation path and removes the message from public approval flow.',
+        rejectDescription:
+          'This uses the manual moderation path and removes the message from public approval flow.',
         rejectConfirm: 'Reject',
         rejectSuccess: 'Marshmallow message rejected.',
         rejectError: 'Failed to reject the selected marshmallow message.',
@@ -1210,7 +1235,8 @@ const COPY = {
         expires: 'Expires',
       },
       noJobTitle: 'No export job created in this session',
-      noJobDescription: 'Create an export job here, then refresh the latest job until the download becomes available.',
+      noJobDescription:
+        'Create an export job here, then refresh the latest job until the download becomes available.',
     },
     options: {
       captcha: {
@@ -1256,7 +1282,10 @@ const COPY = {
 } as const satisfies Record<SupportedUiLocale, unknown>;
 
 export type MarshmallowManagementCopy = (typeof COPY)['en'];
-const MARSHMALLOW_COPY_RECORD = COPY as unknown as Record<SupportedUiLocale, MarshmallowManagementCopy>;
+const MARSHMALLOW_COPY_RECORD = COPY as unknown as Record<
+  SupportedUiLocale,
+  MarshmallowManagementCopy
+>;
 
 export function useMarshmallowManagementCopy() {
   const { locale } = useUiLocale();
@@ -1291,25 +1320,26 @@ export function useMarshmallowManagementCopy() {
 }
 
 export function formatMarshmallowDateTime(
-  locale: SupportedUiLocale ,
+  locale: SupportedUiLocale,
   value: string | null,
-  fallback: string,
+  fallback: string
 ) {
   return formatLocaleDateTime(locale, value, fallback);
 }
 
-export function formatMarshmallowNumber(locale: SupportedUiLocale , value: number) {
+export function formatMarshmallowNumber(locale: SupportedUiLocale, value: number) {
   return formatLocaleNumber(locale, value);
 }
 
 export function getMarshmallowMessageStatusLabel(
-  locale: SupportedUiLocale ,
-  status: MarshmallowMessageStatus,
+  locale: SupportedUiLocale,
+  status: MarshmallowMessageStatus
 ) {
-  return (resolveLocaleRecord(locale, MARSHMALLOW_COPY_RECORD) as MarshmallowManagementCopy).options.messageState[status];
+  return (resolveLocaleRecord(locale, MARSHMALLOW_COPY_RECORD) as MarshmallowManagementCopy).options
+    .messageState[status];
 }
 
-export function getMarshmallowExportStatusLabel(locale: SupportedUiLocale , status: string) {
+export function getMarshmallowExportStatusLabel(locale: SupportedUiLocale, status: string) {
   const copy = resolveLocaleRecord(locale, MARSHMALLOW_COPY_RECORD) as MarshmallowManagementCopy;
   const normalized = status.toLowerCase();
 
@@ -1321,9 +1351,9 @@ export function getMarshmallowExportStatusLabel(locale: SupportedUiLocale , stat
 }
 
 export function getMarshmallowActionAriaLabel(
-  locale: SupportedUiLocale ,
+  locale: SupportedUiLocale,
   action: 'approve' | 'reject' | 'restore' | 'markRead' | 'markUnread' | 'star' | 'unstar',
-  messageId: string,
+  messageId: string
 ) {
   const copy = resolveLocaleRecord(locale, MARSHMALLOW_COPY_RECORD) as MarshmallowManagementCopy;
 

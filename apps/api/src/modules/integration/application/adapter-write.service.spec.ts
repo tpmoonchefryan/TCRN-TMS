@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import 'reflect-metadata';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   createLocalizedText,
@@ -10,7 +10,6 @@ import {
   type RequestContext,
   TechEventType,
 } from '@tcrn/shared';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ChangeLogService, TechEventLogService } from '../../log';
 import type { IntegrationAdapterOwnerScope } from '../domain/adapter-read.policy';
@@ -82,14 +81,14 @@ describe('AdapterWriteApplicationService', () => {
     mockReadApplicationService,
     mockCryptoService,
     mockChangeLogService,
-    mockTechEventLog,
+    mockTechEventLog
   );
   const localized = (en: string) => createLocalizedText({ en });
 
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(mockRepository.withTransaction).mockImplementation(async (operation) =>
-      operation(prisma),
+      operation(prisma)
     );
   });
 
@@ -132,8 +131,8 @@ describe('AdapterWriteApplicationService', () => {
           ],
         },
         context,
-        scope,
-      ),
+        scope
+      )
     ).resolves.toEqual({
       id: 'adapter-ai-1',
       code: 'AI_ADAPTER',
@@ -155,7 +154,7 @@ describe('AdapterWriteApplicationService', () => {
             invocationRuntime: 'not_implemented',
           }),
         }),
-      }),
+      })
     );
     expect(mockRepository.upsertConfigs).toHaveBeenCalledWith(
       prisma,
@@ -182,7 +181,7 @@ describe('AdapterWriteApplicationService', () => {
           configValue: 'encrypted:provider-token',
           isSecret: true,
         },
-      ],
+      ]
     );
   });
 
@@ -203,8 +202,8 @@ describe('AdapterWriteApplicationService', () => {
           ],
         },
         context,
-        scope,
-      ),
+        scope
+      )
     ).rejects.toMatchObject({
       response: {
         code: ErrorCodes.VALIDATION_FAILED,
@@ -226,8 +225,8 @@ describe('AdapterWriteApplicationService', () => {
           ],
         },
         context,
-        scope,
-      ),
+        scope
+      )
     ).rejects.toMatchObject({
       response: {
         code: ErrorCodes.VALIDATION_FAILED,
@@ -250,8 +249,8 @@ describe('AdapterWriteApplicationService', () => {
           ],
         },
         context,
-        scope,
-      ),
+        scope
+      )
     ).rejects.toMatchObject({
       response: {
         code: ErrorCodes.VALIDATION_FAILED,
@@ -295,30 +294,25 @@ describe('AdapterWriteApplicationService', () => {
           ],
         },
         context,
-        scope,
-      ),
+        scope
+      )
     ).resolves.toEqual({
       id: 'adapter-1',
       code: 'BILI_SYNC',
     });
 
-    expect(mockRepository.upsertConfigs).toHaveBeenCalledWith(
-      prisma,
-      'tenant_test',
-      'adapter-1',
-      [
-        {
-          configKey: 'client_secret',
-          configValue: 'encrypted:top-secret',
-          isSecret: true,
-        },
-        {
-          configKey: 'endpoint',
-          configValue: 'https://example.com',
-          isSecret: false,
-        },
-      ],
-    );
+    expect(mockRepository.upsertConfigs).toHaveBeenCalledWith(prisma, 'tenant_test', 'adapter-1', [
+      {
+        configKey: 'client_secret',
+        configValue: 'encrypted:top-secret',
+        isSecret: true,
+      },
+      {
+        configKey: 'endpoint',
+        configValue: 'https://example.com',
+        isSecret: false,
+      },
+    ]);
     expect(mockReadApplicationService.findById).toHaveBeenCalledWith('adapter-1', context);
   });
 
@@ -345,8 +339,8 @@ describe('AdapterWriteApplicationService', () => {
           name: { en: 'Bili Sync Updated' },
           version: 2,
         },
-        context,
-      ),
+        context
+      )
     ).rejects.toMatchObject({
       response: {
         code: ErrorCodes.VERSION_CONFLICT,
@@ -387,25 +381,20 @@ describe('AdapterWriteApplicationService', () => {
             },
           ],
         },
-        context,
-      ),
+        context
+      )
     ).resolves.toEqual({
       updatedCount: 1,
       adapterVersion: 6,
     });
 
-    expect(mockRepository.upsertConfigs).toHaveBeenCalledWith(
-      prisma,
-      'tenant_test',
-      'adapter-1',
-      [
-        {
-          configKey: 'client_secret',
-          configValue: 'encrypted:rotated-secret',
-          isSecret: true,
-        },
-      ],
-    );
+    expect(mockRepository.upsertConfigs).toHaveBeenCalledWith(prisma, 'tenant_test', 'adapter-1', [
+      {
+        configKey: 'client_secret',
+        configValue: 'encrypted:rotated-secret',
+        isSecret: true,
+      },
+    ]);
     expect(mockTechEventLog.log).toHaveBeenCalledWith({
       eventType: TechEventType.SECURITY_EVENT,
       scope: 'security',
@@ -457,30 +446,25 @@ describe('AdapterWriteApplicationService', () => {
             },
           ],
         },
-        context,
-      ),
+        context
+      )
     ).resolves.toEqual({
       updatedCount: 2,
       adapterVersion: 6,
     });
 
-    expect(mockRepository.upsertConfigs).toHaveBeenCalledWith(
-      prisma,
-      'tenant_test',
-      'adapter-1',
-      [
-        {
-          configKey: 'endpoint_url',
-          configValue: 'https://new.example.com',
-          isSecret: false,
-        },
-      ],
-    );
+    expect(mockRepository.upsertConfigs).toHaveBeenCalledWith(prisma, 'tenant_test', 'adapter-1', [
+      {
+        configKey: 'endpoint_url',
+        configValue: 'https://new.example.com',
+        isSecret: false,
+      },
+    ]);
     expect(mockRepository.deleteConfig).toHaveBeenCalledWith(
       prisma,
       'tenant_test',
       'adapter-1',
-      'access_token',
+      'access_token'
     );
     expect(mockTechEventLog.log).toHaveBeenCalledWith({
       eventType: TechEventType.SECURITY_EVENT,
@@ -523,8 +507,8 @@ describe('AdapterWriteApplicationService', () => {
             },
           ],
         },
-        context,
-      ),
+        context
+      )
     ).resolves.toEqual({
       updatedCount: 0,
       adapterVersion: 5,
@@ -565,12 +549,13 @@ describe('AdapterWriteApplicationService', () => {
             },
           ],
         },
-        context,
-      ),
+        context
+      )
     ).rejects.toMatchObject({
       response: {
         code: ErrorCodes.VALIDATION_FAILED,
-        message: "Required secret 'client_secret' cannot be cleared; replace the secret or disable the adapter instead",
+        message:
+          "Required secret 'client_secret' cannot be cleared; replace the secret or disable the adapter instead",
       },
     });
 
@@ -588,9 +573,7 @@ describe('AdapterWriteApplicationService', () => {
       isSecret: true,
     } as never);
 
-    await expect(
-      service.revealConfig('adapter-1', 'client_secret', context),
-    ).resolves.toEqual({
+    await expect(service.revealConfig('adapter-1', 'client_secret', context)).resolves.toEqual({
       configKey: 'client_secret',
       configValue: 'decrypted:encrypted-secret',
       revealedAt: '2026-04-14T00:00:00.000Z',

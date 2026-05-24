@@ -1,6 +1,7 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { prisma } from '@tcrn/database';
 import { createLocalizedText, type PartialLocalizedText } from '@tcrn/shared';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ConfigService } from './config.service';
 import {
@@ -33,16 +34,14 @@ interface TestableConfigService {
       description: unknown;
       name: unknown;
     },
-    language: string,
+    language: string
   ): DecoratedConfigEntity;
 }
 
 const localized = (en: string, patch: PartialLocalizedText = {}) =>
   createLocalizedText({ en, ...patch });
 
-const createBaseEntity = (
-  overrides: Partial<BaseConfigEntity> = {},
-): BaseConfigEntity => ({
+const createBaseEntity = (overrides: Partial<BaseConfigEntity> = {}): BaseConfigEntity => ({
   id: 'config-1',
   ownerType: 'tenant',
   ownerId: null,
@@ -80,9 +79,7 @@ describe('ConfigService LocalizedText contract', () => {
   });
 
   it('searches the single LocalizedText name JSONB field', async () => {
-    mockPrisma.$queryRawUnsafe
-      .mockResolvedValueOnce([{ count: 0n }])
-      .mockResolvedValueOnce([]);
+    mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([{ count: 0n }]).mockResolvedValueOnce([]);
 
     await service.list('membership-type', 'tenant_test', {
       includeDisabled: true,
@@ -97,13 +94,11 @@ describe('ConfigService LocalizedText contract', () => {
   });
 
   it('creates consent content as single LocalizedText JSONB columns', async () => {
-    mockPrisma.$queryRawUnsafe
-      .mockResolvedValueOnce([])
-      .mockResolvedValueOnce([
-        createBaseEntity({
-          contentMarkdown: localized('I agree to the terms.'),
-        } as Partial<BaseConfigEntity>),
-      ]);
+    mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([]).mockResolvedValueOnce([
+      createBaseEntity({
+        contentMarkdown: localized('I agree to the terms.'),
+      } as Partial<BaseConfigEntity>),
+    ]);
 
     await service.create(
       'consent',
@@ -120,7 +115,7 @@ describe('ConfigService LocalizedText contract', () => {
           fr: 'Consentement aux conditions',
         }),
       },
-      '00000000-0000-0000-0000-000000000001',
+      '00000000-0000-0000-0000-000000000001'
     );
 
     const insertSql = String(mockPrisma.$queryRawUnsafe.mock.calls[1][0]);
@@ -128,15 +123,19 @@ describe('ConfigService LocalizedText contract', () => {
 
     expect(insertSql).toContain('name');
     expect(insertSql).toContain('content_markdown');
-    expect(insertParams.some((value) => String(value).includes('"fr":"Consentement aux conditions"'))).toBe(true);
-    expect(insertParams.some((value) => String(value).includes('"fr":"J\'accepte les conditions."'))).toBe(true);
+    expect(
+      insertParams.some((value) => String(value).includes('"fr":"Consentement aux conditions"'))
+    ).toBe(true);
+    expect(
+      insertParams.some((value) => String(value).includes('"fr":"J\'accepte les conditions."'))
+    ).toBe(true);
   });
 
   it('returns LocalizedText plus request-locale display derivatives', () => {
     const decorated = testableService.decorateEntity(
       'customer-status',
       createBaseEntity(),
-      'zh-Hant',
+      'zh-Hant'
     );
 
     expect(decorated.name.zh_HANT).toBe('活躍');
@@ -146,17 +145,19 @@ describe('ConfigService LocalizedText contract', () => {
   });
 
   it('rejects non-tenant artist-stage creation attempts', async () => {
-    await expect(service.create(
-      'artist-stage',
-      'tenant_test',
-      {
-        code: 'PRE_DEBUT',
-        name: localized('Pre-Debut'),
-        ownerType: 'subsidiary',
-        ownerId: '550e8400-e29b-41d4-a716-446655440000',
-      },
-      '00000000-0000-0000-0000-000000000001',
-    )).rejects.toThrow('tenant-owned');
+    await expect(
+      service.create(
+        'artist-stage',
+        'tenant_test',
+        {
+          code: 'PRE_DEBUT',
+          name: localized('Pre-Debut'),
+          ownerType: 'subsidiary',
+          ownerId: '550e8400-e29b-41d4-a716-446655440000',
+        },
+        '00000000-0000-0000-0000-000000000001'
+      )
+    ).rejects.toThrow('tenant-owned');
 
     expect(mockPrisma.$queryRawUnsafe).not.toHaveBeenCalled();
   });
@@ -168,17 +169,19 @@ describe('ConfigService LocalizedText contract', () => {
         ownerType: 'tenant',
         ownerId: null,
         code: 'PRE_DEBUT',
-      }) as ConfigEntityWithMeta,
+      }) as ConfigEntityWithMeta
     );
 
-    await expect(service.disableInScope(
-      'artist-stage',
-      'artist-stage-1',
-      'tenant_test',
-      'subsidiary',
-      '550e8400-e29b-41d4-a716-446655440000',
-      '00000000-0000-0000-0000-000000000001',
-    )).rejects.toThrow('tenant-owned');
+    await expect(
+      service.disableInScope(
+        'artist-stage',
+        'artist-stage-1',
+        'tenant_test',
+        'subsidiary',
+        '550e8400-e29b-41d4-a716-446655440000',
+        '00000000-0000-0000-0000-000000000001'
+      )
+    ).rejects.toThrow('tenant-owned');
 
     expect(mockPrisma.$executeRawUnsafe).not.toHaveBeenCalled();
   });

@@ -28,7 +28,9 @@ export function applyGlobalSwaggerParameters(document: OpenAPIObject): void {
         continue;
       }
 
-      const existingParameters = Array.isArray(operation.parameters) ? [...operation.parameters] : [];
+      const existingParameters = Array.isArray(operation.parameters)
+        ? [...operation.parameters]
+        : [];
 
       for (const parameter of GLOBAL_SWAGGER_PARAMETERS) {
         const alreadyPresent = existingParameters.some(
@@ -38,7 +40,7 @@ export function applyGlobalSwaggerParameters(document: OpenAPIObject): void {
             'name' in existingParameter &&
             'in' in existingParameter &&
             existingParameter.name === parameter.name &&
-            existingParameter.in === parameter.in,
+            existingParameter.in === parameter.in
         );
 
         if (!alreadyPresent) {

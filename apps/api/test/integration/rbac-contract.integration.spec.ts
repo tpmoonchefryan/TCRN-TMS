@@ -154,7 +154,7 @@ describe('RBAC Contract Integration', () => {
           WHERE id = $1::uuid
           LIMIT 1
         `,
-        talent.id,
+        talent.id
       )
     )[0].profileStoreId;
     customerId = (
@@ -416,7 +416,9 @@ describe('RBAC Contract Integration', () => {
     expect(detailResponse.body.data).not.toHaveProperty('phoneNumbers');
 
     const piiResponse = await withAuth(
-      request(app.getHttpServer()).post(`/api/v1/talents/${talentId}/customers/individuals/${customerId}/pii-portal-session`),
+      request(app.getHttpServer()).post(
+        `/api/v1/talents/${talentId}/customers/individuals/${customerId}/pii-portal-session`
+      ),
       'viewer'
     ).expect(403);
 

@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import type { Job } from 'bullmq';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -116,7 +115,7 @@ describe('customerExportJobProcessor', () => {
     mockJob.data.filters.includePii = true;
 
     await expect(customerExportJobProcessor(mockJob)).rejects.toThrow(
-      'Customer export does not support includePii yet',
+      'Customer export does not support includePii yet'
     );
 
     expect(mockPrisma.$queryRawUnsafe).not.toHaveBeenCalled();

@@ -1,8 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
-import 'reflect-metadata';
-
 import { ConfigService } from '@nestjs/config';
+import 'reflect-metadata';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { RedisService } from '../../../redis';
@@ -57,7 +55,7 @@ describe('CaptchaService', () => {
       mockRedisService as RedisService,
       mockConfigService as ConfigService,
       mockTrustScoreService as TrustScoreService,
-      mockSettingsService as unknown as SettingsService,
+      mockSettingsService as unknown as SettingsService
     );
   });
 
@@ -191,7 +189,7 @@ describe('CaptchaService', () => {
       vi.stubGlobal('fetch', fetchSpy);
 
       await expect(
-        service.verifyTurnstile('token', '192.168.1.100', 'test-fingerprint'),
+        service.verifyTurnstile('token', '192.168.1.100', 'test-fingerprint')
       ).resolves.toBe(true);
       expect(fetchSpy).not.toHaveBeenCalled();
     });
@@ -210,7 +208,7 @@ describe('CaptchaService', () => {
       });
 
       await expect(
-        service.verifyTurnstile('token', '192.168.1.100', 'test-fingerprint'),
+        service.verifyTurnstile('token', '192.168.1.100', 'test-fingerprint')
       ).resolves.toBe(false);
     });
 
@@ -237,16 +235,16 @@ describe('CaptchaService', () => {
       mockTrustScoreService.recordCaptchaResult = vi.fn().mockResolvedValue(undefined);
 
       await expect(
-        service.verifyTurnstile('token', '192.168.1.100', 'test-fingerprint'),
+        service.verifyTurnstile('token', '192.168.1.100', 'test-fingerprint')
       ).resolves.toBe(true);
       expect(fetchSpy).toHaveBeenCalledWith(
         'https://challenges.cloudflare.com/turnstile/v0/siteverify',
-        expect.objectContaining({ method: 'POST' }),
+        expect.objectContaining({ method: 'POST' })
       );
       expect(mockTrustScoreService.recordCaptchaResult).toHaveBeenCalledWith(
         'test-fingerprint',
         '192.168.1.100',
-        true,
+        true
       );
     });
 
@@ -270,7 +268,9 @@ describe('CaptchaService', () => {
 
         return null;
       });
-      (mockSettingsService.resolveTenantTurnstileRuntimeConfig as ReturnType<typeof vi.fn>).mockResolvedValue({
+      (
+        mockSettingsService.resolveTenantTurnstileRuntimeConfig as ReturnType<typeof vi.fn>
+      ).mockResolvedValue({
         source: 'tenant',
         siteKey: 'tenant-site-key',
         secretKey: 'tenant-secret-key',
@@ -279,14 +279,16 @@ describe('CaptchaService', () => {
       });
       mockTrustScoreService.recordCaptchaResult = vi.fn().mockResolvedValue(undefined);
 
-      await expect(service.getTurnstileConfigStatusForTenant('tenant_demo')).resolves.toMatchObject({
-        siteKey: 'tenant-site-key',
-        source: 'tenant',
-        providerReady: true,
-        ready: true,
-      });
+      await expect(service.getTurnstileConfigStatusForTenant('tenant_demo')).resolves.toMatchObject(
+        {
+          siteKey: 'tenant-site-key',
+          source: 'tenant',
+          providerReady: true,
+          ready: true,
+        }
+      );
       await expect(
-        service.verifyTurnstile('token', '192.168.1.100', 'test-fingerprint', 'tenant_demo'),
+        service.verifyTurnstile('token', '192.168.1.100', 'test-fingerprint', 'tenant_demo')
       ).resolves.toBe(true);
 
       const body = fetchSpy.mock.calls[0]?.[1]?.body as URLSearchParams;
@@ -310,7 +312,9 @@ describe('CaptchaService', () => {
 
         return null;
       });
-      (mockSettingsService.resolveTenantTurnstileRuntimeConfig as ReturnType<typeof vi.fn>).mockResolvedValue({
+      (
+        mockSettingsService.resolveTenantTurnstileRuntimeConfig as ReturnType<typeof vi.fn>
+      ).mockResolvedValue({
         source: 'tenant',
         siteKey: 'tenant-site-key',
         secretKey: null,
@@ -319,7 +323,7 @@ describe('CaptchaService', () => {
       });
 
       await expect(
-        service.shouldRequireCaptcha(CaptchaMode.ALWAYS, mockContext, 'tenant_demo'),
+        service.shouldRequireCaptcha(CaptchaMode.ALWAYS, mockContext, 'tenant_demo')
       ).resolves.toMatchObject({
         required: true,
         unavailable: true,

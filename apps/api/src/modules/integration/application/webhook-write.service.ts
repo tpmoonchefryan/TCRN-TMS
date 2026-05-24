@@ -1,7 +1,12 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+
 import { Prisma } from '@tcrn/database';
 import {
   ErrorCodes,
@@ -33,7 +38,7 @@ export class WebhookWriteApplicationService {
     private readonly webhookReadApplicationService: WebhookReadApplicationService,
     private readonly cryptoService: AdapterCryptoService,
     private readonly changeLogService: ChangeLogService,
-    private readonly configService: ConfigService,
+    private readonly configService: ConfigService
   ) {}
 
   async create(dto: CreateWebhookDto, context: RequestContext) {
@@ -43,7 +48,11 @@ export class WebhookWriteApplicationService {
     const createInput = this.buildCreateInput(dto, definition);
 
     const webhookId = await this.webhookWriteRepository.withTransaction(async (prisma) => {
-      const existing = await this.webhookWriteRepository.findByCode(prisma, createInput.code, tenantSchema);
+      const existing = await this.webhookWriteRepository.findByCode(
+        prisma,
+        createInput.code,
+        tenantSchema
+      );
 
       if (existing) {
         throw new ConflictException({
@@ -85,7 +94,7 @@ export class WebhookWriteApplicationService {
             monitoredTalentIds: dto.monitoredTalentIds ?? [],
           },
         },
-        context,
+        context
       );
 
       return id;
@@ -110,10 +119,7 @@ export class WebhookWriteApplicationService {
     return definition;
   }
 
-  private buildCreateInput(
-    dto: CreateWebhookDto,
-    definition: IntegrationWebhookDefinition | null,
-  ) {
+  private buildCreateInput(dto: CreateWebhookDto, definition: IntegrationWebhookDefinition | null) {
     if (!definition) {
       if (!dto.code || !dto.name || !dto.events?.length) {
         throw new BadRequestException({
@@ -148,13 +154,9 @@ export class WebhookWriteApplicationService {
 
   private assertDefinitionIdentityLocked(
     dto: CreateWebhookDto,
-    definition: IntegrationWebhookDefinition,
+    definition: IntegrationWebhookDefinition
   ) {
-    const hasLockedField = Boolean(
-      dto.code
-      || dto.name
-      || dto.events,
-    );
+    const hasLockedField = Boolean(dto.code || dto.name || dto.events);
 
     if (hasLockedField) {
       throw new BadRequestException({
@@ -167,7 +169,7 @@ export class WebhookWriteApplicationService {
   private buildCreateExtraData(
     extraData: Record<string, unknown> | null,
     definition: IntegrationWebhookDefinition | null,
-    monitoredTalentIds: string[] | undefined,
+    monitoredTalentIds: string[] | undefined
   ) {
     const definitionExtraData = !definition
       ? extraData
@@ -211,19 +213,15 @@ export class WebhookWriteApplicationService {
       }
 
       await this.webhookWriteRepository.update(prisma, tenantSchema, id, {
-        name: dto.name
-          ? this.normalizeWebhookName({ ...webhook.name, ...dto.name })
-          : webhook.name,
+        name: dto.name ? this.normalizeWebhookName({ ...webhook.name, ...dto.name }) : webhook.name,
         extraData: mergeWebhookExtraData(webhook.extraData, dto.monitoredTalentIds),
         url: dto.url ?? webhook.url,
         secret: this.resolveSecret(dto.secret, webhook.secret),
         events: dto.events ?? webhook.events,
         headers: (dto.headers ?? webhook.headers ?? {}) as Prisma.InputJsonObject,
-        retryPolicy: (
-          dto.retryPolicy !== undefined
-            ? toRetryPolicyInput(dto.retryPolicy)
-            : (webhook.retryPolicy ?? toRetryPolicyInput(undefined))
-        ) as Prisma.InputJsonObject,
+        retryPolicy: (dto.retryPolicy !== undefined
+          ? toRetryPolicyInput(dto.retryPolicy)
+          : (webhook.retryPolicy ?? toRetryPolicyInput(undefined))) as Prisma.InputJsonObject,
         userId: context.userId ?? null,
       });
 
@@ -240,7 +238,7 @@ export class WebhookWriteApplicationService {
               dto.monitoredTalentIds ?? normalizeMonitoredTalentIds(webhook.extraData),
           },
         },
-        context,
+        context
       );
     });
 
@@ -263,7 +261,7 @@ export class WebhookWriteApplicationService {
           objectId: id,
           objectName: webhook.code,
         },
-        context,
+        context
       );
 
       return { id, deleted: true };
@@ -278,11 +276,7 @@ export class WebhookWriteApplicationService {
     return this.setActiveStatus(id, true, context);
   }
 
-  private async setActiveStatus(
-    id: string,
-    isActive: boolean,
-    context: RequestContext,
-  ) {
+  private async setActiveStatus(id: string, isActive: boolean, context: RequestContext) {
     const tenantSchema = getWebhookTenantSchema(context);
 
     return this.webhookWriteRepository.withTransaction(async (prisma) => {
@@ -305,7 +299,7 @@ export class WebhookWriteApplicationService {
           oldValue: { isActive: webhook.isActive },
           newValue: { isActive },
         },
-        context,
+        context
       );
 
       return { id, isActive };
@@ -315,7 +309,7 @@ export class WebhookWriteApplicationService {
   private async getWebhookOrThrow(
     prisma: Prisma.TransactionClient,
     id: string,
-    tenantSchema: string | null,
+    tenantSchema: string | null
   ): Promise<WebhookRecord> {
     const webhook = await this.webhookWriteRepository.findById(prisma, id, tenantSchema);
 
@@ -329,7 +323,10 @@ export class WebhookWriteApplicationService {
     return webhook;
   }
 
-  private resolveSecret(nextSecret: string | undefined, currentSecret: string | null): string | null {
+  private resolveSecret(
+    nextSecret: string | undefined,
+    currentSecret: string | null
+  ): string | null {
     if (nextSecret === undefined) {
       return currentSecret;
     }

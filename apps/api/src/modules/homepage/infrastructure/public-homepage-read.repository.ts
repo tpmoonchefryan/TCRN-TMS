@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable } from '@nestjs/common';
 
 import { isMissingDatabaseRelationError } from '../../../platform/persistence/database-error.util';
@@ -56,10 +55,11 @@ export class PublicHomepageReadRepository {
 
   async findPublishedTalentByPath(
     schema: string,
-    path: string,
+    path: string
   ): Promise<PublicHomepageTalentRecord | null> {
     const prisma = this.databaseService.getPrisma();
-    const talents = await prisma.$queryRawUnsafe<PublicHomepageTalentRecord[]>(`
+    const talents = await prisma.$queryRawUnsafe<PublicHomepageTalentRecord[]>(
+      `
       SELECT
         id,
         code,
@@ -71,17 +71,20 @@ export class PublicHomepageReadRepository {
       WHERE (LOWER(homepage_path) = LOWER($1) OR LOWER(code) = LOWER($1))
         AND lifecycle_status = 'published'
       LIMIT 1
-    `, path);
+    `,
+      path
+    );
 
     return talents[0] ?? null;
   }
 
   async findPublishedTalentByCode(
     schema: string,
-    talentCode: string,
+    talentCode: string
   ): Promise<PublicHomepageTalentRecord | null> {
     const prisma = this.databaseService.getPrisma();
-    const talents = await prisma.$queryRawUnsafe<PublicHomepageTalentRecord[]>(`
+    const talents = await prisma.$queryRawUnsafe<PublicHomepageTalentRecord[]>(
+      `
       SELECT
         id,
         code,
@@ -93,17 +96,20 @@ export class PublicHomepageReadRepository {
       WHERE LOWER(code) = LOWER($1)
         AND lifecycle_status = 'published'
       LIMIT 1
-    `, talentCode);
+    `,
+      talentCode
+    );
 
     return talents[0] ?? null;
   }
 
   async findPublishedTalentById(
     schema: string,
-    talentId: string,
+    talentId: string
   ): Promise<PublicHomepageTalentRecord | null> {
     const prisma = this.databaseService.getPrisma();
-    const talents = await prisma.$queryRawUnsafe<PublicHomepageTalentRecord[]>(`
+    const talents = await prisma.$queryRawUnsafe<PublicHomepageTalentRecord[]>(
+      `
       SELECT
         id,
         code,
@@ -115,21 +121,23 @@ export class PublicHomepageReadRepository {
       WHERE id = $1::uuid
         AND lifecycle_status = 'published'
       LIMIT 1
-    `, talentId);
+    `,
+      talentId
+    );
 
     return talents[0] ?? null;
   }
 
-
   async findVerifiedDomainBindingRoute(
     schema: string,
     normalizedDomain: string,
-    talentCode: string | null = null,
+    talentCode: string | null = null
   ): Promise<DomainLookupBindingRouteRecord | null> {
     const prisma = this.databaseService.getPrisma();
     let results: DomainLookupBindingRouteRecord[];
     try {
-      results = await prisma.$queryRawUnsafe<DomainLookupBindingRouteRecord[]>(`
+      results = await prisma.$queryRawUnsafe<DomainLookupBindingRouteRecord[]>(
+        `
         SELECT
           binding.id as "domainId",
           binding.hostname,
@@ -193,7 +201,11 @@ export class PublicHomepageReadRepository {
             )
           )
         LIMIT 1
-      `, schema, normalizedDomain, talentCode);
+      `,
+        schema,
+        normalizedDomain,
+        talentCode
+      );
     } catch (error) {
       if (this.isMissingCustomDomainRegistryRelation(error)) {
         return null;
@@ -207,10 +219,11 @@ export class PublicHomepageReadRepository {
 
   async findVerifiedDomainRoute(
     schema: string,
-    normalizedDomain: string,
+    normalizedDomain: string
   ): Promise<DomainLookupRouteRecord | null> {
     const prisma = this.databaseService.getPrisma();
-    const results = await prisma.$queryRawUnsafe<DomainLookupRouteRecord[]>(`
+    const results = await prisma.$queryRawUnsafe<DomainLookupRouteRecord[]>(
+      `
       SELECT
         id as "talentId",
         homepage_path as "homepagePath",
@@ -221,36 +234,44 @@ export class PublicHomepageReadRepository {
         AND custom_domain_verified = true
         AND lifecycle_status = 'published'
       LIMIT 1
-    `, normalizedDomain);
+    `,
+      normalizedDomain
+    );
 
     return results[0] ?? null;
   }
 
   async findPublishedHomepageRecord(
     schema: string,
-    talentId: string,
+    talentId: string
   ): Promise<PublishedHomepageRecord | null> {
     const prisma = this.databaseService.getPrisma();
-    const homepages = await prisma.$queryRawUnsafe<PublishedHomepageRecord[]>(`
+    const homepages = await prisma.$queryRawUnsafe<PublishedHomepageRecord[]>(
+      `
       SELECT id, is_published as "isPublished", published_version_id as "publishedVersionId",
              seo_title as "seoTitle", seo_description as "seoDescription", og_image_url as "ogImageUrl"
       FROM "${schema}".talent_homepage
       WHERE talent_id = $1::uuid
-    `, talentId);
+    `,
+      talentId
+    );
 
     return homepages[0] ?? null;
   }
 
   async findHomepageVersion(
     schema: string,
-    versionId: string,
+    versionId: string
   ): Promise<HomepageVersionRecord | null> {
     const prisma = this.databaseService.getPrisma();
-    const versions = await prisma.$queryRawUnsafe<HomepageVersionRecord[]>(`
+    const versions = await prisma.$queryRawUnsafe<HomepageVersionRecord[]>(
+      `
       SELECT content, theme, published_at as "publishedAt", created_at as "createdAt"
       FROM "${schema}".homepage_version
       WHERE id = $1::uuid
-    `, versionId);
+    `,
+      versionId
+    );
 
     return versions[0] ?? null;
   }

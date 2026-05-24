@@ -3,9 +3,4 @@
 export * from './test-utils';
 
 // Re-export types for convenience
-export type {
-  MockPrismaClient,
-  TenantFixture,
-  TestUser,
-  UserContext,
-} from './test-utils';
+export type { MockPrismaClient, TenantFixture, TestUser, UserContext } from './test-utils';

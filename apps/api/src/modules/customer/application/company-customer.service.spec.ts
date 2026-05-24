@@ -1,11 +1,8 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
-import {
-  BadRequestException,
-  ConflictException,
-} from '@nestjs/common';
-import type { RequestContext } from '@tcrn/shared';
+import { BadRequestException, ConflictException } from '@nestjs/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import type { RequestContext } from '@tcrn/shared';
 
 import type { DatabaseService } from '../../database';
 import type { ChangeLogService, TechEventLogService } from '../../log';
@@ -75,20 +72,21 @@ describe('CompanyCustomerApplicationService', () => {
     mockDatabaseService,
     mockTechEventLogService,
     mockCustomerArchiveAccessService,
-    mockCustomerPiiPlatformApplicationService,
+    mockCustomerPiiPlatformApplicationService
   );
 
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(mockDatabaseService.getPrisma).mockReturnValue(prismaClient as never);
     vi.mocked(mockRepository.withTransaction).mockImplementation(async (operation) =>
-      operation(prismaClient as never));
+      operation(prismaClient as never)
+    );
   });
 
   it('fails closed when create resolves a talent without a profile store', async () => {
-    vi.mocked(
-      mockCustomerArchiveAccessService.requireTalentArchiveTarget,
-    ).mockRejectedValue(new BadRequestException());
+    vi.mocked(mockCustomerArchiveAccessService.requireTalentArchiveTarget).mockRejectedValue(
+      new BadRequestException()
+    );
 
     await expect(
       service.create(
@@ -97,15 +95,13 @@ describe('CompanyCustomerApplicationService', () => {
           nickname: 'Acme',
           companyLegalName: 'Acme Corporation',
         },
-        context,
-      ),
+        context
+      )
     ).rejects.toThrow(BadRequestException);
   });
 
   it('creates a company customer, externalizes company contact pii, and writes an optional external id', async () => {
-    vi.mocked(
-      mockCustomerArchiveAccessService.requireTalentArchiveTarget,
-    ).mockResolvedValue({
+    vi.mocked(mockCustomerArchiveAccessService.requireTalentArchiveTarget).mockResolvedValue({
       talentId: 'talent-1',
       profileStoreId: 'store-1',
     });
@@ -121,7 +117,9 @@ describe('CompanyCustomerApplicationService', () => {
     vi.mocked(mockRepository.insertExternalId).mockResolvedValue(1 as never);
     vi.mocked(mockChangeLogService.create).mockResolvedValue(undefined as never);
     vi.mocked(mockRepository.insertAccessLog).mockResolvedValue(1 as never);
-    vi.mocked(mockCustomerPiiPlatformApplicationService.assertPlatformEnabled).mockResolvedValue(undefined as never);
+    vi.mocked(mockCustomerPiiPlatformApplicationService.assertPlatformEnabled).mockResolvedValue(
+      undefined as never
+    );
     vi.mocked(mockCustomerPiiPlatformApplicationService.upsertCustomerPii).mockResolvedValue({
       customerId: 'customer-1',
       syncedAt: '2026-04-14T00:00:01.000Z',
@@ -146,8 +144,8 @@ describe('CompanyCustomerApplicationService', () => {
             contactDepartment: 'Partnerships',
           },
         },
-        context,
-      ),
+        context
+      )
     ).resolves.toEqual({
       id: 'customer-1',
       profileType: 'company',
@@ -167,7 +165,7 @@ describe('CompanyCustomerApplicationService', () => {
         companyLegalName: 'Acme Corporation',
         businessSegmentId: 'segment-1',
         website: 'https://acme.example.com',
-      }),
+      })
     );
     expect(mockCustomerPiiPlatformApplicationService.upsertCustomerPii).toHaveBeenCalledWith(
       'customer-1',
@@ -179,25 +177,19 @@ describe('CompanyCustomerApplicationService', () => {
         contactEmail: 'alice@acme.example.com',
         contactDepartment: 'Partnerships',
       },
-      context,
+      context
     );
-    expect(mockRepository.insertExternalId).toHaveBeenCalledWith(
-      prismaClient,
-      'tenant_test',
-      {
-        customerId: 'customer-1',
-        profileStoreId: 'store-1',
-        consumerId: 'consumer-1',
-        externalId: 'CRM-001',
-        userId: 'user-1',
-      },
-    );
+    expect(mockRepository.insertExternalId).toHaveBeenCalledWith(prismaClient, 'tenant_test', {
+      customerId: 'customer-1',
+      profileStoreId: 'store-1',
+      consumerId: 'consumer-1',
+      externalId: 'CRM-001',
+      userId: 'user-1',
+    });
   });
 
   it('throws ConflictException when update sees a version mismatch', async () => {
-    vi.mocked(
-      mockCustomerArchiveAccessService.requireCustomerArchiveAccess,
-    ).mockResolvedValue({
+    vi.mocked(mockCustomerArchiveAccessService.requireCustomerArchiveAccess).mockResolvedValue({
       id: 'customer-1',
       profileType: ProfileType.COMPANY,
       profileStoreId: 'store-1',
@@ -220,15 +212,13 @@ describe('CompanyCustomerApplicationService', () => {
             contactName: 'Alice',
           },
         },
-        context,
-      ),
+        context
+      )
     ).rejects.toThrow(ConflictException);
   });
 
   it('updates company pii externally without mutating stored company contact fields', async () => {
-    vi.mocked(
-      mockCustomerArchiveAccessService.requireCustomerArchiveAccess,
-    ).mockResolvedValue({
+    vi.mocked(mockCustomerArchiveAccessService.requireCustomerArchiveAccess).mockResolvedValue({
       id: 'customer-1',
       profileType: ProfileType.COMPANY,
       profileStoreId: 'store-1',
@@ -248,7 +238,9 @@ describe('CompanyCustomerApplicationService', () => {
     });
     vi.mocked(mockChangeLogService.createDirect).mockResolvedValue(undefined as never);
     vi.mocked(mockRepository.insertAccessLog).mockResolvedValue(1 as never);
-    vi.mocked(mockCustomerPiiPlatformApplicationService.assertPlatformEnabled).mockResolvedValue(undefined as never);
+    vi.mocked(mockCustomerPiiPlatformApplicationService.assertPlatformEnabled).mockResolvedValue(
+      undefined as never
+    );
     vi.mocked(mockCustomerPiiPlatformApplicationService.upsertCustomerPii).mockResolvedValue({
       customerId: 'customer-1',
       syncedAt: '2026-04-14T00:05:05.000Z',
@@ -268,8 +260,8 @@ describe('CompanyCustomerApplicationService', () => {
             contactDepartment: 'Partnerships',
           },
         },
-        context,
-      ),
+        context
+      )
     ).resolves.toEqual({
       id: 'customer-1',
       nickname: 'Acme',
@@ -289,15 +281,13 @@ describe('CompanyCustomerApplicationService', () => {
         contactEmail: 'alice@acme.example.com',
         contactDepartment: 'Partnerships',
       },
-      context,
+      context
     );
     expect(mockChangeLogService.createDirect).toHaveBeenCalledTimes(1);
   });
 
   it('creates a company pii portal session through the external platform', async () => {
-    vi.mocked(
-      mockCustomerArchiveAccessService.requireCustomerArchiveAccess,
-    ).mockResolvedValue({
+    vi.mocked(mockCustomerArchiveAccessService.requireCustomerArchiveAccess).mockResolvedValue({
       id: 'customer-1',
       profileType: ProfileType.COMPANY,
       profileStoreId: 'store-1',
@@ -317,7 +307,7 @@ describe('CompanyCustomerApplicationService', () => {
     vi.mocked(mockRepository.insertAccessLog).mockResolvedValue(1 as never);
 
     await expect(
-      service.createPiiPortalSession('customer-1', 'talent-1', context),
+      service.createPiiPortalSession('customer-1', 'talent-1', context)
     ).resolves.toEqual({
       redirectUrl: 'https://pii.example.com/session/company-1',
       expiresAt: '2026-04-15T08:05:00.000Z',
@@ -327,7 +317,7 @@ describe('CompanyCustomerApplicationService', () => {
       'customer-1',
       'talent-1',
       'company',
-      context,
+      context
     );
   });
 });

@@ -1,14 +1,14 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { SUPPORTED_UI_LOCALES, type SupportedUiLocale } from '@tcrn/shared';
 import { IsNotEmpty, IsOptional, IsString, Length, Matches, MinLength } from 'class-validator';
+
+import { SUPPORTED_UI_LOCALES, type SupportedUiLocale } from '@tcrn/shared';
 
 /**
  * Login Request DTO
  */
 export class LoginDto {
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Tenant code identifying the organization',
     example: 'UAT_Corp',
   })
@@ -16,7 +16,7 @@ export class LoginDto {
   @IsString()
   tenantCode: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Username or email address',
     example: 'admin@example.com',
   })
@@ -24,7 +24,7 @@ export class LoginDto {
   @IsString()
   login: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'User password',
     example: 'SecureP@ssw0rd123',
   })
@@ -32,7 +32,7 @@ export class LoginDto {
   @IsString()
   password: string;
 
-  @ApiPropertyOptional({ 
+  @ApiPropertyOptional({
     description: 'Remember me flag for extended session (30 days)',
     example: true,
     default: false,
@@ -45,7 +45,7 @@ export class LoginDto {
  * TOTP Verify Request DTO
  */
 export class TotpVerifyDto {
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Temporary session token returned from login when TOTP is required',
     example: 'sess_abc123def456...',
   })
@@ -53,7 +53,7 @@ export class TotpVerifyDto {
   @IsString()
   sessionToken: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: '6-digit TOTP code from authenticator app',
     example: '123456',
     minLength: 6,
@@ -70,7 +70,7 @@ export class TotpVerifyDto {
  * Recovery Code Verify Request DTO
  */
 export class RecoveryCodeVerifyDto {
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Temporary session token from login',
     example: 'sess_abc123def456...',
   })
@@ -78,7 +78,7 @@ export class RecoveryCodeVerifyDto {
   @IsString()
   sessionToken: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Recovery code in format XXXX-XXXX-XXXX',
     example: 'ABCD-1234-WXYZ',
     pattern: '^[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$',
@@ -92,7 +92,7 @@ export class RecoveryCodeVerifyDto {
  * Refresh Token Request DTO
  */
 export class RefreshTokenDto {
-  @ApiPropertyOptional({ 
+  @ApiPropertyOptional({
     description: 'Refresh token (optional if using HTTP-only cookie)',
     example: 'rt_dGVuYW50X3RlbXBsYXRl.a1b2c3d4e5f6...',
   })
@@ -105,7 +105,7 @@ export class RefreshTokenDto {
  * Change Password Request DTO
  */
 export class ChangePasswordDto {
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Current password for verification',
     example: 'OldP@ssw0rd123',
   })
@@ -113,8 +113,9 @@ export class ChangePasswordDto {
   @IsString()
   currentPassword: string;
 
-  @ApiProperty({ 
-    description: 'New password (min 12 chars, must include uppercase, lowercase, number, special char)',
+  @ApiProperty({
+    description:
+      'New password (min 12 chars, must include uppercase, lowercase, number, special char)',
     example: 'NewSecureP@ss123',
     minLength: 12,
   })
@@ -123,7 +124,7 @@ export class ChangePasswordDto {
   @MinLength(12)
   newPassword: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Confirm new password (must match newPassword)',
     example: 'NewSecureP@ss123',
   })
@@ -136,7 +137,7 @@ export class ChangePasswordDto {
  * Update User Profile DTO
  */
 export class UpdateUserProfileDto {
-  @ApiPropertyOptional({ 
+  @ApiPropertyOptional({
     description: 'Display name shown in UI',
     example: 'John Doe',
   })
@@ -144,7 +145,7 @@ export class UpdateUserProfileDto {
   @IsString()
   displayName?: string;
 
-  @ApiPropertyOptional({ 
+  @ApiPropertyOptional({
     description: 'Phone number with country code',
     example: '+81-90-1234-5678',
   })
@@ -152,7 +153,7 @@ export class UpdateUserProfileDto {
   @IsString()
   phone?: string;
 
-  @ApiPropertyOptional({ 
+  @ApiPropertyOptional({
     description: 'Preferred language for UI',
     example: 'ja',
     enum: SUPPORTED_UI_LOCALES,
@@ -161,7 +162,7 @@ export class UpdateUserProfileDto {
   @IsString()
   preferredLanguage?: SupportedUiLocale;
 
-  @ApiPropertyOptional({ 
+  @ApiPropertyOptional({
     description: 'URL to user avatar image',
     example: 'https://example.com/avatars/user123.jpg',
   })
@@ -174,7 +175,7 @@ export class UpdateUserProfileDto {
  * TOTP Enable Request DTO
  */
 export class TotpEnableDto {
-  @ApiProperty({ 
+  @ApiProperty({
     description: '6-digit TOTP code from authenticator app to verify setup',
     example: '123456',
     minLength: 6,
@@ -191,7 +192,7 @@ export class TotpEnableDto {
  * TOTP Disable Request DTO
  */
 export class TotpDisableDto {
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Current password for security confirmation',
     example: 'SecureP@ssw0rd123',
   })
@@ -199,7 +200,7 @@ export class TotpDisableDto {
   @IsString()
   password: string;
 
-  @ApiPropertyOptional({ 
+  @ApiPropertyOptional({
     description: 'TOTP code or recovery code for additional verification',
     example: '123456',
   })
@@ -212,7 +213,7 @@ export class TotpDisableDto {
  * Regenerate Recovery Codes DTO
  */
 export class RegenerateRecoveryCodesDto {
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Current password for security confirmation',
     example: 'SecureP@ssw0rd123',
   })
@@ -226,7 +227,7 @@ export class RegenerateRecoveryCodesDto {
  * Used when login returns passwordResetRequired
  */
 export class ForceResetPasswordDto {
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Session token returned from login when password reset is required',
     example: 'sess_abc123def456...',
   })
@@ -234,8 +235,9 @@ export class ForceResetPasswordDto {
   @IsString()
   sessionToken: string;
 
-  @ApiProperty({ 
-    description: 'New password (min 12 chars, must include uppercase, lowercase, number, special char)',
+  @ApiProperty({
+    description:
+      'New password (min 12 chars, must include uppercase, lowercase, number, special char)',
     example: 'NewSecureP@ss123',
     minLength: 12,
   })
@@ -244,7 +246,7 @@ export class ForceResetPasswordDto {
   @MinLength(12)
   newPassword: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Confirm new password (must match newPassword)',
     example: 'NewSecureP@ss123',
   })
@@ -261,7 +263,10 @@ export class ForceResetPasswordDto {
  * Login Success Response DTO
  */
 export class LoginSuccessResponseDto {
-  @ApiProperty({ description: 'JWT access token', example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' })
+  @ApiProperty({
+    description: 'JWT access token',
+    example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+  })
   accessToken: string;
 
   @ApiProperty({ description: 'Token type', example: 'Bearer' })
@@ -270,7 +275,10 @@ export class LoginSuccessResponseDto {
   @ApiProperty({ description: 'Token expiration time in seconds', example: 900 })
   expiresIn: number;
 
-  @ApiPropertyOptional({ description: 'Tenant ID', example: '550e8400-e29b-41d4-a716-446655440000' })
+  @ApiPropertyOptional({
+    description: 'Tenant ID',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+  })
   tenantId?: string;
 }
 
@@ -281,7 +289,10 @@ export class LoginTotpRequiredResponseDto {
   @ApiProperty({ description: 'Indicates TOTP verification is required', example: true })
   totpRequired: boolean;
 
-  @ApiProperty({ description: 'Session token for TOTP verification', example: 'sess_abc123def456...' })
+  @ApiProperty({
+    description: 'Session token for TOTP verification',
+    example: 'sess_abc123def456...',
+  })
   sessionToken: string;
 }
 
@@ -336,10 +347,16 @@ export class TotpSetupResponseDto {
   @ApiProperty({ description: 'TOTP secret key', example: 'JBSWY3DPEHPK3PXP' })
   secret: string;
 
-  @ApiProperty({ description: 'QR code data URL for authenticator app', example: 'data:image/png;base64,iVBOR...' })
+  @ApiProperty({
+    description: 'QR code data URL for authenticator app',
+    example: 'data:image/png;base64,iVBOR...',
+  })
   qrCode: string;
 
-  @ApiProperty({ description: 'OTP Auth URI', example: 'otpauth://totp/TCRN%20TMS:admin?secret=JBSWY3DPEHPK3PXP&issuer=TCRN%20TMS' })
+  @ApiProperty({
+    description: 'OTP Auth URI',
+    example: 'otpauth://totp/TCRN%20TMS:admin?secret=JBSWY3DPEHPK3PXP&issuer=TCRN%20TMS',
+  })
   otpAuthUrl: string;
 }
 
@@ -347,7 +364,7 @@ export class TotpSetupResponseDto {
  * Recovery Codes Response DTO
  */
 export class RecoveryCodesResponseDto {
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'List of recovery codes (store securely)',
     type: [String],
     example: ['ABCD-1234-WXYZ', 'EFGH-5678-UVWX'],

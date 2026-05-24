@@ -1,14 +1,14 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable } from '@nestjs/common';
+
 import { Prisma } from '@tcrn/database';
 import type { IntegrationAdapterPlatformBindingDefinition, LocalizedText } from '@tcrn/shared';
 
-import { DatabaseService } from '../../database';
 import {
   readLocalizedText,
   stringifyLocalizedText,
 } from '../../../platform/persistence/localized-text.persistence';
+import { DatabaseService } from '../../database';
 import type { IntegrationAdapterOwnerScope } from '../domain/adapter-read.policy';
 import type {
   IntegrationAdapterMutationRecord,
@@ -44,24 +44,20 @@ export interface AdapterConfigPersistenceInput {
 
 @Injectable()
 export class AdapterWriteRepository {
-  constructor(
-    private readonly databaseService: DatabaseService,
-  ) {}
+  constructor(private readonly databaseService: DatabaseService) {}
 
   private get prisma() {
     return this.databaseService.getPrisma();
   }
 
-  withTransaction<T>(
-    operation: (prisma: Prisma.TransactionClient) => Promise<T>,
-  ): Promise<T> {
+  withTransaction<T>(operation: (prisma: Prisma.TransactionClient) => Promise<T>): Promise<T> {
     return this.prisma.$transaction((prisma) => operation(prisma));
   }
 
   async findPlatformById(
     prisma: Prisma.TransactionClient,
     tenantSchema: string,
-    platformId: string,
+    platformId: string
   ): Promise<IntegrationAdapterPlatformRecord | null> {
     const rows = await prisma.$queryRawUnsafe<IntegrationAdapterPlatformRecord[]>(
       `
@@ -75,7 +71,7 @@ export class AdapterWriteRepository {
         WHERE id = $1::uuid
         LIMIT 1
       `,
-      platformId,
+      platformId
     );
 
     return rows[0] ?? null;
@@ -84,7 +80,7 @@ export class AdapterWriteRepository {
   async findPlatformByCode(
     prisma: Prisma.TransactionClient,
     tenantSchema: string,
-    platformCode: string,
+    platformCode: string
   ): Promise<IntegrationAdapterPlatformRecord | null> {
     const rows = await prisma.$queryRawUnsafe<IntegrationAdapterPlatformRecord[]>(
       `
@@ -98,7 +94,7 @@ export class AdapterWriteRepository {
         WHERE code = $1
         LIMIT 1
       `,
-      platformCode,
+      platformCode
     );
 
     return rows[0] ?? null;
@@ -107,7 +103,7 @@ export class AdapterWriteRepository {
   async ensurePlatformForDefinition(
     prisma: Prisma.TransactionClient,
     tenantSchema: string,
-    platform: IntegrationAdapterPlatformBindingDefinition,
+    platform: IntegrationAdapterPlatformBindingDefinition
   ): Promise<IntegrationAdapterPlatformRecord> {
     const rows = await prisma.$queryRawUnsafe<IntegrationAdapterPlatformRecord[]>(
       `
@@ -165,7 +161,7 @@ export class AdapterWriteRepository {
       platform.displayName,
       platform.iconUrl ?? null,
       platform.baseUrl ?? null,
-      platform.color ?? null,
+      platform.color ?? null
     );
 
     return rows[0];
@@ -175,7 +171,7 @@ export class AdapterWriteRepository {
     prisma: Prisma.TransactionClient,
     tenantSchema: string,
     scope: IntegrationAdapterOwnerScope,
-    code: string,
+    code: string
   ): Promise<{ id: string } | null> {
     const ownerScope = this.buildOwnerMatch('ia', 1, scope);
     const rows = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
@@ -187,7 +183,7 @@ export class AdapterWriteRepository {
         LIMIT 1
       `,
       ...ownerScope.params,
-      code,
+      code
     );
 
     return rows[0] ?? null;
@@ -198,7 +194,7 @@ export class AdapterWriteRepository {
     tenantSchema: string,
     scope: IntegrationAdapterOwnerScope,
     platformId: string,
-    adapterType: string,
+    adapterType: string
   ): Promise<{ id: string } | null> {
     const ownerScope = this.buildOwnerMatch('ia', 1, scope);
     const rows = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
@@ -212,7 +208,7 @@ export class AdapterWriteRepository {
       `,
       ...ownerScope.params,
       platformId,
-      adapterType,
+      adapterType
     );
 
     return rows[0] ?? null;
@@ -221,7 +217,7 @@ export class AdapterWriteRepository {
   async create(
     prisma: Prisma.TransactionClient,
     tenantSchema: string,
-    input: AdapterCreatePersistenceInput,
+    input: AdapterCreatePersistenceInput
   ): Promise<string> {
     const rows = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
       `
@@ -266,7 +262,7 @@ export class AdapterWriteRepository {
       input.extraData ? JSON.stringify(input.extraData) : null,
       input.adapterType,
       input.inherit,
-      input.userId,
+      input.userId
     );
 
     return rows[0]?.id ?? '';
@@ -276,7 +272,7 @@ export class AdapterWriteRepository {
     prisma: Prisma.TransactionClient,
     tenantSchema: string,
     adapterId: string,
-    configs: AdapterConfigPersistenceInput[],
+    configs: AdapterConfigPersistenceInput[]
   ): Promise<void> {
     for (const config of configs) {
       await prisma.$executeRawUnsafe(
@@ -307,7 +303,7 @@ export class AdapterWriteRepository {
         adapterId,
         config.configKey,
         config.configValue,
-        config.isSecret,
+        config.isSecret
       );
     }
   }
@@ -316,7 +312,7 @@ export class AdapterWriteRepository {
     prisma: Prisma.TransactionClient,
     tenantSchema: string,
     adapterId: string,
-    configKey: string,
+    configKey: string
   ): Promise<number> {
     return prisma.$executeRawUnsafe(
       `
@@ -325,14 +321,14 @@ export class AdapterWriteRepository {
           AND config_key = $2
       `,
       adapterId,
-      configKey,
+      configKey
     );
   }
 
   async findById(
     prisma: Prisma.TransactionClient,
     tenantSchema: string,
-    adapterId: string,
+    adapterId: string
   ): Promise<IntegrationAdapterMutationRecord | null> {
     const rows = await prisma.$queryRawUnsafe<IntegrationAdapterMutationRecord[]>(
       `
@@ -354,7 +350,7 @@ export class AdapterWriteRepository {
         WHERE id = $1::uuid
         LIMIT 1
       `,
-      adapterId,
+      adapterId
     );
 
     const row = rows[0];
@@ -370,7 +366,7 @@ export class AdapterWriteRepository {
     prisma: Prisma.TransactionClient,
     tenantSchema: string,
     adapterId: string,
-    input: AdapterUpdatePersistenceInput,
+    input: AdapterUpdatePersistenceInput
   ): Promise<number> {
     return prisma.$executeRawUnsafe(
       `
@@ -388,7 +384,7 @@ export class AdapterWriteRepository {
       stringifyLocalizedText(input.name),
       input.extraData ? JSON.stringify(input.extraData) : null,
       input.inherit,
-      input.userId,
+      input.userId
     );
   }
 
@@ -396,7 +392,7 @@ export class AdapterWriteRepository {
     prisma: Prisma.TransactionClient,
     tenantSchema: string,
     adapterId: string,
-    userId: string | null,
+    userId: string | null
   ): Promise<number | null> {
     const rows = await prisma.$queryRawUnsafe<Array<{ version: number }>>(
       `
@@ -409,7 +405,7 @@ export class AdapterWriteRepository {
         RETURNING version
       `,
       adapterId,
-      userId,
+      userId
     );
 
     return rows[0]?.version ?? null;
@@ -418,7 +414,7 @@ export class AdapterWriteRepository {
   async findConfig(
     tenantSchema: string,
     adapterId: string,
-    configKey: string,
+    configKey: string
   ): Promise<IntegrationAdapterStoredConfigRecord | null> {
     const rows = await this.prisma.$queryRawUnsafe<IntegrationAdapterStoredConfigRecord[]>(
       `
@@ -433,7 +429,7 @@ export class AdapterWriteRepository {
         LIMIT 1
       `,
       adapterId,
-      configKey,
+      configKey
     );
 
     return rows[0] ?? null;
@@ -443,7 +439,7 @@ export class AdapterWriteRepository {
     prisma: Prisma.TransactionClient,
     tenantSchema: string,
     adapterId: string,
-    scope: IntegrationAdapterOwnerScope,
+    scope: IntegrationAdapterOwnerScope
   ): Promise<IntegrationAdapterOverrideRecord | null> {
     const rows = await prisma.$queryRawUnsafe<IntegrationAdapterOverrideRecord[]>(
       `
@@ -457,7 +453,7 @@ export class AdapterWriteRepository {
       `,
       adapterId,
       scope.ownerType,
-      scope.ownerId,
+      scope.ownerId
     );
 
     return rows[0] ?? null;
@@ -468,7 +464,7 @@ export class AdapterWriteRepository {
     tenantSchema: string,
     adapterId: string,
     scope: IntegrationAdapterOwnerScope,
-    userId: string | null,
+    userId: string | null
   ): Promise<number> {
     return prisma.$executeRawUnsafe(
       `
@@ -504,7 +500,7 @@ export class AdapterWriteRepository {
       adapterId,
       scope.ownerType,
       scope.ownerId,
-      userId,
+      userId
     );
   }
 
@@ -512,7 +508,7 @@ export class AdapterWriteRepository {
     prisma: Prisma.TransactionClient,
     tenantSchema: string,
     adapterId: string,
-    scope: IntegrationAdapterOwnerScope,
+    scope: IntegrationAdapterOwnerScope
   ): Promise<number> {
     return prisma.$executeRawUnsafe(
       `
@@ -524,7 +520,7 @@ export class AdapterWriteRepository {
       `,
       adapterId,
       scope.ownerType,
-      scope.ownerId,
+      scope.ownerId
     );
   }
 
@@ -533,7 +529,7 @@ export class AdapterWriteRepository {
     tenantSchema: string,
     adapterId: string,
     isActive: boolean,
-    userId: string | null,
+    userId: string | null
   ): Promise<number> {
     return prisma.$executeRawUnsafe(
       `
@@ -547,14 +543,14 @@ export class AdapterWriteRepository {
       `,
       adapterId,
       isActive,
-      userId,
+      userId
     );
   }
 
   private buildOwnerMatch(
     alias: string,
     startIndex: number,
-    scope: IntegrationAdapterOwnerScope,
+    scope: IntegrationAdapterOwnerScope
   ): { clause: string; params: unknown[]; nextIndex: number } {
     const qualifiedAlias = alias ? `${alias}.` : '';
 

@@ -1,16 +1,16 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 // Email Module Zod DTOs - Using createZodDto for Swagger integration
+import { createZodDto } from 'nestjs-zod';
 
 import {
-    CreateEmailTemplateSchema,
-    EmailTemplateQuerySchema,
-    PreviewEmailTemplateSchema,
-    SaveEmailConfigSchema,
-    SendEmailSchema,
-    TestEmailSchema,
-    UpdateEmailTemplateSchema,
+  CreateEmailTemplateSchema,
+  EmailTemplateQuerySchema,
+  PreviewEmailTemplateSchema,
+  SaveEmailConfigSchema,
+  SendEmailSchema,
+  TestEmailSchema,
+  UpdateEmailTemplateSchema,
 } from '@tcrn/shared';
-import { createZodDto } from 'nestjs-zod';
 
 // Config DTOs
 export class SaveEmailConfigZodDto extends createZodDto(SaveEmailConfigSchema) {}

@@ -1,7 +1,8 @@
-import { BROWSER_PUBLIC_CONSUMER_CODE, BROWSER_PUBLIC_CONSUMER_HEADER } from '@tcrn/shared';
 import { render, screen, waitFor } from '@testing-library/react';
 import type { ReactElement } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { BROWSER_PUBLIC_CONSUMER_CODE, BROWSER_PUBLIC_CONSUMER_HEADER } from '@tcrn/shared';
 
 import { PublicHomepageScreen } from '@/domains/public-homepage/screens/PublicHomepageScreen';
 import { UiLocaleProvider } from '@/platform/runtime/locale/locale-provider';
@@ -166,13 +167,18 @@ describe('PublicHomepageScreen', () => {
           actions: [],
           media: [],
         },
-      }),
+      })
     );
 
     renderWithLocale(<PublicHomepageScreen path="aki-home" />);
 
-    expect(await screen.findByRole('heading', { level: 1, name: 'Aki Rosenthal' })).toBeInTheDocument();
-    expect(screen.getAllByRole('link', { name: 'YouTube' })[0]).toHaveAttribute('href', 'https://youtube.com/@aki');
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Aki Rosenthal' })
+    ).toBeInTheDocument();
+    expect(screen.getAllByRole('link', { name: 'YouTube' })[0]).toHaveAttribute(
+      'href',
+      'https://youtube.com/@aki'
+    );
     expect(screen.getByRole('heading', { name: 'About' })).toBeInTheDocument();
     expect(screen.getAllByText('Official public homepage.')).toHaveLength(2);
 
@@ -181,7 +187,7 @@ describe('PublicHomepageScreen', () => {
         '/api/v1/public/homepage/aki-home',
         expect.objectContaining({
           credentials: 'include',
-        }),
+        })
       );
     });
 
@@ -199,14 +205,18 @@ describe('PublicHomepageScreen', () => {
             message: 'Homepage not found or not published',
           },
         },
-        404,
-      ),
+        404
+      )
     );
 
     renderWithLocale(<PublicHomepageScreen path="missing-home" />);
 
     expect(await screen.findByText('Fan page unavailable')).toBeInTheDocument();
-    expect(screen.getByText('This fan page is not live yet, is not reachable right now, or has been turned off.')).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'This fan page is not live yet, is not reachable right now, or has been turned off.'
+      )
+    ).toBeInTheDocument();
   });
 
   it('uses runtime locale copy for unavailable public homepage states even when the API returns English copy', async () => {
@@ -224,8 +234,8 @@ describe('PublicHomepageScreen', () => {
             message: 'Homepage not found or not published',
           },
         },
-        404,
-      ),
+        404
+      )
     );
 
     renderWithLocale(<PublicHomepageScreen path="missing-home" />);

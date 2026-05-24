@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { MessageStatus, type UpdateMessageDto } from '../dto/marshmallow.dto';
 
 export interface MarshmallowAdminMessageRow {
@@ -78,7 +77,7 @@ export interface MarshmallowMessageUpdateFieldChange {
 }
 
 export const buildMarshmallowMessageStats = (
-  row: MarshmallowMessageStatsRow | null | undefined,
+  row: MarshmallowMessageStatsRow | null | undefined
 ) => {
   const stats = row ?? {
     pending: 0n,
@@ -116,7 +115,7 @@ export const buildMarshmallowMessageListResponse = (params: {
       isPinned: message.isPinned,
       replyContent: message.replyContent,
       repliedAt: message.repliedAt?.toISOString() ?? null,
-      repliedBy: message.repliedBy ? repliers.get(message.repliedBy) ?? null : null,
+      repliedBy: message.repliedBy ? (repliers.get(message.repliedBy) ?? null) : null,
       reactionCounts: message.reactionCounts ?? {},
       profanityFlags: message.profanityFlags ?? [],
       imageUrl: message.imageUrl,
@@ -135,9 +134,7 @@ export const canUnrejectMarshmallowMessage = (status: string): boolean =>
 export const canReplyToMarshmallowMessage = (status: string): boolean =>
   status === MessageStatus.APPROVED;
 
-export const buildMarshmallowModerationResponse = (
-  row: MarshmallowMessageModerationRow,
-) => ({
+export const buildMarshmallowModerationResponse = (row: MarshmallowMessageModerationRow) => ({
   id: row.id,
   status: row.status,
   moderatedAt: row.moderatedAt?.toISOString(),
@@ -158,7 +155,7 @@ export const buildMarshmallowReplyDiff = (content: string) => ({
 });
 
 export const buildMarshmallowMessageUpdateFieldChanges = (
-  dto: UpdateMessageDto,
+  dto: UpdateMessageDto
 ): MarshmallowMessageUpdateFieldChange[] => {
   const changes: MarshmallowMessageUpdateFieldChange[] = [];
 
@@ -177,9 +174,7 @@ export const buildMarshmallowMessageUpdateFieldChanges = (
   return changes;
 };
 
-export const buildMarshmallowMessageUpdateResponse = (
-  row: MarshmallowMessageUpdateRow,
-) => ({
+export const buildMarshmallowMessageUpdateResponse = (row: MarshmallowMessageUpdateRow) => ({
   id: row.id,
   isRead: row.isRead,
   isStarred: row.isStarred,

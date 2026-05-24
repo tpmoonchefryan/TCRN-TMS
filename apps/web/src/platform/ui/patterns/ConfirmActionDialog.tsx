@@ -37,7 +37,7 @@ export const ConfirmActionDialog: React.FC<ConfirmActionDialogProps> = ({
   const isPending = externalIsPending || internalIsPending;
   const dialogRef = useRef<HTMLDivElement>(null);
   const cancelButtonRef = useRef<HTMLButtonElement>(null);
-  
+
   // Presence helper
   const [isMounted, setIsMounted] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
@@ -53,13 +53,13 @@ export const ConfirmActionDialog: React.FC<ConfirmActionDialogProps> = ({
       setIsExiting(true);
       const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       // Match duration-[150ms] from dialogExit token
-      const timeout = reducedMotion ? 0 : motionConstants.durationQuickMs; 
-      
+      const timeout = reducedMotion ? 0 : motionConstants.durationQuickMs;
+
       const timer = setTimeout(() => {
         setIsExiting(false);
         setIsMounted(false);
       }, timeout);
-      
+
       return () => clearTimeout(timer);
     }
   }, [open, isMounted]);
@@ -119,9 +119,9 @@ export const ConfirmActionDialog: React.FC<ConfirmActionDialogProps> = ({
 
   return createPortal(
     <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 sm:p-6">
-      <div 
+      <div
         className={`fixed inset-0 bg-slate-900/50 backdrop-blur-sm transition-opacity ${isExiting ? 'opacity-0 duration-150 ease-in' : 'opacity-100 duration-200 ease-out'} ${tokens.motion.reduced}`}
-        aria-hidden="true" 
+        aria-hidden="true"
         onClick={() => !isPending && handleCancel()}
       />
       <div
@@ -146,7 +146,7 @@ export const ConfirmActionDialog: React.FC<ConfirmActionDialogProps> = ({
           <button
             ref={cancelButtonRef}
             type="button"
-            className="inline-flex w-full justify-center rounded-md bg-white px-4 py-2 text-sm font-semibold text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:w-auto disabled:opacity-50"
+            className="inline-flex w-full justify-center rounded-md bg-white px-4 py-2 text-sm font-semibold text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 sm:w-auto"
             onClick={handleCancel}
             disabled={isPending}
           >
@@ -154,7 +154,7 @@ export const ConfirmActionDialog: React.FC<ConfirmActionDialogProps> = ({
           </button>
           <button
             type="button"
-            className={`inline-flex w-full justify-center rounded-md px-4 py-2 text-sm font-semibold shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 sm:w-auto disabled:opacity-50 ${confirmBtnClass}`}
+            className={`inline-flex w-full justify-center rounded-md px-4 py-2 text-sm font-semibold shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 sm:w-auto ${confirmBtnClass}`}
             onClick={handleConfirm}
             disabled={isPending}
           >

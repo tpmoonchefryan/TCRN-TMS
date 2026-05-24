@@ -1,7 +1,15 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+import { promises as dnsPromises } from 'dns';
 
-import { BadRequestException, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
+import {
+  BadRequestException,
+  NotFoundException,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { TalentCustomDomainRepository } from '../infrastructure/talent-custom-domain.repository';
+import { TalentCustomDomainService } from './talent-custom-domain.service';
 
 vi.mock('crypto', () => ({
   randomBytes: vi.fn(() => ({
@@ -14,11 +22,6 @@ vi.mock('dns', () => ({
     resolveTxt: vi.fn(),
   },
 }));
-
-import { promises as dnsPromises } from 'dns';
-
-import { TalentCustomDomainRepository } from '../infrastructure/talent-custom-domain.repository';
-import { TalentCustomDomainService } from './talent-custom-domain.service';
 
 describe('TalentCustomDomainService', () => {
   const mockRepository = {
@@ -46,11 +49,13 @@ describe('TalentCustomDomainService', () => {
   const service = new TalentCustomDomainService(mockRepository);
   const missingSelectionRelationError = {
     code: 'P2010',
-    message: 'Raw query failed. Code: 42P01. relation "public.custom_domain_talent_selection" does not exist',
+    message:
+      'Raw query failed. Code: 42P01. relation "public.custom_domain_talent_selection" does not exist',
   };
   const missingBindingRelationError = {
     code: 'P2010',
-    message: 'Raw query failed. Code: 42P01. relation "public.custom_domain_binding" does not exist',
+    message:
+      'Raw query failed. Code: 42P01. relation "public.custom_domain_binding" does not exist',
   };
 
   beforeEach(() => {
@@ -68,11 +73,7 @@ describe('TalentCustomDomainService', () => {
     vi.mocked(mockRepository.setCustomDomain).mockResolvedValue(true);
 
     await expect(
-      service.setCustomDomain(
-        'talent-123',
-        'tenant_test',
-        'Talent.Example.com ',
-      ),
+      service.setCustomDomain('talent-123', 'tenant_test', 'Talent.Example.com ')
     ).resolves.toEqual({
       customDomain: 'talent.example.com',
       token: 'token-123',
@@ -81,16 +82,13 @@ describe('TalentCustomDomainService', () => {
   });
 
   it('fails closed when another talent already owns the custom domain', async () => {
-    vi.mocked(mockRepository.findTalentIdByCustomDomain).mockResolvedValue(
-      'talent-456',
-    );
+    vi.mocked(mockRepository.findTalentIdByCustomDomain).mockResolvedValue('talent-456');
     vi.mocked(mockRepository.findCustomDomainBindingByHostname).mockResolvedValue(null);
 
     await expect(
-      service.setCustomDomain('talent-123', 'tenant_test', 'talent.example.com'),
+      service.setCustomDomain('talent-123', 'tenant_test', 'talent.example.com')
     ).rejects.toThrow(BadRequestException);
   });
-
 
   it('fails closed when a legacy talent domain collides with binding registry', async () => {
     vi.mocked(mockRepository.findTalentIdByCustomDomain).mockResolvedValue(null);
@@ -107,7 +105,7 @@ describe('TalentCustomDomainService', () => {
     });
 
     await expect(
-      service.setCustomDomain('talent-123', 'tenant_test', 'talent.example.com'),
+      service.setCustomDomain('talent-123', 'tenant_test', 'talent.example.com')
     ).rejects.toThrow(BadRequestException);
     expect(mockRepository.setCustomDomain).not.toHaveBeenCalled();
   });
@@ -137,34 +135,30 @@ describe('TalentCustomDomainService', () => {
         isActive: true,
       },
     ]);
-    vi.mocked(mockRepository.listSelectedInheritedDomainIds).mockResolvedValue([
-      'tenant-domain',
-    ]);
+    vi.mocked(mockRepository.listSelectedInheritedDomainIds).mockResolvedValue(['tenant-domain']);
 
-    await expect(
-      service.getCustomDomainConfig('talent-123', 'tenant_test'),
-    ).resolves.toMatchObject({
-      customDomain: 'talent.example.com',
-      homepageCustomPath: 'homepage',
-      marshmallowCustomPath: 'marshmallow',
-      selectedInheritedDomainIds: ['tenant-domain'],
-      domains: [
-        expect.objectContaining({
-          hostname: 'talent.example.com',
-          routeMode: 'dedicated_talent',
-          homepagePath: 'homepage',
-        }),
-        expect.objectContaining({
-          id: 'tenant-domain',
-          selected: true,
-          routeMode: 'scoped_talent_path',
-          homepagePath: 'shiori/homepage',
-        }),
-      ],
-      inheritedDomains: [
-        expect.objectContaining({ id: 'tenant-domain' }),
-      ],
-    });
+    await expect(service.getCustomDomainConfig('talent-123', 'tenant_test')).resolves.toMatchObject(
+      {
+        customDomain: 'talent.example.com',
+        homepageCustomPath: 'homepage',
+        marshmallowCustomPath: 'marshmallow',
+        selectedInheritedDomainIds: ['tenant-domain'],
+        domains: [
+          expect.objectContaining({
+            hostname: 'talent.example.com',
+            routeMode: 'dedicated_talent',
+            homepagePath: 'homepage',
+          }),
+          expect.objectContaining({
+            id: 'tenant-domain',
+            selected: true,
+            routeMode: 'scoped_talent_path',
+            homepagePath: 'shiori/homepage',
+          }),
+        ],
+        inheritedDomains: [expect.objectContaining({ id: 'tenant-domain' })],
+      }
+    );
   });
 
   it('keeps legacy custom-domain config readable when additive registry tables are missing', async () => {
@@ -180,26 +174,26 @@ describe('TalentCustomDomainService', () => {
       marshmallowCustomPath: 'legacy-ask',
     });
     vi.mocked(mockRepository.listCustomDomainBindingsForTalent).mockRejectedValue(
-      missingBindingRelationError,
+      missingBindingRelationError
     );
     vi.mocked(mockRepository.listSelectedInheritedDomainIds).mockRejectedValue(
-      missingSelectionRelationError,
+      missingSelectionRelationError
     );
 
-    await expect(
-      service.getCustomDomainConfig('talent-123', 'tenant_test'),
-    ).resolves.toMatchObject({
-      customDomain: 'talent.example.com',
-      selectedInheritedDomainIds: [],
-      domains: [
-        expect.objectContaining({
-          hostname: 'talent.example.com',
-          routeMode: 'dedicated_talent',
-          selected: true,
-        }),
-      ],
-      inheritedDomains: [],
-    });
+    await expect(service.getCustomDomainConfig('talent-123', 'tenant_test')).resolves.toMatchObject(
+      {
+        customDomain: 'talent.example.com',
+        selectedInheritedDomainIds: [],
+        domains: [
+          expect.objectContaining({
+            hostname: 'talent.example.com',
+            routeMode: 'dedicated_talent',
+            selected: true,
+          }),
+        ],
+        inheritedDomains: [],
+      }
+    );
   });
 
   it('lists scoped custom-domain bindings with inherited and selected state for talent settings', async () => {
@@ -236,7 +230,7 @@ describe('TalentCustomDomainService', () => {
         scopeId: 'talent-123',
         includeInherited: true,
         includeInactive: false,
-      }),
+      })
     ).resolves.toEqual({
       domains: [
         expect.objectContaining({
@@ -258,7 +252,7 @@ describe('TalentCustomDomainService', () => {
   it('returns operator-safe storage errors for scoped custom-domain binding list reads', async () => {
     vi.mocked(mockRepository.customDomainOwnerExists).mockResolvedValue(true);
     vi.mocked(mockRepository.listCustomDomainBindingsForScope).mockRejectedValue(
-      missingBindingRelationError,
+      missingBindingRelationError
     );
 
     await expect(
@@ -267,7 +261,7 @@ describe('TalentCustomDomainService', () => {
         scopeId: null,
         includeInherited: true,
         includeInactive: false,
-      }),
+      })
     ).rejects.toThrow(ServiceUnavailableException);
   });
 
@@ -293,7 +287,8 @@ describe('TalentCustomDomainService', () => {
     expect(caught).toBeInstanceOf(ServiceUnavailableException);
     expect((caught as ServiceUnavailableException).getResponse()).toMatchObject({
       code: 'SYS_CUSTOM_DOMAIN_REGISTRY_UNAVAILABLE',
-      message: 'Custom-domain routing is temporarily unavailable. Try again later or contact an administrator.',
+      message:
+        'Custom-domain routing is temporarily unavailable. Try again later or contact an administrator.',
     });
     expect(mockRepository.customDomainOwnerExists).not.toHaveBeenCalled();
     expect(mockRepository.listCustomDomainBindingsForScope).not.toHaveBeenCalled();
@@ -311,18 +306,13 @@ describe('TalentCustomDomainService', () => {
       homepageCustomPath: 'homepage',
       marshmallowCustomPath: 'marshmallow',
     });
-    vi.mocked(dnsPromises.resolveTxt).mockResolvedValue([
-      ['tcrn-verify=token-123'],
-    ] as never);
+    vi.mocked(dnsPromises.resolveTxt).mockResolvedValue([['tcrn-verify=token-123']] as never);
 
-    await expect(
-      service.verifyCustomDomain('talent-123', 'tenant_test'),
-    ).resolves.toEqual({
+    await expect(service.verifyCustomDomain('talent-123', 'tenant_test')).resolves.toEqual({
       verified: true,
       message: 'Domain verified successfully',
     });
   });
-
 
   it('creates a tenant-owned domain binding with normalized hostname and TXT record', async () => {
     vi.mocked(mockRepository.customDomainOwnerExists).mockResolvedValue(true);
@@ -346,7 +336,7 @@ describe('TalentCustomDomainService', () => {
         ownerId: null,
         hostname: 'Brand.Example.COM.',
         customDomainSslMode: 'cloudflare',
-      }),
+      })
     ).resolves.toEqual({
       domain: expect.objectContaining({
         id: 'domain-1',
@@ -365,7 +355,7 @@ describe('TalentCustomDomainService', () => {
         customDomainSslMode: 'cloudflare',
         isActive: true,
       },
-      'token-123',
+      'token-123'
     );
   });
 
@@ -403,7 +393,7 @@ describe('TalentCustomDomainService', () => {
         hostname: 'Brand.Example.COM.',
         customDomainSslMode: 'cloudflare',
         isActive: false,
-      }),
+      })
     ).resolves.toEqual({
       domain: expect.objectContaining({
         id: 'domain-1',
@@ -419,7 +409,7 @@ describe('TalentCustomDomainService', () => {
     });
     expect(mockRepository.findCustomDomainBindingByHostname).toHaveBeenCalledWith(
       'brand.example.com',
-      'domain-1',
+      'domain-1'
     );
     expect(mockRepository.updateCustomDomainBinding).toHaveBeenCalledWith(
       'tenant_test',
@@ -431,7 +421,7 @@ describe('TalentCustomDomainService', () => {
         customDomainSslMode: 'cloudflare',
         isActive: false,
       },
-      'token-123',
+      'token-123'
     );
   });
 
@@ -446,7 +436,7 @@ describe('TalentCustomDomainService', () => {
       service.createCustomDomainBinding('tenant_test', {
         ownerType: 'tenant',
         hostname: 'brand.example.com',
-      }),
+      })
     ).rejects.toThrow(ServiceUnavailableException);
     expect(mockRepository.customDomainOwnerExists).not.toHaveBeenCalled();
     expect(mockRepository.createCustomDomainBinding).not.toHaveBeenCalled();
@@ -471,7 +461,7 @@ describe('TalentCustomDomainService', () => {
       service.createCustomDomainBinding('tenant_test', {
         ownerType: 'tenant',
         hostname: 'brand.example.com',
-      }),
+      })
     ).rejects.toThrow(BadRequestException);
     expect(mockRepository.createCustomDomainBinding).not.toHaveBeenCalled();
   });
@@ -484,7 +474,7 @@ describe('TalentCustomDomainService', () => {
         ownerType: 'subsidiary',
         ownerId: 'sub-foreign',
         hostname: 'brand.example.com',
-      }),
+      })
     ).rejects.toThrow(BadRequestException);
     expect(mockRepository.findCustomDomainBindingByHostname).not.toHaveBeenCalled();
   });
@@ -501,19 +491,15 @@ describe('TalentCustomDomainService', () => {
       customDomainSslMode: 'auto',
       isActive: true,
     });
-    vi.mocked(dnsPromises.resolveTxt).mockResolvedValue([
-      ['tcrn-verify=token-123'],
-    ] as never);
+    vi.mocked(dnsPromises.resolveTxt).mockResolvedValue([['tcrn-verify=token-123']] as never);
 
-    await expect(
-      service.verifyCustomDomainBinding('tenant_test', 'domain-1'),
-    ).resolves.toEqual({
+    await expect(service.verifyCustomDomainBinding('tenant_test', 'domain-1')).resolves.toEqual({
       verified: true,
       message: 'Domain binding verified successfully',
     });
     expect(mockRepository.markCustomDomainBindingVerified).toHaveBeenCalledWith(
       'tenant_test',
-      'domain-1',
+      'domain-1'
     );
   });
 
@@ -524,9 +510,9 @@ describe('TalentCustomDomainService', () => {
       ready: false,
     });
 
-    await expect(
-      service.verifyCustomDomainBinding('tenant_test', 'domain-1'),
-    ).rejects.toThrow(ServiceUnavailableException);
+    await expect(service.verifyCustomDomainBinding('tenant_test', 'domain-1')).rejects.toThrow(
+      ServiceUnavailableException
+    );
     expect(mockRepository.findCustomDomainBindingById).not.toHaveBeenCalled();
     expect(dnsPromises.resolveTxt).not.toHaveBeenCalled();
   });
@@ -559,7 +545,7 @@ describe('TalentCustomDomainService', () => {
     vi.mocked(mockRepository.listSelectedInheritedDomainIds).mockResolvedValue([]);
 
     await expect(
-      service.setSelectedInheritedDomainIds('talent-123', 'tenant_test', ['tenant-domain']),
+      service.setSelectedInheritedDomainIds('talent-123', 'tenant_test', ['tenant-domain'])
     ).rejects.toThrow(BadRequestException);
     expect(mockRepository.replaceSelectedInheritedDomainIds).not.toHaveBeenCalled();
   });
@@ -591,7 +577,7 @@ describe('TalentCustomDomainService', () => {
     ]);
     vi.mocked(mockRepository.listSelectedInheritedDomainIds).mockResolvedValue([]);
     vi.mocked(mockRepository.replaceSelectedInheritedDomainIds).mockRejectedValue(
-      missingSelectionRelationError,
+      missingSelectionRelationError
     );
 
     let caught: unknown;
@@ -604,7 +590,8 @@ describe('TalentCustomDomainService', () => {
     expect(caught).toBeInstanceOf(ServiceUnavailableException);
     expect((caught as ServiceUnavailableException).getResponse()).toMatchObject({
       code: 'SYS_CUSTOM_DOMAIN_REGISTRY_UNAVAILABLE',
-      message: 'Custom-domain routing is temporarily unavailable. Try again later or contact an administrator.',
+      message:
+        'Custom-domain routing is temporarily unavailable. Try again later or contact an administrator.',
     });
   });
 
@@ -642,18 +629,20 @@ describe('TalentCustomDomainService', () => {
       service.setSelectedInheritedDomainIds('talent-123', 'tenant_test', [
         'tenant-domain',
         'tenant-domain',
-      ]),
+      ])
     ).resolves.toMatchObject({
       selectedInheritedDomainIds: ['tenant-domain'],
-      inheritedDomains: [expect.objectContaining({
-        id: 'tenant-domain',
-        selected: true,
-      })],
+      inheritedDomains: [
+        expect.objectContaining({
+          id: 'tenant-domain',
+          selected: true,
+        }),
+      ],
     });
     expect(mockRepository.replaceSelectedInheritedDomainIds).toHaveBeenCalledWith(
       'tenant_test',
       'talent-123',
-      ['tenant-domain'],
+      ['tenant-domain']
     );
   });
 
@@ -674,7 +663,7 @@ describe('TalentCustomDomainService', () => {
       service.updateServicePaths('talent-123', 'tenant_test', {
         homepageCustomPath: '/homepage',
         marshmallowCustomPath: '/marshmallow',
-      }),
+      })
     ).resolves.toEqual({
       homepageCustomPath: 'homepage',
       marshmallowCustomPath: 'marshmallow',
@@ -685,8 +674,8 @@ describe('TalentCustomDomainService', () => {
   it('fails closed when updating SSL mode for a missing talent', async () => {
     vi.mocked(mockRepository.updateSslMode).mockResolvedValue(null);
 
-    await expect(
-      service.updateSslMode('talent-123', 'tenant_test', 'cloudflare'),
-    ).rejects.toThrow(NotFoundException);
+    await expect(service.updateSslMode('talent-123', 'tenant_test', 'cloudflare')).rejects.toThrow(
+      NotFoundException
+    );
   });
 });

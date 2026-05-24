@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { ConfigService } from '@nestjs/config';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -102,7 +101,7 @@ describe('FingerprintService', () => {
 
     it('should reject tampered fingerprint', () => {
       const fingerprint = service.generateFingerprint('tenant-123', 'user-456');
-      
+
       // Verify with different tenant/user
       const isValid = service.verifyFingerprint(fingerprint, 'tenant-999', 'user-456');
 

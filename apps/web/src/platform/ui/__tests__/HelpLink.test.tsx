@@ -27,7 +27,7 @@ describe('HelpLink', () => {
       <>
         <HelpLink href="#settings-sections" label="Help" ariaLabel="Jump to settings sections" />
         <nav id="settings-sections" tabIndex={-1} aria-label="Settings sections" />
-      </>,
+      </>
     );
 
     fireEvent.click(screen.getByRole('link', { name: 'Jump to settings sections' }));

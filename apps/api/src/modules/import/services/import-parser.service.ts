@@ -1,12 +1,9 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable } from '@nestjs/common';
 
 import { ImportTemplateApplicationService } from '../application/import-template.service';
-import type {
-  CompanyImportRow,
-  IndividualImportRow,
-} from '../dto/import.dto';
+import type { CompanyImportRow, IndividualImportRow } from '../dto/import.dto';
+
 export type {
   CsvTemplateValidationResult,
   ImportErrorCsvRow,
@@ -23,12 +20,12 @@ export {
 @Injectable()
 export class ImportParserService {
   constructor(
-    private readonly importTemplateApplicationService: ImportTemplateApplicationService = new ImportTemplateApplicationService(),
+    private readonly importTemplateApplicationService: ImportTemplateApplicationService = new ImportTemplateApplicationService()
   ) {}
 
   validateCsvTemplate(
     content: string,
-    templateKind: import('../domain/import-template.policy').ImportTemplateKind,
+    templateKind: import('../domain/import-template.policy').ImportTemplateKind
   ) {
     return this.importTemplateApplicationService.validateCsvTemplate(content, templateKind);
   }
@@ -65,7 +62,7 @@ export class ImportParserService {
    * Generate errors CSV
    */
   generateErrorsCsv(
-    errors: import('../domain/import-template.policy').ImportErrorCsvRow[],
+    errors: import('../domain/import-template.policy').ImportErrorCsvRow[]
   ): string {
     return this.importTemplateApplicationService.generateErrorsCsv(errors);
   }

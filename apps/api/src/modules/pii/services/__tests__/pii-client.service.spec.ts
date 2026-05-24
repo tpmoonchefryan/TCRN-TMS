@@ -1,12 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { ConfigService } from '@nestjs/config';
-import axios, {
-  AxiosError,
-  AxiosHeaders,
-  AxiosResponse,
-  InternalAxiosRequestConfig,
-} from 'axios';
+import axios, { AxiosError, AxiosHeaders, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ProfileType } from '../../../customer/dto/customer.dto';
@@ -66,7 +60,7 @@ describe('PiiClientService', () => {
 
     service = new PiiClientService(
       mockConfigService as ConfigService,
-      mockIntegrationLogService as IntegrationLogService,
+      mockIntegrationLogService as IntegrationLogService
     );
   });
 
@@ -112,7 +106,7 @@ describe('PiiClientService', () => {
         },
         testAccessToken,
         testTenantId,
-        testTenantSchema,
+        testTenantSchema
       );
 
       expect(result).toEqual({
@@ -130,7 +124,7 @@ describe('PiiClientService', () => {
             Authorization: `Bearer ${testAccessToken}`,
             'X-Tenant-ID': testTenantId,
           }),
-        }),
+        })
       );
     });
   });
@@ -170,7 +164,7 @@ describe('PiiClientService', () => {
         },
         testAccessToken,
         testTenantId,
-        testTenantSchema,
+        testTenantSchema
       );
 
       expect(result).toEqual({
@@ -187,7 +181,7 @@ describe('PiiClientService', () => {
           headers: expect.objectContaining({
             Authorization: `Bearer ${testAccessToken}`,
           }),
-        }),
+        })
       );
       expect(mockIntegrationLogService.logOutbound).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -197,22 +191,16 @@ describe('PiiClientService', () => {
         }),
         expect.objectContaining({
           tenantSchema: testTenantSchema,
-        }),
+        })
       );
     });
 
     it('logs a failed portal session request', async () => {
-      const mockError = new AxiosError(
-        'Forbidden',
-        '403',
-        {} as InternalAxiosRequestConfig,
-        {},
-        {
-          status: 403,
-          data: { error: 'Forbidden' },
-          headers: new AxiosHeaders(),
-        } as AxiosResponse,
-      );
+      const mockError = new AxiosError('Forbidden', '403', {} as InternalAxiosRequestConfig, {}, {
+        status: 403,
+        data: { error: 'Forbidden' },
+        headers: new AxiosHeaders(),
+      } as AxiosResponse);
       (axios.post as ReturnType<typeof vi.fn>).mockRejectedValue(mockError);
 
       await expect(
@@ -238,8 +226,8 @@ describe('PiiClientService', () => {
           },
           testAccessToken,
           testTenantId,
-          testTenantSchema,
-        ),
+          testTenantSchema
+        )
       ).rejects.toThrow('Forbidden');
 
       expect(mockIntegrationLogService.logOutbound).toHaveBeenCalledWith(
@@ -250,7 +238,7 @@ describe('PiiClientService', () => {
         }),
         expect.objectContaining({
           tenantSchema: testTenantSchema,
-        }),
+        })
       );
     });
   });
@@ -296,7 +284,7 @@ describe('PiiClientService', () => {
         },
         testAccessToken,
         testTenantId,
-        testTenantSchema,
+        testTenantSchema
       );
 
       expect(result).toEqual({
@@ -318,7 +306,7 @@ describe('PiiClientService', () => {
             Authorization: `Bearer ${testAccessToken}`,
             'X-Tenant-ID': testTenantId,
           }),
-        }),
+        })
       );
       expect(mockIntegrationLogService.logOutbound).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -328,7 +316,7 @@ describe('PiiClientService', () => {
         }),
         expect.objectContaining({
           tenantSchema: testTenantSchema,
-        }),
+        })
       );
     });
   });
@@ -376,7 +364,7 @@ describe('PiiClientService', () => {
         },
         testAccessToken,
         testTenantId,
-        testTenantSchema,
+        testTenantSchema
       );
 
       expect(result).toEqual({
@@ -390,7 +378,7 @@ describe('PiiClientService', () => {
           reportType: ReportType.MFR,
           customerIds: ['customer-1', 'customer-2'],
         }),
-        expect.any(Object),
+        expect.any(Object)
       );
     });
   });
@@ -433,8 +421,10 @@ describe('PiiClientService', () => {
           headers: {},
         });
 
-      vi.spyOn(service as unknown as { sleep: (ms: number) => Promise<void> }, 'sleep')
-        .mockResolvedValue(undefined);
+      vi.spyOn(
+        service as unknown as { sleep: (ms: number) => Promise<void> },
+        'sleep'
+      ).mockResolvedValue(undefined);
 
       const result = await service.createPortalSession(
         testPiiPlatformUrl,
@@ -457,7 +447,7 @@ describe('PiiClientService', () => {
           purpose: 'customer_view',
         },
         testAccessToken,
-        testTenantId,
+        testTenantId
       );
 
       expect(result.redirectUrl).toContain('/portal/sessions/');
@@ -474,7 +464,7 @@ describe('PiiClientService', () => {
           status: 404,
           data: {},
           headers: new AxiosHeaders(),
-        } as AxiosResponse,
+        } as AxiosResponse
       );
       (axios.post as ReturnType<typeof vi.fn>).mockRejectedValue(notFoundError);
 
@@ -500,8 +490,8 @@ describe('PiiClientService', () => {
             purpose: 'customer_view',
           },
           testAccessToken,
-          testTenantId,
-        ),
+          testTenantId
+        )
       ).rejects.toThrow();
 
       expect(axios.post).toHaveBeenCalledTimes(1);
@@ -523,7 +513,7 @@ describe('PiiClientService', () => {
 
       const mtlsService = new PiiClientService(
         mtlsConfigService as ConfigService,
-        mockIntegrationLogService as IntegrationLogService,
+        mockIntegrationLogService as IntegrationLogService
       );
 
       expect(mtlsService).toBeDefined();

@@ -1,7 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { createLocalizedText, type RequestContext } from '@tcrn/shared';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { PiiServiceConfigApplicationService } from '../application/pii-service-config.service';
 import { PiiServiceConfigService } from './pii-service-config.service';
@@ -96,8 +96,8 @@ describe('PiiServiceConfigService', () => {
           apiUrl: 'https://pii.example.com',
           authType: 'mtls' as never,
         },
-        context,
-      ),
+        context
+      )
     ).resolves.toMatchObject({ code: 'DEFAULT_PII' });
     await expect(
       service.update(
@@ -106,8 +106,8 @@ describe('PiiServiceConfigService', () => {
           version: 1,
           name: { en: 'Updated' },
         },
-        context,
-      ),
+        context
+      )
     ).resolves.toMatchObject({ version: 2 });
   });
 
@@ -118,16 +118,11 @@ describe('PiiServiceConfigService', () => {
       testedAt: new Date('2026-04-14T00:10:00.000Z'),
     } as never);
 
-    await expect(
-      service.testConnection('config-1', context),
-    ).resolves.toMatchObject({
+    await expect(service.testConnection('config-1', context)).resolves.toMatchObject({
       status: 'ok',
       latencyMs: 42,
     });
 
-    expect(mockApplicationService.testConnection).toHaveBeenCalledWith(
-      'config-1',
-      context,
-    );
+    expect(mockApplicationService.testConnection).toHaveBeenCalledWith('config-1', context);
   });
 });

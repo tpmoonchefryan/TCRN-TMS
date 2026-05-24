@@ -1,7 +1,8 @@
-import { BadRequestException, type ExecutionContext,ForbiddenException } from '@nestjs/common';
+import { BadRequestException, type ExecutionContext, ForbiddenException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { ErrorCodes } from '@tcrn/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { ErrorCodes } from '@tcrn/shared';
 
 import { DatabaseService } from '../../modules/database';
 import { PublishedTalentAccessGuard } from './published-talent-access.guard';
@@ -41,7 +42,7 @@ describe('PublishedTalentAccessGuard', () => {
 
     guard = new PublishedTalentAccessGuard(
       mockReflector as Reflector,
-      mockDatabaseService as DatabaseService,
+      mockDatabaseService as DatabaseService
     );
   });
 
@@ -49,7 +50,7 @@ describe('PublishedTalentAccessGuard', () => {
     vi.mocked(mockReflector.getAllAndOverride).mockReturnValue(undefined);
 
     await expect(
-      guard.canActivate(createContext({ user: { tenantSchema: 'tenant_test' } })),
+      guard.canActivate(createContext({ user: { tenantSchema: 'tenant_test' } }))
     ).resolves.toBe(true);
 
     expect(mockPrisma.$queryRawUnsafe).not.toHaveBeenCalled();
@@ -80,9 +81,7 @@ describe('PublishedTalentAccessGuard', () => {
 
   it('rejects draft talents with TALENT_NOT_PUBLISHED', async () => {
     vi.mocked(mockReflector.getAllAndOverride).mockReturnValue({});
-    mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([
-      { lifecycleStatus: 'draft' },
-    ]);
+    mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([{ lifecycleStatus: 'draft' }]);
 
     const request = {
       user: { tenantSchema: 'tenant_test' },
@@ -105,9 +104,7 @@ describe('PublishedTalentAccessGuard', () => {
 
   it('allows draft talents when the route opts into draft access', async () => {
     vi.mocked(mockReflector.getAllAndOverride).mockReturnValue({ allowDraft: true });
-    mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([
-      { lifecycleStatus: 'draft' },
-    ]);
+    mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([{ lifecycleStatus: 'draft' }]);
 
     const request = {
       user: { tenantSchema: 'tenant_test' },
@@ -138,7 +135,7 @@ describe('PublishedTalentAccessGuard', () => {
     expect(mockPrisma.$queryRawUnsafe).toHaveBeenNthCalledWith(
       1,
       expect.stringContaining('FROM "tenant_test"."report_job"'),
-      '550e8400-e29b-41d4-a716-446655440099',
+      '550e8400-e29b-41d4-a716-446655440099'
     );
   });
 });

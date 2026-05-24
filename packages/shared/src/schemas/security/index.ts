@@ -1,6 +1,5 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 // Security Module Zod Schemas
-
 import { z } from 'zod';
 
 import { LocalizedTextSchema, PartialLocalizedTextSchema } from '../common.schema';
@@ -54,19 +53,15 @@ export const BlocklistScopeSummarySchema = z.object({
 
 export type BlocklistScopeCategory = z.infer<typeof BlocklistScopeCategorySchema>;
 export type BlocklistSurfaceScope = z.infer<typeof BlocklistSurfaceScopeSchema>;
-export type BlocklistStructuredScopeEntry = z.infer<
-  typeof BlocklistStructuredScopeEntrySchema
->;
-export type BlocklistStructuredScopeInput = z.infer<
-  typeof BlocklistStructuredScopeSchema
->;
+export type BlocklistStructuredScopeEntry = z.infer<typeof BlocklistStructuredScopeEntrySchema>;
+export type BlocklistStructuredScopeInput = z.infer<typeof BlocklistStructuredScopeSchema>;
 export type BlocklistScopeSummary = z.infer<typeof BlocklistScopeSummarySchema>;
 
 const isBlocklistSurfaceScope = (value: string): value is BlocklistSurfaceScope =>
   (BLOCKLIST_SURFACE_SCOPE_VALUES as readonly string[]).includes(value);
 
 const isBlocklistStructuredCategoryToken = (
-  value: string,
+  value: string
 ): value is Exclude<BlocklistScopeCategory, 'surface'> =>
   (BLOCKLIST_STRUCTURED_SCOPE_CATEGORY_VALUES as readonly string[]).includes(value);
 
@@ -100,20 +95,18 @@ export const normalizeBlocklistScopeInput = ({
     ? BlocklistStructuredScopeSchema.parse(structuredScope).entries
     : [];
   const structuredRuntimeTokens = structuredEntries
-    .filter((entry): entry is Extract<BlocklistStructuredScopeEntry, { category: 'surface' }> =>
-      entry.category === 'surface',
+    .filter(
+      (entry): entry is Extract<BlocklistStructuredScopeEntry, { category: 'surface' }> =>
+        entry.category === 'surface'
     )
     .map((entry) => entry.value);
   const structuredCategoryTokens = structuredEntries
-    .filter((entry): entry is Exclude<BlocklistStructuredScopeEntry, { category: 'surface' }> =>
-      entry.category !== 'surface',
+    .filter(
+      (entry): entry is Exclude<BlocklistStructuredScopeEntry, { category: 'surface' }> =>
+        entry.category !== 'surface'
     )
     .map((entry) => entry.category);
-  if (
-    structuredScope
-    && structuredRuntimeTokens.length === 0
-    && rawTokens.length === 0
-  ) {
+  if (structuredScope && structuredRuntimeTokens.length === 0 && rawTokens.length === 0) {
     throw new Error('At least one runtime surface scope is required');
   }
 
@@ -127,13 +120,13 @@ export const normalizeBlocklistScopeInput = ({
 };
 
 export const summarizeBlocklistScopes = (
-  scope: readonly string[] | null | undefined,
+  scope: readonly string[] | null | undefined
 ): BlocklistScopeSummary => {
   const tokens = dedupeScopeTokens([...(scope ?? [])]);
   const categoryTokens = tokens.filter(isBlocklistStructuredCategoryToken);
   const surfaceTokens = tokens.filter(isBlocklistSurfaceScope);
   const unsupported = tokens.filter(
-    (token) => !isBlocklistSurfaceScope(token) && !isBlocklistStructuredCategoryToken(token),
+    (token) => !isBlocklistSurfaceScope(token) && !isBlocklistStructuredCategoryToken(token)
   );
 
   return {
@@ -230,7 +223,10 @@ export const IpRuleListQuerySchema = z.object({
 
 export const CreateIpRuleSchema = z.object({
   ruleType: IpRuleTypeSchema,
-  ipPattern: z.string().regex(/^[\d.:/]+$/).max(64),
+  ipPattern: z
+    .string()
+    .regex(/^[\d.:/]+$/)
+    .max(64),
   scope: IpRuleScopeSchema,
   reason: z.string().max(255).optional(),
   expiresAt: z.string().optional(),

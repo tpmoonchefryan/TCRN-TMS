@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { ConflictException, Injectable } from '@nestjs/common';
+
 import { ErrorCodes, type RequestContext, TechEventType } from '@tcrn/shared';
 
 import { DatabaseService } from '../../database';
@@ -34,32 +34,24 @@ export class IndividualCustomerWriteApplicationService {
     private readonly changeLogService: ChangeLogService,
     private readonly techEventLogService: TechEventLogService,
     private readonly customerArchiveAccessService: CustomerArchiveAccessService,
-    private readonly customerPiiPlatformApplicationService: CustomerPiiPlatformApplicationService,
+    private readonly customerPiiPlatformApplicationService: CustomerPiiPlatformApplicationService
   ) {}
 
-  async create(
-    talentId: string,
-    dto: CreateIndividualCustomerDto,
-    context: RequestContext,
-  ) {
+  async create(talentId: string, dto: CreateIndividualCustomerDto, context: RequestContext) {
     if (dto.pii) {
-      await this.customerPiiPlatformApplicationService.assertPlatformEnabled(
-        talentId,
-        context,
-      );
+      await this.customerPiiPlatformApplicationService.assertPlatformEnabled(talentId, context);
     }
 
-    const archiveTarget =
-      await this.customerArchiveAccessService.requireTalentArchiveTarget(
-        talentId,
-        context,
-      );
+    const archiveTarget = await this.customerArchiveAccessService.requireTalentArchiveTarget(
+      talentId,
+      context
+    );
 
     const statusId = dto.statusCode
       ? await this.individualCustomerWriteRepository.findActiveStatusId(
           this.databaseService.getPrisma(),
           context.tenantSchema,
-          dto.statusCode,
+          dto.statusCode
         )
       : null;
 
@@ -79,14 +71,14 @@ export class IndividualCustomerWriteApplicationService {
               source: dto.source ?? null,
               notes: dto.notes ?? null,
               userId: context.userId,
-            },
+            }
           );
 
           if (dto.externalId && dto.consumerCode) {
             const consumer = await this.individualCustomerWriteRepository.findActiveConsumer(
               prisma,
               context.tenantSchema,
-              dto.consumerCode,
+              dto.consumerCode
             );
 
             if (consumer) {
@@ -99,7 +91,7 @@ export class IndividualCustomerWriteApplicationService {
                   consumerId: consumer.id,
                   externalId: dto.externalId,
                   userId: context.userId,
-                },
+                }
               );
             }
           }
@@ -113,27 +105,27 @@ export class IndividualCustomerWriteApplicationService {
               objectName: dto.nickname,
               newValue: buildIndividualCustomerCreateChangeLogNewValue(dto, statusId),
             },
-            context,
+            context
           );
 
           await this.individualCustomerWriteRepository.insertAccessLog(
             prisma,
-              context.tenantSchema,
-              {
-                customerId: created.id,
-                profileStoreId: archiveTarget.profileStoreId,
-                talentId,
+            context.tenantSchema,
+            {
+              customerId: created.id,
+              profileStoreId: archiveTarget.profileStoreId,
+              talentId,
               action: CustomerAction.CREATE,
               userId: context.userId,
               userName: context.userName,
               ipAddress: context.ipAddress,
               userAgent: context.userAgent,
               requestId: context.requestId,
-            },
+            }
           );
 
           return created;
-        },
+        }
       );
 
       if (dto.pii) {
@@ -142,7 +134,7 @@ export class IndividualCustomerWriteApplicationService {
           talentId,
           ProfileType.INDIVIDUAL,
           dto.pii,
-          context,
+          context
         );
 
         await this.techEventLogService.piiAccess(
@@ -152,7 +144,7 @@ export class IndividualCustomerWriteApplicationService {
             customerId: customer.id,
             operatorId: context.userId,
           },
-          context,
+          context
         );
       }
 
@@ -168,7 +160,7 @@ export class IndividualCustomerWriteApplicationService {
             operatorId: context.userId,
             originalError: error instanceof Error ? error.message : String(error),
           },
-          context,
+          context
         );
       }
 
@@ -180,7 +172,7 @@ export class IndividualCustomerWriteApplicationService {
     customerId: string,
     talentId: string,
     dto: UpdateIndividualCustomerDto,
-    context: RequestContext,
+    context: RequestContext
   ) {
     const customer = await this.verifyAccess(customerId, talentId, context);
 
@@ -193,79 +185,70 @@ export class IndividualCustomerWriteApplicationService {
 
     let statusId: string | undefined;
     if (dto.statusCode !== undefined && dto.statusCode) {
-      statusId = await this.individualCustomerWriteRepository.findActiveStatusId(
-        this.databaseService.getPrisma(),
-        context.tenantSchema,
-        dto.statusCode,
-      ) ?? undefined;
+      statusId =
+        (await this.individualCustomerWriteRepository.findActiveStatusId(
+          this.databaseService.getPrisma(),
+          context.tenantSchema,
+          dto.statusCode
+        )) ?? undefined;
     }
 
-    const updated = await this.individualCustomerWriteRepository.withTransaction(
-      async (prisma) => {
-        const result = await this.individualCustomerWriteRepository.updateCustomerProfile(
-          prisma,
-          context.tenantSchema,
-          {
-            customerId,
-            talentId,
-            userId: context.userId,
-            update: toIndividualCustomerUpdateInput(dto, statusId),
-          },
-        );
+    const updated = await this.individualCustomerWriteRepository.withTransaction(async (prisma) => {
+      const result = await this.individualCustomerWriteRepository.updateCustomerProfile(
+        prisma,
+        context.tenantSchema,
+        {
+          customerId,
+          talentId,
+          userId: context.userId,
+          update: toIndividualCustomerUpdateInput(dto, statusId),
+        }
+      );
 
-        await this.changeLogService.create(
-          prisma,
-          {
-            action: 'update',
-            objectType: 'customer_profile',
-            objectId: customerId,
-            objectName: result.nickname,
-            oldValue: buildIndividualCustomerUpdateChangeLogOldValue(customer),
-            newValue: buildIndividualCustomerUpdateChangeLogNewValue(
-              result.nickname,
-              customer,
-              dto,
-              statusId,
-            ),
-          },
-          context,
-        );
+      await this.changeLogService.create(
+        prisma,
+        {
+          action: 'update',
+          objectType: 'customer_profile',
+          objectId: customerId,
+          objectName: result.nickname,
+          oldValue: buildIndividualCustomerUpdateChangeLogOldValue(customer),
+          newValue: buildIndividualCustomerUpdateChangeLogNewValue(
+            result.nickname,
+            customer,
+            dto,
+            statusId
+          ),
+        },
+        context
+      );
 
-        await this.individualCustomerWriteRepository.insertAccessLog(
-          prisma,
-          context.tenantSchema,
-          {
-            customerId,
-            profileStoreId: customer.profileStoreId,
-            talentId,
-            action: CustomerAction.UPDATE,
-            fieldChanges: JSON.stringify(dto),
-            userId: context.userId,
-            userName: context.userName,
-            ipAddress: context.ipAddress,
-            userAgent: context.userAgent,
-            requestId: context.requestId,
-          },
-        );
+      await this.individualCustomerWriteRepository.insertAccessLog(prisma, context.tenantSchema, {
+        customerId,
+        profileStoreId: customer.profileStoreId,
+        talentId,
+        action: CustomerAction.UPDATE,
+        fieldChanges: JSON.stringify(dto),
+        userId: context.userId,
+        userName: context.userName,
+        ipAddress: context.ipAddress,
+        userAgent: context.userAgent,
+        requestId: context.requestId,
+      });
 
-        return result;
-      },
-    );
+      return result;
+    });
 
     return buildIndividualCustomerUpdateResult(updated);
   }
-  private async verifyAccess(
-    customerId: string,
-    talentId: string,
-    context: RequestContext,
-  ) {
+  private async verifyAccess(customerId: string, talentId: string, context: RequestContext) {
     return this.customerArchiveAccessService.requireCustomerArchiveAccess(
       customerId,
       talentId,
       context,
       {
         expectedProfileType: ProfileType.INDIVIDUAL,
-      },
+      }
     );
   }
 }

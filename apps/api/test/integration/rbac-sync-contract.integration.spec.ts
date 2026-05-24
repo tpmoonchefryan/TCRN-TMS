@@ -1,9 +1,9 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 // Regression proof for repairing drifted RBAC rows in an existing tenant schema
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { PrismaClient } from '@tcrn/database';
 import { createTestTenantFixture, type TenantFixture } from '@tcrn/shared';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import {
   getSchemaCounts,
@@ -90,7 +90,7 @@ describe('RBAC Contract Sync Integration', () => {
     const [customerExportBefore] = await prisma.$queryRawUnsafe<Array<{ count: bigint }>>(
       `SELECT COUNT(*)::bigint AS count
        FROM "${schemaName}".resource
-       WHERE code = 'customer.export'`,
+       WHERE code = 'customer.export'`
     );
     expect(Number(customerExportBefore?.count ?? 0)).toBe(0);
 
@@ -99,7 +99,7 @@ describe('RBAC Contract Sync Integration', () => {
     >(
       `SELECT module, is_active AS "isActive"
        FROM "${schemaName}".resource
-       WHERE code = 'talent.marshmallow'`,
+       WHERE code = 'talent.marshmallow'`
     );
     expect(marshmallowBefore).toEqual({
       module: 'customer',
@@ -109,7 +109,7 @@ describe('RBAC Contract Sync Integration', () => {
     const [tenantAdminBefore] = await prisma.$queryRawUnsafe<Array<{ isActive: boolean }>>(
       `SELECT is_active AS "isActive"
        FROM "${schemaName}".role
-       WHERE code = 'TENANT_ADMIN'`,
+       WHERE code = 'TENANT_ADMIN'`
     );
     expect(tenantAdminBefore?.isActive).toBe(false);
 
@@ -127,7 +127,7 @@ describe('RBAC Contract Sync Integration', () => {
     >(
       `SELECT module, is_active AS "isActive"
        FROM "${schemaName}".resource
-       WHERE code = 'customer.export'`,
+       WHERE code = 'customer.export'`
     );
     expect(customerExportAfter).toEqual({
       module: 'customer',
@@ -139,7 +139,7 @@ describe('RBAC Contract Sync Integration', () => {
     >(
       `SELECT module, is_active AS "isActive"
        FROM "${schemaName}".resource
-       WHERE code = 'talent.marshmallow'`,
+       WHERE code = 'talent.marshmallow'`
     );
     expect(marshmallowAfter).toEqual({
       module: 'external',
@@ -151,7 +151,7 @@ describe('RBAC Contract Sync Integration', () => {
        FROM "${schemaName}".policy p
        JOIN "${schemaName}".resource r ON r.id = p.resource_id
        WHERE r.code = 'talent.marshmallow'
-         AND p.action = 'execute'`,
+         AND p.action = 'execute'`
     );
     expect(marshmallowExecutePolicy?.isActive).toBe(true);
 
@@ -163,11 +163,13 @@ describe('RBAC Contract Sync Integration', () => {
        JOIN "${schemaName}".resource r ON r.id = p.resource_id
        WHERE rl.code = 'CUSTOMER_MANAGER'
          AND r.code = 'customer.export'
-         AND p.action = 'write'`,
+         AND p.action = 'write'`
     );
     expect(customerManagerExportPolicy?.effect).toBe('grant');
 
-    const [contentManagerMarshmallowPolicy] = await prisma.$queryRawUnsafe<Array<{ effect: string }>>(
+    const [contentManagerMarshmallowPolicy] = await prisma.$queryRawUnsafe<
+      Array<{ effect: string }>
+    >(
       `SELECT rp.effect
        FROM "${schemaName}".role_policy rp
        JOIN "${schemaName}".role rl ON rl.id = rp.role_id
@@ -175,14 +177,14 @@ describe('RBAC Contract Sync Integration', () => {
        JOIN "${schemaName}".resource r ON r.id = p.resource_id
        WHERE rl.code = 'CONTENT_MANAGER'
          AND r.code = 'talent.marshmallow'
-         AND p.action = 'execute'`,
+         AND p.action = 'execute'`
     );
     expect(contentManagerMarshmallowPolicy?.effect).toBe('grant');
 
     const [tenantAdminAfter] = await prisma.$queryRawUnsafe<Array<{ isActive: boolean }>>(
       `SELECT is_active AS "isActive"
        FROM "${schemaName}".role
-       WHERE code = 'TENANT_ADMIN'`,
+       WHERE code = 'TENANT_ADMIN'`
     );
     expect(tenantAdminAfter?.isActive).toBe(true);
   });

@@ -1,6 +1,5 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 // Report Module Zod Schemas
-
 import { z } from 'zod';
 
 import { SUPPORTED_UI_LOCALES, type LocalizedText } from '../../constants/locale';
@@ -9,7 +8,14 @@ import { SUPPORTED_UI_LOCALES, type LocalizedText } from '../../constants/locale
 // Enums
 // ============================================================================
 export const ReportJobStatusSchema = z.enum([
-  'pending', 'running', 'success', 'consumed', 'expired', 'failed', 'retrying', 'cancelled'
+  'pending',
+  'running',
+  'success',
+  'consumed',
+  'expired',
+  'failed',
+  'retrying',
+  'cancelled',
 ]);
 export const ReportTypeSchema = z.enum(['mfr']);
 export const ReportFormatSchema = z.enum(['xlsx', 'csv']);
@@ -97,10 +103,14 @@ export const ReportDictionaryMultiSelectFilterFieldSchema = ReportFilterFieldBas
 
 export const ReportEnumSelectFilterFieldSchema = ReportFilterFieldBaseSchema.extend({
   type: z.literal('enum-select'),
-  options: z.array(z.object({
-    value: z.string().min(1),
-    label: ReportLocalizedTextSchema,
-  })).min(1),
+  options: z
+    .array(
+      z.object({
+        value: z.string().min(1),
+        label: ReportLocalizedTextSchema,
+      })
+    )
+    .min(1),
 });
 
 export const ReportDateRangeFilterFieldSchema = ReportFilterFieldBaseSchema.omit({
@@ -154,7 +164,9 @@ export type ReportPermissionRequirement = z.infer<typeof ReportPermissionRequire
 export type ReportCatalogAvailability = z.infer<typeof ReportCatalogAvailabilitySchema>;
 export type ReportFilterOptionSource = z.infer<typeof ReportFilterOptionSourceSchema>;
 export type ReportConfigFilterOptionSource = z.infer<typeof ReportConfigFilterOptionSourceSchema>;
-export type ReportDictionaryFilterOptionSource = z.infer<typeof ReportDictionaryFilterOptionSourceSchema>;
+export type ReportDictionaryFilterOptionSource = z.infer<
+  typeof ReportDictionaryFilterOptionSourceSchema
+>;
 export type ReportFilterField = z.infer<typeof ReportFilterFieldSchema>;
 export type ReportFilterSchema = z.infer<typeof ReportFilterSchemaSchema>;
 export type ReportCatalogItem = z.infer<typeof ReportCatalogItemSchema>;

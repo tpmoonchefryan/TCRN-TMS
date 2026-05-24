@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable, Logger } from '@nestjs/common';
+
 import { prisma } from '@tcrn/database';
 import {
   getRbacResourceDefinition,
@@ -39,7 +39,12 @@ export class PermissionSnapshotService {
   /**
    * Get snapshot key for a user's permissions at a specific scope
    */
-  private getSnapshotKey(tenantSchema: string, userId: string, scopeType?: ScopeType, scopeId?: string | null): string {
+  private getSnapshotKey(
+    tenantSchema: string,
+    userId: string,
+    scopeType?: ScopeType,
+    scopeId?: string | null
+  ): string {
     if (scopeType && scopeId) {
       return `perm:${tenantSchema}:${userId}:${scopeType}:${scopeId}`;
     }
@@ -52,52 +57,52 @@ export class PermissionSnapshotService {
   private async readPermissionFromSnapshot(
     key: string,
     resource: string,
-    action: string,
+    action: string
   ): Promise<boolean> {
     const permKey = `${resource}:${action}`;
-    
+
     // Check specific permission
     const value = await this.redisService.hget(key, permKey);
-    
+
     // Deny takes precedence - if explicitly denied, return false immediately
     if (value === 'deny') {
       return false;
     }
-    
+
     if (value === 'grant') {
       return true;
     }
-    
+
     // Check for resource-level admin permission
     const adminKey = `${resource}:admin`;
     const adminValue = await this.redisService.hget(key, adminKey);
-    
+
     if (adminValue === 'deny') {
       return false;
     }
-    
+
     if (adminValue === 'grant') {
       return true;
     }
-    
+
     // Check for global admin permission
     const globalAdminValue = await this.redisService.hget(key, '*:admin');
-    
+
     if (globalAdminValue === 'deny') {
       return false;
     }
-    
+
     if (globalAdminValue === 'grant') {
       return true;
     }
 
     // Check for superuser permission (*:*)
     const superuserValue = await this.redisService.hget(key, '*:*');
-    
+
     if (superuserValue === 'deny') {
       return false;
     }
-    
+
     if (superuserValue === 'grant') {
       return true;
     }
@@ -129,7 +134,12 @@ export class PermissionSnapshotService {
     const exists = await this.redisService.exists(key);
     if (!exists) {
       this.logger.log(`Snapshot missing for ${key}, calculating...`);
-      await this.calculateAndStoreSnapshot(tenantSchema, userId, effectiveScopeType, effectiveScopeId);
+      await this.calculateAndStoreSnapshot(
+        tenantSchema,
+        userId,
+        effectiveScopeType,
+        effectiveScopeId
+      );
     }
 
     return this.readPermissionFromSnapshot(key, resource, action);
@@ -147,7 +157,12 @@ export class PermissionSnapshotService {
     const effectiveScopeId = scopeType ? scopeId : null;
     const key = this.getSnapshotKey(tenantSchema, userId, effectiveScopeType, effectiveScopeId);
 
-    await this.calculateAndStoreSnapshot(tenantSchema, userId, effectiveScopeType, effectiveScopeId);
+    await this.calculateAndStoreSnapshot(
+      tenantSchema,
+      userId,
+      effectiveScopeType,
+      effectiveScopeId
+    );
 
     return this.readPermissionFromSnapshot(key, resource, action);
   }
@@ -163,14 +178,14 @@ export class PermissionSnapshotService {
   ): Promise<Record<string, RbacRolePolicyEffect>> {
     const key = this.getSnapshotKey(tenantSchema, userId, scopeType, scopeId);
     const data = await this.redisService.hgetall(key);
-    
+
     const result: Record<string, RbacRolePolicyEffect> = {};
     for (const [k, v] of Object.entries(data)) {
       if ((v === 'grant' || v === 'deny') && this.shouldExposePermissionKey(k)) {
         result[k] = v;
       }
     }
-    
+
     return result;
   }
 
@@ -211,10 +226,10 @@ export class PermissionSnapshotService {
   ): Promise<void> {
     // Get scope chain (from target scope up to tenant)
     const scopeChain = await this.getScopeChain(tenantSchema, scopeType, scopeId);
-    
+
     // Get user's role assignments
     const assignments = await this.getUserRoleAssignments(tenantSchema, userId);
-    
+
     // Calculate effective permissions
     const permissions = await this.calculateEffectivePermissions(
       tenantSchema,
@@ -223,17 +238,17 @@ export class PermissionSnapshotService {
       scopeType,
       scopeId
     );
-    
+
     // Store in Redis
     const key = this.getSnapshotKey(tenantSchema, userId, scopeType, scopeId);
     await this.redisService.del(key);
-    
+
     if (Object.keys(permissions).length > 0) {
       await this.redisService.hmset(key, permissions);
       // Set TTL of 24 hours as a safety net
       await this.redisService.expire(key, 86400);
     }
-    
+
     this.logger.debug(`Updated permission snapshot: ${key}`);
   }
 
@@ -246,62 +261,76 @@ export class PermissionSnapshotService {
     scopeId: string | null
   ): Promise<Array<{ type: ScopeType; id: string | null; path?: string }>> {
     const chain: Array<{ type: ScopeType; id: string | null; path?: string }> = [];
-    
+
     // Always start with tenant
     chain.push({ type: 'tenant', id: null });
-    
+
     if (scopeType === 'tenant') {
       return chain;
     }
-    
+
     if (scopeType === 'subsidiary' && scopeId) {
       // Get subsidiary path and traverse up
-      const subsidiaries = await prisma.$queryRawUnsafe<Array<{ id: string; path: string }>>(`
+      const subsidiaries = await prisma.$queryRawUnsafe<Array<{ id: string; path: string }>>(
+        `
         SELECT id, path FROM "${tenantSchema}".subsidiary WHERE id = CAST($1 AS uuid)
-      `, scopeId);
-      
+      `,
+        scopeId
+      );
+
       if (subsidiaries.length > 0) {
         const path = subsidiaries[0].path;
         // Get all ancestors based on path
-        const ancestors = await prisma.$queryRawUnsafe<Array<{ id: string; path: string }>>(`
+        const ancestors = await prisma.$queryRawUnsafe<Array<{ id: string; path: string }>>(
+          `
           SELECT id, path FROM "${tenantSchema}".subsidiary 
           WHERE $1 LIKE path || '%' AND path != $1
           ORDER BY length(path)
-        `, path);
-        
+        `,
+          path
+        );
+
         for (const anc of ancestors) {
           chain.push({ type: 'subsidiary', id: anc.id, path: anc.path });
         }
         chain.push({ type: 'subsidiary', id: scopeId, path });
       }
     }
-    
+
     if (scopeType === 'talent' && scopeId) {
       // Get talent and its subsidiary chain
-      const talents = await prisma.$queryRawUnsafe<Array<{ id: string; subsidiaryId: string | null; path: string }>>(`
+      const talents = await prisma.$queryRawUnsafe<
+        Array<{ id: string; subsidiaryId: string | null; path: string }>
+      >(
+        `
         SELECT id, subsidiary_id as "subsidiaryId", path FROM "${tenantSchema}".talent WHERE id = CAST($1 AS uuid)
-      `, scopeId);
-      
+      `,
+        scopeId
+      );
+
       if (talents.length > 0) {
         const talent = talents[0];
-        
+
         if (talent.subsidiaryId) {
           // Get subsidiary chain
-          const subsidiaries = await prisma.$queryRawUnsafe<Array<{ id: string; path: string }>>(`
+          const subsidiaries = await prisma.$queryRawUnsafe<Array<{ id: string; path: string }>>(
+            `
             SELECT id, path FROM "${tenantSchema}".subsidiary 
             WHERE $1 LIKE path || '%'
             ORDER BY length(path)
-          `, talent.path);
-          
+          `,
+            talent.path
+          );
+
           for (const sub of subsidiaries) {
             chain.push({ type: 'subsidiary', id: sub.id, path: sub.path });
           }
         }
-        
+
         chain.push({ type: 'talent', id: scopeId, path: talent.path });
       }
     }
-    
+
     return chain;
   }
 
@@ -312,12 +341,15 @@ export class PermissionSnapshotService {
     tenantSchema: string,
     userId: string
   ): Promise<RoleAssignment[]> {
-    const assignments = await prisma.$queryRawUnsafe<Array<{
-      roleId: string;
-      scopeType: ScopeType;
-      scopeId: string | null;
-      inherit: boolean;
-    }>>(`
+    const assignments = await prisma.$queryRawUnsafe<
+      Array<{
+        roleId: string;
+        scopeType: ScopeType;
+        scopeId: string | null;
+        inherit: boolean;
+      }>
+    >(
+      `
       SELECT 
         role_id as "roleId",
         scope_type as "scopeType",
@@ -326,8 +358,10 @@ export class PermissionSnapshotService {
       FROM "${tenantSchema}".user_role
       WHERE user_id = CAST($1 AS uuid)
         AND (expires_at IS NULL OR expires_at > NOW())
-    `, userId);
-    
+    `,
+      userId
+    );
+
     return assignments;
   }
 
@@ -335,11 +369,9 @@ export class PermissionSnapshotService {
    * Get role permissions with effect from role_policy table
    * Effect is now stored in role_policy, not in policy
    */
-  private async getRolePermissions(
-    tenantSchema: string,
-    roleId: string
-  ): Promise<Permission[]> {
-    const permissions = await prisma.$queryRawUnsafe<Permission[]>(`
+  private async getRolePermissions(tenantSchema: string, roleId: string): Promise<Permission[]> {
+    const permissions = await prisma.$queryRawUnsafe<Permission[]>(
+      `
       SELECT 
         r.code as "resourceCode",
         p.action,
@@ -348,7 +380,9 @@ export class PermissionSnapshotService {
       JOIN "${tenantSchema}".policy p ON rp.policy_id = p.id
       JOIN "${tenantSchema}".resource r ON p.resource_id = r.id
       WHERE rp.role_id = CAST($1 AS uuid) AND p.is_active = true
-    `, roleId);
+    `,
+      roleId
+    );
 
     return permissions.filter((permission) => this.shouldStoreRuntimePermission(permission));
   }
@@ -373,10 +407,10 @@ export class PermissionSnapshotService {
 
   /**
    * Calculate effective permissions for a user at a specific scope
-   * 
+   *
    * Three-state permission model: Grant | Deny | Unset (no record)
    * Priority: Deny > Grant > Unset
-   * 
+   *
    * - If ANY role has Deny for a permission, the final result is Deny
    * - If NO role has Deny and at least one has Grant, the final result is Grant
    * - If ALL roles have Unset (no record), the permission is not granted
@@ -393,56 +427,60 @@ export class PermissionSnapshotService {
     scopeChain.forEach((scope, idx) => {
       scopeIndex.set(`${scope.type}:${scope.id}`, idx);
     });
-    
+
     // Collect all permissions from all applicable roles
-    const permissionsByKey = new Map<string, Array<{
-      effect: RbacRolePolicyEffect;
-      scopeIndex: number;
-      isDirect: boolean;
-    }>>();
+    const permissionsByKey = new Map<
+      string,
+      Array<{
+        effect: RbacRolePolicyEffect;
+        scopeIndex: number;
+        isDirect: boolean;
+      }>
+    >();
 
     // console.log(`[PermissionDebug] Calculating for user scopes:`, scopeChain);
     // console.log(`[PermissionDebug] Found assignments:`, assignments);
-    
+
     for (const assignment of assignments) {
       const assignmentScopeKey = `${assignment.scopeType}:${assignment.scopeId}`;
       let assignmentScopeIdx = scopeIndex.get(assignmentScopeKey);
-      
+
       // Fallback for tenant scope: if tenant:UUID not found, check tenant:null
       // This ensures tenant-level roles apply to the current tenant context
       if (assignmentScopeIdx === undefined && assignment.scopeType === 'tenant') {
         assignmentScopeIdx = scopeIndex.get('tenant:null');
       }
-      
+
       // Skip if assignment is not in the scope chain
       if (assignmentScopeIdx === undefined) {
         continue;
       }
-      
+
       // Check if this assignment applies to target scope
       // For tenant scope, we treat null and specific ID as matching because
       // tenant scope effectively means "the current tenant context"
       const isTenantMatch = assignment.scopeType === 'tenant' && targetScopeType === 'tenant';
-      
-      const isDirect = (assignment.scopeType === targetScopeType && 
-                       assignment.scopeId === targetScopeId) || isTenantMatch;
-      
+
+      const isDirect =
+        (assignment.scopeType === targetScopeType && assignment.scopeId === targetScopeId) ||
+        isTenantMatch;
+
       // If inherit=false, only apply to direct scope
       if (!assignment.inherit && !isDirect) {
         continue;
       }
-      
+
       // Get role permissions
       const rolePermissions = await this.getRolePermissions(tenantSchema, assignment.roleId);
       // console.log(`[PermissionDebug] Role ${assignment.roleId} permissions:`, rolePermissions);
-      
+
       for (const perm of rolePermissions) {
         const key = `${perm.resourceCode}:${perm.action}`;
-        
+
         if (!permissionsByKey.has(key)) {
           permissionsByKey.set(key, []);
         }
-        
+
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         permissionsByKey.get(key)!.push({
           effect: perm.effect,
@@ -451,23 +489,23 @@ export class PermissionSnapshotService {
         });
       }
     }
-    
+
     // Resolve final permissions using three-state priority:
     // Deny > Grant > Unset
     // If ANY entry has Deny, result is Deny
     // Otherwise, if ANY entry has Grant, result is Grant
     // If no entries (all Unset), permission is not included in result
     const result: Record<string, RbacRolePolicyEffect> = {};
-    
+
     for (const [key, entries] of permissionsByKey) {
       // Check if any entry has deny (deny takes precedence regardless of scope)
-      const hasDeny = entries.some(e => e.effect === 'deny');
-      
+      const hasDeny = entries.some((e) => e.effect === 'deny');
+
       if (hasDeny) {
         result[key] = 'deny';
       } else {
         // At least one grant exists (otherwise entries would be empty)
-        const hasGrant = entries.some(e => e.effect === 'grant');
+        const hasGrant = entries.some((e) => e.effect === 'grant');
         if (hasGrant) {
           result[key] = 'grant';
         }
@@ -475,7 +513,7 @@ export class PermissionSnapshotService {
         // the permission is not included in the result (equivalent to unset)
       }
     }
-    
+
     return result;
   }
 
@@ -484,18 +522,23 @@ export class PermissionSnapshotService {
    */
   async refreshUserSnapshots(tenantSchema: string, userId: string): Promise<void> {
     // Get all scopes where user has roles
-    const scopes = await prisma.$queryRawUnsafe<Array<{
-      scopeType: ScopeType;
-      scopeId: string | null;
-    }>>(`
+    const scopes = await prisma.$queryRawUnsafe<
+      Array<{
+        scopeType: ScopeType;
+        scopeId: string | null;
+      }>
+    >(
+      `
       SELECT DISTINCT scope_type as "scopeType", scope_id as "scopeId"
       FROM "${tenantSchema}".user_role
       WHERE user_id = CAST($1 AS uuid)
-    `, userId);
-    
+    `,
+      userId
+    );
+
     // Calculate snapshot for tenant level
     await this.calculateAndStoreSnapshot(tenantSchema, userId, 'tenant', null);
-    
+
     // Calculate snapshots for each specific scope
     for (const scope of scopes) {
       if (scope.scopeType !== 'tenant') {
@@ -509,16 +552,19 @@ export class PermissionSnapshotService {
    */
   async refreshRoleSnapshots(tenantSchema: string, roleId: string): Promise<number> {
     // Get all users with this role
-    const users = await prisma.$queryRawUnsafe<Array<{ userId: string }>>(`
+    const users = await prisma.$queryRawUnsafe<Array<{ userId: string }>>(
+      `
       SELECT DISTINCT user_id as "userId"
       FROM "${tenantSchema}".user_role
       WHERE role_id = CAST($1 AS uuid)
-    `, roleId);
-    
+    `,
+      roleId
+    );
+
     for (const user of users) {
       await this.refreshUserSnapshots(tenantSchema, user.userId);
     }
-    
+
     return users.length;
   }
 
@@ -528,13 +574,13 @@ export class PermissionSnapshotService {
   async deleteUserSnapshots(tenantSchema: string, userId: string): Promise<void> {
     const pattern = `perm:${tenantSchema}:${userId}:*`;
     const keys = await this.redisService.keys(pattern);
-    
+
     if (keys.length > 0) {
       for (const key of keys) {
         await this.redisService.del(key);
       }
     }
-    
+
     // Also delete the base key
     await this.redisService.del(`perm:${tenantSchema}:${userId}`);
   }

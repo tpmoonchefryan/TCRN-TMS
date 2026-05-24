@@ -1,8 +1,8 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { ConflictException } from '@nestjs/common';
-import { createLocalizedText, ErrorCodes } from '@tcrn/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { createLocalizedText, ErrorCodes } from '@tcrn/shared';
 
 import { SubsidiaryWriteRepository } from '../infrastructure/subsidiary-write.repository';
 import { SubsidiaryReadApplicationService } from './subsidiary-read.service';
@@ -29,7 +29,7 @@ describe('SubsidiaryWriteApplicationService', () => {
 
     service = new SubsidiaryWriteApplicationService(
       mockSubsidiaryWriteRepository as unknown as SubsidiaryWriteRepository,
-      mockSubsidiaryReadApplicationService as unknown as SubsidiaryReadApplicationService,
+      mockSubsidiaryReadApplicationService as unknown as SubsidiaryReadApplicationService
     );
   });
 
@@ -53,8 +53,8 @@ describe('SubsidiaryWriteApplicationService', () => {
           code: 'TOKYO',
           name: createLocalizedText({ en: 'Tokyo Branch' }),
         },
-        'user-1',
-      ),
+        'user-1'
+      )
     ).resolves.toEqual({
       id: 'subsidiary-1',
       code: 'TOKYO',
@@ -68,7 +68,7 @@ describe('SubsidiaryWriteApplicationService', () => {
         path: '/HQ/TOKYO/',
         depth: 2,
       }),
-      'user-1',
+      'user-1'
     );
   });
 
@@ -86,8 +86,8 @@ describe('SubsidiaryWriteApplicationService', () => {
           name: { en: 'Tokyo Branch' },
           version: 2,
         },
-        'user-1',
-      ),
+        'user-1'
+      )
     ).rejects.toMatchObject({
       response: {
         code: ErrorCodes.RES_VERSION_MISMATCH,
@@ -98,7 +98,7 @@ describe('SubsidiaryWriteApplicationService', () => {
 
   it('preserves the retired move fail-closed contract', async () => {
     await expect(
-      service.move('subsidiary-1', 'tenant_test', 'parent-2', 1, 'user-1'),
+      service.move('subsidiary-1', 'tenant_test', 'parent-2', 1, 'user-1')
     ).rejects.toThrow(ConflictException);
   });
 
@@ -119,7 +119,7 @@ describe('SubsidiaryWriteApplicationService', () => {
     });
 
     await expect(
-      service.deactivate('subsidiary-1', 'tenant_test', true, 5, 'user-1'),
+      service.deactivate('subsidiary-1', 'tenant_test', true, 5, 'user-1')
     ).resolves.toEqual({
       subsidiaries: 4,
       talents: 9,
@@ -137,9 +137,7 @@ describe('SubsidiaryWriteApplicationService', () => {
         version: 7,
       });
 
-    await expect(
-      service.reactivate('subsidiary-1', 'tenant_test', 6, 'user-1'),
-    ).resolves.toEqual({
+    await expect(service.reactivate('subsidiary-1', 'tenant_test', 6, 'user-1')).resolves.toEqual({
       id: 'subsidiary-1',
       code: 'TOKYO',
       version: 7,

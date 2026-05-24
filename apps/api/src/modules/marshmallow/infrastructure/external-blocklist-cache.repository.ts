@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable } from '@nestjs/common';
 
 import { RedisService } from '../../redis';
@@ -13,10 +12,7 @@ import { OwnerType } from '../dto/external-blocklist.dto';
 export class ExternalBlocklistCacheRepository {
   constructor(private readonly redisService: RedisService) {}
 
-  async clearForOwner(
-    ownerType: OwnerType,
-    ownerId: string | null | undefined,
-  ): Promise<void> {
+  async clearForOwner(ownerType: OwnerType, ownerId: string | null | undefined): Promise<void> {
     if (ownerType === OwnerType.TALENT && ownerId) {
       await this.redisService.del(`${EXTERNAL_BLOCKLIST_CACHE_KEY_PREFIX}${ownerId}`);
       return;

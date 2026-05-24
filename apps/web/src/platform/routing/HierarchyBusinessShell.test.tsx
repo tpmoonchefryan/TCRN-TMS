@@ -79,7 +79,7 @@ describe('HierarchyBusinessShell', () => {
           >
             <div>Hierarchy content</div>
           </HierarchyBusinessShell>
-        </UiLocaleProvider>,
+        </UiLocaleProvider>
       );
 
       if (scopeType === 'subsidiary') {
@@ -89,11 +89,11 @@ describe('HierarchyBusinessShell', () => {
       }
       expect(screen.getByRole('link', { name: 'Organization Structure' })).toHaveAttribute(
         'href',
-        '/tenant/tenant-1/organization-structure',
+        '/tenant/tenant-1/organization-structure'
       );
 
       fireEvent.click(screen.getByRole('link', { name: /Business overview/i }));
       expect(onNavigate).toHaveBeenCalledTimes(1);
-    },
+    }
   );
 });

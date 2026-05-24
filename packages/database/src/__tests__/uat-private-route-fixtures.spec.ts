@@ -1,5 +1,6 @@
-import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
+
+import assert from 'node:assert/strict';
 
 import {
   buildUatPrivateFixtureRoutes,
@@ -36,7 +37,7 @@ describe('UAT private route fixtures', () => {
         firstCustomer: '/tenant/tenant-1/talent/talent-1/customers/customer-1',
         homepageManagement: '/tenant/tenant-1/talent/talent-1/homepage',
         publicHomepage: '/uat_corp/talent_sakura/homepage',
-      },
+      }
     );
   });
 
@@ -47,7 +48,7 @@ describe('UAT private route fixtures', () => {
         subsidiaryId: 'subsidiary-1',
         talentId: 'talent-1',
       }).firstCustomer,
-      null,
+      null
     );
   });
 });

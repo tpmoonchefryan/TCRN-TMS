@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { ConfigService } from '@nestjs/config';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -28,7 +27,7 @@ describe('EmailConfigService', () => {
     service = new EmailConfigService(
       {} as DatabaseService,
       {} as ConfigService,
-      mockEmailConfigApplicationService as unknown as EmailConfigApplicationService,
+      mockEmailConfigApplicationService as unknown as EmailConfigApplicationService
     );
   });
 

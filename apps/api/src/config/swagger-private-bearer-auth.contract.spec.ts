@@ -1,5 +1,4 @@
 import 'reflect-metadata';
-
 import { describe, expect, it } from 'vitest';
 
 import { CustomerController } from '../modules/customer/controllers/customer.controller';
@@ -72,7 +71,7 @@ const PUBLIC_OR_INTERNAL_CONTROLLERS = [
 describe('Swagger private-controller bearer-auth contract', () => {
   it.each(PRIVATE_CONTROLLERS)('documents JWT bearer auth for %p', (controllerClass) => {
     expect(Reflect.getMetadata(API_SECURITY_METADATA_KEY, controllerClass)).toEqual(
-      expect.arrayContaining([{ bearer: [] }]),
+      expect.arrayContaining([{ bearer: [] }])
     );
   });
 
@@ -80,6 +79,6 @@ describe('Swagger private-controller bearer-auth contract', () => {
     'does not document JWT bearer auth for %p',
     (controllerClass) => {
       expect(Reflect.getMetadata(API_SECURITY_METADATA_KEY, controllerClass)).toBeUndefined();
-    },
+    }
   );
 });

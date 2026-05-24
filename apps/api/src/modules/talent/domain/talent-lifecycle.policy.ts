@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import {
   getReadinessAction,
   type TalentData,
@@ -15,10 +14,7 @@ export const buildTalentPublishReadiness = (params: {
   const blockers: TalentPublishReadiness['blockers'] = [];
   const warnings: TalentPublishReadiness['warnings'] = [];
 
-  if (
-    params.talent.lifecycleStatus !== 'published' &&
-    !params.hasReadyCustomerArchive
-  ) {
+  if (params.talent.lifecycleStatus !== 'published' && !params.hasReadyCustomerArchive) {
     blockers.push({
       code: 'PROFILE_STORE_REQUIRED',
       message: 'Talent must be bound to an active profile store before publish.',

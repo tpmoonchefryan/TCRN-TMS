@@ -1,8 +1,8 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import type { Job } from 'bullmq';
-import { createLocalizedText } from '@tcrn/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { createLocalizedText } from '@tcrn/shared';
 
 import { type ReportJobData, reportJobProcessor, type ReportJobResult } from '../report.job';
 
@@ -111,9 +111,7 @@ describe('reportJobProcessor', () => {
       updateProgress: vi.fn(),
     } as unknown as Job<ReportJobData, ReportJobResult>;
 
-    mockPrisma.$queryRawUnsafe
-      .mockResolvedValueOnce([{ count: 1n }])
-      .mockResolvedValueOnce([
+    mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([{ count: 1n }]).mockResolvedValueOnce([
       {
         customer_nickname: 'Customer A',
         profile_type: 'individual',
@@ -146,7 +144,9 @@ describe('reportJobProcessor', () => {
     expect(result.rowCount).toBe(1);
     expect(mockJob.updateProgress).toHaveBeenCalledWith(100);
     expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalledTimes(2);
-    expect(mockPrisma.$queryRawUnsafe.mock.calls[0]?.[0]).toContain('FROM "tenant_test".membership_record');
+    expect(mockPrisma.$queryRawUnsafe.mock.calls[0]?.[0]).toContain(
+      'FROM "tenant_test".membership_record'
+    );
     expect(mockPrisma.$queryRawUnsafe.mock.calls[1]?.[0]).toContain('LIMIT 1000');
 
     expect(mockMinioClient.putObject).toHaveBeenCalledWith(
@@ -154,7 +154,7 @@ describe('reportJobProcessor', () => {
       expect.stringMatching(/^tenant_test\/report-job-1\/MFR_tenant-1_.+\.xlsx$/),
       { stream: true },
       256,
-      { 'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' },
+      { 'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }
     );
 
     expect(mockPrisma.$executeRawUnsafe).toHaveBeenCalledTimes(3);
@@ -162,7 +162,7 @@ describe('reportJobProcessor', () => {
     expect(mockPrisma.$executeRawUnsafe.mock.calls[1]?.[0]).toContain('updated_at = NOW()');
     expect(mockPrisma.$executeRawUnsafe.mock.calls[2]?.[0]).toContain('updated_at = NOW()');
     expect(mockFs.unlinkSync).toHaveBeenCalledWith(
-      expect.stringContaining('/mfr_report-job-1.xlsx'),
+      expect.stringContaining('/mfr_report-job-1.xlsx')
     );
   });
 
@@ -176,12 +176,12 @@ describe('reportJobProcessor', () => {
     expect(mockFs.writeFileSync).toHaveBeenCalledWith(
       expect.stringContaining('/mfr_report-job-1.csv'),
       expect.stringContaining('Nickname,Type,Platform'),
-      'utf8',
+      'utf8'
     );
     expect(mockFs.appendFileSync).toHaveBeenCalledWith(
       expect.stringContaining('/mfr_report-job-1.csv'),
       expect.stringContaining('Customer A,individual,YouTube'),
-      'utf8',
+      'utf8'
     );
     expect(mockExcel.workbook.addWorksheet).not.toHaveBeenCalled();
     expect(mockMinioClient.putObject).toHaveBeenCalledWith(
@@ -189,7 +189,7 @@ describe('reportJobProcessor', () => {
       expect.stringMatching(/^tenant_test\/report-job-1\/MFR_tenant-1_.+\.csv$/),
       { stream: true },
       256,
-      { 'Content-Type': 'text/csv' },
+      { 'Content-Type': 'text/csv' }
     );
   });
 
@@ -205,7 +205,7 @@ describe('reportJobProcessor', () => {
     expect(mockFs.writeFileSync).toHaveBeenCalledWith(
       expect.stringContaining('/mfr_report-job-1.csv'),
       expect.stringContaining('暱稱,類型,平台'),
-      'utf8',
+      'utf8'
     );
   });
 
@@ -221,7 +221,7 @@ describe('reportJobProcessor', () => {
     expect(mockFs.writeFileSync).toHaveBeenCalledWith(
       expect.stringContaining('/mfr_report-job-1.csv'),
       expect.stringContaining('昵称,类型,平台'),
-      'utf8',
+      'utf8'
     );
   });
 
@@ -237,7 +237,7 @@ describe('reportJobProcessor', () => {
     expect(mockFs.writeFileSync).toHaveBeenCalledWith(
       expect.stringContaining('/mfr_report-job-1.csv'),
       expect.stringContaining('Pseudo,Type,Plateforme'),
-      'utf8',
+      'utf8'
     );
   });
 
@@ -248,7 +248,7 @@ describe('reportJobProcessor', () => {
     };
 
     await expect(reportJobProcessor(mockJob)).rejects.toThrow(
-      'PII-inclusive report generation has been retired from TMS. Use TCRN PII Platform report flow instead.',
+      'PII-inclusive report generation has been retired from TMS. Use TCRN PII Platform report flow instead.'
     );
 
     expect(mockPrisma.$queryRawUnsafe).not.toHaveBeenCalled();
@@ -266,7 +266,7 @@ describe('reportJobProcessor', () => {
     expect(mockPrisma.$executeRawUnsafe.mock.calls[2]?.[0]).toContain('updated_at = NOW()');
     expect(mockPrisma.$executeRawUnsafe.mock.calls[2]?.[0]).toContain('error_message = $3');
     expect(mockFs.unlinkSync).toHaveBeenCalledWith(
-      expect.stringContaining('/mfr_report-job-1.xlsx'),
+      expect.stringContaining('/mfr_report-job-1.xlsx')
     );
   });
 });

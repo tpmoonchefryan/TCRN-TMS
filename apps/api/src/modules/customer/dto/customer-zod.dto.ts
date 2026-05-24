@@ -1,29 +1,31 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 // Customer Module Zod DTOs - Using createZodDto for Swagger integration
+import { createZodDto } from 'nestjs-zod';
 
 import {
-    BatchOperationSchema,
-    CreateCompanyCustomerSchema,
-    CreateExternalIdSchema,
-    CreateIndividualCustomerSchema,
-    CreateMembershipSchema,
-    CreatePlatformIdentitySchema,
-    CustomerListQuerySchema,
-    DeactivateCustomerSchema,
-    MembershipListQuerySchema,
-    PlatformIdentityHistoryQuerySchema,
-    UpdateCompanyCustomerSchema,
-    UpdateIndividualCustomerSchema,
-    UpdateIndividualPiiSchema,
-    UpdateMembershipSchema,
-    UpdatePlatformIdentitySchema,
+  BatchOperationSchema,
+  CreateCompanyCustomerSchema,
+  CreateExternalIdSchema,
+  CreateIndividualCustomerSchema,
+  CreateMembershipSchema,
+  CreatePlatformIdentitySchema,
+  CustomerListQuerySchema,
+  DeactivateCustomerSchema,
+  MembershipListQuerySchema,
+  PlatformIdentityHistoryQuerySchema,
+  UpdateCompanyCustomerSchema,
+  UpdateIndividualCustomerSchema,
+  UpdateIndividualPiiSchema,
+  UpdateMembershipSchema,
+  UpdatePlatformIdentitySchema,
 } from '@tcrn/shared';
-import { createZodDto } from 'nestjs-zod';
 
 // Query DTOs
 export class CustomerListQueryZodDto extends createZodDto(CustomerListQuerySchema) {}
 export class MembershipListQueryZodDto extends createZodDto(MembershipListQuerySchema) {}
-export class PlatformIdentityHistoryQueryZodDto extends createZodDto(PlatformIdentityHistoryQuerySchema) {}
+export class PlatformIdentityHistoryQueryZodDto extends createZodDto(
+  PlatformIdentityHistoryQuerySchema
+) {}
 
 // Individual Customer DTOs
 export class CreateIndividualCustomerZodDto extends createZodDto(CreateIndividualCustomerSchema) {}

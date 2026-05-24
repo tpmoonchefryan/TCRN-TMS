@@ -1,12 +1,8 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
-import {
-  BadRequestException,
-  ConflictException,
-  NotFoundException,
-} from '@nestjs/common';
-import { createLocalizedText } from '@tcrn/shared';
+import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { createLocalizedText } from '@tcrn/shared';
 
 import { TalentWriteRepository } from '../infrastructure/talent-write.repository';
 import { TalentReadService } from './talent-read.service';
@@ -65,8 +61,8 @@ describe('TalentWriteService', () => {
           name: createLocalizedText({ en: 'Sora' }),
           displayName: 'Sora',
         },
-        'user-1',
-      ),
+        'user-1'
+      )
     ).resolves.toMatchObject({
       path: '/TOKYO/SORA/',
     });
@@ -77,7 +73,7 @@ describe('TalentWriteService', () => {
         artistStageId: 'stage-1',
         lifecycleStatus: 'draft',
       }),
-      'user-1',
+      'user-1'
     );
   });
 
@@ -94,8 +90,8 @@ describe('TalentWriteService', () => {
           name: createLocalizedText({ en: 'Sora' }),
           displayName: 'Sora',
         },
-        'user-1',
-      ),
+        'user-1'
+      )
     ).rejects.toThrow(BadRequestException);
   });
 
@@ -113,8 +109,8 @@ describe('TalentWriteService', () => {
           name: createLocalizedText({ en: 'Sora' }),
           displayName: 'Sora',
         },
-        'user-1',
-      ),
+        'user-1'
+      )
     ).rejects.toThrow(BadRequestException);
   });
 
@@ -140,8 +136,8 @@ describe('TalentWriteService', () => {
           name: createLocalizedText({ en: 'Sora' }),
           displayName: 'Sora',
         },
-        'user-1',
-      ),
+        'user-1'
+      )
     ).rejects.toThrow(NotFoundException);
   });
 
@@ -162,8 +158,8 @@ describe('TalentWriteService', () => {
           version: 2,
           displayName: 'Updated',
         },
-        'user-1',
-      ),
+        'user-1'
+      )
     ).rejects.toThrow(BadRequestException);
   });
 
@@ -190,8 +186,8 @@ describe('TalentWriteService', () => {
           version: 1,
           homepagePath: 'sora-next',
         },
-        'user-1',
-      ),
+        'user-1'
+      )
     ).resolves.toMatchObject({
       homepagePath: 'sora-next',
       version: 2,
@@ -209,9 +205,7 @@ describe('TalentWriteService', () => {
       id: 'talent-123',
     } as never);
 
-    await expect(
-      service.delete('talent-123', 'tenant_test', { version: 1 }),
-    ).resolves.toEqual({
+    await expect(service.delete('talent-123', 'tenant_test', { version: 1 })).resolves.toEqual({
       id: 'talent-123',
       deleted: true,
     });
@@ -224,9 +218,9 @@ describe('TalentWriteService', () => {
       version: 1,
     } as never);
 
-    await expect(
-      service.delete('talent-123', 'tenant_test', { version: 1 }),
-    ).rejects.toThrow(ConflictException);
+    await expect(service.delete('talent-123', 'tenant_test', { version: 1 })).rejects.toThrow(
+      ConflictException
+    );
   });
 
   it('fails closed when protected dependencies already exist for draft delete', async () => {
@@ -248,8 +242,8 @@ describe('TalentWriteService', () => {
       },
     } as never);
 
-    await expect(
-      service.delete('talent-123', 'tenant_test', { version: 1 }),
-    ).rejects.toThrow(ConflictException);
+    await expect(service.delete('talent-123', 'tenant_test', { version: 1 })).rejects.toThrow(
+      ConflictException
+    );
   });
 });

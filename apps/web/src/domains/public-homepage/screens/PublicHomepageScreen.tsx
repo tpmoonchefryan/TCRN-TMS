@@ -1,22 +1,16 @@
 'use client';
 
-import {
-  DEFAULT_THEME,
-  type ThemeConfig,
-} from '@tcrn/shared';
 import { Sparkles } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
+
+import { DEFAULT_THEME, type ThemeConfig } from '@tcrn/shared';
 
 import {
   type PublicHomepageResponse,
   readPublicHomepage,
 } from '@/domains/public-homepage/api/public-homepage.api';
-import {
-  PublicHomepageProjectionRenderer,
-} from '@/domains/public-homepage/components/PublicHomepageProjectionRenderer';
-import {
-  getHomepageCanvasStyle,
-} from '@/domains/public-homepage/components/PublicHomepageRenderer';
+import { PublicHomepageProjectionRenderer } from '@/domains/public-homepage/components/PublicHomepageProjectionRenderer';
+import { getHomepageCanvasStyle } from '@/domains/public-homepage/components/PublicHomepageRenderer';
 import {
   PublicPresenceBadge,
   PublicPresenceShell,
@@ -93,7 +87,10 @@ export function PublicHomepageScreen({
 
   if (loading && !data) {
     return (
-      <PublicPresenceShell contentClassName="flex min-h-[70vh] items-center" decorationDensity="calm">
+      <PublicPresenceShell
+        contentClassName="flex min-h-[70vh] items-center"
+        decorationDensity="calm"
+      >
         <div className="w-full space-y-5">
           <PublicPresenceSurface className="p-8">
             <PublicPresenceBadge icon={<Sparkles />} tone="rose">
@@ -126,7 +123,9 @@ export function PublicHomepageScreen({
       >
         <PublicPresenceStateView
           tone={isUnavailable ? 'unavailable' : 'error'}
-          title={isUnavailable ? copy.publicHomepage.unavailableTitle : copy.publicHomepage.failedTitle}
+          title={
+            isUnavailable ? copy.publicHomepage.unavailableTitle : copy.publicHomepage.failedTitle
+          }
           description={description}
         />
       </PublicPresenceShell>

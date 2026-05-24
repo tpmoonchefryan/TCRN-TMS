@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable, Logger } from '@nestjs/common';
+
 import { Prisma } from '@tcrn/database';
 import {
   type ChangeAction,
@@ -22,7 +22,7 @@ export class ChangeLogService {
 
   constructor(
     private readonly databaseService: DatabaseService,
-    private readonly maskingService: LogMaskingService,
+    private readonly maskingService: LogMaskingService
   ) {}
 
   /**
@@ -31,23 +31,21 @@ export class ChangeLogService {
   async create(
     tx: Prisma.TransactionClient,
     data: CreateChangeLogDto,
-    context: RequestContext,
+    context: RequestContext
   ): Promise<void> {
     try {
       // 1. Calculate diff
       const diff = this.calculateDiff(data.oldValue ?? null, data.newValue);
 
       // 2. Apply masking
-      const maskedDiff = this.maskingService.maskChangeLogDiff(
-        data.objectType,
-        diff,
-      );
+      const maskedDiff = this.maskingService.maskChangeLogDiff(data.objectType, diff);
 
       // 3. Write to database using raw SQL for multi-tenancy support
       const schema = context.tenantSchema;
       if (schema) {
         // Use raw SQL to write to the correct tenant schema
-        await tx.$executeRawUnsafe(`
+        await tx.$executeRawUnsafe(
+          `
           INSERT INTO "${schema}".change_log (
             id, occurred_at, operator_id, operator_name, action,
             object_type, object_id, object_name, diff,
@@ -67,7 +65,7 @@ export class ChangeLogService {
           JSON.stringify(maskedDiff),
           context.ipAddress || null,
           context.userAgent ?? null,
-          context.requestId ?? null,
+          context.requestId ?? null
         );
       } else {
         // Fallback to Prisma ORM for non-tenant contexts
@@ -91,7 +89,7 @@ export class ChangeLogService {
       // Log error but don't throw - change log failure shouldn't block business operations
       this.logger.error(
         `Failed to create change log: ${error instanceof Error ? error.message : String(error)}`,
-        error instanceof Error ? error.stack : undefined,
+        error instanceof Error ? error.stack : undefined
       );
     }
   }
@@ -99,10 +97,7 @@ export class ChangeLogService {
   /**
    * Create change log entry using default Prisma client (non-transactional)
    */
-  async createDirect(
-    data: CreateChangeLogDto,
-    context: RequestContext,
-  ): Promise<void> {
+  async createDirect(data: CreateChangeLogDto, context: RequestContext): Promise<void> {
     const prisma = this.databaseService.getPrisma();
     await this.create(prisma as unknown as Prisma.TransactionClient, data, context);
   }
@@ -112,7 +107,7 @@ export class ChangeLogService {
    */
   private calculateDiff(
     oldValue: Record<string, unknown> | null,
-    newValue: Record<string, unknown> | null | undefined,
+    newValue: Record<string, unknown> | null | undefined
   ): ChangeLogDiff {
     const diff: ChangeLogDiff = {};
     const safeNewValue = newValue ?? {};
@@ -128,10 +123,7 @@ export class ChangeLogService {
     }
 
     // Update operation - only record changed fields
-    const allKeys = new Set([
-      ...Object.keys(oldValue),
-      ...Object.keys(safeNewValue),
-    ]);
+    const allKeys = new Set([...Object.keys(oldValue), ...Object.keys(safeNewValue)]);
 
     for (const key of allKeys) {
       if (this.isSystemField(key)) continue;
@@ -202,7 +194,7 @@ export class ChangeLogQueryService {
       page?: number;
       pageSize?: number;
     },
-    tenantSchema: string,
+    tenantSchema: string
   ) {
     const prisma = this.databaseService.getPrisma();
     const page = query.page || 1;
@@ -258,13 +250,13 @@ export class ChangeLogQueryService {
          ${whereClause}
          ORDER BY cl.occurred_at DESC
          LIMIT ${pageSize} OFFSET ${offset}`,
-        ...params,
+        ...params
       );
 
       // Query total count
       const countResult = await prisma.$queryRawUnsafe<{ count: bigint }[]>(
         `SELECT COUNT(*) as count FROM "${tenantSchema}".change_log cl ${whereClause}`,
-        ...params,
+        ...params
       );
       const total = Number(countResult[0]?.count || 0);
 
@@ -276,7 +268,9 @@ export class ChangeLogQueryService {
         totalPages: Math.ceil(total / pageSize),
       };
     } catch (error) {
-      this.logger.error(`Failed to query change logs: ${error instanceof Error ? error.message : String(error)}`);
+      this.logger.error(
+        `Failed to query change logs: ${error instanceof Error ? error.message : String(error)}`
+      );
       return {
         items: [],
         total: 0,
@@ -294,7 +288,7 @@ export class ChangeLogQueryService {
     objectType: string,
     objectId: string,
     query: { page?: number; pageSize?: number },
-    tenantSchema: string,
+    tenantSchema: string
   ) {
     return this.findMany(
       {
@@ -302,7 +296,7 @@ export class ChangeLogQueryService {
         objectId,
         ...query,
       },
-      tenantSchema,
+      tenantSchema
     );
   }
 
@@ -312,14 +306,14 @@ export class ChangeLogQueryService {
   async findByOperator(
     operatorId: string,
     query: { page?: number; pageSize?: number },
-    tenantSchema: string,
+    tenantSchema: string
   ) {
     return this.findMany(
       {
         operatorId,
         ...query,
       },
-      tenantSchema,
+      tenantSchema
     );
   }
 

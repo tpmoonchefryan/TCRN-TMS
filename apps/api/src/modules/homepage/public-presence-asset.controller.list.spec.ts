@@ -1,7 +1,6 @@
-import 'reflect-metadata';
-
 import type { INestApplication } from '@nestjs/common';
 import { Test, type TestingModule } from '@nestjs/testing';
+import 'reflect-metadata';
 import request from 'supertest';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -52,14 +51,18 @@ describe('PublicPresenceAssetController list path', () => {
     }).compile();
 
     const service = moduleFixture.get(PublicPresenceAssetService);
-    (service as unknown as {
-      publicPresenceAssetRepository: typeof repository;
-    }).publicPresenceAssetRepository = repository;
+    (
+      service as unknown as {
+        publicPresenceAssetRepository: typeof repository;
+      }
+    ).publicPresenceAssetRepository = repository;
 
     const controller = moduleFixture.get(PublicPresenceAssetController);
-    (controller as unknown as {
-      publicPresenceAssetService: PublicPresenceAssetService;
-    }).publicPresenceAssetService = service;
+    (
+      controller as unknown as {
+        publicPresenceAssetService: PublicPresenceAssetService;
+      }
+    ).publicPresenceAssetService = service;
 
     app = moduleFixture.createNestApplication();
     app.use((req, _res, next) => {
@@ -262,12 +265,12 @@ describe('PublicPresenceAssetController list path', () => {
           { ownerType: 'system', ownerId: null },
           { ownerType: 'tenant', ownerId: null },
         ],
-        assetKind,
+        assetKind
       );
       expect(repository.listCurrentRevisionsByAssetIds).toHaveBeenCalledWith(
         TEST_USER.tenantSchema,
-        [assetRow.id],
+        [assetRow.id]
       );
-    },
+    }
   );
 });

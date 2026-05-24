@@ -1,12 +1,15 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Controller, Get, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+
 import { ErrorCodes } from '@tcrn/shared';
 
 import { RequirePermissions } from '../../../common/decorators';
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
-import { RateLimitStatsResponse, RateLimitStatsService } from '../services/rate-limit-stats.service';
+import {
+  RateLimitStatsResponse,
+  RateLimitStatsService,
+} from '../services/rate-limit-stats.service';
 
 const RATE_LIMIT_STATS_SCHEMA = {
   type: 'object',

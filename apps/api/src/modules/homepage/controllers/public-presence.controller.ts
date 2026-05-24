@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import {
   Body,
   Controller,
@@ -12,19 +11,14 @@ import {
   Query,
   Req,
 } from '@nestjs/common';
-import {
-  ApiBearerAuth,
-  ApiOperation,
-  ApiParam,
-  ApiResponse,
-  ApiTags,
-} from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Request } from 'express';
+
 import {
   type PublicPresencePhaseVisibility,
   PublicPresencePhaseVisibilitySchema,
   type RequestContext,
 } from '@tcrn/shared';
-import { Request } from 'express';
 
 import {
   AuthenticatedUser,
@@ -81,7 +75,7 @@ export class PublicPresenceController {
   constructor(
     private readonly publicPresenceStudioService: PublicPresenceStudioService,
     private readonly publicHomepageProjectionService: PublicHomepageProjectionService,
-    private readonly publicPresenceWorkflowService: PublicPresenceWorkflowService,
+    private readonly publicPresenceWorkflowService: PublicPresenceWorkflowService
   ) {}
 
   @Get()
@@ -103,13 +97,9 @@ export class PublicPresenceController {
   async getWorkspace(
     @Param('talentId', ParseUUIDPipe) talentId: string,
     @CurrentUser() user: AuthenticatedUser,
-    @Query('templateId') templateId?: string,
+    @Query('templateId') templateId?: string
   ) {
-    return this.publicPresenceStudioService.getWorkspace(
-      talentId,
-      user.tenantSchema,
-      templateId,
-    );
+    return this.publicPresenceStudioService.getWorkspace(talentId, user.tenantSchema, templateId);
   }
 
   @Get('preview')
@@ -132,13 +122,13 @@ export class PublicPresenceController {
     @Param('talentId', ParseUUIDPipe) talentId: string,
     @CurrentUser() user: AuthenticatedUser,
     @Query('phase') phase?: string,
-    @Query('templateId') templateId?: string,
+    @Query('templateId') templateId?: string
   ) {
     return this.publicHomepageProjectionService.getDraftPreviewProjectionOrThrow(
       talentId,
       user.tenantSchema,
       this.parseRevealPhase(phase),
-      templateId,
+      templateId
     );
   }
 
@@ -162,12 +152,12 @@ export class PublicPresenceController {
     @Param('talentId', ParseUUIDPipe) talentId: string,
     @Body() dto: BootstrapPublicPresenceDraftDto,
     @CurrentUser() user: AuthenticatedUser,
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     return this.publicPresenceStudioService.bootstrapDraft(
       talentId,
       dto.templateAssetId?.trim() || dto.templateId?.trim() || '',
-      this.buildContext(user, req),
+      this.buildContext(user, req)
     );
   }
 
@@ -183,21 +173,20 @@ export class PublicPresenceController {
   })
   @ApiResponse({
     status: 200,
-    description:
-      'Persists the draft source document and returns the updated workspace state.',
+    description: 'Persists the draft source document and returns the updated workspace state.',
     schema: PUBLIC_PRESENCE_WORKSPACE_SCHEMA,
   })
   async saveDraft(
     @Param('talentId', ParseUUIDPipe) talentId: string,
     @Body() dto: SavePublicPresenceDraftDto,
     @CurrentUser() user: AuthenticatedUser,
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     return this.publicPresenceStudioService.saveDraft(
       talentId,
       dto.document,
       this.buildContext(user, req),
-      dto.expectedCurrentContentHash,
+      dto.expectedCurrentContentHash
     );
   }
 
@@ -207,19 +196,19 @@ export class PublicPresenceController {
     @Param('talentId', ParseUUIDPipe) talentId: string,
     @Body() dto: PublicPresenceWorkflowHashDto,
     @CurrentUser() user: AuthenticatedUser,
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     await this.publicPresenceWorkflowService.submitForReview(
       talentId,
       this.buildContext(user, req),
       dto.expectedCurrentContentHash,
-      dto.templateId,
+      dto.templateId
     );
 
     return this.publicPresenceStudioService.getWorkspace(
       talentId,
       user.tenantSchema,
-      dto.templateId,
+      dto.templateId
     );
   }
 
@@ -229,18 +218,18 @@ export class PublicPresenceController {
     @Param('talentId', ParseUUIDPipe) talentId: string,
     @Body() dto: PublicPresenceChangesRequestDto,
     @CurrentUser() user: AuthenticatedUser,
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     await this.publicPresenceWorkflowService.requestChanges(
       talentId,
       this.buildContext(user, req),
-      dto,
+      dto
     );
 
     return this.publicPresenceStudioService.getWorkspace(
       talentId,
       user.tenantSchema,
-      dto.templateId,
+      dto.templateId
     );
   }
 
@@ -250,19 +239,19 @@ export class PublicPresenceController {
     @Param('talentId', ParseUUIDPipe) talentId: string,
     @Body() dto: PublicPresenceWorkflowHashDto,
     @CurrentUser() user: AuthenticatedUser,
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     await this.publicPresenceWorkflowService.approve(
       talentId,
       this.buildContext(user, req),
       dto.expectedCurrentContentHash,
-      dto.templateId,
+      dto.templateId
     );
 
     return this.publicPresenceStudioService.getWorkspace(
       talentId,
       user.tenantSchema,
-      dto.templateId,
+      dto.templateId
     );
   }
 
@@ -272,19 +261,19 @@ export class PublicPresenceController {
     @Param('talentId', ParseUUIDPipe) talentId: string,
     @Body() dto: PublicPresenceWorkflowHashDto,
     @CurrentUser() user: AuthenticatedUser,
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     await this.publicPresenceWorkflowService.publishNow(
       talentId,
       this.buildContext(user, req),
       dto.expectedCurrentContentHash,
-      dto.templateId,
+      dto.templateId
     );
 
     return this.publicPresenceStudioService.getWorkspace(
       talentId,
       user.tenantSchema,
-      dto.templateId,
+      dto.templateId
     );
   }
 
@@ -294,18 +283,18 @@ export class PublicPresenceController {
     @Param('talentId', ParseUUIDPipe) talentId: string,
     @Body() dto: PublicPresenceSchedulePublishDto,
     @CurrentUser() user: AuthenticatedUser,
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     await this.publicPresenceWorkflowService.schedulePublish(
       talentId,
       this.buildContext(user, req),
-      dto,
+      dto
     );
 
     return this.publicPresenceStudioService.getWorkspace(
       talentId,
       user.tenantSchema,
-      dto.templateId,
+      dto.templateId
     );
   }
 
@@ -315,19 +304,19 @@ export class PublicPresenceController {
     @Param('talentId', ParseUUIDPipe) talentId: string,
     @Body() dto: PublicPresenceWorkflowHashDto,
     @CurrentUser() user: AuthenticatedUser,
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     await this.publicPresenceWorkflowService.cancelScheduledPublish(
       talentId,
       this.buildContext(user, req),
       dto.expectedCurrentContentHash,
-      dto.templateId,
+      dto.templateId
     );
 
     return this.publicPresenceStudioService.getWorkspace(
       talentId,
       user.tenantSchema,
-      dto.templateId,
+      dto.templateId
     );
   }
 
@@ -337,24 +326,18 @@ export class PublicPresenceController {
     @Param('talentId', ParseUUIDPipe) talentId: string,
     @Body() dto: PublicPresenceRollbackDraftDto,
     @CurrentUser() user: AuthenticatedUser,
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     await this.publicPresenceWorkflowService.createRollbackDraft(
       talentId,
       this.buildContext(user, req),
-      dto.sourceVersionId,
+      dto.sourceVersionId
     );
 
-    return this.publicPresenceStudioService.getWorkspace(
-      talentId,
-      user.tenantSchema,
-    );
+    return this.publicPresenceStudioService.getWorkspace(talentId, user.tenantSchema);
   }
 
-  private buildContext(
-    user: AuthenticatedUser,
-    req: Request,
-  ): RequestContext {
+  private buildContext(user: AuthenticatedUser, req: Request): RequestContext {
     return {
       ipAddress: (req.ip || req.socket?.remoteAddress) ?? undefined,
       requestId: req.headers['x-request-id'] as string,
@@ -367,7 +350,7 @@ export class PublicPresenceController {
   }
 
   private parseRevealPhase(
-    value: string | undefined,
+    value: string | undefined
   ): PublicPresencePhaseVisibility | 'current' | null {
     if (!value || value === 'current') {
       return 'current';

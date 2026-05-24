@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable, Logger } from '@nestjs/common';
 import type { Transporter } from 'nodemailer';
 import * as nodemailer from 'nodemailer';
@@ -92,7 +91,9 @@ export class SmtpClient {
       };
     } catch (error) {
       const err = error as Error;
-      this.logger.warn(`SMTP connection test failed (${config.host}:${config.port}): ${err.message}`);
+      this.logger.warn(
+        `SMTP connection test failed (${config.host}:${config.port}): ${err.message}`
+      );
       return {
         success: false,
         message: 'SMTP connection failed',

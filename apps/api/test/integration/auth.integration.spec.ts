@@ -1,10 +1,11 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 // Auth Module Integration Tests
-
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
-import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
+import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
+
+import { PrismaClient } from '@tcrn/database';
 import {
   createTestTenantFixture,
   createTestUserInTenant,
@@ -14,7 +15,6 @@ import {
 
 import { AppModule } from '../../src/app.module';
 import { bootstrapTestApp } from '../../src/testing/bootstrap-test-app';
-import { PrismaClient } from '@tcrn/database';
 
 // Check if database is available
 const checkDatabaseConnection = async (): Promise<boolean> => {
@@ -47,7 +47,7 @@ describeFn('Auth Integration Tests', () => {
       login: string;
       password: string;
     }> = {},
-    ip = nextIp(),
+    ip = nextIp()
   ) =>
     request(app.getHttpServer())
       .post('/api/v1/auth/login')
@@ -75,12 +75,9 @@ describeFn('Auth Integration Tests', () => {
     prisma = new PrismaClient();
     tenantFixture = await createTestTenantFixture(prisma, 'auth');
 
-    const user = await createTestUserInTenant(
-      prisma,
-      tenantFixture,
-      `auth_user_${Date.now()}`,
-      ['ADMIN'],
-    );
+    const user = await createTestUserInTenant(prisma, tenantFixture, `auth_user_${Date.now()}`, [
+      'ADMIN',
+    ]);
 
     testUser = {
       ...user,
@@ -90,7 +87,7 @@ describeFn('Auth Integration Tests', () => {
 
   afterAll(async () => {
     if (!dbAvailable) return;
-    
+
     await tenantFixture?.cleanup();
     await prisma?.$disconnect();
     await app?.close();
@@ -154,9 +151,7 @@ describeFn('Auth Integration Tests', () => {
     });
 
     it('should fail without refresh token', async () => {
-      const response = await request(app.getHttpServer())
-        .post('/api/v1/auth/refresh')
-        .expect(401);
+      const response = await request(app.getHttpServer()).post('/api/v1/auth/refresh').expect(401);
 
       expect(response.body.success).toBe(false);
       expect(response.body.error.code).toBe('AUTH_REFRESH_TOKEN_INVALID');
@@ -185,9 +180,7 @@ describeFn('Auth Integration Tests', () => {
     });
 
     it('should fail without access token', async () => {
-      const response = await request(app.getHttpServer())
-        .post('/api/v1/auth/logout')
-        .expect(401);
+      const response = await request(app.getHttpServer()).post('/api/v1/auth/logout').expect(401);
 
       expect(response.body.success).toBe(false);
     });
@@ -215,9 +208,7 @@ describeFn('Auth Integration Tests', () => {
     });
 
     it('should fail without authentication', async () => {
-      const response = await request(app.getHttpServer())
-        .get('/api/v1/users/me')
-        .expect(401);
+      const response = await request(app.getHttpServer()).get('/api/v1/users/me').expect(401);
 
       expect(response.body.success).toBe(false);
     });
@@ -240,7 +231,7 @@ describeFn('Auth Integration Tests', () => {
         prisma,
         tenantFixture,
         `lockout_user_${Date.now()}`,
-        ['ADMIN'],
+        ['ADMIN']
       );
       lockoutUser = {
         ...user,
@@ -255,7 +246,7 @@ describeFn('Auth Integration Tests', () => {
             login: lockoutUser.username,
             password: 'WrongPassword!',
           },
-          nextIp(),
+          nextIp()
         );
       }
 
@@ -264,7 +255,7 @@ describeFn('Auth Integration Tests', () => {
           login: lockoutUser.username,
           password: lockoutUser.password,
         },
-        nextIp(),
+        nextIp()
       ).expect(401);
 
       expect(response.body.success).toBe(false);

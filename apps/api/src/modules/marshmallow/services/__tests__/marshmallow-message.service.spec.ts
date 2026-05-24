@@ -1,7 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { RequestContext } from '@tcrn/shared';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { MarshmallowMessageApplicationService } from '../../application/marshmallow-message.service';
 import { MarshmallowMessageService } from '../marshmallow-message.service';
@@ -49,11 +49,12 @@ describe('MarshmallowMessageService', () => {
       moderatedAt: '2026-04-14T00:00:00.000Z',
     });
 
+    await expect(service.findMany('talent-1', 'tenant_test', {})).resolves.toMatchObject({
+      items: [],
+      total: 0,
+    });
     await expect(
-      service.findMany('talent-1', 'tenant_test', {}),
-    ).resolves.toMatchObject({ items: [], total: 0 });
-    await expect(
-      service.approve('talent-1', 'tenant_test', 'message-1', context),
+      service.approve('talent-1', 'tenant_test', 'message-1', context)
     ).resolves.toMatchObject({ id: 'message-1', status: 'approved' });
   });
 
@@ -82,25 +83,13 @@ describe('MarshmallowMessageService', () => {
     });
 
     await expect(
-      service.reject(
-        'talent-1',
-        'tenant_test',
-        'message-1',
-        { reason: 'spam' as never },
-        context,
-      ),
+      service.reject('talent-1', 'tenant_test', 'message-1', { reason: 'spam' as never }, context)
     ).resolves.toMatchObject({ status: 'rejected' });
     await expect(
-      service.unreject('talent-1', 'tenant_test', 'message-1', context),
+      service.unreject('talent-1', 'tenant_test', 'message-1', context)
     ).resolves.toMatchObject({ status: 'pending' });
     await expect(
-      service.reply(
-        'talent-1',
-        'tenant_test',
-        'message-1',
-        { content: 'Thanks!' },
-        context,
-      ),
+      service.reply('talent-1', 'tenant_test', 'message-1', { content: 'Thanks!' }, context)
     ).resolves.toMatchObject({ replyContent: 'Thanks!' });
     await expect(
       service.update(
@@ -108,8 +97,8 @@ describe('MarshmallowMessageService', () => {
         'tenant_test',
         'message-1',
         { isRead: true, isPinned: true },
-        context,
-      ),
+        context
+      )
     ).resolves.toMatchObject({ isPinned: true });
   });
 
@@ -127,8 +116,8 @@ describe('MarshmallowMessageService', () => {
           messageIds: ['message-1'],
           action: 'markRead',
         },
-        context,
-      ),
+        context
+      )
     ).resolves.toEqual({
       processed: 1,
       action: 'markRead',
@@ -141,7 +130,7 @@ describe('MarshmallowMessageService', () => {
         messageIds: ['message-1'],
         action: 'markRead',
       },
-      context,
+      context
     );
   });
 });

@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable } from '@nestjs/common';
+
 import { prisma } from '@tcrn/database';
 
 import type { ScopeOwnSettingsRecord, SettingsScopeType } from '../domain/settings.policy';
@@ -38,7 +38,7 @@ export class SettingsRepository {
         FROM public.tenant
         WHERE schema_name = $1
       `,
-      tenantSchema,
+      tenantSchema
     );
 
     return tenants[0] ?? null;
@@ -46,7 +46,7 @@ export class SettingsRepository {
 
   async findSubsidiaryById(
     tenantSchema: string,
-    subsidiaryId: string,
+    subsidiaryId: string
   ): Promise<SubsidiaryRecord | null> {
     const subsidiaries = await prisma.$queryRawUnsafe<
       Array<{ id: string; path: string; version: number }>
@@ -56,7 +56,7 @@ export class SettingsRepository {
         FROM "${tenantSchema}".subsidiary
         WHERE id = $1::uuid
       `,
-      subsidiaryId,
+      subsidiaryId
     );
 
     return subsidiaries[0] ?? null;
@@ -64,7 +64,7 @@ export class SettingsRepository {
 
   async listSubsidiariesByCodes(
     tenantSchema: string,
-    codes: string[],
+    codes: string[]
   ): Promise<Array<{ id: string; code: string }>> {
     if (codes.length === 0) {
       return [];
@@ -79,7 +79,7 @@ export class SettingsRepository {
         WHERE code IN (${placeholders})
         ORDER BY depth ASC
       `,
-      ...codes,
+      ...codes
     );
   }
 
@@ -97,7 +97,7 @@ export class SettingsRepository {
         FROM "${tenantSchema}".talent
         WHERE id = $1::uuid
       `,
-      talentId,
+      talentId
     );
 
     return talents[0] ?? null;
@@ -106,7 +106,7 @@ export class SettingsRepository {
   async findScopeSettingsRecord(
     tenantSchema: string,
     scopeType: SettingsScopeType,
-    scopeId: string | null,
+    scopeId: string | null
   ): Promise<ScopeOwnSettingsRecord | null> {
     try {
       const query = scopeId
@@ -123,7 +123,7 @@ export class SettingsRepository {
 
   async updateTenantSettings(
     tenantSchema: string,
-    settings: Record<string, unknown>,
+    settings: Record<string, unknown>
   ): Promise<void> {
     await prisma.$executeRawUnsafe(
       `
@@ -132,7 +132,7 @@ export class SettingsRepository {
         WHERE schema_name = $2
       `,
       JSON.stringify(settings),
-      tenantSchema,
+      tenantSchema
     );
   }
 
@@ -154,7 +154,7 @@ export class SettingsRepository {
       JSON.stringify(settings),
       version,
       userId,
-      talentId,
+      talentId
     );
   }
 
@@ -181,7 +181,7 @@ export class SettingsRepository {
         scopeId,
         JSON.stringify(settings),
         version,
-        userId,
+        userId
       );
       return;
     }
@@ -196,7 +196,7 @@ export class SettingsRepository {
       scopeType,
       JSON.stringify(settings),
       version,
-      userId,
+      userId
     );
   }
 
@@ -215,13 +215,11 @@ export class SettingsRepository {
           updated_by UUID,
           UNIQUE(scope_type, scope_id)
         )
-      `,
+      `
     );
   }
 
-  async listArtistStageCatalog(
-    tenantSchema: string,
-  ): Promise<ArtistStageCatalogRecord[]> {
+  async listArtistStageCatalog(tenantSchema: string): Promise<ArtistStageCatalogRecord[]> {
     try {
       return await prisma.$queryRawUnsafe<ArtistStageCatalogRecord[]>(
         `
@@ -233,7 +231,7 @@ export class SettingsRepository {
           WHERE owner_type = 'tenant'
             AND owner_id IS NULL
           ORDER BY sort_order ASC, code ASC
-        `,
+        `
       );
     } catch {
       return [];

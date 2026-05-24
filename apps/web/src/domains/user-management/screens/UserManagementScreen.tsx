@@ -62,10 +62,7 @@ import {
   pickLocalizedName,
   useUserManagementCopy,
 } from './user-management.copy';
-import {
-  isRoleVisibleInWorkspace,
-  UserManagementPaginationFooter,
-} from './user-management.shared';
+import { isRoleVisibleInWorkspace, UserManagementPaginationFooter } from './user-management.shared';
 
 type ManagementTab = 'users' | 'roles' | 'delegation';
 type UserStatusFilter = 'all' | 'active' | 'inactive';
@@ -280,7 +277,11 @@ function ToneBadge({
             ? 'bg-indigo-100 text-indigo-800'
             : 'bg-slate-100 text-slate-700';
 
-  return <span className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${toneClasses}`}>{label}</span>;
+  return (
+    <span className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${toneClasses}`}>
+      {label}
+    </span>
+  );
 }
 
 function InlineActionButton({
@@ -325,7 +326,11 @@ function NoticeBanner({
       ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
       : 'border-rose-200 bg-rose-50 text-rose-800';
 
-  return <div className={`rounded-2xl border px-4 py-3 text-sm font-medium ${toneClasses}`}>{message}</div>;
+  return (
+    <div className={`rounded-2xl border px-4 py-3 text-sm font-medium ${toneClasses}`}>
+      {message}
+    </div>
+  );
 }
 
 function SummaryCard({
@@ -360,14 +365,21 @@ export function UserManagementScreen({
   const sharedCopy = copy.shared;
   const managementCopy = copy.management;
   const workspaceDisplayLabel = isAcWorkspace ? sharedCopy.acWorkspace : sharedCopy.tenantWorkspace;
-  const workspaceAccessLabel = isAcWorkspace ? sharedCopy.acAccessLabel : sharedCopy.tenantAccessLabel;
-  const workspaceSessionLabel = isAcWorkspace ? sharedCopy.acSessionLabel : sharedCopy.tenantSessionLabel;
-  const workspaceDirectoryLabel = isAcWorkspace ? sharedCopy.acDirectoryLabel : sharedCopy.tenantDirectoryLabel;
+  const workspaceAccessLabel = isAcWorkspace
+    ? sharedCopy.acAccessLabel
+    : sharedCopy.tenantAccessLabel;
+  const workspaceSessionLabel = isAcWorkspace
+    ? sharedCopy.acSessionLabel
+    : sharedCopy.tenantSessionLabel;
+  const workspaceDirectoryLabel = isAcWorkspace
+    ? sharedCopy.acDirectoryLabel
+    : sharedCopy.tenantDirectoryLabel;
   const userManagementPath = pathname.split('?')[0];
   const userCreateHref = `${userManagementPath}/new`;
   const buildUserEditorHref = (systemUserId: string) => `${userManagementPath}/${systemUserId}`;
   const roleCreateHref = `${userManagementPath}/roles/new`;
-  const buildRoleEditorHref = (systemRoleId: string) => `${userManagementPath}/roles/${systemRoleId}`;
+  const buildRoleEditorHref = (systemRoleId: string) =>
+    `${userManagementPath}/roles/${systemRoleId}`;
 
   const currentSearchParamsTab = resolveInitialTab(searchParams.get('tab'));
   const urlUserSearch = searchParams.get('search') ?? '';
@@ -376,10 +388,8 @@ export function UserManagementScreen({
   const urlUsersPageSize = parsePageSizeParam(searchParams.get('pageSize'));
 
   const [activeTab, setActiveTab] = useState<ManagementTab>(currentSearchParamsTab);
-  const {
-    displayedValue: displayedTab,
-    transitionClassName: tabTransitionClassName,
-  } = useFadeSwapState(activeTab);
+  const { displayedValue: displayedTab, transitionClassName: tabTransitionClassName } =
+    useFadeSwapState(activeTab);
   const [userSearch, setUserSearch] = useState(urlUserSearch);
   const deferredUserSearch = useDeferredValue(userSearch);
   const [userStatusFilter, setUserStatusFilter] = useState<UserStatusFilter>(urlUserStatusFilter);
@@ -388,7 +398,9 @@ export function UserManagementScreen({
   const [rolesPage, setRolesPage] = useState(1);
   const [rolesPageSize, setRolesPageSize] = useState<PageSizeOption>(PAGE_SIZE_OPTIONS[0]);
   const [delegationsPage, setDelegationsPage] = useState(1);
-  const [delegationsPageSize, setDelegationsPageSize] = useState<PageSizeOption>(PAGE_SIZE_OPTIONS[0]);
+  const [delegationsPageSize, setDelegationsPageSize] = useState<PageSizeOption>(
+    PAGE_SIZE_OPTIONS[0]
+  );
   const [usersPanel, setUsersPanel] = useState<PanelState<SystemUserListItem>>({
     data: [],
     pagination: buildFallbackPagination(0, 1, PAGE_SIZE_OPTIONS[0]),
@@ -425,7 +437,9 @@ export function UserManagementScreen({
 
   useEffect(() => {
     setUserSearch((current) => (current === urlUserSearch ? current : urlUserSearch));
-    setUserStatusFilter((current) => (current === urlUserStatusFilter ? current : urlUserStatusFilter));
+    setUserStatusFilter((current) =>
+      current === urlUserStatusFilter ? current : urlUserStatusFilter
+    );
     setUsersPage((current) => (current === urlUsersPage ? current : urlUsersPage));
     setUsersPageSize((current) => (current === urlUsersPageSize ? current : urlUsersPageSize));
   }, [urlUserSearch, urlUserStatusFilter, urlUsersPage, urlUsersPageSize]);
@@ -437,7 +451,7 @@ export function UserManagementScreen({
       status: UserStatusFilter;
       page: number;
       pageSize: PageSizeOption;
-    }>,
+    }>
   ) {
     const nextTab = nextState.tab ?? activeTab;
     const nextSearch = nextState.search ?? userSearch;
@@ -531,11 +545,17 @@ export function UserManagementScreen({
 
     try {
       const data = await listSystemRoles(request, { isActive: true });
-      const visibleRoles = data.filter((role) => isRoleVisibleInWorkspace(role, session?.tenantTier));
+      const visibleRoles = data.filter((role) =>
+        isRoleVisibleInWorkspace(role, session?.tenantTier)
+      );
 
       setRolesPanel({
         data: visibleRoles,
-        pagination: buildFallbackPagination(visibleRoles.length, 1, Math.max(visibleRoles.length, 1)),
+        pagination: buildFallbackPagination(
+          visibleRoles.length,
+          1,
+          Math.max(visibleRoles.length, 1)
+        ),
         loading: false,
         error: null,
       });
@@ -591,7 +611,7 @@ export function UserManagementScreen({
         pagination: buildFallbackPagination(
           tree.directTalents.length + tree.subsidiaries.length,
           1,
-          Math.max(tree.directTalents.length + tree.subsidiaries.length, 1),
+          Math.max(tree.directTalents.length + tree.subsidiaries.length, 1)
         ),
         loading: false,
         error: null,
@@ -617,16 +637,16 @@ export function UserManagementScreen({
   const rolesPagination = buildPaginationMeta(rolesPanel.data.length, rolesPage, rolesPageSize);
   const paginatedRoles = rolesPanel.data.slice(
     (rolesPagination.page - 1) * rolesPagination.pageSize,
-    rolesPagination.page * rolesPagination.pageSize,
+    rolesPagination.page * rolesPagination.pageSize
   );
   const delegationsPagination = buildPaginationMeta(
     delegationsPanel.data.length,
     delegationsPage,
-    delegationsPageSize,
+    delegationsPageSize
   );
   const paginatedDelegations = delegationsPanel.data.slice(
     (delegationsPagination.page - 1) * delegationsPagination.pageSize,
-    delegationsPagination.page * delegationsPagination.pageSize,
+    delegationsPagination.page * delegationsPagination.pageSize
   );
 
   useEffect(() => {
@@ -643,13 +663,16 @@ export function UserManagementScreen({
 
   useEffect(() => {
     setDelegationDraft((current) => {
-      const scopeOptions = scopeOptionsPanel.data.filter((option) => option.type === current.scopeType);
+      const scopeOptions = scopeOptionsPanel.data.filter(
+        (option) => option.type === current.scopeType
+      );
       const scopeId = scopeOptions.some((option) => option.id === current.scopeId)
         ? current.scopeId
         : (scopeOptions[0]?.id ?? '');
-      const delegateOptions = current.delegateType === 'user'
-        ? usersPanel.data
-        : rolesPanel.data.filter((role) => role.isActive);
+      const delegateOptions =
+        current.delegateType === 'user'
+          ? usersPanel.data
+          : rolesPanel.data.filter((role) => role.isActive);
       const delegateId = delegateOptions.some((option) => option.id === current.delegateId)
         ? current.delegateId
         : (delegateOptions[0]?.id ?? '');
@@ -764,12 +787,19 @@ export function UserManagementScreen({
   const tabs: Array<{ key: ManagementTab; label: string; count: number }> = [
     { key: 'users', label: managementCopy.tabs.users, count: usersPanel.pagination.totalCount },
     { key: 'roles', label: managementCopy.tabs.roles, count: rolesPanel.data.length },
-    { key: 'delegation', label: managementCopy.tabs.delegation, count: delegationsPanel.data.length },
+    {
+      key: 'delegation',
+      label: managementCopy.tabs.delegation,
+      count: delegationsPanel.data.length,
+    },
   ];
-  const delegationScopeOptions = scopeOptionsPanel.data.filter((option) => option.type === delegationDraft.scopeType);
-  const delegationDelegateOptions: Array<SystemUserListItem | SystemRoleListItem> = delegationDraft.delegateType === 'user'
-    ? usersPanel.data
-    : rolesPanel.data.filter((role) => role.isActive);
+  const delegationScopeOptions = scopeOptionsPanel.data.filter(
+    (option) => option.type === delegationDraft.scopeType
+  );
+  const delegationDelegateOptions: Array<SystemUserListItem | SystemRoleListItem> =
+    delegationDraft.delegateType === 'user'
+      ? usersPanel.data
+      : rolesPanel.data.filter((role) => role.isActive);
 
   const allPanelsFailed =
     !usersPanel.loading &&
@@ -801,7 +831,9 @@ export function UserManagementScreen({
               {managementCopy.badge(workspaceDisplayLabel)}
             </p>
             <h1 className="text-3xl font-semibold text-slate-950">{managementCopy.title}</h1>
-            <p className="max-w-3xl text-sm leading-6 text-slate-600">{managementCopy.description}</p>
+            <p className="max-w-3xl text-sm leading-6 text-slate-600">
+              {managementCopy.description}
+            </p>
           </div>
 
           <div className="grid gap-3 sm:grid-cols-3">
@@ -857,585 +889,710 @@ export function UserManagementScreen({
       </GlassSurface>
 
       <div className={tabTransitionClassName}>
-      {displayedTab === 'users' && (
-        <section className="space-y-4">
-          <GlassSurface className="p-6">
-            <div className="flex flex-wrap items-end justify-between gap-4">
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <UsersRound className="h-4 w-4 text-slate-500" />
-                  <h2 className="text-lg font-semibold text-slate-900">{managementCopy.users.title}</h2>
+        {displayedTab === 'users' && (
+          <section className="space-y-4">
+            <GlassSurface className="p-6">
+              <div className="flex flex-wrap items-end justify-between gap-4">
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <UsersRound className="h-4 w-4 text-slate-500" />
+                    <h2 className="text-lg font-semibold text-slate-900">
+                      {managementCopy.users.title}
+                    </h2>
+                  </div>
+                  <p className="max-w-2xl text-sm leading-6 text-slate-600">
+                    {managementCopy.users.description}
+                  </p>
                 </div>
-                <p className="max-w-2xl text-sm leading-6 text-slate-600">{managementCopy.users.description}</p>
-              </div>
 
-              <div className="flex flex-wrap items-end gap-3">
+                <div className="flex flex-wrap items-end gap-3">
+                  <Link
+                    href={userCreateHref}
+                    className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+                  >
+                    <UserRoundPlus className="h-4 w-4" />
+                    {managementCopy.users.newUser}
+                  </Link>
+                  <label className="space-y-2 text-sm">
+                    <span className="font-medium text-slate-700">
+                      {managementCopy.users.searchLabel}
+                    </span>
+                    <input
+                      value={userSearch}
+                      onChange={(event) => {
+                        applyUsersQueryState({
+                          search: event.target.value,
+                          page: 1,
+                        });
+                      }}
+                      placeholder={managementCopy.users.searchPlaceholder}
+                      className="w-72 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-slate-400"
+                    />
+                  </label>
+                  <label className="space-y-2 text-sm">
+                    <span className="font-medium text-slate-700">
+                      {managementCopy.users.statusLabel}
+                    </span>
+                    <select
+                      value={userStatusFilter}
+                      onChange={(event) => {
+                        applyUsersQueryState({
+                          status: event.target.value as UserStatusFilter,
+                          page: 1,
+                        });
+                      }}
+                      className="rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-slate-400"
+                    >
+                      <option value="all">{managementCopy.users.statusAll}</option>
+                      <option value="active">{managementCopy.users.statusActive}</option>
+                      <option value="inactive">{managementCopy.users.statusInactive}</option>
+                    </select>
+                  </label>
+                </div>
+              </div>
+            </GlassSurface>
+
+            {notice?.scope === 'users' ? (
+              <NoticeBanner tone={notice.tone} message={notice.message} />
+            ) : null}
+
+            {usersPanel.error && usersPanel.data.length === 0 && !usersPanel.loading ? (
+              <StateView
+                status="error"
+                title={managementCopy.users.unavailableTitle}
+                description={usersPanel.error}
+              />
+            ) : (
+              <GlassSurface className="p-4">
+                {usersPanel.error ? <NoticeBanner tone="error" message={usersPanel.error} /> : null}
+                <TableShell
+                  ariaLabel={managementCopy.users.title}
+                  columns={[...managementCopy.users.columns]}
+                  dataLength={usersPanel.data.length}
+                  isLoading={usersPanel.loading}
+                  isEmpty={!usersPanel.loading && usersPanel.data.length === 0}
+                  emptyTitle={managementCopy.users.emptyTitle}
+                  emptyDescription={managementCopy.users.emptyDescription(workspaceDirectoryLabel)}
+                >
+                  {usersPanel.data.map((user) => (
+                    <tr key={user.id} className="align-top">
+                      <td className="px-6 py-4">
+                        <div className="space-y-1">
+                          <p className="text-sm font-semibold text-slate-900">
+                            {user.displayName || user.username}
+                          </p>
+                          <p className="text-sm text-slate-500">{user.email}</p>
+                          <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                            {user.username}
+                          </p>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex flex-wrap gap-2">
+                          <ToneBadge
+                            tone={user.isActive ? 'success' : 'warning'}
+                            label={
+                              user.isActive
+                                ? managementCopy.users.active
+                                : managementCopy.users.inactive
+                            }
+                          />
+                          {user.forceReset ? (
+                            <ToneBadge tone="warning" label={managementCopy.users.resetRequired} />
+                          ) : null}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex flex-wrap gap-2">
+                          <ToneBadge
+                            tone={user.isTotpEnabled ? 'info' : 'neutral'}
+                            label={
+                              user.isTotpEnabled
+                                ? managementCopy.users.totpEnabled
+                                : managementCopy.users.noTotp
+                            }
+                          />
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-slate-600">
+                        {formatUserManagementDateTime(user.lastLoginAt, locale, sharedCopy.never)}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-slate-600">
+                        {formatUserManagementDateTime(
+                          user.createdAt,
+                          locale,
+                          sharedCopy.unavailable
+                        )}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex flex-wrap gap-2">
+                          <Link
+                            href={buildUserEditorHref(user.id)}
+                            className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:border-slate-300 hover:bg-white"
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                            {managementCopy.users.edit}
+                          </Link>
+                          {!user.isTotpEnabled ? (
+                            <InlineActionButton
+                              tone="primary"
+                              onClick={() => {
+                                setDialogState({
+                                  kind: 'force-totp',
+                                  scope: 'users',
+                                  id: user.id,
+                                  title: managementCopy.users.requireTotpTitle(
+                                    user.displayName || user.username
+                                  ),
+                                  description: managementCopy.users.requireTotpDescription,
+                                  confirmText: managementCopy.users.requireTotpConfirm,
+                                  pendingText: managementCopy.users.requireTotpPending,
+                                  successMessage: managementCopy.users.requireTotpSuccess(
+                                    user.displayName || user.username
+                                  ),
+                                  errorFallback: managementCopy.users.requireTotpError,
+                                  intent: 'primary',
+                                });
+                              }}
+                            >
+                              <ShieldCheck className="h-3.5 w-3.5" />
+                              {managementCopy.users.requireTotp}
+                            </InlineActionButton>
+                          ) : null}
+                          {user.isActive ? (
+                            <InlineActionButton
+                              tone="danger"
+                              onClick={() => {
+                                setDialogState({
+                                  kind: 'deactivate-user',
+                                  scope: 'users',
+                                  id: user.id,
+                                  title: managementCopy.users.deactivateTitle(
+                                    user.displayName || user.username
+                                  ),
+                                  description:
+                                    managementCopy.users.deactivateDescription(
+                                      workspaceAccessLabel
+                                    ),
+                                  confirmText: managementCopy.users.deactivateConfirm,
+                                  pendingText: managementCopy.users.deactivatePending,
+                                  successMessage: managementCopy.users.deactivateSuccess(
+                                    user.displayName || user.username
+                                  ),
+                                  errorFallback: managementCopy.users.deactivateError,
+                                  intent: 'danger',
+                                });
+                              }}
+                            >
+                              <UserMinus className="h-3.5 w-3.5" />
+                              {managementCopy.users.deactivate}
+                            </InlineActionButton>
+                          ) : (
+                            <InlineActionButton
+                              tone="primary"
+                              onClick={() => {
+                                setDialogState({
+                                  kind: 'reactivate-user',
+                                  scope: 'users',
+                                  id: user.id,
+                                  title: managementCopy.users.reactivateTitle(
+                                    user.displayName || user.username
+                                  ),
+                                  description:
+                                    managementCopy.users.reactivateDescription(
+                                      workspaceAccessLabel
+                                    ),
+                                  confirmText: managementCopy.users.reactivateConfirm,
+                                  pendingText: managementCopy.users.reactivatePending,
+                                  successMessage: managementCopy.users.reactivateSuccess(
+                                    user.displayName || user.username
+                                  ),
+                                  errorFallback: managementCopy.users.reactivateError,
+                                  intent: 'primary',
+                                });
+                              }}
+                            >
+                              <UserRoundPlus className="h-3.5 w-3.5" />
+                              {managementCopy.users.reactivate}
+                            </InlineActionButton>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </TableShell>
+                <div className="px-2 pt-4">
+                  <UserManagementPaginationFooter
+                    locale={locale}
+                    pagination={usersPanel.pagination}
+                    itemCount={usersPanel.data.length}
+                    pageSize={usersPageSize}
+                    onPageSizeChange={(pageSize) => {
+                      applyUsersQueryState({
+                        pageSize,
+                        page: 1,
+                      });
+                    }}
+                    onPrevious={() => {
+                      applyUsersQueryState({
+                        page: Math.max(1, usersPanel.pagination.page - 1),
+                      });
+                    }}
+                    onNext={() => {
+                      applyUsersQueryState({
+                        page: usersPanel.pagination.page + 1,
+                      });
+                    }}
+                  />
+                </div>
+              </GlassSurface>
+            )}
+          </section>
+        )}
+
+        {displayedTab === 'roles' && (
+          <section className="space-y-4">
+            <GlassSurface className="p-6">
+              <div className="flex flex-wrap items-end justify-between gap-4">
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <ShieldCheck className="h-4 w-4 text-slate-500" />
+                    <h2 className="text-lg font-semibold text-slate-900">
+                      {managementCopy.roles.title}
+                    </h2>
+                  </div>
+                  <p className="max-w-2xl text-sm leading-6 text-slate-600">
+                    {managementCopy.roles.description}
+                  </p>
+                </div>
                 <Link
-                  href={userCreateHref}
+                  href={roleCreateHref}
                   className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
                 >
-                  <UserRoundPlus className="h-4 w-4" />
-                  {managementCopy.users.newUser}
+                  <ShieldCheck className="h-4 w-4" />
+                  {managementCopy.roles.newRole}
                 </Link>
-                <label className="space-y-2 text-sm">
-                  <span className="font-medium text-slate-700">{managementCopy.users.searchLabel}</span>
-                  <input
-                    value={userSearch}
-                    onChange={(event) => {
-                      applyUsersQueryState({
-                        search: event.target.value,
-                        page: 1,
-                      });
-                    }}
-                    placeholder={managementCopy.users.searchPlaceholder}
-                    className="w-72 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-slate-400"
-                  />
-                </label>
-                <label className="space-y-2 text-sm">
-                  <span className="font-medium text-slate-700">{managementCopy.users.statusLabel}</span>
-                  <select
-                    value={userStatusFilter}
-                    onChange={(event) => {
-                      applyUsersQueryState({
-                        status: event.target.value as UserStatusFilter,
-                        page: 1,
-                      });
-                    }}
-                    className="rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-slate-400"
-                  >
-                    <option value="all">{managementCopy.users.statusAll}</option>
-                    <option value="active">{managementCopy.users.statusActive}</option>
-                    <option value="inactive">{managementCopy.users.statusInactive}</option>
-                  </select>
-                </label>
-              </div>
-            </div>
-          </GlassSurface>
-
-          {notice?.scope === 'users' ? <NoticeBanner tone={notice.tone} message={notice.message} /> : null}
-
-          {usersPanel.error && usersPanel.data.length === 0 && !usersPanel.loading ? (
-            <StateView status="error" title={managementCopy.users.unavailableTitle} description={usersPanel.error} />
-          ) : (
-            <GlassSurface className="p-4">
-              {usersPanel.error ? <NoticeBanner tone="error" message={usersPanel.error} /> : null}
-              <TableShell
-                ariaLabel={managementCopy.users.title}
-                columns={[...managementCopy.users.columns]}
-                dataLength={usersPanel.data.length}
-                isLoading={usersPanel.loading}
-                isEmpty={!usersPanel.loading && usersPanel.data.length === 0}
-                emptyTitle={managementCopy.users.emptyTitle}
-                emptyDescription={managementCopy.users.emptyDescription(workspaceDirectoryLabel)}
-              >
-                {usersPanel.data.map((user) => (
-                  <tr key={user.id} className="align-top">
-                    <td className="px-6 py-4">
-                      <div className="space-y-1">
-                        <p className="text-sm font-semibold text-slate-900">{user.displayName || user.username}</p>
-                        <p className="text-sm text-slate-500">{user.email}</p>
-                        <p className="text-xs uppercase tracking-[0.18em] text-slate-400">{user.username}</p>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex flex-wrap gap-2">
-                        <ToneBadge
-                          tone={user.isActive ? 'success' : 'warning'}
-                          label={user.isActive ? managementCopy.users.active : managementCopy.users.inactive}
-                        />
-                        {user.forceReset ? <ToneBadge tone="warning" label={managementCopy.users.resetRequired} /> : null}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex flex-wrap gap-2">
-                        <ToneBadge
-                          tone={user.isTotpEnabled ? 'info' : 'neutral'}
-                          label={user.isTotpEnabled ? managementCopy.users.totpEnabled : managementCopy.users.noTotp}
-                        />
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-slate-600">
-                      {formatUserManagementDateTime(user.lastLoginAt, locale, sharedCopy.never)}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-slate-600">
-                      {formatUserManagementDateTime(user.createdAt, locale, sharedCopy.unavailable)}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex flex-wrap gap-2">
-                        <Link
-                          href={buildUserEditorHref(user.id)}
-                          className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:border-slate-300 hover:bg-white"
-                        >
-                          <Pencil className="h-3.5 w-3.5" />
-                          {managementCopy.users.edit}
-                        </Link>
-                        {!user.isTotpEnabled ? (
-                          <InlineActionButton
-                            tone="primary"
-                            onClick={() => {
-                              setDialogState({
-                                kind: 'force-totp',
-                                scope: 'users',
-                                id: user.id,
-                                title: managementCopy.users.requireTotpTitle(user.displayName || user.username),
-                                description: managementCopy.users.requireTotpDescription,
-                                confirmText: managementCopy.users.requireTotpConfirm,
-                                pendingText: managementCopy.users.requireTotpPending,
-                                successMessage: managementCopy.users.requireTotpSuccess(user.displayName || user.username),
-                                errorFallback: managementCopy.users.requireTotpError,
-                                intent: 'primary',
-                              });
-                            }}
-                          >
-                            <ShieldCheck className="h-3.5 w-3.5" />
-                            {managementCopy.users.requireTotp}
-                          </InlineActionButton>
-                        ) : null}
-                        {user.isActive ? (
-                          <InlineActionButton
-                            tone="danger"
-                            onClick={() => {
-                              setDialogState({
-                                kind: 'deactivate-user',
-                                scope: 'users',
-                                id: user.id,
-                                title: managementCopy.users.deactivateTitle(user.displayName || user.username),
-                                description: managementCopy.users.deactivateDescription(workspaceAccessLabel),
-                                confirmText: managementCopy.users.deactivateConfirm,
-                                pendingText: managementCopy.users.deactivatePending,
-                                successMessage: managementCopy.users.deactivateSuccess(user.displayName || user.username),
-                                errorFallback: managementCopy.users.deactivateError,
-                                intent: 'danger',
-                              });
-                            }}
-                          >
-                            <UserMinus className="h-3.5 w-3.5" />
-                            {managementCopy.users.deactivate}
-                          </InlineActionButton>
-                        ) : (
-                          <InlineActionButton
-                            tone="primary"
-                            onClick={() => {
-                              setDialogState({
-                                kind: 'reactivate-user',
-                                scope: 'users',
-                                id: user.id,
-                                title: managementCopy.users.reactivateTitle(user.displayName || user.username),
-                                description: managementCopy.users.reactivateDescription(workspaceAccessLabel),
-                                confirmText: managementCopy.users.reactivateConfirm,
-                                pendingText: managementCopy.users.reactivatePending,
-                                successMessage: managementCopy.users.reactivateSuccess(user.displayName || user.username),
-                                errorFallback: managementCopy.users.reactivateError,
-                                intent: 'primary',
-                              });
-                            }}
-                          >
-                            <UserRoundPlus className="h-3.5 w-3.5" />
-                            {managementCopy.users.reactivate}
-                          </InlineActionButton>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </TableShell>
-              <div className="px-2 pt-4">
-                <UserManagementPaginationFooter
-                  locale={locale}
-                  pagination={usersPanel.pagination}
-                  itemCount={usersPanel.data.length}
-                  pageSize={usersPageSize}
-                  onPageSizeChange={(pageSize) => {
-                    applyUsersQueryState({
-                      pageSize,
-                      page: 1,
-                    });
-                  }}
-                  onPrevious={() => {
-                    applyUsersQueryState({
-                      page: Math.max(1, usersPanel.pagination.page - 1),
-                    });
-                  }}
-                  onNext={() => {
-                    applyUsersQueryState({
-                      page: usersPanel.pagination.page + 1,
-                    });
-                  }}
-                />
               </div>
             </GlassSurface>
-          )}
 
-        </section>
-      )}
+            {notice?.scope === 'roles' ? (
+              <NoticeBanner tone={notice.tone} message={notice.message} />
+            ) : null}
 
-      {displayedTab === 'roles' && (
-        <section className="space-y-4">
-          <GlassSurface className="p-6">
-            <div className="flex flex-wrap items-end justify-between gap-4">
+            {rolesPanel.error && rolesPanel.data.length === 0 && !rolesPanel.loading ? (
+              <StateView
+                status="error"
+                title={managementCopy.roles.unavailableTitle}
+                description={rolesPanel.error}
+              />
+            ) : (
+              <GlassSurface className="p-4">
+                {rolesPanel.error ? <NoticeBanner tone="error" message={rolesPanel.error} /> : null}
+                <TableShell
+                  ariaLabel={managementCopy.roles.title}
+                  columns={[...managementCopy.roles.columns]}
+                  dataLength={paginatedRoles.length}
+                  isLoading={rolesPanel.loading}
+                  isEmpty={!rolesPanel.loading && rolesPanel.data.length === 0}
+                  emptyTitle={managementCopy.roles.emptyTitle}
+                  emptyDescription={managementCopy.roles.emptyDescription(workspaceAccessLabel)}
+                >
+                  {paginatedRoles.map((role) => (
+                    <tr key={role.id} className="align-top">
+                      <td className="px-6 py-4">
+                        <div className="space-y-1">
+                          <p className="text-sm font-semibold text-slate-900">
+                            {role.localizedName || role.name.en || role.code}
+                          </p>
+                          <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                            {role.code}
+                          </p>
+                          {role.description ? (
+                            <p className="text-sm text-slate-500">{role.description}</p>
+                          ) : null}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-slate-600">
+                        {managementCopy.roles.permissions(role.permissionCount)}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-slate-600">
+                        {managementCopy.roles.assignedUsers(role.userCount)}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex flex-wrap gap-2">
+                          <ToneBadge
+                            tone={role.isSystem ? 'info' : 'neutral'}
+                            label={
+                              role.isSystem
+                                ? managementCopy.roles.protected
+                                : managementCopy.roles.custom
+                            }
+                          />
+                          <ToneBadge
+                            tone={role.isActive ? 'success' : 'warning'}
+                            label={
+                              role.isActive
+                                ? managementCopy.roles.active
+                                : managementCopy.roles.inactive
+                            }
+                          />
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-slate-600">
+                        {formatUserManagementDateTime(
+                          role.updatedAt,
+                          locale,
+                          sharedCopy.unavailable
+                        )}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex flex-wrap gap-2">
+                          <Link
+                            href={buildRoleEditorHref(role.id)}
+                            className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:border-slate-300 hover:bg-white"
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                            {managementCopy.roles.edit}
+                          </Link>
+                          {role.isSystem ? (
+                            <ToneBadge tone="neutral" label={managementCopy.roles.protected} />
+                          ) : (
+                            <InlineActionButton
+                              tone="danger"
+                              onClick={() => {
+                                setDialogState({
+                                  kind: 'delete-role',
+                                  scope: 'roles',
+                                  id: role.id,
+                                  title: managementCopy.roles.deleteTitle(
+                                    role.localizedName || role.name.en || role.code
+                                  ),
+                                  description: managementCopy.roles.deleteDescription,
+                                  confirmText: managementCopy.roles.deleteConfirm,
+                                  pendingText: managementCopy.roles.deletePending,
+                                  successMessage: managementCopy.roles.deleteSuccess(
+                                    role.localizedName || role.name.en || role.code
+                                  ),
+                                  errorFallback: managementCopy.roles.deleteError,
+                                  intent: 'danger',
+                                });
+                              }}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                              {managementCopy.roles.delete}
+                            </InlineActionButton>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </TableShell>
+                <div className="px-2 pt-4">
+                  <UserManagementPaginationFooter
+                    locale={locale}
+                    pagination={rolesPagination}
+                    itemCount={paginatedRoles.length}
+                    pageSize={rolesPageSize}
+                    onPageSizeChange={(pageSize) => {
+                      setRolesPageSize(pageSize);
+                      setRolesPage(1);
+                    }}
+                    onPrevious={() => {
+                      setRolesPage((current) => Math.max(1, current - 1));
+                    }}
+                    onNext={() => {
+                      setRolesPage((current) => current + 1);
+                    }}
+                  />
+                </div>
+              </GlassSurface>
+            )}
+          </section>
+        )}
+
+        {displayedTab === 'delegation' && (
+          <section className="space-y-4">
+            <GlassSurface className="p-6">
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
-                  <ShieldCheck className="h-4 w-4 text-slate-500" />
-                  <h2 className="text-lg font-semibold text-slate-900">{managementCopy.roles.title}</h2>
+                  <KeyRound className="h-4 w-4 text-slate-500" />
+                  <h2 className="text-lg font-semibold text-slate-900">
+                    {managementCopy.delegation.title}
+                  </h2>
                 </div>
-                <p className="max-w-2xl text-sm leading-6 text-slate-600">{managementCopy.roles.description}</p>
+                <p className="max-w-2xl text-sm leading-6 text-slate-600">
+                  {managementCopy.delegation.description}
+                </p>
               </div>
-              <Link
-                href={roleCreateHref}
-                className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
-              >
-                <ShieldCheck className="h-4 w-4" />
-                {managementCopy.roles.newRole}
-              </Link>
-            </div>
-          </GlassSurface>
+            </GlassSurface>
 
-          {notice?.scope === 'roles' ? <NoticeBanner tone={notice.tone} message={notice.message} /> : null}
-
-          {rolesPanel.error && rolesPanel.data.length === 0 && !rolesPanel.loading ? (
-            <StateView status="error" title={managementCopy.roles.unavailableTitle} description={rolesPanel.error} />
-          ) : (
-            <GlassSurface className="p-4">
-              {rolesPanel.error ? <NoticeBanner tone="error" message={rolesPanel.error} /> : null}
-              <TableShell
-                ariaLabel={managementCopy.roles.title}
-                columns={[...managementCopy.roles.columns]}
-                dataLength={paginatedRoles.length}
-                isLoading={rolesPanel.loading}
-                isEmpty={!rolesPanel.loading && rolesPanel.data.length === 0}
-                emptyTitle={managementCopy.roles.emptyTitle}
-                emptyDescription={managementCopy.roles.emptyDescription(workspaceAccessLabel)}
+            <GlassSurface className="p-6">
+              <FormSection
+                title={managementCopy.delegation.grantTitle}
+                description={managementCopy.delegation.grantDescription}
+                actions={
+                  <AsyncSubmitButton
+                    type="button"
+                    isPending={delegationPending}
+                    pendingText={managementCopy.delegation.grantPending}
+                    onClick={() => {
+                      void handleSaveDelegation();
+                    }}
+                    disabled={scopeOptionsPanel.loading}
+                  >
+                    {managementCopy.delegation.grantButton}
+                  </AsyncSubmitButton>
+                }
               >
-                {paginatedRoles.map((role) => (
-                  <tr key={role.id} className="align-top">
-                    <td className="px-6 py-4">
-                      <div className="space-y-1">
-                        <p className="text-sm font-semibold text-slate-900">
-                          {role.localizedName || role.name.en || role.code}
-                        </p>
-                        <p className="text-xs uppercase tracking-[0.18em] text-slate-400">{role.code}</p>
-                        {role.description ? <p className="text-sm text-slate-500">{role.description}</p> : null}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-slate-600">{managementCopy.roles.permissions(role.permissionCount)}</td>
-                    <td className="px-6 py-4 text-sm text-slate-600">{managementCopy.roles.assignedUsers(role.userCount)}</td>
-                    <td className="px-6 py-4">
-                      <div className="flex flex-wrap gap-2">
-                        <ToneBadge
-                          tone={role.isSystem ? 'info' : 'neutral'}
-                          label={role.isSystem ? managementCopy.roles.protected : managementCopy.roles.custom}
-                        />
-                        <ToneBadge
-                          tone={role.isActive ? 'success' : 'warning'}
-                          label={role.isActive ? managementCopy.roles.active : managementCopy.roles.inactive}
-                        />
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-slate-600">
-                      {formatUserManagementDateTime(role.updatedAt, locale, sharedCopy.unavailable)}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex flex-wrap gap-2">
-                        <Link
-                          href={buildRoleEditorHref(role.id)}
-                          className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:border-slate-300 hover:bg-white"
+                {scopeOptionsPanel.error ? (
+                  <NoticeBanner tone="error" message={scopeOptionsPanel.error} />
+                ) : null}
+                {scopeOptionsPanel.loading ? (
+                  <StateView
+                    status="unavailable"
+                    title={managementCopy.delegation.loadingTitle}
+                    description={managementCopy.delegation.loadingDescription}
+                  />
+                ) : scopeOptionsPanel.data.length === 0 ? (
+                  <StateView
+                    status="unavailable"
+                    title={managementCopy.delegation.noScopesTitle}
+                    description={managementCopy.delegation.noScopesDescription}
+                  />
+                ) : (
+                  <>
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <label className="space-y-2">
+                        <span className="text-sm font-semibold text-slate-900">
+                          {managementCopy.delegation.scopeTypeLabel}
+                        </span>
+                        <select
+                          aria-label={managementCopy.delegation.scopeTypeLabel}
+                          value={delegationDraft.scopeType}
+                          onChange={(event) => {
+                            const scopeType = event.target.value as DelegationDraft['scopeType'];
+                            const nextScopeOptions = scopeOptionsPanel.data.filter(
+                              (option) => option.type === scopeType
+                            );
+
+                            setDelegationDraft((current) => ({
+                              ...current,
+                              scopeType,
+                              scopeId: nextScopeOptions[0]?.id ?? '',
+                            }));
+                          }}
+                          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400"
                         >
-                          <Pencil className="h-3.5 w-3.5" />
-                          {managementCopy.roles.edit}
-                        </Link>
-                        {role.isSystem ? (
-                          <ToneBadge tone="neutral" label={managementCopy.roles.protected} />
-                        ) : (
-                          <InlineActionButton
-                            tone="danger"
-                            onClick={() => {
-                              setDialogState({
-                                kind: 'delete-role',
-                                scope: 'roles',
-                                id: role.id,
-                                title: managementCopy.roles.deleteTitle(
-                                  role.localizedName || role.name.en || role.code,
-                                ),
-                                description: managementCopy.roles.deleteDescription,
-                                confirmText: managementCopy.roles.deleteConfirm,
-                                pendingText: managementCopy.roles.deletePending,
-                                successMessage: managementCopy.roles.deleteSuccess(
-                                  role.localizedName || role.name.en || role.code,
-                                ),
-                                errorFallback: managementCopy.roles.deleteError,
-                                intent: 'danger',
-                              });
-                            }}
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                            {managementCopy.roles.delete}
-                          </InlineActionButton>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </TableShell>
-              <div className="px-2 pt-4">
-                <UserManagementPaginationFooter
-                  locale={locale}
-                  pagination={rolesPagination}
-                  itemCount={paginatedRoles.length}
-                  pageSize={rolesPageSize}
-                  onPageSizeChange={(pageSize) => {
-                    setRolesPageSize(pageSize);
-                    setRolesPage(1);
-                  }}
-                  onPrevious={() => {
-                    setRolesPage((current) => Math.max(1, current - 1));
-                  }}
-                  onNext={() => {
-                    setRolesPage((current) => current + 1);
-                  }}
-                />
-              </div>
+                          <option value="subsidiary">
+                            {managementCopy.delegation.scopeTypeSubsidiary}
+                          </option>
+                          <option value="talent">
+                            {managementCopy.delegation.scopeTypeTalent}
+                          </option>
+                        </select>
+                      </label>
+                      <label className="space-y-2">
+                        <span className="text-sm font-semibold text-slate-900">
+                          {managementCopy.delegation.scopeTargetLabel}
+                        </span>
+                        <select
+                          aria-label={managementCopy.delegation.scopeTargetLabel}
+                          value={delegationDraft.scopeId}
+                          onChange={(event) => {
+                            setDelegationDraft((current) => ({
+                              ...current,
+                              scopeId: event.target.value,
+                            }));
+                          }}
+                          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400"
+                        >
+                          {delegationScopeOptions.map((option) => (
+                            <option key={`${option.type}-${option.id}`} value={option.id}>
+                              {option.label}
+                            </option>
+                          ))}
+                        </select>
+                        {delegationScopeOptions.length > 0 ? (
+                          <p className="text-xs text-slate-500">
+                            {delegationScopeOptions.find(
+                              (option) => option.id === delegationDraft.scopeId
+                            )?.hint || delegationScopeOptions[0]?.hint}
+                          </p>
+                        ) : null}
+                      </label>
+                    </div>
+
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <label className="space-y-2">
+                        <span className="text-sm font-semibold text-slate-900">
+                          {managementCopy.delegation.delegateTypeLabel}
+                        </span>
+                        <select
+                          aria-label={managementCopy.delegation.delegateTypeLabel}
+                          value={delegationDraft.delegateType}
+                          onChange={(event) => {
+                            const delegateType = event.target
+                              .value as DelegationDraft['delegateType'];
+                            const nextDelegateOptions =
+                              delegateType === 'user'
+                                ? usersPanel.data
+                                : rolesPanel.data.filter((role) => role.isActive);
+
+                            setDelegationDraft((current) => ({
+                              ...current,
+                              delegateType,
+                              delegateId: nextDelegateOptions[0]?.id ?? '',
+                            }));
+                          }}
+                          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400"
+                        >
+                          <option value="user">{managementCopy.delegation.delegateTypeUser}</option>
+                          <option value="role">{managementCopy.delegation.delegateTypeRole}</option>
+                        </select>
+                      </label>
+                      <label className="space-y-2">
+                        <span className="text-sm font-semibold text-slate-900">
+                          {managementCopy.delegation.delegateLabel}
+                        </span>
+                        <select
+                          aria-label={managementCopy.delegation.delegateLabel}
+                          value={delegationDraft.delegateId}
+                          onChange={(event) => {
+                            setDelegationDraft((current) => ({
+                              ...current,
+                              delegateId: event.target.value,
+                            }));
+                          }}
+                          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400"
+                        >
+                          {delegationDelegateOptions.map((option) => (
+                            <option key={option.id} value={option.id}>
+                              {'email' in option
+                                ? `${option.displayName || option.username} (${option.email})`
+                                : `${option.localizedName || option.name.en || option.code} (${option.code})`}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                    </div>
+
+                    <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-600">
+                      {managementCopy.delegation.sourceNote}
+                    </div>
+                  </>
+                )}
+              </FormSection>
             </GlassSurface>
-          )}
-        </section>
-      )}
 
-      {displayedTab === 'delegation' && (
-        <section className="space-y-4">
-          <GlassSurface className="p-6">
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <KeyRound className="h-4 w-4 text-slate-500" />
-                <h2 className="text-lg font-semibold text-slate-900">{managementCopy.delegation.title}</h2>
-              </div>
-              <p className="max-w-2xl text-sm leading-6 text-slate-600">{managementCopy.delegation.description}</p>
-            </div>
-          </GlassSurface>
+            {notice?.scope === 'delegation' ? (
+              <NoticeBanner tone={notice.tone} message={notice.message} />
+            ) : null}
 
-          <GlassSurface className="p-6">
-            <FormSection
-              title={managementCopy.delegation.grantTitle}
-              description={managementCopy.delegation.grantDescription}
-              actions={
-                <AsyncSubmitButton
-                  type="button"
-                  isPending={delegationPending}
-                  pendingText={managementCopy.delegation.grantPending}
-                  onClick={() => {
-                    void handleSaveDelegation();
-                  }}
-                  disabled={scopeOptionsPanel.loading}
+            {delegationsPanel.error &&
+            delegationsPanel.data.length === 0 &&
+            !delegationsPanel.loading ? (
+              <StateView
+                status="error"
+                title={managementCopy.delegation.unavailableTitle}
+                description={delegationsPanel.error}
+              />
+            ) : (
+              <GlassSurface className="p-4">
+                {delegationsPanel.error ? (
+                  <NoticeBanner tone="error" message={delegationsPanel.error} />
+                ) : null}
+                <TableShell
+                  ariaLabel={managementCopy.delegation.title}
+                  columns={[...managementCopy.delegation.columns]}
+                  dataLength={paginatedDelegations.length}
+                  isLoading={delegationsPanel.loading}
+                  isEmpty={!delegationsPanel.loading && delegationsPanel.data.length === 0}
+                  emptyTitle={managementCopy.delegation.emptyTitle}
+                  emptyDescription={managementCopy.delegation.emptyDescription(isAcWorkspace)}
                 >
-                  {managementCopy.delegation.grantButton}
-                </AsyncSubmitButton>
-              }
-            >
-              {scopeOptionsPanel.error ? <NoticeBanner tone="error" message={scopeOptionsPanel.error} /> : null}
-              {scopeOptionsPanel.loading ? (
-                <StateView
-                  status="unavailable"
-                  title={managementCopy.delegation.loadingTitle}
-                  description={managementCopy.delegation.loadingDescription}
-                />
-              ) : scopeOptionsPanel.data.length === 0 ? (
-                <StateView
-                  status="unavailable"
-                  title={managementCopy.delegation.noScopesTitle}
-                  description={managementCopy.delegation.noScopesDescription}
-                />
-              ) : (
-                <>
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <label className="space-y-2">
-                      <span className="text-sm font-semibold text-slate-900">{managementCopy.delegation.scopeTypeLabel}</span>
-                      <select
-                        aria-label={managementCopy.delegation.scopeTypeLabel}
-                        value={delegationDraft.scopeType}
-                        onChange={(event) => {
-                          const scopeType = event.target.value as DelegationDraft['scopeType'];
-                          const nextScopeOptions = scopeOptionsPanel.data.filter((option) => option.type === scopeType);
-
-                          setDelegationDraft((current) => ({
-                            ...current,
-                            scopeType,
-                            scopeId: nextScopeOptions[0]?.id ?? '',
-                          }));
-                        }}
-                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400"
-                      >
-                        <option value="subsidiary">{managementCopy.delegation.scopeTypeSubsidiary}</option>
-                        <option value="talent">{managementCopy.delegation.scopeTypeTalent}</option>
-                      </select>
-                    </label>
-                    <label className="space-y-2">
-                      <span className="text-sm font-semibold text-slate-900">{managementCopy.delegation.scopeTargetLabel}</span>
-                      <select
-                        aria-label={managementCopy.delegation.scopeTargetLabel}
-                        value={delegationDraft.scopeId}
-                        onChange={(event) => {
-                          setDelegationDraft((current) => ({
-                            ...current,
-                            scopeId: event.target.value,
-                          }));
-                        }}
-                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400"
-                      >
-                        {delegationScopeOptions.map((option) => (
-                          <option key={`${option.type}-${option.id}`} value={option.id}>
-                            {option.label}
-                          </option>
-                        ))}
-                      </select>
-                      {delegationScopeOptions.length > 0 ? (
-                        <p className="text-xs text-slate-500">
-                          {delegationScopeOptions.find((option) => option.id === delegationDraft.scopeId)?.hint || delegationScopeOptions[0]?.hint}
-                        </p>
-                      ) : null}
-                    </label>
-                  </div>
-
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <label className="space-y-2">
-                      <span className="text-sm font-semibold text-slate-900">{managementCopy.delegation.delegateTypeLabel}</span>
-                      <select
-                        aria-label={managementCopy.delegation.delegateTypeLabel}
-                        value={delegationDraft.delegateType}
-                        onChange={(event) => {
-                          const delegateType = event.target.value as DelegationDraft['delegateType'];
-                          const nextDelegateOptions = delegateType === 'user'
-                            ? usersPanel.data
-                            : rolesPanel.data.filter((role) => role.isActive);
-
-                          setDelegationDraft((current) => ({
-                            ...current,
-                            delegateType,
-                            delegateId: nextDelegateOptions[0]?.id ?? '',
-                          }));
-                        }}
-                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400"
-                      >
-                        <option value="user">{managementCopy.delegation.delegateTypeUser}</option>
-                        <option value="role">{managementCopy.delegation.delegateTypeRole}</option>
-                      </select>
-                    </label>
-                    <label className="space-y-2">
-                      <span className="text-sm font-semibold text-slate-900">{managementCopy.delegation.delegateLabel}</span>
-                      <select
-                        aria-label={managementCopy.delegation.delegateLabel}
-                        value={delegationDraft.delegateId}
-                        onChange={(event) => {
-                          setDelegationDraft((current) => ({
-                            ...current,
-                            delegateId: event.target.value,
-                          }));
-                        }}
-                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400"
-                      >
-                        {delegationDelegateOptions.map((option) => (
-                          <option key={option.id} value={option.id}>
-                            {'email' in option
-                              ? `${option.displayName || option.username} (${option.email})`
-                              : `${option.localizedName || option.name.en || option.code} (${option.code})`}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                  </div>
-
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-600">
-                    {managementCopy.delegation.sourceNote}
-                  </div>
-                </>
-              )}
-            </FormSection>
-          </GlassSurface>
-
-          {notice?.scope === 'delegation' ? <NoticeBanner tone={notice.tone} message={notice.message} /> : null}
-
-          {delegationsPanel.error && delegationsPanel.data.length === 0 && !delegationsPanel.loading ? (
-            <StateView status="error" title={managementCopy.delegation.unavailableTitle} description={delegationsPanel.error} />
-          ) : (
-            <GlassSurface className="p-4">
-              {delegationsPanel.error ? <NoticeBanner tone="error" message={delegationsPanel.error} /> : null}
-              <TableShell
-                ariaLabel={managementCopy.delegation.title}
-                columns={[...managementCopy.delegation.columns]}
-                dataLength={paginatedDelegations.length}
-                isLoading={delegationsPanel.loading}
-                isEmpty={!delegationsPanel.loading && delegationsPanel.data.length === 0}
-                emptyTitle={managementCopy.delegation.emptyTitle}
-                emptyDescription={managementCopy.delegation.emptyDescription(isAcWorkspace)}
-              >
-                {paginatedDelegations.map((delegation) => (
-                  <tr key={delegation.id} className="align-top">
-                    <td className="px-6 py-4">
-                      <div className="space-y-1">
-                        <p className="text-sm font-semibold text-slate-900">{delegation.scopeName}</p>
-                        <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
-                          {getLocalizedScopeTypeLabel(delegation.scopeType, locale)}
-                        </p>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="space-y-1">
-                        <p className="text-sm font-semibold text-slate-900">{delegation.delegateName}</p>
-                        <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
-                          {getLocalizedDelegateTypeLabel(delegation.delegateType, locale)}
-                        </p>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-slate-600">
-                      {delegation.grantedBy ? delegation.grantedBy.username : managementCopy.delegation.systemGrantedBy}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-slate-600">
-                      {formatUserManagementDateTime(delegation.grantedAt, locale, sharedCopy.unavailable)}
-                    </td>
-                    <td className="px-6 py-4">
-                      <InlineActionButton
-                        tone="danger"
-                        onClick={() => {
-                          setDialogState({
-                            kind: 'remove-delegation',
-                            scope: 'delegation',
-                            id: delegation.id,
-                            title: managementCopy.delegation.removeTitle(delegation.delegateName),
-                            description: managementCopy.delegation.removeDescription,
-                            confirmText: managementCopy.delegation.removeConfirm,
-                            pendingText: managementCopy.delegation.removePending,
-                            successMessage: managementCopy.delegation.removeSuccess(delegation.delegateName),
-                            errorFallback: managementCopy.delegation.removeError,
-                            intent: 'danger',
-                          });
-                        }}
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                        {managementCopy.delegation.remove}
-                      </InlineActionButton>
-                    </td>
-                  </tr>
-                ))}
-              </TableShell>
-              <div className="px-2 pt-4">
-                <UserManagementPaginationFooter
-                  locale={locale}
-                  pagination={delegationsPagination}
-                  itemCount={paginatedDelegations.length}
-                  pageSize={delegationsPageSize}
-                  onPageSizeChange={(pageSize) => {
-                    setDelegationsPageSize(pageSize);
-                    setDelegationsPage(1);
-                  }}
-                  onPrevious={() => {
-                    setDelegationsPage((current) => Math.max(1, current - 1));
-                  }}
-                  onNext={() => {
-                    setDelegationsPage((current) => current + 1);
-                  }}
-                />
-              </div>
-            </GlassSurface>
-          )}
-        </section>
-      )}
+                  {paginatedDelegations.map((delegation) => (
+                    <tr key={delegation.id} className="align-top">
+                      <td className="px-6 py-4">
+                        <div className="space-y-1">
+                          <p className="text-sm font-semibold text-slate-900">
+                            {delegation.scopeName}
+                          </p>
+                          <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                            {getLocalizedScopeTypeLabel(delegation.scopeType, locale)}
+                          </p>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="space-y-1">
+                          <p className="text-sm font-semibold text-slate-900">
+                            {delegation.delegateName}
+                          </p>
+                          <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                            {getLocalizedDelegateTypeLabel(delegation.delegateType, locale)}
+                          </p>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-slate-600">
+                        {delegation.grantedBy
+                          ? delegation.grantedBy.username
+                          : managementCopy.delegation.systemGrantedBy}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-slate-600">
+                        {formatUserManagementDateTime(
+                          delegation.grantedAt,
+                          locale,
+                          sharedCopy.unavailable
+                        )}
+                      </td>
+                      <td className="px-6 py-4">
+                        <InlineActionButton
+                          tone="danger"
+                          onClick={() => {
+                            setDialogState({
+                              kind: 'remove-delegation',
+                              scope: 'delegation',
+                              id: delegation.id,
+                              title: managementCopy.delegation.removeTitle(delegation.delegateName),
+                              description: managementCopy.delegation.removeDescription,
+                              confirmText: managementCopy.delegation.removeConfirm,
+                              pendingText: managementCopy.delegation.removePending,
+                              successMessage: managementCopy.delegation.removeSuccess(
+                                delegation.delegateName
+                              ),
+                              errorFallback: managementCopy.delegation.removeError,
+                              intent: 'danger',
+                            });
+                          }}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                          {managementCopy.delegation.remove}
+                        </InlineActionButton>
+                      </td>
+                    </tr>
+                  ))}
+                </TableShell>
+                <div className="px-2 pt-4">
+                  <UserManagementPaginationFooter
+                    locale={locale}
+                    pagination={delegationsPagination}
+                    itemCount={paginatedDelegations.length}
+                    pageSize={delegationsPageSize}
+                    onPageSizeChange={(pageSize) => {
+                      setDelegationsPageSize(pageSize);
+                      setDelegationsPage(1);
+                    }}
+                    onPrevious={() => {
+                      setDelegationsPage((current) => Math.max(1, current - 1));
+                    }}
+                    onNext={() => {
+                      setDelegationsPage((current) => current + 1);
+                    }}
+                  />
+                </div>
+              </GlassSurface>
+            )}
+          </section>
+        )}
       </div>
 
       <ConfirmActionDialog

@@ -1,11 +1,13 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable, Logger, Optional } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
 import { RedisService } from '../../redis';
 import { SettingsService } from '../../settings';
-import { buildCaptchaRuntimeStatus, type CaptchaRuntimeStatus } from '../domain/captcha-runtime.policy';
+import {
+  buildCaptchaRuntimeStatus,
+  type CaptchaRuntimeStatus,
+} from '../domain/captcha-runtime.policy';
 import { CaptchaMode } from '../dto/marshmallow.dto';
 import { TrustScoreService } from './trust-score.service';
 
@@ -16,7 +18,7 @@ import { TrustScoreService } from './trust-score.service';
 export interface CaptchaDecision {
   required: boolean;
   reason?: string;
-  forceReject?: boolean;  // If true, reject the request entirely (honeypot, etc.)
+  forceReject?: boolean; // If true, reject the request entirely (honeypot, etc.)
   unavailable?: boolean;
   trustLevel?: string;
 }
@@ -25,7 +27,7 @@ export interface CaptchaContext {
   ip: string;
   fingerprint: string;
   userAgent: string;
-  honeypotValue?: string;  // Hidden field value - should be empty for real users
+  honeypotValue?: string; // Hidden field value - should be empty for real users
   contentPreview?: string; // Optional content for risk pre-analysis
 }
 
@@ -36,11 +38,11 @@ export interface ResolvedTurnstileConfigStatus extends CaptchaRuntimeStatus {
 
 // Auto mode thresholds
 const AUTO_MODE_CONFIG = {
-  ipRequestThreshold: 3,          // Require CAPTCHA after N requests per hour from same IP
+  ipRequestThreshold: 3, // Require CAPTCHA after N requests per hour from same IP
   fingerprintRequestThreshold: 5, // Require CAPTCHA after N requests per hour from same fingerprint
-  multipleFingerprints: 5,        // Max fingerprints from same IP before suspicious
-  trustScoreLowThreshold: 40,     // Require CAPTCHA if trust score below this
-  captchaFailRateThreshold: 0.5,  // Require CAPTCHA if fail rate > 50%
+  multipleFingerprints: 5, // Max fingerprints from same IP before suspicious
+  trustScoreLowThreshold: 40, // Require CAPTCHA if trust score below this
+  captchaFailRateThreshold: 0.5, // Require CAPTCHA if fail rate > 50%
 };
 
 @Injectable()
@@ -51,7 +53,7 @@ export class CaptchaService {
     private readonly redisService: RedisService,
     private readonly configService: ConfigService,
     private readonly trustScoreService: TrustScoreService,
-    @Optional() private readonly settingsService?: SettingsService,
+    @Optional() private readonly settingsService?: SettingsService
   ) {}
 
   // =============================================================================
@@ -67,7 +69,7 @@ export class CaptchaService {
   }
 
   async getTurnstileConfigStatusForTenant(
-    tenantSchema: string | null | undefined,
+    tenantSchema: string | null | undefined
   ): Promise<ResolvedTurnstileConfigStatus> {
     const resolved = await this.resolveTurnstileConfig(tenantSchema);
 
@@ -82,9 +84,11 @@ export class CaptchaService {
     };
   }
 
-  private async resolveTurnstileConfig(
-    tenantSchema: string | null | undefined,
-  ): Promise<{ siteKey: string | null; secretKey: string | null; source: 'tenant' | 'environment' | 'none' }> {
+  private async resolveTurnstileConfig(tenantSchema: string | null | undefined): Promise<{
+    siteKey: string | null;
+    secretKey: string | null;
+    source: 'tenant' | 'environment' | 'none';
+  }> {
     if (tenantSchema && this.settingsService) {
       const resolved = await this.settingsService.resolveTenantTurnstileRuntimeConfig(tenantSchema);
 
@@ -107,7 +111,7 @@ export class CaptchaService {
 
   private async applyRuntimePolicy(
     decision: CaptchaDecision,
-    tenantSchema?: string | null,
+    tenantSchema?: string | null
   ): Promise<CaptchaDecision> {
     if (!decision.required || decision.forceReject) {
       return decision;
@@ -140,7 +144,7 @@ export class CaptchaService {
   async shouldRequireCaptcha(
     mode: CaptchaMode,
     context: CaptchaContext,
-    tenantSchema?: string | null,
+    tenantSchema?: string | null
   ): Promise<CaptchaDecision> {
     // 0. Honeypot check - immediate rejection for bots
     if (context.honeypotValue) {
@@ -183,7 +187,10 @@ export class CaptchaService {
     if (trustScore.level === 'blocked') {
       return { required: true, reason: 'trust_blocked', forceReject: true, trustLevel: 'blocked' };
     }
-    if (trustScore.level === 'suspicious' || trustScore.score < AUTO_MODE_CONFIG.trustScoreLowThreshold) {
+    if (
+      trustScore.level === 'suspicious' ||
+      trustScore.score < AUTO_MODE_CONFIG.trustScoreLowThreshold
+    ) {
       return { required: true, reason: 'trust_suspicious', trustLevel: trustScore.level };
     }
 
@@ -249,7 +256,7 @@ export class CaptchaService {
     token: string,
     ip: string,
     fingerprint?: string,
-    tenantSchema?: string | null,
+    tenantSchema?: string | null
   ): Promise<boolean> {
     const resolved = await this.resolveTurnstileConfig(tenantSchema);
     const runtimeStatus = buildCaptchaRuntimeStatus({
@@ -270,18 +277,15 @@ export class CaptchaService {
     }
 
     try {
-      const response = await fetch(
-        'https://challenges.cloudflare.com/turnstile/v0/siteverify',
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: new URLSearchParams({
-            secret: secretKey,
-            response: token,
-            remoteip: ip,
-          }),
-        },
-      );
+      const response = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          secret: secretKey,
+          response: token,
+          remoteip: ip,
+        }),
+      });
 
       const result = await response.json();
       const passed = result.success === true;

@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable } from '@nestjs/common';
+
 import { type RequestContext } from '@tcrn/shared';
 
 import { DatabaseService } from '../../database';
@@ -21,35 +21,25 @@ export class MfrReportService {
     reportJobService: ReportJobService,
     private readonly mfrReportApplicationService: MfrReportApplicationService = new MfrReportApplicationService(
       new MfrReportRepository(databaseService),
-      reportJobService,
-    ),
+      reportJobService
+    )
   ) {}
 
   async search(
     talentId: string,
     filters: MfrFilterCriteriaDto = {},
     previewLimit: number = 20,
-    context: RequestContext,
+    context: RequestContext
   ): Promise<MfrSearchResult> {
-    return this.mfrReportApplicationService.search(
-      talentId,
-      filters,
-      previewLimit,
-      context,
-    );
+    return this.mfrReportApplicationService.search(talentId, filters, previewLimit, context);
   }
 
   async createJob(
     talentId: string,
     filters: MfrFilterCriteriaDto = {},
     format: ReportFormat = ReportFormat.XLSX,
-    context: RequestContext,
+    context: RequestContext
   ): Promise<ReportCreateResponse> {
-    return this.mfrReportApplicationService.createJob(
-      talentId,
-      filters,
-      format,
-      context,
-    );
+    return this.mfrReportApplicationService.createJob(talentId, filters, format, context);
   }
 }

@@ -30,7 +30,7 @@ describe('PublicHomepageService', () => {
 
     service = new PublicHomepageService(
       mockPublicHomepageReadRepository as unknown as PublicHomepageReadRepository,
-      mockDomainLookupService as DomainLookupService,
+      mockDomainLookupService as DomainLookupService
     );
   });
 
@@ -82,7 +82,7 @@ describe('PublicHomepageService', () => {
 
     const result = await service.getPublishedHomepageByDomainAndTalentCode(
       'brand.example.com',
-      'SORA',
+      'SORA'
     );
 
     expect(result).toMatchObject({
@@ -93,13 +93,10 @@ describe('PublicHomepageService', () => {
         title: 'Demo SEO',
       },
     });
-    expect(mockDomainLookupService.lookupDomain).toHaveBeenCalledWith(
-      'brand.example.com',
-      'SORA',
-    );
+    expect(mockDomainLookupService.lookupDomain).toHaveBeenCalledWith('brand.example.com', 'SORA');
     expect(mockPublicHomepageReadRepository.findPublishedTalentById).toHaveBeenCalledWith(
       'tenant_demo',
-      'talent-1',
+      'talent-1'
     );
   });
 
@@ -110,7 +107,7 @@ describe('PublicHomepageService', () => {
     await expect(service.getPublishedHomepage('demo')).resolves.toBeNull();
     expect(mockPublicHomepageReadRepository.findPublishedTalentByPath).toHaveBeenCalledWith(
       'tenant_demo',
-      'demo',
+      'demo'
     );
   });
 
@@ -177,7 +174,7 @@ describe('PublicHomepageService', () => {
     });
     expect(mockPublicHomepageReadRepository.findPublishedTalentById).toHaveBeenCalledWith(
       'tenant_demo',
-      '550e8400-e29b-41d4-a716-446655440000',
+      '550e8400-e29b-41d4-a716-446655440000'
     );
   });
 });

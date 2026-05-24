@@ -1,13 +1,14 @@
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { SUPPORTED_UI_LOCALES, type SupportedUiLocale } from '@tcrn/shared';
+
 import type {
   DictionaryItemRecord,
   DictionaryTypeSummary,
 } from '@/domains/config-dictionary-settings/api/system-dictionary.api';
 import { SystemDictionaryScreen } from '@/domains/config-dictionary-settings/screens/SystemDictionaryScreen';
 import { localizedFixture } from '@/domains/config-dictionary-settings/testing/localized-fixtures';
-import { SUPPORTED_UI_LOCALES, type SupportedUiLocale } from '@tcrn/shared';
 
 const mockRequest = vi.fn();
 const mockRouterReplace = vi.fn();
@@ -149,7 +150,9 @@ describe('SystemDictionaryScreen', () => {
     fireEvent.click(await screen.findByRole('button', { name: '辞書タイプドロワーを閉じる' }));
 
     fireEvent.click(screen.getByRole('button', { name: '編集' }));
-    expect(await screen.findByRole('button', { name: '辞書項目ドロワーを閉じる' })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('button', { name: '辞書項目ドロワーを閉じる' })
+    ).toBeInTheDocument();
   });
 
   it('clears stale dictionary rows while loading a newly selected type', async () => {
@@ -243,7 +246,7 @@ describe('SystemDictionaryScreen', () => {
     await waitFor(() => {
       expect(mockRequest).toHaveBeenCalledWith(
         expect.stringContaining('/api/v1/system-dictionary/MEMBERSHIP_LEVEL'),
-        expect.anything(),
+        expect.anything()
       );
     });
     await waitFor(() => {
@@ -265,7 +268,9 @@ describe('SystemDictionaryScreen', () => {
       },
     });
 
-    expect(await screen.findByText('This dictionary type does not contain any visible items yet.')).toBeInTheDocument();
+    expect(
+      await screen.findByText('This dictionary type does not contain any visible items yet.')
+    ).toBeInTheDocument();
   });
 
   it('creates dictionary types and manages dictionary item lifecycle in the AC-owned workspace', async () => {
@@ -336,7 +341,9 @@ describe('SystemDictionaryScreen', () => {
 
       if (url.pathname === '/api/v1/system-dictionary/CUSTOMER_STATUS') {
         const includeInactive = url.searchParams.get('includeInactive') === 'true';
-        const visibleItems = cloneItems(includeInactive ? items : items.filter((item) => item.isActive));
+        const visibleItems = cloneItems(
+          includeInactive ? items : items.filter((item) => item.isActive)
+        );
 
         return {
           success: true,
@@ -371,7 +378,10 @@ describe('SystemDictionaryScreen', () => {
         };
       }
 
-      if (url.pathname === '/api/v1/system-dictionary/CUSTOMER_STATUS/items' && init?.method === 'POST') {
+      if (
+        url.pathname === '/api/v1/system-dictionary/CUSTOMER_STATUS/items' &&
+        init?.method === 'POST'
+      ) {
         const body = JSON.parse(String(init.body)) as {
           code: string;
           name: ReturnType<typeof localizedFixture>;
@@ -402,13 +412,16 @@ describe('SystemDictionaryScreen', () => {
                 ...entry,
                 count: items.length,
               }
-            : entry,
+            : entry
         );
 
         return createdItem;
       }
 
-      if (url.pathname === '/api/v1/system-dictionary/CUSTOMER_STATUS/items/item-1' && init?.method === 'PATCH') {
+      if (
+        url.pathname === '/api/v1/system-dictionary/CUSTOMER_STATUS/items/item-1' &&
+        init?.method === 'PATCH'
+      ) {
         const body = JSON.parse(String(init.body)) as {
           name: ReturnType<typeof localizedFixture>;
           description?: ReturnType<typeof localizedFixture>;
@@ -428,13 +441,16 @@ describe('SystemDictionaryScreen', () => {
                 updatedAt: '2026-04-17T00:40:00.000Z',
                 version: body.version + 1,
               }
-            : item,
+            : item
         );
 
         return items.find((item) => item.id === 'item-1');
       }
 
-      if (url.pathname === '/api/v1/system-dictionary/CUSTOMER_STATUS/items/item-1' && init?.method === 'DELETE') {
+      if (
+        url.pathname === '/api/v1/system-dictionary/CUSTOMER_STATUS/items/item-1' &&
+        init?.method === 'DELETE'
+      ) {
         const body = JSON.parse(String(init.body)) as {
           version: number;
         };
@@ -447,13 +463,16 @@ describe('SystemDictionaryScreen', () => {
                 updatedAt: '2026-04-17T00:50:00.000Z',
                 version: body.version + 1,
               }
-            : item,
+            : item
         );
 
         return items.find((item) => item.id === 'item-1');
       }
 
-      if (url.pathname === '/api/v1/system-dictionary/CUSTOMER_STATUS/items/item-1/reactivate' && init?.method === 'POST') {
+      if (
+        url.pathname === '/api/v1/system-dictionary/CUSTOMER_STATUS/items/item-1/reactivate' &&
+        init?.method === 'POST'
+      ) {
         const body = JSON.parse(String(init.body)) as {
           version: number;
         };
@@ -466,7 +485,7 @@ describe('SystemDictionaryScreen', () => {
                 updatedAt: '2026-04-17T01:00:00.000Z',
                 version: body.version + 1,
               }
-            : item,
+            : item
         );
 
         return items.find((item) => item.id === 'item-1');
@@ -500,11 +519,13 @@ describe('SystemDictionaryScreen', () => {
             description: localizedFixture(''),
             sortOrder: 0,
           }),
-        }),
+        })
       );
     });
 
-    expect(await screen.findByText('MEMBERSHIP_LEVEL dictionary type created.')).toBeInTheDocument();
+    expect(
+      await screen.findByText('MEMBERSHIP_LEVEL dictionary type created.')
+    ).toBeInTheDocument();
     expect((await screen.findAllByText('Membership Level')).length).toBeGreaterThan(0);
 
     fireEvent.click(screen.getByRole('button', { name: 'New item' }));
@@ -528,11 +549,13 @@ describe('SystemDictionaryScreen', () => {
             description: localizedFixture(''),
             sortOrder: 0,
           }),
-        }),
+        })
       );
     });
 
-    expect(await screen.findByText('INACTIVE item created under CUSTOMER_STATUS.')).toBeInTheDocument();
+    expect(
+      await screen.findByText('INACTIVE item created under CUSTOMER_STATUS.')
+    ).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: /Customer Status/ }));
     expect((await screen.findAllByText('Inactive customer')).length).toBeGreaterThan(0);
 
@@ -559,7 +582,7 @@ describe('SystemDictionaryScreen', () => {
             sortOrder: 0,
             version: 1,
           }),
-        }),
+        })
       );
     });
 
@@ -568,7 +591,9 @@ describe('SystemDictionaryScreen', () => {
       expect(within(getTableRowByText('ACTIVE')).getByText('v2')).toBeInTheDocument();
     });
 
-    fireEvent.click(within(getTableRowByText('ACTIVE')).getByRole('button', { name: 'Deactivate' }));
+    fireEvent.click(
+      within(getTableRowByText('ACTIVE')).getByRole('button', { name: 'Deactivate' })
+    );
     const deactivateDialog = await screen.findByRole('dialog');
     expect(within(deactivateDialog).getByText('Deactivate dictionary item')).toBeInTheDocument();
     fireEvent.click(within(deactivateDialog).getByRole('button', { name: 'Deactivate' }));
@@ -581,7 +606,7 @@ describe('SystemDictionaryScreen', () => {
           body: JSON.stringify({
             version: 2,
           }),
-        }),
+        })
       );
     });
 
@@ -596,7 +621,9 @@ describe('SystemDictionaryScreen', () => {
       expect(within(activeRow).getByRole('button', { name: 'Reactivate' })).toBeInTheDocument();
     });
 
-    fireEvent.click(within(getTableRowByText('ACTIVE')).getByRole('button', { name: 'Reactivate' }));
+    fireEvent.click(
+      within(getTableRowByText('ACTIVE')).getByRole('button', { name: 'Reactivate' })
+    );
     const reactivateDialog = await screen.findByRole('dialog');
     expect(within(reactivateDialog).getByText('Reactivate dictionary item')).toBeInTheDocument();
     fireEvent.click(within(reactivateDialog).getByRole('button', { name: 'Reactivate' }));
@@ -609,16 +636,16 @@ describe('SystemDictionaryScreen', () => {
           body: JSON.stringify({
             version: 3,
           }),
-        }),
+        })
       );
     });
 
     expect(await screen.findByText('ACTIVE reactivated.')).toBeInTheDocument();
   });
 
-
   it('hydrates dictionary explorer state from URL and preserves unrelated query params', async () => {
-    currentSearch = 'dictionaryType=MEMBERSHIP_LEVEL&dictionarySearch=vip&dictionaryInactive=true&dictionaryPage=2&dictionaryPageSize=50&foo=1';
+    currentSearch =
+      'dictionaryType=MEMBERSHIP_LEVEL&dictionarySearch=vip&dictionaryInactive=true&dictionaryPage=2&dictionaryPageSize=50&foo=1';
     const types: DictionaryTypeSummary[] = [
       {
         type: 'CUSTOMER_STATUS',
@@ -694,7 +721,7 @@ describe('SystemDictionaryScreen', () => {
     });
 
     expect(mockRouterReplace).toHaveBeenCalledWith(
-      '/ac/ac-tenant/system-dictionary?foo=1&dictionaryType=MEMBERSHIP_LEVEL&dictionarySearch=vip&dictionaryInactive=true',
+      '/ac/ac-tenant/system-dictionary?foo=1&dictionaryType=MEMBERSHIP_LEVEL&dictionarySearch=vip&dictionaryInactive=true'
     );
   });
 

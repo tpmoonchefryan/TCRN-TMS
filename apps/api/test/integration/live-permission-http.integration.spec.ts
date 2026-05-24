@@ -1,6 +1,5 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 // Opt-in live HTTP smoke for post-prune permission verification on an existing tenant.
-
 import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
@@ -28,13 +27,20 @@ const LIVE_FORBID_PREFIXES = process.env.LIVE_PERMISSION_SMOKE_FORBID_PREFIXES;
 const LIVE_EXPECT_ROLE_CODES = process.env.LIVE_PERMISSION_SMOKE_EXPECT_ROLE_CODES;
 
 function parseCsvEnv(value: string | undefined): string[] {
-  return value
-    ?.split(',')
-    .map((entry) => entry.trim())
-    .filter((entry) => entry.length > 0) ?? [];
+  return (
+    value
+      ?.split(',')
+      .map((entry) => entry.trim())
+      .filter((entry) => entry.length > 0) ?? []
+  );
 }
 
-const DEFAULT_FORBIDDEN_PREFIXES = ['homepage:', 'marshmallow:', 'log.change:', 'log.integration:'] as const;
+const DEFAULT_FORBIDDEN_PREFIXES = [
+  'homepage:',
+  'marshmallow:',
+  'log.change:',
+  'log.integration:',
+] as const;
 const DEFAULT_EXPECTED_CANONICAL_GRANTS = {
   'talent.homepage:read': 'grant',
   'talent.marshmallow:read': 'grant',
@@ -49,7 +55,7 @@ const EXPECTED_CANONICAL_GRANTS = Object.fromEntries(
   (EXPECTED_GRANTED_KEYS.length > 0
     ? EXPECTED_GRANTED_KEYS
     : Object.keys(DEFAULT_EXPECTED_CANONICAL_GRANTS)
-  ).map((permissionKey) => [permissionKey, 'grant']),
+  ).map((permissionKey) => [permissionKey, 'grant'])
 ) as Record<string, 'grant'>;
 const LEGACY_PREFIXES =
   FORBIDDEN_PREFIXES.length > 0 ? FORBIDDEN_PREFIXES : [...DEFAULT_FORBIDDEN_PREFIXES];
@@ -79,16 +85,17 @@ describeLive('Live Permission HTTP Smoke', () => {
   };
 
   const withAuth = (req: request.Test) =>
-    req
-      .set('Authorization', `Bearer ${issueToken()}`)
-      .set('X-Tenant-ID', tenantId);
+    req.set('Authorization', `Bearer ${issueToken()}`).set('X-Tenant-ID', tenantId);
 
   const pickPermissions = (
     permissions: Record<string, string>,
-    permissionKeys: readonly string[],
+    permissionKeys: readonly string[]
   ): Record<string, string> =>
     Object.fromEntries(
-      permissionKeys.map((permissionKey) => [permissionKey, permissions[permissionKey] ?? 'missing']),
+      permissionKeys.map((permissionKey) => [
+        permissionKey,
+        permissions[permissionKey] ?? 'missing',
+      ])
     );
 
   beforeAll(async () => {
@@ -126,7 +133,7 @@ describeLive('Live Permission HTTP Smoke', () => {
           AND is_active = true
         LIMIT 1
       `,
-      LIVE_USER,
+      LIVE_USER
     );
 
     const selectedUser = users[0];
@@ -147,10 +154,12 @@ describeLive('Live Permission HTTP Smoke', () => {
 
   it('returns canonical content/log grants with legacy keys removed', async () => {
     const response = await withAuth(
-      request(app.getHttpServer()).get('/api/v1/users/me/permissions').query({
-        scopeType: LIVE_SCOPE_TYPE,
-        ...(LIVE_SCOPE_ID ? { scopeId: LIVE_SCOPE_ID } : {}),
-      }),
+      request(app.getHttpServer())
+        .get('/api/v1/users/me/permissions')
+        .query({
+          scopeType: LIVE_SCOPE_TYPE,
+          ...(LIVE_SCOPE_ID ? { scopeId: LIVE_SCOPE_ID } : {}),
+        })
     ).expect(200);
 
     expect(response.body.success).toBe(true);
@@ -158,17 +167,17 @@ describeLive('Live Permission HTTP Smoke', () => {
       expect.objectContaining({
         type: LIVE_SCOPE_TYPE,
         id: LIVE_SCOPE_ID,
-      }),
+      })
     );
 
     const permissions = response.body.data.permissions as Record<string, string>;
     const legacyKeys = Object.keys(permissions).filter((permissionKey) =>
-      LEGACY_PREFIXES.some((prefix) => permissionKey.startsWith(prefix)),
+      LEGACY_PREFIXES.some((prefix) => permissionKey.startsWith(prefix))
     );
 
     expect(legacyKeys).toEqual([]);
     expect(pickPermissions(permissions, Object.keys(EXPECTED_CANONICAL_GRANTS))).toEqual(
-      EXPECTED_CANONICAL_GRANTS,
+      EXPECTED_CANONICAL_GRANTS
     );
 
     if (EXPECTED_ROLE_CODES.length > 0) {
@@ -177,9 +186,9 @@ describeLive('Live Permission HTTP Smoke', () => {
           EXPECTED_ROLE_CODES.map((roleCode) =>
             expect.objectContaining({
               code: roleCode,
-            }),
-          ),
-        ),
+            })
+          )
+        )
       );
     }
   });

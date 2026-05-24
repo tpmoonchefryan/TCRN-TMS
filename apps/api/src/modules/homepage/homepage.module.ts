@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { HttpModule } from '@nestjs/axios';
 import { Module } from '@nestjs/common';
 import { ScheduleModule } from '@nestjs/schedule';
@@ -12,8 +11,8 @@ import { TalentModule } from '../talent/talent.module';
 import { HomepageAdminService } from './application/homepage-admin.service';
 import { HomepageSchedulerApplicationService } from './application/homepage-scheduler.service';
 import { HomepageVersionApplicationService } from './application/homepage-version.service';
-import { PublicPresenceFoundationService } from './application/public-presence-foundation.service';
 import { PublicPresenceAssetService } from './application/public-presence-asset.service';
+import { PublicPresenceFoundationService } from './application/public-presence-foundation.service';
 import { PublicPresenceStudioService } from './application/public-presence-studio.service';
 import { PublicPresenceWorkflowService } from './application/public-presence-workflow.service';
 import {

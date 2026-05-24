@@ -29,19 +29,18 @@ export function useOverlayFocusManager({
     wasOpenRef.current = true;
 
     const focusTimer = window.setTimeout(() => {
-      const prefersDesktopFocus = typeof window !== 'undefined'
-        ? window.innerWidth >= desktopBreakpoint
-        : true;
+      const prefersDesktopFocus =
+        typeof window !== 'undefined' ? window.innerWidth >= desktopBreakpoint : true;
       const target = prefersDesktopFocus
-        ? desktopInitialFocusRef.current ?? mobileInitialFocusRef.current
-        : mobileInitialFocusRef.current ?? desktopInitialFocusRef.current;
-      const activeElement = document.activeElement instanceof HTMLElement
-        ? document.activeElement
-        : null;
-      const shouldMoveFocus = activeElement === null
-        || activeElement === document.body
-        || activeElement === openerRef.current
-        || activeElement === fallbackTriggerRef.current;
+        ? (desktopInitialFocusRef.current ?? mobileInitialFocusRef.current)
+        : (mobileInitialFocusRef.current ?? desktopInitialFocusRef.current);
+      const activeElement =
+        document.activeElement instanceof HTMLElement ? document.activeElement : null;
+      const shouldMoveFocus =
+        activeElement === null ||
+        activeElement === document.body ||
+        activeElement === openerRef.current ||
+        activeElement === fallbackTriggerRef.current;
 
       if (shouldMoveFocus) {
         target?.focus();

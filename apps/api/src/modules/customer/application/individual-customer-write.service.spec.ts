@@ -1,8 +1,8 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { BadRequestException, ConflictException } from '@nestjs/common';
-import type { RequestContext } from '@tcrn/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import type { RequestContext } from '@tcrn/shared';
 
 import type { DatabaseService } from '../../database';
 import type { ChangeLogService, TechEventLogService } from '../../log';
@@ -73,25 +73,23 @@ describe('IndividualCustomerWriteApplicationService', () => {
     mockChangeLogService,
     mockTechEventLogService,
     mockCustomerArchiveAccessService,
-    mockCustomerPiiPlatformApplicationService,
+    mockCustomerPiiPlatformApplicationService
   );
 
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(mockDatabaseService.getPrisma).mockReturnValue(prismaClient as never);
-    vi.mocked(mockWriteRepository.withTransaction).mockImplementation(
-      async (operation) => operation(transactionClient as never),
+    vi.mocked(mockWriteRepository.withTransaction).mockImplementation(async (operation) =>
+      operation(transactionClient as never)
     );
   });
 
   it('fails closed when pii is submitted without an active pii platform adapter', async () => {
-    vi.mocked(
-      mockCustomerPiiPlatformApplicationService.assertPlatformEnabled,
-    ).mockRejectedValue(
+    vi.mocked(mockCustomerPiiPlatformApplicationService.assertPlatformEnabled).mockRejectedValue(
       new BadRequestException({
         code: 'VALIDATION_FAILED',
         message: 'TCRN PII Platform is not enabled for this talent',
-      }),
+      })
     );
 
     await expect(
@@ -104,24 +102,20 @@ describe('IndividualCustomerWriteApplicationService', () => {
             familyName: 'Doe',
           },
         },
-        context,
-      ),
+        context
+      )
     ).rejects.toThrow(BadRequestException);
 
     expect(mockWriteRepository.createCustomerProfile).not.toHaveBeenCalled();
-    expect(
-      mockCustomerPiiPlatformApplicationService.upsertCustomerPii,
-    ).not.toHaveBeenCalled();
+    expect(mockCustomerPiiPlatformApplicationService.upsertCustomerPii).not.toHaveBeenCalled();
   });
 
   it('creates a customer record and synchronizes pii to the external platform', async () => {
     const createdAt = new Date('2026-04-14T00:00:00.000Z');
-    vi.mocked(
-      mockCustomerPiiPlatformApplicationService.assertPlatformEnabled,
-    ).mockResolvedValue(undefined as never);
-    vi.mocked(
-      mockCustomerArchiveAccessService.requireTalentArchiveTarget,
-    ).mockResolvedValue({
+    vi.mocked(mockCustomerPiiPlatformApplicationService.assertPlatformEnabled).mockResolvedValue(
+      undefined as never
+    );
+    vi.mocked(mockCustomerArchiveAccessService.requireTalentArchiveTarget).mockResolvedValue({
       talentId: 'talent-1',
       profileStoreId: 'store-1',
     });
@@ -132,9 +126,7 @@ describe('IndividualCustomerWriteApplicationService', () => {
     });
     vi.mocked(mockChangeLogService.create).mockResolvedValue(undefined as never);
     vi.mocked(mockWriteRepository.insertAccessLog).mockResolvedValue(1 as never);
-    vi.mocked(
-      mockCustomerPiiPlatformApplicationService.upsertCustomerPii,
-    ).mockResolvedValue({
+    vi.mocked(mockCustomerPiiPlatformApplicationService.upsertCustomerPii).mockResolvedValue({
       customerId: 'customer-1',
       syncedAt: '2026-04-14T00:00:01.000Z',
     } as never);
@@ -150,8 +142,8 @@ describe('IndividualCustomerWriteApplicationService', () => {
             familyName: 'Doe',
           },
         },
-        context,
-      ),
+        context
+      )
     ).resolves.toEqual({
       id: 'customer-1',
       profileType: 'individual',
@@ -166,11 +158,9 @@ describe('IndividualCustomerWriteApplicationService', () => {
         talentId: 'talent-1',
         profileStoreId: 'store-1',
         nickname: 'Test User',
-      }),
+      })
     );
-    expect(
-      mockCustomerPiiPlatformApplicationService.upsertCustomerPii,
-    ).toHaveBeenCalledWith(
+    expect(mockCustomerPiiPlatformApplicationService.upsertCustomerPii).toHaveBeenCalledWith(
       'customer-1',
       'talent-1',
       'individual',
@@ -178,18 +168,16 @@ describe('IndividualCustomerWriteApplicationService', () => {
         givenName: 'John',
         familyName: 'Doe',
       },
-      context,
+      context
     );
   });
 
   it('logs a warning and rethrows when pii synchronization fails after customer creation', async () => {
     const platformFailure = new Error('pii platform unavailable');
-    vi.mocked(
-      mockCustomerPiiPlatformApplicationService.assertPlatformEnabled,
-    ).mockResolvedValue(undefined as never);
-    vi.mocked(
-      mockCustomerArchiveAccessService.requireTalentArchiveTarget,
-    ).mockResolvedValue({
+    vi.mocked(mockCustomerPiiPlatformApplicationService.assertPlatformEnabled).mockResolvedValue(
+      undefined as never
+    );
+    vi.mocked(mockCustomerArchiveAccessService.requireTalentArchiveTarget).mockResolvedValue({
       talentId: 'talent-1',
       profileStoreId: 'store-1',
     });
@@ -200,9 +188,9 @@ describe('IndividualCustomerWriteApplicationService', () => {
     });
     vi.mocked(mockChangeLogService.create).mockResolvedValue(undefined as never);
     vi.mocked(mockWriteRepository.insertAccessLog).mockResolvedValue(1 as never);
-    vi.mocked(
-      mockCustomerPiiPlatformApplicationService.upsertCustomerPii,
-    ).mockRejectedValue(platformFailure);
+    vi.mocked(mockCustomerPiiPlatformApplicationService.upsertCustomerPii).mockRejectedValue(
+      platformFailure
+    );
     vi.mocked(mockTechEventLogService.warn).mockResolvedValue(undefined as never);
 
     await expect(
@@ -214,8 +202,8 @@ describe('IndividualCustomerWriteApplicationService', () => {
             givenName: 'John',
           },
         },
-        context,
-      ),
+        context
+      )
     ).rejects.toThrow('pii platform unavailable');
 
     expect(mockTechEventLogService.warn).toHaveBeenCalledWith(
@@ -226,14 +214,12 @@ describe('IndividualCustomerWriteApplicationService', () => {
         profileStoreId: 'store-1',
         operatorId: 'user-1',
       }),
-      context,
+      context
     );
   });
 
   it('rejects updates when the optimistic version is stale', async () => {
-    vi.mocked(
-      mockCustomerArchiveAccessService.requireCustomerArchiveAccess,
-    ).mockResolvedValue({
+    vi.mocked(mockCustomerArchiveAccessService.requireCustomerArchiveAccess).mockResolvedValue({
       id: 'customer-1',
       profileType: ProfileType.INDIVIDUAL,
       profileStoreId: 'store-1',
@@ -254,8 +240,8 @@ describe('IndividualCustomerWriteApplicationService', () => {
           version: 1,
           nickname: 'Updated Name',
         },
-        context,
-      ),
+        context
+      )
     ).rejects.toThrow(ConflictException);
 
     expect(mockWriteRepository.updateCustomerProfile).not.toHaveBeenCalled();
@@ -263,9 +249,7 @@ describe('IndividualCustomerWriteApplicationService', () => {
 
   it('updates non-pii customer fields and records change plus access logs', async () => {
     const updatedAt = new Date('2026-04-14T00:05:00.000Z');
-    vi.mocked(
-      mockCustomerArchiveAccessService.requireCustomerArchiveAccess,
-    ).mockResolvedValue({
+    vi.mocked(mockCustomerArchiveAccessService.requireCustomerArchiveAccess).mockResolvedValue({
       id: 'customer-1',
       profileType: ProfileType.INDIVIDUAL,
       profileStoreId: 'store-1',
@@ -298,8 +282,8 @@ describe('IndividualCustomerWriteApplicationService', () => {
           tags: ['vip', 'premium'],
           notes: 'updated',
         },
-        context,
-      ),
+        context
+      )
     ).resolves.toEqual({
       id: 'customer-1',
       nickname: 'Updated Name',
@@ -320,7 +304,7 @@ describe('IndividualCustomerWriteApplicationService', () => {
           tags: ['vip', 'premium'],
           notes: 'updated',
         },
-      },
+      }
     );
     expect(mockWriteRepository.insertAccessLog).toHaveBeenCalledWith(
       transactionClient,
@@ -329,7 +313,7 @@ describe('IndividualCustomerWriteApplicationService', () => {
         customerId: 'customer-1',
         profileStoreId: 'store-1',
         action: 'update',
-      }),
+      })
     );
   });
 });

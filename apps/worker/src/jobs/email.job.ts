@@ -1,4 +1,9 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+import { createDecipheriv } from 'crypto';
+
+import type { Job, Processor } from 'bullmq';
+import * as nodemailer from 'nodemailer';
+import * as tencentcloud from 'tencentcloud-sdk-nodejs-ses';
 
 import { prisma } from '@tcrn/database';
 import {
@@ -14,10 +19,6 @@ import {
   normalizeStoredEmailConfig,
   type LocalizedText,
 } from '@tcrn/shared';
-import type { Job, Processor } from 'bullmq';
-import { createDecipheriv } from 'crypto';
-import * as nodemailer from 'nodemailer';
-import * as tencentcloud from 'tencentcloud-sdk-nodejs-ses';
 
 import { workerLogger as logger } from '../logger';
 
@@ -59,11 +60,14 @@ interface EmailConfig {
     fromAddress: string;
     fromName: string;
   };
-  tenantSenderOverrides?: Record<string, {
-    fromAddress?: string;
-    fromName?: string;
-    replyTo?: string;
-  }>;
+  tenantSenderOverrides?: Record<
+    string,
+    {
+      fromAddress?: string;
+      fromName?: string;
+      replyTo?: string;
+    }
+  >;
 }
 
 // Encryption configuration
@@ -225,15 +229,13 @@ function applyTenantSenderOverride(config: EmailConfig, tenantSchema?: string): 
 /**
  * Get email address from explicit payload only
  */
-async function getRecipientEmail(
-  recipientEmail?: string,
-): Promise<string> {
+async function getRecipientEmail(recipientEmail?: string): Promise<string> {
   if (recipientEmail) {
     return recipientEmail;
   }
 
   throw new Error(
-    'Recipient email must be provided explicitly. Worker-side PII lookup has been retired.',
+    'Recipient email must be provided explicitly. Worker-side PII lookup has been retired.'
   );
 }
 
@@ -243,7 +245,7 @@ async function getRecipientEmail(
 async function renderTemplate(
   templateCode: string,
   locale: string,
-  variables: Record<string, string>,
+  variables: Record<string, string>
 ): Promise<{ subject: string; htmlBody: string; textBody?: string }> {
   const template = await prisma.emailTemplate.findUnique({
     where: { code: templateCode },
@@ -259,7 +261,9 @@ async function renderTemplate(
 
   const subjectText = readLocalizedText(template.subject, 'email_template.subject');
   const bodyHtmlText = readLocalizedText(template.bodyHtml, 'email_template.body_html');
-  const bodyTextValue = template.bodyText ? readLocalizedText(template.bodyText, 'email_template.body_text') : null;
+  const bodyTextValue = template.bodyText
+    ? readLocalizedText(template.bodyText, 'email_template.body_text')
+    : null;
   let subject = pickLocalizedText(subjectText, locale);
   let htmlBody = pickLocalizedText(bodyHtmlText, locale);
   let textBody = bodyTextValue ? pickLocalizedText(bodyTextValue, locale) || undefined : undefined;
@@ -285,7 +289,7 @@ async function sendViaTencentSes(
   subject: string,
   htmlBody: string,
   textBody: string | undefined,
-  config: NonNullable<EmailConfig['tencentSes']>,
+  config: NonNullable<EmailConfig['tencentSes']>
 ): Promise<string> {
   const client = new SesClient({
     credential: {
@@ -317,7 +321,7 @@ async function sendViaSmtp(
   subject: string,
   htmlBody: string,
   textBody: string | undefined,
-  config: NonNullable<EmailConfig['smtp']>,
+  config: NonNullable<EmailConfig['smtp']>
 ): Promise<string> {
   const transporter = nodemailer.createTransport({
     host: config.host,
@@ -355,7 +359,7 @@ async function sendEmail(
   subject: string,
   htmlBody: string,
   textBody?: string,
-  tenantSchema?: string,
+  tenantSchema?: string
 ): Promise<string> {
   const config = await getEmailConfig(tenantSchema);
 
@@ -391,16 +395,24 @@ async function logEmailError(
   locale: string,
   errorCode: string,
   errorMessage: string,
-  retryCount: number,
+  retryCount: number
 ): Promise<void> {
   try {
     // Use raw query to insert into tenant schema
-    await prisma.$executeRawUnsafe(`
+    await prisma.$executeRawUnsafe(
+      `
       INSERT INTO "${tenantSchema}".email_log 
         (id, template_code, recipient_hint, locale, error_code, error_message, retry_count, created_at)
       VALUES 
         (gen_random_uuid(), $1, $2, $3, $4, $5, $6, NOW())
-    `, templateCode, recipientHint, locale, errorCode, errorMessage, retryCount);
+    `,
+      templateCode,
+      recipientHint,
+      locale,
+      errorCode,
+      errorMessage,
+      retryCount
+    );
   } catch (logError) {
     logger.error(`[EmailJob] Failed to log email error: ${logError}`);
   }
@@ -410,7 +422,7 @@ async function logEmailError(
  * Email job processor
  */
 export const emailJobProcessor: Processor<EmailJobData, EmailJobResult> = async (
-  job: Job<EmailJobData, EmailJobResult>,
+  job: Job<EmailJobData, EmailJobResult>
 ) => {
   const startTime = Date.now();
   const { tenantSchema, templateCode, recipientEmail, locale, variables } = job.data;
@@ -422,13 +434,19 @@ export const emailJobProcessor: Processor<EmailJobData, EmailJobResult> = async 
   try {
     // 1. Get recipient email
     email = await getRecipientEmail(recipientEmail);
-    
+
     // 2. Render template
     const rendered = await renderTemplate(templateCode, locale, variables);
-    
+
     // 3. Send email
-    const messageId = await sendEmail(email, rendered.subject, rendered.htmlBody, rendered.textBody, tenantSchema);
-    
+    const messageId = await sendEmail(
+      email,
+      rendered.subject,
+      rendered.htmlBody,
+      rendered.textBody,
+      tenantSchema
+    );
+
     const duration = Date.now() - startTime;
     logger.info(`[EmailJob] Job ${job.id} completed in ${duration}ms (messageId: ${messageId})`);
 
@@ -436,7 +454,7 @@ export const emailJobProcessor: Processor<EmailJobData, EmailJobResult> = async 
   } catch (error) {
     const err = error as Error & { code?: string };
     const duration = Date.now() - startTime;
-    
+
     logger.error(`[EmailJob] Job ${job.id} failed after ${duration}ms:`, err.message);
 
     // Log error to tenant schema
@@ -447,7 +465,7 @@ export const emailJobProcessor: Processor<EmailJobData, EmailJobResult> = async 
       locale,
       err.code || 'UNKNOWN',
       err.message,
-      job.attemptsMade,
+      job.attemptsMade
     );
 
     // Re-throw to trigger retry

@@ -19,7 +19,7 @@ describe('DomainLookupService', () => {
     };
 
     service = new DomainLookupService(
-      mockPublicHomepageReadRepository as unknown as PublicHomepageReadRepository,
+      mockPublicHomepageReadRepository as unknown as PublicHomepageReadRepository
     );
   });
 
@@ -52,7 +52,7 @@ describe('DomainLookupService', () => {
     expect(mockPublicHomepageReadRepository.findVerifiedDomainBindingRoute).toHaveBeenCalledWith(
       'tenant_demo',
       'brand.example.com',
-      null,
+      null
     );
     expect(mockPublicHomepageReadRepository.findVerifiedDomainRoute).not.toHaveBeenCalled();
   });
@@ -86,7 +86,7 @@ describe('DomainLookupService', () => {
     expect(mockPublicHomepageReadRepository.findVerifiedDomainBindingRoute).toHaveBeenCalledWith(
       'tenant_demo',
       'brand.example.com',
-      'SORA',
+      'SORA'
     );
     expect(mockPublicHomepageReadRepository.findVerifiedDomainRoute).not.toHaveBeenCalled();
   });
@@ -126,7 +126,7 @@ describe('DomainLookupService', () => {
     });
     expect(mockPublicHomepageReadRepository.findVerifiedDomainRoute).toHaveBeenCalledWith(
       'tenant_demo',
-      'example.com',
+      'example.com'
     );
   });
 

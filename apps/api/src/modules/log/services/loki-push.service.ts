@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable, InternalServerErrorException, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
@@ -30,7 +29,7 @@ export class LokiPushService implements OnModuleInit {
   constructor(private readonly configService: ConfigService) {
     this.lokiUrl = this.configService.get<string>(
       'LOKI_PUSH_URL',
-      'http://loki:3100/loki/api/v1/push',
+      'http://loki:3100/loki/api/v1/push'
     );
     this.enabled = this.configService.get<string>('LOKI_ENABLED', 'false') === 'true';
   }
@@ -58,11 +57,7 @@ export class LokiPushService implements OnModuleInit {
   /**
    * Push single log entry to Loki
    */
-  async push(
-    stream: string,
-    labels: Record<string, string>,
-    entry: unknown,
-  ): Promise<void> {
+  async push(stream: string, labels: Record<string, string>, entry: unknown): Promise<void> {
     if (!this.enabled) return;
 
     this.pendingEntries.push({
@@ -94,7 +89,7 @@ export class LokiPushService implements OnModuleInit {
         action: entry.action,
         object_type: entry.objectType,
       },
-      entry,
+      entry
     );
   }
 
@@ -115,7 +110,7 @@ export class LokiPushService implements OnModuleInit {
         event_type: entry.eventType,
         scope: entry.scope,
       },
-      entry,
+      entry
     );
   }
 
@@ -135,7 +130,7 @@ export class LokiPushService implements OnModuleInit {
         consumer_code: entry.consumerCode || 'unknown',
         status: entry.responseStatus?.toString() || 'unknown',
       },
-      entry,
+      entry
     );
   }
 
@@ -153,7 +148,7 @@ export class LokiPushService implements OnModuleInit {
     } catch (error) {
       // Log error but don't rethrow - log push failure shouldn't affect main flow
       this.logger.error(
-        `Failed to push batch to Loki: ${error instanceof Error ? error.message : String(error)}`,
+        `Failed to push batch to Loki: ${error instanceof Error ? error.message : String(error)}`
       );
       // Optionally add back to queue for retry (with limit)
     }
@@ -175,10 +170,7 @@ export class LokiPushService implements OnModuleInit {
       }
       const existing = streamMap.get(key);
       if (existing) {
-        existing.push([
-          this.toNanoTimestamp(entry.timestamp),
-          JSON.stringify(entry.data),
-        ]);
+        existing.push([this.toNanoTimestamp(entry.timestamp), JSON.stringify(entry.data)]);
       }
     }
 
@@ -205,7 +197,9 @@ export class LokiPushService implements OnModuleInit {
     });
 
     if (!response.ok) {
-      throw new InternalServerErrorException(`Loki push failed: ${response.status} ${response.statusText}`);
+      throw new InternalServerErrorException(
+        `Loki push failed: ${response.status} ${response.statusText}`
+      );
     }
   }
 

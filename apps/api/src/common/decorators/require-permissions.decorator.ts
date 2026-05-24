@@ -1,12 +1,12 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { SetMetadata } from '@nestjs/common';
+import type { Request } from 'express';
+
 import {
   type PermissionActionInput,
   type RbacResourceCode,
   resolveRbacPermission,
 } from '@tcrn/shared';
-import type { Request } from 'express';
 
 export interface RequiredPermission {
   resource: RbacResourceCode;
@@ -21,11 +21,11 @@ export type PermissionResolver = (request: Request) => RequiredPermission[];
 /**
  * Decorator to require specific permissions for an endpoint
  * PRD §12.6
- * 
+ *
  * @example
  * @RequirePermissions({ resource: 'customer.profile', action: 'read' })
  * async listCustomers() { ... }
- * 
+ *
  * @example
  * @RequirePermissions(
  *   { resource: 'customer.profile', action: 'read' },

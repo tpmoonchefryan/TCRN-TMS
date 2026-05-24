@@ -1,12 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { pickLocalizedText, type LocalizedText } from '@tcrn/shared';
 
-import type {
-  MfrFilterCriteriaDto,
-  MfrPreviewRow,
-  MfrSearchResult,
-} from '../dto/report.dto';
+import type { MfrFilterCriteriaDto, MfrPreviewRow, MfrSearchResult } from '../dto/report.dto';
 
 export interface RawMfrPreviewRecord {
   nickname: string | null;
@@ -29,7 +24,7 @@ export const mapMfrPreviewRow = (record: RawMfrPreviewRecord): MfrPreviewRow => 
 });
 
 export const buildMfrFilterSummary = (
-  filters: MfrFilterCriteriaDto,
+  filters: MfrFilterCriteriaDto
 ): MfrSearchResult['filterSummary'] => {
   let dateRange: string | null = null;
   if (filters.validFromStart || filters.validFromEnd) {

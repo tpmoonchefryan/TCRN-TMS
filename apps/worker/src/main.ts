@@ -38,8 +38,7 @@ async function bootstrap() {
     await redisConnection.connect();
   } catch (error) {
     const redisFailureMessage =
-      firstRedisErrorMessage
-      ?? (error instanceof Error ? error.message : String(error));
+      firstRedisErrorMessage ?? (error instanceof Error ? error.message : String(error));
     logger.error(
       `Unable to connect to Redis at ${redisUrl}: ${redisFailureMessage}. Start local infra first with "pnpm infra:up" or "docker compose --env-file .env.local up -d postgres redis minio nats".`
     );

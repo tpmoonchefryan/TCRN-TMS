@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Redis from 'ioredis';
@@ -19,7 +18,7 @@ export class RateLimiterService implements OnModuleInit {
   private readonly allowedBots = [
     'Googlebot',
     'Bingbot',
-    'Slurp',           // Yahoo
+    'Slurp', // Yahoo
     'DuckDuckBot',
     'Baiduspider',
     'YandexBot',
@@ -33,7 +32,7 @@ export class RateLimiterService implements OnModuleInit {
 
   async onModuleInit() {
     const redisUrl = this.configService.get<string>('REDIS_URL');
-    
+
     if (!redisUrl) {
       this.logger.warn('REDIS_URL not configured, rate limiting disabled');
       return;
@@ -52,9 +51,9 @@ export class RateLimiterService implements OnModuleInit {
       this.rateLimiter = new RateLimiterRedis({
         storeClient: this.redisClient,
         keyPrefix: 'rl_public',
-        points: 60,            // 60 requests
-        duration: 60,          // per 60 seconds (1 minute)
-        blockDuration: 60,     // Block for 60 seconds if exceeded
+        points: 60, // 60 requests
+        duration: 60, // per 60 seconds (1 minute)
+        blockDuration: 60, // Block for 60 seconds if exceeded
       });
 
       this.logger.log('Rate limiter initialized with Redis');
@@ -68,9 +67,7 @@ export class RateLimiterService implements OnModuleInit {
    */
   isAllowedBot(userAgent: string | undefined): boolean {
     if (!userAgent) return false;
-    return this.allowedBots.some(bot => 
-      userAgent.toLowerCase().includes(bot.toLowerCase())
-    );
+    return this.allowedBots.some((bot) => userAgent.toLowerCase().includes(bot.toLowerCase()));
   }
 
   /**
@@ -78,7 +75,10 @@ export class RateLimiterService implements OnModuleInit {
    */
   isWhitelistedIp(ip: string): boolean {
     const whitelist = this.configService.get<string>('RATE_LIMIT_WHITELIST') || '';
-    const whitelistedIps = whitelist.split(',').map(s => s.trim()).filter(Boolean);
+    const whitelistedIps = whitelist
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
     return whitelistedIps.includes(ip);
   }
 
@@ -126,7 +126,7 @@ export class RateLimiterService implements OnModuleInit {
    */
   async checkRateLimit(
     ip: string,
-    userAgent: string | undefined,
+    userAgent: string | undefined
   ): Promise<{ allowed: boolean; remaining: number; retryAfter?: number }> {
     // Check whitelist
     if (this.isWhitelistedIp(ip)) {
@@ -140,7 +140,7 @@ export class RateLimiterService implements OnModuleInit {
 
     // Check rate limit
     const result = await this.consume(ip);
-    
+
     if (result) {
       return {
         allowed: false,

@@ -5,10 +5,10 @@ import { buildPublicHomepageEndpoint } from '@/domains/public-homepage/api/publi
 describe('buildPublicHomepageEndpoint', () => {
   it('maps shared-domain public homepage paths to the canonical public API endpoint', () => {
     expect(buildPublicHomepageEndpoint('tenant-a/suisei')).toBe(
-      '/api/v1/public/homepage/tenant-a/suisei',
+      '/api/v1/public/homepage/tenant-a/suisei'
     );
     expect(buildPublicHomepageEndpoint('tenant-a/suisei/homepage')).toBe(
-      '/api/v1/public/homepage/tenant-a/suisei',
+      '/api/v1/public/homepage/tenant-a/suisei'
     );
   });
 

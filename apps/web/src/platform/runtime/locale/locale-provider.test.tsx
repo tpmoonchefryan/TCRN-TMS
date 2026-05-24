@@ -1,21 +1,17 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
+
 import { SUPPORTED_UI_LOCALES } from '@tcrn/shared';
 
-import {
-  UiLocaleProvider,
-  useUiLocale,
-} from '@/platform/runtime/locale/locale-provider';
+import { UiLocaleProvider, useUiLocale } from '@/platform/runtime/locale/locale-provider';
 
-let mockSession:
-  | {
-      tenantId: string;
-      user: {
-        id: string;
-        preferredLanguage: string;
-      };
-    }
-  | null = null;
+let mockSession: {
+  tenantId: string;
+  user: {
+    id: string;
+    preferredLanguage: string;
+  };
+} | null = null;
 
 vi.mock('@/platform/runtime/session/session-provider', () => ({
   useSession: () => ({
@@ -62,7 +58,7 @@ describe('UiLocaleProvider', () => {
     render(
       <UiLocaleProvider>
         <LocaleHarness />
-      </UiLocaleProvider>,
+      </UiLocaleProvider>
     );
 
     expect(screen.getByTestId('current-locale')).toHaveTextContent('ja');
@@ -84,7 +80,7 @@ describe('UiLocaleProvider', () => {
     render(
       <UiLocaleProvider>
         <LocaleHarness />
-      </UiLocaleProvider>,
+      </UiLocaleProvider>
     );
 
     expect(screen.getByTestId('current-locale')).toHaveTextContent('zh_HANS');
@@ -118,7 +114,7 @@ describe('UiLocaleProvider', () => {
     render(
       <UiLocaleProvider>
         <LocaleHarness />
-      </UiLocaleProvider>,
+      </UiLocaleProvider>
     );
 
     expect(screen.getByTestId('current-locale')).toHaveTextContent('zh_HANT');
@@ -140,7 +136,7 @@ describe('UiLocaleProvider', () => {
     render(
       <UiLocaleProvider>
         <LocaleHarness />
-      </UiLocaleProvider>,
+      </UiLocaleProvider>
     );
 
     expect(screen.getByTestId('current-locale')).toHaveTextContent('ko');
@@ -161,7 +157,7 @@ describe('UiLocaleProvider', () => {
     render(
       <UiLocaleProvider>
         <LocaleHarness />
-      </UiLocaleProvider>,
+      </UiLocaleProvider>
     );
 
     expect(screen.getByTestId('current-locale')).toHaveTextContent('fr');

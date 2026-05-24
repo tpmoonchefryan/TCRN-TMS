@@ -1,6 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { ConflictException } from '@nestjs/common';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import {
   buildBlankPublicPresenceAssetSourceBundle,
   buildPublicPresenceTemplateAssetManifest,
@@ -9,7 +10,6 @@ import {
   type PublicPresenceDocument,
   type RequestContext,
 } from '@tcrn/shared';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { calculatePublicPresenceContentHash } from '../domain/public-presence-foundation.policy';
 import { PublicPresenceFoundationRepository } from '../infrastructure/public-presence-foundation.repository';
@@ -119,7 +119,7 @@ describe('PublicPresenceFoundationService', () => {
     vi.clearAllMocks();
     service = new PublicPresenceFoundationService(
       mockRepository as unknown as PublicPresenceFoundationRepository,
-      mockAssetService as unknown as PublicPresenceAssetService,
+      mockAssetService as unknown as PublicPresenceAssetService
     );
   });
 
@@ -203,7 +203,7 @@ describe('PublicPresenceFoundationService', () => {
       expect.objectContaining({
         portalId: 'portal-1',
         versionNumber: 1,
-      }),
+      })
     );
   });
 
@@ -244,7 +244,7 @@ describe('PublicPresenceFoundationService', () => {
       service.saveDraft('talent-1', safeDocument, requestContext, {
         expectedCurrentContentHash: 'stale-client-hash',
         templateAssetPin: templatePin,
-      }),
+      })
     ).rejects.toThrow(ConflictException);
     expect(mockRepository.createDraftVersionAndAssign).not.toHaveBeenCalled();
   });
@@ -321,14 +321,12 @@ describe('PublicPresenceFoundationService', () => {
         id: 'snapshot-2',
       },
     });
-    expect(
-      mockRepository.createValidationSnapshotForExistingDraft,
-    ).toHaveBeenCalledWith(
+    expect(mockRepository.createValidationSnapshotForExistingDraft).toHaveBeenCalledWith(
       'tenant_test',
       expect.objectContaining({
         eventType: 'validationSnapshotted',
         versionId: 'version-1',
-      }),
+      })
     );
     expect(mockRepository.createDraftVersionAndAssign).not.toHaveBeenCalled();
   });

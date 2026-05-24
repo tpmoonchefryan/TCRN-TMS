@@ -1,7 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { describe, expect, it } from 'vitest';
 
+import { buildPublicPresenceSeedRuntimeAuthority } from '../../public-presence/asset-runtime';
 import {
   PUBLIC_PRESENCE_COMPONENT_SEED_BLUEPRINTS,
   PUBLIC_PRESENCE_SEED_METADATA,
@@ -9,9 +9,6 @@ import {
   PUBLIC_PRESENCE_STAGE_SECTION_SEED_BLUEPRINTS,
   PUBLIC_PRESENCE_TEMPLATE_SEED_BLUEPRINTS,
 } from '../../public-presence/registry';
-import {
-  buildPublicPresenceSeedRuntimeAuthority,
-} from '../../public-presence/asset-runtime';
 import {
   createPublicPresenceValidationArtifact,
   validatePublicPresenceDocument,
@@ -87,8 +84,7 @@ const safeActiveDocument = {
   },
 };
 
-const activeHubRuntimeAuthority =
-  buildPublicPresenceSeedRuntimeAuthority('activeTalentHub');
+const activeHubRuntimeAuthority = buildPublicPresenceSeedRuntimeAuthority('activeTalentHub');
 
 describe('public presence registry and schema', () => {
   it('exposes the approved template and section vocabulary', () => {
@@ -96,9 +92,11 @@ describe('public presence registry and schema', () => {
       'activeTalentHub',
       'debutReveal',
     ]);
-    expect(PUBLIC_PRESENCE_STAGE_SECTION_SEED_BLUEPRINTS.firstEncounter.fieldDefinitions.map((field) => field.fieldKey)).toEqual(
-      expect.arrayContaining(['displayName', 'primaryCtaUrl']),
-    );
+    expect(
+      PUBLIC_PRESENCE_STAGE_SECTION_SEED_BLUEPRINTS.firstEncounter.fieldDefinitions.map(
+        (field) => field.fieldKey
+      )
+    ).toEqual(expect.arrayContaining(['displayName', 'primaryCtaUrl']));
     expect(PUBLIC_PRESENCE_COMPONENT_SEED_BLUEPRINTS.SocialLinks.aiPatchAllowlist).toEqual([
       'platforms',
       'style',
@@ -110,21 +108,23 @@ describe('public presence registry and schema', () => {
       canonicalization: 'stableJson',
     });
     expect(PUBLIC_PRESENCE_SEED_METADATA.documentStates).toEqual(
-      expect.arrayContaining(['draft', 'approved', 'published']),
+      expect.arrayContaining(['draft', 'approved', 'published'])
     );
     expect(PUBLIC_PRESENCE_SAFETY_POLICY.embedPolicies.youtube.acceptedHosts).toEqual(
-      expect.arrayContaining(['youtube.com', 'youtu.be']),
+      expect.arrayContaining(['youtube.com', 'youtu.be'])
     );
   });
 
   it('keeps the outer document schema strict while allowing validation-time compatibility handling', () => {
-    expect(PublicPresenceDocumentSchema.parse(safeActiveDocument).templateId).toBe('activeTalentHub');
+    expect(PublicPresenceDocumentSchema.parse(safeActiveDocument).templateId).toBe(
+      'activeTalentHub'
+    );
 
     expect(() =>
       PublicPresenceDocumentSchema.parse({
         ...safeActiveDocument,
         extra: true,
-      }),
+      })
     ).toThrow();
   });
 });
@@ -142,40 +142,45 @@ describe('public presence validation artifact', () => {
       warning: 0,
       info: 0,
     });
-    expect(PublicPresenceValidationSnapshotSchema.parse(artifact.snapshot).validationMode).toBe('publish');
+    expect(PublicPresenceValidationSnapshotSchema.parse(artifact.snapshot).validationMode).toBe(
+      'publish'
+    );
   });
 
   it('preserves unknown fields and unknown nodes as locked/source-owned compatibility content', () => {
-    const artifact = createPublicPresenceValidationArtifact({
-      ...safeActiveDocument,
-      sections: [
-        {
-          ...safeActiveDocument.sections[0],
-          fields: {
-            ...safeActiveDocument.sections[0].fields,
-            futureToggle: {
-              value: true,
-              provenance: 'sourceOwned',
-            },
-          },
-        },
-        {
-          id: 'channels-compat',
-          kind: 'officialChannels',
-          components: [
-            {
-              id: 'future-1',
-              type: 'FutureBlock',
-              props: {
-                secretInternalField: 'keep-me',
+    const artifact = createPublicPresenceValidationArtifact(
+      {
+        ...safeActiveDocument,
+        sections: [
+          {
+            ...safeActiveDocument.sections[0],
+            fields: {
+              ...safeActiveDocument.sections[0].fields,
+              futureToggle: {
+                value: true,
+                provenance: 'sourceOwned',
               },
             },
-          ],
-        },
-      ],
-    }, {
-      runtimeAuthority: activeHubRuntimeAuthority,
-    });
+          },
+          {
+            id: 'channels-compat',
+            kind: 'officialChannels',
+            components: [
+              {
+                id: 'future-1',
+                type: 'FutureBlock',
+                props: {
+                  secretInternalField: 'keep-me',
+                },
+              },
+            ],
+          },
+        ],
+      },
+      {
+        runtimeAuthority: activeHubRuntimeAuthority,
+      }
+    );
 
     expect(artifact.normalizedDocument.sections[0].unknownFields).toMatchObject({
       futureToggle: {
@@ -190,52 +195,57 @@ describe('public presence validation artifact', () => {
       },
     });
     expect(artifact.snapshot.issues.map((issue) => issue.code)).toEqual(
-      expect.arrayContaining([
-        'registry.unknownField',
-        'registry.unknownComponent',
-      ]),
+      expect.arrayContaining(['registry.unknownField', 'registry.unknownComponent'])
     );
-    expect(artifact.snapshot.issues.find((issue) => issue.code === 'registry.unknownComponent')?.blocksPublish).toBe(false);
+    expect(
+      artifact.snapshot.issues.find((issue) => issue.code === 'registry.unknownComponent')
+        ?.blocksPublish
+    ).toBe(false);
   });
 
   it('fails closed on unsafe links and blocks publish, visual edit, projection, and AI patch by contract', () => {
-    const snapshot = validatePublicPresenceDocument({
-      ...safeActiveDocument,
-      sections: [
-        safeActiveDocument.sections[0],
-        {
-          id: 'actions-1',
-          kind: 'fanActions',
-          fields: {
-            actions: {
-              value: [
-                {
-                  slot: 'launch',
-                  label: 'Launch',
-                  url: 'https://www.youtube.com/watch?v=launch',
-                },
-              ],
-              provenance: 'publicPresence',
-            },
-          },
-          components: [
-            {
-              id: 'cta-1',
-              type: 'LinkButton',
-              props: {
-                label: 'Unsafe CTA',
-                url: 'javascript:alert(1)',
+    const snapshot = validatePublicPresenceDocument(
+      {
+        ...safeActiveDocument,
+        sections: [
+          safeActiveDocument.sections[0],
+          {
+            id: 'actions-1',
+            kind: 'fanActions',
+            fields: {
+              actions: {
+                value: [
+                  {
+                    slot: 'launch',
+                    label: 'Launch',
+                    url: 'https://www.youtube.com/watch?v=launch',
+                  },
+                ],
+                provenance: 'publicPresence',
               },
             },
-          ],
-        },
-      ],
-    }, {
-      mode: 'publish',
-      runtimeAuthority: activeHubRuntimeAuthority,
-    });
+            components: [
+              {
+                id: 'cta-1',
+                type: 'LinkButton',
+                props: {
+                  label: 'Unsafe CTA',
+                  url: 'javascript:alert(1)',
+                },
+              },
+            ],
+          },
+        ],
+      },
+      {
+        mode: 'publish',
+        runtimeAuthority: activeHubRuntimeAuthority,
+      }
+    );
 
-    const unsafeIssue = snapshot.issues.find((issue) => issue.code === 'unsafe.url.invalid' || issue.code === 'unsafe.url.protocol');
+    const unsafeIssue = snapshot.issues.find(
+      (issue) => issue.code === 'unsafe.url.invalid' || issue.code === 'unsafe.url.protocol'
+    );
 
     expect(unsafeIssue).toBeDefined();
     expect(unsafeIssue).toMatchObject({
@@ -262,12 +272,8 @@ describe('public presence validation artifact', () => {
       runtimeAuthority: activeHubRuntimeAuthority,
     });
 
-    expect(first.issues.map((issue) => issue.id)).toEqual(
-      second.issues.map((issue) => issue.id),
-    );
-    expect(first.issues.map((issue) => issue.code)).toEqual([
-      'template.missingRequiredSection',
-    ]);
+    expect(first.issues.map((issue) => issue.id)).toEqual(second.issues.map((issue) => issue.id));
+    expect(first.issues.map((issue) => issue.code)).toEqual(['template.missingRequiredSection']);
   });
 
   it('validates the public projection contract without exposing raw source props', () => {

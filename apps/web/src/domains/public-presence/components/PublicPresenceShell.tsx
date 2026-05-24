@@ -1,8 +1,4 @@
-import {
-  type CSSProperties,
-  type HTMLAttributes,
-  type ReactNode,
-} from 'react';
+import { type CSSProperties, type HTMLAttributes, type ReactNode } from 'react';
 
 import { PublicPresenceDecorationLayer } from '@/domains/public-presence/components/PublicPresenceDecorationLayer';
 import {
@@ -45,7 +41,7 @@ export function PublicPresenceShell({
       className={publicPresenceClassNames(
         'relative min-h-screen overflow-hidden px-5 py-8 sm:px-6 sm:py-10 lg:px-10 lg:py-14',
         publicPresenceTokens.surface.canvas,
-        className,
+        className
       )}
       {...props}
     >
@@ -67,7 +63,7 @@ export function PublicPresenceShell({
         className={publicPresenceClassNames(
           'relative z-10 mx-auto w-full',
           getPublicPresenceShellWidthClasses(width),
-          contentClassName,
+          contentClassName
         )}
       >
         {children}

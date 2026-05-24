@@ -1,8 +1,8 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { ConflictException, NotFoundException } from '@nestjs/common';
-import { createLocalizedText, type RequestContext } from '@tcrn/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { createLocalizedText, type RequestContext } from '@tcrn/shared';
 
 import { DatabaseService } from '../../database';
 import { ChangeLogService } from '../../log';
@@ -49,7 +49,7 @@ describe('PiiServiceConfigApplicationService', () => {
     mockRepository,
     mockDatabaseService,
     mockChangeLogService,
-    mockPiiClientService,
+    mockPiiClientService
   );
 
   const defaultPiiName = createLocalizedText({ en: 'Default PII' });
@@ -87,9 +87,7 @@ describe('PiiServiceConfigApplicationService', () => {
     vi.mocked(mockRepository.countMany).mockResolvedValue(1);
     vi.mocked(mockRepository.countProfileStoresByConfigId).mockResolvedValue(2);
 
-    await expect(
-      service.findMany({}, context),
-    ).resolves.toEqual({
+    await expect(service.findMany({}, context)).resolves.toEqual({
       items: [
         {
           id: 'config-1',
@@ -121,9 +119,7 @@ describe('PiiServiceConfigApplicationService', () => {
   it('fails closed when the detail record does not exist', async () => {
     vi.mocked(mockRepository.findById).mockResolvedValue(null);
 
-    await expect(
-      service.findById('missing-config', context),
-    ).rejects.toThrow(NotFoundException);
+    await expect(service.findById('missing-config', context)).rejects.toThrow(NotFoundException);
   });
 
   it('creates a config with derived health-check defaults and writes a change log', async () => {
@@ -143,8 +139,8 @@ describe('PiiServiceConfigApplicationService', () => {
           apiUrl: 'https://pii.example.com',
           authType: 'mtls' as never,
         },
-        context,
-      ),
+        context
+      )
     ).resolves.toEqual({
       id: 'config-1',
       code: 'DEFAULT_PII',
@@ -158,7 +154,7 @@ describe('PiiServiceConfigApplicationService', () => {
         healthCheckUrl: 'https://pii.example.com/health',
         healthCheckIntervalSec: 60,
       }),
-      'user-1',
+      'user-1'
     );
     expect(mockChangeLogService.createDirect).toHaveBeenCalled();
   });
@@ -174,8 +170,8 @@ describe('PiiServiceConfigApplicationService', () => {
           apiUrl: 'https://pii.example.com',
           authType: 'mtls' as never,
         },
-        context,
-      ),
+        context
+      )
     ).rejects.toThrow(ConflictException);
   });
 
@@ -197,8 +193,8 @@ describe('PiiServiceConfigApplicationService', () => {
           version: 2,
           name: { en: 'New Name' },
         },
-        context,
-      ),
+        context
+      )
     ).rejects.toThrow(ConflictException);
   });
 
@@ -232,8 +228,8 @@ describe('PiiServiceConfigApplicationService', () => {
           apiUrl: 'https://new.example.com',
           isActive: false,
         },
-        context,
-      ),
+        context
+      )
     ).resolves.toEqual({
       id: 'config-1',
       code: 'DEFAULT_PII',
@@ -257,16 +253,16 @@ describe('PiiServiceConfigApplicationService', () => {
           isActive: false,
         },
       }),
-      context,
+      context
     );
   });
 
   it('fails closed when testConnection targets a missing config', async () => {
     vi.mocked(mockRepository.findForConnectionTest).mockResolvedValue(null);
 
-    await expect(
-      service.testConnection('missing-config', context),
-    ).rejects.toThrow(NotFoundException);
+    await expect(service.testConnection('missing-config', context)).rejects.toThrow(
+      NotFoundException
+    );
   });
 
   it('tests health via the layered repository/client path and persists status', async () => {
@@ -280,20 +276,12 @@ describe('PiiServiceConfigApplicationService', () => {
       latencyMs: 42,
     } as never);
 
-    await expect(
-      service.testConnection('config-1', context),
-    ).resolves.toMatchObject({
+    await expect(service.testConnection('config-1', context)).resolves.toMatchObject({
       status: 'ok',
       latencyMs: 42,
     });
 
-    expect(mockPiiClientService.checkHealth).toHaveBeenCalledWith(
-      'https://pii.example.com',
-    );
-    expect(mockRepository.updateHealthStatus).toHaveBeenCalledWith(
-      'tenant_test',
-      'config-1',
-      true,
-    );
+    expect(mockPiiClientService.checkHealth).toHaveBeenCalledWith('https://pii.example.com');
+    expect(mockRepository.updateHealthStatus).toHaveBeenCalledWith('tenant_test', 'config-1', true);
   });
 });

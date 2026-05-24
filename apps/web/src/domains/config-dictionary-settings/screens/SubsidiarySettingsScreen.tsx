@@ -31,10 +31,17 @@ import {
 import { useSettingsFamilyCopy } from '@/domains/config-dictionary-settings/screens/settings-family.copy';
 import { ApiRequestError } from '@/platform/http/api';
 import { buildSubsidiaryBusinessPath } from '@/platform/routing/workspace-paths';
+import { pickLocaleText } from '@/platform/runtime/locale/locale-text';
 import { useFadeSwapState } from '@/platform/runtime/motion/use-fade-swap-state';
 import { useSession } from '@/platform/runtime/session/session-provider';
-import { pickLocaleText } from '@/platform/runtime/locale/locale-text';
-import { ActionDrawer, ActionDrawerFooter, FormSection, GlassSurface, SettingsLayout, StateView } from '@/platform/ui';
+import {
+  ActionDrawer,
+  ActionDrawerFooter,
+  FormSection,
+  GlassSurface,
+  SettingsLayout,
+  StateView,
+} from '@/platform/ui';
 
 interface AsyncPanelState<T> {
   data: T | null;
@@ -78,8 +85,14 @@ function FieldRow({
   return (
     <div className="min-w-0 rounded-2xl border border-slate-200 bg-white/80 px-4 py-4 shadow-sm">
       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{label}</p>
-      <p className="mt-2 min-w-0 whitespace-normal break-all text-base font-semibold text-slate-950">{value}</p>
-      {hint ? <p className="mt-2 min-w-0 whitespace-normal break-all text-sm leading-6 text-slate-600">{hint}</p> : null}
+      <p className="mt-2 min-w-0 whitespace-normal break-all text-base font-semibold text-slate-950">
+        {value}
+      </p>
+      {hint ? (
+        <p className="mt-2 min-w-0 whitespace-normal break-all text-sm leading-6 text-slate-600">
+          {hint}
+        </p>
+      ) : null}
     </div>
   );
 }
@@ -141,10 +154,8 @@ export function SubsidiarySettingsScreen({
   const queryString = searchParams.toString();
   const urlSection = parseSubsidiarySettingsSection(searchParams.get('section'));
   const [activeSectionId, setActiveSectionId] = useState<SubsidiarySettingsSection>(urlSection);
-  const {
-    displayedValue: displayedSectionId,
-    transitionClassName: sectionTransitionClassName,
-  } = useFadeSwapState(activeSectionId);
+  const { displayedValue: displayedSectionId, transitionClassName: sectionTransitionClassName } =
+    useFadeSwapState(activeSectionId);
   const { request, requestEnvelope, session } = useSession();
   const {
     common,
@@ -161,8 +172,12 @@ export function SubsidiarySettingsScreen({
     data: null,
     error: null,
   });
-  const [initialDraft, setInitialDraft] = useState<SubsidiarySettingsDraft>(() => buildSubsidiarySettingsDraft({}));
-  const [draft, setDraft] = useState<SubsidiarySettingsDraft>(() => buildSubsidiarySettingsDraft({}));
+  const [initialDraft, setInitialDraft] = useState<SubsidiarySettingsDraft>(() =>
+    buildSubsidiarySettingsDraft({})
+  );
+  const [draft, setDraft] = useState<SubsidiarySettingsDraft>(() =>
+    buildSubsidiarySettingsDraft({})
+  );
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -224,8 +239,8 @@ export function SubsidiarySettingsScreen({
                 ja: '配下スコープ詳細の読み込みに失敗しました。',
                 ko: '하위 조직 상세 정보를 불러오지 못했습니다.',
                 fr: 'Echec du chargement des details du perimetre.',
-              }),
-            ),
+              })
+            )
           );
           return;
         }
@@ -241,8 +256,8 @@ export function SubsidiarySettingsScreen({
                 ja: '配下スコープ設定の読み込みに失敗しました。',
                 ko: '하위 조직 설정을 불러오지 못했습니다.',
                 fr: 'Echec du chargement des parametres du perimetre.',
-              }),
-            ),
+              })
+            )
           );
           return;
         }
@@ -265,7 +280,7 @@ export function SubsidiarySettingsScreen({
                     ja: 'このスコープのシステム辞書を読み込めません。',
                     ko: '이 범위에서는 시스템 사전을 사용할 수 없습니다.',
                     fr: 'Le dictionnaire systeme est indisponible pour ce perimetre.',
-                  }),
+                  })
                 )
               : null,
         });
@@ -403,7 +418,7 @@ export function SubsidiarySettingsScreen({
           ja: '配下スコープ設定を保存しました。',
           ko: '하위 조직 설정을 저장했습니다.',
           fr: 'Les parametres du perimetre ont ete enregistres.',
-        }),
+        })
       );
     } catch (reason) {
       setSaveError(
@@ -416,8 +431,8 @@ export function SubsidiarySettingsScreen({
             ja: '配下スコープ設定の保存に失敗しました。',
             ko: '하위 조직 설정을 저장하지 못했습니다.',
             fr: 'Echec de l enregistrement des parametres du perimetre.',
-          }),
-        ),
+          })
+        )
       );
     } finally {
       setIsSaving(false);
@@ -432,484 +447,736 @@ export function SubsidiarySettingsScreen({
 
   return (
     <>
-    <SettingsLayout
-      title={`${detail.localizedName} ${text({
-        en: 'Subsidiary Settings',
-        zh_HANS: '分目录设置',
-        zh_HANT: '分目錄設定',
-        ja: '配下スコープ設定',
-        ko: '하위 조직 설정',
-        fr: 'Parametres du perimetre',
-      })}`}
-      description={text({
-        en: 'Manage subsidiary identity, defaults, configuration entities, and dictionary visibility.',
-        zh_HANS: '管理分目录身份、默认值、配置实体与词典可见性。',
-        zh_HANT: '管理分目錄識別資訊、預設值、配置實體與詞典可見性。',
-        ja: '配下スコープの識別情報、既定値、設定エンティティ、辞書表示を管理します。',
-        ko: '하위 조직의 식별 정보, 기본값, 구성 엔티티, 사전 가시성을 관리합니다.',
-        fr: 'Gerez l identite du perimetre, ses valeurs par defaut, ses entites de configuration et la visibilite du dictionnaire.',
-      })}
-      sections={[
-        { id: 'details', label: common.details },
-        { id: 'config-entities', label: common.configEntities },
-        { id: 'settings', label: common.settings },
-        { id: 'dictionary', label: common.dictionary },
-      ]}
-      activeSectionId={activeSectionId}
-      ariaLabel={common.settingsSectionsAriaLabel}
-      sectionNavId="subsidiary-settings-sections"
-      onSectionChange={(sectionId) => {
-        applySectionRouteState(sectionId as SubsidiarySettingsSection);
-      }}
-    >
-      <div className={sectionTransitionClassName}>
-      {displayedSectionId === 'details' ? (
-        <div className="space-y-6">
-          <GlassSurface className="p-8">
-            <div className="flex flex-wrap items-start justify-between gap-6">
-              <div className="space-y-4">
-                <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-600">
-                  <Building2 className="h-3.5 w-3.5" />
-                  {text({
-                    en: 'Subsidiary settings',
-                    zh_HANS: '分目录设置',
-                    zh_HANT: '分目錄設定',
-                    ja: '配下スコープ設定',
-                    ko: '하위 조직 설정',
-                    fr: 'Parametres du perimetre',
-                  })}
-                </div>
-              </div>
-
-              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                <FieldRow label={text({ en: 'Tenant', zh_HANS: '租户', zh_HANT: '租戶', ja: 'テナント', ko: '테넌트', fr: 'Locataire' })} value={session?.tenantName || common.currentTenant} />
-                <FieldRow label={text({ en: 'Subsidiary', zh_HANS: '分目录', zh_HANT: '分目錄', ja: '配下スコープ', ko: '하위 조직', fr: 'Perimetre' })} value={detail.localizedName} />
-                <FieldRow label={text({ en: 'Child Subsidiaries', zh_HANS: '子分目录', zh_HANT: '子分目錄', ja: '子スコープ', ko: '하위 조직 수', fr: 'Perimetres enfants' })} value={String(detail.childrenCount)} />
-                <FieldRow label={text({ en: 'Attached Talents', zh_HANS: '关联艺人', zh_HANT: '關聯藝人', ja: '所属タレント', ko: '연결된 아티스트', fr: 'Talents rattaches' })} value={String(detail.talentCount)} />
-              </div>
-            </div>
-          </GlassSurface>
-
-          <GlassSurface className="p-6">
-            <FormSection
-              title={common.details}
-              description={text({
-                en: 'Review subsidiary identity, hierarchy, status, and quick links.',
-                zh_HANS: '查看分目录身份、层级、状态与快捷入口。',
-                zh_HANT: '查看分目錄識別資訊、層級、狀態與快捷入口。',
-                ja: '配下スコープの識別情報、階層、状態、関連ショートカットを確認します。',
-                ko: '하위 조직의 식별 정보, 계층, 상태와 빠른 이동 링크를 확인합니다.',
-                fr: 'Consultez l identite, la hierarchie, le statut et les raccourcis de ce perimetre.',
-              })}
-            >
-              <div className="grid gap-4 xl:grid-cols-2">
-                <FieldRow label={text({ en: 'Subsidiary Code', zh_HANS: '分目录代码', zh_HANT: '分目錄代碼', ja: '配下スコープコード', ko: '하위 조직 코드', fr: 'Code du perimetre' })} value={detail.code} />
-                <FieldRow label={text({ en: 'Path', zh_HANS: '路径', zh_HANT: '路徑', ja: 'パス', ko: '경로', fr: 'Chemin' })} value={detail.path} />
-                <FieldRow label={text({ en: 'Legal Name', zh_HANS: '正式名称', zh_HANT: '正式名稱', ja: '正式名称', ko: '법인명', fr: 'Raison sociale' })} value={pickLocaleText(locale, detail.name)} />
-                <FieldRow
-                  label={text({ en: 'Parent scope', zh_HANS: '上级范围', zh_HANT: '上級範圍', ja: '親スコープ', ko: '상위 범위', fr: 'Perimetre parent' })}
-                  value={
-                    detail.parentId
-                      ? text({ en: 'Parent subsidiary', zh_HANS: '上级分目录', zh_HANT: '上級分目錄', ja: '親スコープ', ko: '상위 하위 조직', fr: 'Perimetre parent' })
-                      : text({ en: 'Tenant root', zh_HANS: '租户根级', zh_HANT: '租戶根級', ja: 'テナントルート', ko: '테넌트 루트', fr: 'Racine du locataire' })
-                  }
-                />
-                <FieldRow
-                  label={text({ en: 'Hierarchy Level', zh_HANS: '层级深度', zh_HANT: '層級深度', ja: '階層', ko: '계층 깊이', fr: 'Niveau hierarchique' })}
-                  value={String(detail.depth)}
-                />
-                <FieldRow label={text({ en: 'Sort Order', zh_HANS: '排序', zh_HANT: '排序', ja: '表示順', ko: '정렬 순서', fr: 'Ordre de tri' })} value={String(detail.sortOrder)} />
-                <FieldRow label={text({ en: 'Status', zh_HANS: '状态', zh_HANT: '狀態', ja: '状態', ko: '상태', fr: 'Statut' })} value={detail.isActive ? common.active : common.inactive} />
-                <FieldRow label={text({ en: 'Created At', zh_HANS: '创建时间', zh_HANT: '建立時間', ja: '作成日時', ko: '생성 시각', fr: 'Cree le' })} value={formatDateTime(detail.createdAt)} />
-                <FieldRow label={text({ en: 'Updated At', zh_HANS: '更新时间', zh_HANT: '更新時間', ja: '更新日時', ko: '수정 시각', fr: 'Mis a jour le' })} value={formatDateTime(detail.updatedAt)} />
-              </div>
-
-              <SectionPlaceholder
-                title={text({
-                  en: 'Description',
-                  zh_HANS: '说明',
-                  zh_HANT: '說明',
-                  ja: '説明',
-                  ko: '설명',
-                  fr: 'Description',
-                })}
-                description={resolveDescription(
-                  detail,
-                  text({
-                    en: 'No description has been provided for this subsidiary.',
-                    zh_HANS: '该分目录暂无说明。',
-                    zh_HANT: '此分目錄尚無說明。',
-                    ja: 'この配下スコープには説明がありません。',
-                    ko: '이 하위 조직에는 아직 설명이 없습니다.',
-                    fr: 'Aucune description n a encore ete renseignee pour ce perimetre.',
-                  }),
-                )}
-              />
-
-              <div className="grid gap-4 lg:grid-cols-2">
-                <SectionEntryLink
-                  title={text({ en: 'Business Workspace', zh_HANS: '业务工作区', zh_HANT: '業務工作區', ja: '業務ワークスペース', ko: '비즈니스 워크스페이스', fr: 'Espace metier' })}
-                  description={text(
-                    'Open the subsidiary-level business workspace for cross-talent operations inside this branch.',
-                    '打开当前分目录的业务工作区，用于该层级内的跨艺人运营。',
-                    'この配下スコープ内の複数タレント運用向けに、業務ワークスペースを開きます。',
-                  )}
-                  href={buildSubsidiaryBusinessPath(tenantId, subsidiaryId)}
-                  cta={text({ en: 'Open business workspace', zh_HANS: '打开业务工作区', zh_HANT: '打開業務工作區', ja: '業務ワークスペースを開く', ko: '비즈니스 워크스페이스 열기', fr: 'Ouvrir l espace metier' })}
-                />
-                <SectionEntryLink
-                  title={text({ en: 'Security', zh_HANS: '安全管理', zh_HANT: '安全管理', ja: 'セキュリティ管理', ko: '보안 관리', fr: 'Securite' })}
-                  description={text(
-                    'Open security management for this subsidiary.',
-                    '打开当前分目录的安全管理页面。',
-                    'この配下スコープのセキュリティ管理を開きます。',
-                  )}
-                  href={`/tenant/${tenantId}/security?tab=blocklist&scopeType=subsidiary&scopeId=${subsidiaryId}`}
-                  cta={text({ en: 'Open security', zh_HANS: '打开安全管理', zh_HANT: '打開安全管理', ja: 'セキュリティを開く', ko: '보안 열기', fr: 'Ouvrir la securite' })}
-                />
-                <SectionEntryLink
-                  title={text({ en: 'External Blocklist', zh_HANS: '外部封禁', zh_HANT: '外部封禁', ja: '外部ブロックリスト', ko: '외부 차단 목록', fr: 'Liste de blocage externe' })}
-                  description={text(
-                    'Review external blocklist rules for this subsidiary.',
-                    '查看当前分目录的外部封禁规则。',
-                    'この配下スコープの外部ブロックリストを確認します。',
-                  )}
-                  href={`/tenant/${tenantId}/security?tab=external-blocklist&scopeType=subsidiary&scopeId=${subsidiaryId}`}
-                  cta={text({ en: 'Open blocklist', zh_HANS: '打开外部封禁', zh_HANT: '打開外部封禁', ja: 'ブロックリストを開く', ko: '차단 목록 열기', fr: 'Ouvrir la liste de blocage' })}
-                />
-              </div>
-            </FormSection>
-          </GlassSurface>
-        </div>
-      ) : null}
-
-      {displayedSectionId === 'config-entities' ? (
-        <div className="space-y-6">
-          <GlassSurface className="p-6">
-            <FormSection
-              title={common.configEntities}
-              description={text({
-                en: 'Manage configuration entities available in this subsidiary, then work with inherited and local homepage assets in the dedicated inventory below.',
-                zh_HANS: '先管理当前分目录可用的配置实体，再在下方专用清单里处理继承与本地主页资产。',
-                zh_HANT: '先管理目前分目錄可用的配置實體，再在下方專用清單裡處理繼承與本地主頁資產。',
-                ja: 'この配下スコープで利用できる設定エンティティを管理し、その下の専用インベントリで継承資産とローカルのホームページ資産を扱います。',
-                ko: '이 하위 조직에서 사용할 구성 엔티티를 관리한 뒤, 아래 전용 인벤토리에서 상속 및 로컬 홈페이지 자산을 다룹니다.',
-                fr: 'Gérez les entités de configuration de ce périmètre, puis les assets de homepage hérités et locaux dans l’inventaire dédié ci-dessous.',
-              })}
-            >
-              <div className="grid gap-4 xl:grid-cols-3">
-                <FieldRow
-                  label={text({ en: 'Child Subsidiaries', zh_HANS: '子分目录', zh_HANT: '子分目錄', ja: '子スコープ', ko: '하위 조직 수', fr: 'Perimetres enfants' })}
-                  value={String(detail.childrenCount)}
-                  hint={text(
-                    'Number of child subsidiaries under this branch.',
-                    '当前分支下的子分目录数量。',
-                    'この配下に含まれる子スコープ数です。',
-                  )}
-                />
-                <FieldRow
-                  label={text({ en: 'Attached Talents', zh_HANS: '关联艺人', zh_HANT: '關聯藝人', ja: '所属タレント', ko: '연결된 아티스트', fr: 'Talents rattaches' })}
-                  value={String(detail.talentCount)}
-                  hint={text(
-                    'Number of talents currently attached to this subsidiary.',
-                    '当前挂在此分目录下的艺人数量。',
-                    'この配下スコープに属するタレント数です。',
-                  )}
-                />
-                <FieldRow
-                  label={text({ en: 'Override Fields', zh_HANS: '覆盖字段', zh_HANT: '覆寫欄位', ja: '上書き項目', ko: '재정의 필드', fr: 'Champs remplaces' })}
-                  value={String(settings.overrides.length)}
-                  hint={text(
-                    'Fields currently overridden at this subsidiary.',
-                    '当前分目录已覆盖的字段数。',
-                    'この配下スコープで上書きしている項目数です。',
-                  )}
-                />
-              </div>
-
-              <ScopedConfigEntityWorkspace
-                request={request}
-                requestEnvelope={requestEnvelope}
-                scopeType="subsidiary"
-                scopeId={subsidiaryId}
-                locale={locale}
-                copy={scopedConfigCopy}
-                catalog={localizedConfigEntityCatalog}
-              />
-            </FormSection>
-          </GlassSurface>
-
-          <GlassSurface className="p-6">
-            <FormSection
-              title={text({
-                en: 'Homepage Assets',
-                zh_HANS: '主页资产',
-                zh_HANT: '主頁資產',
-                ja: 'ホームページ資産',
-                ko: '홈페이지 자산',
-                fr: 'Assets de homepage',
-              })}
-              description={text({
-                en: 'Inspect inherited assets, duplicate protected ones into this subsidiary, and open the scoped IDE from the resulting asset record.',
-                zh_HANS: '查看继承资产，把受保护资产复制到当前分目录，并从生成后的资产记录进入对应 IDE。',
-                zh_HANT: '查看繼承資產，把受保護資產複製到目前分目錄，並從產生後的資產記錄進入對應 IDE。',
-                ja: '継承資産を確認し、保護された資産をこの配下スコープへ複製して、生成された資産レコードから対象 IDE を開きます。',
-                ko: '상속 자산을 확인하고 보호된 자산을 현재 하위 조직으로 복제한 뒤, 생성된 자산 레코드에서 해당 IDE를 엽니다.',
-                fr: 'Inspectez les assets hérités, dupliquez ici ceux qui sont protégés, puis ouvrez l’IDE ciblé depuis le record obtenu.',
-              })}
-            >
-              <PublicPresenceAssetWorkspace
-                locale={locale}
-                request={request}
-                scopeId={subsidiaryId}
-                scopeType="subsidiary"
-                tenantId={tenantId}
-              />
-            </FormSection>
-          </GlassSurface>
-        </div>
-      ) : null}
-
-      {displayedSectionId === 'settings' ? (
-        <div className="space-y-6">
-          <GlassSurface className="p-6">
-          <FormSection
-            title={common.settings}
-            description={text({
-              en: 'Review subsidiary defaults before opening the edit workflow.',
-              zh_HANS: '先查看分目录默认值，再进入编辑流程。',
-              zh_HANT: '先查看分目錄預設值，再進入編輯流程。',
-              ja: '編集ワークフローを開く前に配下スコープ既定値を確認します。',
-              ko: '편집 흐름을 열기 전에 하위 조직 기본값을 확인합니다.',
-              fr: 'Consultez les valeurs par defaut du perimetre avant d ouvrir l edition.',
-            })}
-              actions={
-                <button
-                  type="button"
-                  onClick={() => setIsDefaultsDrawerOpen(true)}
-                  className="rounded-xl bg-slate-950 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
-                >
-                  {text({
-                    en: 'Edit defaults',
-                    zh_HANS: '编辑默认值',
-                    zh_HANT: '編輯預設值',
-                    ja: '既定値を編集',
-                    ko: '기본값 편집',
-                    fr: 'Modifier les valeurs par defaut',
-                  })}
-                </button>
-              }
-            >
-              <SettingsCategoryWorkbench
-                ariaLabel={common.settingsCategoriesAriaLabel}
-                categories={[{ id: 'defaults', label: common.defaultsCategory }]}
-                activeCategoryId="defaults"
-              >
-                <SettingsDefaultsSummaryGrid
-                  draft={initialDraft}
-                  getSourceHint={(key) => formatSourceHint(settings.inheritedFrom[key], overrideSet.has(key))}
-                  text={text}
-                />
-
-                {!isDefaultsDrawerOpen && saveError ? <p className="text-sm font-medium text-red-600">{saveError}</p> : null}
-                {!isDefaultsDrawerOpen && saveSuccess ? <p className="text-sm font-medium text-emerald-700">{saveSuccess}</p> : null}
-              </SettingsCategoryWorkbench>
-            </FormSection>
-          </GlassSurface>
-        </div>
-      ) : null}
-
-      {displayedSectionId === 'dictionary' ? (
-        <GlassSurface className="p-6">
-          <FormSection
-            title={common.dictionary}
-            description={text({
-              en: 'Review dictionary items available in this subsidiary.',
-              zh_HANS: '查看当前分目录可用的词典内容。',
-              zh_HANT: '查看目前分目錄可用的詞典內容。',
-              ja: 'この配下スコープで利用できる辞書項目を確認します。',
-              ko: '이 하위 조직에서 사용할 수 있는 사전 항목을 확인합니다.',
-              fr: 'Consultez les elements du dictionnaire disponibles pour ce perimetre.',
-            })}
-          >
-            {dictionaryPanel.error ? (
-              <SectionPlaceholder
-                title={text({
-                  en: 'Dictionary unavailable',
-                  zh_HANS: '词典不可用',
-                  zh_HANT: '詞典不可用',
-                  ja: '辞書を読み込めません',
-                  ko: '사전을 사용할 수 없습니다',
-                  fr: 'Dictionnaire indisponible',
-                })}
-                description={dictionaryPanel.error}
-              />
-            ) : dictionaryPanel.data ? (
-              <>
-                <div className="grid gap-4 xl:grid-cols-3">
-                  <FieldRow label={text({ en: 'Visible Dictionary Types', zh_HANS: '可见词典类型', zh_HANT: '可見詞典類型', ja: '表示中の辞書タイプ', ko: '표시 가능한 사전 유형', fr: 'Types de dictionnaire visibles' })} value={String(dictionaryCount)} />
-                  <FieldRow label={text({ en: 'Inherited Fields', zh_HANS: '继承字段', zh_HANT: '繼承欄位', ja: '継承項目', ko: '상속 필드', fr: 'Champs herites' })} value={String(Object.keys(settings.inheritedFrom).length)} />
-                  <FieldRow label={text({ en: 'Current Overrides', zh_HANS: '当前覆盖项', zh_HANT: '目前覆寫項', ja: '現在の上書き数', ko: '현재 재정의 수', fr: 'Remplacements actuels' })} value={String(settings.overrides.length)} />
-                </div>
-                <DictionaryExplorerPanel
-                  request={request}
-                  requestEnvelope={requestEnvelope}
-                  types={dictionaryPanel.data}
-                  locale={locale}
-                  copy={dictionaryExplorerCopy}
-                  allowIncludeInactiveToggle
-                  intro={(
-                    <>
-                      <p>
-                        {text({
-                          en: 'Review the dictionary items available in this subsidiary.',
-                          zh_HANS: '查看当前分目录可用的词典项。',
-                          zh_HANT: '查看目前分目錄可用的詞典項。',
-                          ja: 'この配下スコープで利用できる辞書項目を確認します。',
-                          ko: '이 하위 조직에서 사용할 수 있는 사전 항목을 확인합니다.',
-                          fr: 'Consultez les elements du dictionnaire disponibles pour ce perimetre.',
-                        })}
-                      </p>
-                      <p className="mt-2">
-                        {text({
-                          en: 'Open System Dictionary if you need to change the vocabulary itself.',
-                          zh_HANS: '如需调整词典内容，请前往系统词典。',
-                          zh_HANT: '如需調整詞典內容，請前往系統詞典。',
-                          ja: '辞書項目自体を変更する場合はシステム辞書を開いてください。',
-                          ko: '용어 자체를 바꾸려면 시스템 사전을 여십시오.',
-                          fr: 'Ouvrez le dictionnaire systeme si vous devez modifier le vocabulaire lui-meme.',
-                        })}
-                      </p>
-                    </>
-                  )}
-                  emptyDescription={text({
-                    en: 'No dictionary types are currently available for this subsidiary.',
-                    zh_HANS: '当前分目录下没有可用的词典类型。',
-                    zh_HANT: '目前此分目錄下沒有可用的詞典類型。',
-                    ja: 'この配下スコープで利用できる辞書タイプはありません。',
-                    ko: '이 하위 조직에서 현재 사용할 수 있는 사전 유형이 없습니다.',
-                    fr: 'Aucun type de dictionnaire n est actuellement disponible pour ce perimetre.',
-                  })}
-                />
-              </>
-            ) : (
-              <SectionPlaceholder
-                title={text({
-                  en: 'No dictionary types returned',
-                  zh_HANS: '未返回词典类型',
-                  zh_HANT: '未返回詞典類型',
-                  ja: '辞書タイプが返されませんでした',
-                  ko: '반환된 사전 유형이 없습니다',
-                  fr: 'Aucun type de dictionnaire n a ete renvoye',
-                })}
-                description={text({
-                  en: 'No dictionary types are currently available for this subsidiary.',
-                  zh_HANS: '当前分目录下没有可用的词典类型。',
-                  zh_HANT: '目前此分目錄下沒有可用的詞典類型。',
-                  ja: 'この配下スコープで利用できる辞書タイプはありません。',
-                  ko: '이 하위 조직에서 현재 사용할 수 있는 사전 유형이 없습니다.',
-                  fr: 'Aucun type de dictionnaire n est actuellement disponible pour ce perimetre.',
-                })}
-              />
-            )}
-          </FormSection>
-        </GlassSurface>
-      ) : null}
-      </div>
-    </SettingsLayout>
-
-    <ActionDrawer
-      open={isDefaultsDrawerOpen}
-      onOpenChange={(open) => {
-        if (!open && !isSaving) {
-          handleReset();
-        }
-        setIsDefaultsDrawerOpen(open);
-      }}
-      title={text({
-        en: 'Edit subsidiary defaults',
-        zh_HANS: '编辑分目录默认值',
-        zh_HANT: '編輯分目錄預設值',
-        ja: '配下スコープ既定値を編集',
-        ko: '하위 조직 기본값 편집',
-        fr: 'Modifier les valeurs par defaut du perimetre',
-      })}
-      description={text({
-        en: 'Change localization, public surface, import, and security defaults used by this subsidiary scope.',
-        zh_HANS: '修改当前分目录范围使用的本地化、公开入口、导入与安全默认值。',
-        zh_HANT: '修改目前分目錄範圍使用的本地化、公開入口、匯入與安全預設值。',
-        ja: 'この配下スコープで使用するローカライズ、公開サーフェス、インポート、セキュリティ既定値を変更します。',
-        ko: '이 하위 조직 범위에서 사용할 현지화, 공개 화면, 가져오기, 보안 기본값을 변경합니다.',
-        fr: 'Modifiez les valeurs par defaut de localisation, surface publique, import et securite utilisees par ce perimetre.',
-      })}
-      size="lg"
-      closeButtonAriaLabel={text({
-        en: 'Close subsidiary defaults editor',
-        zh_HANS: '关闭分目录默认值编辑器',
-        zh_HANT: '關閉分目錄預設值編輯器',
-        ja: '配下スコープ既定値エディターを閉じる',
-        ko: '하위 조직 기본값 편집기 닫기',
-        fr: 'Fermer l editeur des valeurs par defaut du perimetre',
-      })}
-      footer={(
-        <ActionDrawerFooter
-          secondary={(
-            <button
-              type="button"
-              onClick={() => {
-                handleReset();
-                setIsDefaultsDrawerOpen(false);
-              }}
-              disabled={isSaving}
-              className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {text({ en: 'Cancel', zh_HANS: '取消', zh_HANT: '取消', ja: 'キャンセル', ko: '취소', fr: 'Annuler' })}
-            </button>
-          )}
-          primary={(
-            <button
-              type="button"
-              onClick={() => void handleSave()}
-              disabled={isSaving || !hasDirtyDraft}
-              className="rounded-xl bg-slate-950 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {isSaving
-                ? common.saving
-                : text({
-                    en: 'Save subsidiary settings',
-                    zh_HANS: '保存分目录设置',
-                    zh_HANT: '儲存分目錄設定',
-                    ja: '配下スコープ設定を保存',
-                    ko: '하위 조직 설정 저장',
-                    fr: 'Enregistrer les parametres du perimetre',
-                  })}
-            </button>
-          )}
-        />
-      )}
-    >
-      <FormSection
-        title={common.settings}
+      <SettingsLayout
+        title={`${detail.localizedName} ${text({
+          en: 'Subsidiary Settings',
+          zh_HANS: '分目录设置',
+          zh_HANT: '分目錄設定',
+          ja: '配下スコープ設定',
+          ko: '하위 조직 설정',
+          fr: 'Parametres du perimetre',
+        })}`}
         description={text({
-          en: 'Review and adjust the defaults applied within this subsidiary scope.',
-          zh_HANS: '查看并调整当前分目录范围内应用的默认设置。',
-          zh_HANT: '檢視並調整目前分目錄範圍內套用的預設設定。',
-          ja: 'この配下スコープに適用される既定値を確認して調整します。',
-          ko: '이 하위 조직 범위에 적용되는 기본 설정을 검토하고 조정합니다.',
-          fr: 'Examinez et ajustez les parametres par defaut appliques dans ce perimetre secondaire.',
+          en: 'Manage subsidiary identity, defaults, configuration entities, and dictionary visibility.',
+          zh_HANS: '管理分目录身份、默认值、配置实体与词典可见性。',
+          zh_HANT: '管理分目錄識別資訊、預設值、配置實體與詞典可見性。',
+          ja: '配下スコープの識別情報、既定値、設定エンティティ、辞書表示を管理します。',
+          ko: '하위 조직의 식별 정보, 기본값, 구성 엔티티, 사전 가시성을 관리합니다.',
+          fr: 'Gerez l identite du perimetre, ses valeurs par defaut, ses entites de configuration et la visibilite du dictionnaire.',
         })}
+        sections={[
+          { id: 'details', label: common.details },
+          { id: 'config-entities', label: common.configEntities },
+          { id: 'settings', label: common.settings },
+          { id: 'dictionary', label: common.dictionary },
+        ]}
+        activeSectionId={activeSectionId}
+        ariaLabel={common.settingsSectionsAriaLabel}
+        sectionNavId="subsidiary-settings-sections"
+        onSectionChange={(sectionId) => {
+          applySectionRouteState(sectionId as SubsidiarySettingsSection);
+        }}
       >
-        <SettingsDefaultsFormFields
-          draft={draft}
-          getSourceHint={(key) => formatSourceHint(settings.inheritedFrom[key], overrideSet.has(key))}
-          onDraftChange={setDraft}
-          text={text}
-        />
+        <div className={sectionTransitionClassName}>
+          {displayedSectionId === 'details' ? (
+            <div className="space-y-6">
+              <GlassSurface className="p-8">
+                <div className="flex flex-wrap items-start justify-between gap-6">
+                  <div className="space-y-4">
+                    <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-600">
+                      <Building2 className="h-3.5 w-3.5" />
+                      {text({
+                        en: 'Subsidiary settings',
+                        zh_HANS: '分目录设置',
+                        zh_HANT: '分目錄設定',
+                        ja: '配下スコープ設定',
+                        ko: '하위 조직 설정',
+                        fr: 'Parametres du perimetre',
+                      })}
+                    </div>
+                  </div>
 
-        {saveError ? <p className="text-sm font-medium text-red-600">{saveError}</p> : null}
-        {saveSuccess ? <p className="text-sm font-medium text-emerald-700">{saveSuccess}</p> : null}
-      </FormSection>
-    </ActionDrawer>
+                  <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                    <FieldRow
+                      label={text({
+                        en: 'Tenant',
+                        zh_HANS: '租户',
+                        zh_HANT: '租戶',
+                        ja: 'テナント',
+                        ko: '테넌트',
+                        fr: 'Locataire',
+                      })}
+                      value={session?.tenantName || common.currentTenant}
+                    />
+                    <FieldRow
+                      label={text({
+                        en: 'Subsidiary',
+                        zh_HANS: '分目录',
+                        zh_HANT: '分目錄',
+                        ja: '配下スコープ',
+                        ko: '하위 조직',
+                        fr: 'Perimetre',
+                      })}
+                      value={detail.localizedName}
+                    />
+                    <FieldRow
+                      label={text({
+                        en: 'Child Subsidiaries',
+                        zh_HANS: '子分目录',
+                        zh_HANT: '子分目錄',
+                        ja: '子スコープ',
+                        ko: '하위 조직 수',
+                        fr: 'Perimetres enfants',
+                      })}
+                      value={String(detail.childrenCount)}
+                    />
+                    <FieldRow
+                      label={text({
+                        en: 'Attached Talents',
+                        zh_HANS: '关联艺人',
+                        zh_HANT: '關聯藝人',
+                        ja: '所属タレント',
+                        ko: '연결된 아티스트',
+                        fr: 'Talents rattaches',
+                      })}
+                      value={String(detail.talentCount)}
+                    />
+                  </div>
+                </div>
+              </GlassSurface>
+
+              <GlassSurface className="p-6">
+                <FormSection
+                  title={common.details}
+                  description={text({
+                    en: 'Review subsidiary identity, hierarchy, status, and quick links.',
+                    zh_HANS: '查看分目录身份、层级、状态与快捷入口。',
+                    zh_HANT: '查看分目錄識別資訊、層級、狀態與快捷入口。',
+                    ja: '配下スコープの識別情報、階層、状態、関連ショートカットを確認します。',
+                    ko: '하위 조직의 식별 정보, 계층, 상태와 빠른 이동 링크를 확인합니다.',
+                    fr: 'Consultez l identite, la hierarchie, le statut et les raccourcis de ce perimetre.',
+                  })}
+                >
+                  <div className="grid gap-4 xl:grid-cols-2">
+                    <FieldRow
+                      label={text({
+                        en: 'Subsidiary Code',
+                        zh_HANS: '分目录代码',
+                        zh_HANT: '分目錄代碼',
+                        ja: '配下スコープコード',
+                        ko: '하위 조직 코드',
+                        fr: 'Code du perimetre',
+                      })}
+                      value={detail.code}
+                    />
+                    <FieldRow
+                      label={text({
+                        en: 'Path',
+                        zh_HANS: '路径',
+                        zh_HANT: '路徑',
+                        ja: 'パス',
+                        ko: '경로',
+                        fr: 'Chemin',
+                      })}
+                      value={detail.path}
+                    />
+                    <FieldRow
+                      label={text({
+                        en: 'Legal Name',
+                        zh_HANS: '正式名称',
+                        zh_HANT: '正式名稱',
+                        ja: '正式名称',
+                        ko: '법인명',
+                        fr: 'Raison sociale',
+                      })}
+                      value={pickLocaleText(locale, detail.name)}
+                    />
+                    <FieldRow
+                      label={text({
+                        en: 'Parent scope',
+                        zh_HANS: '上级范围',
+                        zh_HANT: '上級範圍',
+                        ja: '親スコープ',
+                        ko: '상위 범위',
+                        fr: 'Perimetre parent',
+                      })}
+                      value={
+                        detail.parentId
+                          ? text({
+                              en: 'Parent subsidiary',
+                              zh_HANS: '上级分目录',
+                              zh_HANT: '上級分目錄',
+                              ja: '親スコープ',
+                              ko: '상위 하위 조직',
+                              fr: 'Perimetre parent',
+                            })
+                          : text({
+                              en: 'Tenant root',
+                              zh_HANS: '租户根级',
+                              zh_HANT: '租戶根級',
+                              ja: 'テナントルート',
+                              ko: '테넌트 루트',
+                              fr: 'Racine du locataire',
+                            })
+                      }
+                    />
+                    <FieldRow
+                      label={text({
+                        en: 'Hierarchy Level',
+                        zh_HANS: '层级深度',
+                        zh_HANT: '層級深度',
+                        ja: '階層',
+                        ko: '계층 깊이',
+                        fr: 'Niveau hierarchique',
+                      })}
+                      value={String(detail.depth)}
+                    />
+                    <FieldRow
+                      label={text({
+                        en: 'Sort Order',
+                        zh_HANS: '排序',
+                        zh_HANT: '排序',
+                        ja: '表示順',
+                        ko: '정렬 순서',
+                        fr: 'Ordre de tri',
+                      })}
+                      value={String(detail.sortOrder)}
+                    />
+                    <FieldRow
+                      label={text({
+                        en: 'Status',
+                        zh_HANS: '状态',
+                        zh_HANT: '狀態',
+                        ja: '状態',
+                        ko: '상태',
+                        fr: 'Statut',
+                      })}
+                      value={detail.isActive ? common.active : common.inactive}
+                    />
+                    <FieldRow
+                      label={text({
+                        en: 'Created At',
+                        zh_HANS: '创建时间',
+                        zh_HANT: '建立時間',
+                        ja: '作成日時',
+                        ko: '생성 시각',
+                        fr: 'Cree le',
+                      })}
+                      value={formatDateTime(detail.createdAt)}
+                    />
+                    <FieldRow
+                      label={text({
+                        en: 'Updated At',
+                        zh_HANS: '更新时间',
+                        zh_HANT: '更新時間',
+                        ja: '更新日時',
+                        ko: '수정 시각',
+                        fr: 'Mis a jour le',
+                      })}
+                      value={formatDateTime(detail.updatedAt)}
+                    />
+                  </div>
+
+                  <SectionPlaceholder
+                    title={text({
+                      en: 'Description',
+                      zh_HANS: '说明',
+                      zh_HANT: '說明',
+                      ja: '説明',
+                      ko: '설명',
+                      fr: 'Description',
+                    })}
+                    description={resolveDescription(
+                      detail,
+                      text({
+                        en: 'No description has been provided for this subsidiary.',
+                        zh_HANS: '该分目录暂无说明。',
+                        zh_HANT: '此分目錄尚無說明。',
+                        ja: 'この配下スコープには説明がありません。',
+                        ko: '이 하위 조직에는 아직 설명이 없습니다.',
+                        fr: 'Aucune description n a encore ete renseignee pour ce perimetre.',
+                      })
+                    )}
+                  />
+
+                  <div className="grid gap-4 lg:grid-cols-2">
+                    <SectionEntryLink
+                      title={text({
+                        en: 'Business Workspace',
+                        zh_HANS: '业务工作区',
+                        zh_HANT: '業務工作區',
+                        ja: '業務ワークスペース',
+                        ko: '비즈니스 워크스페이스',
+                        fr: 'Espace metier',
+                      })}
+                      description={text(
+                        'Open the subsidiary-level business workspace for cross-talent operations inside this branch.',
+                        '打开当前分目录的业务工作区，用于该层级内的跨艺人运营。',
+                        'この配下スコープ内の複数タレント運用向けに、業務ワークスペースを開きます。'
+                      )}
+                      href={buildSubsidiaryBusinessPath(tenantId, subsidiaryId)}
+                      cta={text({
+                        en: 'Open business workspace',
+                        zh_HANS: '打开业务工作区',
+                        zh_HANT: '打開業務工作區',
+                        ja: '業務ワークスペースを開く',
+                        ko: '비즈니스 워크스페이스 열기',
+                        fr: 'Ouvrir l espace metier',
+                      })}
+                    />
+                    <SectionEntryLink
+                      title={text({
+                        en: 'Security',
+                        zh_HANS: '安全管理',
+                        zh_HANT: '安全管理',
+                        ja: 'セキュリティ管理',
+                        ko: '보안 관리',
+                        fr: 'Securite',
+                      })}
+                      description={text(
+                        'Open security management for this subsidiary.',
+                        '打开当前分目录的安全管理页面。',
+                        'この配下スコープのセキュリティ管理を開きます。'
+                      )}
+                      href={`/tenant/${tenantId}/security?tab=blocklist&scopeType=subsidiary&scopeId=${subsidiaryId}`}
+                      cta={text({
+                        en: 'Open security',
+                        zh_HANS: '打开安全管理',
+                        zh_HANT: '打開安全管理',
+                        ja: 'セキュリティを開く',
+                        ko: '보안 열기',
+                        fr: 'Ouvrir la securite',
+                      })}
+                    />
+                    <SectionEntryLink
+                      title={text({
+                        en: 'External Blocklist',
+                        zh_HANS: '外部封禁',
+                        zh_HANT: '外部封禁',
+                        ja: '外部ブロックリスト',
+                        ko: '외부 차단 목록',
+                        fr: 'Liste de blocage externe',
+                      })}
+                      description={text(
+                        'Review external blocklist rules for this subsidiary.',
+                        '查看当前分目录的外部封禁规则。',
+                        'この配下スコープの外部ブロックリストを確認します。'
+                      )}
+                      href={`/tenant/${tenantId}/security?tab=external-blocklist&scopeType=subsidiary&scopeId=${subsidiaryId}`}
+                      cta={text({
+                        en: 'Open blocklist',
+                        zh_HANS: '打开外部封禁',
+                        zh_HANT: '打開外部封禁',
+                        ja: 'ブロックリストを開く',
+                        ko: '차단 목록 열기',
+                        fr: 'Ouvrir la liste de blocage',
+                      })}
+                    />
+                  </div>
+                </FormSection>
+              </GlassSurface>
+            </div>
+          ) : null}
+
+          {displayedSectionId === 'config-entities' ? (
+            <div className="space-y-6">
+              <GlassSurface className="p-6">
+                <FormSection
+                  title={common.configEntities}
+                  description={text({
+                    en: 'Manage configuration entities available in this subsidiary, then work with inherited and local homepage assets in the dedicated inventory below.',
+                    zh_HANS:
+                      '先管理当前分目录可用的配置实体，再在下方专用清单里处理继承与本地主页资产。',
+                    zh_HANT:
+                      '先管理目前分目錄可用的配置實體，再在下方專用清單裡處理繼承與本地主頁資產。',
+                    ja: 'この配下スコープで利用できる設定エンティティを管理し、その下の専用インベントリで継承資産とローカルのホームページ資産を扱います。',
+                    ko: '이 하위 조직에서 사용할 구성 엔티티를 관리한 뒤, 아래 전용 인벤토리에서 상속 및 로컬 홈페이지 자산을 다룹니다.',
+                    fr: 'Gérez les entités de configuration de ce périmètre, puis les assets de homepage hérités et locaux dans l’inventaire dédié ci-dessous.',
+                  })}
+                >
+                  <div className="grid gap-4 xl:grid-cols-3">
+                    <FieldRow
+                      label={text({
+                        en: 'Child Subsidiaries',
+                        zh_HANS: '子分目录',
+                        zh_HANT: '子分目錄',
+                        ja: '子スコープ',
+                        ko: '하위 조직 수',
+                        fr: 'Perimetres enfants',
+                      })}
+                      value={String(detail.childrenCount)}
+                      hint={text(
+                        'Number of child subsidiaries under this branch.',
+                        '当前分支下的子分目录数量。',
+                        'この配下に含まれる子スコープ数です。'
+                      )}
+                    />
+                    <FieldRow
+                      label={text({
+                        en: 'Attached Talents',
+                        zh_HANS: '关联艺人',
+                        zh_HANT: '關聯藝人',
+                        ja: '所属タレント',
+                        ko: '연결된 아티스트',
+                        fr: 'Talents rattaches',
+                      })}
+                      value={String(detail.talentCount)}
+                      hint={text(
+                        'Number of talents currently attached to this subsidiary.',
+                        '当前挂在此分目录下的艺人数量。',
+                        'この配下スコープに属するタレント数です。'
+                      )}
+                    />
+                    <FieldRow
+                      label={text({
+                        en: 'Override Fields',
+                        zh_HANS: '覆盖字段',
+                        zh_HANT: '覆寫欄位',
+                        ja: '上書き項目',
+                        ko: '재정의 필드',
+                        fr: 'Champs remplaces',
+                      })}
+                      value={String(settings.overrides.length)}
+                      hint={text(
+                        'Fields currently overridden at this subsidiary.',
+                        '当前分目录已覆盖的字段数。',
+                        'この配下スコープで上書きしている項目数です。'
+                      )}
+                    />
+                  </div>
+
+                  <ScopedConfigEntityWorkspace
+                    request={request}
+                    requestEnvelope={requestEnvelope}
+                    scopeType="subsidiary"
+                    scopeId={subsidiaryId}
+                    locale={locale}
+                    copy={scopedConfigCopy}
+                    catalog={localizedConfigEntityCatalog}
+                  />
+                </FormSection>
+              </GlassSurface>
+
+              <GlassSurface className="p-6">
+                <FormSection
+                  title={text({
+                    en: 'Homepage Assets',
+                    zh_HANS: '主页资产',
+                    zh_HANT: '主頁資產',
+                    ja: 'ホームページ資産',
+                    ko: '홈페이지 자산',
+                    fr: 'Assets de homepage',
+                  })}
+                  description={text({
+                    en: 'Inspect inherited assets, duplicate protected ones into this subsidiary, and open the scoped IDE from the resulting asset record.',
+                    zh_HANS:
+                      '查看继承资产，把受保护资产复制到当前分目录，并从生成后的资产记录进入对应 IDE。',
+                    zh_HANT:
+                      '查看繼承資產，把受保護資產複製到目前分目錄，並從產生後的資產記錄進入對應 IDE。',
+                    ja: '継承資産を確認し、保護された資産をこの配下スコープへ複製して、生成された資産レコードから対象 IDE を開きます。',
+                    ko: '상속 자산을 확인하고 보호된 자산을 현재 하위 조직으로 복제한 뒤, 생성된 자산 레코드에서 해당 IDE를 엽니다.',
+                    fr: 'Inspectez les assets hérités, dupliquez ici ceux qui sont protégés, puis ouvrez l’IDE ciblé depuis le record obtenu.',
+                  })}
+                >
+                  <PublicPresenceAssetWorkspace
+                    locale={locale}
+                    request={request}
+                    scopeId={subsidiaryId}
+                    scopeType="subsidiary"
+                    tenantId={tenantId}
+                  />
+                </FormSection>
+              </GlassSurface>
+            </div>
+          ) : null}
+
+          {displayedSectionId === 'settings' ? (
+            <div className="space-y-6">
+              <GlassSurface className="p-6">
+                <FormSection
+                  title={common.settings}
+                  description={text({
+                    en: 'Review subsidiary defaults before opening the edit workflow.',
+                    zh_HANS: '先查看分目录默认值，再进入编辑流程。',
+                    zh_HANT: '先查看分目錄預設值，再進入編輯流程。',
+                    ja: '編集ワークフローを開く前に配下スコープ既定値を確認します。',
+                    ko: '편집 흐름을 열기 전에 하위 조직 기본값을 확인합니다.',
+                    fr: 'Consultez les valeurs par defaut du perimetre avant d ouvrir l edition.',
+                  })}
+                  actions={
+                    <button
+                      type="button"
+                      onClick={() => setIsDefaultsDrawerOpen(true)}
+                      className="rounded-xl bg-slate-950 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
+                    >
+                      {text({
+                        en: 'Edit defaults',
+                        zh_HANS: '编辑默认值',
+                        zh_HANT: '編輯預設值',
+                        ja: '既定値を編集',
+                        ko: '기본값 편집',
+                        fr: 'Modifier les valeurs par defaut',
+                      })}
+                    </button>
+                  }
+                >
+                  <SettingsCategoryWorkbench
+                    ariaLabel={common.settingsCategoriesAriaLabel}
+                    categories={[{ id: 'defaults', label: common.defaultsCategory }]}
+                    activeCategoryId="defaults"
+                  >
+                    <SettingsDefaultsSummaryGrid
+                      draft={initialDraft}
+                      getSourceHint={(key) =>
+                        formatSourceHint(settings.inheritedFrom[key], overrideSet.has(key))
+                      }
+                      text={text}
+                    />
+
+                    {!isDefaultsDrawerOpen && saveError ? (
+                      <p className="text-sm font-medium text-red-600">{saveError}</p>
+                    ) : null}
+                    {!isDefaultsDrawerOpen && saveSuccess ? (
+                      <p className="text-sm font-medium text-emerald-700">{saveSuccess}</p>
+                    ) : null}
+                  </SettingsCategoryWorkbench>
+                </FormSection>
+              </GlassSurface>
+            </div>
+          ) : null}
+
+          {displayedSectionId === 'dictionary' ? (
+            <GlassSurface className="p-6">
+              <FormSection
+                title={common.dictionary}
+                description={text({
+                  en: 'Review dictionary items available in this subsidiary.',
+                  zh_HANS: '查看当前分目录可用的词典内容。',
+                  zh_HANT: '查看目前分目錄可用的詞典內容。',
+                  ja: 'この配下スコープで利用できる辞書項目を確認します。',
+                  ko: '이 하위 조직에서 사용할 수 있는 사전 항목을 확인합니다.',
+                  fr: 'Consultez les elements du dictionnaire disponibles pour ce perimetre.',
+                })}
+              >
+                {dictionaryPanel.error ? (
+                  <SectionPlaceholder
+                    title={text({
+                      en: 'Dictionary unavailable',
+                      zh_HANS: '词典不可用',
+                      zh_HANT: '詞典不可用',
+                      ja: '辞書を読み込めません',
+                      ko: '사전을 사용할 수 없습니다',
+                      fr: 'Dictionnaire indisponible',
+                    })}
+                    description={dictionaryPanel.error}
+                  />
+                ) : dictionaryPanel.data ? (
+                  <>
+                    <div className="grid gap-4 xl:grid-cols-3">
+                      <FieldRow
+                        label={text({
+                          en: 'Visible Dictionary Types',
+                          zh_HANS: '可见词典类型',
+                          zh_HANT: '可見詞典類型',
+                          ja: '表示中の辞書タイプ',
+                          ko: '표시 가능한 사전 유형',
+                          fr: 'Types de dictionnaire visibles',
+                        })}
+                        value={String(dictionaryCount)}
+                      />
+                      <FieldRow
+                        label={text({
+                          en: 'Inherited Fields',
+                          zh_HANS: '继承字段',
+                          zh_HANT: '繼承欄位',
+                          ja: '継承項目',
+                          ko: '상속 필드',
+                          fr: 'Champs herites',
+                        })}
+                        value={String(Object.keys(settings.inheritedFrom).length)}
+                      />
+                      <FieldRow
+                        label={text({
+                          en: 'Current Overrides',
+                          zh_HANS: '当前覆盖项',
+                          zh_HANT: '目前覆寫項',
+                          ja: '現在の上書き数',
+                          ko: '현재 재정의 수',
+                          fr: 'Remplacements actuels',
+                        })}
+                        value={String(settings.overrides.length)}
+                      />
+                    </div>
+                    <DictionaryExplorerPanel
+                      request={request}
+                      requestEnvelope={requestEnvelope}
+                      types={dictionaryPanel.data}
+                      locale={locale}
+                      copy={dictionaryExplorerCopy}
+                      allowIncludeInactiveToggle
+                      intro={
+                        <>
+                          <p>
+                            {text({
+                              en: 'Review the dictionary items available in this subsidiary.',
+                              zh_HANS: '查看当前分目录可用的词典项。',
+                              zh_HANT: '查看目前分目錄可用的詞典項。',
+                              ja: 'この配下スコープで利用できる辞書項目を確認します。',
+                              ko: '이 하위 조직에서 사용할 수 있는 사전 항목을 확인합니다.',
+                              fr: 'Consultez les elements du dictionnaire disponibles pour ce perimetre.',
+                            })}
+                          </p>
+                          <p className="mt-2">
+                            {text({
+                              en: 'Open System Dictionary if you need to change the vocabulary itself.',
+                              zh_HANS: '如需调整词典内容，请前往系统词典。',
+                              zh_HANT: '如需調整詞典內容，請前往系統詞典。',
+                              ja: '辞書項目自体を変更する場合はシステム辞書を開いてください。',
+                              ko: '용어 자체를 바꾸려면 시스템 사전을 여십시오.',
+                              fr: 'Ouvrez le dictionnaire systeme si vous devez modifier le vocabulaire lui-meme.',
+                            })}
+                          </p>
+                        </>
+                      }
+                      emptyDescription={text({
+                        en: 'No dictionary types are currently available for this subsidiary.',
+                        zh_HANS: '当前分目录下没有可用的词典类型。',
+                        zh_HANT: '目前此分目錄下沒有可用的詞典類型。',
+                        ja: 'この配下スコープで利用できる辞書タイプはありません。',
+                        ko: '이 하위 조직에서 현재 사용할 수 있는 사전 유형이 없습니다.',
+                        fr: 'Aucun type de dictionnaire n est actuellement disponible pour ce perimetre.',
+                      })}
+                    />
+                  </>
+                ) : (
+                  <SectionPlaceholder
+                    title={text({
+                      en: 'No dictionary types returned',
+                      zh_HANS: '未返回词典类型',
+                      zh_HANT: '未返回詞典類型',
+                      ja: '辞書タイプが返されませんでした',
+                      ko: '반환된 사전 유형이 없습니다',
+                      fr: 'Aucun type de dictionnaire n a ete renvoye',
+                    })}
+                    description={text({
+                      en: 'No dictionary types are currently available for this subsidiary.',
+                      zh_HANS: '当前分目录下没有可用的词典类型。',
+                      zh_HANT: '目前此分目錄下沒有可用的詞典類型。',
+                      ja: 'この配下スコープで利用できる辞書タイプはありません。',
+                      ko: '이 하위 조직에서 현재 사용할 수 있는 사전 유형이 없습니다.',
+                      fr: 'Aucun type de dictionnaire n est actuellement disponible pour ce perimetre.',
+                    })}
+                  />
+                )}
+              </FormSection>
+            </GlassSurface>
+          ) : null}
+        </div>
+      </SettingsLayout>
+
+      <ActionDrawer
+        open={isDefaultsDrawerOpen}
+        onOpenChange={(open) => {
+          if (!open && !isSaving) {
+            handleReset();
+          }
+          setIsDefaultsDrawerOpen(open);
+        }}
+        title={text({
+          en: 'Edit subsidiary defaults',
+          zh_HANS: '编辑分目录默认值',
+          zh_HANT: '編輯分目錄預設值',
+          ja: '配下スコープ既定値を編集',
+          ko: '하위 조직 기본값 편집',
+          fr: 'Modifier les valeurs par defaut du perimetre',
+        })}
+        description={text({
+          en: 'Change localization, public surface, import, and security defaults used by this subsidiary scope.',
+          zh_HANS: '修改当前分目录范围使用的本地化、公开入口、导入与安全默认值。',
+          zh_HANT: '修改目前分目錄範圍使用的本地化、公開入口、匯入與安全預設值。',
+          ja: 'この配下スコープで使用するローカライズ、公開サーフェス、インポート、セキュリティ既定値を変更します。',
+          ko: '이 하위 조직 범위에서 사용할 현지화, 공개 화면, 가져오기, 보안 기본값을 변경합니다.',
+          fr: 'Modifiez les valeurs par defaut de localisation, surface publique, import et securite utilisees par ce perimetre.',
+        })}
+        size="lg"
+        closeButtonAriaLabel={text({
+          en: 'Close subsidiary defaults editor',
+          zh_HANS: '关闭分目录默认值编辑器',
+          zh_HANT: '關閉分目錄預設值編輯器',
+          ja: '配下スコープ既定値エディターを閉じる',
+          ko: '하위 조직 기본값 편집기 닫기',
+          fr: 'Fermer l editeur des valeurs par defaut du perimetre',
+        })}
+        footer={
+          <ActionDrawerFooter
+            secondary={
+              <button
+                type="button"
+                onClick={() => {
+                  handleReset();
+                  setIsDefaultsDrawerOpen(false);
+                }}
+                disabled={isSaving}
+                className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {text({
+                  en: 'Cancel',
+                  zh_HANS: '取消',
+                  zh_HANT: '取消',
+                  ja: 'キャンセル',
+                  ko: '취소',
+                  fr: 'Annuler',
+                })}
+              </button>
+            }
+            primary={
+              <button
+                type="button"
+                onClick={() => void handleSave()}
+                disabled={isSaving || !hasDirtyDraft}
+                className="rounded-xl bg-slate-950 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {isSaving
+                  ? common.saving
+                  : text({
+                      en: 'Save subsidiary settings',
+                      zh_HANS: '保存分目录设置',
+                      zh_HANT: '儲存分目錄設定',
+                      ja: '配下スコープ設定を保存',
+                      ko: '하위 조직 설정 저장',
+                      fr: 'Enregistrer les parametres du perimetre',
+                    })}
+              </button>
+            }
+          />
+        }
+      >
+        <FormSection
+          title={common.settings}
+          description={text({
+            en: 'Review and adjust the defaults applied within this subsidiary scope.',
+            zh_HANS: '查看并调整当前分目录范围内应用的默认设置。',
+            zh_HANT: '檢視並調整目前分目錄範圍內套用的預設設定。',
+            ja: 'この配下スコープに適用される既定値を確認して調整します。',
+            ko: '이 하위 조직 범위에 적용되는 기본 설정을 검토하고 조정합니다.',
+            fr: 'Examinez et ajustez les parametres par defaut appliques dans ce perimetre secondaire.',
+          })}
+        >
+          <SettingsDefaultsFormFields
+            draft={draft}
+            getSourceHint={(key) =>
+              formatSourceHint(settings.inheritedFrom[key], overrideSet.has(key))
+            }
+            onDraftChange={setDraft}
+            text={text}
+          />
+
+          {saveError ? <p className="text-sm font-medium text-red-600">{saveError}</p> : null}
+          {saveSuccess ? (
+            <p className="text-sm font-medium text-emerald-700">{saveSuccess}</p>
+          ) : null}
+        </FormSection>
+      </ActionDrawer>
     </>
   );
 }

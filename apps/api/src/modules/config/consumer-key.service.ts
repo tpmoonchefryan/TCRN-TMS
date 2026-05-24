@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable, NotFoundException } from '@nestjs/common';
+
 import { prisma } from '@tcrn/database';
 import { ErrorCodes } from '@tcrn/shared';
 
@@ -46,11 +46,17 @@ export class ConsumerKeyService {
     const { key: apiKey, prefix: apiKeyPrefix, hash: apiKeyHash } = generateApiKeyMaterial();
 
     // Update consumer with new key
-    await prisma.$executeRawUnsafe(`
+    await prisma.$executeRawUnsafe(
+      `
       UPDATE "${tenantSchema}".consumer
       SET api_key_hash = $2, api_key_prefix = $3, updated_at = now(), updated_by = $4::uuid, version = version + 1
       WHERE id = $1::uuid
-    `, consumerId, apiKeyHash, apiKeyPrefix, userId);
+    `,
+      consumerId,
+      apiKeyHash,
+      apiKeyPrefix,
+      userId
+    );
 
     return {
       apiKey,
@@ -73,11 +79,7 @@ export class ConsumerKeyService {
   /**
    * Revoke API key for a consumer
    */
-  async revokeApiKey(
-    consumerId: string,
-    tenantSchema: string,
-    userId: string
-  ): Promise<void> {
+  async revokeApiKey(consumerId: string, tenantSchema: string, userId: string): Promise<void> {
     // Verify consumer exists
     const consumer = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
       `SELECT id FROM "${tenantSchema}".consumer WHERE id = $1::uuid`,
@@ -92,11 +94,15 @@ export class ConsumerKeyService {
     }
 
     // Clear API key
-    await prisma.$executeRawUnsafe(`
+    await prisma.$executeRawUnsafe(
+      `
       UPDATE "${tenantSchema}".consumer
       SET api_key_hash = NULL, api_key_prefix = NULL, updated_at = now(), updated_by = $2::uuid, version = version + 1
       WHERE id = $1::uuid
-    `, consumerId, userId);
+    `,
+      consumerId,
+      userId
+    );
   }
 
   /**
@@ -114,7 +120,9 @@ export class ConsumerKeyService {
     const hash = hashApiKey(apiKey);
 
     // Find consumer by prefix and hash
-    const consumers = await prisma.$queryRawUnsafe<Array<{ id: string; code: string; apiKeyHash: string }>>(
+    const consumers = await prisma.$queryRawUnsafe<
+      Array<{ id: string; code: string; apiKeyHash: string }>
+    >(
       `SELECT id, code, api_key_hash as "apiKeyHash" 
        FROM "${tenantSchema}".consumer 
        WHERE api_key_prefix = $1 AND is_active = true`,
@@ -147,5 +155,4 @@ export class ConsumerKeyService {
 
     return result.length > 0 && result[0].hasKey;
   }
-
 }

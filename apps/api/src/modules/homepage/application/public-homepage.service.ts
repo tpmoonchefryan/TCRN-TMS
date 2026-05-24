@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+
 import { ErrorCodes } from '@tcrn/shared';
 
 import {
@@ -21,7 +21,7 @@ export class PublicHomepageService {
 
   constructor(
     private readonly publicHomepageReadRepository: PublicHomepageReadRepository,
-    private readonly domainLookupService: DomainLookupService,
+    private readonly domainLookupService: DomainLookupService
   ) {}
 
   async getPublishedHomepage(path: string): Promise<PublicHomepageData | null> {
@@ -29,15 +29,18 @@ export class PublicHomepageService {
     const tenantSchemas = await this.publicHomepageReadRepository.listActiveTenantSchemas();
 
     this.logger.debug(
-      `[getPublishedHomepage] Found ${tenantSchemas.length} active tenants: ${tenantSchemas.join(', ')}`,
+      `[getPublishedHomepage] Found ${tenantSchemas.length} active tenants: ${tenantSchemas.join(', ')}`
     );
 
     for (const schema of tenantSchemas) {
       try {
-        const talent = await this.publicHomepageReadRepository.findPublishedTalentByPath(schema, path);
+        const talent = await this.publicHomepageReadRepository.findPublishedTalentByPath(
+          schema,
+          path
+        );
 
         this.logger.debug(
-          `[getPublishedHomepage] Schema "${schema}": found ${talent ? 1 : 0} matching talents`,
+          `[getPublishedHomepage] Schema "${schema}": found ${talent ? 1 : 0} matching talents`
         );
 
         if (!talent) {
@@ -45,18 +48,18 @@ export class PublicHomepageService {
         }
 
         this.logger.debug(
-          `[getPublishedHomepage] Found talent: id=${talent.id}, displayName="${talent.displayName}", homepagePath="${talent.homepagePath}"`,
+          `[getPublishedHomepage] Found talent: id=${talent.id}, displayName="${talent.displayName}", homepagePath="${talent.homepagePath}"`
         );
 
         const result = await this.getPublishedHomepageForTalent(schema, talent);
         this.logger.debug(
-          `[getPublishedHomepage] Returning ${result ? 'published' : 'hidden'} data for "${talent.displayName}"`,
+          `[getPublishedHomepage] Returning ${result ? 'published' : 'hidden'} data for "${talent.displayName}"`
         );
         return result;
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         this.logger.debug(
-          `[getPublishedHomepage] Skipping schema "${schema}" due to lookup error: ${message}`,
+          `[getPublishedHomepage] Skipping schema "${schema}" due to lookup error: ${message}`
         );
       }
     }
@@ -80,7 +83,7 @@ export class PublicHomepageService {
 
   async getPublishedHomepageByCodes(
     tenantCode: string,
-    talentCode: string,
+    talentCode: string
   ): Promise<PublicHomepageData | null> {
     const tenantSchema =
       await this.publicHomepageReadRepository.findActiveTenantSchemaByCode(tenantCode);
@@ -89,8 +92,10 @@ export class PublicHomepageService {
       return null;
     }
 
-    const talent =
-      await this.publicHomepageReadRepository.findPublishedTalentByCode(tenantSchema, talentCode);
+    const talent = await this.publicHomepageReadRepository.findPublishedTalentByCode(
+      tenantSchema,
+      talentCode
+    );
 
     if (!talent) {
       return null;
@@ -101,7 +106,7 @@ export class PublicHomepageService {
 
   async getPublishedHomepageByCodesOrThrow(
     tenantCode: string,
-    talentCode: string,
+    talentCode: string
   ): Promise<PublicHomepageData> {
     const data = await this.getPublishedHomepageByCodes(tenantCode, talentCode);
 
@@ -115,10 +120,9 @@ export class PublicHomepageService {
     return data;
   }
 
-
   async getPublishedHomepageByDomainAndTalentCode(
     domain: string,
-    talentCode: string,
+    talentCode: string
   ): Promise<PublicHomepageData | null> {
     const mapping = await this.domainLookupService.lookupDomain(domain, talentCode);
 
@@ -128,7 +132,7 @@ export class PublicHomepageService {
 
     const talent = await this.publicHomepageReadRepository.findPublishedTalentById(
       mapping.tenantSchema,
-      mapping.talentId,
+      mapping.talentId
     );
 
     if (!talent) {
@@ -147,7 +151,7 @@ export class PublicHomepageService {
 
     const talent = await this.publicHomepageReadRepository.findPublishedTalentById(
       mapping.tenantSchema,
-      mapping.talentId,
+      mapping.talentId
     );
 
     if (!talent) {
@@ -159,15 +163,15 @@ export class PublicHomepageService {
 
   private async getPublishedHomepageForTalent(
     schema: string,
-    talent: PublicHomepageTalentRecord,
+    talent: PublicHomepageTalentRecord
   ): Promise<PublicHomepageData | null> {
     const homepage = await this.publicHomepageReadRepository.findPublishedHomepageRecord(
       schema,
-      talent.id,
+      talent.id
     );
 
     this.logger.debug(
-      `[getPublishedHomepageForTalent] Homepage record ${homepage ? 'found' : 'missing'} for talent "${talent.displayName}"`,
+      `[getPublishedHomepageForTalent] Homepage record ${homepage ? 'found' : 'missing'} for talent "${talent.displayName}"`
     );
 
     if (!hasPublishedHomepage(homepage)) {
@@ -176,7 +180,7 @@ export class PublicHomepageService {
 
     const version = await this.publicHomepageReadRepository.findHomepageVersion(
       schema,
-      homepage.publishedVersionId,
+      homepage.publishedVersionId
     );
 
     if (!version) {
@@ -189,13 +193,13 @@ export class PublicHomepageService {
       typeof version.theme === 'object' && version.theme !== null ? version.theme : {};
 
     this.logger.debug(
-      `[getPublishedHomepageForTalent] Version content keys: ${Object.keys(contentRecord).join(', ')}`,
+      `[getPublishedHomepageForTalent] Version content keys: ${Object.keys(contentRecord).join(', ')}`
     );
     this.logger.debug(
-      `[getPublishedHomepageForTalent] Version content.components length: ${getHomepageComponentCount(version.content) ?? 'N/A'}`,
+      `[getPublishedHomepageForTalent] Version content.components length: ${getHomepageComponentCount(version.content) ?? 'N/A'}`
     );
     this.logger.debug(
-      `[getPublishedHomepageForTalent] Version theme keys: ${Object.keys(themeRecord).join(', ')}`,
+      `[getPublishedHomepageForTalent] Version theme keys: ${Object.keys(themeRecord).join(', ')}`
     );
 
     return buildPublicHomepageData({

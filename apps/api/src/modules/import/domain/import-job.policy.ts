@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import {
   type ImportError,
   type ImportJobQueryDto,
@@ -53,7 +52,7 @@ export interface CreatedImportJobResult {
 
 export const mapImportJobResponse = (
   job: RawImportJobRecord,
-  nowMs: number = Date.now(),
+  nowMs: number = Date.now()
 ): ImportJobResponse => {
   let estimatedRemainingSeconds: number | null = null;
 
@@ -82,9 +81,7 @@ export const mapImportJobResponse = (
       successRows: job.success_rows,
       failedRows: job.failed_rows,
       warningRows: job.warning_rows,
-      percentage: job.total_rows > 0
-        ? Math.round((job.processed_rows / job.total_rows) * 100)
-        : 0,
+      percentage: job.total_rows > 0 ? Math.round((job.processed_rows / job.total_rows) * 100) : 0,
     },
     startedAt: job.started_at?.toISOString() ?? null,
     completedAt: job.completed_at?.toISOString() ?? null,

@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 import { Request } from 'express';
 
@@ -25,5 +24,5 @@ export const CurrentUser = createParamDecorator(
     }
 
     return data ? user[data] : user;
-  },
+  }
 );

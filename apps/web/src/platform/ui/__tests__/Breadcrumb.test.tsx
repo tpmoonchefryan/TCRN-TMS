@@ -13,7 +13,7 @@ describe('Breadcrumb', () => {
           { label: 'Talent', href: '/tenant/1/business/talent/2' },
           { label: 'Homepage', isCurrent: true },
         ]}
-      />,
+      />
     );
 
     expect(screen.getByRole('navigation', { name: 'Workspace trail' })).toBeInTheDocument();
@@ -31,7 +31,7 @@ describe('Breadcrumb', () => {
           { label: 'Tenant', href: '/tenant/1' },
           { label: 'Settings', isCurrent: true },
         ]}
-      />,
+      />
     );
 
     fireEvent.click(screen.getByRole('link', { name: 'Tenant' }));

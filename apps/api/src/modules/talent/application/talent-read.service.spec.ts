@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { TalentReadRepository } from '../infrastructure/talent-read.repository';
@@ -59,30 +58,22 @@ describe('TalentReadService', () => {
     await expect(service.findByCode('SORA', 'tenant_test')).resolves.toMatchObject({
       code: 'SORA',
     });
-    await expect(
-      service.findByHomepagePath('sora', 'tenant_test'),
-    ).resolves.toMatchObject({
+    await expect(service.findByHomepagePath('sora', 'tenant_test')).resolves.toMatchObject({
       homepagePath: 'sora',
     });
     await expect(
-      service.findByCustomDomain('Talent.Example.com', 'tenant_test'),
+      service.findByCustomDomain('Talent.Example.com', 'tenant_test')
     ).resolves.toMatchObject({
       id: 'talent-1',
     });
-    await expect(
-      service.getProfileStoreById('store-1', 'tenant_test'),
-    ).resolves.toMatchObject({
+    await expect(service.getProfileStoreById('store-1', 'tenant_test')).resolves.toMatchObject({
       code: 'DEFAULT',
     });
-    await expect(
-      service.getTalentStats('talent-1', 'tenant_test'),
-    ).resolves.toEqual({
+    await expect(service.getTalentStats('talent-1', 'tenant_test')).resolves.toEqual({
       customerCount: 3,
       pendingMessagesCount: 1,
     });
-    await expect(
-      service.getExternalPagesDomainConfig('talent-1', 'tenant_test'),
-    ).resolves.toEqual({
+    await expect(service.getExternalPagesDomainConfig('talent-1', 'tenant_test')).resolves.toEqual({
       homepage: null,
       marshmallow: null,
     });
@@ -105,7 +96,7 @@ describe('TalentReadService', () => {
         pageSize: 10,
         search: 'Sora',
         sort: '-createdAt',
-      }),
+      })
     ).resolves.toEqual({
       data: [
         {

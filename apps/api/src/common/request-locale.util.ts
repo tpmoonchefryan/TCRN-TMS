@@ -1,7 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+import type { Request } from 'express';
 
 import { normalizeSupportedUiLocale, type SupportedUiLocale } from '@tcrn/shared';
-import type { Request } from 'express';
 
 export function getPrimaryAcceptLanguage(req: Request): string {
   const rawHeader = req.headers['accept-language'];
@@ -21,7 +21,7 @@ export function getUiLocale(locale?: string | null): SupportedUiLocale {
 export function buildLocalizedJsonTextSql(
   jsonColumnSql: string,
   locale?: string | null,
-  fallbackSql: string = `${jsonColumnSql}->>'en'`,
+  fallbackSql: string = `${jsonColumnSql}->>'en'`
 ): string {
   const uiLocale = getUiLocale(locale);
 

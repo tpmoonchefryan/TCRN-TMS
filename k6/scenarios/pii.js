@@ -1,8 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 // PII Service Performance Test
-
-import http from 'k6/http';
 import { check, sleep, group } from 'k6';
+import http from 'k6/http';
 import { Rate, Trend, Counter } from 'k6/metrics';
 
 // Custom metrics
@@ -56,16 +55,12 @@ export function setup() {
   const accessToken = loginRes.json('data.access_token');
 
   // Get PII access token
-  const piiTokenRes = http.post(
-    `${API_URL}/api/v1/pii/token`,
-    null,
-    {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
-    }
-  );
+  const piiTokenRes = http.post(`${API_URL}/api/v1/pii/token`, null, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+  });
 
   return {
     token: accessToken,
@@ -91,11 +86,8 @@ export default function (data) {
     // 60% - Read operations (most common)
     group('PII Profile Read', () => {
       const testProfileId = `test-profile-${Math.floor(Math.random() * 1000)}`;
-      
-      const getRes = http.get(
-        `${PII_SERVICE_URL}/api/v1/profiles/${testProfileId}`,
-        { headers }
-      );
+
+      const getRes = http.get(`${PII_SERVICE_URL}/api/v1/profiles/${testProfileId}`, { headers });
 
       check(getRes, {
         'get returns 200 or 404': (r) => r.status === 200 || r.status === 404,

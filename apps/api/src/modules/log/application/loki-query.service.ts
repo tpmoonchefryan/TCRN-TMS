@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable, Logger } from '@nestjs/common';
 
 import {
@@ -19,9 +18,7 @@ import { LokiQueryGateway } from '../infrastructure/loki-query.gateway';
 export class LokiQueryApplicationService {
   private readonly logger = new Logger(LokiQueryApplicationService.name);
 
-  constructor(
-    private readonly lokiQueryGateway: LokiQueryGateway,
-  ) {}
+  constructor(private readonly lokiQueryGateway: LokiQueryGateway) {}
 
   async query(params: LokiQueryParams): Promise<LokiQueryResponse> {
     if (!this.lokiQueryGateway.isEnabled()) {
@@ -41,7 +38,7 @@ export class LokiQueryApplicationService {
       return transformLokiQueryResponse(data);
     } catch (error) {
       this.logger.error(
-        `Loki query failed: ${error instanceof Error ? error.message : String(error)}`,
+        `Loki query failed: ${error instanceof Error ? error.message : String(error)}`
       );
       return { entries: [] };
     }

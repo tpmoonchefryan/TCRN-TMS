@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ComplianceReportService } from '../compliance-report.service';
@@ -98,7 +97,7 @@ describe('ComplianceReportService', () => {
     const report = await service.generateReport(
       'tenant-missing',
       new Date('2026-05-01T00:00:00.000Z'),
-      new Date('2026-05-02T00:00:00.000Z'),
+      new Date('2026-05-02T00:00:00.000Z')
     );
 
     expect(queryRawUnsafe).not.toHaveBeenCalled();

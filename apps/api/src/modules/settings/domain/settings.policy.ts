@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import type { ArtistLifecycleFlow } from '@tcrn/shared';
 
 export type SettingsScopeType = 'tenant' | 'subsidiary' | 'talent';
@@ -160,11 +159,11 @@ export const SETTINGS_CONTRACT_DEFINITIONS: SettingsContractDefinition[] = [
 ];
 
 const SETTINGS_CONTRACT_BY_KEY = new Map(
-  SETTINGS_CONTRACT_DEFINITIONS.map((definition) => [definition.key, definition]),
+  SETTINGS_CONTRACT_DEFINITIONS.map((definition) => [definition.key, definition])
 );
 
 export function normalizeTurnstileRuntimeEnvironment(
-  value: string | null | undefined,
+  value: string | null | undefined
 ): TurnstileRuntimeEnvironment {
   if (value === 'production' || value === 'staging' || value === 'test') {
     return value;
@@ -198,21 +197,17 @@ export function normalizeStoredArtistLifecycleFlow(value: unknown): ArtistLifecy
   const record = value as Record<string, unknown>;
 
   return {
-    nodes: Array.isArray(record.nodes)
-      ? record.nodes as ArtistLifecycleFlow['nodes']
-      : [],
+    nodes: Array.isArray(record.nodes) ? (record.nodes as ArtistLifecycleFlow['nodes']) : [],
     transitions: Array.isArray(record.transitions)
-      ? record.transitions as ArtistLifecycleFlow['transitions']
+      ? (record.transitions as ArtistLifecycleFlow['transitions'])
       : [],
     homepagePolicyByStage: Array.isArray(record.homepagePolicyByStage)
-      ? record.homepagePolicyByStage as ArtistLifecycleFlow['homepagePolicyByStage']
+      ? (record.homepagePolicyByStage as ArtistLifecycleFlow['homepagePolicyByStage'])
       : [],
   };
 }
 
-export function getSettingsContractDefinition(
-  key: string,
-): SettingsContractDefinition | null {
+export function getSettingsContractDefinition(key: string): SettingsContractDefinition | null {
   return SETTINGS_CONTRACT_BY_KEY.get(key) ?? null;
 }
 
@@ -225,7 +220,7 @@ export function canUpdateSettingsKeyThroughGeneralSettings(key: string): boolean
 }
 
 export function readStoredTenantTurnstileSettings(
-  settings: Record<string, unknown> | null,
+  settings: Record<string, unknown> | null
 ): StoredTenantTurnstileSettings {
   const raw = settings?.[TENANT_TURNSTILE_SETTINGS_KEY];
 
@@ -246,9 +241,7 @@ export function readStoredTenantTurnstileSettings(
   };
 }
 
-export function hasStoredTenantTurnstileSettings(
-  settings: StoredTenantTurnstileSettings,
-): boolean {
+export function hasStoredTenantTurnstileSettings(settings: StoredTenantTurnstileSettings): boolean {
   return Boolean(settings.siteKey || settings.secretKeyEncrypted);
 }
 

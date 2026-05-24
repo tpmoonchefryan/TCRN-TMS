@@ -1,7 +1,8 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { prisma } from '@tcrn/database';
 import {
   createLocalizedText,
@@ -10,17 +11,20 @@ import {
   type TenantFixture,
   type TestUser,
 } from '@tcrn/shared';
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { DatabaseService } from '@/modules/database/database.service';
 import { ChangeLogService } from '@/modules/log/services/change-log.service';
 import { BlocklistReadService } from '@/modules/security/application/blocklist-read.service';
 import { BlocklistWriteService } from '@/modules/security/application/blocklist-write.service';
-import { BlocklistAction, BlocklistPatternType, BlocklistSeverity } from '@/modules/security/dto/security.dto';
+import {
+  BlocklistAction,
+  BlocklistPatternType,
+  BlocklistSeverity,
+} from '@/modules/security/dto/security.dto';
 import { BlocklistReadRepository } from '@/modules/security/infrastructure/blocklist-read.repository';
 import { BlocklistWriteRepository } from '@/modules/security/infrastructure/blocklist-write.repository';
-import { BlocklistService } from '@/modules/security/services/blocklist.service';
 import { BlocklistMatcherService } from '@/modules/security/services/blocklist-matcher.service';
+import { BlocklistService } from '@/modules/security/services/blocklist.service';
 
 describe('BlocklistService', () => {
   let service: BlocklistService;
@@ -40,7 +44,7 @@ describe('BlocklistService', () => {
       prisma,
       tenantFixture,
       `blocklist_admin_${Date.now()}`,
-      ['ADMIN'],
+      ['ADMIN']
     );
     mockContext = {
       tenantId: tenantFixture.tenant.id,
@@ -78,7 +82,13 @@ describe('BlocklistService', () => {
             testPattern: (content: string, pattern: string) => ({
               matched: content.includes(pattern),
               matches: content.includes(pattern)
-                ? [{ start: content.indexOf(pattern), end: content.indexOf(pattern) + pattern.length, text: pattern }]
+                ? [
+                    {
+                      start: content.indexOf(pattern),
+                      end: content.indexOf(pattern) + pattern.length,
+                      text: pattern,
+                    },
+                  ]
                 : [],
             }),
           },
@@ -92,9 +102,12 @@ describe('BlocklistService', () => {
   afterAll(async () => {
     if (createdEntryId) {
       try {
-        await prisma.$executeRawUnsafe(`
+        await prisma.$executeRawUnsafe(
+          `
           DELETE FROM "${tenantFixture.schemaName}".blocklist_entry WHERE id = $1::uuid
-        `, createdEntryId);
+        `,
+          createdEntryId
+        );
       } catch {
         // Ignore cleanup errors
       }
@@ -128,16 +141,18 @@ describe('BlocklistService', () => {
       const result = await service.findMany(tenantFixture.schemaName, { category: 'profanity' });
 
       expect(result).toHaveProperty('items');
-      result.items.forEach(item => {
+      result.items.forEach((item) => {
         expect(item.category).toBe('profanity');
       });
     });
 
     it('should filter by patternType', async () => {
-      const result = await service.findMany(tenantFixture.schemaName, { patternType: BlocklistPatternType.KEYWORD });
+      const result = await service.findMany(tenantFixture.schemaName, {
+        patternType: BlocklistPatternType.KEYWORD,
+      });
 
       expect(result).toHaveProperty('items');
-      result.items.forEach(item => {
+      result.items.forEach((item) => {
         expect(item.patternType).toBe(BlocklistPatternType.KEYWORD);
       });
     });
@@ -153,10 +168,7 @@ describe('BlocklistService', () => {
   describe('findById', () => {
     it('should throw NotFoundException for non-existent entry', async () => {
       await expect(
-        service.findById(
-          tenantFixture.schemaName,
-          '00000000-0000-0000-0000-000000000000',
-        ),
+        service.findById(tenantFixture.schemaName, '00000000-0000-0000-0000-000000000000')
       ).rejects.toThrow(NotFoundException);
     });
   });
@@ -168,7 +180,12 @@ describe('BlocklistService', () => {
         ownerId: null,
         pattern: 'test_integration_pattern',
         patternType: BlocklistPatternType.KEYWORD,
-        name: createLocalizedText({ en: 'Integration Test Entry', zh_HANS: '集成测试条目', zh_HANT: '集成测试条目', ja: '統合テストエントリ' }),
+        name: createLocalizedText({
+          en: 'Integration Test Entry',
+          zh_HANS: '集成测试条目',
+          zh_HANT: '集成测试条目',
+          ja: '統合テストエントリ',
+        }),
         category: 'test',
         severity: BlocklistSeverity.MEDIUM,
         action: BlocklistAction.REPLACE,
@@ -212,12 +229,15 @@ describe('BlocklistService', () => {
       };
 
       const result = await service.create(dto, mockContext);
-      
+
       // Cleanup immediately
       if (result.id) {
-        await prisma.$executeRawUnsafe(`
+        await prisma.$executeRawUnsafe(
+          `
           DELETE FROM "${tenantFixture.schemaName}".blocklist_entry WHERE id = $1::uuid
-        `, result.id);
+        `,
+          result.id
+        );
       }
 
       expect(result).toHaveProperty('id');
@@ -227,7 +247,7 @@ describe('BlocklistService', () => {
   describe('update', () => {
     it('should throw NotFoundException for non-existent entry', async () => {
       await expect(
-        service.update('00000000-0000-0000-0000-000000000000', { version: 1 }, mockContext),
+        service.update('00000000-0000-0000-0000-000000000000', { version: 1 }, mockContext)
       ).rejects.toThrow(NotFoundException);
     });
 
@@ -249,13 +269,20 @@ describe('BlocklistService', () => {
       try {
         // Try to update with wrong version
         await expect(
-          service.update(created.id, { version: 999, name: createLocalizedText({ en: 'Updated' }) }, mockContext),
+          service.update(
+            created.id,
+            { version: 999, name: createLocalizedText({ en: 'Updated' }) },
+            mockContext
+          )
         ).rejects.toThrow(ConflictException);
       } finally {
         // Cleanup
-        await prisma.$executeRawUnsafe(`
+        await prisma.$executeRawUnsafe(
+          `
           DELETE FROM "${tenantFixture.schemaName}".blocklist_entry WHERE id = $1::uuid
-        `, created.id);
+        `,
+          created.id
+        );
       }
     });
 
@@ -275,16 +302,23 @@ describe('BlocklistService', () => {
 
       try {
         await expect(
-          service.update(created.id, {
-            version: 1,
-            pattern: '[invalid(',
-            patternType: BlocklistPatternType.REGEX,
-          }, mockContext),
+          service.update(
+            created.id,
+            {
+              version: 1,
+              pattern: '[invalid(',
+              patternType: BlocklistPatternType.REGEX,
+            },
+            mockContext
+          )
         ).rejects.toThrow(BadRequestException);
       } finally {
-        await prisma.$executeRawUnsafe(`
+        await prisma.$executeRawUnsafe(
+          `
           DELETE FROM "${tenantFixture.schemaName}".blocklist_entry WHERE id = $1::uuid
-        `, created.id);
+        `,
+          created.id
+        );
       }
     });
   });
@@ -311,15 +345,18 @@ describe('BlocklistService', () => {
         expect(result.deleted).toBe(true);
       } finally {
         // Hard delete for cleanup
-        await prisma.$executeRawUnsafe(`
+        await prisma.$executeRawUnsafe(
+          `
           DELETE FROM "${tenantFixture.schemaName}".blocklist_entry WHERE id = $1::uuid
-        `, created.id);
+        `,
+          created.id
+        );
       }
     });
 
     it('should throw NotFoundException for non-existent entry', async () => {
       await expect(
-        service.delete('00000000-0000-0000-0000-000000000000', mockContext),
+        service.delete('00000000-0000-0000-0000-000000000000', mockContext)
       ).rejects.toThrow(NotFoundException);
     });
   });

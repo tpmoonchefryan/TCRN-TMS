@@ -1,13 +1,14 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 // Customer Export Job Processor
-
-import { PrismaClient } from '@tcrn/database';
-import type { Job, Processor } from 'bullmq';
-import ExcelJS from 'exceljs';
 import * as fs from 'fs';
-import * as Minio from 'minio';
 import * as os from 'os';
 import * as path from 'path';
+
+import type { Job, Processor } from 'bullmq';
+import ExcelJS from 'exceljs';
+import * as Minio from 'minio';
+
+import { PrismaClient } from '@tcrn/database';
 
 import { reportLogger as logger } from '../logger';
 
@@ -107,10 +108,10 @@ function resolveRequestedFields(fields?: string[]): readonly CustomerExportField
   }
 
   const allowedFields = new Set<CustomerExportField>(
-    CUSTOMER_EXPORT_FIELD_DEFINITIONS.map((field) => field.key),
+    CUSTOMER_EXPORT_FIELD_DEFINITIONS.map((field) => field.key)
   );
   const invalidFields = fields.filter(
-    (field): field is string => !allowedFields.has(field as CustomerExportField),
+    (field): field is string => !allowedFields.has(field as CustomerExportField)
   );
 
   if (invalidFields.length > 0) {
@@ -122,7 +123,7 @@ function resolveRequestedFields(fields?: string[]): readonly CustomerExportField
 
 function projectRow(
   row: CustomerExportRow,
-  fields: readonly CustomerExportField[],
+  fields: readonly CustomerExportField[]
 ): Record<string, string | number> {
   return Object.fromEntries(fields.map((field) => [field, row[field]]));
 }
@@ -160,13 +161,13 @@ function getFileExtension(format: CustomerExportJobData['format']): string {
 async function getProfileStoreId(
   prisma: PrismaClient,
   tenantSchema: string,
-  talentId: string,
+  talentId: string
 ): Promise<string> {
   const talents = await prisma.$queryRawUnsafe<Array<{ profileStoreId: string | null }>>(
     `SELECT profile_store_id as "profileStoreId"
      FROM "${tenantSchema}".talent
      WHERE id = $1::uuid`,
-    talentId,
+    talentId
   );
 
   const profileStoreId = talents[0]?.profileStoreId;
@@ -182,7 +183,7 @@ async function updateJobProgress(
   tenantSchema: string,
   jobId: string,
   totalRecords: number,
-  processedRecords: number,
+  processedRecords: number
 ): Promise<void> {
   await prisma.$executeRawUnsafe(
     `UPDATE "${tenantSchema}".export_job
@@ -194,7 +195,7 @@ async function updateJobProgress(
      WHERE id = $3::uuid`,
     totalRecords,
     processedRecords,
-    jobId,
+    jobId
   );
 }
 
@@ -204,7 +205,7 @@ async function updateJobCompleted(
   jobId: string,
   filePath: string,
   fileName: string,
-  totalRecords: number,
+  totalRecords: number
 ): Promise<void> {
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + 7);
@@ -224,7 +225,7 @@ async function updateJobCompleted(
     fileName,
     totalRecords,
     expiresAt.toISOString(),
-    jobId,
+    jobId
   );
 }
 
@@ -232,7 +233,7 @@ async function updateJobFailed(
   prisma: PrismaClient,
   tenantSchema: string,
   jobId: string,
-  errorMessage: string,
+  errorMessage: string
 ): Promise<void> {
   await prisma.$executeRawUnsafe(
     `UPDATE "${tenantSchema}".export_job
@@ -242,7 +243,7 @@ async function updateJobFailed(
          updated_at = NOW()
      WHERE id = $2::uuid`,
     errorMessage,
-    jobId,
+    jobId
   );
 }
 
@@ -250,7 +251,7 @@ async function fetchCustomerExportRows(
   prisma: PrismaClient,
   tenantSchema: string,
   profileStoreId: string,
-  filters: CustomerExportFilters,
+  filters: CustomerExportFilters
 ): Promise<CustomerExportRow[]> {
   const conditions: string[] = ['cp.profile_store_id = $1::uuid'];
   const params: unknown[] = [profileStoreId];
@@ -285,29 +286,32 @@ async function fetchCustomerExportRows(
 
   const whereClause = conditions.join(' AND ');
 
-  return prisma.$queryRawUnsafe<Array<{
-    id: string;
-    nickname: string;
-    profileType: string;
-    primaryLanguage: string | null;
-    tags: string[] | null;
-    isActive: boolean;
-    source: string | null;
-    createdAt: Date;
-    updatedAt: Date;
-    statusCode: string | null;
-    statusName: string | null;
-    companyShortName: string | null;
-    originTalentDisplayName: string | null;
-    membershipPlatformCode: string | null;
-    membershipPlatformName: string | null;
-    membershipClassCode: string | null;
-    membershipClassName: string | null;
-    membershipLevelCode: string | null;
-    membershipLevelName: string | null;
-    membershipCount: number;
-  }>>(
-    `SELECT
+  return prisma
+    .$queryRawUnsafe<
+      Array<{
+        id: string;
+        nickname: string;
+        profileType: string;
+        primaryLanguage: string | null;
+        tags: string[] | null;
+        isActive: boolean;
+        source: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        statusCode: string | null;
+        statusName: string | null;
+        companyShortName: string | null;
+        originTalentDisplayName: string | null;
+        membershipPlatformCode: string | null;
+        membershipPlatformName: string | null;
+        membershipClassCode: string | null;
+        membershipClassName: string | null;
+        membershipLevelCode: string | null;
+        membershipLevelName: string | null;
+        membershipCount: number;
+      }>
+    >(
+      `SELECT
        cp.id,
        cp.nickname,
        cp.profile_type as "profileType",
@@ -357,38 +361,39 @@ async function fetchCustomerExportRows(
      ) mc ON true
      WHERE ${whereClause}
      ORDER BY cp.created_at DESC`,
-    ...params,
-  ).then((rows) =>
-    rows.map((row) => ({
-      id: row.id,
-      nickname: row.nickname,
-      profileType: row.profileType,
-      statusCode: row.statusCode ?? '',
-      statusName: row.statusName ?? '',
-      tags: (row.tags ?? []).join(', '),
-      isActive: row.isActive ? 'true' : 'false',
-      companyShortName: row.companyShortName ?? '',
-      originTalentDisplayName: row.originTalentDisplayName ?? '',
-      membershipPlatformCode: row.membershipPlatformCode ?? '',
-      membershipPlatformName: row.membershipPlatformName ?? '',
-      membershipClassCode: row.membershipClassCode ?? '',
-      membershipClassName: row.membershipClassName ?? '',
-      membershipLevelCode: row.membershipLevelCode ?? '',
-      membershipLevelName: row.membershipLevelName ?? '',
-      membershipCount: row.membershipCount,
-      primaryLanguage: row.primaryLanguage ?? '',
-      source: row.source ?? '',
-      createdAt: row.createdAt.toISOString(),
-      updatedAt: row.updatedAt.toISOString(),
-    })),
-  );
+      ...params
+    )
+    .then((rows) =>
+      rows.map((row) => ({
+        id: row.id,
+        nickname: row.nickname,
+        profileType: row.profileType,
+        statusCode: row.statusCode ?? '',
+        statusName: row.statusName ?? '',
+        tags: (row.tags ?? []).join(', '),
+        isActive: row.isActive ? 'true' : 'false',
+        companyShortName: row.companyShortName ?? '',
+        originTalentDisplayName: row.originTalentDisplayName ?? '',
+        membershipPlatformCode: row.membershipPlatformCode ?? '',
+        membershipPlatformName: row.membershipPlatformName ?? '',
+        membershipClassCode: row.membershipClassCode ?? '',
+        membershipClassName: row.membershipClassName ?? '',
+        membershipLevelCode: row.membershipLevelCode ?? '',
+        membershipLevelName: row.membershipLevelName ?? '',
+        membershipCount: row.membershipCount,
+        primaryLanguage: row.primaryLanguage ?? '',
+        source: row.source ?? '',
+        createdAt: row.createdAt.toISOString(),
+        updatedAt: row.updatedAt.toISOString(),
+      }))
+    );
 }
 
 async function writeCustomerExportFile(
   jobId: string,
   format: CustomerExportJobData['format'],
   fields: readonly CustomerExportField[],
-  rows: CustomerExportRow[],
+  rows: CustomerExportRow[]
 ): Promise<{ filePath: string; fileName: string }> {
   const dateStamp = new Date().toISOString().split('T')[0];
   const extension = getFileExtension(format);
@@ -404,7 +409,7 @@ async function writeCustomerExportFile(
   if (format === 'csv') {
     const headerLine = fields.join(',');
     const bodyLines = projectedRows.map((row) =>
-      fields.map((field) => escapeCsv(row[field] ?? '')).join(','),
+      fields.map((field) => escapeCsv(row[field] ?? '')).join(',')
     );
     fs.writeFileSync(filePath, [headerLine, ...bodyLines].join('\n'), 'utf8');
     return { filePath, fileName };
@@ -414,7 +419,7 @@ async function writeCustomerExportFile(
   const worksheet = workbook.addWorksheet('Customers');
   worksheet.columns = fields.map((field) => {
     const definition = CUSTOMER_EXPORT_FIELD_DEFINITIONS.find(
-      (candidate) => candidate.key === field,
+      (candidate) => candidate.key === field
     );
 
     return {
@@ -438,7 +443,7 @@ async function uploadCustomerExportFile(
   jobId: string,
   localFilePath: string,
   fileName: string,
-  format: CustomerExportJobData['format'],
+  format: CustomerExportJobData['format']
 ): Promise<{ objectPath: string; fileSize: number }> {
   const stats = fs.statSync(localFilePath);
   const minioClient = createMinioClient();
@@ -454,7 +459,7 @@ async function uploadCustomerExportFile(
     objectPath,
     fs.createReadStream(localFilePath),
     stats.size,
-    { 'Content-Type': getContentType(format) },
+    { 'Content-Type': getContentType(format) }
   );
 
   return {
@@ -482,8 +487,7 @@ export const customerExportJobProcessor: Processor<
 
     const fields = resolveRequestedFields(filters.fields);
     const profileStoreId =
-      job.data.profileStoreId ??
-      (await getProfileStoreId(prisma, tenantSchema, talentId));
+      job.data.profileStoreId ?? (await getProfileStoreId(prisma, tenantSchema, talentId));
     const rows = await fetchCustomerExportRows(prisma, tenantSchema, profileStoreId, filters);
 
     await updateJobProgress(prisma, tenantSchema, jobId, rows.length, 0);
@@ -495,7 +499,7 @@ export const customerExportJobProcessor: Processor<
       jobId,
       filePath,
       fileName,
-      format,
+      format
     );
 
     await job.updateProgress(100);

@@ -1,15 +1,12 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import {
   PublicPresenceComponentPropsSchemaMap,
   PublicPresenceDocumentSchema,
   PublicPresenceSectionFieldSchemaMap,
   PublicPresenceValidationSnapshotSchema,
 } from '../schemas/public-presence';
-import {
-  PUBLIC_PRESENCE_SAFETY_POLICY,
-} from './registry';
 import type { PublicPresenceAssetRuntimeAuthority } from './assets';
+import { PUBLIC_PRESENCE_SAFETY_POLICY } from './registry';
 import type {
   PublicPresenceComponentNode,
   PublicPresenceDocument,
@@ -84,12 +81,12 @@ const PRIVATE_HOST_PATTERNS = [
 
 function hasUnsafeInternalPathShape(value: string) {
   return (
-    value.startsWith('//')
-    || value.startsWith('/\\')
-    || value.startsWith('/%2f')
-    || value.startsWith('/%2F')
-    || value.startsWith('/%5c')
-    || value.startsWith('/%5C')
+    value.startsWith('//') ||
+    value.startsWith('/\\') ||
+    value.startsWith('/%2f') ||
+    value.startsWith('/%2F') ||
+    value.startsWith('/%5c') ||
+    value.startsWith('/%5C')
   );
 }
 
@@ -97,10 +94,10 @@ function hasEncodedProtocolRelativeBypass(value: string) {
   const lowered = value.toLowerCase();
 
   return (
-    lowered.includes('%2f%2f')
-    || lowered.includes('%2f%5c')
-    || lowered.includes('%5c%2f')
-    || lowered.includes('%5c%5c')
+    lowered.includes('%2f%2f') ||
+    lowered.includes('%2f%5c') ||
+    lowered.includes('%5c%2f') ||
+    lowered.includes('%5c%5c')
   );
 }
 
@@ -114,9 +111,7 @@ function stablePath(path: string[]) {
 
 function normalizeIssuePath(path: PropertyKey[]) {
   return path.map((segment) =>
-    typeof segment === 'number' || typeof segment === 'string'
-      ? segment
-      : String(segment),
+    typeof segment === 'number' || typeof segment === 'string' ? segment : String(segment)
   );
 }
 
@@ -142,7 +137,7 @@ export function createPublicPresenceValidationIssueId(input: {
 
 function pushIssue(
   runtime: ValidationRuntimeState,
-  input: Omit<PublicPresenceValidationIssue, 'id' | 'registryVersion' | 'policyVersion'>,
+  input: Omit<PublicPresenceValidationIssue, 'id' | 'registryVersion' | 'policyVersion'>
 ) {
   runtime.issues.push({
     ...input,
@@ -161,14 +156,14 @@ function pushIssue(
 
 function pushFallbackDecision(
   runtime: ValidationRuntimeState,
-  decision: PublicPresenceFallbackDecision,
+  decision: PublicPresenceFallbackDecision
 ) {
   runtime.fallbackDecisions.push(decision);
 }
 
 function pickKnownEntries(
   source: Record<string, unknown>,
-  fieldDefinitions: PublicPresenceFieldDefinition[],
+  fieldDefinitions: PublicPresenceFieldDefinition[]
 ) {
   const knownFieldKeys = new Set(fieldDefinitions.map((field) => field.fieldKey));
   const knownProps: Record<string, unknown> = {};
@@ -190,11 +185,13 @@ function pickKnownEntries(
 }
 
 function aggregateValidationState(
-  states: PublicPresenceValidationState[],
+  states: PublicPresenceValidationState[]
 ): PublicPresenceValidationState {
-  return [...states].sort(
-    (left, right) => ISSUE_SEVERITY_ORDER[right] - ISSUE_SEVERITY_ORDER[left],
-  )[0] ?? 'validEditable';
+  return (
+    [...states].sort(
+      (left, right) => ISSUE_SEVERITY_ORDER[right] - ISSUE_SEVERITY_ORDER[left]
+    )[0] ?? 'validEditable'
+  );
 }
 
 function addUnknownFieldIssues(params: {
@@ -312,9 +309,9 @@ function validateUrlLikeValue(params: {
   }
 
   if (
-    trimmed.startsWith('//')
-    || trimmed.startsWith('\\')
-    || hasEncodedProtocolRelativeBypass(trimmed)
+    trimmed.startsWith('//') ||
+    trimmed.startsWith('\\') ||
+    hasEncodedProtocolRelativeBypass(trimmed)
   ) {
     pushIssue(params.runtime, {
       severity: 'fatal',
@@ -425,10 +422,9 @@ function validateUrlLikeValue(params: {
   }
 
   if (
-    policy.allowListedHosts
-    && !policy.allowListedHosts.some(
-      (allowedHost) =>
-        hostname === allowedHost || hostname.endsWith(`.${allowedHost}`),
+    policy.allowListedHosts &&
+    !policy.allowListedHosts.some(
+      (allowedHost) => hostname === allowedHost || hostname.endsWith(`.${allowedHost}`)
     )
   ) {
     pushIssue(params.runtime, {
@@ -462,7 +458,7 @@ function validateHtmlValue(params: {
   const lowered = params.value.toLowerCase();
   if (
     /(?:href|src)\s*=\s*["']?\s*(?:\/\/|\/\\|https?:\/\/[^"'\s]*@|https?:\/\/[^"'\s]*(?:%2f%2f|%5c%5c))/i.test(
-      params.value,
+      params.value
     )
   ) {
     pushIssue(params.runtime, {
@@ -484,8 +480,8 @@ function validateHtmlValue(params: {
     });
     return;
   }
-  const matchedRule = PUBLIC_PRESENCE_SAFETY_POLICY.htmlRules.forbiddenPatterns.find(
-    (pattern) => lowered.includes(pattern),
+  const matchedRule = PUBLIC_PRESENCE_SAFETY_POLICY.htmlRules.forbiddenPatterns.find((pattern) =>
+    lowered.includes(pattern)
   );
 
   if (!matchedRule) {
@@ -514,7 +510,7 @@ function validateHtmlValue(params: {
 function validateSectionFields(
   section: PublicPresenceSectionNode,
   sectionIndex: number,
-  runtime: ValidationRuntimeState,
+  runtime: ValidationRuntimeState
 ) {
   const definition = runtime.authority.stageSections[section.kind];
   const fields = section.fields ?? {};
@@ -534,10 +530,7 @@ function validateSectionFields(
     };
   }
 
-  const { knownProps, unknownProps } = pickKnownEntries(
-    fields,
-    definition.fieldDefinitions,
-  );
+  const { knownProps, unknownProps } = pickKnownEntries(fields, definition.fieldDefinitions);
   const fieldSchema =
     PublicPresenceSectionFieldSchemaMap[
       definition.kind as keyof typeof PublicPresenceSectionFieldSchemaMap
@@ -559,22 +552,16 @@ function validateSectionFields(
     } else {
       const safeFields = parsedFields.data;
       if (
-        definition.kind === 'firstEncounter'
-        && 'primaryCtaUrl' in safeFields
-        && isPlainObject(safeFields.primaryCtaUrl)
-        && typeof safeFields.primaryCtaUrl.value === 'string'
+        definition.kind === 'firstEncounter' &&
+        'primaryCtaUrl' in safeFields &&
+        isPlainObject(safeFields.primaryCtaUrl) &&
+        typeof safeFields.primaryCtaUrl.value === 'string'
       ) {
         validateUrlLikeValue({
           category: 'fanActionUrl',
           componentId: undefined,
           fieldKey: 'primaryCtaUrl',
-          path: [
-            'sections',
-            String(sectionIndex),
-            'fields',
-            'primaryCtaUrl',
-            'value',
-          ],
+          path: ['sections', String(sectionIndex), 'fields', 'primaryCtaUrl', 'value'],
           runtime,
           sectionId: section.id,
           value: safeFields.primaryCtaUrl.value,
@@ -582,10 +569,10 @@ function validateSectionFields(
       }
 
       if (
-        definition.kind === 'firstEncounter'
-        && 'avatarUrl' in safeFields
-        && isPlainObject(safeFields.avatarUrl)
-        && typeof safeFields.avatarUrl.value === 'string'
+        definition.kind === 'firstEncounter' &&
+        'avatarUrl' in safeFields &&
+        isPlainObject(safeFields.avatarUrl) &&
+        typeof safeFields.avatarUrl.value === 'string'
       ) {
         validateUrlLikeValue({
           category: 'mediaAssetUrl',
@@ -598,10 +585,10 @@ function validateSectionFields(
       }
 
       if (
-        definition.kind === 'firstEncounter'
-        && 'heroMediaUrl' in safeFields
-        && isPlainObject(safeFields.heroMediaUrl)
-        && typeof safeFields.heroMediaUrl.value === 'string'
+        definition.kind === 'firstEncounter' &&
+        'heroMediaUrl' in safeFields &&
+        isPlainObject(safeFields.heroMediaUrl) &&
+        typeof safeFields.heroMediaUrl.value === 'string'
       ) {
         validateUrlLikeValue({
           category: 'mediaAssetUrl',
@@ -617,20 +604,11 @@ function validateSectionFields(
         const safeCountdownFields = safeFields as Record<string, unknown>;
         for (const countdownUrlField of ['streamUrl', 'launchUrl'] as const) {
           const countdownField = safeCountdownFields[countdownUrlField];
-          if (
-            isPlainObject(countdownField)
-            && typeof countdownField.value === 'string'
-          ) {
+          if (isPlainObject(countdownField) && typeof countdownField.value === 'string') {
             validateUrlLikeValue({
               category: countdownUrlField === 'streamUrl' ? 'streamUrl' : 'launchUrl',
               fieldKey: countdownUrlField,
-              path: [
-                'sections',
-                String(sectionIndex),
-                'fields',
-                countdownUrlField,
-                'value',
-              ],
+              path: ['sections', String(sectionIndex), 'fields', countdownUrlField, 'value'],
               runtime,
               sectionId: section.id,
               value: countdownField.value,
@@ -664,10 +642,9 @@ function validateComponent(
   componentIndex: number,
   section: PublicPresenceSectionNode,
   sectionIndex: number,
-  runtime: ValidationRuntimeState,
+  runtime: ValidationRuntimeState
 ): PublicPresenceNormalizedComponent {
-  const definition =
-    runtime.authority.components[component.type];
+  const definition = runtime.authority.components[component.type];
 
   if (!definition) {
     pushIssue(runtime, {
@@ -675,13 +652,7 @@ function validateComponent(
       state: 'validLocked',
       code: 'registry.unknownComponent',
       messageKey: 'publicPresence.validation.unknownComponent',
-      path: [
-        'sections',
-        String(sectionIndex),
-        'components',
-        String(componentIndex),
-        'type',
-      ],
+      path: ['sections', String(sectionIndex), 'components', String(componentIndex), 'type'],
       templateId: runtime.templateId,
       sectionId: section.id,
       componentId: component.id,
@@ -705,7 +676,7 @@ function validateComponent(
 
   const { knownProps, unknownProps } = pickKnownEntries(
     component.props,
-    definition.fieldDefinitions,
+    definition.fieldDefinitions
   );
   const propsSchema =
     PublicPresenceComponentPropsSchemaMap[
@@ -721,13 +692,7 @@ function validateComponent(
         message: issue.message,
         path: normalizeIssuePath(issue.path),
       })),
-      pathPrefix: [
-        'sections',
-        String(sectionIndex),
-        'components',
-        String(componentIndex),
-        'props',
-      ],
+      pathPrefix: ['sections', String(sectionIndex), 'components', String(componentIndex), 'props'],
       runtime,
       sectionId: section.id,
     });
@@ -736,13 +701,7 @@ function validateComponent(
   addUnknownFieldIssues({
     componentId: component.id,
     fieldEntries: unknownProps,
-    pathPrefix: [
-      'sections',
-      String(sectionIndex),
-      'components',
-      String(componentIndex),
-      'props',
-    ],
+    pathPrefix: ['sections', String(sectionIndex), 'components', String(componentIndex), 'props'],
     runtime,
     sectionId: section.id,
   });
@@ -759,12 +718,7 @@ function validateComponent(
         definition.sourcePolicy === 'sourceOnly'
           ? 'publicPresence.validation.sourceOnlyComponent'
           : 'publicPresence.validation.lockedComponent',
-      path: [
-        'sections',
-        String(sectionIndex),
-        'components',
-        String(componentIndex),
-      ],
+      path: ['sections', String(sectionIndex), 'components', String(componentIndex)],
       templateId: runtime.templateId,
       sectionId: section.id,
       componentId: component.id,
@@ -961,10 +915,7 @@ function validateComponent(
   }
 
   const componentStates = runtime.issues
-    .filter(
-      (issue) =>
-        issue.sectionId === section.id && issue.componentId === component.id,
-    )
+    .filter((issue) => issue.sectionId === section.id && issue.componentId === component.id)
     .map((issue) => issue.state);
 
   return {
@@ -980,10 +931,9 @@ function validateComponent(
 function validateSection(
   section: PublicPresenceSectionNode,
   sectionIndex: number,
-  runtime: ValidationRuntimeState,
+  runtime: ValidationRuntimeState
 ) {
-  const definition =
-    runtime.authority.stageSections[section.kind];
+  const definition = runtime.authority.stageSections[section.kind];
   const templateDefinition = runtime.authority.template;
 
   if (!definition) {
@@ -1029,36 +979,30 @@ function validateSection(
     }
   }
 
-  const { knownFields, state: fieldState, unknownFields } = validateSectionFields(
-    section,
-    sectionIndex,
-    runtime,
-  );
+  const {
+    knownFields,
+    state: fieldState,
+    unknownFields,
+  } = validateSectionFields(section, sectionIndex, runtime);
 
   const components = (section.components ?? []).map((component, componentIndex) =>
-    validateComponent(component, componentIndex, section, sectionIndex, runtime),
+    validateComponent(component, componentIndex, section, sectionIndex, runtime)
   );
 
   if (definition) {
     const allowedComponentTypes = new Set(definition.allowedComponents);
     components.forEach((component, componentIndex) => {
       if (
-        Boolean(runtime.authority.components[component.type])
-        && allowedComponentTypes.size > 0
-        && !allowedComponentTypes.has(component.type)
+        Boolean(runtime.authority.components[component.type]) &&
+        allowedComponentTypes.size > 0 &&
+        !allowedComponentTypes.has(component.type)
       ) {
         pushIssue(runtime, {
           severity: 'blocker',
           state: 'invalidRecoverable',
           code: 'section.componentNotAllowed',
           messageKey: 'publicPresence.validation.componentNotAllowed',
-          path: [
-            'sections',
-            String(sectionIndex),
-            'components',
-            String(componentIndex),
-            'type',
-          ],
+          path: ['sections', String(sectionIndex), 'components', String(componentIndex), 'type'],
           templateId: runtime.templateId,
           sectionId: section.id,
           componentId: component.id,
@@ -1091,7 +1035,7 @@ function validateSection(
 
 export function createPublicPresenceValidationArtifact(
   input: unknown,
-  options: ValidationOptions = {},
+  options: ValidationOptions = {}
 ): PublicPresenceValidationArtifact {
   const document = PublicPresenceDocumentSchema.parse(input);
   const runtimeAuthority = options.runtimeAuthority;
@@ -1099,7 +1043,7 @@ export function createPublicPresenceValidationArtifact(
   if (!runtimeAuthority) {
     throw new Error(
       `Public Presence runtime authority is required to validate template '${document.templateId}'. ` +
-        'Use scoped asset source bundles or a stored validation snapshot instead of static registry fallbacks.',
+        'Use scoped asset source bundles or a stored validation snapshot instead of static registry fallbacks.'
     );
   }
 
@@ -1132,7 +1076,7 @@ export function createPublicPresenceValidationArtifact(
   }
 
   const normalizedSections = document.sections.map((section, sectionIndex) =>
-    validateSection(section, sectionIndex, runtime),
+    validateSection(section, sectionIndex, runtime)
   );
 
   if (document.metadata?.ogImageUrl) {
@@ -1155,7 +1099,7 @@ export function createPublicPresenceValidationArtifact(
       blocker: 0,
       warning: 0,
       info: 0,
-    },
+    }
   );
 
   const snapshot: PublicPresenceValidationSnapshot = {
@@ -1172,9 +1116,7 @@ export function createPublicPresenceValidationArtifact(
     componentRegistryVersion: runtimeAuthority.registryVersion,
     safetyPolicyVersion: runtimeAuthority.safetyPolicyVersion,
     issueCounts,
-    blockerIds: runtime.issues
-      .filter((issue) => issue.blocksPublish)
-      .map((issue) => issue.id),
+    blockerIds: runtime.issues.filter((issue) => issue.blocksPublish).map((issue) => issue.id),
     issues: runtime.issues,
     fallbackDecisions: runtime.fallbackDecisions,
     acknowledgementIds: runtime.issues
@@ -1196,9 +1138,6 @@ export function createPublicPresenceValidationArtifact(
   };
 }
 
-export function validatePublicPresenceDocument(
-  input: unknown,
-  options: ValidationOptions = {},
-) {
+export function validatePublicPresenceDocument(input: unknown, options: ValidationOptions = {}) {
   return createPublicPresenceValidationArtifact(input, options).snapshot;
 }

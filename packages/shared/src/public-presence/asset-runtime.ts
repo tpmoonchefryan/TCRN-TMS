@@ -1,19 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
-import {
-  createLocalizedText,
-  type LocalizedText,
-} from '../constants/locale';
-import {
-  HOMEPAGE_COMPONENT_TYPES,
-  type HomepageComponentType,
-} from '../types/homepage/schema';
-import {
-  PUBLIC_PRESENCE_COMPONENT_SEED_BLUEPRINTS,
-  PUBLIC_PRESENCE_SEED_METADATA,
-  PUBLIC_PRESENCE_STAGE_SECTION_SEED_BLUEPRINTS,
-  PUBLIC_PRESENCE_TEMPLATE_SEED_BLUEPRINTS,
-} from './registry';
+import { createLocalizedText, type LocalizedText } from '../constants/locale';
+import { HOMEPAGE_COMPONENT_TYPES, type HomepageComponentType } from '../types/homepage/schema';
 import {
   PUBLIC_PRESENCE_ASSET_RUNTIME_VERSION,
   type PublicPresenceAssetManifest,
@@ -25,6 +12,12 @@ import {
   type PublicPresenceTemplateAssetManifest,
   type PublicPresenceTemplateSourceManifest,
 } from './assets';
+import {
+  PUBLIC_PRESENCE_COMPONENT_SEED_BLUEPRINTS,
+  PUBLIC_PRESENCE_SEED_METADATA,
+  PUBLIC_PRESENCE_STAGE_SECTION_SEED_BLUEPRINTS,
+  PUBLIC_PRESENCE_TEMPLATE_SEED_BLUEPRINTS,
+} from './registry';
 import type { PublicPresenceTemplateId } from './types';
 
 const TEMPLATE_LOCALIZED_TEXT = {
@@ -179,9 +172,7 @@ const COMPONENT_LOCALIZED_NAMES = {
   }),
 } as const satisfies Record<HomepageComponentType, LocalizedText>;
 
-function getComponentSeedDescription(
-  componentType: HomepageComponentType,
-): LocalizedText {
+function getComponentSeedDescription(componentType: HomepageComponentType): LocalizedText {
   return createLocalizedText({
     en: `System starter component for ${COMPONENT_LOCALIZED_NAMES[componentType].en.toLowerCase()} rendering.`,
   });
@@ -190,7 +181,7 @@ function getComponentSeedDescription(
 function createJsonSourceFile(
   path: string,
   kind: PublicPresenceSourceBundleFile['kind'],
-  payload: unknown,
+  payload: unknown
 ): PublicPresenceSourceBundleFile {
   return {
     contents: `${JSON.stringify(payload, null, 2)}\n`,
@@ -204,7 +195,7 @@ function createTextSourceFile(
   path: string,
   kind: PublicPresenceSourceBundleFile['kind'],
   language: string,
-  contents: string,
+  contents: string
 ): PublicPresenceSourceBundleFile {
   return {
     contents: contents.endsWith('\n') ? contents : `${contents}\n`,
@@ -241,13 +232,13 @@ export interface PublicPresenceSystemAssetSeedDefinition {
 }
 
 export function getPublicPresenceTemplateSeedText(
-  templateId: PublicPresenceTemplateId,
+  templateId: PublicPresenceTemplateId
 ): PublicPresenceAssetSeedText {
   return TEMPLATE_LOCALIZED_TEXT[templateId];
 }
 
 export function getPublicPresenceComponentSeedText(
-  componentType: HomepageComponentType,
+  componentType: HomepageComponentType
 ): PublicPresenceAssetSeedText {
   return {
     description: getComponentSeedDescription(componentType),
@@ -257,7 +248,7 @@ export function getPublicPresenceComponentSeedText(
 
 export function buildPublicPresenceTemplateAssetManifest(
   templateId: PublicPresenceTemplateId,
-  options: BuildPublicPresenceAssetManifestOptions = {},
+  options: BuildPublicPresenceAssetManifestOptions = {}
 ): PublicPresenceTemplateAssetManifest {
   const definition = PUBLIC_PRESENCE_TEMPLATE_SEED_BLUEPRINTS[templateId];
 
@@ -287,7 +278,7 @@ export function buildPublicPresenceTemplateAssetManifest(
 
 export function buildPublicPresenceComponentAssetManifest(
   componentType: HomepageComponentType,
-  options: BuildPublicPresenceAssetManifestOptions = {},
+  options: BuildPublicPresenceAssetManifestOptions = {}
 ): PublicPresenceComponentAssetManifest {
   const definition = PUBLIC_PRESENCE_COMPONENT_SEED_BLUEPRINTS[componentType];
 
@@ -317,7 +308,7 @@ export function buildPublicPresenceComponentAssetManifest(
 
 export function buildPublicPresenceTemplateSourceManifest(
   templateId: PublicPresenceTemplateId,
-  options: BuildPublicPresenceAssetManifestOptions = {},
+  options: BuildPublicPresenceAssetManifestOptions = {}
 ): PublicPresenceTemplateSourceManifest {
   const manifest = buildPublicPresenceTemplateAssetManifest(templateId, options);
   const sectionKinds = Array.from(
@@ -327,7 +318,7 @@ export function buildPublicPresenceTemplateSourceManifest(
       ...manifest.optionalSections,
       ...manifest.lockedSections,
       ...manifest.defaultSectionOrder,
-    ]),
+    ])
   );
 
   return {
@@ -338,15 +329,15 @@ export function buildPublicPresenceTemplateSourceManifest(
       structuredClone(
         PUBLIC_PRESENCE_STAGE_SECTION_SEED_BLUEPRINTS[
           sectionKind as keyof typeof PUBLIC_PRESENCE_STAGE_SECTION_SEED_BLUEPRINTS
-        ],
-      ),
+        ]
+      )
     ),
   };
 }
 
 export function buildPublicPresenceComponentSourceManifest(
   componentType: HomepageComponentType,
-  options: BuildPublicPresenceAssetManifestOptions = {},
+  options: BuildPublicPresenceAssetManifestOptions = {}
 ): PublicPresenceComponentSourceManifest {
   const manifest = buildPublicPresenceComponentAssetManifest(componentType, options);
   const definition = PUBLIC_PRESENCE_COMPONENT_SEED_BLUEPRINTS[componentType];
@@ -375,8 +366,7 @@ export function buildPublicPresenceComponentSourceManifest(
     safetyPolicyReferences: [...(manifest.safetyPolicyReferences ?? [])],
     safetyPolicyVersion: PUBLIC_PRESENCE_SEED_METADATA.safetyPolicyVersion,
     sourcePolicy: manifest.sourcePolicy ?? definition.sourcePolicy,
-    unknownFieldPolicy:
-      manifest.unknownFieldPolicy ?? definition.unknownFieldPolicy,
+    unknownFieldPolicy: manifest.unknownFieldPolicy ?? definition.unknownFieldPolicy,
     visualSupport: manifest.visualSupport,
   };
 }
@@ -389,36 +379,33 @@ export function buildBlankPublicPresenceAssetSourceBundle(input: {
   name: LocalizedText;
   templateId?: PublicPresenceTemplateId;
 }) {
-  const sourceManifest = input.assetKind === 'template'
-    ? buildPublicPresenceTemplateSourceManifest(input.templateId!, {
-        assetCode: input.manifest.assetCode ?? input.assetCode,
-        assetId: input.manifest.assetId ?? null,
-        assetRevisionId: input.manifest.assetRevisionId ?? null,
-        description: input.manifest.description ?? null,
-        name: input.manifest.name ?? null,
-        ownerId: input.manifest.ownerId ?? null,
-        ownerType: input.manifest.ownerType ?? null,
-      })
-    : buildPublicPresenceComponentSourceManifest(input.componentType!, {
-        assetCode: input.manifest.assetCode ?? input.assetCode,
-        assetId: input.manifest.assetId ?? null,
-        assetRevisionId: input.manifest.assetRevisionId ?? null,
-        description: input.manifest.description ?? null,
-        name: input.manifest.name ?? null,
-        ownerId: input.manifest.ownerId ?? null,
-        ownerType: input.manifest.ownerType ?? null,
-      });
-  const manifestFile = createJsonSourceFile(
-    'manifest.json',
-    'schema',
-    {
-      ...sourceManifest,
-      authoring: {
-        assetCode: input.assetCode,
-        starter: input.assetKind === 'template' ? 'templateAsset' : 'componentAsset',
-      },
+  const sourceManifest =
+    input.assetKind === 'template'
+      ? buildPublicPresenceTemplateSourceManifest(input.templateId!, {
+          assetCode: input.manifest.assetCode ?? input.assetCode,
+          assetId: input.manifest.assetId ?? null,
+          assetRevisionId: input.manifest.assetRevisionId ?? null,
+          description: input.manifest.description ?? null,
+          name: input.manifest.name ?? null,
+          ownerId: input.manifest.ownerId ?? null,
+          ownerType: input.manifest.ownerType ?? null,
+        })
+      : buildPublicPresenceComponentSourceManifest(input.componentType!, {
+          assetCode: input.manifest.assetCode ?? input.assetCode,
+          assetId: input.manifest.assetId ?? null,
+          assetRevisionId: input.manifest.assetRevisionId ?? null,
+          description: input.manifest.description ?? null,
+          name: input.manifest.name ?? null,
+          ownerId: input.manifest.ownerId ?? null,
+          ownerType: input.manifest.ownerType ?? null,
+        });
+  const manifestFile = createJsonSourceFile('manifest.json', 'schema', {
+    ...sourceManifest,
+    authoring: {
+      assetCode: input.assetCode,
+      starter: input.assetKind === 'template' ? 'templateAsset' : 'componentAsset',
     },
-  );
+  });
 
   if (input.assetKind === 'template') {
     return [
@@ -427,7 +414,7 @@ export function buildBlankPublicPresenceAssetSourceBundle(input: {
         'src/index.tsx',
         'code',
         'tsx',
-        `export function ${toPascalCase(input.assetCode)}Template() {\n  return null;\n}`,
+        `export function ${toPascalCase(input.assetCode)}Template() {\n  return null;\n}`
       ),
       createJsonSourceFile('fixtures/default.json', 'fixture', {
         templateId: input.templateId,
@@ -437,7 +424,7 @@ export function buildBlankPublicPresenceAssetSourceBundle(input: {
         'docs/README.md',
         'doc',
         'markdown',
-        `# ${input.name.en}\n\nTemplate asset workspace starter for ${input.templateId}.`,
+        `# ${input.name.en}\n\nTemplate asset workspace starter for ${input.templateId}.`
       ),
     ];
   }
@@ -448,25 +435,23 @@ export function buildBlankPublicPresenceAssetSourceBundle(input: {
       'src/index.tsx',
       'code',
       'tsx',
-      `export function ${toPascalCase(input.assetCode)}Component() {\n  return null;\n}`,
+      `export function ${toPascalCase(input.assetCode)}Component() {\n  return null;\n}`
     ),
     createJsonSourceFile('fixtures/default.json', 'fixture', {
       componentType: input.componentType,
-      props: input.manifest.assetKind === 'component'
-        ? input.manifest.defaultProps ?? {}
-        : {},
+      props: input.manifest.assetKind === 'component' ? (input.manifest.defaultProps ?? {}) : {},
     }),
     createTextSourceFile(
       'docs/README.md',
       'doc',
       'markdown',
-      `# ${input.name.en}\n\nComponent asset workspace starter for ${input.componentType}.`,
+      `# ${input.name.en}\n\nComponent asset workspace starter for ${input.componentType}.`
     ),
   ];
 }
 
 export function buildPublicPresenceSystemTemplateSeed(
-  templateId: PublicPresenceTemplateId,
+  templateId: PublicPresenceTemplateId
 ): PublicPresenceSystemAssetSeedDefinition {
   const text = getPublicPresenceTemplateSeedText(templateId);
   const manifest = buildPublicPresenceTemplateAssetManifest(templateId, {
@@ -495,7 +480,7 @@ export function buildPublicPresenceSystemTemplateSeed(
 }
 
 export function buildPublicPresenceSystemComponentSeed(
-  componentType: HomepageComponentType,
+  componentType: HomepageComponentType
 ): PublicPresenceSystemAssetSeedDefinition {
   const text = getPublicPresenceComponentSeedText(componentType);
   const code = toKebabCase(componentType);
@@ -525,7 +510,7 @@ export function buildPublicPresenceSystemComponentSeed(
 }
 
 export function buildPublicPresenceSeedRuntimeAuthority(
-  templateId: PublicPresenceTemplateId,
+  templateId: PublicPresenceTemplateId
 ): PublicPresenceAssetRuntimeAuthority {
   const template = structuredClone(PUBLIC_PRESENCE_TEMPLATE_SEED_BLUEPRINTS[templateId]);
   const allowedSectionKinds = Array.from(
@@ -535,7 +520,7 @@ export function buildPublicPresenceSeedRuntimeAuthority(
       ...template.optionalSections,
       ...template.lockedSections,
       ...template.defaultSectionOrder,
-    ]),
+    ])
   );
 
   return {
@@ -546,7 +531,7 @@ export function buildPublicPresenceSeedRuntimeAuthority(
       allowedSectionKinds.map((sectionKind) => [
         sectionKind,
         structuredClone(PUBLIC_PRESENCE_STAGE_SECTION_SEED_BLUEPRINTS[sectionKind]),
-      ]),
+      ])
     ),
     template,
   };
@@ -555,10 +540,10 @@ export function buildPublicPresenceSeedRuntimeAuthority(
 export function getPublicPresenceSystemAssetSeeds(): PublicPresenceSystemAssetSeedDefinition[] {
   return [
     ...Object.keys(PUBLIC_PRESENCE_TEMPLATE_SEED_BLUEPRINTS).map((templateId) =>
-      buildPublicPresenceSystemTemplateSeed(templateId as PublicPresenceTemplateId),
+      buildPublicPresenceSystemTemplateSeed(templateId as PublicPresenceTemplateId)
     ),
     ...HOMEPAGE_COMPONENT_TYPES.map((componentType) =>
-      buildPublicPresenceSystemComponentSeed(componentType),
+      buildPublicPresenceSystemComponentSeed(componentType)
     ),
   ];
 }

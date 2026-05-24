@@ -1,21 +1,21 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import type { LocalizedText, PartialLocalizedText } from '@tcrn/shared';
 import { Type } from 'class-transformer';
 import {
-    IsBoolean,
-    IsEnum,
-    IsInt,
-    IsObject,
-    IsOptional,
-    IsString,
-    IsUrl,
-    Matches,
-    Max,
-    MaxLength,
-    Min,
+  IsBoolean,
+  IsEnum,
+  IsInt,
+  IsObject,
+  IsOptional,
+  IsString,
+  IsUrl,
+  Matches,
+  Max,
+  MaxLength,
+  Min,
 } from 'class-validator';
+
+import type { LocalizedText, PartialLocalizedText } from '@tcrn/shared';
 
 export enum AuthType {
   MTLS = 'mtls',
@@ -63,7 +63,11 @@ const PROFILE_STORE_DESCRIPTION_EXAMPLE: LocalizedText = {
 // ============================================================================
 
 export class CreatePiiServiceConfigDto {
-  @ApiProperty({ description: 'PII service config code', example: 'DEFAULT_PII', pattern: '^[A-Z0-9_]{3,32}$' })
+  @ApiProperty({
+    description: 'PII service config code',
+    example: 'DEFAULT_PII',
+    pattern: '^[A-Z0-9_]{3,32}$',
+  })
   @IsString()
   @MaxLength(32)
   @Matches(/^[A-Z0-9_]{3,32}$/, {
@@ -88,44 +92,71 @@ export class CreatePiiServiceConfigDto {
   @IsObject()
   description?: PartialLocalizedText;
 
-  @ApiProperty({ description: 'Base API URL for the PII service', example: 'https://pii.internal.tcrn.app' })
+  @ApiProperty({
+    description: 'Base API URL for the PII service',
+    example: 'https://pii.internal.tcrn.app',
+  })
   @IsUrl()
   @MaxLength(512)
   apiUrl!: string;
 
-  @ApiProperty({ description: 'Authentication mode used to reach the PII service', enum: AuthType, example: AuthType.MTLS })
+  @ApiProperty({
+    description: 'Authentication mode used to reach the PII service',
+    enum: AuthType,
+    example: AuthType.MTLS,
+  })
   @IsEnum(AuthType)
   authType!: AuthType;
 
   // mTLS authentication (Base64 encoded)
-  @ApiPropertyOptional({ description: 'mTLS client certificate (PEM/Base64)', example: 'LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0t' })
+  @ApiPropertyOptional({
+    description: 'mTLS client certificate (PEM/Base64)',
+    example: 'LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0t',
+  })
   @IsOptional()
   @IsString()
   mtlsClientCert?: string;
 
-  @ApiPropertyOptional({ description: 'mTLS client private key (PEM/Base64)', example: 'LS0tLS1CRUdJTiBQUklWQVRFIEtFWS0tLS0t' })
+  @ApiPropertyOptional({
+    description: 'mTLS client private key (PEM/Base64)',
+    example: 'LS0tLS1CRUdJTiBQUklWQVRFIEtFWS0tLS0t',
+  })
   @IsOptional()
   @IsString()
   mtlsClientKey?: string;
 
-  @ApiPropertyOptional({ description: 'mTLS CA certificate (PEM/Base64)', example: 'LS0tLS1CRUdJTiBDQSBCRUdJTi0tLS0t' })
+  @ApiPropertyOptional({
+    description: 'mTLS CA certificate (PEM/Base64)',
+    example: 'LS0tLS1CRUdJTiBDQSBCRUdJTi0tLS0t',
+  })
   @IsOptional()
   @IsString()
   mtlsCaCert?: string;
 
   // API Key authentication
-  @ApiPropertyOptional({ description: 'API key used when authType is `api_key`', example: 'pii_live_secret_key' })
+  @ApiPropertyOptional({
+    description: 'API key used when authType is `api_key`',
+    example: 'pii_live_secret_key',
+  })
   @IsOptional()
   @IsString()
   apiKey?: string;
 
-  @ApiPropertyOptional({ description: 'Health-check endpoint override', example: 'https://pii.internal.tcrn.app/health' })
+  @ApiPropertyOptional({
+    description: 'Health-check endpoint override',
+    example: 'https://pii.internal.tcrn.app/health',
+  })
   @IsOptional()
   @IsUrl()
   @MaxLength(512)
   healthCheckUrl?: string;
 
-  @ApiPropertyOptional({ description: 'Health-check interval in seconds', example: 60, minimum: 10, maximum: 3600 })
+  @ApiPropertyOptional({
+    description: 'Health-check interval in seconds',
+    example: 60,
+    minimum: 10,
+    maximum: 3600,
+  })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
@@ -153,13 +184,20 @@ export class UpdatePiiServiceConfigDto {
   @IsObject()
   description?: PartialLocalizedText;
 
-  @ApiPropertyOptional({ description: 'Base API URL for the PII service', example: 'https://pii.internal.tcrn.app' })
+  @ApiPropertyOptional({
+    description: 'Base API URL for the PII service',
+    example: 'https://pii.internal.tcrn.app',
+  })
   @IsOptional()
   @IsUrl()
   @MaxLength(512)
   apiUrl?: string;
 
-  @ApiPropertyOptional({ description: 'Authentication mode used to reach the PII service', enum: AuthType, example: AuthType.API_KEY })
+  @ApiPropertyOptional({
+    description: 'Authentication mode used to reach the PII service',
+    enum: AuthType,
+    example: AuthType.API_KEY,
+  })
   @IsOptional()
   @IsEnum(AuthType)
   authType?: AuthType;
@@ -179,18 +217,29 @@ export class UpdatePiiServiceConfigDto {
   @IsString()
   mtlsCaCert?: string;
 
-  @ApiPropertyOptional({ description: 'API key used when authType is `api_key`', example: 'pii_live_secret_key' })
+  @ApiPropertyOptional({
+    description: 'API key used when authType is `api_key`',
+    example: 'pii_live_secret_key',
+  })
   @IsOptional()
   @IsString()
   apiKey?: string;
 
-  @ApiPropertyOptional({ description: 'Health-check endpoint override', example: 'https://pii.internal.tcrn.app/health' })
+  @ApiPropertyOptional({
+    description: 'Health-check endpoint override',
+    example: 'https://pii.internal.tcrn.app/health',
+  })
   @IsOptional()
   @IsUrl()
   @MaxLength(512)
   healthCheckUrl?: string;
 
-  @ApiPropertyOptional({ description: 'Health-check interval in seconds', example: 60, minimum: 10, maximum: 3600 })
+  @ApiPropertyOptional({
+    description: 'Health-check interval in seconds',
+    example: 60,
+    minimum: 10,
+    maximum: 3600,
+  })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
@@ -213,7 +262,11 @@ export class UpdatePiiServiceConfigDto {
 // ============================================================================
 
 export class CreateProfileStoreDto {
-  @ApiProperty({ description: 'Profile-store code', example: 'DEFAULT_STORE', pattern: '^[A-Z0-9_]{3,32}$' })
+  @ApiProperty({
+    description: 'Profile-store code',
+    example: 'DEFAULT_STORE',
+    pattern: '^[A-Z0-9_]{3,32}$',
+  })
   @IsString()
   @MaxLength(32)
   @Matches(/^[A-Z0-9_]{3,32}$/, {
@@ -238,7 +291,10 @@ export class CreateProfileStoreDto {
   @IsObject()
   description?: PartialLocalizedText;
 
-  @ApiPropertyOptional({ description: 'Whether this store becomes the default store', example: true })
+  @ApiPropertyOptional({
+    description: 'Whether this store becomes the default store',
+    example: true,
+  })
   @IsOptional()
   @IsBoolean()
   isDefault?: boolean;
@@ -263,7 +319,10 @@ export class UpdateProfileStoreDto {
   @IsObject()
   description?: PartialLocalizedText;
 
-  @ApiPropertyOptional({ description: 'Whether this store should be the default store', example: true })
+  @ApiPropertyOptional({
+    description: 'Whether this store should be the default store',
+    example: true,
+  })
   @IsOptional()
   @IsBoolean()
   isDefault?: boolean;
@@ -296,7 +355,13 @@ export class PaginationQueryDto {
   @Min(1)
   page?: number = 1;
 
-  @ApiPropertyOptional({ description: 'Items per page', example: 20, minimum: 1, maximum: 100, default: 20 })
+  @ApiPropertyOptional({
+    description: 'Items per page',
+    example: 20,
+    minimum: 1,
+    maximum: 100,
+    default: 20,
+  })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
@@ -304,7 +369,11 @@ export class PaginationQueryDto {
   @Max(100)
   pageSize?: number = 20;
 
-  @ApiPropertyOptional({ description: 'Include inactive records in the list', example: false, default: false })
+  @ApiPropertyOptional({
+    description: 'Include inactive records in the list',
+    example: false,
+    default: false,
+  })
   @IsOptional()
   @Type(() => Boolean)
   @IsBoolean()

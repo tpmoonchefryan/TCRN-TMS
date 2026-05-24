@@ -1,8 +1,9 @@
-import type { SupportedUiLocale } from '@tcrn/shared';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { localizedFixture } from '@/domains/config-dictionary-settings/testing/localized-fixtures';
 
+import type { SupportedUiLocale } from '@tcrn/shared';
+
+import { localizedFixture } from '@/domains/config-dictionary-settings/testing/localized-fixtures';
 import { UserManagementScreen } from '@/domains/user-management/screens/UserManagementScreen';
 import type { ApiPaginationMeta, ApiSuccessEnvelope } from '@/platform/http/api';
 
@@ -51,10 +52,7 @@ HTMLDialogElement.prototype.close = vi.fn(function mockClose(this: HTMLDialogEle
   this.removeAttribute('open');
 });
 
-function buildSuccessEnvelope<T>(
-  data: T,
-  pagination?: ApiPaginationMeta,
-): ApiSuccessEnvelope<T> {
+function buildSuccessEnvelope<T>(data: T, pagination?: ApiPaginationMeta): ApiSuccessEnvelope<T> {
   return {
     success: true,
     data,
@@ -113,7 +111,6 @@ describe('UserManagementScreen', () => {
     });
 
     mockRequest.mockImplementation(async (path: string) => {
-
       if (path === '/api/v1/system-roles?isActive=true') {
         return [
           {
@@ -159,7 +156,9 @@ describe('UserManagementScreen', () => {
 
     render(<UserManagementScreen />);
 
-    expect(await screen.findByRole('heading', { name: 'Identity, role, and delegation control' })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { name: 'Identity, role, and delegation control' })
+    ).toBeInTheDocument();
     expect(await screen.findByText('alice@example.com')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: /Roles/i }));
@@ -220,7 +219,9 @@ describe('UserManagementScreen', () => {
     fireEvent.click(await screen.findByRole('button', { name: /委派/ }));
 
     expect(mockReplace).toHaveBeenCalledWith('/tenant/tenant-1/user-management?tab=delegation');
-    expect(await screen.findByText('委派记录继续以分目录或艺人为目标范围进行管理。')).toBeInTheDocument();
+    expect(
+      await screen.findByText('委派记录继续以分目录或艺人为目标范围进行管理。')
+    ).toBeInTheDocument();
     expect(screen.getByRole('option', { name: '分目录' })).toBeInTheDocument();
     expect(screen.queryByText(/子公司/)).not.toBeInTheDocument();
   });
@@ -250,7 +251,6 @@ describe('UserManagementScreen', () => {
     });
 
     mockRequest.mockImplementation(async (path: string, init?: RequestInit) => {
-
       if (path === '/api/v1/system-users/user-1/deactivate' && init?.method === 'POST') {
         isActive = false;
         return {
@@ -289,7 +289,7 @@ describe('UserManagementScreen', () => {
         '/api/v1/system-users/user-1/deactivate',
         expect.objectContaining({
           method: 'POST',
-        }),
+        })
       );
     });
 
@@ -320,7 +320,6 @@ describe('UserManagementScreen', () => {
     });
 
     mockRequest.mockImplementation(async (path: string) => {
-
       if (path === '/api/v1/system-roles?isActive=true') {
         return [];
       }
@@ -360,7 +359,6 @@ describe('UserManagementScreen', () => {
     });
 
     mockRequest.mockImplementation(async (path: string) => {
-
       if (path === '/api/v1/system-roles?isActive=true') {
         return [
           {
@@ -427,7 +425,6 @@ describe('UserManagementScreen', () => {
     });
 
     mockRequest.mockImplementation(async (path: string) => {
-
       if (path === '/api/v1/system-roles?isActive=true') {
         return [
           {
@@ -511,7 +508,6 @@ describe('UserManagementScreen', () => {
     });
 
     mockRequest.mockImplementation(async (path: string, init?: RequestInit) => {
-
       if (path === '/api/v1/system-roles?isActive=true') {
         return [
           {
@@ -592,11 +588,13 @@ describe('UserManagementScreen', () => {
             delegateType: 'role',
             delegateId: 'role-1',
           }),
-        }),
+        })
       );
     });
 
-    expect(await screen.findByText('Editor was granted delegated administration for Tokino Sora.')).toBeInTheDocument();
+    expect(
+      await screen.findByText('Editor was granted delegated administration for Tokino Sora.')
+    ).toBeInTheDocument();
     expect((await screen.findAllByText('Tokino Sora')).length).toBeGreaterThan(0);
     expect((await screen.findAllByText('Editor')).length).toBeGreaterThan(0);
   });
@@ -626,7 +624,6 @@ describe('UserManagementScreen', () => {
     });
 
     mockRequest.mockImplementation(async (path: string) => {
-
       if (path === '/api/v1/system-roles?isActive=true') {
         return [];
       }
@@ -644,7 +641,9 @@ describe('UserManagementScreen', () => {
 
     render(<UserManagementScreen />);
 
-    expect(await screen.findByRole('heading', { name: '身份、角色与委派管理' })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { name: '身份、角色与委派管理' })
+    ).toBeInTheDocument();
 
     const expectedCreatedAt = new Intl.DateTimeFormat('zh', {
       dateStyle: 'medium',
@@ -654,7 +653,7 @@ describe('UserManagementScreen', () => {
     expect(await screen.findByText(expectedCreatedAt)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: '新建用户' })).toHaveAttribute(
       'href',
-      '/tenant/tenant-1/user-management/new',
+      '/tenant/tenant-1/user-management/new'
     );
   });
 

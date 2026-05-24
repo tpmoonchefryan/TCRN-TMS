@@ -1,8 +1,8 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { BadRequestException, NotFoundException } from '@nestjs/common';
-import type { RequestContext } from '@tcrn/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import type { RequestContext } from '@tcrn/shared';
 
 import { MarshmallowMessageRepository } from '../infrastructure/marshmallow-message.repository';
 import { MarshmallowMessageApplicationService } from './marshmallow-message.service';
@@ -73,9 +73,7 @@ describe('MarshmallowMessageApplicationService', () => {
       { id: 'user-2', username: 'alice' },
     ]);
 
-    await expect(
-      service.findMany('talent-1', 'tenant_test', {}),
-    ).resolves.toEqual({
+    await expect(service.findMany('talent-1', 'tenant_test', {})).resolves.toEqual({
       items: [
         {
           id: 'message-1',
@@ -112,7 +110,7 @@ describe('MarshmallowMessageApplicationService', () => {
     vi.mocked(mockRepository.findMessageById).mockResolvedValue(null);
 
     await expect(
-      service.approve('talent-1', 'tenant_test', 'missing-message', context),
+      service.approve('talent-1', 'tenant_test', 'missing-message', context)
     ).rejects.toThrow(NotFoundException);
   });
 
@@ -135,13 +133,13 @@ describe('MarshmallowMessageApplicationService', () => {
       createdAt: new Date('2026-04-14T00:00:00.000Z'),
     });
 
-    await expect(
-      service.approve('talent-1', 'tenant_test', 'message-1', context),
-    ).resolves.toEqual({
-      id: 'message-1',
-      status: 'approved',
-      moderatedAt: '2026-04-14T00:00:00.000Z',
-    });
+    await expect(service.approve('talent-1', 'tenant_test', 'message-1', context)).resolves.toEqual(
+      {
+        id: 'message-1',
+        status: 'approved',
+        moderatedAt: '2026-04-14T00:00:00.000Z',
+      }
+    );
 
     expect(mockRepository.approve).not.toHaveBeenCalled();
   });
@@ -176,8 +174,8 @@ describe('MarshmallowMessageApplicationService', () => {
         'tenant_test',
         'message-1',
         { reason: 'spam' as never, note: 'Repeated links' },
-        context,
-      ),
+        context
+      )
     ).resolves.toEqual({
       id: 'message-1',
       status: 'rejected',
@@ -193,7 +191,7 @@ describe('MarshmallowMessageApplicationService', () => {
           new: { status: 'rejected', reason: 'spam' },
         },
       }),
-      context,
+      context
     );
   });
 
@@ -216,9 +214,9 @@ describe('MarshmallowMessageApplicationService', () => {
       createdAt: new Date('2026-04-14T00:00:00.000Z'),
     });
 
-    await expect(
-      service.unreject('talent-1', 'tenant_test', 'message-1', context),
-    ).rejects.toThrow(BadRequestException);
+    await expect(service.unreject('talent-1', 'tenant_test', 'message-1', context)).rejects.toThrow(
+      BadRequestException
+    );
   });
 
   it('fails closed when replying to a non-approved message', async () => {
@@ -241,13 +239,7 @@ describe('MarshmallowMessageApplicationService', () => {
     });
 
     await expect(
-      service.reply(
-        'talent-1',
-        'tenant_test',
-        'message-1',
-        { content: 'Thanks!' },
-        context,
-      ),
+      service.reply('talent-1', 'tenant_test', 'message-1', { content: 'Thanks!' }, context)
     ).rejects.toThrow(BadRequestException);
   });
 
@@ -270,9 +262,7 @@ describe('MarshmallowMessageApplicationService', () => {
       createdAt: new Date('2026-04-14T00:00:00.000Z'),
     });
 
-    await expect(
-      service.update('talent-1', 'tenant_test', 'message-1', {}),
-    ).resolves.toEqual({
+    await expect(service.update('talent-1', 'tenant_test', 'message-1', {})).resolves.toEqual({
       id: 'message-1',
       isRead: true,
       isStarred: false,
@@ -293,8 +283,8 @@ describe('MarshmallowMessageApplicationService', () => {
           messageIds: ['message-1', 'message-2'],
           action: 'markRead',
         },
-        context,
-      ),
+        context
+      )
     ).rejects.toThrow(BadRequestException);
   });
 
@@ -309,8 +299,8 @@ describe('MarshmallowMessageApplicationService', () => {
           messageIds: ['message-1', 'message-2'],
           action: 'markRead',
         },
-        context,
-      ),
+        context
+      )
     ).resolves.toEqual({
       processed: 2,
       action: 'markRead',
@@ -323,7 +313,7 @@ describe('MarshmallowMessageApplicationService', () => {
         messageIds: ['message-1', 'message-2'],
         action: 'markRead',
       },
-      'user-1',
+      'user-1'
     );
   });
 });

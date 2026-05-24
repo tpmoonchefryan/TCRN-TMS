@@ -1,12 +1,8 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
-import {
-  BadRequestException,
-  ConflictException,
-  NotFoundException,
-} from '@nestjs/common';
-import { createLocalizedText, normalizeLocalizedText, type RequestContext } from '@tcrn/shared';
+import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { createLocalizedText, normalizeLocalizedText, type RequestContext } from '@tcrn/shared';
 
 import { DatabaseService } from '../../database';
 import { ChangeLogService } from '../../log';
@@ -47,7 +43,7 @@ describe('ProfileStoreApplicationService', () => {
   const service = new ProfileStoreApplicationService(
     mockRepository,
     mockDatabaseService,
-    mockChangeLogService,
+    mockChangeLogService
   );
 
   const defaultStoreName = createLocalizedText({
@@ -64,13 +60,10 @@ describe('ProfileStoreApplicationService', () => {
     ja: '主要な顧客プロフィールストア',
     fr: 'Magasin principal des profils clients',
   });
-  const normalizedDefaultDescription = normalizeLocalizedText(
-    undefined,
-    defaultStoreName.en,
-  );
+  const normalizedDefaultDescription = normalizeLocalizedText(undefined, defaultStoreName.en);
   const normalizedLocalizedDescription = normalizeLocalizedText(
     defaultStoreDescription,
-    defaultStoreName.en,
+    defaultStoreName.en
   );
   const emptyStoreDescription = createLocalizedText({
     en: 'Default Profile Store',
@@ -149,7 +142,7 @@ describe('ProfileStoreApplicationService', () => {
         pageSize: 50,
         includeInactive: true,
       },
-      context,
+      context
     );
 
     expect(mockRepository.findMany).toHaveBeenCalledWith('tenant_test', true, 'archive', 50, 50);
@@ -159,9 +152,7 @@ describe('ProfileStoreApplicationService', () => {
   it('fails closed when the detail record does not exist', async () => {
     vi.mocked(mockRepository.findById).mockResolvedValue(null);
 
-    await expect(
-      service.findById('missing-store', context),
-    ).rejects.toThrow(NotFoundException);
+    await expect(service.findById('missing-store', context)).rejects.toThrow(NotFoundException);
   });
 
   it('fails closed on duplicate create code', async () => {
@@ -173,8 +164,8 @@ describe('ProfileStoreApplicationService', () => {
           code: 'DEFAULT_STORE',
           name: defaultStoreName,
         },
-        context,
-      ),
+        context
+      )
     ).rejects.toThrow(ConflictException);
   });
 
@@ -197,8 +188,8 @@ describe('ProfileStoreApplicationService', () => {
           name: defaultStoreName,
           isDefault: true,
         },
-        context,
-      ),
+        context
+      )
     ).resolves.toEqual({
       id: 'store-1',
       code: 'DEFAULT_STORE',
@@ -216,7 +207,7 @@ describe('ProfileStoreApplicationService', () => {
         description: normalizedDefaultDescription,
         isDefault: true,
       },
-      'user-1',
+      'user-1'
     );
   });
 
@@ -237,7 +228,7 @@ describe('ProfileStoreApplicationService', () => {
         name: defaultStoreName,
         description: defaultStoreDescription,
       },
-      context,
+      context
     );
 
     expect(mockRepository.create).toHaveBeenCalledWith(
@@ -248,7 +239,7 @@ describe('ProfileStoreApplicationService', () => {
         description: normalizedLocalizedDescription,
         isDefault: false,
       },
-      'user-1',
+      'user-1'
     );
 
     vi.mocked(mockRepository.findById).mockResolvedValue({
@@ -292,8 +283,8 @@ describe('ProfileStoreApplicationService', () => {
           version: 2,
           name: { en: 'New Name' },
         },
-        context,
-      ),
+        context
+      )
     ).rejects.toThrow(ConflictException);
   });
 
@@ -317,8 +308,8 @@ describe('ProfileStoreApplicationService', () => {
           version: 1,
           isActive: false,
         },
-        context,
-      ),
+        context
+      )
     ).rejects.toThrow(BadRequestException);
   });
 
@@ -341,8 +332,8 @@ describe('ProfileStoreApplicationService', () => {
           version: 1,
           isDefault: false,
         },
-        context,
-      ),
+        context
+      )
     ).rejects.toThrow(BadRequestException);
   });
 
@@ -378,8 +369,8 @@ describe('ProfileStoreApplicationService', () => {
           version: 1,
           isDefault: true,
         },
-        context,
-      ),
+        context
+      )
     ).resolves.toEqual({
       id: 'store-2',
       code: 'SECONDARY_STORE',
@@ -397,7 +388,7 @@ describe('ProfileStoreApplicationService', () => {
           value: true,
         },
       ],
-      'user-1',
+      'user-1'
     );
   });
 
@@ -431,8 +422,8 @@ describe('ProfileStoreApplicationService', () => {
         {
           version: 1,
         },
-        context,
-      ),
+        context
+      )
     ).resolves.toEqual({
       id: 'store-1',
       code: 'DEFAULT_STORE',
@@ -440,11 +431,6 @@ describe('ProfileStoreApplicationService', () => {
       updatedAt: new Date('2026-04-14T00:10:00.000Z'),
     });
 
-    expect(mockRepository.update).toHaveBeenCalledWith(
-      'tenant_test',
-      'store-1',
-      [],
-      'user-1',
-    );
+    expect(mockRepository.update).toHaveBeenCalledWith('tenant_test', 'store-1', [], 'user-1');
   });
 });

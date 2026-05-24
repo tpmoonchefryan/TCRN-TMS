@@ -1,6 +1,5 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
-import { Injectable, Logger,OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 
 import { RedisService } from '../../redis';
 
@@ -42,11 +41,7 @@ export class RateLimitService implements OnModuleInit {
   /**
    * Check and consume rate limit quota
    */
-  async consume(
-    limiterName: string,
-    key: string,
-    points: number = 1,
-  ): Promise<RateLimitResult> {
+  async consume(limiterName: string, key: string, points: number = 1): Promise<RateLimitResult> {
     const config = this.configs.get(limiterName);
     if (!config) {
       this.logger.warn(`Unknown limiter: ${limiterName}`);

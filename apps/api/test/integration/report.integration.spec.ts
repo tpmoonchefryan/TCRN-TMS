@@ -1,13 +1,14 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 // Report Module Integration Tests
-
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+
+import { PrismaClient } from '@tcrn/database';
+
 import { AppModule } from '../../src/app.module';
 import { bootstrapTestApp } from '../../src/testing/bootstrap-test-app';
-import { PrismaClient } from '@tcrn/database';
 
 // Check if database is available
 const checkDatabaseConnection = async (): Promise<boolean> => {
@@ -64,7 +65,7 @@ describeFn('Report Integration Tests', () => {
 
   afterAll(async () => {
     if (!dbAvailable) return;
-    
+
     await prisma?.$disconnect();
     await app?.close();
   });

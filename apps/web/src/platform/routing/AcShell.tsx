@@ -35,7 +35,7 @@ function getAcPageTitle(
     tenantManagement: string;
     userManagement: string;
     webhookManagement: string;
-  },
+  }
 ) {
   if (pathname.includes('/user-management')) {
     return titles.userManagement;
@@ -291,7 +291,8 @@ export function AcShell({
     },
   ];
 
-  const userName = session.user.displayName || session.user.username || copy.common.authenticatedUser;
+  const userName =
+    session.user.displayName || session.user.username || copy.common.authenticatedUser;
   const pageTitle = getAcPageTitle(pathname, {
     ...copy.ac.titles,
     apiClientManagement: integrationLabels.apiClientManagement,
@@ -325,7 +326,10 @@ export function AcShell({
     }),
   };
   const breadcrumbItems = [
-    { label: session.tenantName || copy.common.currentTenant, href: buildAcWorkspacePath(tenantId) },
+    {
+      label: session.tenantName || copy.common.currentTenant,
+      href: buildAcWorkspacePath(tenantId),
+    },
     { label: copy.ac.shellLabel },
     { label: pageTitle, isCurrent: true },
   ];
@@ -347,7 +351,9 @@ export function AcShell({
           onOpenChange={setIsMobileNavOpen}
           header={
             <div className="space-y-2">
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">TCRN TMS</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
+                TCRN TMS
+              </p>
               <div className="space-y-1">
                 <p className="text-base font-semibold text-slate-900">{session.tenantName}</p>
                 <p className="text-xs text-slate-500">{copy.ac.shellSubtitle}</p>
@@ -368,9 +374,7 @@ export function AcShell({
               <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500 sm:hidden">
                 {copy.ac.shellLabel}
               </p>
-              <p className="text-lg font-semibold text-slate-900">
-                {pageTitle}
-              </p>
+              <p className="text-lg font-semibold text-slate-900">{pageTitle}</p>
             </div>
           }
           rightArea={

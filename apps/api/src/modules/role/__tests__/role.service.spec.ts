@@ -1,8 +1,11 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
-import { prisma } from '@tcrn/database';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { prisma } from '@tcrn/database';
+
+import { PermissionSnapshotService } from '../../permission/permission-snapshot.service';
+import { RoleData, RoleService } from '../role.service';
 
 // Mock @tcrn/database before importing service
 vi.mock('@tcrn/database', () => ({
@@ -11,9 +14,6 @@ vi.mock('@tcrn/database', () => ({
     $executeRawUnsafe: vi.fn(),
   },
 }));
-
-import { PermissionSnapshotService } from '../../permission/permission-snapshot.service';
-import { RoleData, RoleService } from '../role.service';
 
 const mockPrisma = prisma as unknown as {
   $queryRawUnsafe: ReturnType<typeof vi.fn>;
@@ -99,7 +99,7 @@ describe('RoleService', () => {
 
       expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalledWith(
         expect.stringContaining('ILIKE'),
-        '%admin%',
+        '%admin%'
       );
     });
 
@@ -112,7 +112,7 @@ describe('RoleService', () => {
 
       expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalledWith(
         expect.stringContaining('is_system'),
-        true,
+        true
       );
     });
 
@@ -123,7 +123,7 @@ describe('RoleService', () => {
 
       expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalledWith(
         expect.stringContaining('is_active'),
-        false,
+        false
       );
     });
 
@@ -133,7 +133,7 @@ describe('RoleService', () => {
       await service.list(testSchema, { sort: '-name' });
 
       expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalledWith(
-        expect.stringContaining("name->>'en' DESC"),
+        expect.stringContaining("name->>'en' DESC")
       );
     });
   });
@@ -169,10 +169,34 @@ describe('RoleService', () => {
   describe('getRolePermissions', () => {
     it('returns only catalog-backed canonical role permissions', async () => {
       const mockPermissions = [
-        { id: 'perm-1', resourceCode: 'customer.profile', action: 'read', effect: 'grant', name: 'Customer Profile' },
-        { id: 'perm-2', resourceCode: 'legacy.unknown', action: 'read', effect: 'grant', name: 'Legacy Unknown' },
-        { id: 'perm-3', resourceCode: 'log.search', action: 'delete', effect: 'grant', name: 'Log Search Delete' },
-        { id: 'perm-4', resourceCode: 'customer.profile', action: 'create', effect: 'grant', name: 'Customer Create' },
+        {
+          id: 'perm-1',
+          resourceCode: 'customer.profile',
+          action: 'read',
+          effect: 'grant',
+          name: 'Customer Profile',
+        },
+        {
+          id: 'perm-2',
+          resourceCode: 'legacy.unknown',
+          action: 'read',
+          effect: 'grant',
+          name: 'Legacy Unknown',
+        },
+        {
+          id: 'perm-3',
+          resourceCode: 'log.search',
+          action: 'delete',
+          effect: 'grant',
+          name: 'Log Search Delete',
+        },
+        {
+          id: 'perm-4',
+          resourceCode: 'customer.profile',
+          action: 'create',
+          effect: 'grant',
+          name: 'Customer Create',
+        },
       ];
       mockPrisma.$queryRawUnsafe.mockResolvedValueOnce(mockPermissions);
 
@@ -189,7 +213,7 @@ describe('RoleService', () => {
       ]);
       expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalledWith(
         expect.stringContaining('rp.effect as effect'),
-        'role-123',
+        'role-123'
       );
     });
 
@@ -200,7 +224,7 @@ describe('RoleService', () => {
 
       expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalledWith(
         expect.stringContaining('r.name as name'),
-        'role-123',
+        'role-123'
       );
     });
 
@@ -211,7 +235,7 @@ describe('RoleService', () => {
 
       expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalledWith(
         expect.stringContaining('r.name as name'),
-        'role-123',
+        'role-123'
       );
     });
   });
@@ -229,7 +253,7 @@ describe('RoleService', () => {
           name: newRoleName,
           permissionIds: [],
         },
-        'user-123',
+        'user-123'
       );
 
       expect(result).toBeDefined();
@@ -240,7 +264,11 @@ describe('RoleService', () => {
       mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([mockRole]); // Code taken
 
       await expect(
-        service.create(testSchema, { code: 'ADMIN', name: newRoleName, permissionIds: [] }, 'user-123'),
+        service.create(
+          testSchema,
+          { code: 'ADMIN', name: newRoleName, permissionIds: [] },
+          'user-123'
+        )
       ).rejects.toThrow(BadRequestException);
     });
 
@@ -257,7 +285,7 @@ describe('RoleService', () => {
           name: newRoleName,
           permissionIds: ['perm-1', 'perm-2'],
         },
-        'user-123',
+        'user-123'
       );
 
       expect(mockPrisma.$executeRawUnsafe).toHaveBeenCalledTimes(2);
@@ -275,11 +303,13 @@ describe('RoleService', () => {
           name: newRoleName,
           permissionIds: [],
         },
-        'user-123',
+        'user-123'
       );
 
       const insertQuery = mockPrisma.$queryRawUnsafe.mock.calls[1]?.[0];
-      expect(insertQuery).toContain('(gen_random_uuid(), $1, $2::jsonb, $3, false, true, now(), now(), $4, $4, 1)');
+      expect(insertQuery).toContain(
+        '(gen_random_uuid(), $1, $2::jsonb, $3, false, true, now(), now(), $4, $4, 1)'
+      );
       expect(insertQuery).not.toContain('$1::uuid');
     });
   });
@@ -294,7 +324,7 @@ describe('RoleService', () => {
         'role-123',
         testSchema,
         { name: { en: 'Updated' }, version: 1 },
-        'user-123',
+        'user-123'
       );
 
       expect(result.name.en).toBe('Updated');
@@ -304,7 +334,7 @@ describe('RoleService', () => {
       mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([]);
 
       await expect(
-        service.update('nonexistent', testSchema, { version: 1 }, 'user-123'),
+        service.update('nonexistent', testSchema, { version: 1 }, 'user-123')
       ).rejects.toThrow(NotFoundException);
     });
 
@@ -312,7 +342,7 @@ describe('RoleService', () => {
       mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([mockRole]); // Version 1
 
       await expect(
-        service.update('role-123', testSchema, { version: 2 }, 'user-123'), // Wrong version
+        service.update('role-123', testSchema, { version: 2 }, 'user-123') // Wrong version
       ).rejects.toThrow(BadRequestException);
     });
   });
@@ -329,7 +359,7 @@ describe('RoleService', () => {
         testSchema,
         ['perm-1', 'perm-2'],
         1,
-        'user-123',
+        'user-123'
       );
 
       expect(result.affectedUsers).toBe(5);
@@ -340,7 +370,7 @@ describe('RoleService', () => {
       mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([mockSystemRole]);
 
       await expect(
-        service.setPermissions('system-role-123', testSchema, [], 1, 'user-123'),
+        service.setPermissions('system-role-123', testSchema, [], 1, 'user-123')
       ).rejects.toThrow(ForbiddenException);
     });
 
@@ -348,7 +378,7 @@ describe('RoleService', () => {
       mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([mockRole]);
 
       await expect(
-        service.setPermissions('role-123', testSchema, [], 999, 'user-123'),
+        service.setPermissions('role-123', testSchema, [], 999, 'user-123')
       ).rejects.toThrow(BadRequestException);
     });
   });
@@ -370,24 +400,24 @@ describe('RoleService', () => {
       mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([mockSystemRole]);
 
       await expect(
-        service.deactivate('system-role-123', testSchema, 1, 'user-123'),
+        service.deactivate('system-role-123', testSchema, 1, 'user-123')
       ).rejects.toThrow(ForbiddenException);
     });
 
     it('should throw NotFoundException for non-existent role', async () => {
       mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([]);
 
-      await expect(
-        service.deactivate('nonexistent', testSchema, 1, 'user-123'),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.deactivate('nonexistent', testSchema, 1, 'user-123')).rejects.toThrow(
+        NotFoundException
+      );
     });
 
     it('should throw on version mismatch', async () => {
       mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([mockRole]);
 
-      await expect(
-        service.deactivate('role-123', testSchema, 999, 'user-123'),
-      ).rejects.toThrow(BadRequestException);
+      await expect(service.deactivate('role-123', testSchema, 999, 'user-123')).rejects.toThrow(
+        BadRequestException
+      );
     });
   });
 
@@ -408,17 +438,17 @@ describe('RoleService', () => {
     it('should throw NotFoundException for non-existent role', async () => {
       mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([]);
 
-      await expect(
-        service.reactivate('nonexistent', testSchema, 1, 'user-123'),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.reactivate('nonexistent', testSchema, 1, 'user-123')).rejects.toThrow(
+        NotFoundException
+      );
     });
 
     it('should throw on version mismatch', async () => {
       mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([mockRole]);
 
-      await expect(
-        service.reactivate('role-123', testSchema, 999, 'user-123'),
-      ).rejects.toThrow(BadRequestException);
+      await expect(service.reactivate('role-123', testSchema, 999, 'user-123')).rejects.toThrow(
+        BadRequestException
+      );
     });
   });
 });

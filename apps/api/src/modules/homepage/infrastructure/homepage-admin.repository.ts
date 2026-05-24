@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable } from '@nestjs/common';
+
 import type { ArtistLifecycleFlow } from '@tcrn/shared';
 
 import { DatabaseService } from '../../database';
@@ -24,7 +24,7 @@ export class HomepageAdminRepository {
 
   async findTalentById(
     schema: string,
-    talentId: string,
+    talentId: string
   ): Promise<HomepageAdminTalentRecord | null> {
     const prisma = this.databaseService.getPrisma();
     const talents = await prisma.$queryRawUnsafe<HomepageAdminTalentRecord[]>(
@@ -36,7 +36,7 @@ export class HomepageAdminRepository {
         FROM "${schema}".talent
         WHERE id = $1::uuid
       `,
-      talentId,
+      talentId
     );
 
     return talents[0] ?? null;
@@ -44,7 +44,7 @@ export class HomepageAdminRepository {
 
   async findHomepageByTalentId(
     schema: string,
-    talentId: string,
+    talentId: string
   ): Promise<HomepageAdminRecord | null> {
     const prisma = this.databaseService.getPrisma();
     const homepages = await prisma.$queryRawUnsafe<HomepageAdminRecord[]>(
@@ -58,7 +58,7 @@ export class HomepageAdminRepository {
         FROM "${schema}".talent_homepage
         WHERE talent_id = $1::uuid
       `,
-      talentId,
+      talentId
     );
 
     return homepages[0] ?? null;
@@ -67,7 +67,7 @@ export class HomepageAdminRepository {
   async createHomepage(
     schema: string,
     talentId: string,
-    defaultTheme: Record<string, unknown>,
+    defaultTheme: Record<string, unknown>
   ): Promise<HomepageAdminRecord> {
     const prisma = this.databaseService.getPrisma();
     const created = await prisma.$queryRawUnsafe<HomepageAdminRecord[]>(
@@ -84,7 +84,7 @@ export class HomepageAdminRepository {
           theme, created_at as "createdAt", updated_at as "updatedAt", version
       `,
       talentId,
-      JSON.stringify(defaultTheme),
+      JSON.stringify(defaultTheme)
     );
 
     return created[0];
@@ -92,7 +92,7 @@ export class HomepageAdminRepository {
 
   async findHomepageVersion(
     schema: string,
-    versionId: string,
+    versionId: string
   ): Promise<HomepageAdminVersionRecord | null> {
     const prisma = this.databaseService.getPrisma();
     const versions = await prisma.$queryRawUnsafe<HomepageAdminVersionRecord[]>(
@@ -104,7 +104,7 @@ export class HomepageAdminRepository {
         FROM "${schema}".homepage_version
         WHERE id = $1::uuid
       `,
-      versionId,
+      versionId
     );
 
     return versions[0] ?? null;
@@ -112,7 +112,7 @@ export class HomepageAdminRepository {
 
   async findSystemUserById(
     schema: string,
-    userId: string,
+    userId: string
   ): Promise<HomepageVersionActorRecord | null> {
     const prisma = this.databaseService.getPrisma();
     const users = await prisma.$queryRawUnsafe<HomepageVersionActorRecord[]>(
@@ -121,7 +121,7 @@ export class HomepageAdminRepository {
         FROM "${schema}".system_user
         WHERE id = $1::uuid
       `,
-      userId,
+      userId
     );
 
     return users[0] ?? null;
@@ -129,7 +129,7 @@ export class HomepageAdminRepository {
 
   async findHomepageDraftPointer(
     schema: string,
-    talentId: string,
+    talentId: string
   ): Promise<HomepageDraftPointerRecord | null> {
     const prisma = this.databaseService.getPrisma();
     const homepages = await prisma.$queryRawUnsafe<HomepageDraftPointerRecord[]>(
@@ -138,7 +138,7 @@ export class HomepageAdminRepository {
         FROM "${schema}".talent_homepage
         WHERE talent_id = $1::uuid
       `,
-      talentId,
+      talentId
     );
 
     return homepages[0] ?? null;
@@ -146,7 +146,7 @@ export class HomepageAdminRepository {
 
   async findHomepageVersionSummary(
     schema: string,
-    versionId: string,
+    versionId: string
   ): Promise<HomepageVersionSummaryRecord | null> {
     const prisma = this.databaseService.getPrisma();
     const versions = await prisma.$queryRawUnsafe<HomepageVersionSummaryRecord[]>(
@@ -155,16 +155,13 @@ export class HomepageAdminRepository {
         FROM "${schema}".homepage_version
         WHERE id = $1::uuid
       `,
-      versionId,
+      versionId
     );
 
     return versions[0] ?? null;
   }
 
-  async findLatestHomepageVersionNumber(
-    schema: string,
-    homepageId: string,
-  ): Promise<number> {
+  async findLatestHomepageVersionNumber(schema: string, homepageId: string): Promise<number> {
     const prisma = this.databaseService.getPrisma();
     const lastVersions = await prisma.$queryRawUnsafe<Array<{ versionNumber: number }>>(
       `
@@ -174,7 +171,7 @@ export class HomepageAdminRepository {
         ORDER BY version_number DESC
         LIMIT 1
       `,
-      homepageId,
+      homepageId
     );
 
     return lastVersions[0]?.versionNumber ?? 0;
@@ -210,14 +207,14 @@ export class HomepageAdminRepository {
       JSON.stringify(content),
       JSON.stringify(theme),
       contentHash,
-      userId,
+      userId
     );
   }
 
   async findHomepageVersionByNumber(
     schema: string,
     homepageId: string,
-    versionNumber: number,
+    versionNumber: number
   ): Promise<HomepageVersionSummaryRecord | null> {
     const prisma = this.databaseService.getPrisma();
     const versions = await prisma.$queryRawUnsafe<HomepageVersionSummaryRecord[]>(
@@ -227,7 +224,7 @@ export class HomepageAdminRepository {
         WHERE homepage_id = $1::uuid AND version_number = $2
       `,
       homepageId,
-      versionNumber,
+      versionNumber
     );
 
     return versions[0] ?? null;
@@ -235,7 +232,7 @@ export class HomepageAdminRepository {
 
   async findHomepagePublishTarget(
     schema: string,
-    talentId: string,
+    talentId: string
   ): Promise<HomepagePublishTargetRecord | null> {
     const prisma = this.databaseService.getPrisma();
     const homepages = await prisma.$queryRawUnsafe<HomepagePublishTargetRecord[]>(
@@ -250,7 +247,7 @@ export class HomepageAdminRepository {
         JOIN "${schema}".talent t ON t.id = h.talent_id
         WHERE h.talent_id = $1::uuid
       `,
-      talentId,
+      talentId
     );
 
     return homepages[0] ?? null;
@@ -271,9 +268,7 @@ export class HomepageAdminRepository {
     return tenants[0]?.code ?? null;
   }
 
-  async listArtistStages(
-    schema: string,
-  ): Promise<HomepageAdminArtistStageRecord[]> {
+  async listArtistStages(schema: string): Promise<HomepageAdminArtistStageRecord[]> {
     const prisma = this.databaseService.getPrisma();
 
     return prisma.$queryRawUnsafe<HomepageAdminArtistStageRecord[]>(
@@ -292,13 +287,11 @@ export class HomepageAdminRepository {
         WHERE owner_type = 'tenant'
           AND owner_id IS NULL
         ORDER BY sort_order ASC, code ASC
-      `,
+      `
     );
   }
 
-  async readArtistLifecycleFlow(
-    schema: string,
-  ): Promise<ArtistLifecycleFlow> {
+  async readArtistLifecycleFlow(schema: string): Promise<ArtistLifecycleFlow> {
     const prisma = this.databaseService.getPrisma();
     const rows = await prisma.$queryRawUnsafe<Array<{ settings: Record<string, unknown> | null }>>(
       `
@@ -306,7 +299,7 @@ export class HomepageAdminRepository {
         FROM public.tenant
         WHERE schema_name = $1
       `,
-      schema,
+      schema
     );
 
     return normalizeStoredArtistLifecycleFlow(rows[0]?.settings?.artistLifecycleFlow);
@@ -329,7 +322,7 @@ export class HomepageAdminRepository {
       `,
       versionId,
       publishedAt,
-      userId,
+      userId
     );
 
     return updatedVersions[0];
@@ -338,7 +331,7 @@ export class HomepageAdminRepository {
   async markHomepagePublished(
     schema: string,
     homepageId: string,
-    publishedVersionId: string,
+    publishedVersionId: string
   ): Promise<void> {
     const prisma = this.databaseService.getPrisma();
 
@@ -349,7 +342,7 @@ export class HomepageAdminRepository {
         WHERE id = $1::uuid
       `,
       homepageId,
-      publishedVersionId,
+      publishedVersionId
     );
   }
 
@@ -376,7 +369,7 @@ export class HomepageAdminRepository {
       JSON.stringify({ versionNumber }),
       userId,
       ipAddress,
-      userAgent,
+      userAgent
     );
   }
 
@@ -389,7 +382,7 @@ export class HomepageAdminRepository {
         SET is_published = false, updated_at = now()
         WHERE id = $1::uuid
       `,
-      homepageId,
+      homepageId
     );
   }
 
@@ -413,13 +406,13 @@ export class HomepageAdminRepository {
       homepageId,
       userId,
       ipAddress,
-      userAgent,
+      userAgent
     );
   }
 
   async findHomepageSettings(
     schema: string,
-    talentId: string,
+    talentId: string
   ): Promise<HomepageSettingsRecord | null> {
     const prisma = this.databaseService.getPrisma();
     const homepages = await prisma.$queryRawUnsafe<HomepageSettingsRecord[]>(
@@ -434,7 +427,7 @@ export class HomepageAdminRepository {
         FROM "${schema}".talent_homepage
         WHERE talent_id = $1::uuid
       `,
-      talentId,
+      talentId
     );
 
     return homepages[0] ?? null;
@@ -443,7 +436,7 @@ export class HomepageAdminRepository {
   async findTalentIdByHomepagePath(
     schema: string,
     homepagePath: string,
-    excludedTalentId: string,
+    excludedTalentId: string
   ): Promise<string | null> {
     const prisma = this.databaseService.getPrisma();
     const rows = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
@@ -454,7 +447,7 @@ export class HomepageAdminRepository {
           AND id != $2::uuid
       `,
       homepagePath,
-      excludedTalentId,
+      excludedTalentId
     );
 
     return rows[0]?.id ?? null;
@@ -463,7 +456,7 @@ export class HomepageAdminRepository {
   async updateTalentHomepagePath(
     schema: string,
     talentId: string,
-    homepagePath: string | null,
+    homepagePath: string | null
   ): Promise<void> {
     const prisma = this.databaseService.getPrisma();
 
@@ -474,7 +467,7 @@ export class HomepageAdminRepository {
         WHERE id = $2::uuid
       `,
       homepagePath,
-      talentId,
+      talentId
     );
   }
 
@@ -500,7 +493,7 @@ export class HomepageAdminRepository {
       seoTitle,
       seoDescription,
       ogImageUrl,
-      analyticsId,
+      analyticsId
     );
   }
 
@@ -528,7 +521,7 @@ export class HomepageAdminRepository {
       JSON.stringify(newValue),
       userId,
       ipAddress,
-      userAgent,
+      userAgent
     );
   }
 }

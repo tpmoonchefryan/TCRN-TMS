@@ -1,32 +1,49 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import {
-    Body,
-    Controller,
-    Get,
-    HttpCode,
-    HttpStatus,
-    NotFoundException,
-    Param,
-    Patch,
-    Post,
-    Query,
-    Req,
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  NotFoundException,
+  Param,
+  Patch,
+  Post,
+  Query,
+  Req,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiProperty, ApiPropertyOptional, ApiTags } from '@nestjs/swagger';
-import type { LocalizedText, PartialLocalizedText } from '@tcrn/shared';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiProperty,
+  ApiPropertyOptional,
+  ApiTags,
+} from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
-import { IsArray, IsBoolean, IsEnum, IsInt, IsObject, IsOptional, IsString, Matches, Min, MinLength } from 'class-validator';
+import {
+  IsArray,
+  IsBoolean,
+  IsEnum,
+  IsInt,
+  IsObject,
+  IsOptional,
+  IsString,
+  Matches,
+  Min,
+  MinLength,
+} from 'class-validator';
 import { Request } from 'express';
+
+import type { LocalizedText, PartialLocalizedText } from '@tcrn/shared';
 
 import { AuthenticatedUser, CurrentUser } from '../../common/decorators/current-user.decorator';
 import { RequirePermissions } from '../../common/decorators/require-permissions.decorator';
 import { getPrimaryAcceptLanguage } from '../../common/request-locale.util';
 import { paginated, success } from '../../common/response.util';
 import { BlocklistService } from './blocklist.service';
+import { assertValidConfigEntityType, RequireConfigEntityPermission } from './config-rbac';
 import { ConfigService } from './config.service';
 import { OwnerType } from './config.types';
-import { assertValidConfigEntityType, RequireConfigEntityPermission } from './config-rbac';
 import { ConsumerKeyService } from './consumer-key.service';
 
 const CONFIG_NAME_EXAMPLE: LocalizedText = {
@@ -58,12 +75,19 @@ const CONSENT_CONTENT_EXAMPLE: LocalizedText = {
 
 // DTOs
 class ListConfigQueryDto {
-  @ApiPropertyOptional({ description: 'Scope type filter', enum: ['tenant', 'subsidiary', 'talent'], example: 'talent' })
+  @ApiPropertyOptional({
+    description: 'Scope type filter',
+    enum: ['tenant', 'subsidiary', 'talent'],
+    example: 'talent',
+  })
   @IsOptional()
   @IsEnum(['tenant', 'subsidiary', 'talent'])
   scopeType?: OwnerType;
 
-  @ApiPropertyOptional({ description: 'Scope ID filter', example: '550e8400-e29b-41d4-a716-446655440000' })
+  @ApiPropertyOptional({
+    description: 'Scope ID filter',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+  })
   @IsOptional()
   @IsString()
   scopeId?: string;
@@ -97,7 +121,10 @@ class ListConfigQueryDto {
   @IsString()
   search?: string;
 
-  @ApiPropertyOptional({ description: 'Parent ID for hierarchical configs', example: '550e8400-e29b-41d4-a716-446655440000' })
+  @ApiPropertyOptional({
+    description: 'Parent ID for hierarchical configs',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+  })
   @IsOptional()
   @IsString()
   parentId?: string;
@@ -123,7 +150,11 @@ class ListConfigQueryDto {
 }
 
 class CreateConfigDto {
-  @ApiProperty({ description: 'Config code (uppercase)', example: 'VIP_STATUS', pattern: '^[A-Z0-9_]{3,32}$' })
+  @ApiProperty({
+    description: 'Config code (uppercase)',
+    example: 'VIP_STATUS',
+    pattern: '^[A-Z0-9_]{3,32}$',
+  })
   @IsString()
   @Matches(/^[A-Z0-9_]{3,32}$/)
   code: string;
@@ -177,12 +208,18 @@ class CreateConfigDto {
   @IsBoolean()
   isForceUse?: boolean;
 
-  @ApiPropertyOptional({ description: 'Owner type for scoped configs', enum: ['tenant', 'subsidiary', 'talent'] })
+  @ApiPropertyOptional({
+    description: 'Owner type for scoped configs',
+    enum: ['tenant', 'subsidiary', 'talent'],
+  })
   @IsOptional()
   @IsEnum(['tenant', 'subsidiary', 'talent'])
   ownerType?: OwnerType;
 
-  @ApiPropertyOptional({ description: 'Owner ID for scoped configs', example: '550e8400-e29b-41d4-a716-446655440000' })
+  @ApiPropertyOptional({
+    description: 'Owner ID for scoped configs',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+  })
   @IsOptional()
   @IsString()
   ownerId?: string;
@@ -225,22 +262,34 @@ class CreateConfigDto {
   @IsString()
   baseUrl?: string;
 
-  @ApiPropertyOptional({ description: 'Icon URL', example: 'https://example.com/icons/twitter.svg' })
+  @ApiPropertyOptional({
+    description: 'Icon URL',
+    example: 'https://example.com/icons/twitter.svg',
+  })
   @IsOptional()
   @IsString()
   iconUrl?: string;
 
-  @ApiPropertyOptional({ description: 'URL pattern for validation', example: 'https://twitter.com/{username}' })
+  @ApiPropertyOptional({
+    description: 'URL pattern for validation',
+    example: 'https://twitter.com/{username}',
+  })
   @IsOptional()
   @IsString()
   urlPattern?: string;
 
-  @ApiPropertyOptional({ description: 'Profile URL template', example: 'https://twitter.com/{username}' })
+  @ApiPropertyOptional({
+    description: 'Profile URL template',
+    example: 'https://twitter.com/{username}',
+  })
   @IsOptional()
   @IsString()
   profileUrlTemplate?: string;
 
-  @ApiPropertyOptional({ description: 'Consumer category', enum: ['internal', 'external', 'partner'] })
+  @ApiPropertyOptional({
+    description: 'Consumer category',
+    enum: ['internal', 'external', 'partner'],
+  })
   @IsOptional()
   @IsEnum(['internal', 'external', 'partner'])
   consumerCategory?: 'internal' | 'external' | 'partner';
@@ -359,22 +408,34 @@ class UpdateConfigDto {
   @IsString()
   baseUrl?: string;
 
-  @ApiPropertyOptional({ description: 'Icon URL', example: 'https://example.com/icons/twitter.svg' })
+  @ApiPropertyOptional({
+    description: 'Icon URL',
+    example: 'https://example.com/icons/twitter.svg',
+  })
   @IsOptional()
   @IsString()
   iconUrl?: string;
 
-  @ApiPropertyOptional({ description: 'URL pattern for validation', example: 'https://twitter.com/{username}' })
+  @ApiPropertyOptional({
+    description: 'URL pattern for validation',
+    example: 'https://twitter.com/{username}',
+  })
   @IsOptional()
   @IsString()
   urlPattern?: string;
 
-  @ApiPropertyOptional({ description: 'Profile URL template', example: 'https://twitter.com/{username}' })
+  @ApiPropertyOptional({
+    description: 'Profile URL template',
+    example: 'https://twitter.com/{username}',
+  })
   @IsOptional()
   @IsString()
   profileUrlTemplate?: string;
 
-  @ApiPropertyOptional({ description: 'Consumer category', enum: ['internal', 'external', 'partner'] })
+  @ApiPropertyOptional({
+    description: 'Consumer category',
+    enum: ['internal', 'external', 'partner'],
+  })
   @IsOptional()
   @IsEnum(['internal', 'external', 'partner'])
   consumerCategory?: 'internal' | 'external' | 'partner';
@@ -442,7 +503,11 @@ class ScopeDto {
 }
 
 class TestBlocklistTextDto {
-  @ApiProperty({ description: 'Scope type for blocklist', enum: ['tenant', 'subsidiary', 'talent'], example: 'talent' })
+  @ApiProperty({
+    description: 'Scope type for blocklist',
+    enum: ['tenant', 'subsidiary', 'talent'],
+    example: 'talent',
+  })
   @IsEnum(['tenant', 'subsidiary', 'talent'])
   scopeType: OwnerType;
 
@@ -451,7 +516,11 @@ class TestBlocklistTextDto {
   @IsString()
   scopeId?: string;
 
-  @ApiProperty({ description: 'Text to test against blocklist', example: 'test message content', minLength: 1 })
+  @ApiProperty({
+    description: 'Text to test against blocklist',
+    example: 'test message content',
+    minLength: 1,
+  })
   @IsString()
   @MinLength(1)
   text: string;
@@ -469,32 +538,29 @@ export class ConfigController {
   constructor(
     private readonly configService: ConfigService,
     private readonly blocklistService: BlocklistService,
-    private readonly consumerKeyService: ConsumerKeyService,
+    private readonly consumerKeyService: ConsumerKeyService
   ) {}
 
   /**
    * GET /api/v1/configuration-entity/membership-tree
    * Get full membership tree structure (Class -> Type -> Level)
-  */
+   */
   @Get('membership-tree')
   @RequirePermissions({ resource: 'config.membership', action: 'read' })
   @ApiOperation({ summary: 'Get membership tree' })
   async getMembershipTree(
     @CurrentUser() user: AuthenticatedUser,
     @Query() query: { scopeType?: OwnerType; scopeId?: string; includeInactive?: boolean },
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     const language = getPrimaryAcceptLanguage(req);
 
-    const tree = await this.configService.getMembershipTree(
-      user.tenantSchema,
-      {
-        scopeType: query.scopeType,
-        scopeId: query.scopeId,
-        includeInactive: query.includeInactive === true,
-        language,
-      }
-    );
+    const tree = await this.configService.getMembershipTree(user.tenantSchema, {
+      scopeType: query.scopeType,
+      scopeId: query.scopeId,
+      includeInactive: query.includeInactive === true,
+      language,
+    });
 
     return success(tree);
   }
@@ -502,7 +568,7 @@ export class ConfigController {
   /**
    * GET /api/v1/configuration-entity/membership-classes/:classId/types
    * Get types under a specific membership class
-  */
+   */
   @Get('membership-classes/:classId/types')
   @RequirePermissions({ resource: 'config.membership', action: 'read' })
   @ApiOperation({ summary: 'Get membership types by class' })
@@ -510,22 +576,18 @@ export class ConfigController {
     @CurrentUser() user: AuthenticatedUser,
     @Param('classId') classId: string,
     @Query() query: ListConfigQueryDto,
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     const language = getPrimaryAcceptLanguage(req);
 
-    const { data, total } = await this.configService.list(
-      'membership-type',
-      user.tenantSchema,
-      {
-        parentId: classId,
-        includeInactive: query.includeInactive,
-        page: query.page,
-        pageSize: query.pageSize,
-        sort: query.sort,
-        language,
-      }
-    );
+    const { data, total } = await this.configService.list('membership-type', user.tenantSchema, {
+      parentId: classId,
+      includeInactive: query.includeInactive,
+      page: query.page,
+      pageSize: query.pageSize,
+      sort: query.sort,
+      language,
+    });
 
     return paginated(data, {
       page: query.page || 1,
@@ -537,7 +599,7 @@ export class ConfigController {
   /**
    * GET /api/v1/configuration-entity/membership-types/:typeId/levels
    * Get levels under a specific membership type
-  */
+   */
   @Get('membership-types/:typeId/levels')
   @RequirePermissions({ resource: 'config.membership', action: 'read' })
   @ApiOperation({ summary: 'Get membership levels by type' })
@@ -545,22 +607,18 @@ export class ConfigController {
     @CurrentUser() user: AuthenticatedUser,
     @Param('typeId') typeId: string,
     @Query() query: ListConfigQueryDto,
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     const language = getPrimaryAcceptLanguage(req);
 
-    const { data, total } = await this.configService.list(
-      'membership-level',
-      user.tenantSchema,
-      {
-        parentId: typeId,
-        includeInactive: query.includeInactive,
-        page: query.page,
-        pageSize: query.pageSize,
-        sort: query.sort,
-        language,
-      }
-    );
+    const { data, total } = await this.configService.list('membership-level', user.tenantSchema, {
+      parentId: typeId,
+      includeInactive: query.includeInactive,
+      page: query.page,
+      pageSize: query.pageSize,
+      sort: query.sort,
+      language,
+    });
 
     return paginated(data, {
       page: query.page || 1,
@@ -572,7 +630,7 @@ export class ConfigController {
   /**
    * GET /api/v1/config/:entityType
    * List config entities
-  */
+   */
   @Get(':entityType')
   @RequireConfigEntityPermission('read')
   @ApiOperation({ summary: 'List config entities' })
@@ -580,30 +638,26 @@ export class ConfigController {
     @CurrentUser() user: AuthenticatedUser,
     @Param('entityType') entityType: string,
     @Query() query: ListConfigQueryDto,
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     const validEntityType = assertValidConfigEntityType(entityType);
 
     const language = getPrimaryAcceptLanguage(req);
 
-    const { data, total } = await this.configService.list(
-      validEntityType,
-      user.tenantSchema,
-      {
-        scopeType: query.scopeType,
-        scopeId: query.scopeId,
-        includeInherited: query.includeInherited,
-        includeDisabled: query.includeDisabled,
-        includeInactive: query.includeInactive,
-        ownerOnly: query.ownerOnly,
-        search: query.search,
-        parentId: query.parentId,
-        page: query.page,
-        pageSize: query.pageSize,
-        sort: query.sort,
-        language,
-      }
-    );
+    const { data, total } = await this.configService.list(validEntityType, user.tenantSchema, {
+      scopeType: query.scopeType,
+      scopeId: query.scopeId,
+      includeInherited: query.includeInherited,
+      includeDisabled: query.includeDisabled,
+      includeInactive: query.includeInactive,
+      ownerOnly: query.ownerOnly,
+      search: query.search,
+      parentId: query.parentId,
+      page: query.page,
+      pageSize: query.pageSize,
+      sort: query.sort,
+      language,
+    });
 
     return paginated(data, {
       page: query.page || 1,
@@ -615,7 +669,7 @@ export class ConfigController {
   /**
    * POST /api/v1/config/:entityType
    * Create config entity
-  */
+   */
   @Post(':entityType')
   @RequireConfigEntityPermission('create')
   @ApiOperation({ summary: 'Create config entity' })
@@ -623,7 +677,7 @@ export class ConfigController {
     @CurrentUser() user: AuthenticatedUser,
     @Param('entityType') entityType: string,
     @Body() dto: CreateConfigDto,
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     const validEntityType = assertValidConfigEntityType(entityType);
 
@@ -631,9 +685,7 @@ export class ConfigController {
     const normalizedDto = {
       ...dto,
       profileUrlTemplate:
-        typeof dto.profileUrlTemplate === 'string'
-          ? dto.profileUrlTemplate
-          : dto.urlPattern,
+        typeof dto.profileUrlTemplate === 'string' ? dto.profileUrlTemplate : dto.urlPattern,
     };
 
     const entity = await this.configService.create(
@@ -643,7 +695,12 @@ export class ConfigController {
       user.id
     );
 
-    const result = await this.configService.findById(validEntityType, entity.id, user.tenantSchema, language);
+    const result = await this.configService.findById(
+      validEntityType,
+      entity.id,
+      user.tenantSchema,
+      language
+    );
 
     return success(result);
   }
@@ -651,7 +708,7 @@ export class ConfigController {
   /**
    * GET /api/v1/config/:entityType/:id
    * Get config entity details
-  */
+   */
   @Get(':entityType/:id')
   @RequireConfigEntityPermission('read')
   @ApiOperation({ summary: 'Get config entity details' })
@@ -659,13 +716,18 @@ export class ConfigController {
     @CurrentUser() user: AuthenticatedUser,
     @Param('entityType') entityType: string,
     @Param('id') id: string,
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     const validEntityType = assertValidConfigEntityType(entityType);
 
     const language = getPrimaryAcceptLanguage(req);
 
-    const entity = await this.configService.findById(validEntityType, id, user.tenantSchema, language);
+    const entity = await this.configService.findById(
+      validEntityType,
+      id,
+      user.tenantSchema,
+      language
+    );
     if (!entity) {
       throw new NotFoundException({
         code: 'CONFIG_NOT_FOUND',
@@ -679,7 +741,7 @@ export class ConfigController {
   /**
    * PATCH /api/v1/config/:entityType/:id
    * Update config entity
-  */
+   */
   @Patch(':entityType/:id')
   @RequireConfigEntityPermission('update')
   @ApiOperation({ summary: 'Update config entity' })
@@ -688,7 +750,7 @@ export class ConfigController {
     @Param('entityType') entityType: string,
     @Param('id') id: string,
     @Body() dto: UpdateConfigDto,
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     const validEntityType = assertValidConfigEntityType(entityType);
 
@@ -696,9 +758,7 @@ export class ConfigController {
     const normalizedDto = {
       ...dto,
       profileUrlTemplate:
-        typeof dto.profileUrlTemplate === 'string'
-          ? dto.profileUrlTemplate
-          : dto.urlPattern,
+        typeof dto.profileUrlTemplate === 'string' ? dto.profileUrlTemplate : dto.urlPattern,
     };
 
     const entity = await this.configService.update(
@@ -709,7 +769,12 @@ export class ConfigController {
       user.id
     );
 
-    const result = await this.configService.findById(validEntityType, entity.id, user.tenantSchema, language);
+    const result = await this.configService.findById(
+      validEntityType,
+      entity.id,
+      user.tenantSchema,
+      language
+    );
 
     return success(result);
   }
@@ -717,7 +782,7 @@ export class ConfigController {
   /**
    * POST /api/v1/config/:entityType/:id/deactivate
    * Deactivate config entity
-  */
+   */
   @Post(':entityType/:id/deactivate')
   @HttpCode(HttpStatus.OK)
   @RequireConfigEntityPermission('update')
@@ -726,7 +791,7 @@ export class ConfigController {
     @CurrentUser() user: AuthenticatedUser,
     @Param('entityType') entityType: string,
     @Param('id') id: string,
-    @Body() body: { version: number },
+    @Body() body: { version: number }
   ) {
     const validEntityType = assertValidConfigEntityType(entityType);
 
@@ -748,7 +813,7 @@ export class ConfigController {
   /**
    * POST /api/v1/config/:entityType/:id/reactivate
    * Reactivate config entity
-  */
+   */
   @Post(':entityType/:id/reactivate')
   @HttpCode(HttpStatus.OK)
   @RequireConfigEntityPermission('update')
@@ -757,7 +822,7 @@ export class ConfigController {
     @CurrentUser() user: AuthenticatedUser,
     @Param('entityType') entityType: string,
     @Param('id') id: string,
-    @Body() body: { version: number },
+    @Body() body: { version: number }
   ) {
     const validEntityType = assertValidConfigEntityType(entityType);
 
@@ -778,7 +843,7 @@ export class ConfigController {
   /**
    * POST /api/v1/config/:entityType/:id/disable
    * Disable inherited config in current scope
-  */
+   */
   @Post(':entityType/:id/disable')
   @HttpCode(HttpStatus.OK)
   @RequireConfigEntityPermission('update')
@@ -787,7 +852,7 @@ export class ConfigController {
     @CurrentUser() user: AuthenticatedUser,
     @Param('entityType') entityType: string,
     @Param('id') id: string,
-    @Body() dto: ScopeDto,
+    @Body() dto: ScopeDto
   ) {
     const validEntityType = assertValidConfigEntityType(entityType);
 
@@ -808,7 +873,7 @@ export class ConfigController {
   /**
    * POST /api/v1/config/:entityType/:id/enable
    * Enable previously disabled inherited config
-  */
+   */
   @Post(':entityType/:id/enable')
   @HttpCode(HttpStatus.OK)
   @RequireConfigEntityPermission('update')
@@ -817,7 +882,7 @@ export class ConfigController {
     @CurrentUser() user: AuthenticatedUser,
     @Param('entityType') entityType: string,
     @Param('id') id: string,
-    @Body() dto: ScopeDto,
+    @Body() dto: ScopeDto
   ) {
     const validEntityType = assertValidConfigEntityType(entityType);
 
@@ -837,14 +902,14 @@ export class ConfigController {
   /**
    * POST /api/v1/configuration-entity/consumer/:consumerId/generate-key
    * Generate a new API key for a consumer
-  */
+   */
   @Post('consumer/:consumerId/generate-key')
   @HttpCode(HttpStatus.OK)
   @RequirePermissions({ resource: 'integration.consumer', action: 'admin' })
   @ApiOperation({ summary: 'Generate API key for consumer' })
   async generateConsumerKey(
     @CurrentUser() user: AuthenticatedUser,
-    @Param('consumerId') consumerId: string,
+    @Param('consumerId') consumerId: string
   ) {
     const result = await this.consumerKeyService.generateApiKey(
       consumerId,
@@ -853,7 +918,8 @@ export class ConfigController {
     );
 
     return success({
-      message: 'API key generated successfully. Please save it securely - it will not be shown again.',
+      message:
+        'API key generated successfully. Please save it securely - it will not be shown again.',
       apiKey: result.apiKey,
       apiKeyPrefix: result.apiKeyPrefix,
     });
@@ -862,14 +928,14 @@ export class ConfigController {
   /**
    * POST /api/v1/configuration-entity/consumer/:consumerId/rotate-key
    * Rotate (regenerate) API key for a consumer
-  */
+   */
   @Post('consumer/:consumerId/rotate-key')
   @HttpCode(HttpStatus.OK)
   @RequirePermissions({ resource: 'integration.consumer', action: 'admin' })
   @ApiOperation({ summary: 'Rotate API key for consumer' })
   async rotateConsumerKey(
     @CurrentUser() user: AuthenticatedUser,
-    @Param('consumerId') consumerId: string,
+    @Param('consumerId') consumerId: string
   ) {
     const result = await this.consumerKeyService.rotateApiKey(
       consumerId,
@@ -878,7 +944,8 @@ export class ConfigController {
     );
 
     return success({
-      message: 'API key rotated successfully. Please save the new key securely - it will not be shown again.',
+      message:
+        'API key rotated successfully. Please save the new key securely - it will not be shown again.',
       apiKey: result.apiKey,
       apiKeyPrefix: result.apiKeyPrefix,
     });
@@ -887,20 +954,16 @@ export class ConfigController {
   /**
    * POST /api/v1/configuration-entity/consumer/:consumerId/revoke-key
    * Revoke API key for a consumer
-  */
+   */
   @Post('consumer/:consumerId/revoke-key')
   @HttpCode(HttpStatus.OK)
   @RequirePermissions({ resource: 'integration.consumer', action: 'admin' })
   @ApiOperation({ summary: 'Revoke API key for consumer' })
   async revokeConsumerKey(
     @CurrentUser() user: AuthenticatedUser,
-    @Param('consumerId') consumerId: string,
+    @Param('consumerId') consumerId: string
   ) {
-    await this.consumerKeyService.revokeApiKey(
-      consumerId,
-      user.tenantSchema,
-      user.id
-    );
+    await this.consumerKeyService.revokeApiKey(consumerId, user.tenantSchema, user.id);
 
     return success({
       message: 'API key revoked successfully',
@@ -910,15 +973,12 @@ export class ConfigController {
   /**
    * POST /api/v1/config/blocklist-entry/test
    * Test text against blocklist
-  */
+   */
   @Post('blocklist-entry/test')
   @HttpCode(HttpStatus.OK)
   @RequirePermissions({ resource: 'security.blocklist', action: 'read' })
   @ApiOperation({ summary: 'Test blocklist' })
-  async testBlocklist(
-    @CurrentUser() user: AuthenticatedUser,
-    @Body() dto: TestBlocklistTextDto,
-  ) {
+  async testBlocklist(@CurrentUser() user: AuthenticatedUser, @Body() dto: TestBlocklistTextDto) {
     const result = await this.blocklistService.testText(
       user.tenantSchema,
       dto.scopeType,
@@ -932,13 +992,13 @@ export class ConfigController {
   /**
    * GET /api/v1/config/blocklist-entry/effective
    * Get effective blocklist entries
-  */
+   */
   @Get('blocklist-entry/effective')
   @RequirePermissions({ resource: 'security.blocklist', action: 'read' })
   @ApiOperation({ summary: 'Get effective blocklist' })
   async getEffectiveBlocklist(
     @CurrentUser() user: AuthenticatedUser,
-    @Query() query: { scopeType?: OwnerType; scopeId?: string },
+    @Query() query: { scopeType?: OwnerType; scopeId?: string }
   ) {
     const entries = await this.blocklistService.getEffectiveEntries(
       user.tenantSchema,
@@ -947,9 +1007,9 @@ export class ConfigController {
     );
 
     const bySeverity = {
-      high: entries.filter(e => e.severity === 'high').length,
-      medium: entries.filter(e => e.severity === 'medium').length,
-      low: entries.filter(e => e.severity === 'low').length,
+      high: entries.filter((e) => e.severity === 'high').length,
+      medium: entries.filter((e) => e.severity === 'medium').length,
+      low: entries.filter((e) => e.severity === 'low').length,
     };
 
     return success(entries, {

@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable } from '@nestjs/common';
 
 import {
@@ -16,31 +15,25 @@ import {
   type ParseResult,
   validateCsvTemplate,
 } from '../domain/import-template.policy';
-import type {
-  CompanyImportRow,
-  IndividualImportRow,
-} from '../dto/import.dto';
+import type { CompanyImportRow, IndividualImportRow } from '../dto/import.dto';
 
 @Injectable()
 export class ImportTemplateApplicationService {
   validateCsvTemplate(
     content: string,
-    templateKind: ImportTemplateKind,
+    templateKind: ImportTemplateKind
   ): CsvTemplateValidationResult {
     return validateCsvTemplate(content, templateKind);
   }
 
   parseIndividualRow(
     row: IndividualImportRow,
-    _rowNumber: number,
+    _rowNumber: number
   ): ParseResult<ParsedIndividualRow> {
     return parseIndividualImportRow(row);
   }
 
-  parseCompanyRow(
-    row: CompanyImportRow,
-    _rowNumber: number,
-  ): ParseResult<ParsedCompanyRow> {
+  parseCompanyRow(row: CompanyImportRow, _rowNumber: number): ParseResult<ParsedCompanyRow> {
     return parseCompanyImportRow(row);
   }
 

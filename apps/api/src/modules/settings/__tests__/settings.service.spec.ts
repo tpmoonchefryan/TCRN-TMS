@@ -1,12 +1,11 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import type { ConfigService } from '@nestjs/config';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { SettingsApplicationService } from '../application/settings-application.service';
-import { SettingsRepository } from '../infrastructure/settings.repository';
 import type { SettingsSecretCryptoService } from '../infrastructure/settings-secret-crypto.service';
+import { SettingsRepository } from '../infrastructure/settings.repository';
 
 describe('SettingsApplicationService', () => {
   let service: SettingsApplicationService;
@@ -39,7 +38,7 @@ describe('SettingsApplicationService', () => {
     };
 
     service = new SettingsApplicationService(
-      mockSettingsRepository as unknown as SettingsRepository,
+      mockSettingsRepository as unknown as SettingsRepository
     );
   });
 
@@ -180,7 +179,7 @@ describe('SettingsApplicationService', () => {
       mockSettingsRepository.findTalentById.mockResolvedValue(null);
 
       await expect(
-        service.getEffectiveSettings(testSchema, 'talent', 'nonexistent'),
+        service.getEffectiveSettings(testSchema, 'talent', 'nonexistent')
       ).rejects.toThrow(NotFoundException);
     });
   });
@@ -208,12 +207,12 @@ describe('SettingsApplicationService', () => {
         null,
         { timezone: 'Asia/Tokyo' },
         1,
-        'user-123',
+        'user-123'
       );
 
       expect(mockSettingsRepository.updateTenantSettings).toHaveBeenCalledWith(
         testSchema,
-        expect.objectContaining({ timezone: 'Asia/Tokyo' }),
+        expect.objectContaining({ timezone: 'Asia/Tokyo' })
       );
       expect(result.settings.timezone).toBe('Asia/Tokyo');
     });
@@ -230,8 +229,8 @@ describe('SettingsApplicationService', () => {
           null,
           { timezone: 'Asia/Tokyo' },
           3,
-          'user-123',
-        ),
+          'user-123'
+        )
       ).rejects.toThrow(BadRequestException);
     });
 
@@ -251,14 +250,7 @@ describe('SettingsApplicationService', () => {
         });
       mockSettingsRepository.updateTenantSettings.mockResolvedValue(undefined);
 
-      await service.updateSettings(
-        testSchema,
-        'tenant',
-        null,
-        { language: 'ja' },
-        1,
-        'user-123',
-      );
+      await service.updateSettings(testSchema, 'tenant', null, { language: 'ja' }, 1, 'user-123');
 
       expect(mockSettingsRepository.updateTenantSettings).toHaveBeenCalledWith(
         testSchema,
@@ -266,7 +258,7 @@ describe('SettingsApplicationService', () => {
           timezone: 'UTC',
           currency: 'USD',
           language: 'ja',
-        }),
+        })
       );
     });
 
@@ -292,7 +284,7 @@ describe('SettingsApplicationService', () => {
         null,
         { defaultLanguage: 'zh-CN' },
         1,
-        'user-123',
+        'user-123'
       );
 
       expect(mockSettingsRepository.updateTenantSettings).toHaveBeenCalledWith(
@@ -300,7 +292,7 @@ describe('SettingsApplicationService', () => {
         expect.objectContaining({
           timezone: 'UTC',
           defaultLanguage: 'zh_HANS',
-        }),
+        })
       );
     });
 
@@ -310,14 +302,7 @@ describe('SettingsApplicationService', () => {
         .mockResolvedValueOnce({ id: 'tenant-123', settings: { timezone: 'UTC' } });
 
       await expect(
-        service.updateSettings(
-          testSchema,
-          'tenant',
-          null,
-          { defaultLanguage: 'xx' },
-          1,
-          'user-123',
-        ),
+        service.updateSettings(testSchema, 'tenant', null, { defaultLanguage: 'xx' }, 1, 'user-123')
       ).rejects.toThrow(BadRequestException);
       expect(mockSettingsRepository.updateTenantSettings).not.toHaveBeenCalled();
     });
@@ -332,8 +317,8 @@ describe('SettingsApplicationService', () => {
           null,
           { timezone: 'Asia/Tokyo' },
           1,
-          'user-123',
-        ),
+          'user-123'
+        )
       ).rejects.toThrow(NotFoundException);
     });
 
@@ -358,8 +343,8 @@ describe('SettingsApplicationService', () => {
             },
           },
           2,
-          'user-123',
-        ),
+          'user-123'
+        )
       ).rejects.toThrow(BadRequestException);
     });
   });
@@ -400,17 +385,11 @@ describe('SettingsApplicationService', () => {
         },
       ]);
 
-      const response = await service.getArtistLifecycleFlow(
-        testSchema,
-        'talent',
-        'talent-123',
-      );
+      const response = await service.getArtistLifecycleFlow(testSchema, 'talent', 'talent-123');
 
       expect(response.writable).toBe(false);
       expect(response.inheritedFrom).toBe('tenant');
-      expect(response.flow.homepagePolicyByStage[0]?.allowedTemplateIds).toEqual([
-        'debutReveal',
-      ]);
+      expect(response.flow.homepagePolicyByStage[0]?.allowedTemplateIds).toEqual(['debutReveal']);
       expect(response.validationIssues).toEqual([]);
     });
 
@@ -437,7 +416,7 @@ describe('SettingsApplicationService', () => {
           ],
           transitions: [],
           homepagePolicyByStage: [],
-        }),
+        })
       ).rejects.toThrow(BadRequestException);
       expect(mockSettingsRepository.updateTenantSettings).not.toHaveBeenCalled();
     });
@@ -464,7 +443,7 @@ describe('SettingsApplicationService', () => {
         service: new SettingsApplicationService(
           mockSettingsRepository as unknown as SettingsRepository,
           mockSecretCrypto as unknown as SettingsSecretCryptoService,
-          mockConfigService as unknown as ConfigService,
+          mockConfigService as unknown as ConfigService
         ),
       };
     }
@@ -502,7 +481,7 @@ describe('SettingsApplicationService', () => {
             siteKey: 'tenant-site-key',
             secretKeyEncrypted: 'v1:encrypted-secret',
           }),
-        }),
+        })
       );
       expect(result).toMatchObject({
         siteKey: 'tenant-site-key',
@@ -513,7 +492,9 @@ describe('SettingsApplicationService', () => {
         ready: true,
         secretKeyMasked: '********',
       });
-      expect(JSON.stringify(mockSettingsRepository.updateTenantSettings.mock.calls)).not.toContain('tenant-secret-key');
+      expect(JSON.stringify(mockSettingsRepository.updateTenantSettings.mock.calls)).not.toContain(
+        'tenant-secret-key'
+      );
       expect(JSON.stringify(result)).not.toContain('tenant-secret-key');
     });
 
@@ -528,7 +509,7 @@ describe('SettingsApplicationService', () => {
         helpers.service.updateTenantTurnstileSettings(testSchema, {
           secretKeyMutation: 'replace',
           secretKey: '',
-        }),
+        })
       ).rejects.toThrow(BadRequestException);
       expect(mockSettingsRepository.updateTenantSettings).not.toHaveBeenCalled();
     });
@@ -566,7 +547,7 @@ describe('SettingsApplicationService', () => {
           turnstileConfig: expect.objectContaining({
             secretKeyEncrypted: null,
           }),
-        }),
+        })
       );
       expect(result).toMatchObject({
         secretKeyConfigured: false,
@@ -608,7 +589,7 @@ describe('SettingsApplicationService', () => {
   describe('resetToInherited', () => {
     it('should throw BadRequestException for tenant scope', async () => {
       await expect(
-        service.resetToInherited(testSchema, 'tenant', null, 'timezone', 'user-123'),
+        service.resetToInherited(testSchema, 'tenant', null, 'timezone', 'user-123')
       ).rejects.toThrow(BadRequestException);
     });
 
@@ -644,13 +625,13 @@ describe('SettingsApplicationService', () => {
         'subsidiary',
         'sub-123',
         'timezone',
-        'user-123',
+        'user-123'
       );
 
       expect(mockSettingsRepository.upsertScopeSettings).toHaveBeenCalledWith(
         expect.objectContaining({
           settings: {},
-        }),
+        })
       );
       expect(result.settings.timezone).toBe('UTC');
     });
@@ -681,7 +662,7 @@ describe('SettingsApplicationService', () => {
         'subsidiary',
         'sub-123',
         'timezone',
-        'user-123',
+        'user-123'
       );
 
       expect(result).toBeDefined();
@@ -730,7 +711,7 @@ describe('SettingsApplicationService', () => {
       mockSettingsRepository.findSubsidiaryById.mockResolvedValue(null);
 
       await expect(
-        service.getEffectiveSettings(testSchema, 'talent', 'talent-123'),
+        service.getEffectiveSettings(testSchema, 'talent', 'talent-123')
       ).rejects.toThrow(NotFoundException);
     });
   });

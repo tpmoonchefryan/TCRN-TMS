@@ -1,8 +1,9 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { ApiClientManagementScreen } from '@/domains/api-client-management/screens/ApiClientManagementScreen';
 import { SUPPORTED_UI_LOCALES, type SupportedUiLocale } from '@tcrn/shared';
+
+import { ApiClientManagementScreen } from '@/domains/api-client-management/screens/ApiClientManagementScreen';
 
 const mockRequest = vi.fn();
 const mockReplace = vi.fn();
@@ -54,7 +55,9 @@ describe('ApiClientManagementScreen', () => {
 
   it('keeps API client key lifecycle on the AC platform surface', async () => {
     mockRequest.mockImplementation(async (path: string) => {
-      if (path === '/api/v1/configuration-entity/consumer?includeInactive=true&page=1&pageSize=100') {
+      if (
+        path === '/api/v1/configuration-entity/consumer?includeInactive=true&page=1&pageSize=100'
+      ) {
         return [];
       }
 
@@ -63,7 +66,9 @@ describe('ApiClientManagementScreen', () => {
 
     render(<ApiClientManagementScreen tenantId="tenant-ac" />);
 
-    expect(await screen.findByRole('heading', { name: 'API Client Management' })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { name: 'API Client Management' })
+    ).toBeInTheDocument();
     expect(await screen.findByText('No API clients configured')).toBeInTheDocument();
     expect(screen.getAllByText('API Clients').length).toBeGreaterThan(0);
     expect(screen.getByRole('button', { name: /New API client/i })).toBeInTheDocument();

@@ -1,7 +1,4 @@
-import {
-  type HTMLAttributes,
-  type ReactNode,
-} from 'react';
+import { type HTMLAttributes, type ReactNode } from 'react';
 
 import {
   getPublicPresenceAccentClasses,
@@ -63,7 +60,7 @@ export function PublicPresenceBadge({
         'inline-flex min-h-7 items-center gap-2 px-3 py-1 text-xs font-semibold leading-5',
         publicPresenceTokens.radius.badge,
         variantClasses,
-        className,
+        className
       )}
       {...props}
     >

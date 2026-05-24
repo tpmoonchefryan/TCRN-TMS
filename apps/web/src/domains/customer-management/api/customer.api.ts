@@ -193,7 +193,7 @@ function buildQueryString(input: Record<string, string | number | boolean | null
 export async function checkCustomerProfilePermission(
   request: RequestFn,
   talentId: string,
-  action: CustomerProfilePermissionAction,
+  action: CustomerProfilePermissionAction
 ) {
   const result = await request<{
     results: Array<{
@@ -225,8 +225,8 @@ export async function checkCustomerProfilePermission(
 export function listCustomers(
   requestEnvelope: RequestEnvelopeFn,
   talentId: string,
-  options: ListCustomersOptions = {},
-) : Promise<PaginatedResult<CustomerListItem>> {
+  options: ListCustomersOptions = {}
+): Promise<PaginatedResult<CustomerListItem>> {
   const page = options.page ?? 1;
   const pageSize = options.pageSize ?? 20;
   const query = buildQueryString({
@@ -237,10 +237,12 @@ export function listCustomers(
     hasMembership: options.hasMembership,
   });
 
-  return requestEnvelope<CustomerListItem[]>(`/api/v1/talents/${talentId}/customers${query}`).then((envelope) => ({
-    items: envelope.data,
-    pagination: resolveApiPagination(envelope.meta, page, pageSize, envelope.data.length),
-  }));
+  return requestEnvelope<CustomerListItem[]>(`/api/v1/talents/${talentId}/customers${query}`).then(
+    (envelope) => ({
+      items: envelope.data,
+      pagination: resolveApiPagination(envelope.meta, page, pageSize, envelope.data.length),
+    })
+  );
 }
 
 export function readCustomerDetail(request: RequestFn, talentId: string, customerId: string) {
@@ -251,27 +253,33 @@ export function deactivateCustomer(
   request: RequestFn,
   talentId: string,
   customerId: string,
-  input: DeactivateCustomerInput,
+  input: DeactivateCustomerInput
 ) {
-  return request<CustomerActivationResponse>(`/api/v1/talents/${talentId}/customers/${customerId}/deactivate`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(input),
-  });
+  return request<CustomerActivationResponse>(
+    `/api/v1/talents/${talentId}/customers/${customerId}/deactivate`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(input),
+    }
+  );
 }
 
 export function reactivateCustomer(request: RequestFn, talentId: string, customerId: string) {
-  return request<CustomerActivationResponse>(`/api/v1/talents/${talentId}/customers/${customerId}/reactivate`, {
-    method: 'POST',
-  });
+  return request<CustomerActivationResponse>(
+    `/api/v1/talents/${talentId}/customers/${customerId}/reactivate`,
+    {
+      method: 'POST',
+    }
+  );
 }
 
 export function createIndividualCustomer(
   request: RequestFn,
   talentId: string,
-  input: CreateIndividualCustomerInput,
+  input: CreateIndividualCustomerInput
 ) {
   return request<CustomerCreateResponse>(`/api/v1/talents/${talentId}/customers/individuals`, {
     method: 'POST',
@@ -285,7 +293,7 @@ export function createIndividualCustomer(
 export function createCompanyCustomer(
   request: RequestFn,
   talentId: string,
-  input: CreateCompanyCustomerInput,
+  input: CreateCompanyCustomerInput
 ) {
   return request<CustomerCreateResponse>(`/api/v1/talents/${talentId}/customers/companies`, {
     method: 'POST',
@@ -296,7 +304,9 @@ export function createCompanyCustomer(
   });
 }
 
-export async function listCustomerSocialPlatforms(request: RequestFn): Promise<CustomerSocialPlatformOption[]> {
+export async function listCustomerSocialPlatforms(
+  request: RequestFn
+): Promise<CustomerSocialPlatformOption[]> {
   const items: CustomerSocialPlatformOption[] = [];
 
   for (let page = 1; page <= MAX_CONFIGURATION_ENTITY_PAGES; page += 1) {
@@ -304,7 +314,7 @@ export async function listCustomerSocialPlatforms(request: RequestFn): Promise<C
       `/api/v1/configuration-entity/social-platform${buildQueryString({
         page,
         pageSize: CONFIGURATION_ENTITY_PAGE_SIZE,
-      })}`,
+      })}`
     );
 
     items.push(...batch);
@@ -317,15 +327,12 @@ export async function listCustomerSocialPlatforms(request: RequestFn): Promise<C
   return items.filter((item) => item.isActive);
 }
 
-export function listCustomerMembershipTree(
-  request: RequestFn,
-  talentId: string,
-) {
+export function listCustomerMembershipTree(request: RequestFn, talentId: string) {
   return request<CustomerMembershipClassOption[]>(
     `/api/v1/configuration-entity/membership-tree${buildQueryString({
       scopeType: 'talent',
       scopeId: talentId,
-    })}`,
+    })}`
   );
 }
 
@@ -333,7 +340,7 @@ export function createCustomerMembership(
   request: RequestFn,
   talentId: string,
   customerId: string,
-  input: CreateCustomerMembershipInput,
+  input: CreateCustomerMembershipInput
 ) {
   return request<CustomerMembershipCreateResponse>(
     `/api/v1/talents/${talentId}/customers/${customerId}/memberships`,
@@ -343,6 +350,6 @@ export function createCustomerMembership(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(input),
-    },
+    }
   );
 }

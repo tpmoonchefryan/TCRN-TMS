@@ -1,13 +1,5 @@
 'use client';
 
-import type {
-  PublicPresencePhaseVisibility,
-  PublicPresenceProjection,
-} from '@tcrn/shared';
-import {
-  DEFAULT_THEME,
-  normalizeTheme,
-} from '@tcrn/shared';
 import {
   ArrowLeft,
   Eye,
@@ -22,9 +14,12 @@ import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useId, useMemo, useState } from 'react';
 
+import type { PublicPresencePhaseVisibility, PublicPresenceProjection } from '@tcrn/shared';
+import { DEFAULT_THEME, normalizeTheme } from '@tcrn/shared';
+
 import { PublicHomepageProjectionRenderer } from '@/domains/public-homepage/components/PublicHomepageProjectionRenderer';
-import { preloadPublicHomepageProjectionMedia } from '@/domains/public-homepage/components/public-homepage-projection-media';
 import { getHomepageCanvasStyle } from '@/domains/public-homepage/components/PublicHomepageRenderer';
+import { preloadPublicHomepageProjectionMedia } from '@/domains/public-homepage/components/public-homepage-projection-media';
 import {
   PublicPresenceBadge,
   PublicPresenceShell,
@@ -37,6 +32,12 @@ import {
   readPublicPresenceDraftPreview,
   readPublicPresenceWorkspace,
 } from '@/domains/public-presence-studio/api/public-presence-studio.api';
+import { useOverlayFocusManager } from '@/domains/public-presence-studio/screens/public-presence-studio-overlay';
+import {
+  mergeUrlSearchParams,
+  parseBooleanSearchParam,
+  parseEnumSearchParam,
+} from '@/domains/public-presence-studio/screens/public-presence-studio-url-state';
 import {
   getPublicPresencePreviewPhaseLabel,
   getPublicPresenceStageSectionLabel,
@@ -45,13 +46,7 @@ import {
   PUBLIC_PRESENCE_PREVIEW_PHASES,
   usePublicPresenceStudioCopy,
 } from '@/domains/public-presence-studio/screens/public-presence-studio.copy';
-import { useOverlayFocusManager } from '@/domains/public-presence-studio/screens/public-presence-studio-overlay';
 import { withPublicPresenceRouteTimeout } from '@/domains/public-presence-studio/screens/public-presence-studio.loading';
-import {
-  mergeUrlSearchParams,
-  parseBooleanSearchParam,
-  parseEnumSearchParam,
-} from '@/domains/public-presence-studio/screens/public-presence-studio-url-state';
 import { ApiRequestError } from '@/platform/http/api';
 import {
   buildPublicPresenceStudioEditorPath,
@@ -76,7 +71,7 @@ const PREVIEW_MOBILE_SHEET_VALUES = ['tools'] as const;
 function getPreviewSectionIdentity(
   locale: string,
   section: PublicPresenceProjection['sections'][number],
-  index: number,
+  index: number
 ) {
   const label = getPublicPresenceStageSectionLabel(locale, section);
   const roleTitle = (() => {
@@ -118,7 +113,9 @@ function getPreviewSectionIdentity(
           fr: 'Note d’operation',
         });
       default:
-        return 'title' in section && typeof section.title === 'string' && section.title.trim().length > 0
+        return 'title' in section &&
+          typeof section.title === 'string' &&
+          section.title.trim().length > 0
           ? section.title.trim()
           : label;
     }
@@ -148,11 +145,13 @@ function getErrorMessage(reason: unknown, fallback: string) {
 
 function resolveCurrentTemplate(
   workspace: PublicPresenceStudioWorkspaceResponse | null,
-  selectedTemplateId: string,
+  selectedTemplateId: string
 ): PublicPresenceStudioTemplateSummary | null {
-  return workspace?.templates.find(
-    (template) => template.templateId === (workspace.selectedTemplateId ?? selectedTemplateId),
-  ) ?? null;
+  return (
+    workspace?.templates.find(
+      (template) => template.templateId === (workspace.selectedTemplateId ?? selectedTemplateId)
+    ) ?? null
+  );
 }
 
 export function PublicPresencePreviewScreen({
@@ -176,29 +175,34 @@ export function PublicPresencePreviewScreen({
   const [previewError, setPreviewError] = useState<string | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewProjection, setPreviewProjection] = useState<PublicPresenceProjection | null>(null);
-  const [previewPhase, setPreviewPhase] = useState<PublicPresencePhaseVisibility | 'current'>('current');
+  const [previewPhase, setPreviewPhase] = useState<PublicPresencePhaseVisibility | 'current'>(
+    'current'
+  );
   const [previewViewport, setPreviewViewport] = useState<PreviewViewportMode['id']>('desktop');
   const [selectedPreviewSectionId, setSelectedPreviewSectionId] = useState<string | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [mobilePreviewToolsOpen, setMobilePreviewToolsOpen] = useState(false);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>(
-    initialTemplateId ?? 'activeTalentHub',
+    initialTemplateId ?? 'activeTalentHub'
   );
   const mobilePreviewToolsSheetId = useId();
   const detailsSurfaceId = useId();
-  const queryState = useMemo(() => ({
-    detailsOpen: parseBooleanSearchParam(searchParams.get('details')) ?? false,
-    mobileSheet: parseEnumSearchParam(searchParams.get('sheet'), PREVIEW_MOBILE_SHEET_VALUES),
-    previewPhase: parseEnumSearchParam(
-      searchParams.get('phase'),
-      ['current', ...PUBLIC_PRESENCE_PREVIEW_PHASES] as const,
-    ) ?? 'current',
-    previewViewport: parseEnumSearchParam(
-      searchParams.get('viewport'),
-      PREVIEW_VIEWPORT_QUERY_VALUES,
-    ) ?? 'desktop',
-    selectedPreviewSectionId: searchParams.get('section'),
-  }), [searchKey, searchParams]);
+  const queryState = useMemo(
+    () => ({
+      detailsOpen: parseBooleanSearchParam(searchParams.get('details')) ?? false,
+      mobileSheet: parseEnumSearchParam(searchParams.get('sheet'), PREVIEW_MOBILE_SHEET_VALUES),
+      previewPhase:
+        parseEnumSearchParam(searchParams.get('phase'), [
+          'current',
+          ...PUBLIC_PRESENCE_PREVIEW_PHASES,
+        ] as const) ?? 'current',
+      previewViewport:
+        parseEnumSearchParam(searchParams.get('viewport'), PREVIEW_VIEWPORT_QUERY_VALUES) ??
+        'desktop',
+      selectedPreviewSectionId: searchParams.get('section'),
+    }),
+    [searchKey, searchParams]
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -209,11 +213,7 @@ export function PublicPresencePreviewScreen({
 
       try {
         const result = await withPublicPresenceRouteTimeout(
-          readPublicPresenceWorkspace(
-            request,
-            talentId,
-            selectedTemplateId,
-          ),
+          readPublicPresenceWorkspace(request, talentId, selectedTemplateId),
           pickLocaleText(locale, {
             en: 'Preview route took too long to load. Refresh the page or confirm the local API is running.',
             zh_HANS: '预览路由加载时间过长。请刷新页面，或确认本地 API 已启动。',
@@ -221,7 +221,7 @@ export function PublicPresencePreviewScreen({
             ja: 'プレビュールートの読み込みに時間がかかりすぎています。再読み込みするか、ローカル API が起動しているか確認してください。',
             ko: '미리보기 라우트 로딩이 너무 오래 걸립니다. 페이지를 새로고침하거나 로컬 API가 실행 중인지 확인하세요.',
             fr: 'La route d’aperçu met trop de temps à charger. Actualisez la page ou vérifiez que l’API locale tourne bien.',
-          }),
+          })
         );
 
         if (cancelled) {
@@ -270,7 +270,7 @@ export function PublicPresencePreviewScreen({
             request,
             talentId,
             previewPhase,
-            workspace.selectedTemplateId ?? selectedTemplateId,
+            workspace.selectedTemplateId ?? selectedTemplateId
           ),
           pickLocaleText(locale, {
             en: 'Fan preview took too long to refresh. Refresh the page or confirm the local API is running.',
@@ -279,7 +279,7 @@ export function PublicPresencePreviewScreen({
             ja: 'ファンプレビューの更新に時間がかかりすぎています。再読み込みするか、ローカル API が起動しているか確認してください。',
             ko: '팬 미리보기 새로고침이 너무 오래 걸립니다. 페이지를 새로고침하거나 로컬 API가 실행 중인지 확인하세요.',
             fr: 'Le fan preview met trop de temps à se rafraîchir. Actualisez la page ou vérifiez que l’API locale tourne bien.',
-          }),
+          })
         );
 
         await preloadPublicHomepageProjectionMedia(result);
@@ -321,23 +321,23 @@ export function PublicPresencePreviewScreen({
   ]);
 
   useEffect(() => {
-    setPreviewViewport((current) => (
+    setPreviewViewport((current) =>
       current === queryState.previewViewport ? current : queryState.previewViewport
-    ));
-    setPreviewPhase((current) => (
+    );
+    setPreviewPhase((current) =>
       current === queryState.previewPhase ? current : queryState.previewPhase
-    ));
+    );
 
     const nextMobilePreviewToolsOpen =
-      queryState.previewViewport === 'mobile'
-      && !queryState.detailsOpen
-      && queryState.mobileSheet === 'tools';
-    setMobilePreviewToolsOpen((current) => (
+      queryState.previewViewport === 'mobile' &&
+      !queryState.detailsOpen &&
+      queryState.mobileSheet === 'tools';
+    setMobilePreviewToolsOpen((current) =>
       current === nextMobilePreviewToolsOpen ? current : nextMobilePreviewToolsOpen
-    ));
-    setDetailsOpen((current) => (
+    );
+    setDetailsOpen((current) =>
       current === queryState.detailsOpen ? current : queryState.detailsOpen
-    ));
+    );
   }, [
     queryState.detailsOpen,
     queryState.mobileSheet,
@@ -361,18 +361,18 @@ export function PublicPresencePreviewScreen({
     onClose: () => setDetailsOpen(false),
     open: detailsOpen,
   });
-  const selectedPreviewSection = previewProjection?.sections.find(
-    (section) => section.id === selectedPreviewSectionId,
-  ) ?? null;
-  const viewportFrameClass = PREVIEW_VIEWPORTS.find((viewport) => viewport.id === previewViewport)
-    ?.frameClassName ?? PREVIEW_VIEWPORTS[0].frameClassName;
+  const selectedPreviewSection =
+    previewProjection?.sections.find((section) => section.id === selectedPreviewSectionId) ?? null;
+  const viewportFrameClass =
+    PREVIEW_VIEWPORTS.find((viewport) => viewport.id === previewViewport)?.frameClassName ??
+    PREVIEW_VIEWPORTS[0].frameClassName;
   const previewTheme = normalizeTheme(previewProjection?.appearance.theme || DEFAULT_THEME);
   const previewCanvasStyle = useMemo(
     () => ({
       ...getHomepageCanvasStyle(previewTheme),
       minHeight: '100%',
     }),
-    [previewTheme],
+    [previewTheme]
   );
   const previewPhaseOptions = useMemo(
     () =>
@@ -380,28 +380,25 @@ export function PublicPresencePreviewScreen({
         value,
         label: getPublicPresencePreviewPhaseLabel(locale, value),
       })),
-    [locale],
+    [locale]
   );
   const editorHref = buildPublicPresenceStudioEditorPath(
     tenantId,
     talentId,
-    workspace?.selectedTemplateId ?? selectedTemplateId,
+    workspace?.selectedTemplateId ?? selectedTemplateId
   );
   const managementHref = buildTalentWorkspaceSectionPath(tenantId, talentId, 'homepage');
   const currentTemplateId = workspace?.selectedTemplateId ?? selectedTemplateId;
-  const persistTemplateQuery = searchParams.has('templateId') || currentTemplateId !== 'activeTalentHub';
+  const persistTemplateQuery =
+    searchParams.has('templateId') || currentTemplateId !== 'activeTalentHub';
   const selectedSectionEditorHref = selectedPreviewSection
     ? mergePathSearchParams(
-      buildPublicPresenceStudioEditorPath(
-        tenantId,
-        talentId,
-        currentTemplateId,
-      ),
-      {
-        leftPanel: 'sections',
-        stagePanel: `edit:${selectedPreviewSection.kind}`,
-      },
-    )
+        buildPublicPresenceStudioEditorPath(tenantId, talentId, currentTemplateId),
+        {
+          leftPanel: 'sections',
+          stagePanel: `edit:${selectedPreviewSection.kind}`,
+        }
+      )
     : editorHref;
 
   useEffect(() => {
@@ -414,10 +411,11 @@ export function PublicPresencePreviewScreen({
     }
 
     const requestedSectionId = queryState.selectedPreviewSectionId;
-    const nextSectionId = requestedSectionId
-      && previewProjection.sections.some((section) => section.id === requestedSectionId)
-      ? requestedSectionId
-      : previewProjection.sections[0]?.id ?? null;
+    const nextSectionId =
+      requestedSectionId &&
+      previewProjection.sections.some((section) => section.id === requestedSectionId)
+        ? requestedSectionId
+        : (previewProjection.sections[0]?.id ?? null);
 
     if (selectedPreviewSectionId !== nextSectionId) {
       setSelectedPreviewSectionId(nextSectionId);
@@ -434,9 +432,7 @@ export function PublicPresencePreviewScreen({
       phase: previewPhase === 'current' ? null : previewPhase,
       section: selectedPreviewSectionId,
       sheet:
-        mobilePreviewToolsOpen && previewViewport === 'mobile' && !detailsOpen
-          ? 'tools'
-          : null,
+        mobilePreviewToolsOpen && previewViewport === 'mobile' && !detailsOpen ? 'tools' : null,
       templateId: persistTemplateQuery ? currentTemplateId : null,
       viewport: previewViewport === 'desktop' ? null : previewViewport,
     }).toString();
@@ -556,7 +552,7 @@ export function PublicPresencePreviewScreen({
     >
       <div className="space-y-2">
         <PublicPresenceSurface
-          className="sticky top-2 z-20 px-3 py-1.5 sm:px-3 sm:py-1.5 lg:px-3 lg:py-1.5 shadow-sm backdrop-blur"
+          className="sticky top-2 z-20 px-3 py-1.5 shadow-sm backdrop-blur sm:px-3 sm:py-1.5 lg:px-3 lg:py-1.5"
           data-testid="preview-topbar"
         >
           <div className="space-y-2 sm:hidden">
@@ -571,14 +567,16 @@ export function PublicPresencePreviewScreen({
                   className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
                 >
                   <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-                  <span>{pickLocaleText(locale, {
-                    en: 'Back',
-                    zh_HANS: '返回',
-                    zh_HANT: '返回',
-                    ja: '戻る',
-                    ko: '뒤로',
-                    fr: 'Retour',
-                  })}</span>
+                  <span>
+                    {pickLocaleText(locale, {
+                      en: 'Back',
+                      zh_HANS: '返回',
+                      zh_HANT: '返回',
+                      ja: '戻る',
+                      ko: '뒤로',
+                      fr: 'Retour',
+                    })}
+                  </span>
                 </Link>
                 <Link
                   href={editorHref}
@@ -586,14 +584,16 @@ export function PublicPresencePreviewScreen({
                   className="inline-flex items-center gap-2 rounded-full border border-rose-200 bg-white px-3 py-1.5 text-sm font-semibold text-rose-700 transition hover:border-rose-300 hover:bg-rose-50"
                 >
                   <LayoutTemplate className="h-4 w-4" aria-hidden="true" />
-                  <span>{pickLocaleText(locale, {
-                    en: 'Editor',
-                    zh_HANS: '编辑器',
-                    zh_HANT: '編輯器',
-                    ja: 'エディタ',
-                    ko: '편집기',
-                    fr: 'Editeur',
-                  })}</span>
+                  <span>
+                    {pickLocaleText(locale, {
+                      en: 'Editor',
+                      zh_HANS: '编辑器',
+                      zh_HANT: '編輯器',
+                      ja: 'エディタ',
+                      ko: '편집기',
+                      fr: 'Editeur',
+                    })}
+                  </span>
                 </Link>
               </div>
             </div>
@@ -606,7 +606,7 @@ export function PublicPresencePreviewScreen({
               >
                 {templateVersions.map((pageVersion) => {
                   const template = workspace.templates.find(
-                    (entry) => entry.templateId === pageVersion.templateId,
+                    (entry) => entry.templateId === pageVersion.templateId
                   ) ?? {
                     label: pageVersion.templateId,
                     templateId: pageVersion.templateId,
@@ -683,14 +683,16 @@ export function PublicPresencePreviewScreen({
                 }`}
               >
                 <PanelRightOpen className="h-4 w-4" aria-hidden="true" />
-                <span>{pickLocaleText(locale, {
-                  en: 'Tools',
-                  zh_HANS: '工具',
-                  zh_HANT: '工具',
-                  ja: '操作',
-                  ko: '도구',
-                  fr: 'Outils',
-                })}</span>
+                <span>
+                  {pickLocaleText(locale, {
+                    en: 'Tools',
+                    zh_HANS: '工具',
+                    zh_HANT: '工具',
+                    ja: '操作',
+                    ko: '도구',
+                    fr: 'Outils',
+                  })}
+                </span>
               </button>
             </div>
           </div>
@@ -716,7 +718,7 @@ export function PublicPresencePreviewScreen({
               >
                 {templateVersions.map((pageVersion) => {
                   const template = workspace.templates.find(
-                    (entry) => entry.templateId === pageVersion.templateId,
+                    (entry) => entry.templateId === pageVersion.templateId
                   ) ?? {
                     label: pageVersion.templateId,
                     templateId: pageVersion.templateId,
@@ -776,9 +778,7 @@ export function PublicPresencePreviewScreen({
               <select
                 value={previewPhase}
                 onChange={(event) =>
-                  setPreviewPhase(
-                    event.target.value as PublicPresencePhaseVisibility | 'current',
-                  )
+                  setPreviewPhase(event.target.value as PublicPresencePhaseVisibility | 'current')
                 }
                 className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-900 outline-none transition focus:border-rose-300"
               >
@@ -907,7 +907,11 @@ export function PublicPresencePreviewScreen({
                     style={previewCanvasStyle}
                   >
                     {previewProjection ? (
-                      <div className={previewViewport === 'mobile' ? 'mx-auto w-full' : 'mx-auto max-w-4xl'}>
+                      <div
+                        className={
+                          previewViewport === 'mobile' ? 'mx-auto w-full' : 'mx-auto max-w-4xl'
+                        }
+                      >
                         <PublicHomepageProjectionRenderer
                           projection={previewProjection}
                           responsiveMode={previewViewport}
@@ -940,16 +944,24 @@ export function PublicPresencePreviewScreen({
                   {previewStatusCompactLabel}
                 </div>
                 {previewProjection ? (
-                  <PublicPresenceBadge className="hidden sm:inline-flex" tone="slate" variant="outline">
+                  <PublicPresenceBadge
+                    className="hidden sm:inline-flex"
+                    tone="slate"
+                    variant="outline"
+                  >
                     {copy.fanPreview.resolvedPhaseLabel}:{' '}
                     {getPublicPresencePreviewPhaseLabel(
                       locale,
-                      previewProjection.resolvedRevealPhase,
+                      previewProjection.resolvedRevealPhase
                     )}
                   </PublicPresenceBadge>
                 ) : null}
                 {selectedPreviewSection ? (
-                  <PublicPresenceBadge className="hidden sm:inline-flex" tone="slate" variant="outline">
+                  <PublicPresenceBadge
+                    className="hidden sm:inline-flex"
+                    tone="slate"
+                    variant="outline"
+                  >
                     {copy.fanPreview.selectedSectionLabel}:{' '}
                     {getPublicPresenceStageSectionLabel(locale, selectedPreviewSection)}
                   </PublicPresenceBadge>
@@ -962,7 +974,7 @@ export function PublicPresencePreviewScreen({
                     value={previewPhase}
                     onChange={(event) =>
                       setPreviewPhase(
-                        event.target.value as PublicPresencePhaseVisibility | 'current',
+                        event.target.value as PublicPresencePhaseVisibility | 'current'
                       )
                     }
                     className="w-full rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-900 outline-none transition focus:border-rose-300"
@@ -987,7 +999,7 @@ export function PublicPresencePreviewScreen({
                   fr: 'Feuille outils aperçu',
                 })}
                 aria-modal
-                className="!fixed inset-x-3 bottom-3 z-40 max-h-[72vh] overflow-auto rounded-[2rem] border border-slate-200/90 bg-white/97 p-4 shadow-xl sm:hidden"
+                className="bg-white/97 !fixed inset-x-3 bottom-3 z-40 max-h-[72vh] overflow-auto rounded-[2rem] border border-slate-200/90 p-4 shadow-xl sm:hidden"
                 data-testid="preview-mobile-tools-sheet"
                 id={mobilePreviewToolsSheetId}
                 role="dialog"
@@ -995,9 +1007,7 @@ export function PublicPresencePreviewScreen({
               >
                 <div className="mb-4 flex items-center justify-between gap-3">
                   <div className="space-y-1">
-                    <h2 className="text-base font-semibold text-slate-950">
-                      {previewToolsLabel}
-                    </h2>
+                    <h2 className="text-base font-semibold text-slate-950">{previewToolsLabel}</h2>
                     <p className="text-sm text-slate-600">
                       {pickLocaleText(locale, {
                         en: 'Use this sheet to inspect sections, switch phase, and check preview status.',
@@ -1051,7 +1061,7 @@ export function PublicPresencePreviewScreen({
                       value={previewPhase}
                       onChange={(event) =>
                         setPreviewPhase(
-                          event.target.value as PublicPresencePhaseVisibility | 'current',
+                          event.target.value as PublicPresencePhaseVisibility | 'current'
                         )
                       }
                       className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-900 outline-none transition focus:border-rose-300"
@@ -1078,7 +1088,7 @@ export function PublicPresencePreviewScreen({
                       {copy.fanPreview.resolvedPhaseLabel}:{' '}
                       {getPublicPresencePreviewPhaseLabel(
                         locale,
-                        previewProjection.resolvedRevealPhase,
+                        previewProjection.resolvedRevealPhase
                       )}
                     </PublicPresenceBadge>
                   ) : null}
@@ -1102,7 +1112,7 @@ export function PublicPresencePreviewScreen({
                   fr: 'Inspecteur aperçu',
                 })}
                 aria-modal={false}
-                className="!fixed inset-x-3 bottom-3 z-40 max-h-[70vh] overflow-auto rounded-[2rem] border border-slate-200/90 bg-white/97 p-4 shadow-xl lg:sticky lg:top-20 lg:ml-auto lg:w-[20rem]"
+                className="bg-white/97 !fixed inset-x-3 bottom-3 z-40 max-h-[70vh] overflow-auto rounded-[2rem] border border-slate-200/90 p-4 shadow-xl lg:sticky lg:top-20 lg:ml-auto lg:w-[20rem]"
                 data-testid="preview-side-rail"
                 id={detailsSurfaceId}
                 role="dialog"
@@ -1165,21 +1175,18 @@ export function PublicPresencePreviewScreen({
                                 {getPublicPresenceStageSectionLabel(locale, section)}
                               </PublicPresenceBadge>
                               <PublicPresenceBadge tone="slate" variant="outline">
-                                {copy.fanPreview.validationMarkersPrefix} {section.validationIssueIds.length}
+                                {copy.fanPreview.validationMarkersPrefix}{' '}
+                                {section.validationIssueIds.length}
                               </PublicPresenceBadge>
                             </div>
-                            <p className="text-sm font-semibold text-slate-950">
-                              {identity.title}
-                            </p>
+                            <p className="text-sm font-semibold text-slate-950">{identity.title}</p>
                           </div>
                         </button>
                       );
                     })}
                   </div>
                 ) : (
-                  <p className="text-sm leading-6 text-slate-600">
-                    {copy.fanPreview.noSections}
-                  </p>
+                  <p className="text-sm leading-6 text-slate-600">{copy.fanPreview.noSections}</p>
                 )}
 
                 {selectedPreviewSection ? (
@@ -1193,7 +1200,8 @@ export function PublicPresencePreviewScreen({
                       </PublicPresenceBadge>
                     </div>
                     <p className="text-sm leading-6 text-slate-600">
-                      {copy.fanPreview.validationMarkersPrefix}: {selectedPreviewSection.validationIssueIds.length}
+                      {copy.fanPreview.validationMarkersPrefix}:{' '}
+                      {selectedPreviewSection.validationIssueIds.length}
                     </p>
                     <Link
                       href={selectedSectionEditorHref}

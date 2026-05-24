@@ -233,13 +233,17 @@ function buildPreview() {
 }
 
 function isWorkspaceRequest(path: string) {
-  return path === '/api/v1/talents/talent-1/public-presence'
-    || path.startsWith('/api/v1/talents/talent-1/public-presence?templateId=');
+  return (
+    path === '/api/v1/talents/talent-1/public-presence' ||
+    path.startsWith('/api/v1/talents/talent-1/public-presence?templateId=')
+  );
 }
 
 function isPreviewRequest(path: string) {
-  return path === '/api/v1/talents/talent-1/public-presence/preview'
-    || path.startsWith('/api/v1/talents/talent-1/public-presence/preview?');
+  return (
+    path === '/api/v1/talents/talent-1/public-presence/preview' ||
+    path.startsWith('/api/v1/talents/talent-1/public-presence/preview?')
+  );
 }
 
 describe('PublicPresencePreviewScreen', () => {
@@ -268,7 +272,7 @@ describe('PublicPresencePreviewScreen', () => {
 
   it('keeps the preview route canvas-first without ordinary technical copy leakage', async () => {
     const { container } = render(
-      <PublicPresencePreviewScreen talentId="talent-1" tenantId="tenant-1" />,
+      <PublicPresencePreviewScreen talentId="talent-1" tenantId="tenant-1" />
     );
 
     expect(await screen.findByTestId('preview-topbar')).toBeInTheDocument();
@@ -277,7 +281,7 @@ describe('PublicPresencePreviewScreen', () => {
     expect(screen.getAllByRole('button', { name: 'Inspect sections' })[0]).toBeInTheDocument();
     expect(screen.getAllByRole('button', { name: 'Mobile' })[0]).toBeInTheDocument();
     expect(container.textContent).not.toMatch(
-      /projection|content hash|runtime|policy version|workflow event id|registry/i,
+      /projection|content hash|runtime|policy version|workflow event id|registry/i
     );
     expect(container.textContent).not.toMatch(ORDINARY_COPY_BOUNDARY_PATTERN);
   });
@@ -290,7 +294,7 @@ describe('PublicPresencePreviewScreen', () => {
 
     expect(await screen.findByRole('link', { name: 'Edit this section' })).toHaveAttribute(
       'href',
-      '/studio/public-presence/tenant-1/talent-1?templateId=activeTalentHub&leftPanel=sections&stagePanel=edit%3AfirstEncounter',
+      '/studio/public-presence/tenant-1/talent-1?templateId=activeTalentHub&leftPanel=sections&stagePanel=edit%3AfirstEncounter'
     );
   });
 
@@ -302,7 +306,7 @@ describe('PublicPresencePreviewScreen', () => {
         initialTemplateId="activeTalentHub"
         talentId="talent-1"
         tenantId="tenant-1"
-      />,
+      />
     );
 
     await screen.findByTestId('preview-canvas-stage');
@@ -312,7 +316,7 @@ describe('PublicPresencePreviewScreen', () => {
 
   it('keeps mobile preview details behind a dedicated tools sheet', async () => {
     const { container } = render(
-      <PublicPresencePreviewScreen talentId="talent-1" tenantId="tenant-1" />,
+      <PublicPresencePreviewScreen talentId="talent-1" tenantId="tenant-1" />
     );
 
     await screen.findByTestId('preview-topbar');
@@ -329,7 +333,10 @@ describe('PublicPresencePreviewScreen', () => {
     await screen.findByTestId('preview-canvas-stage');
     fireEvent.click(screen.getAllByRole('button', { name: 'Mobile' })[0]);
 
-    expect(screen.getByTestId('mock-public-preview')).toHaveAttribute('data-responsive-mode', 'mobile');
+    expect(screen.getByTestId('mock-public-preview')).toHaveAttribute(
+      'data-responsive-mode',
+      'mobile'
+    );
     expect(currentSearch).toContain('viewport=mobile');
   });
 
@@ -339,13 +346,19 @@ describe('PublicPresencePreviewScreen', () => {
     render(<PublicPresencePreviewScreen talentId="talent-1" tenantId="tenant-1" />);
 
     await screen.findByTestId('preview-canvas-stage');
-    expect(screen.getAllByRole('button', { name: 'Mobile' })[0]).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getAllByRole('button', { name: 'Mobile' })[0]).toHaveAttribute(
+      'aria-pressed',
+      'true'
+    );
     expect(screen.getByTestId('preview-side-rail')).toHaveAttribute('role', 'dialog');
     expect(screen.queryByTestId('preview-mobile-tools-sheet')).not.toBeInTheDocument();
 
     const inspectButton = screen.getAllByRole('button', { name: 'Inspect sections' })[0];
     expect(inspectButton).toHaveAttribute('aria-expanded', 'true');
-    expect(inspectButton).toHaveAttribute('aria-controls', screen.getByTestId('preview-side-rail').id);
+    expect(inspectButton).toHaveAttribute(
+      'aria-controls',
+      screen.getByTestId('preview-side-rail').id
+    );
 
     await waitFor(() => {
       expect(currentSearch).toContain('details=1');
@@ -376,7 +389,9 @@ describe('PublicPresencePreviewScreen', () => {
     const inspector = await screen.findByTestId('preview-side-rail');
     expect(inspector.className).toMatch(/lg:sticky/);
     expect(screen.getByRole('button', { name: '1. Hero: First Encounter' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '2. Social links: Official Channels' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: '2. Social links: Official Channels' })
+    ).toBeInTheDocument();
     expect(screen.getByText('Section 1')).toBeInTheDocument();
   });
 });

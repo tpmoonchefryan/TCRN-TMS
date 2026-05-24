@@ -1,5 +1,4 @@
 import 'reflect-metadata';
-
 import { describe, expect, it } from 'vitest';
 
 import { EmailTemplateController } from '../modules/email/controllers/email-template.controller';
@@ -10,12 +9,9 @@ import {
   UpdateEmailTemplateDto,
 } from '../modules/email/dto/email-template.dto';
 import { ExportController } from '../modules/export/controllers/export.controller';
-import {
-  CreateExportJobDto,
-  ExportJobQueryDto,
-} from '../modules/export/dto/export.dto';
-import { ReportController } from '../modules/report/controllers/report.controller';
+import { CreateExportJobDto, ExportJobQueryDto } from '../modules/export/dto/export.dto';
 import { ReportCatalogController } from '../modules/report/controllers/report-catalog.controller';
+import { ReportController } from '../modules/report/controllers/report.controller';
 import {
   CreateMfrJobDto,
   MfrFilterCriteriaDto,
@@ -29,28 +25,20 @@ const API_MODEL_PROPERTIES_ARRAY_METADATA_KEY = 'swagger/apiModelPropertiesArray
 
 type ControllerClass = { prototype: object };
 
-const getResponseStatuses = (
-  controllerClass: ControllerClass,
-  methodName: string,
-): string[] => {
+const getResponseStatuses = (controllerClass: ControllerClass, methodName: string): string[] => {
   const prototype = controllerClass.prototype as Record<string, unknown>;
-  const metadata = Reflect.getMetadata(
-    API_RESPONSE_METADATA_KEY,
-    prototype[methodName],
-  ) as Record<string, unknown> | undefined;
+  const metadata = Reflect.getMetadata(API_RESPONSE_METADATA_KEY, prototype[methodName]) as
+    | Record<string, unknown>
+    | undefined;
 
   return Object.keys(metadata ?? {}).sort();
 };
 
-const getPathParamNames = (
-  controllerClass: ControllerClass,
-  methodName: string,
-): string[] => {
+const getPathParamNames = (controllerClass: ControllerClass, methodName: string): string[] => {
   const prototype = controllerClass.prototype as Record<string, unknown>;
-  const metadata = Reflect.getMetadata(
-    API_PARAMETERS_METADATA_KEY,
-    prototype[methodName],
-  ) as Array<{ in?: string; name?: string }> | undefined;
+  const metadata = Reflect.getMetadata(API_PARAMETERS_METADATA_KEY, prototype[methodName]) as
+    | Array<{ in?: string; name?: string }>
+    | undefined;
 
   return (metadata ?? [])
     .filter((parameter) => parameter.in === 'path' && typeof parameter.name === 'string')
@@ -58,15 +46,11 @@ const getPathParamNames = (
     .sort();
 };
 
-const getQueryParamNames = (
-  controllerClass: ControllerClass,
-  methodName: string,
-): string[] => {
+const getQueryParamNames = (controllerClass: ControllerClass, methodName: string): string[] => {
   const prototype = controllerClass.prototype as Record<string, unknown>;
-  const metadata = Reflect.getMetadata(
-    API_PARAMETERS_METADATA_KEY,
-    prototype[methodName],
-  ) as Array<{ in?: string; name?: string }> | undefined;
+  const metadata = Reflect.getMetadata(API_PARAMETERS_METADATA_KEY, prototype[methodName]) as
+    | Array<{ in?: string; name?: string }>
+    | undefined;
 
   return (metadata ?? [])
     .filter((parameter) => parameter.in === 'query' && typeof parameter.name === 'string')
@@ -77,7 +61,7 @@ const getQueryParamNames = (
 const getDocumentedDtoProperties = (dtoClass: { prototype: object }): string[] => {
   const metadata = Reflect.getMetadata(
     API_MODEL_PROPERTIES_ARRAY_METADATA_KEY,
-    dtoClass.prototype,
+    dtoClass.prototype
   ) as string[] | undefined;
 
   return (metadata ?? []).map((property) => property.replace(/^:/, '')).sort();
@@ -85,11 +69,7 @@ const getDocumentedDtoProperties = (dtoClass: { prototype: object }): string[] =
 
 describe('Swagger ops and async family contract', () => {
   it('documents response status coverage for email-template routes', () => {
-    expect(getResponseStatuses(EmailTemplateController, 'findAll')).toEqual([
-      '200',
-      '401',
-      '403',
-    ]);
+    expect(getResponseStatuses(EmailTemplateController, 'findAll')).toEqual(['200', '401', '403']);
     expect(getResponseStatuses(EmailTemplateController, 'findOne')).toEqual([
       '200',
       '401',
@@ -139,12 +119,7 @@ describe('Swagger ops and async family contract', () => {
       '403',
     ]);
     expect(getResponseStatuses(ExportController, 'listJobs')).toEqual(['200', '401', '403']);
-    expect(getResponseStatuses(ExportController, 'getJob')).toEqual([
-      '200',
-      '401',
-      '403',
-      '404',
-    ]);
+    expect(getResponseStatuses(ExportController, 'getJob')).toEqual(['200', '401', '403', '404']);
     expect(getResponseStatuses(ExportController, 'downloadExport')).toEqual([
       '302',
       '400',
@@ -218,9 +193,7 @@ describe('Swagger ops and async family contract', () => {
   });
 
   it('documents explicit path params across async ops routes', () => {
-    expect(getPathParamNames(ReportCatalogController, 'getCatalogItem')).toEqual([
-      'reportId',
-    ]);
+    expect(getPathParamNames(ReportCatalogController, 'getCatalogItem')).toEqual(['reportId']);
 
     expect(getPathParamNames(EmailTemplateController, 'findOne')).toEqual(['code']);
     expect(getPathParamNames(EmailTemplateController, 'update')).toEqual(['code']);
@@ -260,14 +233,8 @@ describe('Swagger ops and async family contract', () => {
       'subject',
       'variables',
     ]);
-    expect(getDocumentedDtoProperties(PreviewEmailTemplateDto)).toEqual([
-      'locale',
-      'variables',
-    ]);
-    expect(getDocumentedDtoProperties(EmailTemplateQueryDto)).toEqual([
-      'category',
-      'isActive',
-    ]);
+    expect(getDocumentedDtoProperties(PreviewEmailTemplateDto)).toEqual(['locale', 'variables']);
+    expect(getDocumentedDtoProperties(EmailTemplateQueryDto)).toEqual(['category', 'isActive']);
 
     expect(getDocumentedDtoProperties(CreateExportJobDto)).toEqual([
       'customerIds',
@@ -277,11 +244,7 @@ describe('Swagger ops and async family contract', () => {
       'membershipClassCode',
       'tags',
     ]);
-    expect(getDocumentedDtoProperties(ExportJobQueryDto)).toEqual([
-      'page',
-      'pageSize',
-      'status',
-    ]);
+    expect(getDocumentedDtoProperties(ExportJobQueryDto)).toEqual(['page', 'pageSize', 'status']);
 
     expect(getDocumentedDtoProperties(MfrFilterCriteriaDto)).toEqual([
       'includeExpired',
@@ -301,11 +264,7 @@ describe('Swagger ops and async family contract', () => {
       'previewLimit',
       'talentId',
     ]);
-    expect(getDocumentedDtoProperties(CreateMfrJobDto)).toEqual([
-      'filters',
-      'format',
-      'talentId',
-    ]);
+    expect(getDocumentedDtoProperties(CreateMfrJobDto)).toEqual(['filters', 'format', 'talentId']);
     expect(getDocumentedDtoProperties(ReportJobListQueryDto)).toEqual([
       'createdFrom',
       'createdTo',

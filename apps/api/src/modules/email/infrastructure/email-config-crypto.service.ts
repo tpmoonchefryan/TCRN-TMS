@@ -1,8 +1,8 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+import { createCipheriv, createDecipheriv, randomBytes } from 'crypto';
 
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { createCipheriv, createDecipheriv, randomBytes } from 'crypto';
 
 @Injectable()
 export class EmailConfigCryptoService {
@@ -11,9 +11,7 @@ export class EmailConfigCryptoService {
   private readonly ivLength = 12;
   private readonly authTagLength = 16;
 
-  constructor(
-    private readonly configService: ConfigService,
-  ) {}
+  constructor(private readonly configService: ConfigService) {}
 
   encrypt(plaintext: string): string {
     const key = this.getEncryptionKey();

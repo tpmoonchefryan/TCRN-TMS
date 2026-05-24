@@ -1,8 +1,8 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { NotFoundException } from '@nestjs/common';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { createLocalizedText, type RequestContext } from '@tcrn/shared';
-import { afterEach,beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { DatabaseService } from '../../../database';
 import { ReportFormat, ReportType } from '../../dto/report.dto';
@@ -52,7 +52,8 @@ describe('MfrReportService', () => {
     vi.clearAllMocks();
 
     mockPrisma = {
-      $queryRawUnsafe: vi.fn()
+      $queryRawUnsafe: vi
+        .fn()
         .mockResolvedValueOnce([mockTalent])
         .mockResolvedValueOnce([{ count: BigInt(10) }])
         .mockResolvedValueOnce([mockMembershipRecord]),
@@ -69,7 +70,7 @@ describe('MfrReportService', () => {
 
     service = new MfrReportService(
       mockDatabaseService as DatabaseService,
-      mockReportJobService as ReportJobService,
+      mockReportJobService as ReportJobService
     );
   });
 
@@ -82,14 +83,16 @@ describe('MfrReportService', () => {
       const result = await service.search('talent-123', {}, 20, mockContext);
 
       expect(result.totalCount).toBe(10);
-      expect(result.preview).toEqual([{
-        nickname: 'Test Customer',
-        platformName: 'YouTube',
-        membershipLevelName: '金卡会员',
-        validFrom: mockMembershipRecord.valid_from.toISOString().split('T')[0],
-        validTo: null,
-        statusName: '',
-      }]);
+      expect(result.preview).toEqual([
+        {
+          nickname: 'Test Customer',
+          platformName: 'YouTube',
+          membershipLevelName: '金卡会员',
+          validFrom: mockMembershipRecord.valid_from.toISOString().split('T')[0],
+          validTo: null,
+          statusName: '',
+        },
+      ]);
       expect(result.filterSummary).toEqual({
         platforms: [],
         dateRange: null,
@@ -101,26 +104,33 @@ describe('MfrReportService', () => {
       mockPrisma.$queryRawUnsafe.mockReset().mockResolvedValueOnce([]);
 
       await expect(service.search('invalid-talent', {}, 20, mockContext)).rejects.toThrow(
-        NotFoundException,
+        NotFoundException
       );
     });
 
     it('should apply filters to search', async () => {
-      mockPrisma.$queryRawUnsafe.mockReset()
+      mockPrisma.$queryRawUnsafe
+        .mockReset()
         .mockResolvedValueOnce([mockTalent])
         .mockResolvedValueOnce([{ count: BigInt(10) }])
         .mockResolvedValueOnce([mockMembershipRecord]);
 
-      await service.search('talent-123', {
-        platformCodes: ['YOUTUBE'],
-        membershipClassCodes: ['STANDARD'],
-      }, 20, mockContext);
+      await service.search(
+        'talent-123',
+        {
+          platformCodes: ['YOUTUBE'],
+          membershipClassCodes: ['STANDARD'],
+        },
+        20,
+        mockContext
+      );
 
       expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalled();
     });
 
     it('should respect preview limit', async () => {
-      mockPrisma.$queryRawUnsafe.mockReset()
+      mockPrisma.$queryRawUnsafe
+        .mockReset()
         .mockResolvedValueOnce([mockTalent])
         .mockResolvedValueOnce([{ count: BigInt(10) }])
         .mockResolvedValueOnce([mockMembershipRecord]);
@@ -140,7 +150,7 @@ describe('MfrReportService', () => {
         'talent-123',
         { platformCodes: ['YOUTUBE'] },
         ReportFormat.CSV,
-        mockContext,
+        mockContext
       );
 
       expect(mockReportJobService.create).toHaveBeenCalledWith(
@@ -149,7 +159,7 @@ describe('MfrReportService', () => {
         { platformCodes: ['YOUTUBE'] },
         ReportFormat.CSV,
         12,
-        mockContext,
+        mockContext
       );
     });
   });

@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { normalizeSupportedUiLocale, type SupportedUiLocale } from '@tcrn/shared';
 
 /**
@@ -215,7 +214,7 @@ export function getAllProfanityWords(): ProfanityEntry[] {
  * Get words by severity
  */
 export function getProfanityBySeverity(severity: ProfanitySeverity): ProfanityEntry[] {
-  return getAllProfanityWords().filter(entry => entry.severity === severity);
+  return getAllProfanityWords().filter((entry) => entry.severity === severity);
 }
 
 /**
@@ -231,7 +230,7 @@ export function getProfanityByLanguage(lang: string): ProfanityEntry[] {
 export function isProfanity(word: string): { found: boolean; entry?: ProfanityEntry } {
   const normalized = word.toLowerCase().trim();
   const all = getAllProfanityWords();
-  const entry = all.find(e => e.word.toLowerCase() === normalized);
+  const entry = all.find((e) => e.word.toLowerCase() === normalized);
   return { found: !!entry, entry };
 }
 

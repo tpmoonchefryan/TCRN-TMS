@@ -1,8 +1,10 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 // Marshmallow (Anonymous Q&A) Integration Tests
-
 import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import request from 'supertest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+
 import { PrismaClient } from '@tcrn/database';
 import {
   createLocalizedText,
@@ -13,8 +15,6 @@ import {
   type TenantFixture,
   type TestUser,
 } from '@tcrn/shared';
-import request from 'supertest';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { AppModule } from '../../src/app.module';
 import { TokenService } from '../../src/modules/auth/token.service';
@@ -40,14 +40,10 @@ describe('Marshmallow Integration Tests', () => {
   const userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36';
 
   const withAuth = (req: request.Test) =>
-    req
-      .set('Authorization', `Bearer ${accessToken}`)
-      .set('X-Tenant-ID', tenantFixture.tenant.id);
+    req.set('Authorization', `Bearer ${accessToken}`).set('X-Tenant-ID', tenantFixture.tenant.id);
 
   const withPublicHeaders = (req: request.Test, ip: string) =>
-    req
-      .set('User-Agent', userAgent)
-      .set('X-Real-IP', ip);
+    req.set('User-Agent', userAgent).set('X-Real-IP', ip);
 
   const publicBasePath = () => `/api/v1/public/marshmallow/${marshmallowPath}`;
 
@@ -69,18 +65,16 @@ describe('Marshmallow Integration Tests', () => {
       `,
       talentId,
       lifecycleStatus,
-      testUser.id,
+      testUser.id
     );
   };
 
   const getAdminConfig = () =>
-    withAuth(
-      request(app.getHttpServer()).get(`/api/v1/talents/${talentId}/marshmallow/config`),
-    );
+    withAuth(request(app.getHttpServer()).get(`/api/v1/talents/${talentId}/marshmallow/config`));
 
   const updateAdminConfig = (payload: Record<string, unknown>) =>
     withAuth(
-      request(app.getHttpServer()).patch(`/api/v1/talents/${talentId}/marshmallow/config`),
+      request(app.getHttpServer()).patch(`/api/v1/talents/${talentId}/marshmallow/config`)
     ).send({
       ...payload,
       version: configVersion,
@@ -99,10 +93,7 @@ describe('Marshmallow Integration Tests', () => {
     fingerprint?: string;
     ip?: string;
   }) =>
-    withPublicHeaders(
-      request(app.getHttpServer()).post(`${publicBasePath()}/submit`),
-      ip,
-    ).send({
+    withPublicHeaders(request(app.getHttpServer()).post(`${publicBasePath()}/submit`), ip).send({
       content,
       isAnonymous,
       senderName,
@@ -119,12 +110,9 @@ describe('Marshmallow Integration Tests', () => {
 
     prisma = new PrismaClient();
     tenantFixture = await createTestTenantFixture(prisma, 'marsh');
-    testUser = await createTestUserInTenant(
-      prisma,
-      tenantFixture,
-      `marsh_user_${Date.now()}`,
-      ['ADMIN'],
-    );
+    testUser = await createTestUserInTenant(prisma, tenantFixture, `marsh_user_${Date.now()}`, [
+      'ADMIN',
+    ]);
 
     const subsidiary = await createTestSubsidiaryInTenant(prisma, tenantFixture, {
       code: `SUB_MARSH_${Date.now().toString(36).toUpperCase()}`,
@@ -188,7 +176,7 @@ describe('Marshmallow Integration Tests', () => {
   it('should return public config for the configured marshmallow path', async () => {
     const response = await withPublicHeaders(
       request(app.getHttpServer()).get(`${publicBasePath()}/config`),
-      '203.0.113.11',
+      '203.0.113.11'
     ).expect(200);
 
     expect(response.body.success).toBe(true);
@@ -201,7 +189,7 @@ describe('Marshmallow Integration Tests', () => {
   it('should return 404 for an unknown marshmallow path', async () => {
     const response = await withPublicHeaders(
       request(app.getHttpServer()).get('/api/v1/public/marshmallow/does-not-exist/config'),
-      '203.0.113.12',
+      '203.0.113.12'
     ).expect(404);
 
     expect(response.body.success).toBe(false);
@@ -257,22 +245,24 @@ describe('Marshmallow Integration Tests', () => {
 
   it('should list pending messages for the talent admin', async () => {
     const response = await withAuth(
-      request(app.getHttpServer()).get(`/api/v1/talents/${talentId}/marshmallow/messages`),
+      request(app.getHttpServer()).get(`/api/v1/talents/${talentId}/marshmallow/messages`)
     )
       .query({ status: MessageStatus.PENDING })
       .expect(200);
 
     expect(response.body.success).toBe(true);
     expect(Array.isArray(response.body.data.items)).toBe(true);
-    expect(response.body.data.items.some((item: { id: string }) => item.id === approvedMessageId)).toBe(true);
+    expect(
+      response.body.data.items.some((item: { id: string }) => item.id === approvedMessageId)
+    ).toBe(true);
     expect(response.body.data.meta.stats.pendingCount).toBeGreaterThanOrEqual(1);
   });
 
   it('should approve a pending message', async () => {
     const response = await withAuth(
       request(app.getHttpServer()).post(
-        `/api/v1/talents/${talentId}/marshmallow/messages/${approvedMessageId}/approve`,
-      ),
+        `/api/v1/talents/${talentId}/marshmallow/messages/${approvedMessageId}/approve`
+      )
     ).expect(201);
 
     expect(response.body.success).toBe(true);
@@ -283,8 +273,8 @@ describe('Marshmallow Integration Tests', () => {
   it('should reply to an approved message', async () => {
     const response = await withAuth(
       request(app.getHttpServer()).post(
-        `/api/v1/talents/${talentId}/marshmallow/messages/${approvedMessageId}/reply`,
-      ),
+        `/api/v1/talents/${talentId}/marshmallow/messages/${approvedMessageId}/reply`
+      )
     )
       .send({
         content: 'Thank you for the question. We remember genuine conversations the most.',
@@ -299,25 +289,31 @@ describe('Marshmallow Integration Tests', () => {
   it('should expose approved messages on the public page', async () => {
     const response = await withPublicHeaders(
       request(app.getHttpServer()).get(`${publicBasePath()}/messages`),
-      '203.0.113.22',
+      '203.0.113.22'
     )
       .query({ fingerprint: 'public-reader-fp' })
       .expect(200);
 
     expect(response.body.success).toBe(true);
     expect(Array.isArray(response.body.data.messages)).toBe(true);
-    expect(response.body.data.messages.some((message: { id: string }) => message.id === approvedMessageId)).toBe(true);
+    expect(
+      response.body.data.messages.some(
+        (message: { id: string }) => message.id === approvedMessageId
+      )
+    ).toBe(true);
 
     const approvedMessage = response.body.data.messages.find(
-      (message: { id: string }) => message.id === approvedMessageId,
+      (message: { id: string }) => message.id === approvedMessageId
     );
     expect(approvedMessage.replyContent).toContain('Thank you for the question');
   });
 
   it('should toggle reactions on an approved message', async () => {
     const firstResponse = await withPublicHeaders(
-      request(app.getHttpServer()).post(`/api/v1/public/marshmallow/messages/${approvedMessageId}/react`),
-      '203.0.113.23',
+      request(app.getHttpServer()).post(
+        `/api/v1/public/marshmallow/messages/${approvedMessageId}/react`
+      ),
+      '203.0.113.23'
     )
       .send({
         reaction: '👍',
@@ -330,8 +326,10 @@ describe('Marshmallow Integration Tests', () => {
     expect(firstResponse.body.data.counts['👍']).toBe(1);
 
     const secondResponse = await withPublicHeaders(
-      request(app.getHttpServer()).post(`/api/v1/public/marshmallow/messages/${approvedMessageId}/react`),
-      '203.0.113.23',
+      request(app.getHttpServer()).post(
+        `/api/v1/public/marshmallow/messages/${approvedMessageId}/react`
+      ),
+      '203.0.113.23'
     )
       .send({
         reaction: '👍',
@@ -347,9 +345,9 @@ describe('Marshmallow Integration Tests', () => {
   it('should reject unauthenticated public mark-read state mutation', async () => {
     const response = await withPublicHeaders(
       request(app.getHttpServer()).post(
-        `${publicBasePath()}/messages/${approvedMessageId}/mark-read`,
+        `${publicBasePath()}/messages/${approvedMessageId}/mark-read`
       ),
-      '203.0.113.24',
+      '203.0.113.24'
     )
       .send({
         fingerprint: 'mark-read-fp',
@@ -374,8 +372,8 @@ describe('Marshmallow Integration Tests', () => {
 
     const rejectResponse = await withAuth(
       request(app.getHttpServer()).post(
-        `/api/v1/talents/${talentId}/marshmallow/messages/${rejectedMessageId}/reject`,
-      ),
+        `/api/v1/talents/${talentId}/marshmallow/messages/${rejectedMessageId}/reject`
+      )
     )
       .send({
         reason: RejectionReason.SPAM,
@@ -390,13 +388,15 @@ describe('Marshmallow Integration Tests', () => {
 
   it('should filter rejected messages for the talent admin', async () => {
     const response = await withAuth(
-      request(app.getHttpServer()).get(`/api/v1/talents/${talentId}/marshmallow/messages`),
+      request(app.getHttpServer()).get(`/api/v1/talents/${talentId}/marshmallow/messages`)
     )
       .query({ status: MessageStatus.REJECTED })
       .expect(200);
 
     expect(response.body.success).toBe(true);
-    expect(response.body.data.items.some((item: { id: string }) => item.id === rejectedMessageId)).toBe(true);
+    expect(
+      response.body.data.items.some((item: { id: string }) => item.id === rejectedMessageId)
+    ).toBe(true);
   });
 
   it('should update marshmallow config with optimistic versioning', async () => {
@@ -443,11 +443,11 @@ describe('Marshmallow Integration Tests', () => {
 
     const configResponse = await withPublicHeaders(
       request(app.getHttpServer()).get(`${publicBasePath()}/config`),
-      '203.0.113.88',
+      '203.0.113.88'
     ).expect(404);
     const messagesResponse = await withPublicHeaders(
       request(app.getHttpServer()).get(`${publicBasePath()}/messages`),
-      '203.0.113.89',
+      '203.0.113.89'
     )
       .query({ fingerprint: 'disabled-public-reader' })
       .expect(404);

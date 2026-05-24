@@ -27,7 +27,6 @@ export interface TalentCustomDomainConfigResponse {
   selectedInheritedDomainIds: string[];
 }
 
-
 export interface UpsertCustomDomainBindingInput {
   ownerType: 'tenant' | 'subsidiary' | 'talent';
   ownerId?: string | null;
@@ -124,46 +123,45 @@ export function readTalentCustomDomainConfig(request: RequestFn, talentId: strin
 export function setTalentCustomDomain(
   request: RequestFn,
   talentId: string,
-  input: SetTalentCustomDomainInput,
+  input: SetTalentCustomDomainInput
 ) {
   return request<SetTalentCustomDomainResponse>(
     `/api/v1/talents/${talentId}/custom-domain`,
-    buildJsonRequestInit('POST', input),
+    buildJsonRequestInit('POST', input)
   );
 }
 
 export function verifyTalentCustomDomain(request: RequestFn, talentId: string) {
   return request<VerifyTalentCustomDomainResponse>(
     `/api/v1/talents/${talentId}/custom-domain/verify`,
-    buildJsonRequestInit('POST', {}),
+    buildJsonRequestInit('POST', {})
   );
 }
 
 export function updateTalentCustomDomainSslMode(
   request: RequestFn,
   talentId: string,
-  input: UpdateTalentCustomDomainSslModeInput,
+  input: UpdateTalentCustomDomainSslModeInput
 ) {
   return request<UpdateTalentCustomDomainSslModeResponse>(
     `/api/v1/talents/${talentId}/custom-domain/ssl-mode`,
-    buildJsonRequestInit('PATCH', input),
+    buildJsonRequestInit('PATCH', input)
   );
 }
 
-
 export function createCustomDomainBinding(
   request: RequestFn,
-  input: UpsertCustomDomainBindingInput,
+  input: UpsertCustomDomainBindingInput
 ) {
   return request<CustomDomainBindingResponse>(
     '/api/v1/talents/custom-domain-bindings',
-    buildJsonRequestInit('POST', input),
+    buildJsonRequestInit('POST', input)
   );
 }
 
 export function listCustomDomainBindings(
   request: RequestFn,
-  options: ListCustomDomainBindingsOptions,
+  options: ListCustomDomainBindingsOptions
 ) {
   const query = new URLSearchParams();
   query.set('scopeType', options.scopeType);
@@ -181,35 +179,35 @@ export function listCustomDomainBindings(
   }
 
   return request<CustomDomainBindingCatalogResponse>(
-    `/api/v1/talents/custom-domain-bindings?${query.toString()}`,
+    `/api/v1/talents/custom-domain-bindings?${query.toString()}`
   );
 }
 
 export function updateCustomDomainBinding(
   request: RequestFn,
   domainId: string,
-  input: UpsertCustomDomainBindingInput,
+  input: UpsertCustomDomainBindingInput
 ) {
   return request<CustomDomainBindingResponse>(
     `/api/v1/talents/custom-domain-bindings/${domainId}`,
-    buildJsonRequestInit('PATCH', input),
+    buildJsonRequestInit('PATCH', input)
   );
 }
 
 export function verifyCustomDomainBinding(request: RequestFn, domainId: string) {
   return request<VerifyTalentCustomDomainResponse>(
     `/api/v1/talents/custom-domain-bindings/${domainId}/verify`,
-    buildJsonRequestInit('POST', {}),
+    buildJsonRequestInit('POST', {})
   );
 }
 
 export function selectInheritedCustomDomains(
   request: RequestFn,
   talentId: string,
-  input: SelectInheritedCustomDomainsInput,
+  input: SelectInheritedCustomDomainsInput
 ) {
   return request<TalentCustomDomainConfigResponse>(
     `/api/v1/talents/${talentId}/custom-domain/inherited-selections`,
-    buildJsonRequestInit('PATCH', input),
+    buildJsonRequestInit('PATCH', input)
   );
 }

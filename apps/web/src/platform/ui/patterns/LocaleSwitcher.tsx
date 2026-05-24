@@ -51,14 +51,24 @@ export const LocaleSwitcher: React.FC<LocaleSwitcherProps> = ({
         ref={triggerRef}
         id={triggerId}
         type="button"
-        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-200/50 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500`}
+        className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-200/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500`}
         onClick={togglePopover}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
         aria-label={ariaLabel}
       >
-        <svg className="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        <svg
+          className="h-4 w-4 text-slate-500"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
         </svg>
         <span>{currentLabel}</span>
       </button>
@@ -77,17 +87,23 @@ export const LocaleSwitcher: React.FC<LocaleSwitcherProps> = ({
               return (
                 <button
                   key={option.code}
-                  onClick={() => { onChange(option.code); closePopover(); }}
+                  onClick={() => {
+                    onChange(option.code);
+                    closePopover();
+                  }}
                   role="option"
                   aria-selected={isSelected}
-                  className={`w-full flex items-center justify-between px-4 py-2 text-sm focus:outline-none focus:bg-slate-100 hover:bg-slate-100 focus-visible:bg-slate-100
-                    ${isSelected ? 'text-indigo-600 font-bold' : 'text-slate-700 font-medium'}
-                  `}
+                  className={`flex w-full items-center justify-between px-4 py-2 text-sm hover:bg-slate-100 focus:bg-slate-100 focus:outline-none focus-visible:bg-slate-100 ${isSelected ? 'font-bold text-indigo-600' : 'font-medium text-slate-700'} `}
                 >
                   {option.label}
                   {isSelected && (
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M5 13l4 4L19 7"
+                      />
                     </svg>
                   )}
                 </button>

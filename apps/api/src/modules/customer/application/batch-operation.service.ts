@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+
 import { type RequestContext } from '@tcrn/shared';
 
 import {
@@ -29,19 +29,19 @@ import { BatchOperationRepository } from '../infrastructure/batch-operation.repo
 export class BatchOperationApplicationService {
   constructor(
     private readonly batchOperationRepository: BatchOperationRepository,
-    private readonly batchOperationQueueGateway: BatchOperationQueueGateway,
+    private readonly batchOperationQueueGateway: BatchOperationQueueGateway
   ) {}
 
   async executeBatch(
     talentId: string,
     dto: BatchOperationDto,
-    context: RequestContext,
+    context: RequestContext
   ): Promise<BatchOperationResultDto | { jobId: string; message: string }> {
     assertCustomerBatchSize(dto.customerIds);
 
     if (shouldQueueBatchOperation(dto.customerIds)) {
       const jobId = await this.batchOperationQueueGateway.enqueue(
-        buildQueuedBatchOperationPayload(talentId, dto, context),
+        buildQueuedBatchOperationPayload(talentId, dto, context)
       );
 
       return buildQueuedBatchOperationResponse(dto.customerIds.length, jobId);
@@ -52,7 +52,7 @@ export class BatchOperationApplicationService {
 
   private async executeSyncBatch(
     dto: BatchOperationDto,
-    context: RequestContext,
+    context: RequestContext
   ): Promise<BatchOperationResultDto> {
     const tenantSchema = context.tenantSchema || 'public';
     let result = createBatchOperationResult(dto.customerIds.length);
@@ -73,21 +73,21 @@ export class BatchOperationApplicationService {
     tenantSchema: string,
     customerId: string,
     dto: BatchOperationDto,
-    context: RequestContext,
+    context: RequestContext
   ): Promise<void> {
     switch (dto.action) {
       case BatchAction.DEACTIVATE:
         return this.batchOperationRepository.deactivateCustomer(
           tenantSchema,
           customerId,
-          context.userId,
+          context.userId
         );
 
       case BatchAction.REACTIVATE:
         return this.batchOperationRepository.reactivateCustomer(
           tenantSchema,
           customerId,
-          context.userId,
+          context.userId
         );
 
       case BatchAction.ADD_TAGS:
@@ -108,7 +108,7 @@ export class BatchOperationApplicationService {
     tenantSchema: string,
     customerId: string,
     dto: BatchOperationDto,
-    context: RequestContext,
+    context: RequestContext
   ): Promise<void> {
     const tags = assertBatchTagsProvided(BatchAction.ADD_TAGS, dto.tags);
     const currentTags = await this.getCustomerTagsOrThrow(tenantSchema, customerId);
@@ -117,7 +117,7 @@ export class BatchOperationApplicationService {
       tenantSchema,
       customerId,
       mergeCustomerTags(currentTags, tags),
-      context.userId,
+      context.userId
     );
   }
 
@@ -125,7 +125,7 @@ export class BatchOperationApplicationService {
     tenantSchema: string,
     customerId: string,
     dto: BatchOperationDto,
-    context: RequestContext,
+    context: RequestContext
   ): Promise<void> {
     const tags = assertBatchTagsProvided(BatchAction.REMOVE_TAGS, dto.tags);
     const currentTags = await this.getCustomerTagsOrThrow(tenantSchema, customerId);
@@ -134,29 +134,28 @@ export class BatchOperationApplicationService {
       tenantSchema,
       customerId,
       removeCustomerTags(currentTags, tags),
-      context.userId,
+      context.userId
     );
   }
 
   private async updateMembership(
     tenantSchema: string,
     customerId: string,
-    dto: BatchOperationDto,
+    dto: BatchOperationDto
   ): Promise<void> {
     const membershipId = await this.batchOperationRepository.findActiveMembershipId(
       tenantSchema,
-      customerId,
+      customerId
     );
 
     if (!membershipId) {
       const membershipClassCode = assertMembershipClassCodeForNewMembership(
-        dto.membershipClassCode,
+        dto.membershipClassCode
       );
-      const membershipClassId =
-        await this.batchOperationRepository.findMembershipClassIdByCode(
-          tenantSchema,
-          membershipClassCode,
-        );
+      const membershipClassId = await this.batchOperationRepository.findMembershipClassIdByCode(
+        tenantSchema,
+        membershipClassCode
+      );
 
       if (!membershipClassId) {
         throw new NotFoundException('Membership class not found');
@@ -167,7 +166,7 @@ export class BatchOperationApplicationService {
         customerId,
         membershipClassId,
         dto.validFrom,
-        dto.validTo,
+        dto.validTo
       );
       return;
     }
@@ -176,24 +175,17 @@ export class BatchOperationApplicationService {
       return;
     }
 
-    await this.batchOperationRepository.updateMembershipRecordValidity(
-      tenantSchema,
-      membershipId,
-      {
-        validFrom: dto.validFrom,
-        validTo: dto.validTo,
-      },
-    );
+    await this.batchOperationRepository.updateMembershipRecordValidity(tenantSchema, membershipId, {
+      validFrom: dto.validFrom,
+      validTo: dto.validTo,
+    });
   }
 
   private async getCustomerTagsOrThrow(
     tenantSchema: string,
-    customerId: string,
+    customerId: string
   ): Promise<string[]> {
-    const tags = await this.batchOperationRepository.getCustomerTags(
-      tenantSchema,
-      customerId,
-    );
+    const tags = await this.batchOperationRepository.getCustomerTags(tenantSchema, customerId);
 
     if (tags === null) {
       throw new NotFoundException('Customer not found');

@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { BullModule } from '@nestjs/bullmq';
 import { Global, Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -39,7 +38,7 @@ export const QUEUE_NAMES = {
       { name: QUEUE_NAMES.LOG_CLEANUP },
       { name: QUEUE_NAMES.EXPORT },
       { name: QUEUE_NAMES.MARSHMALLOW_EXPORT },
-      { name: QUEUE_NAMES.EMAIL },
+      { name: QUEUE_NAMES.EMAIL }
     ),
   ],
   exports: [BullModule],

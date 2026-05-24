@@ -44,7 +44,7 @@ describe('AuthRateLimiterGuard', () => {
     await guard.onModuleInit();
 
     await expect(guard.canActivate(createExecutionContext('/api/v1/auth/refresh'))).resolves.toBe(
-      true,
+      true
     );
   });
 });

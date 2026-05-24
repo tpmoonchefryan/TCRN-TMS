@@ -1,5 +1,6 @@
-import { BROWSER_PUBLIC_CONSUMER_CODE, BROWSER_PUBLIC_CONSUMER_HEADER } from '@tcrn/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { BROWSER_PUBLIC_CONSUMER_CODE, BROWSER_PUBLIC_CONSUMER_HEADER } from '@tcrn/shared';
 
 import { buildPublicHomepageMetadata } from '@/domains/public-homepage/public-homepage.metadata';
 
@@ -103,7 +104,7 @@ describe('buildPublicHomepageMetadata', () => {
           actions: [],
           media: [],
         },
-      }),
+      })
     );
 
     const metadata = await buildPublicHomepageMetadata('tenant-a/suisei');
@@ -136,7 +137,7 @@ describe('buildPublicHomepageMetadata', () => {
         next: {
           revalidate: 300,
         },
-      }),
+      })
     );
 
     const headers = new Headers(mockFetch.mock.calls[0]?.[1]?.headers);
@@ -172,7 +173,7 @@ describe('buildPublicHomepageMetadata', () => {
           actions: [],
           media: [],
         },
-      }),
+      })
     );
 
     const metadata = await buildPublicHomepageMetadata('tenant-a/sakura');

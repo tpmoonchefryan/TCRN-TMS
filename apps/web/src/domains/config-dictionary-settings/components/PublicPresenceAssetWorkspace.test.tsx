@@ -187,10 +187,7 @@ describe('PublicPresenceAssetWorkspace', () => {
   });
 
   it('keeps system template assets read-only and duplicates them into the current scope', async () => {
-    const templateAssets = [
-      buildTemplateAssetEntry(),
-      buildEditableTemplateAssetEntry(),
-    ];
+    const templateAssets = [buildTemplateAssetEntry(), buildEditableTemplateAssetEntry()];
 
     request.mockImplementation(async (path: string, init?: RequestInit) => {
       if (path === '/api/v1/public-presence/assets?assetKind=template&scopeType=tenant') {
@@ -201,7 +198,10 @@ describe('PublicPresenceAssetWorkspace', () => {
         return [];
       }
 
-      if (path === '/api/v1/public-presence/assets/asset-template-1/duplicate?scopeType=tenant' && init?.method === 'POST') {
+      if (
+        path === '/api/v1/public-presence/assets/asset-template-1/duplicate?scopeType=tenant' &&
+        init?.method === 'POST'
+      ) {
         const duplicated = buildEditableTemplateAssetEntry({
           code: 'active-talent-hub-copy',
           id: 'asset-template-copy',
@@ -223,22 +223,28 @@ describe('PublicPresenceAssetWorkspace', () => {
         request={request}
         scopeType="tenant"
         tenantId="tenant-1"
-      />,
+      />
     );
 
     const [systemRow] = await screen.findAllByText('Active Talent Hub');
     const systemCard = systemRow.closest('div.rounded-3xl');
     expect(systemCard).not.toBeNull();
-    expect(within(systemCard as HTMLElement).queryByRole('link', { name: 'Edit template' })).not.toBeInTheDocument();
+    expect(
+      within(systemCard as HTMLElement).queryByRole('link', { name: 'Edit template' })
+    ).not.toBeInTheDocument();
     expect(within(systemCard as HTMLElement).getByText('System')).toBeInTheDocument();
 
-    fireEvent.click(within(systemCard as HTMLElement).getByRole('button', { name: 'Duplicate here' }));
+    fireEvent.click(
+      within(systemCard as HTMLElement).getByRole('button', { name: 'Duplicate here' })
+    );
 
     await waitFor(() => {
-      expect(screen.getByText('An editable copy was created in the current scope.')).toBeInTheDocument();
+      expect(
+        screen.getByText('An editable copy was created in the current scope.')
+      ).toBeInTheDocument();
       expect(screen.getByRole('link', { name: 'Edit duplicated template' })).toHaveAttribute(
         'href',
-        '/studio/public-presence/tenant-1/assets/template/asset-template-copy?scopeType=tenant',
+        '/studio/public-presence/tenant-1/assets/template/asset-template-copy?scopeType=tenant'
       );
     });
   });
@@ -282,7 +288,7 @@ describe('PublicPresenceAssetWorkspace', () => {
         request={request}
         scopeType="tenant"
         tenantId="tenant-1"
-      />,
+      />
     );
 
     const componentRow = await screen.findByText('Social Links Local');
@@ -314,7 +320,7 @@ describe('PublicPresenceAssetWorkspace', () => {
       expect(screen.getByText('Component asset created for this scope.')).toBeInTheDocument();
       expect(screen.getByRole('link', { name: 'Open component IDE' })).toHaveAttribute(
         'href',
-        '/studio/public-presence/tenant-1/assets/component/asset-component-2?scopeType=tenant',
+        '/studio/public-presence/tenant-1/assets/component/asset-component-2?scopeType=tenant'
       );
     });
   });

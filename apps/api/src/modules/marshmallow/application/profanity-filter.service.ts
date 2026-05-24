@@ -1,11 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable, Logger } from '@nestjs/common';
 
-import {
-  getAllProfanityWords,
-  getThreatKeywords,
-} from '../data/profanity-wordlist';
+import { getAllProfanityWords, getThreatKeywords } from '../data/profanity-wordlist';
 import {
   calculateContentScore,
   checkBehaviorPatterns,
@@ -27,19 +23,13 @@ export class ProfanityFilterApplicationService {
   private readonly profanityWords = getAllProfanityWords();
   private readonly threatKeywords = getThreatKeywords();
 
-  constructor(
-    private readonly profanityFilterRepository: ProfanityFilterRepository,
-  ) {
+  constructor(private readonly profanityFilterRepository: ProfanityFilterRepository) {
     this.logger.log(
-      `Loaded ${this.profanityWords.length} profanity words and ${this.threatKeywords.length} threat keywords`,
+      `Loaded ${this.profanityWords.length} profanity words and ${this.threatKeywords.length} threat keywords`
     );
   }
 
-  async filter(
-    content: string,
-    talentId: string,
-    options: FilterOptions,
-  ): Promise<FilterResult> {
+  async filter(content: string, talentId: string, options: FilterOptions): Promise<FilterResult> {
     const flags: string[] = [];
     const matchedPatterns: string[] = [];
     const scoreFactors: ScoreFactor[] = [];
@@ -106,7 +96,7 @@ export class ProfanityFilterApplicationService {
     if (options.externalBlocklistEnabled) {
       const externalResult = matchExternalPatterns(
         content,
-        await this.profanityFilterRepository.getExternalPatterns(talentId),
+        await this.profanityFilterRepository.getExternalPatterns(talentId)
       );
       if (externalResult.matched) {
         flags.push(...externalResult.flags);
@@ -122,7 +112,7 @@ export class ProfanityFilterApplicationService {
     if (options.profanityFilterEnabled) {
       const blocklistResult = matchCustomBlocklist(
         normalizedContent,
-        await this.profanityFilterRepository.getCustomBlocklistEntries(talentId),
+        await this.profanityFilterRepository.getCustomBlocklistEntries(talentId)
       );
       if (blocklistResult.matched) {
         flags.push(...blocklistResult.flags);

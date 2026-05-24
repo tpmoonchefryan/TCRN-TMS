@@ -1,15 +1,6 @@
 'use client';
 
 import {
-  type HomepageComponentType,
-  type PublicPresenceAssetDetail,
-  type PublicPresenceAssetKind,
-  type PublicPresenceAssetListEntry,
-  type PublicPresenceAssetScopeType,
-  type PublicPresenceTemplateId,
-  type SupportedUiLocale,
-} from '@tcrn/shared';
-import {
   CopyPlus,
   Eye,
   LayoutTemplate,
@@ -20,6 +11,16 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useMemo, useRef, useState } from 'react';
+
+import {
+  type HomepageComponentType,
+  type PublicPresenceAssetDetail,
+  type PublicPresenceAssetKind,
+  type PublicPresenceAssetListEntry,
+  type PublicPresenceAssetScopeType,
+  type PublicPresenceTemplateId,
+  type SupportedUiLocale,
+} from '@tcrn/shared';
 
 import {
   createPublicPresenceAsset,
@@ -91,10 +92,10 @@ function readComponentFamilyType(asset: PublicPresenceAssetListEntry) {
 function getTemplateDisplayName(
   locale: SupportedUiLocale,
   templateAssets: PublicPresenceAssetListEntry[],
-  templateId: PublicPresenceTemplateId,
+  templateId: PublicPresenceTemplateId
 ) {
   const matchingTemplateAsset = templateAssets.find(
-    (asset) => readTemplateFamilyId(asset) === templateId,
+    (asset) => readTemplateFamilyId(asset) === templateId
   );
 
   if (!matchingTemplateAsset) {
@@ -105,7 +106,7 @@ function getTemplateDisplayName(
 }
 
 function collectTemplateOptions(
-  templateAssets: PublicPresenceAssetListEntry[],
+  templateAssets: PublicPresenceAssetListEntry[]
 ): PublicPresenceTemplateId[] {
   const templateIds = new Set<PublicPresenceTemplateId>();
 
@@ -121,7 +122,7 @@ function collectTemplateOptions(
 }
 
 function collectComponentOptions(
-  componentAssets: PublicPresenceAssetListEntry[],
+  componentAssets: PublicPresenceAssetListEntry[]
 ): HomepageComponentType[] {
   const componentTypes = new Set<HomepageComponentType>();
 
@@ -138,7 +139,7 @@ function collectComponentOptions(
 
 function getAssetOwnerLabel(
   locale: SupportedUiLocale,
-  ownerType: PublicPresenceAssetScopeType | 'system',
+  ownerType: PublicPresenceAssetScopeType | 'system'
 ) {
   switch (ownerType) {
     case 'system':
@@ -180,10 +181,7 @@ function getAssetOwnerLabel(
   }
 }
 
-function getAssetStatusLabel(
-  locale: SupportedUiLocale,
-  asset: PublicPresenceAssetListEntry,
-) {
+function getAssetStatusLabel(locale: SupportedUiLocale, asset: PublicPresenceAssetListEntry) {
   if (asset.currentRevision?.validationState === 'ready') {
     return pickLocaleText(locale, {
       en: 'Validated',
@@ -216,10 +214,7 @@ function getAssetStatusLabel(
   });
 }
 
-function buildAssetTypeLabel(
-  locale: SupportedUiLocale,
-  asset: PublicPresenceAssetListEntry,
-) {
+function buildAssetTypeLabel(locale: SupportedUiLocale, asset: PublicPresenceAssetListEntry) {
   if (asset.asset.assetKind === 'template') {
     return readTemplateLabel(asset);
   }
@@ -233,10 +228,7 @@ function buildAssetTypeLabel(
   return asset.asset.assetKind;
 }
 
-function getManagedStateLabel(
-  locale: SupportedUiLocale,
-  asset: PublicPresenceAssetListEntry,
-) {
+function getManagedStateLabel(locale: SupportedUiLocale, asset: PublicPresenceAssetListEntry) {
   if (asset.canEdit) {
     return pickLocaleText(locale, {
       en: 'Managed here',
@@ -258,10 +250,7 @@ function getManagedStateLabel(
   });
 }
 
-function getReadOnlyHint(
-  locale: SupportedUiLocale,
-  asset: PublicPresenceAssetListEntry,
-) {
+function getReadOnlyHint(locale: SupportedUiLocale, asset: PublicPresenceAssetListEntry) {
   if (asset.asset.isSystem) {
     return pickLocaleText(locale, {
       en: 'System assets stay read-only. Duplicate here to make an editable local copy.',
@@ -286,7 +275,7 @@ function getReadOnlyHint(
 function describeAssetFamily(
   locale: SupportedUiLocale,
   family: AssetFamilyId,
-  scopeType: PublicPresenceAssetScopeType,
+  scopeType: PublicPresenceAssetScopeType
 ) {
   if (family === 'template') {
     return pickLocaleText(locale, {
@@ -313,7 +302,7 @@ function buildAssetIdeHref(
   tenantId: string,
   family: AssetFamilyId,
   assetId: string,
-  scope: PublicPresenceAssetScopeInput,
+  scope: PublicPresenceAssetScopeInput
 ) {
   return buildPublicPresenceAssetIdePath(tenantId, family, assetId, {
     scopeId: scope.scopeId ?? null,
@@ -330,7 +319,9 @@ function DetailMetric({
 }>) {
   return (
     <div className="rounded-2xl border border-slate-200 bg-white/90 px-4 py-3">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">{label}</p>
+      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+        {label}
+      </p>
       <p className="mt-2 text-sm font-semibold text-slate-900">{value}</p>
     </div>
   );
@@ -398,9 +389,7 @@ function AssetRow({
               </span>
             ) : null}
           </div>
-          <p className="text-sm leading-6 text-slate-600">
-            {displayDescription}
-          </p>
+          <p className="text-sm leading-6 text-slate-600">{displayDescription}</p>
           <div className="grid gap-3 md:grid-cols-4">
             <DetailMetric
               label={pickLocaleText(locale, {
@@ -548,36 +537,36 @@ export function PublicPresenceAssetWorkspace({
   const [loadError, setLoadError] = useState<string | null>(null);
   const [notice, setNotice] = useState<AssetNoticeState | null>(null);
   const [drawerState, setDrawerState] = useState<AssetDrawerState | null>(null);
-  const [selectedAssetDetail, setSelectedAssetDetail] = useState<PublicPresenceAssetDetail | null>(null);
+  const [selectedAssetDetail, setSelectedAssetDetail] = useState<PublicPresenceAssetDetail | null>(
+    null
+  );
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState<string | null>(null);
   const [createPending, setCreatePending] = useState(false);
   const [duplicateAssetId, setDuplicateAssetId] = useState<string | null>(null);
-  const [selectedTemplateId, setSelectedTemplateId] = useState<PublicPresenceTemplateId>('activeTalentHub');
-  const [selectedComponentType, setSelectedComponentType] = useState<HomepageComponentType>('SocialLinks');
+  const [selectedTemplateId, setSelectedTemplateId] =
+    useState<PublicPresenceTemplateId>('activeTalentHub');
+  const [selectedComponentType, setSelectedComponentType] =
+    useState<HomepageComponentType>('SocialLinks');
 
   const assetScope = useMemo<PublicPresenceAssetScopeInput>(
     () => ({
       scopeId: scopeId ?? null,
       scopeType,
     }),
-    [scopeId, scopeType],
+    [scopeId, scopeType]
   );
   const requestedFamilies = useMemo<readonly AssetFamilyId[]>(
     () => (families && families.length > 0 ? families : ['template', 'component']),
-    [families],
+    [families]
   );
-  const activeDrawerAssetId = drawerState && drawerState.mode !== 'create'
-    ? drawerState.assetId
-    : null;
+  const activeDrawerAssetId =
+    drawerState && drawerState.mode !== 'create' ? drawerState.assetId : null;
 
-  const templateOptions = useMemo(
-    () => collectTemplateOptions(templateAssets),
-    [templateAssets],
-  );
+  const templateOptions = useMemo(() => collectTemplateOptions(templateAssets), [templateAssets]);
   const componentOptions = useMemo(
     () => collectComponentOptions(componentAssets),
-    [componentAssets],
+    [componentAssets]
   );
 
   useEffect(() => {
@@ -627,7 +616,7 @@ export function PublicPresenceAssetWorkspace({
             ja: 'このスコープのホームページ資産を読み込めませんでした。',
             ko: '이 범위의 홈페이지 자산을 불러오지 못했습니다.',
             fr: 'Impossible de charger les assets de homepage pour cette portée.',
-          }),
+          })
         );
       } finally {
         if (!cancelled) {
@@ -680,7 +669,7 @@ export function PublicPresenceAssetWorkspace({
             ja: '現在は資産詳細を読み込めません。',
             ko: '지금은 자산 상세 정보를 불러올 수 없습니다.',
             fr: 'Impossible de charger les détails de l’asset pour le moment.',
-          }),
+          })
         );
       } finally {
         if (!cancelled) {
@@ -726,7 +715,7 @@ export function PublicPresenceAssetWorkspace({
           ja: 'このスコープのホームページ資産を更新できませんでした。',
           ko: '이 범위의 홈페이지 자산을 새로 고치지 못했습니다.',
           fr: 'Impossible d’actualiser les assets de homepage pour cette portée.',
-        }),
+        })
       );
     } finally {
       setLoading(false);
@@ -749,47 +738,49 @@ export function PublicPresenceAssetWorkspace({
               assetKind: 'component',
               componentType: selectedComponentType,
             },
-        assetScope,
+        assetScope
       );
 
       await refreshAssets();
       setDrawerState(null);
       setNotice({
         href: buildAssetIdeHref(tenantId, family, created.asset.id, assetScope),
-        label: family === 'template'
-          ? pickLocaleText(locale, {
-              en: 'Open template IDE',
-              zh_HANS: '打开模板 IDE',
-              zh_HANT: '打開模板 IDE',
-              ja: 'テンプレート IDE を開く',
-              ko: '템플릿 IDE 열기',
-              fr: 'Ouvrir l’IDE template',
-            })
-          : pickLocaleText(locale, {
-              en: 'Open component IDE',
-              zh_HANS: '打开组件 IDE',
-              zh_HANT: '打開元件 IDE',
-              ja: 'コンポーネント IDE を開く',
-              ko: '컴포넌트 IDE 열기',
-              fr: 'Ouvrir l’IDE composant',
-            }),
-        message: family === 'template'
-          ? pickLocaleText(locale, {
-              en: 'Template asset created for this scope.',
-              zh_HANS: '已在当前范围创建模板资产。',
-              zh_HANT: '已在目前範圍建立模板資產。',
-              ja: 'このスコープにテンプレート資産を作成しました。',
-              ko: '현재 범위에 템플릿 자산을 만들었습니다.',
-              fr: 'Un asset template a été créé pour cette portée.',
-            })
-          : pickLocaleText(locale, {
-              en: 'Component asset created for this scope.',
-              zh_HANS: '已在当前范围创建组件资产。',
-              zh_HANT: '已在目前範圍建立元件資產。',
-              ja: 'このスコープにコンポーネント資産を作成しました。',
-              ko: '현재 범위에 컴포넌트 자산을 만들었습니다.',
-              fr: 'Un asset composant a été créé pour cette portée.',
-            }),
+        label:
+          family === 'template'
+            ? pickLocaleText(locale, {
+                en: 'Open template IDE',
+                zh_HANS: '打开模板 IDE',
+                zh_HANT: '打開模板 IDE',
+                ja: 'テンプレート IDE を開く',
+                ko: '템플릿 IDE 열기',
+                fr: 'Ouvrir l’IDE template',
+              })
+            : pickLocaleText(locale, {
+                en: 'Open component IDE',
+                zh_HANS: '打开组件 IDE',
+                zh_HANT: '打開元件 IDE',
+                ja: 'コンポーネント IDE を開く',
+                ko: '컴포넌트 IDE 열기',
+                fr: 'Ouvrir l’IDE composant',
+              }),
+        message:
+          family === 'template'
+            ? pickLocaleText(locale, {
+                en: 'Template asset created for this scope.',
+                zh_HANS: '已在当前范围创建模板资产。',
+                zh_HANT: '已在目前範圍建立模板資產。',
+                ja: 'このスコープにテンプレート資産を作成しました。',
+                ko: '현재 범위에 템플릿 자산을 만들었습니다.',
+                fr: 'Un asset template a été créé pour cette portée.',
+              })
+            : pickLocaleText(locale, {
+                en: 'Component asset created for this scope.',
+                zh_HANS: '已在当前范围创建组件资产。',
+                zh_HANT: '已在目前範圍建立元件資產。',
+                ja: 'このスコープにコンポーネント資産を作成しました。',
+                ko: '현재 범위에 컴포넌트 자산을 만들었습니다.',
+                fr: 'Un asset composant a été créé pour cette portée.',
+              }),
         tone: 'success',
       });
     } catch {
@@ -818,29 +809,30 @@ export function PublicPresenceAssetWorkspace({
         request,
         asset.asset.id,
         {},
-        assetScope,
+        assetScope
       );
 
       await refreshAssets();
       setNotice({
         href: buildAssetIdeHref(tenantId, asset.asset.assetKind, duplicated.asset.id, assetScope),
-        label: asset.asset.assetKind === 'template'
-          ? pickLocaleText(locale, {
-              en: 'Edit duplicated template',
-              zh_HANS: '编辑复制模板',
-              zh_HANT: '編輯複製模板',
-              ja: '複製したテンプレートを編集',
-              ko: '복제한 템플릿 편집',
-              fr: 'Modifier le template dupliqué',
-            })
-          : pickLocaleText(locale, {
-              en: 'Edit duplicated component',
-              zh_HANS: '编辑复制组件',
-              zh_HANT: '編輯複製元件',
-              ja: '複製したコンポーネントを編集',
-              ko: '복제한 컴포넌트 편집',
-              fr: 'Modifier le composant dupliqué',
-            }),
+        label:
+          asset.asset.assetKind === 'template'
+            ? pickLocaleText(locale, {
+                en: 'Edit duplicated template',
+                zh_HANS: '编辑复制模板',
+                zh_HANT: '編輯複製模板',
+                ja: '複製したテンプレートを編集',
+                ko: '복제한 템플릿 편집',
+                fr: 'Modifier le template dupliqué',
+              })
+            : pickLocaleText(locale, {
+                en: 'Edit duplicated component',
+                zh_HANS: '编辑复制组件',
+                zh_HANT: '編輯複製元件',
+                ja: '複製したコンポーネントを編集',
+                ko: '복제한 컴포넌트 편집',
+                fr: 'Modifier le composant dupliqué',
+              }),
         message: pickLocaleText(locale, {
           en: 'An editable copy was created in the current scope.',
           zh_HANS: '已在当前范围创建可编辑副本。',
@@ -868,70 +860,72 @@ export function PublicPresenceAssetWorkspace({
     }
   };
 
-  const drawerTitle = drawerState?.mode === 'create'
-    ? drawerState.family === 'template'
-      ? pickLocaleText(locale, {
-          en: 'Add homepage template asset',
-          zh_HANS: '新增主页模板资产',
-          zh_HANT: '新增主頁模板資產',
-          ja: 'ホームページテンプレート資産を追加',
-          ko: '홈페이지 템플릿 자산 추가',
-          fr: 'Ajouter un asset template de homepage',
-        })
-      : pickLocaleText(locale, {
-          en: 'Add homepage component asset',
-          zh_HANS: '新增主页组件资产',
-          zh_HANT: '新增主頁元件資產',
-          ja: 'ホームページコンポーネント資産を追加',
-          ko: '홈페이지 컴포넌트 자산 추가',
-          fr: 'Ajouter un asset composant de homepage',
-        })
-    : drawerState?.mode === 'preview'
-      ? pickLocaleText(locale, {
-          en: 'Asset preview',
-          zh_HANS: '资产预览',
-          zh_HANT: '資產預覽',
-          ja: '資産プレビュー',
-          ko: '자산 미리보기',
-          fr: 'Aperçu de l’asset',
-        })
-      : pickLocaleText(locale, {
-          en: 'Asset inspect',
-          zh_HANS: '资产详情',
-          zh_HANT: '資產詳情',
-          ja: '資産詳細',
-          ko: '자산 상세',
-          fr: 'Détails de l’asset',
-        });
+  const drawerTitle =
+    drawerState?.mode === 'create'
+      ? drawerState.family === 'template'
+        ? pickLocaleText(locale, {
+            en: 'Add homepage template asset',
+            zh_HANS: '新增主页模板资产',
+            zh_HANT: '新增主頁模板資產',
+            ja: 'ホームページテンプレート資産を追加',
+            ko: '홈페이지 템플릿 자산 추가',
+            fr: 'Ajouter un asset template de homepage',
+          })
+        : pickLocaleText(locale, {
+            en: 'Add homepage component asset',
+            zh_HANS: '新增主页组件资产',
+            zh_HANT: '新增主頁元件資產',
+            ja: 'ホームページコンポーネント資産を追加',
+            ko: '홈페이지 컴포넌트 자산 추가',
+            fr: 'Ajouter un asset composant de homepage',
+          })
+      : drawerState?.mode === 'preview'
+        ? pickLocaleText(locale, {
+            en: 'Asset preview',
+            zh_HANS: '资产预览',
+            zh_HANT: '資產預覽',
+            ja: '資産プレビュー',
+            ko: '자산 미리보기',
+            fr: 'Aperçu de l’asset',
+          })
+        : pickLocaleText(locale, {
+            en: 'Asset inspect',
+            zh_HANS: '资产详情',
+            zh_HANT: '資產詳情',
+            ja: '資産詳細',
+            ko: '자산 상세',
+            fr: 'Détails de l’asset',
+          });
 
-  const drawerDescription = drawerState?.mode === 'create'
-    ? drawerState.family === 'template'
-      ? pickLocaleText(locale, {
-          en: 'Choose a governed homepage layout as the starting point for this scope.',
-          zh_HANS: '为当前范围选择一个受治理的主页布局作为起点。',
-          zh_HANT: '為目前範圍選擇一個受治理的主頁版型作為起點。',
-          ja: 'このスコープの出発点として、管理対象のホームページレイアウトを選択します。',
-          ko: '현재 범위의 시작점이 될 관리형 홈페이지 레이아웃을 선택하세요.',
-          fr: 'Choisissez une mise en page gouvernée comme point de départ pour cette portée.',
-        })
-      : pickLocaleText(locale, {
-          en: 'Choose a homepage block to start authoring inside the current scope.',
-          zh_HANS: '选择一个主页模块，在当前范围内开始创作。',
-          zh_HANT: '選擇一個主頁模組，在目前範圍內開始創作。',
-          ja: '現在のスコープで作成を始めるホームページブロックを選択します。',
-          ko: '현재 범위 안에서 작업을 시작할 홈페이지 블록을 선택하세요.',
-          fr: 'Choisissez un bloc de homepage pour commencer l’authoring dans la portée actuelle.',
-        })
-    : selectedAssetDetail
-      ? pickLocaleText(locale, {
-          en: `Current scope: ${getAssetOwnerLabel(locale, scopeType)}`,
-          zh_HANS: `当前范围：${getAssetOwnerLabel(locale, scopeType)}`,
-          zh_HANT: `目前範圍：${getAssetOwnerLabel(locale, scopeType)}`,
-          ja: `現在のスコープ: ${getAssetOwnerLabel(locale, scopeType)}`,
-          ko: `현재 범위: ${getAssetOwnerLabel(locale, scopeType)}`,
-          fr: `Portée actuelle : ${getAssetOwnerLabel(locale, scopeType)}`,
-        })
-      : undefined;
+  const drawerDescription =
+    drawerState?.mode === 'create'
+      ? drawerState.family === 'template'
+        ? pickLocaleText(locale, {
+            en: 'Choose a governed homepage layout as the starting point for this scope.',
+            zh_HANS: '为当前范围选择一个受治理的主页布局作为起点。',
+            zh_HANT: '為目前範圍選擇一個受治理的主頁版型作為起點。',
+            ja: 'このスコープの出発点として、管理対象のホームページレイアウトを選択します。',
+            ko: '현재 범위의 시작점이 될 관리형 홈페이지 레이아웃을 선택하세요.',
+            fr: 'Choisissez une mise en page gouvernée comme point de départ pour cette portée.',
+          })
+        : pickLocaleText(locale, {
+            en: 'Choose a homepage block to start authoring inside the current scope.',
+            zh_HANS: '选择一个主页模块，在当前范围内开始创作。',
+            zh_HANT: '選擇一個主頁模組，在目前範圍內開始創作。',
+            ja: '現在のスコープで作成を始めるホームページブロックを選択します。',
+            ko: '현재 범위 안에서 작업을 시작할 홈페이지 블록을 선택하세요.',
+            fr: 'Choisissez un bloc de homepage pour commencer l’authoring dans la portée actuelle.',
+          })
+      : selectedAssetDetail
+        ? pickLocaleText(locale, {
+            en: `Current scope: ${getAssetOwnerLabel(locale, scopeType)}`,
+            zh_HANS: `当前范围：${getAssetOwnerLabel(locale, scopeType)}`,
+            zh_HANT: `目前範圍：${getAssetOwnerLabel(locale, scopeType)}`,
+            ja: `現在のスコープ: ${getAssetOwnerLabel(locale, scopeType)}`,
+            ko: `현재 범위: ${getAssetOwnerLabel(locale, scopeType)}`,
+            fr: `Portée actuelle : ${getAssetOwnerLabel(locale, scopeType)}`,
+          })
+        : undefined;
 
   const renderDrawerBody = () => {
     if (!drawerState) {
@@ -977,7 +971,9 @@ export function PublicPresenceAssetWorkspace({
               </span>
               <select
                 value={selectedTemplateId}
-                onChange={(event) => setSelectedTemplateId(event.currentTarget.value as PublicPresenceTemplateId)}
+                onChange={(event) =>
+                  setSelectedTemplateId(event.currentTarget.value as PublicPresenceTemplateId)
+                }
                 className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-900"
               >
                 {templateOptions.map((templateId) => (
@@ -1001,7 +997,9 @@ export function PublicPresenceAssetWorkspace({
               </span>
               <select
                 value={selectedComponentType}
-                onChange={(event) => setSelectedComponentType(event.currentTarget.value as HomepageComponentType)}
+                onChange={(event) =>
+                  setSelectedComponentType(event.currentTarget.value as HomepageComponentType)
+                }
                 className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-900"
               >
                 {componentOptions.map((componentType) => (
@@ -1144,14 +1142,18 @@ export function PublicPresenceAssetWorkspace({
                   ko: '검증 시각',
                   fr: 'Validé le',
                 })}
-                value={formatLocaleDateTime(locale, currentRevision?.lastValidatedAt ?? null, pickLocaleText(locale, {
-                  en: 'Not yet',
-                  zh_HANS: '尚未',
-                  zh_HANT: '尚未',
-                  ja: '未実行',
-                  ko: '아직 아님',
-                  fr: 'Pas encore',
-                }))}
+                value={formatLocaleDateTime(
+                  locale,
+                  currentRevision?.lastValidatedAt ?? null,
+                  pickLocaleText(locale, {
+                    en: 'Not yet',
+                    zh_HANS: '尚未',
+                    zh_HANT: '尚未',
+                    ja: '未実行',
+                    ko: '아직 아님',
+                    fr: 'Pas encore',
+                  })
+                )}
               />
               <DetailMetric
                 label={pickLocaleText(locale, {
@@ -1179,7 +1181,10 @@ export function PublicPresenceAssetWorkspace({
               </p>
               <div className="mt-4 space-y-3">
                 {selectedAssetDetail.revisions.map((revision) => (
-                  <div key={revision.id} className="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3">
+                  <div
+                    key={revision.id}
+                    className="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3"
+                  >
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <p className="text-sm font-semibold text-slate-900">{`r${revision.revisionNumber}`}</p>
                       <p className="text-xs font-medium text-slate-500">
@@ -1206,33 +1211,38 @@ export function PublicPresenceAssetWorkspace({
     );
   };
 
-  const renderFamilySection = (
-    family: AssetFamilyId,
-    assets: PublicPresenceAssetListEntry[],
-  ) => {
-    const icon = family === 'template'
-      ? <LayoutTemplate className="h-4 w-4" aria-hidden="true" />
-      : <Package2 className="h-4 w-4" aria-hidden="true" />;
-    const familyTitle = family === 'template'
-      ? pickLocaleText(locale, {
-          en: 'Homepage Template Assets',
-          zh_HANS: '主页模板资产',
-          zh_HANT: '主頁模板資產',
-          ja: 'ホームページテンプレート資産',
-          ko: '홈페이지 템플릿 자산',
-          fr: 'Assets template de homepage',
-        })
-      : pickLocaleText(locale, {
-          en: 'Homepage Component Assets',
-          zh_HANS: '主页组件资产',
-          zh_HANT: '主頁元件資產',
-          ja: 'ホームページコンポーネント資産',
-          ko: '홈페이지 컴포넌트 자산',
-          fr: 'Assets composant de homepage',
-        });
+  const renderFamilySection = (family: AssetFamilyId, assets: PublicPresenceAssetListEntry[]) => {
+    const icon =
+      family === 'template' ? (
+        <LayoutTemplate className="h-4 w-4" aria-hidden="true" />
+      ) : (
+        <Package2 className="h-4 w-4" aria-hidden="true" />
+      );
+    const familyTitle =
+      family === 'template'
+        ? pickLocaleText(locale, {
+            en: 'Homepage Template Assets',
+            zh_HANS: '主页模板资产',
+            zh_HANT: '主頁模板資產',
+            ja: 'ホームページテンプレート資産',
+            ko: '홈페이지 템플릿 자산',
+            fr: 'Assets template de homepage',
+          })
+        : pickLocaleText(locale, {
+            en: 'Homepage Component Assets',
+            zh_HANS: '主页组件资产',
+            zh_HANT: '主頁元件資產',
+            ja: 'ホームページコンポーネント資産',
+            ko: '홈페이지 컴포넌트 자산',
+            fr: 'Assets composant de homepage',
+          });
 
     return (
-      <section className="space-y-4 rounded-[2rem] border border-slate-200 bg-slate-50/70 p-5" data-testid={`asset-family-${family}`} key={family}>
+      <section
+        className="space-y-4 rounded-[2rem] border border-slate-200 bg-slate-50/70 p-5"
+        data-testid={`asset-family-${family}`}
+        key={family}
+      >
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="space-y-2">
             <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">
@@ -1248,7 +1258,11 @@ export function PublicPresenceAssetWorkspace({
             onClick={() => setDrawerState({ family, mode: 'create' })}
             className="inline-flex items-center gap-2 rounded-full border border-rose-200 bg-white px-3 py-2 text-sm font-semibold text-rose-700 transition hover:border-rose-300 hover:bg-rose-50"
           >
-            {family === 'template' ? <LayoutTemplate className="h-4 w-4" aria-hidden="true" /> : <Package2 className="h-4 w-4" aria-hidden="true" />}
+            {family === 'template' ? (
+              <LayoutTemplate className="h-4 w-4" aria-hidden="true" />
+            ) : (
+              <Package2 className="h-4 w-4" aria-hidden="true" />
+            )}
             {family === 'template'
               ? pickLocaleText(locale, {
                   en: 'Add template asset',
@@ -1311,16 +1325,20 @@ export function PublicPresenceAssetWorkspace({
                 duplicatePending={duplicateAssetId === asset.asset.id}
                 locale={locale}
                 onDuplicate={handleDuplicateAsset}
-                onInspect={(nextAsset) => setDrawerState({
-                  assetId: nextAsset.asset.id,
-                  family,
-                  mode: 'inspect',
-                })}
-                onPreview={(nextAsset) => setDrawerState({
-                  assetId: nextAsset.asset.id,
-                  family,
-                  mode: 'preview',
-                })}
+                onInspect={(nextAsset) =>
+                  setDrawerState({
+                    assetId: nextAsset.asset.id,
+                    family,
+                    mode: 'inspect',
+                  })
+                }
+                onPreview={(nextAsset) =>
+                  setDrawerState({
+                    assetId: nextAsset.asset.id,
+                    family,
+                    mode: 'preview',
+                  })
+                }
                 scope={assetScope}
                 tenantId={tenantId}
               />
@@ -1354,7 +1372,10 @@ export function PublicPresenceAssetWorkspace({
       ) : null}
 
       {loadError ? (
-        <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-4 text-sm text-rose-800" role="alert">
+        <div
+          className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-4 text-sm text-rose-800"
+          role="alert"
+        >
           <div className="flex flex-wrap items-center justify-between gap-3">
             <span>{loadError}</span>
             <button
@@ -1395,83 +1416,92 @@ export function PublicPresenceAssetWorkspace({
           fr: 'Fermer le tiroir d’asset',
         })}
         description={drawerDescription}
-        footer={drawerState ? (
-          <ActionDrawerFooter
-            secondary={(
-              <button
-                ref={closeDrawerRef}
-                type="button"
-                onClick={() => setDrawerState(null)}
-                className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
-              >
-                {pickLocaleText(locale, {
-                  en: 'Close',
-                  zh_HANS: '关闭',
-                  zh_HANT: '關閉',
-                  ja: '閉じる',
-                  ko: '닫기',
-                  fr: 'Fermer',
-                })}
-              </button>
-            )}
-            primary={drawerState.mode === 'create' ? (
-              <AsyncSubmitButton
-                onClick={() => handleCreateAsset(drawerState.family)}
-                isPending={createPending}
-                pendingText={pickLocaleText(locale, {
-                  en: 'Creating…',
-                  zh_HANS: '创建中…',
-                  zh_HANT: '建立中…',
-                  ja: '作成中…',
-                  ko: '생성 중…',
-                  fr: 'Création…',
-                })}
-              >
-                {drawerState.family === 'template'
-                  ? pickLocaleText(locale, {
-                      en: 'Create template asset',
-                      zh_HANS: '创建模板资产',
-                      zh_HANT: '建立模板資產',
-                      ja: 'テンプレート資産を作成',
-                      ko: '템플릿 자산 만들기',
-                      fr: 'Créer l’asset template',
-                    })
-                  : pickLocaleText(locale, {
-                      en: 'Create component asset',
-                      zh_HANS: '创建组件资产',
-                      zh_HANT: '建立元件資產',
-                      ja: 'コンポーネント資産を作成',
-                      ko: '컴포넌트 자산 만들기',
-                      fr: 'Créer l’asset composant',
+        footer={
+          drawerState ? (
+            <ActionDrawerFooter
+              secondary={
+                <button
+                  ref={closeDrawerRef}
+                  type="button"
+                  onClick={() => setDrawerState(null)}
+                  className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+                >
+                  {pickLocaleText(locale, {
+                    en: 'Close',
+                    zh_HANS: '关闭',
+                    zh_HANT: '關閉',
+                    ja: '閉じる',
+                    ko: '닫기',
+                    fr: 'Fermer',
+                  })}
+                </button>
+              }
+              primary={
+                drawerState.mode === 'create' ? (
+                  <AsyncSubmitButton
+                    onClick={() => handleCreateAsset(drawerState.family)}
+                    isPending={createPending}
+                    pendingText={pickLocaleText(locale, {
+                      en: 'Creating…',
+                      zh_HANS: '创建中…',
+                      zh_HANT: '建立中…',
+                      ja: '作成中…',
+                      ko: '생성 중…',
+                      fr: 'Création…',
                     })}
-              </AsyncSubmitButton>
-            ) : selectedAssetDetail ? (
-              <Link
-                href={buildAssetIdeHref(tenantId, drawerState.family, selectedAssetDetail.asset.id, assetScope)}
-                className="inline-flex items-center gap-2 rounded-full border border-rose-200 bg-white px-4 py-2 text-sm font-semibold text-rose-700 transition hover:border-rose-300 hover:bg-rose-50"
-              >
-                <PencilLine className="h-4 w-4" aria-hidden="true" />
-                {drawerState.family === 'template'
-                  ? pickLocaleText(locale, {
-                      en: 'Open template IDE',
-                      zh_HANS: '打开模板 IDE',
-                      zh_HANT: '打開模板 IDE',
-                      ja: 'テンプレート IDE を開く',
-                      ko: '템플릿 IDE 열기',
-                      fr: 'Ouvrir l’IDE template',
-                    })
-                  : pickLocaleText(locale, {
-                      en: 'Open component IDE',
-                      zh_HANS: '打开组件 IDE',
-                      zh_HANT: '打開元件 IDE',
-                      ja: 'コンポーネント IDE を開く',
-                      ko: '컴포넌트 IDE 열기',
-                      fr: 'Ouvrir l’IDE composant',
-                    })}
-              </Link>
-            ) : null}
-          />
-        ) : null}
+                  >
+                    {drawerState.family === 'template'
+                      ? pickLocaleText(locale, {
+                          en: 'Create template asset',
+                          zh_HANS: '创建模板资产',
+                          zh_HANT: '建立模板資產',
+                          ja: 'テンプレート資産を作成',
+                          ko: '템플릿 자산 만들기',
+                          fr: 'Créer l’asset template',
+                        })
+                      : pickLocaleText(locale, {
+                          en: 'Create component asset',
+                          zh_HANS: '创建组件资产',
+                          zh_HANT: '建立元件資產',
+                          ja: 'コンポーネント資産を作成',
+                          ko: '컴포넌트 자산 만들기',
+                          fr: 'Créer l’asset composant',
+                        })}
+                  </AsyncSubmitButton>
+                ) : selectedAssetDetail ? (
+                  <Link
+                    href={buildAssetIdeHref(
+                      tenantId,
+                      drawerState.family,
+                      selectedAssetDetail.asset.id,
+                      assetScope
+                    )}
+                    className="inline-flex items-center gap-2 rounded-full border border-rose-200 bg-white px-4 py-2 text-sm font-semibold text-rose-700 transition hover:border-rose-300 hover:bg-rose-50"
+                  >
+                    <PencilLine className="h-4 w-4" aria-hidden="true" />
+                    {drawerState.family === 'template'
+                      ? pickLocaleText(locale, {
+                          en: 'Open template IDE',
+                          zh_HANS: '打开模板 IDE',
+                          zh_HANT: '打開模板 IDE',
+                          ja: 'テンプレート IDE を開く',
+                          ko: '템플릿 IDE 열기',
+                          fr: 'Ouvrir l’IDE template',
+                        })
+                      : pickLocaleText(locale, {
+                          en: 'Open component IDE',
+                          zh_HANS: '打开组件 IDE',
+                          zh_HANT: '打開元件 IDE',
+                          ja: 'コンポーネント IDE を開く',
+                          ko: '컴포넌트 IDE 열기',
+                          fr: 'Ouvrir l’IDE composant',
+                        })}
+                  </Link>
+                ) : null
+              }
+            />
+          ) : null
+        }
         initialFocusRef={closeDrawerRef}
         onOpenChange={(open) => {
           if (!open) {

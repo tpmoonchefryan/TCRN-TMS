@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { z } from 'zod';
 
 import {
@@ -27,11 +26,7 @@ import {
   PUBLIC_PRESENCE_VALIDATION_STATES,
 } from '../../public-presence/types';
 import { HOMEPAGE_COMPONENT_TYPES } from '../../types/homepage/schema';
-import {
-  LocalizedTextSchema,
-  PartialLocalizedTextSchema,
-  UUIDSchema,
-} from '../common.schema';
+import { LocalizedTextSchema, PartialLocalizedTextSchema, UUIDSchema } from '../common.schema';
 
 const AssetStatusSchema = z.enum(PUBLIC_PRESENCE_ASSET_STATUSES);
 const SourceBundleFileKindSchema = z.enum(PUBLIC_PRESENCE_SOURCE_BUNDLE_FILE_KINDS);
@@ -52,76 +47,80 @@ export interface ArtistLifecycleFlowStageCatalogEntry {
   isActive: boolean;
 }
 
-export const ArtistStageLifecycleMappingSchema = z.enum(
-  ARTIST_STAGE_LIFECYCLE_MAPPINGS,
-);
+export const ArtistStageLifecycleMappingSchema = z.enum(ARTIST_STAGE_LIFECYCLE_MAPPINGS);
 
-export const PublicPresenceAssetKindSchema = z.enum(
-  PUBLIC_PRESENCE_ASSET_KINDS,
-);
+export const PublicPresenceAssetKindSchema = z.enum(PUBLIC_PRESENCE_ASSET_KINDS);
 
-export const PublicPresenceAssetOwnerTypeSchema = z.enum(
-  PUBLIC_PRESENCE_ASSET_OWNER_TYPES,
-);
+export const PublicPresenceAssetOwnerTypeSchema = z.enum(PUBLIC_PRESENCE_ASSET_OWNER_TYPES);
 
-export const PublicPresenceAssetScopeTypeSchema = z.enum(
-  PUBLIC_PRESENCE_ASSET_SCOPE_TYPES,
-);
+export const PublicPresenceAssetScopeTypeSchema = z.enum(PUBLIC_PRESENCE_ASSET_SCOPE_TYPES);
 
 export const PublicPresenceAssetStatusSchema = AssetStatusSchema;
 
 export const PublicPresenceAssetValidationStateSchema = z.enum(
-  PUBLIC_PRESENCE_ASSET_VALIDATION_STATES,
+  PUBLIC_PRESENCE_ASSET_VALIDATION_STATES
 );
 
-export const PublicPresenceSourceBundleFileSchema = z.object({
-  contents: z.string(),
-  kind: SourceBundleFileKindSchema,
-  language: z.string().trim().min(1).max(64),
-  path: z.string().trim().min(1).max(255),
-}).strict();
+export const PublicPresenceSourceBundleFileSchema = z
+  .object({
+    contents: z.string(),
+    kind: SourceBundleFileKindSchema,
+    language: z.string().trim().min(1).max(64),
+    path: z.string().trim().min(1).max(255),
+  })
+  .strict();
 
-export const ArtistStageRecordSchema = z.object({
-  code: z.string().trim().min(1).max(32),
-  color: z.string().trim().min(1).max(16).nullable(),
-  createdAt: IsoDateTimeSchema,
-  description: LocalizedTextSchema,
-  homepagePolicyKey: z.string().trim().min(1).max(64).nullable(),
-  id: UUIDSchema,
-  isActive: z.boolean(),
-  isSystem: z.boolean(),
-  lifecycleStatusMapping: ArtistStageLifecycleMappingSchema,
-  name: LocalizedTextSchema,
-  ownerId: UUIDSchema.nullable(),
-  ownerType: z.literal('tenant'),
-  sortOrder: z.number().int(),
-  updatedAt: IsoDateTimeSchema,
-  version: z.number().int().min(1),
-}).strict() satisfies z.ZodType<ArtistStageRecord>;
+export const ArtistStageRecordSchema = z
+  .object({
+    code: z.string().trim().min(1).max(32),
+    color: z.string().trim().min(1).max(16).nullable(),
+    createdAt: IsoDateTimeSchema,
+    description: LocalizedTextSchema,
+    homepagePolicyKey: z.string().trim().min(1).max(64).nullable(),
+    id: UUIDSchema,
+    isActive: z.boolean(),
+    isSystem: z.boolean(),
+    lifecycleStatusMapping: ArtistStageLifecycleMappingSchema,
+    name: LocalizedTextSchema,
+    ownerId: UUIDSchema.nullable(),
+    ownerType: z.literal('tenant'),
+    sortOrder: z.number().int(),
+    updatedAt: IsoDateTimeSchema,
+    version: z.number().int().min(1),
+  })
+  .strict() satisfies z.ZodType<ArtistStageRecord>;
 
-export const ArtistLifecycleFlowNodeSchema = z.object({
-  stageCode: z.string().trim().min(1).max(32),
-  stageId: UUIDSchema,
-}).strict();
+export const ArtistLifecycleFlowNodeSchema = z
+  .object({
+    stageCode: z.string().trim().min(1).max(32),
+    stageId: UUIDSchema,
+  })
+  .strict();
 
-export const ArtistLifecycleFlowTransitionSchema = z.object({
-  fromStageId: UUIDSchema,
-  id: z.string().trim().min(1).max(64),
-  label: z.string().trim().min(1).max(255).nullable(),
-  reason: z.string().trim().min(1).max(1024).nullable(),
-  toStageId: UUIDSchema,
-}).strict();
+export const ArtistLifecycleFlowTransitionSchema = z
+  .object({
+    fromStageId: UUIDSchema,
+    id: z.string().trim().min(1).max(64),
+    label: z.string().trim().min(1).max(255).nullable(),
+    reason: z.string().trim().min(1).max(1024).nullable(),
+    toStageId: UUIDSchema,
+  })
+  .strict();
 
-export const ArtistLifecycleHomepagePolicySchema = z.object({
-  allowedTemplateIds: z.array(TemplateIdSchema),
-  stageId: UUIDSchema,
-}).strict();
+export const ArtistLifecycleHomepagePolicySchema = z
+  .object({
+    allowedTemplateIds: z.array(TemplateIdSchema),
+    stageId: UUIDSchema,
+  })
+  .strict();
 
-const ArtistLifecycleFlowSchemaBase = z.object({
-  homepagePolicyByStage: z.array(ArtistLifecycleHomepagePolicySchema),
-  nodes: z.array(ArtistLifecycleFlowNodeSchema),
-  transitions: z.array(ArtistLifecycleFlowTransitionSchema),
-}).strict();
+const ArtistLifecycleFlowSchemaBase = z
+  .object({
+    homepagePolicyByStage: z.array(ArtistLifecycleHomepagePolicySchema),
+    nodes: z.array(ArtistLifecycleFlowNodeSchema),
+    transitions: z.array(ArtistLifecycleFlowTransitionSchema),
+  })
+  .strict();
 
 export function createArtistLifecycleFlowSchema(options?: {
   stageCatalog?: ArtistLifecycleFlowStageCatalogEntry[];
@@ -224,9 +223,7 @@ export function createArtistLifecycleFlowSchema(options?: {
       return;
     }
 
-    const stageCatalogById = new Map(
-      options.stageCatalog.map((stage) => [stage.id, stage]),
-    );
+    const stageCatalogById = new Map(options.stageCatalog.map((stage) => [stage.id, stage]));
 
     for (const [index, node] of flow.nodes.entries()) {
       const catalogStage = stageCatalogById.get(node.stageId);
@@ -282,17 +279,19 @@ export function createArtistLifecycleFlowSchema(options?: {
 
 export const ArtistLifecycleFlowSchema = createArtistLifecycleFlowSchema();
 
-export const PublicPresenceAssetManifestBaseSchema = z.object({
-  assetCode: z.string().trim().min(1).max(64).nullable().optional(),
-  assetId: UUIDSchema.nullable().optional(),
-  assetKind: PublicPresenceAssetKindSchema,
-  assetRevisionId: UUIDSchema.nullable().optional(),
-  description: LocalizedTextSchema.nullable().optional(),
-  name: LocalizedTextSchema.nullable().optional(),
-  ownerId: UUIDSchema.nullable().optional(),
-  ownerType: PublicPresenceAssetOwnerTypeSchema.nullable().optional(),
-  runtimeContractVersion: z.string().trim().min(1).max(32),
-}).strict();
+export const PublicPresenceAssetManifestBaseSchema = z
+  .object({
+    assetCode: z.string().trim().min(1).max(64).nullable().optional(),
+    assetId: UUIDSchema.nullable().optional(),
+    assetKind: PublicPresenceAssetKindSchema,
+    assetRevisionId: UUIDSchema.nullable().optional(),
+    description: LocalizedTextSchema.nullable().optional(),
+    name: LocalizedTextSchema.nullable().optional(),
+    ownerId: UUIDSchema.nullable().optional(),
+    ownerType: PublicPresenceAssetOwnerTypeSchema.nullable().optional(),
+    runtimeContractVersion: z.string().trim().min(1).max(32),
+  })
+  .strict();
 
 export const PublicPresenceTemplateAssetManifestSchema =
   PublicPresenceAssetManifestBaseSchema.extend({
@@ -326,60 +325,60 @@ export const PublicPresenceComponentAssetManifestSchema =
     visualSupport: z.enum(PUBLIC_PRESENCE_COMPONENT_VISUAL_SUPPORT),
   }).strict();
 
-export const PublicPresenceAssetManifestSchema = z.discriminatedUnion(
-  'assetKind',
-  [
-    PublicPresenceTemplateAssetManifestSchema,
-    PublicPresenceComponentAssetManifestSchema,
-  ],
-);
+export const PublicPresenceAssetManifestSchema = z.discriminatedUnion('assetKind', [
+  PublicPresenceTemplateAssetManifestSchema,
+  PublicPresenceComponentAssetManifestSchema,
+]);
 
-export const PublicPresenceCollectionOperationDefinitionSchema = z.object({
-  addLabel: z.string().trim().min(1).max(255),
-  canAdd: z.boolean(),
-  canRemove: z.boolean(),
-  canReorder: z.boolean(),
-  collectionKey: z.string().trim().min(1).max(128),
-  disabledReason: z.string().trim().min(1).max(255).nullable().optional(),
-  itemLabel: z.string().trim().min(1).max(255),
-  maxItems: z.number().int().min(0).optional(),
-  minItems: z.number().int().min(0).optional(),
-  removeLabel: z.string().trim().min(1).max(255),
-  reorderLabel: z.string().trim().min(1).max(255),
-}).strict();
+export const PublicPresenceCollectionOperationDefinitionSchema = z
+  .object({
+    addLabel: z.string().trim().min(1).max(255),
+    canAdd: z.boolean(),
+    canRemove: z.boolean(),
+    canReorder: z.boolean(),
+    collectionKey: z.string().trim().min(1).max(128),
+    disabledReason: z.string().trim().min(1).max(255).nullable().optional(),
+    itemLabel: z.string().trim().min(1).max(255),
+    maxItems: z.number().int().min(0).optional(),
+    minItems: z.number().int().min(0).optional(),
+    removeLabel: z.string().trim().min(1).max(255),
+    reorderLabel: z.string().trim().min(1).max(255),
+  })
+  .strict();
 
-export const PublicPresenceFieldDefinitionSchema = z.object({
-  fallbackPolicy: FallbackPolicySchema,
-  fieldKey: z.string().trim().min(1).max(128),
-  jsonPath: z.string().trim().min(1).max(255),
-  mediaCategory: z.string().trim().min(1).max(64).optional(),
-  phaseVisibility: z.array(PhaseVisibilitySchema).optional(),
-  provenance: z.array(FieldProvenanceSchema).min(1),
-  required: z.enum(['always', 'conditional', 'optional']),
-  sourceOnly: z.boolean(),
-  urlCategory: z.string().trim().min(1).max(64).optional(),
-  validationRules: z.array(z.string().trim().min(1).max(255)),
-  valueType: FieldValueTypeSchema,
-  visualEditable: z.boolean(),
-  aiEditable: z.boolean(),
-}).strict();
+export const PublicPresenceFieldDefinitionSchema = z
+  .object({
+    fallbackPolicy: FallbackPolicySchema,
+    fieldKey: z.string().trim().min(1).max(128),
+    jsonPath: z.string().trim().min(1).max(255),
+    mediaCategory: z.string().trim().min(1).max(64).optional(),
+    phaseVisibility: z.array(PhaseVisibilitySchema).optional(),
+    provenance: z.array(FieldProvenanceSchema).min(1),
+    required: z.enum(['always', 'conditional', 'optional']),
+    sourceOnly: z.boolean(),
+    urlCategory: z.string().trim().min(1).max(64).optional(),
+    validationRules: z.array(z.string().trim().min(1).max(255)),
+    valueType: FieldValueTypeSchema,
+    visualEditable: z.boolean(),
+    aiEditable: z.boolean(),
+  })
+  .strict();
 
-export const PublicPresenceStageSectionDefinitionSchema = z.object({
-  allowedComponents: z.array(z.union([
-    ComponentTypeSchema,
-    z.string().trim().min(1).max(128),
-  ])),
-  collectionOperations: z.array(PublicPresenceCollectionOperationDefinitionSchema).optional(),
-  editabilityState: ValidationStateSchema,
-  fallbackBehavior: FallbackPolicySchema,
-  fieldDefinitions: z.array(PublicPresenceFieldDefinitionSchema),
-  kind: StageSectionKindSchema,
-  phaseVisibility: z.array(PhaseVisibilitySchema),
-  purpose: z.string().trim().min(1).max(2048),
-  slotRules: z.array(z.string().trim().min(1).max(255)),
-  sourcePolicy: z.enum(PUBLIC_PRESENCE_SOURCE_POLICIES),
-  validationRules: z.array(z.string().trim().min(1).max(255)),
-}).strict();
+export const PublicPresenceStageSectionDefinitionSchema = z
+  .object({
+    allowedComponents: z.array(z.union([ComponentTypeSchema, z.string().trim().min(1).max(128)])),
+    collectionOperations: z.array(PublicPresenceCollectionOperationDefinitionSchema).optional(),
+    editabilityState: ValidationStateSchema,
+    fallbackBehavior: FallbackPolicySchema,
+    fieldDefinitions: z.array(PublicPresenceFieldDefinitionSchema),
+    kind: StageSectionKindSchema,
+    phaseVisibility: z.array(PhaseVisibilitySchema),
+    purpose: z.string().trim().min(1).max(2048),
+    slotRules: z.array(z.string().trim().min(1).max(255)),
+    sourcePolicy: z.enum(PUBLIC_PRESENCE_SOURCE_POLICIES),
+    validationRules: z.array(z.string().trim().min(1).max(255)),
+  })
+  .strict();
 
 export const PublicPresenceTemplateSourceManifestSchema =
   PublicPresenceTemplateAssetManifestSchema.extend({
@@ -406,25 +405,24 @@ export const PublicPresenceComponentSourceManifestSchema =
     unknownFieldPolicy: z.enum(PUBLIC_PRESENCE_UNKNOWN_FIELD_POLICIES),
   }).passthrough();
 
-export const PublicPresenceAssetSourceManifestSchema = z.discriminatedUnion(
-  'assetKind',
-  [
-    PublicPresenceTemplateSourceManifestSchema,
-    PublicPresenceComponentSourceManifestSchema,
-  ],
-);
+export const PublicPresenceAssetSourceManifestSchema = z.discriminatedUnion('assetKind', [
+  PublicPresenceTemplateSourceManifestSchema,
+  PublicPresenceComponentSourceManifestSchema,
+]);
 
-const PublicPresenceAssetScopeQueryBaseSchema = z.object({
-  scopeId: UUIDSchema.optional(),
-  scopeType: PublicPresenceAssetScopeTypeSchema.optional(),
-}).strict();
+const PublicPresenceAssetScopeQueryBaseSchema = z
+  .object({
+    scopeId: UUIDSchema.optional(),
+    scopeType: PublicPresenceAssetScopeTypeSchema.optional(),
+  })
+  .strict();
 
 const PublicPresenceAssetScopeQueryRefinement = (
   value: {
     scopeId?: string;
     scopeType?: z.infer<typeof PublicPresenceAssetScopeTypeSchema>;
   },
-  context: z.RefinementCtx,
+  context: z.RefinementCtx
 ) => {
   const normalizedScopeType = value.scopeType ?? 'tenant';
 
@@ -446,24 +444,23 @@ const PublicPresenceAssetScopeQueryRefinement = (
 };
 
 export const PublicPresenceAssetScopeQuerySchema =
-  PublicPresenceAssetScopeQueryBaseSchema.superRefine(
-    PublicPresenceAssetScopeQueryRefinement,
-  );
+  PublicPresenceAssetScopeQueryBaseSchema.superRefine(PublicPresenceAssetScopeQueryRefinement);
 
-export const PublicPresenceAssetListQuerySchema =
-  PublicPresenceAssetScopeQueryBaseSchema.extend({
-    assetKind: PublicPresenceAssetKindSchema.optional(),
-  }).strict().superRefine(PublicPresenceAssetScopeQueryRefinement);
+export const PublicPresenceAssetListQuerySchema = PublicPresenceAssetScopeQueryBaseSchema.extend({
+  assetKind: PublicPresenceAssetKindSchema.optional(),
+})
+  .strict()
+  .superRefine(PublicPresenceAssetScopeQueryRefinement);
 
-const PublicPresenceAssetOptionalCodeSchema = z.string()
+const PublicPresenceAssetOptionalCodeSchema = z
+  .string()
   .trim()
   .min(1)
   .max(64)
   .nullable()
   .optional();
 
-const PublicPresenceAssetOptionalNameSchema =
-  PartialLocalizedTextSchema.nullable().optional();
+const PublicPresenceAssetOptionalNameSchema = PartialLocalizedTextSchema.nullable().optional();
 
 const PublicPresenceAssetOptionalDescriptionSchema =
   PartialLocalizedTextSchema.nullable().optional();
@@ -473,10 +470,9 @@ const PublicPresenceAssetOptionalSourceBundleSchema = z
   .min(1)
   .optional();
 
-export const CreatePublicPresenceAssetSchema = z.discriminatedUnion(
-  'assetKind',
-  [
-    z.object({
+export const CreatePublicPresenceAssetSchema = z.discriminatedUnion('assetKind', [
+  z
+    .object({
       assetKind: z.literal('template'),
       code: PublicPresenceAssetOptionalCodeSchema,
       componentType: z.null().optional(),
@@ -485,11 +481,10 @@ export const CreatePublicPresenceAssetSchema = z.discriminatedUnion(
       name: PublicPresenceAssetOptionalNameSchema,
       sourceBundle: PublicPresenceAssetOptionalSourceBundleSchema,
       templateId: TemplateIdSchema,
-    }).strict().superRefine((value, context) => {
-      if (
-        value.manifest
-        && value.manifest.templateId !== value.templateId
-      ) {
+    })
+    .strict()
+    .superRefine((value, context) => {
+      if (value.manifest && value.manifest.templateId !== value.templateId) {
         context.addIssue({
           code: z.ZodIssueCode.custom,
           message: 'Template asset manifest templateId must match the requested templateId.',
@@ -497,7 +492,8 @@ export const CreatePublicPresenceAssetSchema = z.discriminatedUnion(
         });
       }
     }),
-    z.object({
+  z
+    .object({
       assetKind: z.literal('component'),
       code: PublicPresenceAssetOptionalCodeSchema,
       componentType: ComponentTypeSchema,
@@ -506,11 +502,10 @@ export const CreatePublicPresenceAssetSchema = z.discriminatedUnion(
       name: PublicPresenceAssetOptionalNameSchema,
       sourceBundle: PublicPresenceAssetOptionalSourceBundleSchema,
       templateId: z.null().optional(),
-    }).strict().superRefine((value, context) => {
-      if (
-        value.manifest
-        && value.manifest.componentType !== value.componentType
-      ) {
+    })
+    .strict()
+    .superRefine((value, context) => {
+      if (value.manifest && value.manifest.componentType !== value.componentType) {
         context.addIssue({
           code: z.ZodIssueCode.custom,
           message: 'Component asset manifest componentType must match the requested componentType.',
@@ -518,96 +513,113 @@ export const CreatePublicPresenceAssetSchema = z.discriminatedUnion(
         });
       }
     }),
-  ],
-);
+]);
 
-export const UpdatePublicPresenceAssetRevisionSchema = z.object({
-  description: PublicPresenceAssetOptionalDescriptionSchema,
-  manifest: PublicPresenceAssetManifestSchema.optional(),
-  name: PublicPresenceAssetOptionalNameSchema,
-  sourceBundle: z.array(PublicPresenceSourceBundleFileSchema).min(1),
-}).strict();
+export const UpdatePublicPresenceAssetRevisionSchema = z
+  .object({
+    description: PublicPresenceAssetOptionalDescriptionSchema,
+    manifest: PublicPresenceAssetManifestSchema.optional(),
+    name: PublicPresenceAssetOptionalNameSchema,
+    sourceBundle: z.array(PublicPresenceSourceBundleFileSchema).min(1),
+  })
+  .strict();
 
-export const DuplicatePublicPresenceAssetSchema = z.object({
-  code: PublicPresenceAssetOptionalCodeSchema,
-  description: PublicPresenceAssetOptionalDescriptionSchema,
-  name: PublicPresenceAssetOptionalNameSchema,
-}).strict();
+export const DuplicatePublicPresenceAssetSchema = z
+  .object({
+    code: PublicPresenceAssetOptionalCodeSchema,
+    description: PublicPresenceAssetOptionalDescriptionSchema,
+    name: PublicPresenceAssetOptionalNameSchema,
+  })
+  .strict();
 
-export const PublicPresenceAssetRecordSchema = z.object({
-  assetKind: PublicPresenceAssetKindSchema,
-  code: z.string().trim().min(1).max(64),
-  componentType: ComponentTypeSchema.nullable(),
-  createdAt: IsoDateTimeSchema,
-  currentRevisionId: UUIDSchema.nullable(),
-  description: LocalizedTextSchema,
-  id: UUIDSchema,
-  isSystem: z.boolean(),
-  name: LocalizedTextSchema,
-  ownerId: UUIDSchema.nullable(),
-  ownerType: PublicPresenceAssetOwnerTypeSchema,
-  status: AssetStatusSchema,
-  templateId: TemplateIdSchema.nullable(),
-  updatedAt: IsoDateTimeSchema,
-  version: z.number().int().min(1),
-}).strict();
+export const PublicPresenceAssetRecordSchema = z
+  .object({
+    assetKind: PublicPresenceAssetKindSchema,
+    code: z.string().trim().min(1).max(64),
+    componentType: ComponentTypeSchema.nullable(),
+    createdAt: IsoDateTimeSchema,
+    currentRevisionId: UUIDSchema.nullable(),
+    description: LocalizedTextSchema,
+    id: UUIDSchema,
+    isSystem: z.boolean(),
+    name: LocalizedTextSchema,
+    ownerId: UUIDSchema.nullable(),
+    ownerType: PublicPresenceAssetOwnerTypeSchema,
+    status: AssetStatusSchema,
+    templateId: TemplateIdSchema.nullable(),
+    updatedAt: IsoDateTimeSchema,
+    version: z.number().int().min(1),
+  })
+  .strict();
 
-export const PublicPresenceAssetValidationSummarySchema = z.object({
-  issueCount: z.number().int().min(0),
-  passCount: z.number().int().min(0),
-  warnCount: z.number().int().min(0),
-}).strict();
+export const PublicPresenceAssetValidationSummarySchema = z
+  .object({
+    issueCount: z.number().int().min(0),
+    passCount: z.number().int().min(0),
+    warnCount: z.number().int().min(0),
+  })
+  .strict();
 
-export const PublicPresenceAssetRevisionRecordSchema = z.object({
-  artifactStatus: AssetStatusSchema,
-  assetId: UUIDSchema,
-  createdAt: IsoDateTimeSchema,
-  createdBy: UUIDSchema.nullable(),
-  id: UUIDSchema,
-  lastValidatedAt: IsoDateTimeSchema.nullable(),
-  manifest: PublicPresenceAssetManifestSchema,
-  revisionNumber: z.number().int().min(1),
-  runtimeContractVersion: z.string().trim().min(1).max(32),
-  sourceBundle: z.array(PublicPresenceSourceBundleFileSchema).min(1),
-  sourceHash: Sha256HashSchema,
-  submittedAt: IsoDateTimeSchema.nullable(),
-  validationState: PublicPresenceAssetValidationStateSchema,
-  validationSummary: PublicPresenceAssetValidationSummarySchema,
-}).strict();
+export const PublicPresenceAssetRevisionRecordSchema = z
+  .object({
+    artifactStatus: AssetStatusSchema,
+    assetId: UUIDSchema,
+    createdAt: IsoDateTimeSchema,
+    createdBy: UUIDSchema.nullable(),
+    id: UUIDSchema,
+    lastValidatedAt: IsoDateTimeSchema.nullable(),
+    manifest: PublicPresenceAssetManifestSchema,
+    revisionNumber: z.number().int().min(1),
+    runtimeContractVersion: z.string().trim().min(1).max(32),
+    sourceBundle: z.array(PublicPresenceSourceBundleFileSchema).min(1),
+    sourceHash: Sha256HashSchema,
+    submittedAt: IsoDateTimeSchema.nullable(),
+    validationState: PublicPresenceAssetValidationStateSchema,
+    validationSummary: PublicPresenceAssetValidationSummarySchema,
+  })
+  .strict();
 
-export const PublicPresenceAssetSnapshotSchema = z.object({
-  assetId: UUIDSchema,
-  assetRevisionId: UUIDSchema,
-  manifest: PublicPresenceAssetManifestSchema,
-  revisionNumber: z.number().int().min(1),
-  sourceBundle: z.array(PublicPresenceSourceBundleFileSchema).min(1),
-  sourceHash: Sha256HashSchema,
-}).strict();
+export const PublicPresenceAssetSnapshotSchema = z
+  .object({
+    assetId: UUIDSchema,
+    assetRevisionId: UUIDSchema,
+    manifest: PublicPresenceAssetManifestSchema,
+    revisionNumber: z.number().int().min(1),
+    sourceBundle: z.array(PublicPresenceSourceBundleFileSchema).min(1),
+    sourceHash: Sha256HashSchema,
+  })
+  .strict();
 
-export const PublicPresenceAssetRevisionPinSchema = z.object({
-  assetId: UUIDSchema,
-  assetRevisionId: UUIDSchema,
-  snapshot: PublicPresenceAssetSnapshotSchema.nullable(),
-  sourceHash: Sha256HashSchema,
-}).strict();
+export const PublicPresenceAssetRevisionPinSchema = z
+  .object({
+    assetId: UUIDSchema,
+    assetRevisionId: UUIDSchema,
+    snapshot: PublicPresenceAssetSnapshotSchema.nullable(),
+    sourceHash: Sha256HashSchema,
+  })
+  .strict();
 
-export const PublicPresenceAssetScopeContextSchema = z.object({
-  scopeId: UUIDSchema.nullable(),
-  scopeType: PublicPresenceAssetScopeTypeSchema,
-}).strict();
+export const PublicPresenceAssetScopeContextSchema = z
+  .object({
+    scopeId: UUIDSchema.nullable(),
+    scopeType: PublicPresenceAssetScopeTypeSchema,
+  })
+  .strict();
 
-export const PublicPresenceAssetListEntrySchema = z.object({
-  asset: PublicPresenceAssetRecordSchema,
-  canEdit: z.boolean(),
-  currentRevision: PublicPresenceAssetRevisionRecordSchema.nullable(),
-  isInherited: z.boolean(),
-  scope: PublicPresenceAssetScopeContextSchema,
-}).strict();
+export const PublicPresenceAssetListEntrySchema = z
+  .object({
+    asset: PublicPresenceAssetRecordSchema,
+    canEdit: z.boolean(),
+    currentRevision: PublicPresenceAssetRevisionRecordSchema.nullable(),
+    isInherited: z.boolean(),
+    scope: PublicPresenceAssetScopeContextSchema,
+  })
+  .strict();
 
 export const PublicPresenceAssetDetailSchema = PublicPresenceAssetListEntrySchema.extend({
   revisions: z.array(PublicPresenceAssetRevisionRecordSchema),
 }).strict();
 
 export const CurrentPublicPresenceAssetRuntimeVersionSchema = z.literal(
-  PUBLIC_PRESENCE_ASSET_RUNTIME_VERSION,
+  PUBLIC_PRESENCE_ASSET_RUNTIME_VERSION
 );

@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable } from '@nestjs/common';
 
 import { DatabaseService } from '../../database';
@@ -19,7 +18,7 @@ export class MembershipSchedulerRepository {
         SELECT schema_name as "schemaName"
         FROM public.tenant
         WHERE is_active = true
-      `,
+      `
     );
 
     return tenants.map((tenant) => tenant.schemaName);
@@ -27,7 +26,7 @@ export class MembershipSchedulerRepository {
 
   async findMembershipsToAutoRenew(
     tenantSchema: string,
-    now: Date,
+    now: Date
   ): Promise<MembershipRenewalCandidate[]> {
     const prisma = this.databaseService.getPrisma();
     return prisma.$queryRawUnsafe<MembershipRenewalCandidate[]>(
@@ -44,14 +43,14 @@ export class MembershipSchedulerRepository {
           AND mr.auto_renew = true
         LIMIT 100
       `,
-      now,
+      now
     );
   }
 
   async renewMembershipValidity(
     tenantSchema: string,
     membershipId: string,
-    newValidTo: Date,
+    newValidTo: Date
   ): Promise<void> {
     const prisma = this.databaseService.getPrisma();
     await prisma.$executeRawUnsafe(
@@ -61,14 +60,14 @@ export class MembershipSchedulerRepository {
         WHERE id = $2::uuid
       `,
       newValidTo,
-      membershipId,
+      membershipId
     );
   }
 
   async insertAutoRenewChangeLog(
     tenantSchema: string,
     membershipId: string,
-    diffJson: string,
+    diffJson: string
   ): Promise<void> {
     const prisma = this.databaseService.getPrisma();
     await prisma.$executeRawUnsafe(
@@ -88,7 +87,7 @@ export class MembershipSchedulerRepository {
         )
       `,
       membershipId,
-      diffJson,
+      diffJson
     );
   }
 
@@ -102,16 +101,13 @@ export class MembershipSchedulerRepository {
           AND is_expired = false
           AND auto_renew = false
       `,
-      now,
+      now
     );
 
     return Number(result);
   }
 
-  async findExpiredMembershipIds(
-    tenantSchema: string,
-    now: Date,
-  ): Promise<string[]> {
+  async findExpiredMembershipIds(tenantSchema: string, now: Date): Promise<string[]> {
     const prisma = this.databaseService.getPrisma();
     const records = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
       `
@@ -121,7 +117,7 @@ export class MembershipSchedulerRepository {
           AND is_expired = true
         LIMIT 100
       `,
-      now,
+      now
     );
 
     return records.map((record) => record.id);
@@ -130,7 +126,7 @@ export class MembershipSchedulerRepository {
   async insertExpirationChangeLog(
     tenantSchema: string,
     membershipId: string,
-    diffJson: string,
+    diffJson: string
   ): Promise<void> {
     const prisma = this.databaseService.getPrisma();
     await prisma.$executeRawUnsafe(
@@ -150,14 +146,14 @@ export class MembershipSchedulerRepository {
         )
       `,
       membershipId,
-      diffJson,
+      diffJson
     );
   }
 
   async getUpcomingExpirations(
     tenantSchema: string,
     now: Date,
-    futureDate: Date,
+    futureDate: Date
   ): Promise<UpcomingExpirationRecord[]> {
     const prisma = this.databaseService.getPrisma();
     return prisma.$queryRawUnsafe<UpcomingExpirationRecord[]>(
@@ -174,7 +170,7 @@ export class MembershipSchedulerRepository {
           AND mr.auto_renew = false
       `,
       now,
-      futureDate,
+      futureDate
     );
   }
 }

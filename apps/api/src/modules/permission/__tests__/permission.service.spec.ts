@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { RedisService } from '../../redis/redis.service';
@@ -11,7 +10,12 @@ describe('PermissionSnapshotService', () => {
   let redisHashes: Map<string, Record<string, string>>;
 
   // Helper function to get the correct key format
-  const getKey = (tenantSchema: string, userId: string, scopeType?: string, scopeId?: string | null) => {
+  const getKey = (
+    tenantSchema: string,
+    userId: string,
+    scopeType?: string,
+    scopeId?: string | null
+  ) => {
     if (scopeType && scopeId) {
       return `perm:${tenantSchema}:${userId}:${scopeType}:${scopeId}`;
     }
@@ -40,7 +44,7 @@ describe('PermissionSnapshotService', () => {
       }),
       keys: vi.fn().mockImplementation(async (pattern: string) => {
         const prefix = pattern.replace('*', '');
-        return Array.from(redisHashes.keys()).filter(k => k.startsWith(prefix));
+        return Array.from(redisHashes.keys()).filter((k) => k.startsWith(prefix));
       }),
       expire: vi.fn(),
       exists: vi.fn().mockImplementation(async (key: string) => {
@@ -132,12 +136,7 @@ describe('PermissionSnapshotService', () => {
         '*:admin': 'grant',
       });
 
-      const result = await service.checkPermission(
-        tenantSchema,
-        userId,
-        'any.resource',
-        'delete'
-      );
+      const result = await service.checkPermission(tenantSchema, userId, 'any.resource', 'delete');
 
       expect(result).toBe(true);
     });
@@ -225,7 +224,7 @@ describe('PermissionSnapshotService', () => {
       redisHashes.set(getKey(tenantSchema, userId, 'talent', 'talent-1'), {
         'customer.profile:read': 'grant',
       });
-      
+
       // Set empty permissions for talent-2 so exists returns true but no permission found
       redisHashes.set(getKey(tenantSchema, userId, 'talent', 'talent-2'), {});
 
@@ -251,7 +250,9 @@ describe('PermissionSnapshotService', () => {
       // Set up some snapshot data
       redisHashes.set(getKey(tenantSchema, userId), { 'resource:read': 'grant' });
       redisHashes.set(getKey(tenantSchema, userId, 'talent', 't1'), { 'resource:read': 'grant' });
-      redisHashes.set(getKey(tenantSchema, userId, 'subsidiary', 's1'), { 'resource:read': 'grant' });
+      redisHashes.set(getKey(tenantSchema, userId, 'subsidiary', 's1'), {
+        'resource:read': 'grant',
+      });
 
       await service.deleteUserSnapshots(tenantSchema, userId);
 

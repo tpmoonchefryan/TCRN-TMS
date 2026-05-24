@@ -1,7 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+import type { Job, Processor } from 'bullmq';
 
 import { PrismaClient } from '@tcrn/database';
-import type { Job, Processor } from 'bullmq';
 
 import { logLogger as logger } from '../logger';
 
@@ -53,7 +53,7 @@ async function pushToLoki(
   stream: string,
   labels: Record<string, string>,
   timestamp: string,
-  data: unknown,
+  data: unknown
 ): Promise<void> {
   if (!lokiEnabled) return;
 
@@ -67,9 +67,7 @@ async function pushToLoki(
             stream,
             ...labels,
           },
-          values: [
-            [(ts.getTime() * 1000000).toString(), JSON.stringify(data)],
-          ],
+          values: [[(ts.getTime() * 1000000).toString(), JSON.stringify(data)]],
         },
       ],
     };
@@ -93,7 +91,7 @@ async function pushToLoki(
  * Tech Event Log Processor
  */
 export const processTechEventLog: Processor<TechEventJobData> = async (
-  job: Job<TechEventJobData>,
+  job: Job<TechEventJobData>
 ) => {
   const data = job.data;
   const prisma = new PrismaClient();
@@ -116,7 +114,7 @@ export const processTechEventLog: Processor<TechEventJobData> = async (
       data.message || null,
       data.payload_json ? JSON.stringify(data.payload_json) : null,
       data.error_code || null,
-      data.error_stack || null,
+      data.error_stack || null
     );
 
     // Push to Loki
@@ -124,12 +122,14 @@ export const processTechEventLog: Processor<TechEventJobData> = async (
       'technical_event_log',
       { severity: data.severity, event_type: data.event_type, scope: data.scope || 'general' },
       data.occurred_at,
-      data,
+      data
     );
 
     logger.info(`Tech event log job ${job.id} completed`);
   } catch (error) {
-    logger.error(`Tech event log job ${job.id} failed: ${error instanceof Error ? error.message : String(error)}`);
+    logger.error(
+      `Tech event log job ${job.id} failed: ${error instanceof Error ? error.message : String(error)}`
+    );
     throw error;
   } finally {
     await prisma.$disconnect();
@@ -140,7 +140,7 @@ export const processTechEventLog: Processor<TechEventJobData> = async (
  * Integration Log Processor
  */
 export const processIntegrationLog: Processor<IntegrationJobData> = async (
-  job: Job<IntegrationJobData>,
+  job: Job<IntegrationJobData>
 ) => {
   const data = job.data;
   const prisma = new PrismaClient();
@@ -165,20 +165,26 @@ export const processIntegrationLog: Processor<IntegrationJobData> = async (
       data.response_body ? JSON.stringify(data.response_body) : null,
       data.latency_ms || null,
       data.error_message || null,
-      data.trace_id || null,
+      data.trace_id || null
     );
 
     // Push to Loki
     await pushToLoki(
       'integration_log',
-      { direction: data.direction, consumer_code: data.consumer_code || 'unknown', status: data.response_status?.toString() || 'unknown' },
+      {
+        direction: data.direction,
+        consumer_code: data.consumer_code || 'unknown',
+        status: data.response_status?.toString() || 'unknown',
+      },
       data.occurred_at,
-      data,
+      data
     );
 
     logger.info(`Integration log job ${job.id} completed`);
   } catch (error) {
-    logger.error(`Integration log job ${job.id} failed: ${error instanceof Error ? error.message : String(error)}`);
+    logger.error(
+      `Integration log job ${job.id} failed: ${error instanceof Error ? error.message : String(error)}`
+    );
     throw error;
   } finally {
     await prisma.$disconnect();

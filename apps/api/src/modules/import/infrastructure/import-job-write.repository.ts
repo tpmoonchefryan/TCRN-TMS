@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable } from '@nestjs/common';
 
 import { DatabaseService } from '../../database';
@@ -22,9 +21,7 @@ interface CancelableImportJobRecord {
 
 @Injectable()
 export class ImportJobWriteRepository {
-  constructor(
-    private readonly databaseService: DatabaseService,
-  ) {}
+  constructor(private readonly databaseService: DatabaseService) {}
 
   private get prisma() {
     return this.databaseService.getPrisma();
@@ -32,27 +29,33 @@ export class ImportJobWriteRepository {
 
   async findTalentForCreation(
     tenantSchema: string,
-    talentId: string,
+    talentId: string
   ): Promise<ImportJobCreationTalentRecord | null> {
-    const talents = await this.prisma.$queryRawUnsafe<ImportJobCreationTalentRecord[]>(`
+    const talents = await this.prisma.$queryRawUnsafe<ImportJobCreationTalentRecord[]>(
+      `
       SELECT id, profile_store_id
       FROM "${tenantSchema}".talent
       WHERE id = $1::uuid
-    `, talentId);
+    `,
+      talentId
+    );
 
     return talents[0] ?? null;
   }
 
   async findConsumerByCode(
     tenantSchema: string,
-    consumerCode: string,
+    consumerCode: string
   ): Promise<ImportConsumerRecord | null> {
-    const consumers = await this.prisma.$queryRawUnsafe<ImportConsumerRecord[]>(`
+    const consumers = await this.prisma.$queryRawUnsafe<ImportConsumerRecord[]>(
+      `
       SELECT id
       FROM "${tenantSchema}".consumer
       WHERE code = $1
         AND is_active = true
-    `, consumerCode);
+    `,
+      consumerCode
+    );
 
     return consumers[0] ?? null;
   }
@@ -69,9 +72,10 @@ export class ImportJobWriteRepository {
       consumerId: string | null;
       totalRows: number;
       userId: string;
-    },
+    }
   ): Promise<RawImportJobRecord> {
-    const jobs = await this.prisma.$queryRawUnsafe<RawImportJobRecord[]>(`
+    const jobs = await this.prisma.$queryRawUnsafe<RawImportJobRecord[]>(
+      `
       INSERT INTO "${tenantSchema}".import_job (
         id, talent_id, profile_store_id, job_type, status, file_name, file_size, consumer_id,
         total_rows, processed_rows, success_rows, failed_rows, warning_rows, created_by, created_at
@@ -89,7 +93,7 @@ export class ImportJobWriteRepository {
       params.fileSize,
       params.consumerId,
       params.totalRows,
-      params.userId,
+      params.userId
     );
 
     return jobs[0];
@@ -98,23 +102,31 @@ export class ImportJobWriteRepository {
   async findCancelableJob(
     tenantSchema: string,
     jobId: string,
-    talentId: string,
+    talentId: string
   ): Promise<CancelableImportJobRecord | null> {
-    const jobs = await this.prisma.$queryRawUnsafe<CancelableImportJobRecord[]>(`
+    const jobs = await this.prisma.$queryRawUnsafe<CancelableImportJobRecord[]>(
+      `
       SELECT id, status
       FROM "${tenantSchema}".import_job
       WHERE id = $1::uuid
         AND talent_id = $2::uuid
-    `, jobId, talentId);
+    `,
+      jobId,
+      talentId
+    );
 
     return jobs[0] ?? null;
   }
 
   cancelJob(tenantSchema: string, jobId: string) {
-    return this.prisma.$executeRawUnsafe(`
+    return this.prisma.$executeRawUnsafe(
+      `
       UPDATE "${tenantSchema}".import_job
       SET status = $1, completed_at = NOW()
       WHERE id = $2::uuid
-    `, ImportJobStatus.CANCELLED, jobId);
+    `,
+      ImportJobStatus.CANCELLED,
+      jobId
+    );
   }
 }

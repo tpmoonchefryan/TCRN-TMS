@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import type { ProfileType } from '../dto/customer.dto';
 
 export interface CustomerProfileAccessRecord {
@@ -13,10 +12,10 @@ export interface CustomerProfileAccessRecord {
 
 export const hasCustomerProfileVersionMismatch = (
   customer: CustomerProfileAccessRecord,
-  expectedVersion: number,
+  expectedVersion: number
 ): boolean => customer.version !== expectedVersion;
 
-export const buildCustomerProfileActivationResult = (
-  id: string,
-  isActive: boolean,
-) => ({ id, isActive });
+export const buildCustomerProfileActivationResult = (id: string, isActive: boolean) => ({
+  id,
+  isActive,
+});

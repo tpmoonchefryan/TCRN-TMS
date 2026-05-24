@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable } from '@nestjs/common';
 
 import { DatabaseService } from '../../database';
@@ -11,9 +10,7 @@ import {
 
 @Injectable()
 export class MarshmallowExportStateRepository {
-  constructor(
-    private readonly databaseService: DatabaseService,
-  ) {}
+  constructor(private readonly databaseService: DatabaseService) {}
 
   private get prisma() {
     return this.databaseService.getPrisma();
@@ -26,7 +23,7 @@ export class MarshmallowExportStateRepository {
       totalRecords: number;
       processedRecords: number;
       status: string;
-    },
+    }
   ): Promise<void> {
     await this.executeFallbackUpdate(
       `
@@ -38,12 +35,7 @@ export class MarshmallowExportStateRepository {
             updated_at = NOW()
         WHERE id = $4::uuid
       `,
-      [
-        params.status,
-        params.totalRecords,
-        params.processedRecords,
-        params.jobId,
-      ],
+      [params.status, params.totalRecords, params.processedRecords, params.jobId],
       `
         UPDATE "${tenantSchema}".${MARSHMALLOW_EXPORT_LEGACY_TABLE}
         SET status = $1,
@@ -60,7 +52,7 @@ export class MarshmallowExportStateRepository {
         params.processedRecords,
         params.jobId,
         MARSHMALLOW_EXPORT_QUEUE_JOB_NAME,
-      ],
+      ]
     );
   }
 
@@ -73,7 +65,7 @@ export class MarshmallowExportStateRepository {
       fileName: string;
       totalRecords: number;
       expiresAt: Date;
-    },
+    }
   ): Promise<void> {
     await this.executeFallbackUpdate(
       `
@@ -117,7 +109,7 @@ export class MarshmallowExportStateRepository {
         params.expiresAt,
         params.jobId,
         MARSHMALLOW_EXPORT_QUEUE_JOB_NAME,
-      ],
+      ]
     );
   }
 
@@ -127,7 +119,7 @@ export class MarshmallowExportStateRepository {
       jobId: string;
       status: string;
       errorMessage: string;
-    },
+    }
   ): Promise<void> {
     await this.executeFallbackUpdate(
       `
@@ -148,12 +140,7 @@ export class MarshmallowExportStateRepository {
         WHERE id = $3::uuid
           AND job_type = $4
       `,
-      [
-        params.status,
-        params.errorMessage,
-        params.jobId,
-        MARSHMALLOW_EXPORT_QUEUE_JOB_NAME,
-      ],
+      [params.status, params.errorMessage, params.jobId, MARSHMALLOW_EXPORT_QUEUE_JOB_NAME]
     );
   }
 
@@ -161,7 +148,7 @@ export class MarshmallowExportStateRepository {
     currentSql: string,
     currentParams: unknown[],
     legacySql: string,
-    legacyParams: unknown[],
+    legacyParams: unknown[]
   ): Promise<void> {
     const currentUpdated = await this.prisma.$executeRawUnsafe(currentSql, ...currentParams);
     if (currentUpdated > 0) {

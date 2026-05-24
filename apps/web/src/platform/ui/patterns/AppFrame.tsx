@@ -60,7 +60,9 @@ export const AppFrame: React.FC<AppFrameProps> = ({
   }, [isMobileSidebarMounted, onMobileSidebarOpenChange]);
 
   return (
-    <div className={`flex h-[100dvh] max-h-[100dvh] flex-col overflow-hidden ${tokens.colors.bgBase}`}>
+    <div
+      className={`flex h-[100dvh] max-h-[100dvh] flex-col overflow-hidden ${tokens.colors.bgBase}`}
+    >
       <a
         href="#app-main-content"
         className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-full focus:bg-slate-950 focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-white focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-indigo-400"
@@ -106,8 +108,19 @@ export const AppFrame: React.FC<AppFrameProps> = ({
                   aria-label={mobileSidebarCloseLabel}
                   onClick={() => onMobileSidebarOpenChange?.(false)}
                 >
-                  <svg className="h-5 w-5" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  <svg
+                    className="h-5 w-5"
+                    aria-hidden="true"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
                   </svg>
                 </button>
               </div>

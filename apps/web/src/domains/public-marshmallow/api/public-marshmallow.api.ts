@@ -145,7 +145,7 @@ export async function readPublicMarshmallowMessages(
     cursor?: string;
     limit?: number;
     cacheBust?: string;
-  } = {},
+  } = {}
 ) {
   const response = await fetch(
     `${buildMarshmallowEndpoint(path, 'messages')}${buildQueryString({
@@ -157,7 +157,7 @@ export async function readPublicMarshmallowMessages(
     {
       credentials: 'include',
       headers: withBrowserPublicConsumerHeaders(),
-    },
+    }
   );
 
   return readApiData<PublicMarshmallowMessagesResponse>(response);
@@ -165,7 +165,7 @@ export async function readPublicMarshmallowMessages(
 
 export async function submitPublicMarshmallowMessage(
   path: string,
-  input: SubmitPublicMarshmallowInput,
+  input: SubmitPublicMarshmallowInput
 ) {
   const response = await fetch(buildMarshmallowEndpoint(path, 'submit'), {
     method: 'POST',
@@ -184,16 +184,19 @@ export async function togglePublicMarshmallowReaction(
   input: {
     reaction: string;
     fingerprint: string;
-  },
+  }
 ) {
-  const response = await fetch(`/api/v1/public/marshmallow/messages/${encodeURIComponent(messageId)}/react`, {
-    method: 'POST',
-    credentials: 'include',
-    headers: withBrowserPublicConsumerHeaders({
-      'Content-Type': 'application/json',
-    }),
-    body: JSON.stringify(input),
-  });
+  const response = await fetch(
+    `/api/v1/public/marshmallow/messages/${encodeURIComponent(messageId)}/react`,
+    {
+      method: 'POST',
+      credentials: 'include',
+      headers: withBrowserPublicConsumerHeaders({
+        'Content-Type': 'application/json',
+      }),
+      body: JSON.stringify(input),
+    }
+  );
 
   return readApiData<ToggleReactionResponse>(response);
 }

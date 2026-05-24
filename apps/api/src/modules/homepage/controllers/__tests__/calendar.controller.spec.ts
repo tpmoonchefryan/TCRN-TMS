@@ -15,7 +15,7 @@ describe('CalendarController', () => {
 
     // Manual instantiation to avoid DI issues in unit test environment
     controller = new CalendarController(mockPublicHomepageService as PublicHomepageService);
-    
+
     // Check if we still want to use the module for other things later
     /*
     const module: TestingModule = await Test.createTestingModule({
@@ -52,23 +52,25 @@ describe('CalendarController', () => {
                 events: [],
               },
               props: {
-                 events: [
+                events: [
                   {
                     title: 'Stream 1',
-                    start: '2024-01-01T20:00:00.000Z', 
+                    start: '2024-01-01T20:00:00.000Z',
                     duration: 60,
                     day: 'mon',
                     time: '20:00',
                   },
-                 ]
-              }
+                ],
+              },
             },
           ],
         },
         homepage: { version: {} }, // Legacy/Unused in controller but kept if needed
       };
 
-      mockPublicHomepageService.getPublishedHomepageOrThrow = vi.fn().mockResolvedValue(mockHomepageData);
+      mockPublicHomepageService.getPublishedHomepageOrThrow = vi
+        .fn()
+        .mockResolvedValue(mockHomepageData);
 
       const mockRes = {
         setHeader: vi.fn(),
@@ -78,14 +80,18 @@ describe('CalendarController', () => {
 
       await controller.getCalendar('test-path', 'zh', mockRes);
 
-      expect(mockPublicHomepageService.getPublishedHomepageOrThrow).toHaveBeenCalledWith('test-path');
-      expect(mockRes.set).toHaveBeenCalledWith(expect.objectContaining({
-        'Content-Disposition': 'inline; filename="calendar.ics"',
-        'Cache-Control': 'no-cache, no-store, must-revalidate'
-      }));
+      expect(mockPublicHomepageService.getPublishedHomepageOrThrow).toHaveBeenCalledWith(
+        'test-path'
+      );
+      expect(mockRes.set).toHaveBeenCalledWith(
+        expect.objectContaining({
+          'Content-Disposition': 'inline; filename="calendar.ics"',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+        })
+      );
       // Verify timezone was set (mock data needs to be updated if we want to test specific timezone)
       expect(mockRes.send).toHaveBeenCalled();
-      
+
       // Verify content contains event title
       const sendCall = (mockRes.send as any).mock.calls[0][0];
       expect(sendCall).toContain('SUMMARY:[其他] Stream 1');

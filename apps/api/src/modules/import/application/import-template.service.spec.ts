@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import {
@@ -16,10 +15,9 @@ describe('ImportTemplateApplicationService', () => {
   });
 
   it('accepts the current individual template headers', () => {
-    const csv = [
-      INDIVIDUAL_IMPORT_HEADERS.join(','),
-      'EXT001,Test User,en,ACTIVE,vip,notes',
-    ].join('\n');
+    const csv = [INDIVIDUAL_IMPORT_HEADERS.join(','), 'EXT001,Test User,en,ACTIVE,vip,notes'].join(
+      '\n'
+    );
 
     const result = service.validateCsvTemplate(csv, 'individual');
 
@@ -67,7 +65,7 @@ describe('ImportTemplateApplicationService', () => {
         status_code: 'ACTIVE',
         tags: 'vip,new',
       },
-      1,
+      1
     );
 
     expect(result.success).toBe(true);
@@ -86,7 +84,7 @@ describe('ImportTemplateApplicationService', () => {
         nickname: 'Test User',
         primary_language: 'zh',
       },
-      1,
+      1
     );
 
     expect(result.success).toBe(false);

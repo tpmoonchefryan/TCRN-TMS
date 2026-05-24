@@ -1,10 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 
-import {
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
 import { ErrorCodes, type RequestContext } from '@tcrn/shared';
 
 import {
@@ -19,19 +15,15 @@ import { CustomerArchiveAccessService } from './customer-archive-access.service'
 export class CustomerExternalIdApplicationService {
   constructor(
     private readonly customerArchiveAccessService: CustomerArchiveAccessService,
-    private readonly customerExternalIdRepository: CustomerExternalIdRepository,
+    private readonly customerExternalIdRepository: CustomerExternalIdRepository
   ) {}
 
-  async findByCustomer(
-    customerId: string,
-    talentId: string,
-    context: RequestContext,
-  ) {
+  async findByCustomer(customerId: string, talentId: string, context: RequestContext) {
     await this.verifyCustomerAccess(customerId, talentId, context);
 
     const externalIds = await this.customerExternalIdRepository.findByCustomer(
       context.tenantSchema,
-      customerId,
+      customerId
     );
 
     return externalIds.map((record) => mapCustomerExternalIdRecord(record));
@@ -41,12 +33,12 @@ export class CustomerExternalIdApplicationService {
     customerId: string,
     talentId: string,
     dto: { consumerCode: string; externalId: string },
-    context: RequestContext,
+    context: RequestContext
   ) {
     const customer = await this.verifyCustomerAccess(customerId, talentId, context);
     const consumer = await this.customerExternalIdRepository.findActiveConsumerByCode(
       context.tenantSchema,
-      dto.consumerCode,
+      dto.consumerCode
     );
 
     if (!consumer) {
@@ -60,16 +52,13 @@ export class CustomerExternalIdApplicationService {
       context.tenantSchema,
       customer.profileStoreId,
       consumer.id,
-      dto.externalId,
+      dto.externalId
     );
 
     if (existing) {
       throw new ConflictException({
         code: ErrorCodes.RES_ALREADY_EXISTS,
-        message: buildDuplicateCustomerExternalIdMessage(
-          dto.consumerCode,
-          dto.externalId,
-        ),
+        message: buildDuplicateCustomerExternalIdMessage(dto.consumerCode, dto.externalId),
       });
     }
 
@@ -110,14 +99,14 @@ export class CustomerExternalIdApplicationService {
     customerId: string,
     externalIdId: string,
     talentId: string,
-    context: RequestContext,
+    context: RequestContext
   ) {
     await this.verifyCustomerAccess(customerId, talentId, context);
 
     const externalId = await this.customerExternalIdRepository.findOwnedExternalId(
       context.tenantSchema,
       customerId,
-      externalIdId,
+      externalIdId
     );
 
     if (!externalId) {
@@ -132,10 +121,7 @@ export class CustomerExternalIdApplicationService {
     await this.customerExternalIdRepository.insertChangeLog(context.tenantSchema, {
       action: 'delete',
       objectId: externalIdId,
-      objectName: buildCustomerExternalIdObjectName(
-        externalId.consumerCode,
-        externalId.externalId,
-      ),
+      objectName: buildCustomerExternalIdObjectName(externalId.consumerCode, externalId.externalId),
       diff: JSON.stringify({
         old: {
           consumerCode: externalId.consumerCode,
@@ -151,13 +137,13 @@ export class CustomerExternalIdApplicationService {
     consumerCode: string,
     externalId: string,
     profileStoreId: string,
-    context: RequestContext,
+    context: RequestContext
   ) {
     return this.customerExternalIdRepository.findCustomerByExternalId(
       context.tenantSchema,
       consumerCode,
       externalId,
-      profileStoreId,
+      profileStoreId
     );
   }
 
@@ -165,25 +151,25 @@ export class CustomerExternalIdApplicationService {
     consumerCode: string,
     externalId: string,
     profileStoreId: string,
-    context: RequestContext,
+    context: RequestContext
   ) {
     return this.customerExternalIdRepository.existsInProfileStore(
       context.tenantSchema,
       consumerCode,
       externalId,
-      profileStoreId,
+      profileStoreId
     );
   }
 
   private async verifyCustomerAccess(
     customerId: string,
     talentId: string,
-    context: RequestContext,
+    context: RequestContext
   ) {
     return this.customerArchiveAccessService.requireCustomerArchiveAccess(
       customerId,
       talentId,
-      context,
+      context
     );
   }
 }

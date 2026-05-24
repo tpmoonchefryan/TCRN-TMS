@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable } from '@nestjs/common';
 
 import { DatabaseService } from '../../database';
@@ -16,7 +15,7 @@ export class MarshmallowConfigRepository {
 
   async findConfigByTalentId(
     tenantSchema: string,
-    talentId: string,
+    talentId: string
   ): Promise<MarshmallowConfigRecord | null> {
     const prisma = this.databaseService.getPrisma();
     const configs = await prisma.$queryRawUnsafe<MarshmallowConfigRecord[]>(
@@ -38,7 +37,7 @@ export class MarshmallowConfigRepository {
         FROM "${tenantSchema}".marshmallow_config
         WHERE talent_id = $1::uuid
       `,
-      talentId,
+      talentId
     );
 
     return configs[0] ?? null;
@@ -46,7 +45,7 @@ export class MarshmallowConfigRepository {
 
   async findActiveTalent(
     tenantSchema: string,
-    talentId: string,
+    talentId: string
   ): Promise<MarshmallowTalentRecord | null> {
     const prisma = this.databaseService.getPrisma();
     const talents = await prisma.$queryRawUnsafe<MarshmallowTalentRecord[]>(
@@ -56,7 +55,7 @@ export class MarshmallowConfigRepository {
         WHERE id = $1::uuid
           AND is_active = true
       `,
-      talentId,
+      talentId
     );
 
     return talents[0] ?? null;
@@ -154,7 +153,7 @@ export class MarshmallowConfigRepository {
       defaultConfig.allowedReactions,
       JSON.stringify(defaultConfig.theme),
       JSON.stringify({ en: '', zh_HANS: '', zh_HANT: '', ja: '', ko: '', fr: '' }),
-      JSON.stringify({ en: '', zh_HANS: '', zh_HANT: '', ja: '', ko: '', fr: '' }),
+      JSON.stringify({ en: '', zh_HANS: '', zh_HANT: '', ja: '', ko: '', fr: '' })
     );
 
     return configs[0];
@@ -162,7 +161,7 @@ export class MarshmallowConfigRepository {
 
   async findStatsByConfigId(
     tenantSchema: string,
-    configId: string,
+    configId: string
   ): Promise<MarshmallowConfigStatsRow | null> {
     const prisma = this.databaseService.getPrisma();
     const stats = await prisma.$queryRawUnsafe<MarshmallowConfigStatsRow[]>(
@@ -176,16 +175,13 @@ export class MarshmallowConfigRepository {
         FROM "${tenantSchema}".marshmallow_message
         WHERE config_id = $1::uuid
       `,
-      configId,
+      configId
     );
 
     return stats[0] ?? null;
   }
 
-  async findTalentHomepagePath(
-    tenantSchema: string,
-    talentId: string,
-  ): Promise<string | null> {
+  async findTalentHomepagePath(tenantSchema: string, talentId: string): Promise<string | null> {
     const prisma = this.databaseService.getPrisma();
     const talents = await prisma.$queryRawUnsafe<Array<{ homepagePath: string | null }>>(
       `
@@ -193,7 +189,7 @@ export class MarshmallowConfigRepository {
         FROM "${tenantSchema}".talent
         WHERE id = $1::uuid
       `,
-      talentId,
+      talentId
     );
 
     return talents[0]?.homepagePath ?? null;
@@ -201,16 +197,18 @@ export class MarshmallowConfigRepository {
 
   async findTalentRouteRecord(
     tenantSchema: string,
-    talentId: string,
+    talentId: string
   ): Promise<Pick<MarshmallowTalentRecord, 'code' | 'homepagePath'> | null> {
     const prisma = this.databaseService.getPrisma();
-    const talents = await prisma.$queryRawUnsafe<Array<Pick<MarshmallowTalentRecord, 'code' | 'homepagePath'>>>(
+    const talents = await prisma.$queryRawUnsafe<
+      Array<Pick<MarshmallowTalentRecord, 'code' | 'homepagePath'>>
+    >(
       `
         SELECT code, homepage_path as "homepagePath"
         FROM "${tenantSchema}".talent
         WHERE id = $1::uuid
       `,
-      talentId,
+      talentId
     );
 
     return talents[0] ?? null;
@@ -219,7 +217,7 @@ export class MarshmallowConfigRepository {
   async updateConfigFields(
     tenantSchema: string,
     configId: string,
-    changes: MarshmallowConfigFieldChange[],
+    changes: MarshmallowConfigFieldChange[]
   ): Promise<void> {
     if (changes.length === 0) {
       return;
@@ -235,7 +233,11 @@ export class MarshmallowConfigRepository {
       if (change.field === 'allowedReactions') {
         setClauses.push(`${column} = $${paramIndex}::text[]`);
         params.push(change.value);
-      } else if (change.field === 'theme' || change.field === 'termsContent' || change.field === 'privacyContent') {
+      } else if (
+        change.field === 'theme' ||
+        change.field === 'termsContent' ||
+        change.field === 'privacyContent'
+      ) {
         setClauses.push(`${column} = $${paramIndex}::jsonb`);
         params.push(JSON.stringify(change.value));
       } else {
@@ -254,7 +256,7 @@ export class MarshmallowConfigRepository {
         SET ${setClauses.join(', ')}
         WHERE id = $1::uuid
       `,
-      ...params,
+      ...params
     );
   }
 

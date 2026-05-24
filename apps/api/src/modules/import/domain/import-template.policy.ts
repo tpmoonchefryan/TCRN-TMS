@@ -1,12 +1,9 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
-import { SUPPORTED_UI_LOCALES } from '@tcrn/shared';
 import { z } from 'zod';
 
-import {
-  type CompanyImportRow,
-  type IndividualImportRow,
-} from '../dto/import.dto';
+import { SUPPORTED_UI_LOCALES } from '@tcrn/shared';
+
+import { type CompanyImportRow, type IndividualImportRow } from '../dto/import.dto';
 
 const IndividualRowSchema = z.object({
   external_id: z.string().max(128).optional(),
@@ -24,7 +21,11 @@ const CompanyRowSchema = z.object({
   company_short_name: z.string().max(128).optional(),
   registration_number: z.string().max(64).optional(),
   vat_id: z.string().max(64).optional(),
-  establishment_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().or(z.literal('')),
+  establishment_date: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional()
+    .or(z.literal('')),
   business_segment_code: z.string().max(32).optional(),
   website: z.string().url().max(512).optional().or(z.literal('')),
   status_code: z.string().max(32).optional(),
@@ -107,7 +108,7 @@ export interface ImportErrorCsvRow {
 
 export const validateCsvTemplate = (
   content: string,
-  templateKind: ImportTemplateKind,
+  templateKind: ImportTemplateKind
 ): CsvTemplateValidationResult => {
   const normalizedContent = content.replace(/^\ufeff/, '');
   const lines = normalizedContent
@@ -129,12 +130,10 @@ export const validateCsvTemplate = (
   const errors: string[] = [];
 
   const duplicateHeaders = headers.filter(
-    (header, index) => header.length > 0 && headers.indexOf(header) !== index,
+    (header, index) => header.length > 0 && headers.indexOf(header) !== index
   );
   if (duplicateHeaders.length > 0) {
-    errors.push(
-      `Duplicate headers are not allowed: ${[...new Set(duplicateHeaders)].join(', ')}`,
-    );
+    errors.push(`Duplicate headers are not allowed: ${[...new Set(duplicateHeaders)].join(', ')}`);
   }
 
   const missingHeaders = expectedHeaders.filter((header) => !headers.includes(header));
@@ -156,7 +155,7 @@ export const validateCsvTemplate = (
 };
 
 export const parseIndividualImportRow = (
-  row: IndividualImportRow,
+  row: IndividualImportRow
 ): ParseResult<ParsedIndividualRow> => {
   const warnings: string[] = [];
   const validation = IndividualRowSchema.safeParse(row);
@@ -185,9 +184,7 @@ export const parseIndividualImportRow = (
   };
 };
 
-export const parseCompanyImportRow = (
-  row: CompanyImportRow,
-): ParseResult<ParsedCompanyRow> => {
+export const parseCompanyImportRow = (row: CompanyImportRow): ParseResult<ParsedCompanyRow> => {
   const warnings: string[] = [];
   const validation = CompanyRowSchema.safeParse(row);
 
@@ -222,14 +219,7 @@ export const parseCompanyImportRow = (
 };
 
 export const generateIndividualImportTemplate = (): string => {
-  const exampleRow = [
-    'EXT001',
-    '粉丝小明',
-    'zh_HANS',
-    'ACTIVE',
-    '活跃,高价值',
-    '老粉丝',
-  ];
+  const exampleRow = ['EXT001', '粉丝小明', 'zh_HANS', 'ACTIVE', '活跃,高价值', '老粉丝'];
 
   return [INDIVIDUAL_IMPORT_HEADERS.join(','), exampleRow.join(',')].join('\n');
 };
@@ -261,16 +251,17 @@ export const generateImportErrorsCsv = (errors: ImportErrorCsvRow[]): string => 
       error.errorCode,
       `"${error.errorMessage.replace(/"/g, '""')}"`,
       `"${error.originalData.replace(/"/g, '""')}"`,
-    ].join(','),
+    ].join(',')
   );
 
   return [headers.join(','), ...rows].join('\n');
 };
 
-export const getExpectedHeaders = (
-  templateKind: ImportTemplateKind,
-): readonly string[] =>
+export const getExpectedHeaders = (templateKind: ImportTemplateKind): readonly string[] =>
   templateKind === 'company' ? COMPANY_IMPORT_HEADERS : INDIVIDUAL_IMPORT_HEADERS;
 
 const parseTags = (value?: string): string[] =>
-  value?.split(',').map((tag) => tag.trim()).filter(Boolean) || [];
+  value
+    ?.split(',')
+    .map((tag) => tag.trim())
+    .filter(Boolean) || [];

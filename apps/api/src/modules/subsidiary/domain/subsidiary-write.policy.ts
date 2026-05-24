@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { BadRequestException, ConflictException } from '@nestjs/common';
+
 import { ErrorCodes, type LocalizedText, type PartialLocalizedText } from '@tcrn/shared';
 
 import type { SubsidiaryData } from './subsidiary-read.policy';
@@ -26,7 +26,7 @@ export const MAX_SUBSIDIARY_DEPTH = 10;
 
 export const buildSubsidiaryPath = (
   code: string,
-  parent: Pick<SubsidiaryData, 'path' | 'depth'> | null,
+  parent: Pick<SubsidiaryData, 'path' | 'depth'> | null
 ): { path: string; depth: number } => {
   if (!parent) {
     return {
@@ -50,10 +50,7 @@ export const buildSubsidiaryPath = (
   };
 };
 
-export const assertSubsidiaryVersion = (
-  currentVersion: number,
-  requestedVersion: number,
-): void => {
+export const assertSubsidiaryVersion = (currentVersion: number, requestedVersion: number): void => {
   if (currentVersion !== requestedVersion) {
     throw new BadRequestException({
       code: ErrorCodes.RES_VERSION_MISMATCH,

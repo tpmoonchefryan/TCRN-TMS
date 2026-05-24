@@ -1,8 +1,9 @@
 'use client';
 
-import type { SupportedUiLocale } from '@tcrn/shared';
 import { Send, Sparkles } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
+
+import type { SupportedUiLocale } from '@tcrn/shared';
 
 import {
   type PublicMarshmallowConfigResponse,
@@ -25,17 +26,14 @@ import {
 } from '@/domains/public-presence';
 import { ApiRequestError } from '@/platform/http/api';
 import { useUiLocale } from '@/platform/runtime/locale/locale-provider';
-import {
-  formatLocaleNumber,
-  pickLocaleText,
-} from '@/platform/runtime/locale/locale-text';
+import { formatLocaleNumber, pickLocaleText } from '@/platform/runtime/locale/locale-text';
 
 interface NoticeState {
   tone: 'success' | 'error' | 'info';
   message: string;
 }
 
-type MarshmallowLocale = SupportedUiLocale ;
+type MarshmallowLocale = SupportedUiLocale;
 
 function getApiErrorMessage(reason: unknown) {
   if (!(reason instanceof ApiRequestError)) {
@@ -88,7 +86,7 @@ function readOrCreateFingerprint(path: string) {
 
 function pickLocalizedLegalCopy(
   source: PublicMarshmallowConfigResponse['terms'] | PublicMarshmallowConfigResponse['privacy'],
-  locale: MarshmallowLocale,
+  locale: MarshmallowLocale
 ) {
   return asFilledString(source[locale]) || asFilledString(source.en) || null;
 }
@@ -135,7 +133,7 @@ function formatCharacterCount(current: number, maximum: number, locale: Marshmal
 
 function formatCaptchaMode(
   mode: PublicMarshmallowConfigResponse['captchaMode'],
-  copy: ReturnType<typeof useUiLocale>['copy']['publicMarshmallow'],
+  copy: ReturnType<typeof useUiLocale>['copy']['publicMarshmallow']
 ) {
   switch (mode) {
     case 'always':
@@ -242,24 +240,29 @@ export function PublicMarshmallowScreen({
     };
   }, [fingerprint, path]);
 
-  const theme = useMemo(() => derivePublicMarshmallowThemeSurface(config?.theme || {}), [config?.theme]);
+  const theme = useMemo(
+    () => derivePublicMarshmallowThemeSurface(config?.theme || {}),
+    [config?.theme]
+  );
   const localizedTerms = useMemo(
     () => (config ? pickLocalizedLegalCopy(config.terms, locale) : null),
-    [config, locale],
+    [config, locale]
   );
   const localizedPrivacy = useMemo(
     () => (config ? pickLocalizedLegalCopy(config.privacy, locale) : null),
-    [config, locale],
+    [config, locale]
   );
   const captchaRuntimeBypass = config?.turnstile?.runtimeBypass === true;
   const requiresCaptchaWidget = config?.captchaMode !== 'never' && !captchaRuntimeBypass;
   const turnstileRuntimeReady = config?.turnstile?.ready ?? true;
   const effectiveTurnstileSiteKey = config?.turnstile?.siteKey || turnstileSiteKey;
   const cannotSubmitDueToMissingCaptcha = Boolean(
-    config && requiresCaptchaWidget && (!effectiveTurnstileSiteKey || !turnstileRuntimeReady),
+    config && requiresCaptchaWidget && (!effectiveTurnstileSiteKey || !turnstileRuntimeReady)
   );
 
-  async function refreshMessages(options: { append?: boolean; nextCursor?: string | null; cacheBust?: string } = {}) {
+  async function refreshMessages(
+    options: { append?: boolean; nextCursor?: string | null; cacheBust?: string } = {}
+  ) {
     const result = await readPublicMarshmallowMessages(path, {
       fingerprint,
       limit: 20,
@@ -385,7 +388,7 @@ export function PublicMarshmallowScreen({
             reactionCounts: result.counts,
             userReactions: [...currentUserReactions],
           };
-        }),
+        })
       );
     } catch (reason) {
       setNotice({
@@ -399,7 +402,10 @@ export function PublicMarshmallowScreen({
 
   if (loading && !config) {
     return (
-      <PublicPresenceShell contentClassName="flex min-h-[70vh] items-center" decorationDensity="calm">
+      <PublicPresenceShell
+        contentClassName="flex min-h-[70vh] items-center"
+        decorationDensity="calm"
+      >
         <div className="w-full space-y-5">
           <PublicPresenceSurface className="p-8">
             <PublicPresenceBadge icon={<Sparkles />} tone="rose">
@@ -422,15 +428,19 @@ export function PublicMarshmallowScreen({
         decorationDensity="calm"
         width="sm"
       >
-          <PublicPresenceStateView
-            tone={isUnavailable ? 'unavailable' : 'error'}
-            title={isUnavailable ? copy.publicMarshmallow.unavailableTitle : copy.publicMarshmallow.failedTitle}
-            description={
-              isUnavailable
-                ? copy.publicMarshmallow.unavailableDescription
-                : error || copy.publicMarshmallow.failedDescription
-            }
-          />
+        <PublicPresenceStateView
+          tone={isUnavailable ? 'unavailable' : 'error'}
+          title={
+            isUnavailable
+              ? copy.publicMarshmallow.unavailableTitle
+              : copy.publicMarshmallow.failedTitle
+          }
+          description={
+            isUnavailable
+              ? copy.publicMarshmallow.unavailableDescription
+              : error || copy.publicMarshmallow.failedDescription
+          }
+        />
       </PublicPresenceShell>
     );
   }
@@ -438,39 +448,56 @@ export function PublicMarshmallowScreen({
   return (
     <PublicPresenceShell decorationDensity="calm" style={{ background: theme.pageBackground }}>
       <div className="space-y-8">
-        <PublicPresenceSurface className="overflow-hidden p-8" style={{ backgroundColor: theme.panelBackground }}>
+        <PublicPresenceSurface
+          className="overflow-hidden p-8"
+          style={{ backgroundColor: theme.panelBackground }}
+        >
           <PublicPresenceHero
-            badge={(
+            badge={
               <PublicPresenceBadge icon={<Sparkles />} tone="rose">
                 {copy.publicMarshmallow.badge}
               </PublicPresenceBadge>
-            )}
-            title={config.title || `${config.talent.displayName} ${copy.publicMarshmallow.titleSuffix}`}
+            }
+            title={
+              config.title || `${config.talent.displayName} ${copy.publicMarshmallow.titleSuffix}`
+            }
             description={config.welcomeText ? <p>{config.welcomeText}</p> : null}
-            meta={(
+            meta={
               <>
-                <PublicPresenceBadge tone={config.allowAnonymous ? 'rose' : 'slate'} variant="outline">
-                  {config.allowAnonymous ? copy.publicMarshmallow.anonymousBadgeAllowed : copy.publicMarshmallow.namedOnlyBadge}
+                <PublicPresenceBadge
+                  tone={config.allowAnonymous ? 'rose' : 'slate'}
+                  variant="outline"
+                >
+                  {config.allowAnonymous
+                    ? copy.publicMarshmallow.anonymousBadgeAllowed
+                    : copy.publicMarshmallow.namedOnlyBadge}
                 </PublicPresenceBadge>
                 <PublicPresenceBadge tone="sky" variant="outline">
-                  {copy.publicMarshmallow.captchaModeLabel}: {formatCaptchaMode(config.captchaMode, copy.publicMarshmallow)}
+                  {copy.publicMarshmallow.captchaModeLabel}:{' '}
+                  {formatCaptchaMode(config.captchaMode, copy.publicMarshmallow)}
                 </PublicPresenceBadge>
                 <PublicPresenceBadge tone="amber" variant="outline">
-                  {formatLoadedCount(messages.length, locale, copy.publicMarshmallow.loadedCountLabel)}
+                  {formatLoadedCount(
+                    messages.length,
+                    locale,
+                    copy.publicMarshmallow.loadedCountLabel
+                  )}
                 </PublicPresenceBadge>
               </>
-            )}
-            media={config.talent.avatarUrl ? (
-              <img
-                src={config.talent.avatarUrl}
-                alt={`${config.talent.displayName} ${copy.publicMarshmallow.avatarSuffix}`}
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center bg-slate-100 text-5xl font-semibold text-slate-500">
-                {config.talent.displayName.charAt(0).toUpperCase()}
-              </div>
-            )}
+            }
+            media={
+              config.talent.avatarUrl ? (
+                <img
+                  src={config.talent.avatarUrl}
+                  alt={`${config.talent.displayName} ${copy.publicMarshmallow.avatarSuffix}`}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center bg-slate-100 text-5xl font-semibold text-slate-500">
+                  {config.talent.displayName.charAt(0).toUpperCase()}
+                </div>
+              )
+            }
           />
         </PublicPresenceSurface>
 
@@ -483,22 +510,35 @@ export function PublicMarshmallowScreen({
         ) : null}
 
         <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
-          <PublicPresenceSurface variant="note" className="p-6" style={{ backgroundColor: theme.noteBackground }}>
+          <PublicPresenceSurface
+            variant="note"
+            className="p-6"
+            style={{ backgroundColor: theme.noteBackground }}
+          >
             <div className="space-y-5">
               <div>
-                <p className="text-xs font-semibold text-slate-500">{copy.publicMarshmallow.sendSectionEyebrow}</p>
-                <h2 className="mt-2 text-2xl font-semibold text-slate-950">{copy.publicMarshmallow.sendSectionTitle}</h2>
+                <p className="text-xs font-semibold text-slate-500">
+                  {copy.publicMarshmallow.sendSectionEyebrow}
+                </p>
+                <h2 className="mt-2 text-2xl font-semibold text-slate-950">
+                  {copy.publicMarshmallow.sendSectionTitle}
+                </h2>
               </div>
               <form className="space-y-4" onSubmit={handleSubmit}>
                 <div className="space-y-2">
-                  <label htmlFor="public-marshmallow-message" className="text-sm font-medium text-slate-700">
+                  <label
+                    htmlFor="public-marshmallow-message"
+                    className="text-sm font-medium text-slate-700"
+                  >
                     {copy.publicMarshmallow.messageLabel}
                   </label>
                   <textarea
                     id="public-marshmallow-message"
                     value={content}
                     onChange={(event) => setContent(event.target.value)}
-                    placeholder={config.placeholderText || copy.publicMarshmallow.messagePlaceholder}
+                    placeholder={
+                      config.placeholderText || copy.publicMarshmallow.messagePlaceholder
+                    }
                     minLength={config.minMessageLength}
                     maxLength={config.maxMessageLength}
                     rows={7}
@@ -526,7 +566,10 @@ export function PublicMarshmallowScreen({
 
                 {!isAnonymous ? (
                   <div className="space-y-2">
-                    <label htmlFor="public-marshmallow-sender" className="text-sm font-medium text-slate-700">
+                    <label
+                      htmlFor="public-marshmallow-sender"
+                      className="text-sm font-medium text-slate-700"
+                    >
                       {copy.publicMarshmallow.displayNameLabel}
                     </label>
                     <input
@@ -552,7 +595,9 @@ export function PublicMarshmallowScreen({
 
                 {requiresCaptchaWidget && effectiveTurnstileSiteKey && turnstileRuntimeReady ? (
                   <div className="space-y-2">
-                    <p className="text-sm font-medium text-slate-700">{copy.publicMarshmallow.turnstileLabel}</p>
+                    <p className="text-sm font-medium text-slate-700">
+                      {copy.publicMarshmallow.turnstileLabel}
+                    </p>
                     <TurnstileWidget
                       siteKey={effectiveTurnstileSiteKey}
                       resetSignal={turnstileResetSignal}
@@ -568,20 +613,31 @@ export function PublicMarshmallowScreen({
                   style={{ backgroundColor: theme.accentColor, color: theme.accentText }}
                 >
                   <Send className="h-4 w-4" />
-                  {pendingSubmit ? copy.publicMarshmallow.sendButtonPending : copy.publicMarshmallow.sendButton}
+                  {pendingSubmit
+                    ? copy.publicMarshmallow.sendButtonPending
+                    : copy.publicMarshmallow.sendButton}
                 </button>
               </form>
             </div>
           </PublicPresenceSurface>
 
           <div className="space-y-5">
-            <PublicPresenceSurface className="p-6" style={{ backgroundColor: theme.panelBackground }}>
+            <PublicPresenceSurface
+              className="p-6"
+              style={{ backgroundColor: theme.panelBackground }}
+            >
               <div className="flex items-center justify-between gap-4">
                 <div>
-                  <p className="text-xs font-semibold text-slate-500">{copy.publicMarshmallow.feedEyebrow}</p>
-                  <h2 className="mt-2 text-2xl font-semibold text-slate-950">{copy.publicMarshmallow.feedTitle}</h2>
+                  <p className="text-xs font-semibold text-slate-500">
+                    {copy.publicMarshmallow.feedEyebrow}
+                  </p>
+                  <h2 className="mt-2 text-2xl font-semibold text-slate-950">
+                    {copy.publicMarshmallow.feedTitle}
+                  </h2>
                 </div>
-                <div className="text-right text-sm text-slate-500">{formatVisibleCount(messages.length, locale)}</div>
+                <div className="text-right text-sm text-slate-500">
+                  {formatVisibleCount(messages.length, locale)}
+                </div>
               </div>
             </PublicPresenceSurface>
 
@@ -614,18 +670,22 @@ export function PublicMarshmallowScreen({
                 onClick={() => void handleLoadMore()}
                 className="inline-flex items-center justify-center rounded-md border border-slate-200 bg-white/80 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-white disabled:cursor-not-allowed disabled:opacity-60 motion-reduce:transition-none"
               >
-                {loadingMore ? copy.publicMarshmallow.loadMorePending : copy.publicMarshmallow.loadMore}
+                {loadingMore
+                  ? copy.publicMarshmallow.loadMorePending
+                  : copy.publicMarshmallow.loadMore}
               </button>
             ) : null}
           </div>
         </div>
 
-        {(localizedTerms || localizedPrivacy) ? (
+        {localizedTerms || localizedPrivacy ? (
           <PublicPresenceSurface className="p-6" style={{ backgroundColor: theme.panelBackground }}>
             <div className="grid gap-6 md:grid-cols-2">
               {localizedTerms ? (
                 <div className="space-y-3">
-                  <p className="text-xs font-semibold text-slate-500">{copy.publicMarshmallow.termsLabel}</p>
+                  <p className="text-xs font-semibold text-slate-500">
+                    {copy.publicMarshmallow.termsLabel}
+                  </p>
                   <div className="space-y-3 text-sm leading-7 text-slate-700">
                     <p>{localizedTerms}</p>
                   </div>
@@ -633,7 +693,9 @@ export function PublicMarshmallowScreen({
               ) : null}
               {localizedPrivacy ? (
                 <div className="space-y-3">
-                  <p className="text-xs font-semibold text-slate-500">{copy.publicMarshmallow.privacyLabel}</p>
+                  <p className="text-xs font-semibold text-slate-500">
+                    {copy.publicMarshmallow.privacyLabel}
+                  </p>
                   <div className="space-y-3 text-sm leading-7 text-slate-700">
                     <p>{localizedPrivacy}</p>
                   </div>

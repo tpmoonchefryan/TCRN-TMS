@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { InjectQueue } from '@nestjs/bullmq';
 import { Injectable } from '@nestjs/common';
 import { Queue } from 'bullmq';
@@ -18,8 +17,8 @@ export class EmailService {
     templateService: EmailTemplateService,
     private readonly emailDispatchApplicationService: EmailDispatchApplicationService = new EmailDispatchApplicationService(
       new EmailQueueGateway(emailQueue),
-      templateService,
-    ),
+      templateService
+    )
   ) {}
 
   async send(dto: SendEmailDto): Promise<{ jobId: string }> {
@@ -30,13 +29,13 @@ export class EmailService {
     email: string,
     templateCode: string,
     locale: string = 'en',
-    variables: Record<string, string> = {},
+    variables: Record<string, string> = {}
   ): Promise<{ jobId: string }> {
     return this.emailDispatchApplicationService.sendSystemEmail(
       email,
       templateCode,
       locale,
-      variables,
+      variables
     );
   }
 
@@ -45,14 +44,14 @@ export class EmailService {
     recipientEmail: string,
     templateCode: string,
     locale: string = 'en',
-    variables: Record<string, string> = {},
+    variables: Record<string, string> = {}
   ): Promise<{ jobId: string }> {
     return this.emailDispatchApplicationService.sendBusinessEmail(
       tenantSchema,
       recipientEmail,
       templateCode,
       locale,
-      variables,
+      variables
     );
   }
 }

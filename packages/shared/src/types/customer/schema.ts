@@ -55,10 +55,10 @@ export interface CustomerProfileBase {
   source?: string;
   notes?: string;
   is_active: boolean;
-  
+
   origin_talent: TalentSummary;
   last_modified_talent?: TalentSummary | null;
-  
+
   created_at: string;
   updated_at: string;
 }

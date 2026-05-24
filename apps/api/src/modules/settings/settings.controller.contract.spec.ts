@@ -1,7 +1,6 @@
-import 'reflect-metadata';
-
 import { RequestMethod } from '@nestjs/common';
 import { METHOD_METADATA, PATH_METADATA } from '@nestjs/common/constants';
+import 'reflect-metadata';
 import { describe, expect, it } from 'vitest';
 
 import { PERMISSIONS_KEY } from '../../common/decorators/require-permissions.decorator';
@@ -23,12 +22,15 @@ const normalizePaths = (value: string | string[] | undefined): string[] => {
 
 const getControllerRoutes = (controller: typeof SettingsController): ControllerRoute[] => {
   const methodNames = Object.getOwnPropertyNames(controller.prototype).filter(
-    (methodName) => methodName !== 'constructor' && typeof controller.prototype[methodName] === 'function',
+    (methodName) =>
+      methodName !== 'constructor' && typeof controller.prototype[methodName] === 'function'
   );
 
   return methodNames.flatMap((methodName) => {
     const handler = controller.prototype[methodName];
-    const requestMethod = Reflect.getMetadata(METHOD_METADATA, handler) as RequestMethod | undefined;
+    const requestMethod = Reflect.getMetadata(METHOD_METADATA, handler) as
+      | RequestMethod
+      | undefined;
 
     if (requestMethod === undefined) {
       return [];
@@ -123,7 +125,7 @@ describe('SettingsController private route contract', () => {
           requestMethod: RequestMethod.PATCH,
           path: 'talents/:talentId/settings/reset',
         },
-      ]),
+      ])
     );
   });
 

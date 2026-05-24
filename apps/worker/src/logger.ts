@@ -18,7 +18,7 @@ interface LogEntry {
 function formatLog(entry: LogEntry): string {
   const { timestamp, level, context, message, data } = entry;
   const prefix = `[${timestamp}] [${level.toUpperCase()}] [${context}]`;
-  
+
   if (data !== undefined) {
     return `${prefix} ${message} ${JSON.stringify(data)}`;
   }

@@ -1,8 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+import { Injectable } from '@nestjs/common';
 
-import {
-  Injectable,
-} from '@nestjs/common';
 import { type RequestContext } from '@tcrn/shared';
 
 import { BlocklistReadService } from '../application/blocklist-read.service';
@@ -20,7 +18,7 @@ import {
 export class BlocklistService {
   constructor(
     private readonly blocklistReadService: BlocklistReadService,
-    private readonly blocklistWriteService: BlocklistWriteService,
+    private readonly blocklistWriteService: BlocklistWriteService
   ) {}
 
   /**
@@ -28,7 +26,7 @@ export class BlocklistService {
    */
   async findMany(
     tenantSchema: string,
-    query: BlocklistListQueryDto,
+    query: BlocklistListQueryDto
   ): Promise<{ items: BlocklistEntryWithMeta[]; total: number }> {
     return this.blocklistReadService.findMany(tenantSchema, query);
   }
@@ -75,14 +73,9 @@ export class BlocklistService {
     tenantSchema: string,
     id: string,
     dto: DisableScopeDto,
-    userId: string,
+    userId: string
   ): Promise<{ id: string; disabled: boolean }> {
-    return this.blocklistWriteService.disableInScope(
-      tenantSchema,
-      id,
-      dto,
-      userId,
-    );
+    return this.blocklistWriteService.disableInScope(tenantSchema, id, dto, userId);
   }
 
   /**
@@ -91,7 +84,7 @@ export class BlocklistService {
   async enableInScope(
     tenantSchema: string,
     id: string,
-    dto: DisableScopeDto,
+    dto: DisableScopeDto
   ): Promise<{ id: string; enabled: boolean }> {
     return this.blocklistWriteService.enableInScope(tenantSchema, id, dto);
   }

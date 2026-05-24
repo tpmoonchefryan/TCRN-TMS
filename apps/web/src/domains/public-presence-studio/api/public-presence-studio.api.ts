@@ -127,7 +127,12 @@ export interface PublicPresenceStudioTemplateAssetSummary {
   assetDescription: LocalizedText;
   assetId: string;
   assetName: LocalizedText;
-  blockedReasonCode: 'homepagePolicyMissing' | 'noCurrentRevision' | 'notAllowedInCurrentStage' | 'validationRequired' | null;
+  blockedReasonCode:
+    | 'homepagePolicyMissing'
+    | 'noCurrentRevision'
+    | 'notAllowedInCurrentStage'
+    | 'validationRequired'
+    | null;
   canEdit: boolean;
   currentRevisionId: string | null;
   currentRevisionNumber: number | null;
@@ -227,11 +232,7 @@ export interface PublicPresenceStudioWorkspaceResponse {
 
 type RequestFn = <T>(path: string, init?: RequestInit) => Promise<T>;
 
-function appendTemplateId(
-  path: string,
-  templateId?: string | null,
-  extraParams?: URLSearchParams,
-) {
+function appendTemplateId(path: string, templateId?: string | null, extraParams?: URLSearchParams) {
   const params = extraParams ?? new URLSearchParams();
 
   if (templateId) {
@@ -246,10 +247,10 @@ function appendTemplateId(
 export function readPublicPresenceWorkspace(
   request: RequestFn,
   talentId: string,
-  templateId?: string | null,
+  templateId?: string | null
 ) {
   return request<PublicPresenceStudioWorkspaceResponse>(
-    appendTemplateId(`/api/v1/talents/${talentId}/public-presence`, templateId),
+    appendTemplateId(`/api/v1/talents/${talentId}/public-presence`, templateId)
   );
 }
 
@@ -259,7 +260,7 @@ export function bootstrapPublicPresenceWorkspace(
   input: {
     templateAssetId?: string | null;
     templateId?: string | null;
-  },
+  }
 ) {
   return request<PublicPresenceStudioWorkspaceResponse>(
     `/api/v1/talents/${talentId}/public-presence/bootstrap`,
@@ -269,7 +270,7 @@ export function bootstrapPublicPresenceWorkspace(
         'Content-Type': 'application/json',
       },
       method: 'POST',
-    },
+    }
   );
 }
 
@@ -279,7 +280,7 @@ export function savePublicPresenceWorkspaceDraft(
   input: {
     document: PublicPresenceDocument;
     expectedCurrentContentHash?: string | null;
-  },
+  }
 ) {
   return request<PublicPresenceStudioWorkspaceResponse>(
     `/api/v1/talents/${talentId}/public-presence/draft`,
@@ -289,7 +290,7 @@ export function savePublicPresenceWorkspaceDraft(
         'Content-Type': 'application/json',
       },
       method: 'PATCH',
-    },
+    }
   );
 }
 
@@ -297,7 +298,7 @@ export function readPublicPresenceDraftPreview(
   request: RequestFn,
   talentId: string,
   phase: PublicPresencePhaseVisibility | 'current' = 'current',
-  templateId?: string | null,
+  templateId?: string | null
 ) {
   const params = new URLSearchParams();
 
@@ -306,7 +307,7 @@ export function readPublicPresenceDraftPreview(
   }
 
   return request<PublicPresenceProjection>(
-    appendTemplateId(`/api/v1/talents/${talentId}/public-presence/preview`, templateId, params),
+    appendTemplateId(`/api/v1/talents/${talentId}/public-presence/preview`, templateId, params)
   );
 }
 
@@ -314,7 +315,7 @@ export function submitPublicPresenceForReview(
   request: RequestFn,
   talentId: string,
   expectedCurrentContentHash?: string | null,
-  templateId?: string | null,
+  templateId?: string | null
 ) {
   return request<PublicPresenceStudioWorkspaceResponse>(
     `/api/v1/talents/${talentId}/public-presence/review/submit`,
@@ -324,7 +325,7 @@ export function submitPublicPresenceForReview(
         'Content-Type': 'application/json',
       },
       method: 'POST',
-    },
+    }
   );
 }
 
@@ -335,7 +336,7 @@ export function requestPublicPresenceChanges(
     comment?: string | null;
     expectedCurrentContentHash?: string | null;
     templateId?: string | null;
-  },
+  }
 ) {
   return request<PublicPresenceStudioWorkspaceResponse>(
     `/api/v1/talents/${talentId}/public-presence/review/request-changes`,
@@ -345,7 +346,7 @@ export function requestPublicPresenceChanges(
         'Content-Type': 'application/json',
       },
       method: 'POST',
-    },
+    }
   );
 }
 
@@ -353,7 +354,7 @@ export function approvePublicPresenceReview(
   request: RequestFn,
   talentId: string,
   expectedCurrentContentHash?: string | null,
-  templateId?: string | null,
+  templateId?: string | null
 ) {
   return request<PublicPresenceStudioWorkspaceResponse>(
     `/api/v1/talents/${talentId}/public-presence/review/approve`,
@@ -363,7 +364,7 @@ export function approvePublicPresenceReview(
         'Content-Type': 'application/json',
       },
       method: 'POST',
-    },
+    }
   );
 }
 
@@ -371,7 +372,7 @@ export function publishPublicPresenceNow(
   request: RequestFn,
   talentId: string,
   expectedCurrentContentHash?: string | null,
-  templateId?: string | null,
+  templateId?: string | null
 ) {
   return request<PublicPresenceStudioWorkspaceResponse>(
     `/api/v1/talents/${talentId}/public-presence/publish`,
@@ -381,7 +382,7 @@ export function publishPublicPresenceNow(
         'Content-Type': 'application/json',
       },
       method: 'POST',
-    },
+    }
   );
 }
 
@@ -392,7 +393,7 @@ export function schedulePublicPresencePublish(
     expectedCurrentContentHash?: string | null;
     scheduledFor: string;
     templateId?: string | null;
-  },
+  }
 ) {
   return request<PublicPresenceStudioWorkspaceResponse>(
     `/api/v1/talents/${talentId}/public-presence/publish/schedule`,
@@ -402,7 +403,7 @@ export function schedulePublicPresencePublish(
         'Content-Type': 'application/json',
       },
       method: 'POST',
-    },
+    }
   );
 }
 
@@ -410,7 +411,7 @@ export function cancelPublicPresenceSchedule(
   request: RequestFn,
   talentId: string,
   expectedCurrentContentHash?: string | null,
-  templateId?: string | null,
+  templateId?: string | null
 ) {
   return request<PublicPresenceStudioWorkspaceResponse>(
     `/api/v1/talents/${talentId}/public-presence/publish/cancel`,
@@ -420,14 +421,14 @@ export function cancelPublicPresenceSchedule(
         'Content-Type': 'application/json',
       },
       method: 'POST',
-    },
+    }
   );
 }
 
 export function createPublicPresenceRollbackDraft(
   request: RequestFn,
   talentId: string,
-  sourceVersionId?: string | null,
+  sourceVersionId?: string | null
 ) {
   return request<PublicPresenceStudioWorkspaceResponse>(
     `/api/v1/talents/${talentId}/public-presence/rollback-draft`,
@@ -437,6 +438,6 @@ export function createPublicPresenceRollbackDraft(
         'Content-Type': 'application/json',
       },
       method: 'POST',
-    },
+    }
   );
 }

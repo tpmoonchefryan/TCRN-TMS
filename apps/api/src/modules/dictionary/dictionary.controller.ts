@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import {
   Body,
   Controller,
@@ -14,16 +13,34 @@ import {
   Query,
   Req,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiParam, ApiProperty, ApiPropertyOptional, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiParam,
+  ApiProperty,
+  ApiPropertyOptional,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
+import { Type } from 'class-transformer';
+import {
+  IsBoolean,
+  IsNumber,
+  IsObject,
+  IsOptional,
+  IsString,
+  MaxLength,
+  Min,
+  MinLength,
+} from 'class-validator';
+import { Request } from 'express';
+
 import {
   ErrorCodes,
   SUPPORTED_UI_LOCALES,
   type LocalizedText,
   type PartialLocalizedText,
 } from '@tcrn/shared';
-import { Type } from 'class-transformer';
-import { IsBoolean, IsNumber, IsObject, IsOptional, IsString, MaxLength, Min, MinLength } from 'class-validator';
-import { Request } from 'express';
 
 import { getPrimaryAcceptLanguage } from '../../common/request-locale.util';
 import { paginated, success } from '../../common/response.util';
@@ -97,7 +114,12 @@ export class GetDictionaryQueryDto {
 }
 
 export class CreateDictionaryTypeDto {
-  @ApiProperty({ description: 'Dictionary type code', example: 'CUSTOMER_STATUS', minLength: 2, maxLength: 64 })
+  @ApiProperty({
+    description: 'Dictionary type code',
+    example: 'CUSTOMER_STATUS',
+    minLength: 2,
+    maxLength: 64,
+  })
   @IsString()
   @MinLength(2)
   @MaxLength(64)
@@ -122,7 +144,11 @@ export class CreateDictionaryTypeDto {
   @IsObject()
   description?: PartialLocalizedText;
 
-  @ApiPropertyOptional({ description: 'Extra metadata (JSON object)', type: 'object', additionalProperties: true })
+  @ApiPropertyOptional({
+    description: 'Extra metadata (JSON object)',
+    type: 'object',
+    additionalProperties: true,
+  })
   @IsOptional()
   @IsObject()
   extraData?: Record<string, unknown>;
@@ -155,7 +181,11 @@ export class UpdateDictionaryTypeDto {
   @IsObject()
   description?: PartialLocalizedText;
 
-  @ApiPropertyOptional({ description: 'Extra metadata (JSON object)', type: 'object', additionalProperties: true })
+  @ApiPropertyOptional({
+    description: 'Extra metadata (JSON object)',
+    type: 'object',
+    additionalProperties: true,
+  })
   @IsOptional()
   @IsObject()
   extraData?: Record<string, unknown>;
@@ -252,7 +282,10 @@ export class DeactivateItemDto {
   version!: number;
 }
 
-const createSuccessEnvelopeSchema = (dataSchema: Record<string, unknown>, exampleData: unknown) => ({
+const createSuccessEnvelopeSchema = (
+  dataSchema: Record<string, unknown>,
+  exampleData: unknown
+) => ({
   type: 'object',
   properties: {
     success: { type: 'boolean', example: true },
@@ -300,7 +333,7 @@ const LOCALIZED_TEXT_SCHEMA = {
   type: 'object',
   additionalProperties: { type: 'string' },
   properties: Object.fromEntries(
-    SUPPORTED_UI_LOCALES.map((locale) => [locale, { type: 'string' }]),
+    SUPPORTED_UI_LOCALES.map((locale) => [locale, { type: 'string' }])
   ),
   required: [...SUPPORTED_UI_LOCALES],
 };
@@ -317,12 +350,31 @@ const DICTIONARY_ITEM_SCHEMA = {
     localizedDescription: { type: 'string', example: 'Customer is active' },
     sortOrder: { type: 'integer', example: 0 },
     isActive: { type: 'boolean', example: true },
-    extraData: { type: 'object', nullable: true, additionalProperties: true, example: { color: '#00FF00' } },
+    extraData: {
+      type: 'object',
+      nullable: true,
+      additionalProperties: true,
+      example: { color: '#00FF00' },
+    },
     createdAt: { type: 'string', format: 'date-time', example: '2026-04-13T08:00:00.000Z' },
     updatedAt: { type: 'string', format: 'date-time', example: '2026-04-13T09:00:00.000Z' },
     version: { type: 'integer', example: 1 },
   },
-  required: ['id', 'dictionaryCode', 'code', 'name', 'localizedName', 'description', 'localizedDescription', 'sortOrder', 'isActive', 'extraData', 'createdAt', 'updatedAt', 'version'],
+  required: [
+    'id',
+    'dictionaryCode',
+    'code',
+    'name',
+    'localizedName',
+    'description',
+    'localizedDescription',
+    'sortOrder',
+    'isActive',
+    'extraData',
+    'createdAt',
+    'updatedAt',
+    'version',
+  ],
 };
 
 const DICTIONARY_TYPES_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
@@ -337,7 +389,7 @@ const DICTIONARY_TYPES_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
       description: 'Customer status codes',
       count: 5,
     },
-  ],
+  ]
 );
 
 const DICTIONARY_ITEMS_SUCCESS_SCHEMA = {
@@ -397,24 +449,21 @@ const DICTIONARY_ITEMS_SUCCESS_SCHEMA = {
   },
 };
 
-const DICTIONARY_ITEM_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
-  DICTIONARY_ITEM_SCHEMA,
-  {
-    id: '550e8400-e29b-41d4-a716-446655440500',
-    dictionaryCode: 'CUSTOMER_STATUS',
-    code: 'ACTIVE',
-    name: DICTIONARY_ITEM_NAME_EXAMPLE,
-    localizedName: 'Active',
-    description: DICTIONARY_ITEM_DESCRIPTION_EXAMPLE,
-    localizedDescription: 'Customer is active',
-    sortOrder: 0,
-    isActive: true,
-    extraData: { color: '#00FF00' },
-    createdAt: '2026-04-13T08:00:00.000Z',
-    updatedAt: '2026-04-13T09:00:00.000Z',
-    version: 1,
-  },
-);
+const DICTIONARY_ITEM_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(DICTIONARY_ITEM_SCHEMA, {
+  id: '550e8400-e29b-41d4-a716-446655440500',
+  dictionaryCode: 'CUSTOMER_STATUS',
+  code: 'ACTIVE',
+  name: DICTIONARY_ITEM_NAME_EXAMPLE,
+  localizedName: 'Active',
+  description: DICTIONARY_ITEM_DESCRIPTION_EXAMPLE,
+  localizedDescription: 'Customer is active',
+  sortOrder: 0,
+  isActive: true,
+  extraData: { color: '#00FF00' },
+  createdAt: '2026-04-13T08:00:00.000Z',
+  updatedAt: '2026-04-13T09:00:00.000Z',
+  version: 1,
+});
 
 const DICTIONARY_TYPE_MUTATION_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
   {
@@ -426,14 +475,31 @@ const DICTIONARY_TYPE_MUTATION_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
       localizedName: { type: 'string', example: 'Customer Status' },
       description: { ...LOCALIZED_TEXT_SCHEMA, example: DICTIONARY_DESCRIPTION_EXAMPLE },
       localizedDescription: { type: 'string', example: 'Customer status codes' },
-      extraData: { type: 'object', nullable: true, additionalProperties: true, example: { family: 'customer' } },
+      extraData: {
+        type: 'object',
+        nullable: true,
+        additionalProperties: true,
+        example: { family: 'customer' },
+      },
       sortOrder: { type: 'integer', example: 0 },
       isActive: { type: 'boolean', example: true },
       createdAt: { type: 'string', format: 'date-time', example: '2026-04-13T08:00:00.000Z' },
       updatedAt: { type: 'string', format: 'date-time', example: '2026-04-13T09:00:00.000Z' },
       version: { type: 'integer', example: 1 },
     },
-    required: ['id', 'code', 'name', 'localizedName', 'description', 'localizedDescription', 'sortOrder', 'isActive', 'createdAt', 'updatedAt', 'version'],
+    required: [
+      'id',
+      'code',
+      'name',
+      'localizedName',
+      'description',
+      'localizedDescription',
+      'sortOrder',
+      'isActive',
+      'createdAt',
+      'updatedAt',
+      'version',
+    ],
   },
   {
     id: '550e8400-e29b-41d4-a716-446655440510',
@@ -448,27 +514,27 @@ const DICTIONARY_TYPE_MUTATION_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
     createdAt: '2026-04-13T08:00:00.000Z',
     updatedAt: '2026-04-13T09:00:00.000Z',
     version: 1,
-  },
+  }
 );
 
 const DICTIONARY_BAD_REQUEST_SCHEMA = createErrorEnvelopeSchema(
   ErrorCodes.RES_VERSION_MISMATCH,
-  'Data has been modified. Please refresh and try again.',
+  'Data has been modified. Please refresh and try again.'
 );
 
 const DICTIONARY_UNAUTHORIZED_SCHEMA = createErrorEnvelopeSchema(
   'AUTH_UNAUTHORIZED',
-  'Authentication required',
+  'Authentication required'
 );
 
 const DICTIONARY_FORBIDDEN_SCHEMA = createErrorEnvelopeSchema(
   ErrorCodes.PERM_ACCESS_DENIED,
-  'Only AC tenant administrators can access this resource',
+  'Only AC tenant administrators can access this resource'
 );
 
 const DICTIONARY_NOT_FOUND_SCHEMA = createErrorEnvelopeSchema(
   ErrorCodes.RES_NOT_FOUND,
-  'Dictionary resource not found',
+  'Dictionary resource not found'
 );
 
 // =====================================================
@@ -541,7 +607,7 @@ export class DictionaryController {
   async getByType(
     @Param('type') type: string,
     @Query() query: GetDictionaryQueryDto,
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     const language = this.getLanguage(req);
     const isAc = req.tenantContext?.tier === 'ac';
@@ -599,11 +665,7 @@ export class DictionaryController {
     description: 'Dictionary item was not found',
     schema: DICTIONARY_NOT_FOUND_SCHEMA,
   })
-  async getItem(
-    @Param('type') type: string,
-    @Param('code') code: string,
-    @Req() req: Request,
-  ) {
+  async getItem(@Param('type') type: string, @Param('code') code: string, @Req() req: Request) {
     const language = this.getLanguage(req);
     const item = await this.dictionaryService.getItem(type, code, language);
 
@@ -634,7 +696,8 @@ export class DictionaryController {
   })
   @ApiResponse({
     status: 400,
-    description: 'Dictionary type payload is invalid or conflicts with an existing code/version constraint',
+    description:
+      'Dictionary type payload is invalid or conflicts with an existing code/version constraint',
     schema: DICTIONARY_BAD_REQUEST_SCHEMA,
   })
   @ApiResponse({
@@ -647,10 +710,7 @@ export class DictionaryController {
     description: 'Only AC tenant administrators can create dictionary types',
     schema: DICTIONARY_FORBIDDEN_SCHEMA,
   })
-  async createType(
-    @Body() body: CreateDictionaryTypeDto,
-    @Req() req: Request,
-  ) {
+  async createType(@Body() body: CreateDictionaryTypeDto, @Req() req: Request) {
     this.ensureAcTenant(req);
     const result = await this.dictionaryService.createType(body);
     return success(result);
@@ -695,7 +755,7 @@ export class DictionaryController {
   async updateType(
     @Param('type') type: string,
     @Body() body: UpdateDictionaryTypeDto,
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     this.ensureAcTenant(req);
     const result = await this.dictionaryService.updateType(type, body);
@@ -720,7 +780,8 @@ export class DictionaryController {
   })
   @ApiResponse({
     status: 400,
-    description: 'Dictionary item payload is invalid or conflicts with an existing code/version constraint',
+    description:
+      'Dictionary item payload is invalid or conflicts with an existing code/version constraint',
     schema: DICTIONARY_BAD_REQUEST_SCHEMA,
   })
   @ApiResponse({
@@ -741,7 +802,7 @@ export class DictionaryController {
   async createItem(
     @Param('type') type: string,
     @Body() body: CreateDictionaryItemDto,
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     this.ensureAcTenant(req);
     const result = await this.dictionaryService.createItem(type, body);
@@ -793,10 +854,10 @@ export class DictionaryController {
     @Param('type') type: string,
     @Param('itemId', ParseUUIDPipe) itemId: string,
     @Body() body: UpdateDictionaryItemDto,
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     this.ensureAcTenant(req);
-    
+
     // Verify item belongs to this type
     const item = await this.dictionaryService.getItemById(itemId);
     if (!item || item.dictionaryCode !== type) {
@@ -855,7 +916,7 @@ export class DictionaryController {
     @Param('type') type: string,
     @Param('itemId', ParseUUIDPipe) itemId: string,
     @Body() body: DeactivateItemDto,
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     this.ensureAcTenant(req);
 
@@ -917,7 +978,7 @@ export class DictionaryController {
     @Param('type') type: string,
     @Param('itemId', ParseUUIDPipe) itemId: string,
     @Body() body: DeactivateItemDto,
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     this.ensureAcTenant(req);
 

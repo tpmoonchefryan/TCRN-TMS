@@ -194,12 +194,12 @@ Tencent Cloud SESと統合：
 
 現在の実ランタイムで効いている性能要素：
 
-| 機能                   | 実装方法                                                 |
-| ---------------------- | -------------------------------------------------------- |
-| **非同期ワークロード** | BullMQ worker によるメール、import/export、report 処理   |
-| **権限キャッシュ**     | Redis ベースの permission snapshot と rate limit         |
-| **テナント分離**       | tenant-specific PostgreSQL schemas                       |
-| **ファイル配信**       | MinIO の presigned URL downloads                         |
+| 機能                   | 実装方法                                               |
+| ---------------------- | ------------------------------------------------------ |
+| **非同期ワークロード** | BullMQ worker によるメール、import/export、report 処理 |
+| **権限キャッシュ**     | Redis ベースの permission snapshot と rate limit       |
+| **テナント分離**       | tenant-specific PostgreSQL schemas                     |
+| **ファイル配信**       | MinIO の presigned URL downloads                       |
 
 ### ブラウザランタイム境界
 
@@ -281,23 +281,23 @@ Zod による型安全 validation は、現在も shared/backend 層で有効で
 
 ## 🛠️ 技術スタック
 
-| レイヤー               | 技術               | バージョン |
-| ---------------------- | ------------------ | ---------- |
-| **API Runtime**        | NestJS             | 11.1.6     |
-|                        | TypeScript         | 5.9.3      |
-| **Worker Runtime**     | BullMQ             | 5.66.5     |
-| **契約 / Schema**      | Zod                | 4.x        |
-|                        | Prisma ORM         | 6.14.0     |
-| **データベース**       | PostgreSQL         | 16         |
-|                        | Redis              | 7          |
-| **ストレージ**         | MinIO              | Latest     |
-| **メッセージング**     | NATS JetStream     | 2          |
-| **オブザーバビリティ** | OpenTelemetry      | -          |
-|                        | Prometheus         | -          |
-|                        | Grafana Loki       | 2.9.0      |
-|                        | Grafana Tempo      | -          |
-| **デプロイ**           | Docker             | -          |
-|                        | Kubernetes         | -          |
+| レイヤー               | 技術           | バージョン |
+| ---------------------- | -------------- | ---------- |
+| **API Runtime**        | NestJS         | 11.1.6     |
+|                        | TypeScript     | 5.9.3      |
+| **Worker Runtime**     | BullMQ         | 5.66.5     |
+| **契約 / Schema**      | Zod            | 4.x        |
+|                        | Prisma ORM     | 6.14.0     |
+| **データベース**       | PostgreSQL     | 16         |
+|                        | Redis          | 7          |
+| **ストレージ**         | MinIO          | Latest     |
+| **メッセージング**     | NATS JetStream | 2          |
+| **オブザーバビリティ** | OpenTelemetry  | -          |
+|                        | Prometheus     | -          |
+|                        | Grafana Loki   | 2.9.0      |
+|                        | Grafana Tempo  | -          |
+| **デプロイ**           | Docker         | -          |
+|                        | Kubernetes     | -          |
 
 上記インフラの現在のランタイム状態は次のとおりです。
 

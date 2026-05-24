@@ -18,7 +18,7 @@ describe('public-schedule helpers', () => {
           { day: 'bad', time: '18:00', title: 'Ignored' },
           { day: 'sat', time: '19:00' },
         ],
-      }),
+      })
     ).toEqual({
       weekOf: '2026-01-26',
       timezone: 'Asia/Tokyo',
@@ -61,7 +61,7 @@ describe('public-schedule helpers', () => {
             visible: true,
           },
         ],
-      }),
+      })
     ).toEqual([
       {
         timezone: 'UTC',

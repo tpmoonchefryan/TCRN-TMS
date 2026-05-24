@@ -15,17 +15,26 @@ import { ApiRequestError } from '@/platform/http/api';
 const mocks = vi.hoisted(() => ({
   replace: vi.fn(),
   authenticate: vi.fn(),
-  login: vi.fn<(input: {
-    tenantCode: string;
-    login: string;
-    password: string;
-    rememberMe: boolean;
-  }) => Promise<LoginFlowResult>>(),
+  login:
+    vi.fn<
+      (input: {
+        tenantCode: string;
+        login: string;
+        password: string;
+        rememberMe: boolean;
+      }) => Promise<LoginFlowResult>
+    >(),
   verifyTotp: vi.fn<(sessionToken: string, code: string) => Promise<AuthenticatedSessionResult>>(),
-  forceResetPassword: vi.fn<
-    (sessionToken: string, newPassword: string, newPasswordConfirm: string) => Promise<AuthenticatedSessionResult>
-  >(),
-  readPostLoginOrganizationTree: vi.fn<(accessToken: string) => Promise<OrganizationTreeResponse>>(),
+  forceResetPassword:
+    vi.fn<
+      (
+        sessionToken: string,
+        newPassword: string,
+        newPasswordConfirm: string
+      ) => Promise<AuthenticatedSessionResult>
+    >(),
+  readPostLoginOrganizationTree:
+    vi.fn<(accessToken: string) => Promise<OrganizationTreeResponse>>(),
   search: {
     current: '',
   },
@@ -46,7 +55,8 @@ function buildLoginCopy(overrides: Partial<Record<string, string>> = {}) {
     newPasswordLabel: 'New password',
     passwordLabel: 'Password',
     passwordPlaceholder: 'Minimum 12 characters',
-    passwordResetDescription: 'Your account requires a password change before the private workspace can be opened.',
+    passwordResetDescription:
+      'Your account requires a password change before the private workspace can be opened.',
     passwordResetTitle: 'Set new password',
     rememberMe: 'Keep me signed in on this device',
     setNewPassword: 'Set new password',
@@ -108,7 +118,7 @@ vi.mock('@/domains/auth-identity/api/auth.api', () => ({
 }));
 
 function buildAuthenticatedResult(
-  overrides: Partial<AuthenticatedSessionResult> = {},
+  overrides: Partial<AuthenticatedSessionResult> = {}
 ): AuthenticatedSessionResult {
   return {
     accessToken: 'access-token',
@@ -232,7 +242,7 @@ describe('LoginForm', () => {
     expect(visualDescription).toHaveTextContent(heroDescription);
     expect(visualDescription).toHaveClass('login-hero-typewriter');
     expect(container.querySelectorAll('.login-hero-typewriter-character')).toHaveLength(
-      Array.from(heroDescription).length,
+      Array.from(heroDescription).length
     );
     expect(container.querySelector('.login-hero-typewriter-caret')).toBeInTheDocument();
 
@@ -319,13 +329,15 @@ describe('LoginForm', () => {
 
   it('authenticates credentials and routes to a single published talent workspace', async () => {
     const result = buildAuthenticatedResult();
-    mocks.readPostLoginOrganizationTree.mockResolvedValueOnce(buildOrganizationTree([
-      buildTalent({
-        id: 'talent-solo',
-        code: 'SOLO',
-        displayName: 'Solo Talent',
-      }),
-    ]));
+    mocks.readPostLoginOrganizationTree.mockResolvedValueOnce(
+      buildOrganizationTree([
+        buildTalent({
+          id: 'talent-solo',
+          code: 'SOLO',
+          displayName: 'Solo Talent',
+        }),
+      ])
+    );
     mocks.login.mockResolvedValueOnce({
       kind: 'authenticated',
       data: result,
@@ -354,27 +366,29 @@ describe('LoginForm', () => {
 
   it('shows a post-login selector when multiple published talents are available', async () => {
     const result = buildAuthenticatedResult();
-    mocks.readPostLoginOrganizationTree.mockResolvedValueOnce(buildOrganizationTree([
-      buildTalent({
-        id: 'talent-aurora',
-        code: 'AURORA',
-        displayName: 'Aurora',
-      }),
-      buildTalent({
-        id: 'talent-luna',
-        code: 'LUNA',
-        displayName: 'Luna',
-        subsidiaryId: 'sub-1',
-        subsidiaryName: 'Tokyo Branch',
-      }),
-      buildTalent({
-        id: 'talent-draft',
-        code: 'DRAFT',
-        displayName: 'Draft Talent',
-        lifecycleStatus: 'draft',
-        publishedAt: null,
-      }),
-    ]));
+    mocks.readPostLoginOrganizationTree.mockResolvedValueOnce(
+      buildOrganizationTree([
+        buildTalent({
+          id: 'talent-aurora',
+          code: 'AURORA',
+          displayName: 'Aurora',
+        }),
+        buildTalent({
+          id: 'talent-luna',
+          code: 'LUNA',
+          displayName: 'Luna',
+          subsidiaryId: 'sub-1',
+          subsidiaryName: 'Tokyo Branch',
+        }),
+        buildTalent({
+          id: 'talent-draft',
+          code: 'DRAFT',
+          displayName: 'Draft Talent',
+          lifecycleStatus: 'draft',
+          publishedAt: null,
+        }),
+      ])
+    );
     mocks.login.mockResolvedValueOnce({
       kind: 'authenticated',
       data: result,
@@ -385,7 +399,9 @@ describe('LoginForm', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Sign in' }));
 
-    expect(await screen.findByRole('dialog', { name: 'Choose a talent workspace' })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('dialog', { name: 'Choose a talent workspace' })
+    ).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Open Aurora workspace' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Open Luna workspace' })).toBeInTheDocument();
     expect(screen.queryByText('Draft Talent')).not.toBeInTheDocument();
@@ -400,18 +416,20 @@ describe('LoginForm', () => {
 
   it('closes the post-login selector on Escape and returns focus to the sign-in button', async () => {
     const result = buildAuthenticatedResult();
-    mocks.readPostLoginOrganizationTree.mockResolvedValueOnce(buildOrganizationTree([
-      buildTalent({
-        id: 'talent-aurora',
-        code: 'AURORA',
-        displayName: 'Aurora',
-      }),
-      buildTalent({
-        id: 'talent-luna',
-        code: 'LUNA',
-        displayName: 'Luna',
-      }),
-    ]));
+    mocks.readPostLoginOrganizationTree.mockResolvedValueOnce(
+      buildOrganizationTree([
+        buildTalent({
+          id: 'talent-aurora',
+          code: 'AURORA',
+          displayName: 'Aurora',
+        }),
+        buildTalent({
+          id: 'talent-luna',
+          code: 'LUNA',
+          displayName: 'Luna',
+        }),
+      ])
+    );
     mocks.login.mockResolvedValueOnce({
       kind: 'authenticated',
       data: result,
@@ -423,7 +441,9 @@ describe('LoginForm', () => {
     const signInButton = screen.getByRole('button', { name: 'Sign in' });
     fireEvent.click(signInButton);
 
-    expect(await screen.findByRole('dialog', { name: 'Choose a talent workspace' })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('dialog', { name: 'Choose a talent workspace' })
+    ).toBeInTheDocument();
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'Open Aurora workspace' })).toHaveFocus();
     });
@@ -431,7 +451,9 @@ describe('LoginForm', () => {
     fireEvent.keyDown(document, { key: 'Escape' });
 
     await waitFor(() => {
-      expect(screen.queryByRole('dialog', { name: 'Choose a talent workspace' })).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole('dialog', { name: 'Choose a talent workspace' })
+      ).not.toBeInTheDocument();
     });
     expect(screen.getByLabelText('Tenant code')).toHaveFocus();
     expect(mocks.replace).not.toHaveBeenCalled();
@@ -439,22 +461,24 @@ describe('LoginForm', () => {
 
   it('falls back to organization structure when no published talent is selectable', async () => {
     const result = buildAuthenticatedResult();
-    mocks.readPostLoginOrganizationTree.mockResolvedValueOnce(buildOrganizationTree([
-      buildTalent({
-        id: 'talent-draft',
-        code: 'DRAFT',
-        displayName: 'Draft Talent',
-        lifecycleStatus: 'draft',
-        publishedAt: null,
-      }),
-      buildTalent({
-        id: 'talent-disabled',
-        code: 'DISABLED',
-        displayName: 'Disabled Talent',
-        lifecycleStatus: 'disabled',
-        isActive: false,
-      }),
-    ]));
+    mocks.readPostLoginOrganizationTree.mockResolvedValueOnce(
+      buildOrganizationTree([
+        buildTalent({
+          id: 'talent-draft',
+          code: 'DRAFT',
+          displayName: 'Draft Talent',
+          lifecycleStatus: 'draft',
+          publishedAt: null,
+        }),
+        buildTalent({
+          id: 'talent-disabled',
+          code: 'DISABLED',
+          displayName: 'Disabled Talent',
+          lifecycleStatus: 'disabled',
+          isActive: false,
+        }),
+      ])
+    );
     mocks.login.mockResolvedValueOnce({
       kind: 'authenticated',
       data: result,
@@ -576,14 +600,16 @@ describe('LoginForm', () => {
       expect(mocks.forceResetPassword).toHaveBeenCalledWith(
         'reset-session',
         'new-password-1234',
-        'new-password-1234',
+        'new-password-1234'
       );
       expect(mocks.authenticate).toHaveBeenCalledWith(result, 'MOON');
     });
   });
 
   it('renders API failures inline for credential submission', async () => {
-    mocks.login.mockRejectedValueOnce(new ApiRequestError('Invalid credentials', 'AUTH_INVALID', 401));
+    mocks.login.mockRejectedValueOnce(
+      new ApiRequestError('Invalid credentials', 'AUTH_INVALID', 401)
+    );
 
     render(<LoginForm />);
     fillCredentials();

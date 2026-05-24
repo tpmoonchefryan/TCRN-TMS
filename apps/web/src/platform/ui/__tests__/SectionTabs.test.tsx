@@ -11,16 +11,33 @@ const items = [
 
 describe('SectionTabs', () => {
   it('renders tabs with selected state and counts', () => {
-    render(<SectionTabs items={items} activeId="overview" onChange={vi.fn()} ariaLabel="Workspace sections" />);
+    render(
+      <SectionTabs
+        items={items}
+        activeId="overview"
+        onChange={vi.fn()}
+        ariaLabel="Workspace sections"
+      />
+    );
 
     expect(screen.getByRole('tablist')).toHaveAttribute('aria-label', 'Workspace sections');
-    expect(screen.getByRole('tab', { name: 'Overview 2' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('tab', { name: 'Overview 2' })).toHaveAttribute(
+      'aria-selected',
+      'true'
+    );
     expect(screen.getByRole('tab', { name: 'Settings 4' })).toHaveAttribute('tabindex', '-1');
   });
 
   it('supports arrow, Home, and End keyboard navigation over enabled tabs', () => {
     const onChange = vi.fn();
-    render(<SectionTabs items={items} activeId="overview" onChange={onChange} ariaLabel="Workspace sections" />);
+    render(
+      <SectionTabs
+        items={items}
+        activeId="overview"
+        onChange={onChange}
+        ariaLabel="Workspace sections"
+      />
+    );
 
     const tablist = screen.getByRole('tablist');
     fireEvent.keyDown(tablist, { key: 'ArrowRight' });

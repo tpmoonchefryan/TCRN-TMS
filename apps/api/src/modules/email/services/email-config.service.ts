@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
@@ -10,8 +9,8 @@ import type {
   EmailConfigResponse,
   SaveEmailConfigDto,
 } from '../dto/email-config.dto';
-import { EmailConfigRepository } from '../infrastructure/email-config.repository';
 import { EmailConfigCryptoService } from '../infrastructure/email-config-crypto.service';
+import { EmailConfigRepository } from '../infrastructure/email-config.repository';
 
 @Injectable()
 export class EmailConfigService {
@@ -21,8 +20,8 @@ export class EmailConfigService {
     private readonly emailConfigApplicationService: EmailConfigApplicationService = new EmailConfigApplicationService(
       new EmailConfigRepository(databaseService),
       new EmailConfigCryptoService(configService),
-      configService,
-    ),
+      configService
+    )
   ) {}
 
   getConfig(): Promise<EmailConfigResponse> {

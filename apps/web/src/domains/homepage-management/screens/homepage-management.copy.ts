@@ -128,7 +128,8 @@ const COPY: Record<SupportedUiLocale, HomepageManagementCopy> = {
     header: {
       eyebrow: 'Talent business / Homepage',
       title: 'Homepage management',
-      description: 'Review publication status, version history, and public access for this talent homepage.',
+      description:
+        'Review publication status, version history, and public access for this talent homepage.',
     },
     actions: {
       workspaceSettings: 'Public access settings',
@@ -145,13 +146,15 @@ const COPY: Record<SupportedUiLocale, HomepageManagementCopy> = {
       publishSuccess: 'Homepage draft published.',
       publishError: 'Failed to publish homepage draft.',
       unpublishTitle: 'Unpublish homepage?',
-      unpublishDescription: 'Unpublishing removes the current live homepage while keeping the version history intact.',
+      unpublishDescription:
+        'Unpublishing removes the current live homepage while keeping the version history intact.',
       unpublishConfirm: 'Unpublish homepage',
       unpublishPending: 'Unpublishing…',
       unpublishSuccess: 'Homepage unpublished.',
       unpublishError: 'Failed to unpublish homepage.',
       restoreTitlePrefix: 'Restore',
-      restoreDescription: 'Restoring creates a new draft from the selected version so it can be revised or published again.',
+      restoreDescription:
+        'Restoring creates a new draft from the selected version so it can be revised or published again.',
       restoreConfirm: 'Restore to draft',
       restorePending: 'Restoring…',
       restoreSuccessPrefix: 'Version restored to a new draft:',
@@ -174,7 +177,8 @@ const COPY: Record<SupportedUiLocale, HomepageManagementCopy> = {
     },
     facts: {
       title: 'Public access',
-      description: 'Keep the public address, domain, and published version visible alongside publication controls.',
+      description:
+        'Keep the public address, domain, and published version visible alongside publication controls.',
       copyValue: 'Copy value',
       copiedValue: 'Copied value',
       homepageUrlLabel: 'Homepage URL',
@@ -473,7 +477,8 @@ const COPY: Record<SupportedUiLocale, HomepageManagementCopy> = {
     header: {
       eyebrow: 'タレント業務 / ホームページ',
       title: 'ホームページ管理',
-      description: 'このタレントのホームページについて、公開状態、バージョン履歴、公開アクセスを確認します。',
+      description:
+        'このタレントのホームページについて、公開状態、バージョン履歴、公開アクセスを確認します。',
     },
     actions: {
       workspaceSettings: '公開アクセス設定',
@@ -496,7 +501,8 @@ const COPY: Record<SupportedUiLocale, HomepageManagementCopy> = {
       unpublishSuccess: 'ホームページを公開停止しました。',
       unpublishError: 'ホームページの公開停止に失敗しました。',
       restoreTitlePrefix: '復元',
-      restoreDescription: '復元すると選択したバージョンから新しい下書きが作成され、再編集または再公開できます。',
+      restoreDescription:
+        '復元すると選択したバージョンから新しい下書きが作成され、再編集または再公開できます。',
       restoreConfirm: '下書きとして復元',
       restorePending: '復元中…',
       restoreSuccessPrefix: '新しい下書きとして復元しました:',
@@ -527,7 +533,8 @@ const COPY: Record<SupportedUiLocale, HomepageManagementCopy> = {
       customDomainLabel: 'カスタムドメイン',
       customDomainUnconfigured: '未設定',
       customDomainVerifiedHint: '現在のカスタムドメインは確認済みです。',
-      customDomainPendingHint: '現在のカスタムドメインは登録済みですが、まだ確認が完了していません。',
+      customDomainPendingHint:
+        '現在のカスタムドメインは登録済みですが、まだ確認が完了していません。',
       customDomainPathOnlyHint: '現在はパスベースのルーティングのみを使用しています。',
       homepagePathLabel: '共有ドメインルート',
       homepagePathUnconfigured: '未設定',
@@ -588,7 +595,8 @@ const COPY: Record<SupportedUiLocale, HomepageManagementCopy> = {
     header: {
       eyebrow: 'Talent business / Homepage',
       title: 'Homepage management',
-      description: 'Review publication status, version history, and public access for this talent homepage.',
+      description:
+        'Review publication status, version history, and public access for this talent homepage.',
     },
     actions: {
       workspaceSettings: 'Public access settings',
@@ -605,13 +613,15 @@ const COPY: Record<SupportedUiLocale, HomepageManagementCopy> = {
       publishSuccess: 'Homepage draft published.',
       publishError: 'Failed to publish homepage draft.',
       unpublishTitle: 'Unpublish homepage?',
-      unpublishDescription: 'Unpublishing removes the current live homepage while keeping the version history intact.',
+      unpublishDescription:
+        'Unpublishing removes the current live homepage while keeping the version history intact.',
       unpublishConfirm: 'Unpublish homepage',
       unpublishPending: 'Unpublishing…',
       unpublishSuccess: 'Homepage unpublished.',
       unpublishError: 'Failed to unpublish homepage.',
       restoreTitlePrefix: 'Restore',
-      restoreDescription: 'Restoring creates a new draft from the selected version so it can be revised or published again.',
+      restoreDescription:
+        'Restoring creates a new draft from the selected version so it can be revised or published again.',
       restoreConfirm: 'Restore to draft',
       restorePending: 'Restoring…',
       restoreSuccessPrefix: 'Version restored to a new draft:',
@@ -634,7 +644,8 @@ const COPY: Record<SupportedUiLocale, HomepageManagementCopy> = {
     },
     facts: {
       title: 'Public access',
-      description: 'Keep the public address, domain, and published version visible alongside publication controls.',
+      description:
+        'Keep the public address, domain, and published version visible alongside publication controls.',
       copyValue: 'Copy value',
       copiedValue: 'Copied value',
       homepageUrlLabel: 'Homepage URL',
@@ -703,7 +714,8 @@ const COPY: Record<SupportedUiLocale, HomepageManagementCopy> = {
     header: {
       eyebrow: 'Talent business / Homepage',
       title: 'Homepage management',
-      description: 'Review publication status, version history, and public access for this talent homepage.',
+      description:
+        'Review publication status, version history, and public access for this talent homepage.',
     },
     actions: {
       workspaceSettings: 'Public access settings',
@@ -720,13 +732,15 @@ const COPY: Record<SupportedUiLocale, HomepageManagementCopy> = {
       publishSuccess: 'Homepage draft published.',
       publishError: 'Failed to publish homepage draft.',
       unpublishTitle: 'Unpublish homepage?',
-      unpublishDescription: 'Unpublishing removes the current live homepage while keeping the version history intact.',
+      unpublishDescription:
+        'Unpublishing removes the current live homepage while keeping the version history intact.',
       unpublishConfirm: 'Unpublish homepage',
       unpublishPending: 'Unpublishing…',
       unpublishSuccess: 'Homepage unpublished.',
       unpublishError: 'Failed to unpublish homepage.',
       restoreTitlePrefix: 'Restore',
-      restoreDescription: 'Restoring creates a new draft from the selected version so it can be revised or published again.',
+      restoreDescription:
+        'Restoring creates a new draft from the selected version so it can be revised or published again.',
       restoreConfirm: 'Restore to draft',
       restorePending: 'Restoring…',
       restoreSuccessPrefix: 'Version restored to a new draft:',
@@ -749,7 +763,8 @@ const COPY: Record<SupportedUiLocale, HomepageManagementCopy> = {
     },
     facts: {
       title: 'Public access',
-      description: 'Keep the public address, domain, and published version visible alongside publication controls.',
+      description:
+        'Keep the public address, domain, and published version visible alongside publication controls.',
       copyValue: 'Copy value',
       copiedValue: 'Copied value',
       homepageUrlLabel: 'Homepage URL',
@@ -815,31 +830,47 @@ export function useHomepageManagementCopy() {
 
   return {
     locale,
-    copy: resolveLocaleRecord(locale, COPY as Record<SupportedUiLocale, HomepageManagementCopy>) as HomepageManagementCopy,
+    copy: resolveLocaleRecord(
+      locale,
+      COPY as Record<SupportedUiLocale, HomepageManagementCopy>
+    ) as HomepageManagementCopy,
   };
 }
 
 export function formatHomepageManagementDateTime(
-  locale: SupportedUiLocale ,
+  locale: SupportedUiLocale,
   value: string | null,
-  fallback: string,
+  fallback: string
 ) {
   return formatLocaleDateTime(locale, value, fallback);
 }
 
-export function getHomepageVersionFilterLabel(locale: SupportedUiLocale , filter: VersionFilter) {
-  return (resolveLocaleRecord(locale, COPY as Record<SupportedUiLocale, HomepageManagementCopy>) as HomepageManagementCopy).filters[filter];
+export function getHomepageVersionFilterLabel(locale: SupportedUiLocale, filter: VersionFilter) {
+  return (
+    resolveLocaleRecord(
+      locale,
+      COPY as Record<SupportedUiLocale, HomepageManagementCopy>
+    ) as HomepageManagementCopy
+  ).filters[filter];
 }
 
 export function getHomepageVersionStatusLabel(
-  locale: SupportedUiLocale ,
-  status: HomepageVersionStatus | 'inactive',
+  locale: SupportedUiLocale,
+  status: HomepageVersionStatus | 'inactive'
 ) {
-  return (resolveLocaleRecord(locale, COPY as Record<SupportedUiLocale, HomepageManagementCopy>) as HomepageManagementCopy).statuses[status];
+  return (
+    resolveLocaleRecord(
+      locale,
+      COPY as Record<SupportedUiLocale, HomepageManagementCopy>
+    ) as HomepageManagementCopy
+  ).statuses[status];
 }
 
-export function formatHomepageComponentCount(locale: SupportedUiLocale , count: number) {
-  const copy = resolveLocaleRecord(locale, COPY as Record<SupportedUiLocale, HomepageManagementCopy>) as HomepageManagementCopy;
+export function formatHomepageComponentCount(locale: SupportedUiLocale, count: number) {
+  const copy = resolveLocaleRecord(
+    locale,
+    COPY as Record<SupportedUiLocale, HomepageManagementCopy>
+  ) as HomepageManagementCopy;
   const formattedCount = formatLocaleNumber(locale, count);
 
   return pickLocaleText(locale, {

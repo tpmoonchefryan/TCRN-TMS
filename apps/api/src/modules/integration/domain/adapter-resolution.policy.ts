@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import type { LocalizedText } from '@tcrn/shared';
 
 import { OwnerType } from '../dto/integration.dto';
@@ -86,23 +85,19 @@ export interface EffectiveAdapterResolutionResult {
   version: number;
 }
 
-export const buildEffectiveAdapterScopeKey = (
-  scope: EffectiveAdapterScope,
-): string => `${scope.ownerType}:${scope.ownerId ?? 'tenant-root'}`;
+export const buildEffectiveAdapterScopeKey = (scope: EffectiveAdapterScope): string =>
+  `${scope.ownerType}:${scope.ownerId ?? 'tenant-root'}`;
 
 export const buildEffectiveAdapterLineage = (
   target: EffectiveAdapterScope,
-  talentSubsidiaryId: string | null,
+  talentSubsidiaryId: string | null
 ): EffectiveAdapterScope[] => {
   if (target.ownerType === OwnerType.TENANT) {
     return [{ ownerType: OwnerType.TENANT, ownerId: null }];
   }
 
   if (target.ownerType === OwnerType.SUBSIDIARY) {
-    return [
-      target,
-      { ownerType: OwnerType.TENANT, ownerId: null },
-    ];
+    return [target, { ownerType: OwnerType.TENANT, ownerId: null }];
   }
 
   return [
@@ -124,7 +119,7 @@ export const selectEffectiveAdapter = (args: {
   const disabledOverrideKeys = new Set(
     args.overrides
       .filter((override) => override.isDisabled)
-      .map((override) => `${override.adapterId}:${buildEffectiveAdapterScopeKey(override)}`),
+      .map((override) => `${override.adapterId}:${buildEffectiveAdapterScopeKey(override)}`)
   );
 
   for (const adapter of args.adapters) {
@@ -146,8 +141,7 @@ export const selectEffectiveAdapter = (args: {
     }
 
     const isTargetScope =
-      scope.ownerType === args.target.ownerType &&
-      scope.ownerId === args.target.ownerId;
+      scope.ownerType === args.target.ownerType && scope.ownerId === args.target.ownerId;
 
     if (isTargetScope) {
       return adapter.isActive ? adapter : null;
@@ -159,9 +153,7 @@ export const selectEffectiveAdapter = (args: {
 
     const blockingScopes = args.lineage.slice(0, index);
     const isDisabledInDescendantScope = blockingScopes.some((blockingScope) =>
-      disabledOverrideKeys.has(
-        `${adapter.id}:${buildEffectiveAdapterScopeKey(blockingScope)}`,
-      ),
+      disabledOverrideKeys.has(`${adapter.id}:${buildEffectiveAdapterScopeKey(blockingScope)}`)
     );
 
     return isDisabledInDescendantScope ? null : adapter;
@@ -173,7 +165,7 @@ export const selectEffectiveAdapter = (args: {
 export const buildEffectiveAdapterResolutionResult = (
   adapter: EffectiveAdapterLookupRow,
   target: EffectiveAdapterScope,
-  configs: EffectiveAdapterResolvedConfig[],
+  configs: EffectiveAdapterResolvedConfig[]
 ): EffectiveAdapterResolutionResult => ({
   id: adapter.id,
   ownerType: adapter.ownerType,
@@ -188,9 +180,7 @@ export const buildEffectiveAdapterResolutionResult = (
   adapterType: adapter.adapterType,
   inherit: adapter.inherit,
   isActive: adapter.isActive,
-  isInherited:
-    adapter.ownerType !== target.ownerType ||
-    adapter.ownerId !== target.ownerId,
+  isInherited: adapter.ownerType !== target.ownerType || adapter.ownerId !== target.ownerId,
   resolvedFrom: {
     ownerType: adapter.ownerType,
     ownerId: adapter.ownerId,

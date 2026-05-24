@@ -58,7 +58,7 @@ function getTransitionClassName(phase: FadeSwapPhase) {
 
 export function useFadeSwapState<T extends string>(
   targetValue: T,
-  options: UseFadeSwapStateOptions = {},
+  options: UseFadeSwapStateOptions = {}
 ): FadeSwapState<T> {
   const durationMs = options.durationMs ?? motionConstants.durationQuickMs;
   const prefersReducedMotion = usePrefersReducedMotion();

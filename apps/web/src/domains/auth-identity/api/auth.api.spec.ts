@@ -1,5 +1,6 @@
-import { BROWSER_PUBLIC_CONSUMER_CODE, BROWSER_PUBLIC_CONSUMER_HEADER } from '@tcrn/shared';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+
+import { BROWSER_PUBLIC_CONSUMER_CODE, BROWSER_PUBLIC_CONSUMER_HEADER } from '@tcrn/shared';
 
 import { getCurrentUser, login, logout, refreshAccessToken } from './auth.api';
 
@@ -43,8 +44,8 @@ describe('auth api', () => {
               schemaName: 'tenant_demo',
             },
           },
-        }),
-      ),
+        })
+      )
     );
 
     const result = await login({
@@ -72,8 +73,8 @@ describe('auth api', () => {
           totpRequired: true,
           sessionToken: 'totp-session',
           expiresIn: 300,
-        }),
-      ),
+        })
+      )
     );
 
     const result = await login({
@@ -99,8 +100,8 @@ describe('auth api', () => {
           sessionToken: 'reset-session',
           expiresIn: 300,
           reason: 'PASSWORD_RESET_REQUIRED',
-        }),
-      ),
+        })
+      )
     );
 
     const result = await login({
@@ -124,7 +125,7 @@ describe('auth api', () => {
         accessToken: 'refreshed',
         tokenType: 'Bearer',
         expiresIn: 900,
-      }),
+      })
     );
     vi.stubGlobal('fetch', fetchSpy);
 
@@ -135,7 +136,7 @@ describe('auth api', () => {
       expect.objectContaining({
         method: 'POST',
         credentials: 'include',
-      }),
+      })
     );
     const headers = new Headers(fetchSpy.mock.calls[0]?.[1]?.headers);
     expect(headers.get(BROWSER_PUBLIC_CONSUMER_HEADER)).toBe(BROWSER_PUBLIC_CONSUMER_CODE);
@@ -158,7 +159,7 @@ describe('auth api', () => {
         passwordChangedAt: null,
         passwordExpiresAt: null,
         createdAt: '2026-04-20T00:00:00.000Z',
-      }),
+      })
     );
     vi.stubGlobal('fetch', fetchSpy);
 
@@ -173,7 +174,7 @@ describe('auth api', () => {
     const fetchSpy = vi.fn().mockResolvedValue(
       buildFetchResponse({
         message: 'Logged out',
-      }),
+      })
     );
     vi.stubGlobal('fetch', fetchSpy);
 
@@ -184,7 +185,7 @@ describe('auth api', () => {
       expect.objectContaining({
         method: 'POST',
         credentials: 'include',
-      }),
+      })
     );
     const headers = new Headers(fetchSpy.mock.calls[0]?.[1]?.headers);
     expect(headers.get('Authorization')).toBe('Bearer access-token');

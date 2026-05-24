@@ -24,7 +24,7 @@ describe('PublicHomepageReadRepository', () => {
     });
 
     await expect(
-      repository.findVerifiedDomainBindingRoute('tenant_demo', 'brand.example.com', 'sora'),
+      repository.findVerifiedDomainBindingRoute('tenant_demo', 'brand.example.com', 'sora')
     ).resolves.toBeNull();
   });
 
@@ -32,7 +32,7 @@ describe('PublicHomepageReadRepository', () => {
     queryRawUnsafe.mockRejectedValueOnce(new Error('connection terminated unexpectedly'));
 
     await expect(
-      repository.findVerifiedDomainBindingRoute('tenant_demo', 'brand.example.com', null),
+      repository.findVerifiedDomainBindingRoute('tenant_demo', 'brand.example.com', null)
     ).rejects.toThrow('connection terminated unexpectedly');
   });
 });

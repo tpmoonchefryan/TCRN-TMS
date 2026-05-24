@@ -1,5 +1,6 @@
-import { prisma } from '@tcrn/database';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { prisma } from '@tcrn/database';
 
 import { DictionaryService } from './dictionary.service';
 

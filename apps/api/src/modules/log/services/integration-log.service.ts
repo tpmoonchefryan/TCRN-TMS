@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable, Logger } from '@nestjs/common';
+
 import { IntegrationDirection, type RequestContext } from '@tcrn/shared';
 
 import { DatabaseService } from '../../database';
@@ -49,7 +49,7 @@ export class IntegrationLogService {
 
   constructor(
     private readonly databaseService: DatabaseService,
-    private readonly maskingService: LogMaskingService,
+    private readonly maskingService: LogMaskingService
   ) {}
 
   /**
@@ -63,15 +63,18 @@ export class IntegrationLogService {
 
       const maskedRequestHeaders = this.maskHeaders(data.requestHeaders);
       const maskedRequestBody = this.truncateBody(
-        this.maskingService.maskIntegrationLogBody(data.requestBody ?? null),
+        this.maskingService.maskIntegrationLogBody(data.requestBody ?? null)
       );
       const maskedResponseBody = this.truncateBody(
         this.maskingService.maskIntegrationLogBody(
-          (data.responseBody && typeof data.responseBody === 'object' ? data.responseBody : null) as Record<string, unknown> | null
-        ),
+          (data.responseBody && typeof data.responseBody === 'object'
+            ? data.responseBody
+            : null) as Record<string, unknown> | null
+        )
       );
 
-      await prisma.$executeRawUnsafe(`
+      await prisma.$executeRawUnsafe(
+        `
         INSERT INTO "${schema}".integration_log (
           id, occurred_at, consumer_id, consumer_code, direction, endpoint, method,
           request_headers, request_body, response_status, response_body, latency_ms, error_message, trace_id
@@ -91,12 +94,12 @@ export class IntegrationLogService {
         maskedResponseBody ? JSON.stringify(maskedResponseBody) : null,
         data.latencyMs,
         data.errorMessage ?? null,
-        traceId,
+        traceId
       );
     } catch (error) {
       this.logger.error(
         `Failed to log inbound request: ${error instanceof Error ? error.message : String(error)}`,
-        error instanceof Error ? error.stack : undefined,
+        error instanceof Error ? error.stack : undefined
       );
     }
   }
@@ -112,15 +115,18 @@ export class IntegrationLogService {
 
       const maskedRequestHeaders = this.maskHeaders(data.requestHeaders);
       const maskedRequestBody = this.truncateBody(
-        this.maskingService.maskIntegrationLogBody(data.requestBody ?? null),
+        this.maskingService.maskIntegrationLogBody(data.requestBody ?? null)
       );
       const maskedResponseBody = this.truncateBody(
         this.maskingService.maskIntegrationLogBody(
-          (data.responseBody && typeof data.responseBody === 'object' ? data.responseBody : null) as Record<string, unknown> | null
-        ),
+          (data.responseBody && typeof data.responseBody === 'object'
+            ? data.responseBody
+            : null) as Record<string, unknown> | null
+        )
       );
 
-      await prisma.$executeRawUnsafe(`
+      await prisma.$executeRawUnsafe(
+        `
         INSERT INTO "${schema}".integration_log (
           id, occurred_at, consumer_id, consumer_code, direction, endpoint, method,
           request_headers, request_body, response_status, response_body, latency_ms, error_message, trace_id
@@ -140,12 +146,12 @@ export class IntegrationLogService {
         maskedResponseBody ? JSON.stringify(maskedResponseBody) : null,
         data.latencyMs ?? null,
         data.errorMessage ?? null,
-        traceId,
+        traceId
       );
     } catch (error) {
       this.logger.error(
         `Failed to log outbound request: ${error instanceof Error ? error.message : String(error)}`,
-        error instanceof Error ? error.stack : undefined,
+        error instanceof Error ? error.stack : undefined
       );
     }
   }
@@ -154,17 +160,11 @@ export class IntegrationLogService {
    * Mask sensitive headers
    */
   private maskHeaders(
-    headers: Record<string, string> | null | undefined,
+    headers: Record<string, string> | null | undefined
   ): Record<string, string> | null {
     if (!headers) return null;
 
-    const sensitiveHeaders = [
-      'authorization',
-      'x-api-key',
-      'cookie',
-      'set-cookie',
-      'x-auth-token',
-    ];
+    const sensitiveHeaders = ['authorization', 'x-api-key', 'cookie', 'set-cookie', 'x-auth-token'];
 
     const masked = { ...headers };
 
@@ -222,7 +222,7 @@ export class IntegrationLogQueryService {
       page?: number;
       pageSize?: number;
     },
-    tenantSchema: string,
+    tenantSchema: string
   ) {
     const prisma = this.databaseService.getPrisma();
     const page = query.page || 1;
@@ -272,12 +272,12 @@ export class IntegrationLogQueryService {
          ${whereClause}
          ORDER BY occurred_at DESC
          LIMIT ${pageSize} OFFSET ${offset}`,
-        ...params,
+        ...params
       );
 
       const countResult = await prisma.$queryRawUnsafe<{ count: bigint }[]>(
         `SELECT COUNT(*) as count FROM "${tenantSchema}".integration_log ${whereClause}`,
-        ...params,
+        ...params
       );
       const total = Number(countResult[0]?.count || 0);
 
@@ -289,7 +289,9 @@ export class IntegrationLogQueryService {
         totalPages: Math.ceil(total / pageSize),
       };
     } catch (error) {
-      this.queryLogger.error(`Failed to query integration logs: ${error instanceof Error ? error.message : String(error)}`);
+      this.queryLogger.error(
+        `Failed to query integration logs: ${error instanceof Error ? error.message : String(error)}`
+      );
       return {
         items: [],
         total: 0,
@@ -311,11 +313,13 @@ export class IntegrationLogQueryService {
          FROM "${tenantSchema}".integration_log
          WHERE trace_id = $1
          ORDER BY occurred_at ASC`,
-        traceId,
+        traceId
       );
       return items.map((item) => this.formatEntry(item));
     } catch (error) {
-      this.queryLogger.error(`Failed to find by trace ID: ${error instanceof Error ? error.message : String(error)}`);
+      this.queryLogger.error(
+        `Failed to find by trace ID: ${error instanceof Error ? error.message : String(error)}`
+      );
       return [];
     }
   }
@@ -335,11 +339,11 @@ export class IntegrationLogQueryService {
          FROM "${tenantSchema}".integration_log
          WHERE response_status >= 400 OR error_message IS NOT NULL
          ORDER BY occurred_at DESC
-         LIMIT ${pageSize} OFFSET ${offset}`,
+         LIMIT ${pageSize} OFFSET ${offset}`
       );
 
       const countResult = await prisma.$queryRawUnsafe<{ count: bigint }[]>(
-        `SELECT COUNT(*) as count FROM "${tenantSchema}".integration_log WHERE response_status >= 400 OR error_message IS NOT NULL`,
+        `SELECT COUNT(*) as count FROM "${tenantSchema}".integration_log WHERE response_status >= 400 OR error_message IS NOT NULL`
       );
       const total = Number(countResult[0]?.count || 0);
 
@@ -351,7 +355,9 @@ export class IntegrationLogQueryService {
         totalPages: Math.ceil(total / pageSize),
       };
     } catch (error) {
-      this.queryLogger.error(`Failed to find failed requests: ${error instanceof Error ? error.message : String(error)}`);
+      this.queryLogger.error(
+        `Failed to find failed requests: ${error instanceof Error ? error.message : String(error)}`
+      );
       return {
         items: [],
         total: 0,

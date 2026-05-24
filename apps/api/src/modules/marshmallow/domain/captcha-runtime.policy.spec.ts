@@ -9,7 +9,7 @@ describe('buildCaptchaRuntimeStatus', () => {
         nodeEnv: 'development',
         siteKey: null,
         secretKey: null,
-      }),
+      })
     ).toMatchObject({
       environment: 'development',
       runtimeBypass: true,
@@ -24,7 +24,7 @@ describe('buildCaptchaRuntimeStatus', () => {
         nodeEnv: 'test',
         siteKey: '',
         secretKey: '',
-      }),
+      })
     ).toMatchObject({
       environment: 'test',
       runtimeBypass: true,
@@ -39,7 +39,7 @@ describe('buildCaptchaRuntimeStatus', () => {
         nodeEnv: 'staging',
         siteKey: 'site-key',
         secretKey: '',
-      }),
+      })
     ).toMatchObject({
       environment: 'staging',
       runtimeBypass: false,
@@ -54,7 +54,7 @@ describe('buildCaptchaRuntimeStatus', () => {
         nodeEnv: 'production',
         siteKey: '',
         secretKey: 'secret-key',
-      }),
+      })
     ).toMatchObject({
       environment: 'production',
       runtimeBypass: false,
@@ -69,7 +69,7 @@ describe('buildCaptchaRuntimeStatus', () => {
         nodeEnv: 'staging',
         siteKey: 'site-key',
         secretKey: 'secret-key',
-      }),
+      })
     ).toMatchObject({
       runtimeBypass: false,
       providerReady: true,

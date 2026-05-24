@@ -1,11 +1,11 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import {
   BadRequestException,
   ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+
 import { Prisma, prisma } from '@tcrn/database';
 import {
   ErrorCodes,
@@ -86,7 +86,7 @@ export class ConfigService {
       pageSize?: number;
       sort?: string;
       language?: string;
-    } = {},
+    } = {}
   ): Promise<{ data: ConfigEntityWithMeta[]; total: number }> {
     const tableName = CONFIG_TABLE_NAMES[entityType];
     const {
@@ -126,7 +126,7 @@ export class ConfigService {
         FROM "${tenantSchema}".${tableName}
         WHERE ${whereClause}
       `,
-      ...params,
+      ...params
     );
     const total = Number(countResult[0]?.count ?? 0);
 
@@ -139,7 +139,7 @@ export class ConfigService {
         ORDER BY ${orderBy}
         LIMIT ${pageSize} OFFSET ${offset}
       `,
-      ...params,
+      ...params
     );
 
     const disabledIds = includeDisabled
@@ -154,7 +154,8 @@ export class ConfigService {
           ownerName: null,
           isInherited: item.ownerType !== scopeType || item.ownerId !== scopeId,
           isDisabledHere: disabledIds.has(item.id),
-          canDisable: !item.isForceUse && (item.ownerType !== scopeType || item.ownerId !== scopeId),
+          canDisable:
+            !item.isForceUse && (item.ownerType !== scopeType || item.ownerId !== scopeId),
         })),
       total,
     };
@@ -164,7 +165,7 @@ export class ConfigService {
     entityType: ConfigEntityType,
     id: string,
     tenantSchema: string,
-    language = 'en',
+    language = 'en'
   ): Promise<ConfigEntityWithMeta | null> {
     const tableName = CONFIG_TABLE_NAMES[entityType];
     const results = await prisma.$queryRawUnsafe<RawConfigEntity[]>(
@@ -174,7 +175,7 @@ export class ConfigService {
         WHERE id = $1::uuid
         LIMIT 1
       `,
-      id,
+      id
     );
 
     const item = results[0];
@@ -195,7 +196,7 @@ export class ConfigService {
     entityType: ConfigEntityType,
     tenantSchema: string,
     data: ConfigEntityCreateInput,
-    userId: string,
+    userId: string
   ): Promise<BaseConfigEntity> {
     const tableName = CONFIG_TABLE_NAMES[entityType];
     const isScoped = CONFIG_SCOPED_ENTITIES.has(entityType);
@@ -211,7 +212,7 @@ export class ConfigService {
     this.assertTenantOnlyScopedEntityOwner(
       entityType,
       data.ownerType ?? 'tenant',
-      data.ownerId ?? null,
+      data.ownerId ?? null
     );
 
     if (!normalizedName.en.trim()) {
@@ -226,7 +227,7 @@ export class ConfigService {
           WHERE code = $1
           LIMIT 1
         `,
-        data.code,
+        data.code
       );
 
       if (existing.length > 0) {
@@ -256,7 +257,9 @@ export class ConfigService {
     if (hasDescription) {
       fields.push('description');
       values.push(`$${params.length + 1}::jsonb`);
-      params.push(stringifyLocalizedText(normalizeLocalizedText(data.description, normalizedName.en)));
+      params.push(
+        stringifyLocalizedText(normalizeLocalizedText(data.description, normalizedName.en))
+      );
     }
 
     if (hasExtraData) {
@@ -294,7 +297,7 @@ export class ConfigService {
         VALUES (${values.join(', ')})
         RETURNING ${this.buildBaseSelect(entityType)}
       `,
-      ...params,
+      ...params
     );
 
     return this.decorateEntity(entityType, results[0], 'en');
@@ -305,7 +308,7 @@ export class ConfigService {
     id: string,
     tenantSchema: string,
     data: ConfigEntityUpdateInput,
-    userId: string,
+    userId: string
   ): Promise<BaseConfigEntity> {
     const tableName = CONFIG_TABLE_NAMES[entityType];
     const current = await this.findById(entityType, id, tenantSchema);
@@ -346,10 +349,17 @@ export class ConfigService {
 
     if (hasDescription && data.description !== undefined) {
       updates.push(`description = $${paramIndex++}::jsonb`);
-      params.push(stringifyLocalizedText(normalizeLocalizedText(
-        { ...(current.description ?? normalizeLocalizedText(null, nextName.en)), ...data.description },
-        nextName.en,
-      )));
+      params.push(
+        stringifyLocalizedText(
+          normalizeLocalizedText(
+            {
+              ...(current.description ?? normalizeLocalizedText(null, nextName.en)),
+              ...data.description,
+            },
+            nextName.en
+          )
+        )
+      );
     }
 
     if (hasSortOrder && data.sortOrder !== undefined) {
@@ -386,7 +396,7 @@ export class ConfigService {
         WHERE id = $1::uuid
         RETURNING ${this.buildBaseSelect(entityType)}
       `,
-      ...params,
+      ...params
     );
 
     return this.decorateEntity(entityType, results[0], 'en');
@@ -397,7 +407,7 @@ export class ConfigService {
     id: string,
     tenantSchema: string,
     version: number,
-    userId: string,
+    userId: string
   ): Promise<BaseConfigEntity> {
     const tableName = CONFIG_TABLE_NAMES[entityType];
     const current = await this.findById(entityType, id, tenantSchema);
@@ -429,7 +439,7 @@ export class ConfigService {
         WHERE id = $1::uuid
       `,
       id,
-      userId,
+      userId
     );
 
     const deactivated = await this.findById(entityType, id, tenantSchema);
@@ -447,7 +457,7 @@ export class ConfigService {
     id: string,
     tenantSchema: string,
     version: number,
-    userId: string,
+    userId: string
   ): Promise<BaseConfigEntity> {
     const tableName = CONFIG_TABLE_NAMES[entityType];
     const current = await this.findById(entityType, id, tenantSchema);
@@ -472,7 +482,7 @@ export class ConfigService {
         WHERE id = $1::uuid
       `,
       id,
-      userId,
+      userId
     );
 
     const reactivated = await this.findById(entityType, id, tenantSchema);
@@ -491,7 +501,7 @@ export class ConfigService {
     tenantSchema: string,
     scopeType: OwnerType,
     scopeId: string,
-    userId: string,
+    userId: string
   ): Promise<void> {
     const tableName = CONFIG_TABLE_NAMES[entityType];
 
@@ -544,7 +554,7 @@ export class ConfigService {
       id,
       scopeType,
       scopeId,
-      userId,
+      userId
     );
   }
 
@@ -553,7 +563,7 @@ export class ConfigService {
     id: string,
     tenantSchema: string,
     scopeType: OwnerType,
-    scopeId: string,
+    scopeId: string
   ): Promise<void> {
     const tableName = CONFIG_TABLE_NAMES[entityType];
 
@@ -579,7 +589,7 @@ export class ConfigService {
       tableName,
       id,
       scopeType,
-      scopeId,
+      scopeId
     );
   }
 
@@ -590,38 +600,40 @@ export class ConfigService {
       scopeId?: string | null;
       includeInactive?: boolean;
       language?: string;
-    } = {},
-  ): Promise<Array<{
-    id: string;
-    code: string;
-    name: LocalizedText;
-    localizedName: string;
-    sortOrder: number;
-    isActive: boolean;
-    types: Array<{
+    } = {}
+  ): Promise<
+    Array<{
       id: string;
       code: string;
       name: LocalizedText;
       localizedName: string;
-      classId: string;
-      externalControl: boolean;
-      defaultRenewalDays: number;
       sortOrder: number;
       isActive: boolean;
-      levels: Array<{
+      types: Array<{
         id: string;
         code: string;
         name: LocalizedText;
         localizedName: string;
-        typeId: string;
-        rank: number;
-        color: string | null;
-        badgeUrl: string | null;
+        classId: string;
+        externalControl: boolean;
+        defaultRenewalDays: number;
         sortOrder: number;
         isActive: boolean;
+        levels: Array<{
+          id: string;
+          code: string;
+          name: LocalizedText;
+          localizedName: string;
+          typeId: string;
+          rank: number;
+          color: string | null;
+          badgeUrl: string | null;
+          sortOrder: number;
+          isActive: boolean;
+        }>;
       }>;
-    }>;
-  }>> {
+    }>
+  > {
     const {
       scopeType = 'tenant',
       scopeId = null,
@@ -629,26 +641,28 @@ export class ConfigService {
       language = 'en',
     } = options;
     const scopeChain = await this.getScopeChain(tenantSchema, scopeType, scopeId);
-    const scopeConditions = scopeChain.map((scope) => (
+    const scopeConditions = scopeChain.map((scope) =>
       scope.id === null
         ? `(owner_type = '${scope.type}' AND owner_id IS NULL)`
         : `(owner_type = '${scope.type}' AND owner_id = '${scope.id}')`
-    ));
+    );
     const activeClause = includeInactive ? '' : 'AND is_active = true';
 
-    const classes = await prisma.$queryRawUnsafe<Array<{
-      code: string;
-      id: string;
-      isActive: boolean;
-      name: Prisma.JsonValue;
-      sortOrder: number;
-    }>>(
+    const classes = await prisma.$queryRawUnsafe<
+      Array<{
+        code: string;
+        id: string;
+        isActive: boolean;
+        name: Prisma.JsonValue;
+        sortOrder: number;
+      }>
+    >(
       `
         SELECT id, code, name, sort_order as "sortOrder", is_active as "isActive"
         FROM "${tenantSchema}".membership_class
         WHERE (${scopeConditions.join(' OR ')}) ${activeClause}
         ORDER BY sort_order ASC, code ASC
-      `,
+      `
     );
 
     if (classes.length === 0) {
@@ -656,16 +670,18 @@ export class ConfigService {
     }
 
     const classIds = classes.map((item) => item.id);
-    const types = await prisma.$queryRawUnsafe<Array<{
-      code: string;
-      defaultRenewalDays: number;
-      externalControl: boolean;
-      id: string;
-      isActive: boolean;
-      membershipClassId: string;
-      name: Prisma.JsonValue;
-      sortOrder: number;
-    }>>(
+    const types = await prisma.$queryRawUnsafe<
+      Array<{
+        code: string;
+        defaultRenewalDays: number;
+        externalControl: boolean;
+        id: string;
+        isActive: boolean;
+        membershipClassId: string;
+        name: Prisma.JsonValue;
+        sortOrder: number;
+      }>
+    >(
       `
         SELECT
           id,
@@ -680,23 +696,26 @@ export class ConfigService {
         WHERE membership_class_id = ANY($1::uuid[]) ${activeClause}
         ORDER BY sort_order ASC, code ASC
       `,
-      classIds,
+      classIds
     );
 
     const typeIds = types.map((item) => item.id);
-    const levels = typeIds.length > 0
-      ? await prisma.$queryRawUnsafe<Array<{
-          badgeUrl: string | null;
-          code: string;
-          color: string | null;
-          id: string;
-          isActive: boolean;
-          membershipTypeId: string;
-          name: Prisma.JsonValue;
-          rank: number;
-          sortOrder: number;
-        }>>(
-          `
+    const levels =
+      typeIds.length > 0
+        ? await prisma.$queryRawUnsafe<
+            Array<{
+              badgeUrl: string | null;
+              code: string;
+              color: string | null;
+              id: string;
+              isActive: boolean;
+              membershipTypeId: string;
+              name: Prisma.JsonValue;
+              rank: number;
+              sortOrder: number;
+            }>
+          >(
+            `
             SELECT
               id,
               membership_type_id as "membershipTypeId",
@@ -711,9 +730,9 @@ export class ConfigService {
             WHERE membership_type_id = ANY($1::uuid[]) ${activeClause}
             ORDER BY rank ASC, sort_order ASC, code ASC
           `,
-          typeIds,
-        )
-      : [];
+            typeIds
+          )
+        : [];
 
     const levelsByType = new Map<string, typeof levels>();
     for (const level of levels) {
@@ -796,11 +815,11 @@ export class ConfigService {
           whereClause += ` AND owner_type = 'tenant' AND owner_id IS NULL`;
         }
       } else if (args.includeInherited) {
-        const scopeConditions = args.scopeChain.map((scope) => (
+        const scopeConditions = args.scopeChain.map((scope) =>
           scope.id === null
             ? `(owner_type = '${scope.type}' AND owner_id IS NULL)`
             : `(owner_type = '${scope.type}' AND owner_id = '${scope.id}')`
-        ));
+        );
         whereClause += ` AND (${scopeConditions.join(' OR ')})`;
       }
     }
@@ -838,8 +857,12 @@ export class ConfigService {
 
     if (!sort) {
       return hasSortOrder
-        ? (hasCode ? 'sort_order ASC, code ASC' : `sort_order ASC, ${localizedNameOrder} ASC`)
-        : (hasCode ? 'code ASC' : `${localizedNameOrder} ASC`);
+        ? hasCode
+          ? 'sort_order ASC, code ASC'
+          : `sort_order ASC, ${localizedNameOrder} ASC`
+        : hasCode
+          ? 'code ASC'
+          : `${localizedNameOrder} ASC`;
     }
 
     const isDesc = sort.startsWith('-');
@@ -864,13 +887,16 @@ export class ConfigService {
     const hasSystemFlag = CONFIG_HAS_SYSTEM_FLAG.has(entityType);
     const hasForceUseControl = CONFIG_HAS_FORCE_USE_CONTROL.has(entityType);
     const hasAudit = CONFIG_HAS_AUDIT.has(entityType);
-    const extraFieldsSelect = extraFields.length > 0
-      ? `, ${extraFields.map((field) => `${field} as "${this.snakeToCamel(field)}"`).join(', ')}`
-      : '';
+    const extraFieldsSelect =
+      extraFields.length > 0
+        ? `, ${extraFields.map((field) => `${field} as "${this.snakeToCamel(field)}"`).join(', ')}`
+        : '';
 
     return [
       'id',
-      isScoped ? 'owner_type as "ownerType", owner_id as "ownerId"' : 'NULL as "ownerType", NULL as "ownerId"',
+      isScoped
+        ? 'owner_type as "ownerType", owner_id as "ownerId"'
+        : 'NULL as "ownerType", NULL as "ownerId"',
       hasCode ? 'code' : 'NULL as code',
       'name',
       hasDescription ? 'description' : 'NULL::jsonb as description',
@@ -881,7 +907,9 @@ export class ConfigService {
       hasSystemFlag ? 'is_system as "isSystem"' : 'false as "isSystem"',
       'created_at as "createdAt"',
       'updated_at as "updatedAt"',
-      hasAudit ? 'created_by as "createdBy", updated_by as "updatedBy"' : 'NULL as "createdBy", NULL as "updatedBy"',
+      hasAudit
+        ? 'created_by as "createdBy", updated_by as "updatedBy"'
+        : 'NULL as "createdBy", NULL as "updatedBy"',
       `version${extraFieldsSelect}`,
     ].join(', ');
   }
@@ -889,7 +917,7 @@ export class ConfigService {
   private decorateEntity(
     entityType: ConfigEntityType,
     entity: RawConfigEntity & Record<string, unknown>,
-    language: string,
+    language: string
   ): BaseConfigEntity & {
     localizedDescription: string | null;
     localizedName: string;
@@ -907,7 +935,7 @@ export class ConfigService {
         ? {
             contentMarkdown: readLocalizedText(
               entity.contentMarkdown as Prisma.JsonValue,
-              'consent.contentMarkdown',
+              'consent.contentMarkdown'
             ),
           }
         : {}),
@@ -922,7 +950,7 @@ export class ConfigService {
     fields: string[],
     values: string[],
     params: unknown[],
-    name: LocalizedText,
+    name: LocalizedText
   ): void {
     for (const field of CONFIG_EXTRA_FIELDS[entityType]) {
       const camelField = this.snakeToCamel(field);
@@ -949,7 +977,7 @@ export class ConfigService {
     updates: string[],
     params: unknown[],
     paramIndex: number,
-    name: LocalizedText,
+    name: LocalizedText
   ): void {
     let nextParamIndex = paramIndex;
 
@@ -959,7 +987,10 @@ export class ConfigService {
 
       if (field === 'content_markdown' && data.contentMarkdown !== undefined) {
         const currentContent = current.contentMarkdown
-          ? readLocalizedText(current.contentMarkdown as Prisma.JsonValue, 'consent.contentMarkdown')
+          ? readLocalizedText(
+              current.contentMarkdown as Prisma.JsonValue,
+              'consent.contentMarkdown'
+            )
           : normalizeLocalizedText(null, name.en);
         value = stringifyLocalizedText(mergeLocalizedText(currentContent, data.contentMarkdown));
       }
@@ -1004,7 +1035,7 @@ export class ConfigService {
   private assertTenantOnlyScopedEntityOwner(
     entityType: ConfigEntityType,
     ownerType: OwnerType,
-    ownerId: string | null,
+    ownerId: string | null
   ): void {
     if (!CONFIG_TENANT_ONLY_SCOPED_ENTITIES.has(entityType)) {
       return;
@@ -1021,7 +1052,7 @@ export class ConfigService {
   private async getScopeChain(
     tenantSchema: string,
     scopeType: OwnerType,
-    scopeId: string | null,
+    scopeId: string | null
   ): Promise<ConfigScopeRef[]> {
     const chain: ConfigScopeRef[] = [{ type: 'tenant', id: null }];
 
@@ -1036,7 +1067,7 @@ export class ConfigService {
           FROM "${tenantSchema}".subsidiary
           WHERE id = $1::uuid
         `,
-        scopeId,
+        scopeId
       );
 
       if (subsidiaries.length > 0) {
@@ -1047,7 +1078,7 @@ export class ConfigService {
             WHERE $1 LIKE path || '%' AND path != $1
             ORDER BY length(path)
           `,
-          subsidiaries[0].path,
+          subsidiaries[0].path
         );
 
         for (const ancestor of ancestors) {
@@ -1058,16 +1089,18 @@ export class ConfigService {
     }
 
     if (scopeType === 'talent' && scopeId) {
-      const talents = await prisma.$queryRawUnsafe<Array<{
-        path: string;
-        subsidiaryId: string | null;
-      }>>(
+      const talents = await prisma.$queryRawUnsafe<
+        Array<{
+          path: string;
+          subsidiaryId: string | null;
+        }>
+      >(
         `
           SELECT subsidiary_id as "subsidiaryId", path
           FROM "${tenantSchema}".talent
           WHERE id = $1::uuid
         `,
-        scopeId,
+        scopeId
       );
 
       if (talents.length > 0 && talents[0].subsidiaryId) {
@@ -1078,7 +1111,7 @@ export class ConfigService {
             WHERE $1 LIKE path || '%'
             ORDER BY length(path)
           `,
-          talents[0].path,
+          talents[0].path
         );
 
         for (const subsidiary of subsidiaries) {
@@ -1095,7 +1128,7 @@ export class ConfigService {
     tenantSchema: string,
     entityType: ConfigEntityType,
     scopeType: OwnerType,
-    scopeId: string | null,
+    scopeId: string | null
   ): Promise<Set<string>> {
     const tableName = CONFIG_TABLE_NAMES[entityType];
     const overrides = await prisma.$queryRawUnsafe<Array<{ entityId: string }>>(
@@ -1110,7 +1143,7 @@ export class ConfigService {
       `,
       tableName,
       scopeType,
-      scopeId,
+      scopeId
     );
 
     return new Set(overrides.map((override) => override.entityId));

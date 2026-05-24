@@ -1,16 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
-import {
-  ErrorCodes,
-  LogSeverity,
-  type RequestContext,
-  TechEventType,
-} from '@tcrn/shared';
+import { ErrorCodes, LogSeverity, type RequestContext, TechEventType } from '@tcrn/shared';
 
 import { OwnerType } from '../../integration/dto/integration.dto';
 import { AdapterResolutionService } from '../../integration/services/adapter-resolution.service';
@@ -36,7 +27,7 @@ export class ReportPiiPlatformApplicationService {
     private readonly mfrReportRepository: MfrReportRepository,
     private readonly adapterResolutionService: AdapterResolutionService,
     private readonly piiClientService: PiiClientService,
-    private readonly techEventLog: TechEventLogService,
+    private readonly techEventLog: TechEventLogService
   ) {}
 
   async createMfrReportRequest(
@@ -45,7 +36,7 @@ export class ReportPiiPlatformApplicationService {
     filters: MfrFilterCriteriaDto,
     format: ReportFormat,
     estimatedRows: number,
-    context: RequestContext,
+    context: RequestContext
   ): Promise<PiiPlatformReportCreateResponse | null> {
     const adapter = await this.adapterResolutionService.resolveEffectiveAdapter(
       {
@@ -53,7 +44,7 @@ export class ReportPiiPlatformApplicationService {
         ownerId: talentId,
         platformCode: REPORT_PII_PLATFORM_CODE,
       },
-      context,
+      context
     );
 
     if (!adapter) {
@@ -71,7 +62,7 @@ export class ReportPiiPlatformApplicationService {
 
     const talent = await this.mfrReportRepository.findTalent(
       context.tenantSchema ?? 'public',
-      talentId,
+      talentId
     );
 
     if (!talent) {
@@ -84,7 +75,7 @@ export class ReportPiiPlatformApplicationService {
     const customerIds = await this.mfrReportRepository.findMatchingCustomerIds(
       context.tenantSchema ?? 'public',
       talentId,
-      filters,
+      filters
     );
 
     const result = await this.piiClientService.createReportRequest(
@@ -97,11 +88,11 @@ export class ReportPiiPlatformApplicationService {
         format,
         estimatedRows,
         context,
-        runtime,
+        runtime
       ),
       runtime.serviceToken,
       context.tenantId ?? context.tenantSchema ?? 'unknown',
-      context.tenantSchema,
+      context.tenantSchema
     );
 
     await this.techEventLog.log(
@@ -121,7 +112,7 @@ export class ReportPiiPlatformApplicationService {
           ownerScope: runtime.resolvedFrom,
         },
       },
-      context,
+      context
     );
 
     return buildPiiPlatformReportCreateResponse(
@@ -129,7 +120,7 @@ export class ReportPiiPlatformApplicationService {
       result.redirectUrl,
       result.expiresAt,
       estimatedRows,
-      customerIds.length,
+      customerIds.length
     );
   }
 }

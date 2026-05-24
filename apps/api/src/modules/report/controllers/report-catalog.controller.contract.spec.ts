@@ -1,19 +1,22 @@
-import 'reflect-metadata';
-
 import { RequestMethod } from '@nestjs/common';
 import { METHOD_METADATA, PATH_METADATA } from '@nestjs/common/constants';
+import 'reflect-metadata';
 import { describe, expect, it } from 'vitest';
 
 import { ReportCatalogController } from './report-catalog.controller';
 
 const getRoutes = () => {
   const methodNames = Object.getOwnPropertyNames(ReportCatalogController.prototype).filter(
-    (methodName) => methodName !== 'constructor' && typeof ReportCatalogController.prototype[methodName] === 'function',
+    (methodName) =>
+      methodName !== 'constructor' &&
+      typeof ReportCatalogController.prototype[methodName] === 'function'
   );
 
   return methodNames.flatMap((methodName) => {
     const handler = ReportCatalogController.prototype[methodName];
-    const requestMethod = Reflect.getMetadata(METHOD_METADATA, handler) as RequestMethod | undefined;
+    const requestMethod = Reflect.getMetadata(METHOD_METADATA, handler) as
+      | RequestMethod
+      | undefined;
 
     if (requestMethod === undefined) {
       return [];
@@ -45,7 +48,7 @@ describe('ReportCatalogController route contract', () => {
           requestMethod: RequestMethod.GET,
           path: 'catalog/:reportId',
         },
-      ]),
+      ])
     );
   });
 });

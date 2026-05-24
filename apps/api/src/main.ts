@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Logger } from '@nestjs/common';
 
 import { loadRepoEnvFiles } from './repo-env';
@@ -17,7 +16,7 @@ async function start(): Promise<void> {
 }
 
 void start().catch((error: unknown) => {
-  const details = error instanceof Error ? error.stack ?? error.message : String(error);
+  const details = error instanceof Error ? (error.stack ?? error.message) : String(error);
   logger.error('Failed to start API application', details);
   process.exitCode = 1;
 });

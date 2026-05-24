@@ -51,7 +51,7 @@ modificationAllowed: true
 attributionRequired: false
 reviewedAt: 2026-05-13
 reviewedBy: security-license-governance
-fileHash: ""
+fileHash: ''
 ```
 
 If the manifest is missing or incomplete, AI should propose a CSS/native alternative or ask the user for an authorized upload.

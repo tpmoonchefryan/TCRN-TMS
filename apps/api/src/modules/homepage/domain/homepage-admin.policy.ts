@@ -1,8 +1,8 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+import * as crypto from 'crypto';
 
 import type { LocalizedText } from '@tcrn/shared';
 import { buildSharedHomepageUrl } from '@tcrn/shared';
-import * as crypto from 'crypto';
 
 import type {
   HomepageContent,
@@ -104,7 +104,7 @@ export interface HomepageSettingsRecord {
 
 export function calculateHomepageDraftHash(
   content: HomepageContent,
-  theme?: ThemeConfig | null,
+  theme?: ThemeConfig | null
 ): string {
   return crypto
     .createHash('sha256')
@@ -181,7 +181,7 @@ export function buildHomepagePublishResult(params: {
 }
 
 export function normalizeHomepagePathInput(
-  homepagePath: string | null | undefined,
+  homepagePath: string | null | undefined
 ): string | null | undefined {
   if (homepagePath === undefined) {
     return undefined;

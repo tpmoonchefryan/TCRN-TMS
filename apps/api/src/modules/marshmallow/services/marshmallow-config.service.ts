@@ -1,11 +1,11 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import {
   BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+
 import { ErrorCodes, type RequestContext } from '@tcrn/shared';
 
 import { TalentCustomDomainService } from '../../talent';
@@ -16,7 +16,7 @@ import type { UpdateConfigDto } from '../dto/marshmallow.dto';
 export class MarshmallowConfigService {
   constructor(
     private readonly marshmallowConfigApplicationService: MarshmallowConfigApplicationService,
-    private readonly talentCustomDomainService: TalentCustomDomainService,
+    private readonly talentCustomDomainService: TalentCustomDomainService
   ) {}
 
   /**
@@ -29,18 +29,8 @@ export class MarshmallowConfigService {
   /**
    * Update config (multi-tenant aware)
    */
-  update(
-    talentId: string,
-    tenantSchema: string,
-    dto: UpdateConfigDto,
-    context: RequestContext,
-  ) {
-    return this.marshmallowConfigApplicationService.update(
-      talentId,
-      tenantSchema,
-      dto,
-      context,
-    );
+  update(talentId: string, tenantSchema: string, dto: UpdateConfigDto, context: RequestContext) {
+    return this.marshmallowConfigApplicationService.update(talentId, tenantSchema, dto, context);
   }
 
   /**
@@ -49,7 +39,7 @@ export class MarshmallowConfigService {
   async setCustomDomain(
     talentId: string,
     customDomain: string | null,
-    context: RequestContext,
+    context: RequestContext
   ): Promise<{ customDomain: string | null; token: string | null; txtRecord: string | null }> {
     const tenantSchema = this.getTenantSchema(context);
 
@@ -59,7 +49,7 @@ export class MarshmallowConfigService {
       return await this.talentCustomDomainService.setCustomDomain(
         talentId,
         tenantSchema,
-        customDomain,
+        customDomain
       );
     } catch (error) {
       if (this.isAlreadyExistsError(error)) {
@@ -78,13 +68,13 @@ export class MarshmallowConfigService {
    */
   async verifyCustomDomain(
     talentId: string,
-    context: RequestContext,
+    context: RequestContext
   ): Promise<{ verified: boolean; message: string }> {
     const tenantSchema = this.getTenantSchema(context);
 
     const config = await this.marshmallowConfigApplicationService.findExistingConfig(
       talentId,
-      tenantSchema,
+      tenantSchema
     );
 
     if (!config) {
@@ -94,10 +84,7 @@ export class MarshmallowConfigService {
       });
     }
 
-    return this.talentCustomDomainService.verifyCustomDomain(
-      talentId,
-      tenantSchema,
-    );
+    return this.talentCustomDomainService.verifyCustomDomain(talentId, tenantSchema);
   }
 
   private getTenantSchema(context: RequestContext): string {

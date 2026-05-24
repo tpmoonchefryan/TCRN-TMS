@@ -1,8 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import type { LocalizedText } from '../constants/locale';
 import type { HomepageComponentType } from '../types/homepage/schema';
-
 import type {
   PublicPresenceCollectionOperationDefinition,
   PublicPresenceComponentDefinition,
@@ -18,16 +16,9 @@ import type {
 
 export const PUBLIC_PRESENCE_ASSET_RUNTIME_VERSION = '1.0.0' as const;
 
-export const ARTIST_STAGE_LIFECYCLE_MAPPINGS = [
-  'draft',
-  'published',
-  'disabled',
-] as const;
+export const ARTIST_STAGE_LIFECYCLE_MAPPINGS = ['draft', 'published', 'disabled'] as const;
 
-export const PUBLIC_PRESENCE_ASSET_KINDS = [
-  'template',
-  'component',
-] as const;
+export const PUBLIC_PRESENCE_ASSET_KINDS = ['template', 'component'] as const;
 
 export const PUBLIC_PRESENCE_ASSET_OWNER_TYPES = [
   'system',
@@ -36,11 +27,7 @@ export const PUBLIC_PRESENCE_ASSET_OWNER_TYPES = [
   'talent',
 ] as const;
 
-export const PUBLIC_PRESENCE_ASSET_SCOPE_TYPES = [
-  'tenant',
-  'subsidiary',
-  'talent',
-] as const;
+export const PUBLIC_PRESENCE_ASSET_SCOPE_TYPES = ['tenant', 'subsidiary', 'talent'] as const;
 
 export const PUBLIC_PRESENCE_ASSET_STATUSES = [
   'draft',
@@ -50,11 +37,7 @@ export const PUBLIC_PRESENCE_ASSET_STATUSES = [
   'archived',
 ] as const;
 
-export const PUBLIC_PRESENCE_ASSET_VALIDATION_STATES = [
-  'ready',
-  'warning',
-  'unvalidated',
-] as const;
+export const PUBLIC_PRESENCE_ASSET_VALIDATION_STATES = ['ready', 'warning', 'unvalidated'] as const;
 
 export const PUBLIC_PRESENCE_SOURCE_BUNDLE_FILE_KINDS = [
   'code',
@@ -66,20 +49,15 @@ export const PUBLIC_PRESENCE_SOURCE_BUNDLE_FILE_KINDS = [
   'test',
 ] as const;
 
-export type ArtistStageLifecycleMapping =
-  (typeof ARTIST_STAGE_LIFECYCLE_MAPPINGS)[number];
+export type ArtistStageLifecycleMapping = (typeof ARTIST_STAGE_LIFECYCLE_MAPPINGS)[number];
 
-export type PublicPresenceAssetKind =
-  (typeof PUBLIC_PRESENCE_ASSET_KINDS)[number];
+export type PublicPresenceAssetKind = (typeof PUBLIC_PRESENCE_ASSET_KINDS)[number];
 
-export type PublicPresenceAssetOwnerType =
-  (typeof PUBLIC_PRESENCE_ASSET_OWNER_TYPES)[number];
+export type PublicPresenceAssetOwnerType = (typeof PUBLIC_PRESENCE_ASSET_OWNER_TYPES)[number];
 
-export type PublicPresenceAssetScopeType =
-  (typeof PUBLIC_PRESENCE_ASSET_SCOPE_TYPES)[number];
+export type PublicPresenceAssetScopeType = (typeof PUBLIC_PRESENCE_ASSET_SCOPE_TYPES)[number];
 
-export type PublicPresenceAssetStatus =
-  (typeof PUBLIC_PRESENCE_ASSET_STATUSES)[number];
+export type PublicPresenceAssetStatus = (typeof PUBLIC_PRESENCE_ASSET_STATUSES)[number];
 
 export type PublicPresenceAssetValidationState =
   (typeof PUBLIC_PRESENCE_ASSET_VALIDATION_STATES)[number];
@@ -148,8 +126,7 @@ export interface PublicPresenceAssetManifestBase {
   runtimeContractVersion: string;
 }
 
-export interface PublicPresenceTemplateAssetManifest
-  extends PublicPresenceAssetManifestBase {
+export interface PublicPresenceTemplateAssetManifest extends PublicPresenceAssetManifestBase {
   assetKind: 'template';
   defaultSectionOrder: string[];
   label: string;
@@ -164,8 +141,7 @@ export interface PublicPresenceTemplateAssetManifest
   validationRules: string[];
 }
 
-export interface PublicPresenceComponentAssetManifest
-  extends PublicPresenceAssetManifestBase {
+export interface PublicPresenceComponentAssetManifest extends PublicPresenceAssetManifestBase {
   aiPatchAllowlist?: string[];
   assetKind: 'component';
   componentType: HomepageComponentType;
@@ -184,16 +160,14 @@ export type PublicPresenceAssetManifest =
   | PublicPresenceTemplateAssetManifest
   | PublicPresenceComponentAssetManifest;
 
-export interface PublicPresenceTemplateSourceManifest
-  extends PublicPresenceTemplateAssetManifest {
+export interface PublicPresenceTemplateSourceManifest extends PublicPresenceTemplateAssetManifest {
   authoring?: Record<string, unknown>;
   registryVersion: string;
   safetyPolicyVersion: string;
   stageSections: PublicPresenceStageSectionDefinition[];
 }
 
-export interface PublicPresenceComponentSourceManifest
-  extends PublicPresenceComponentAssetManifest {
+export interface PublicPresenceComponentSourceManifest extends PublicPresenceComponentAssetManifest {
   aiPatchAllowlist: string[];
   authoring?: Record<string, unknown>;
   collectionOperations?: PublicPresenceCollectionOperationDefinition[];
@@ -291,7 +265,6 @@ export interface PublicPresenceAssetListEntry {
   scope: PublicPresenceAssetScopeContext;
 }
 
-export interface PublicPresenceAssetDetail
-  extends PublicPresenceAssetListEntry {
+export interface PublicPresenceAssetDetail extends PublicPresenceAssetListEntry {
   revisions: PublicPresenceAssetRevisionRecord[];
 }

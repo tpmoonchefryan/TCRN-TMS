@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { DatabaseService } from '../../database/database.service';
@@ -43,7 +42,9 @@ describe('SystemRoleService', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockPrisma.$transaction.mockImplementation(async (callback: (tx: typeof mockTx) => Promise<unknown>) => callback(mockTx));
+    mockPrisma.$transaction.mockImplementation(
+      async (callback: (tx: typeof mockTx) => Promise<unknown>) => callback(mockTx)
+    );
 
     const mockDatabaseService = {
       getPrisma: () => mockPrisma,
@@ -122,11 +123,14 @@ describe('SystemRoleService', () => {
     mockPrisma.role.findMany.mockResolvedValue([]);
     mockPrisma.$queryRawUnsafe.mockResolvedValue([]);
 
-    await service.findAll({
-      isActive: true,
-      isSystem: true,
-      search: 'export',
-    }, 'tenant_test123');
+    await service.findAll(
+      {
+        isActive: true,
+        isSystem: true,
+        search: 'export',
+      },
+      'tenant_test123'
+    );
 
     expect(mockPrisma.role.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -143,7 +147,7 @@ describe('SystemRoleService', () => {
             { name: { path: ['fr'], string_contains: 'export' } },
           ],
         },
-      }),
+      })
     );
   });
 
@@ -161,9 +165,7 @@ describe('SystemRoleService', () => {
         },
       },
     ]);
-    mockPrisma.$queryRawUnsafe.mockResolvedValue([
-      { roleId: 'role-1', userCount: BigInt(3) },
-    ]);
+    mockPrisma.$queryRawUnsafe.mockResolvedValue([{ roleId: 'role-1', userCount: BigInt(3) }]);
 
     const result = await service.findAll({}, 'tenant_test123');
 
@@ -263,16 +265,16 @@ describe('SystemRoleService', () => {
       { id: 'policy-1', action: 'read', resource: { code: 'customer.export' } },
     ]);
 
-    await expect(service.create({
-      code: 'EXPORT_MANAGER',
-      name: roleName,
-      permissions: [
-        { resource: 'customer.export', action: 'read' },
-        { resource: 'customer.export', action: 'delete' },
-      ],
-    })).rejects.toThrow(
-      'RBAC policy customer.export:delete is missing from the database contract',
-    );
+    await expect(
+      service.create({
+        code: 'EXPORT_MANAGER',
+        name: roleName,
+        permissions: [
+          { resource: 'customer.export', action: 'read' },
+          { resource: 'customer.export', action: 'delete' },
+        ],
+      })
+    ).rejects.toThrow('RBAC policy customer.export:delete is missing from the database contract');
 
     expect(mockTx.rolePolicy.createMany).not.toHaveBeenCalled();
   });

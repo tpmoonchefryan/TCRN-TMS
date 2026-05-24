@@ -1,9 +1,5 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
-import type {
-  CreatePlatformIdentityDto,
-  UpdatePlatformIdentityDto,
-} from '../dto/customer.dto';
+import type { CreatePlatformIdentityDto, UpdatePlatformIdentityDto } from '../dto/customer.dto';
 
 export interface PlatformIdentityAccessRecord {
   id: string;
@@ -69,9 +65,7 @@ export interface PlatformIdentityChange {
   newValue: string | null;
 }
 
-export const mapPlatformIdentityListRecord = (
-  record: PlatformIdentityListRecord,
-) => ({
+export const mapPlatformIdentityListRecord = (record: PlatformIdentityListRecord) => ({
   id: record.id,
   platform: {
     id: record.platformId,
@@ -104,7 +98,7 @@ export const buildPlatformIdentityCreateResult = (
     id: string;
     code: string;
     displayName: string;
-  },
+  }
 ) => ({
   id: created.id,
   platform: {
@@ -120,9 +114,7 @@ export const buildPlatformIdentityCreateResult = (
   capturedAt: created.capturedAt,
 });
 
-export const buildPlatformIdentityUpdateResult = (
-  updated: PlatformIdentityUpdatedRecord,
-) => ({
+export const buildPlatformIdentityUpdateResult = (updated: PlatformIdentityUpdatedRecord) => ({
   id: updated.id,
   platformUid: updated.platformUid,
   platformNickname: updated.platformNickname,
@@ -132,9 +124,7 @@ export const buildPlatformIdentityUpdateResult = (
   updatedAt: updated.updatedAt,
 });
 
-export const mapPlatformIdentityHistoryRecord = (
-  record: PlatformIdentityHistoryRecord,
-) => ({
+export const mapPlatformIdentityHistoryRecord = (record: PlatformIdentityHistoryRecord) => ({
   id: record.id,
   identityId: record.identityId,
   platform: {
@@ -150,19 +140,15 @@ export const mapPlatformIdentityHistoryRecord = (
 
 export const buildPlatformIdentityProfileUrl = (
   profileUrlTemplate: string | null,
-  platformUid: string,
-) => profileUrlTemplate
-  ? profileUrlTemplate.replace('{uid}', platformUid)
-  : null;
+  platformUid: string
+) => (profileUrlTemplate ? profileUrlTemplate.replace('{uid}', platformUid) : null);
 
-export const buildPlatformIdentityObjectName = (
-  platformCode: string,
-  platformUid: string,
-) => `${platformCode}:${platformUid}`;
+export const buildPlatformIdentityObjectName = (platformCode: string, platformUid: string) =>
+  `${platformCode}:${platformUid}`;
 
 export const collectPlatformIdentityChanges = (
   identity: PlatformIdentityOwnedRecord,
-  dto: UpdatePlatformIdentityDto,
+  dto: UpdatePlatformIdentityDto
 ): PlatformIdentityChange[] => {
   const changes: PlatformIdentityChange[] = [];
 
@@ -174,10 +160,7 @@ export const collectPlatformIdentityChanges = (
     });
   }
 
-  if (
-    dto.platformNickname !== undefined &&
-    dto.platformNickname !== identity.platformNickname
-  ) {
+  if (dto.platformNickname !== undefined && dto.platformNickname !== identity.platformNickname) {
     changes.push({
       type: 'nickname_changed',
       oldValue: identity.platformNickname,
@@ -198,7 +181,7 @@ export const collectPlatformIdentityChanges = (
 
 export const buildPlatformIdentityUpdateInput = (
   identity: PlatformIdentityOwnedRecord,
-  dto: UpdatePlatformIdentityDto,
+  dto: UpdatePlatformIdentityDto
 ) => {
   const platformUid = dto.platformUid ?? identity.platformUid;
 
@@ -216,27 +199,29 @@ export const buildPlatformIdentityUpdateInput = (
 
 export const buildPlatformIdentityCreateChangeLogDiff = (
   platformCode: string,
-  dto: CreatePlatformIdentityDto,
-) => JSON.stringify({
-  new: {
-    platformCode,
-    platformUid: dto.platformUid,
-    platformNickname: dto.platformNickname,
-  },
-});
+  dto: CreatePlatformIdentityDto
+) =>
+  JSON.stringify({
+    new: {
+      platformCode,
+      platformUid: dto.platformUid,
+      platformNickname: dto.platformNickname,
+    },
+  });
 
 export const buildPlatformIdentityUpdateChangeLogDiff = (
   identity: PlatformIdentityOwnedRecord,
-  updated: PlatformIdentityUpdatedRecord,
-) => JSON.stringify({
-  old: {
-    platformUid: identity.platformUid,
-    platformNickname: identity.platformNickname,
-    isCurrent: identity.isCurrent,
-  },
-  new: {
-    platformUid: updated.platformUid,
-    platformNickname: updated.platformNickname,
-    isCurrent: updated.isCurrent,
-  },
-});
+  updated: PlatformIdentityUpdatedRecord
+) =>
+  JSON.stringify({
+    old: {
+      platformUid: identity.platformUid,
+      platformNickname: identity.platformNickname,
+      isCurrent: identity.isCurrent,
+    },
+    new: {
+      platformUid: updated.platformUid,
+      platformNickname: updated.platformNickname,
+      isCurrent: updated.isCurrent,
+    },
+  });

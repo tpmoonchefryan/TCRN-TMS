@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable } from '@nestjs/common';
+
 import { prisma } from '@tcrn/database';
 
 import type {
@@ -16,7 +16,7 @@ export class PlatformIdentityRepository {
   async findAccessRecord(
     tenantSchema: string,
     customerId: string,
-    talentId: string,
+    talentId: string
   ): Promise<PlatformIdentityAccessRecord | null> {
     const customers = await prisma.$queryRawUnsafe<PlatformIdentityAccessRecord[]>(
       `SELECT
@@ -29,16 +29,13 @@ export class PlatformIdentityRepository {
          AND t.id = $2::uuid
          AND t.profile_store_id IS NOT NULL`,
       customerId,
-      talentId,
+      talentId
     );
 
     return customers[0] ?? null;
   }
 
-  findByCustomer(
-    tenantSchema: string,
-    customerId: string,
-  ): Promise<PlatformIdentityListRecord[]> {
+  findByCustomer(tenantSchema: string, customerId: string): Promise<PlatformIdentityListRecord[]> {
     return prisma.$queryRawUnsafe<PlatformIdentityListRecord[]>(
       `SELECT
          pi.id,
@@ -59,25 +56,27 @@ export class PlatformIdentityRepository {
        JOIN "${tenantSchema}".social_platform sp ON sp.id = pi.platform_id
        WHERE pi.customer_id = $1::uuid
        ORDER BY pi.is_current DESC, pi.captured_at DESC`,
-      customerId,
+      customerId
     );
   }
 
   async findActivePlatformByCode(
     tenantSchema: string,
-    platformCode: string,
+    platformCode: string
   ): Promise<{
     id: string;
     code: string;
     displayName: string;
     profileUrlTemplate: string | null;
   } | null> {
-    const platforms = await prisma.$queryRawUnsafe<Array<{
-      id: string;
-      code: string;
-      displayName: string;
-      profileUrlTemplate: string | null;
-    }>>(
+    const platforms = await prisma.$queryRawUnsafe<
+      Array<{
+        id: string;
+        code: string;
+        displayName: string;
+        profileUrlTemplate: string | null;
+      }>
+    >(
       `SELECT
          id,
          code,
@@ -86,7 +85,7 @@ export class PlatformIdentityRepository {
        FROM "${tenantSchema}".social_platform
        WHERE code = $1
          AND is_active = true`,
-      platformCode,
+      platformCode
     );
 
     return platforms[0] ?? null;
@@ -96,7 +95,7 @@ export class PlatformIdentityRepository {
     tenantSchema: string,
     customerId: string,
     platformId: string,
-    platformUid: string,
+    platformUid: string
   ): Promise<{ id: string } | null> {
     const identities = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
       `SELECT id
@@ -106,7 +105,7 @@ export class PlatformIdentityRepository {
          AND platform_uid = $3`,
       customerId,
       platformId,
-      platformUid,
+      platformUid
     );
 
     return identities[0] ?? null;
@@ -122,7 +121,7 @@ export class PlatformIdentityRepository {
       platformAvatarUrl?: string | null;
       profileUrl: string | null;
       isVerified: boolean;
-    },
+    }
   ): Promise<{
     id: string;
     platformUid: string;
@@ -132,15 +131,17 @@ export class PlatformIdentityRepository {
     isCurrent: boolean;
     capturedAt: Date;
   }> {
-    const identities = await prisma.$queryRawUnsafe<Array<{
-      id: string;
-      platformUid: string;
-      platformNickname: string | null;
-      profileUrl: string | null;
-      isVerified: boolean;
-      isCurrent: boolean;
-      capturedAt: Date;
-    }>>(
+    const identities = await prisma.$queryRawUnsafe<
+      Array<{
+        id: string;
+        platformUid: string;
+        platformNickname: string | null;
+        profileUrl: string | null;
+        isVerified: boolean;
+        isCurrent: boolean;
+        capturedAt: Date;
+      }>
+    >(
       `INSERT INTO "${tenantSchema}".platform_identity (
          id, customer_id, platform_id, platform_uid, platform_nickname, platform_avatar_url,
          profile_url, is_verified, is_current, captured_at, updated_at
@@ -161,7 +162,7 @@ export class PlatformIdentityRepository {
       args.platformNickname ?? null,
       args.platformAvatarUrl ?? null,
       args.profileUrl,
-      args.isVerified,
+      args.isVerified
     );
 
     return identities[0];
@@ -176,7 +177,7 @@ export class PlatformIdentityRepository {
       oldValue?: string | null;
       newValue?: string | null;
       capturedBy?: string;
-    },
+    }
   ) {
     return prisma.$executeRawUnsafe(
       `INSERT INTO "${tenantSchema}".platform_identity_history (
@@ -189,7 +190,7 @@ export class PlatformIdentityRepository {
       args.changeType,
       args.oldValue ?? null,
       args.newValue ?? null,
-      args.capturedBy ?? null,
+      args.capturedBy ?? null
     );
   }
 
@@ -202,7 +203,7 @@ export class PlatformIdentityRepository {
       diff: string;
       userId: string;
       ipAddress?: string;
-    },
+    }
   ) {
     return prisma.$executeRawUnsafe(
       `INSERT INTO "${tenantSchema}".change_log (
@@ -215,14 +216,14 @@ export class PlatformIdentityRepository {
       args.objectName,
       args.diff,
       args.userId,
-      args.ipAddress ?? '0.0.0.0',
+      args.ipAddress ?? '0.0.0.0'
     );
   }
 
   async findOwnedIdentity(
     tenantSchema: string,
     customerId: string,
-    identityId: string,
+    identityId: string
   ): Promise<PlatformIdentityOwnedRecord | null> {
     const identities = await prisma.$queryRawUnsafe<PlatformIdentityOwnedRecord[]>(
       `SELECT
@@ -241,7 +242,7 @@ export class PlatformIdentityRepository {
        WHERE pi.id = $1::uuid
          AND pi.customer_id = $2::uuid`,
       identityId,
-      customerId,
+      customerId
     );
 
     return identities[0] ?? null;
@@ -257,7 +258,7 @@ export class PlatformIdentityRepository {
       profileUrl: string | null;
       isVerified: boolean;
       isCurrent: boolean;
-    },
+    }
   ): Promise<PlatformIdentityUpdatedRecord> {
     const identities = await prisma.$queryRawUnsafe<PlatformIdentityUpdatedRecord[]>(
       `UPDATE "${tenantSchema}".platform_identity
@@ -283,7 +284,7 @@ export class PlatformIdentityRepository {
       args.profileUrl,
       args.isVerified,
       args.isCurrent,
-      identityId,
+      identityId
     );
 
     return identities[0];
@@ -297,7 +298,7 @@ export class PlatformIdentityRepository {
       changeType?: string;
       take: number;
       skip: number;
-    },
+    }
   ): Promise<PlatformIdentityHistoryRecord[]> {
     const { whereClause, params } = this.buildHistoryFilters(args.customerId, {
       platformCode: args.platformCode,
@@ -321,7 +322,7 @@ export class PlatformIdentityRepository {
        WHERE ${whereClause}
        ORDER BY pih.captured_at DESC
        LIMIT ${args.take} OFFSET ${args.skip}`,
-      ...params,
+      ...params
     );
   }
 
@@ -331,7 +332,7 @@ export class PlatformIdentityRepository {
       customerId: string;
       platformCode?: string;
       changeType?: string;
-    },
+    }
   ): Promise<number> {
     const { whereClause, params } = this.buildHistoryFilters(args.customerId, args);
     const countResult = await prisma.$queryRawUnsafe<Array<{ count: bigint }>>(
@@ -340,7 +341,7 @@ export class PlatformIdentityRepository {
        JOIN "${tenantSchema}".platform_identity pi ON pi.id = pih.identity_id
        JOIN "${tenantSchema}".social_platform sp ON sp.id = pi.platform_id
        WHERE ${whereClause}`,
-      ...params,
+      ...params
     );
 
     return Number(countResult[0]?.count ?? 0);
@@ -351,7 +352,7 @@ export class PlatformIdentityRepository {
     args: {
       platformCode?: string;
       changeType?: string;
-    },
+    }
   ) {
     let whereClause = 'pih.customer_id = $1::uuid';
     const params: string[] = [customerId];

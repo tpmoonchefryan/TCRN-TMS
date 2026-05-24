@@ -1,8 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 // Smoke Test: Run on every PR, quick validation of basic performance
-
-import http from 'k6/http';
 import { check, sleep } from 'k6';
+import http from 'k6/http';
 import { Rate, Trend } from 'k6/metrics';
 
 const errorRate = new Rate('errors');
@@ -46,10 +45,7 @@ export default function (data) {
   check(healthRes, { 'health check ok': (r) => r.status === 200 });
 
   // 2. Customer list query
-  const customersRes = http.get(
-    `${BASE_URL}/api/v1/customers?page=1&pageSize=20`,
-    { headers }
-  );
+  const customersRes = http.get(`${BASE_URL}/api/v1/customers?page=1&pageSize=20`, { headers });
   check(customersRes, { 'customers list ok': (r) => r.status === 200 });
   apiLatency.add(customersRes.timings.duration);
   errorRate.add(customersRes.status !== 200);

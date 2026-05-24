@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable, NotFoundException } from '@nestjs/common';
+
 import { ErrorCodes } from '@tcrn/shared';
 
 import { mapTalentSummary } from '../domain/organization-read.policy';
@@ -16,29 +16,18 @@ import { OrganizationTreeRepository } from '../infrastructure/organization-tree.
 
 @Injectable()
 export class OrganizationTreeService {
-  constructor(
-    private readonly organizationTreeRepository: OrganizationTreeRepository,
-  ) {}
+  constructor(private readonly organizationTreeRepository: OrganizationTreeRepository) {}
 
   async getUserAccessibleScopes(
     tenantSchema: string,
-    userId: string,
+    userId: string
   ): Promise<OrganizationAccessScopes> {
     const [accesses, roleScopeAccesses] = await Promise.all([
-      this.organizationTreeRepository.findUserScopeAccesses(
-        tenantSchema,
-        userId,
-      ),
-      this.organizationTreeRepository.findUserRoleScopeAccesses(
-        tenantSchema,
-        userId,
-      ),
+      this.organizationTreeRepository.findUserScopeAccesses(tenantSchema, userId),
+      this.organizationTreeRepository.findUserRoleScopeAccesses(tenantSchema, userId),
     ]);
 
-    return buildOrganizationAccessScopes([
-      ...accesses,
-      ...roleScopeAccesses,
-    ]);
+    return buildOrganizationAccessScopes([...accesses, ...roleScopeAccesses]);
   }
 
   async getTree(
@@ -50,7 +39,7 @@ export class OrganizationTreeService {
       search?: string;
       language?: string;
       userId?: string;
-    } = {},
+    } = {}
   ): Promise<OrganizationTree> {
     const {
       includeTalents = true,
@@ -96,22 +85,16 @@ export class OrganizationTreeService {
       includeTalents: boolean;
       includeInactive: boolean;
       language: string;
-    },
+    }
   ): Promise<OrganizationTree> {
     const [subsidiaries, talentCounts, talents] = await Promise.all([
-      this.organizationTreeRepository.findAllSubsidiaries(
-        tenantSchema,
-        options.includeInactive,
-      ),
+      this.organizationTreeRepository.findAllSubsidiaries(tenantSchema, options.includeInactive),
       this.organizationTreeRepository.countTalentsBySubsidiary(
         tenantSchema,
-        options.includeInactive,
+        options.includeInactive
       ),
       options.includeTalents
-        ? this.organizationTreeRepository.findTalentsForTree(
-            tenantSchema,
-            options.includeInactive,
-          )
+        ? this.organizationTreeRepository.findTalentsForTree(tenantSchema, options.includeInactive)
         : Promise.resolve([]),
     ]);
 
@@ -132,18 +115,18 @@ export class OrganizationTreeService {
       includeInactive: boolean;
       search: string;
       language: string;
-    },
+    }
   ): Promise<OrganizationTree> {
     const [matchedSubsidiaries, matchedTalentSubsidiaries] = await Promise.all([
       this.organizationTreeRepository.findMatchedSubsidiaryPaths(
         tenantSchema,
         options.search,
-        options.includeInactive,
+        options.includeInactive
       ),
       this.organizationTreeRepository.findMatchedTalentSubsidiaryIds(
         tenantSchema,
         options.search,
-        options.includeInactive,
+        options.includeInactive
       ),
     ]);
 
@@ -151,9 +134,7 @@ export class OrganizationTreeService {
       matchedTalentSubsidiaries.length > 0
         ? await this.organizationTreeRepository.findSubsidiaryPathsByIds(
             tenantSchema,
-            matchedTalentSubsidiaries.map(
-              (subsidiary) => subsidiary.subsidiary_id,
-            ),
+            matchedTalentSubsidiaries.map((subsidiary) => subsidiary.subsidiary_id)
           )
         : [];
     const paths = collectExpandedSearchPaths([
@@ -170,29 +151,28 @@ export class OrganizationTreeService {
         },
         tree: [],
         talentsWithoutSubsidiary: options.includeTalents
-          ? (await this.organizationTreeRepository.findDirectTalents(
-              tenantSchema,
-              options.includeInactive,
-              options.search,
-            )).map((talent) => mapTalentSummary(talent, options.language))
+          ? (
+              await this.organizationTreeRepository.findDirectTalents(
+                tenantSchema,
+                options.includeInactive,
+                options.search
+              )
+            ).map((talent) => mapTalentSummary(talent, options.language))
           : [],
       };
     }
 
     const [subsidiaries, talentCounts, talents] = await Promise.all([
-      this.organizationTreeRepository.findSubsidiariesByPaths(
-        tenantSchema,
-        paths,
-      ),
+      this.organizationTreeRepository.findSubsidiariesByPaths(tenantSchema, paths),
       this.organizationTreeRepository.countTalentsBySubsidiary(
         tenantSchema,
-        options.includeInactive,
+        options.includeInactive
       ),
       options.includeTalents
         ? this.organizationTreeRepository.findTalentsForTree(
             tenantSchema,
             options.includeInactive,
-            options.search,
+            options.search
           )
         : Promise.resolve([]),
     ]);
@@ -209,7 +189,7 @@ export class OrganizationTreeService {
   private async filterTreeByUserAccess(
     tree: OrganizationTree,
     tenantSchema: string,
-    userId: string,
+    userId: string
   ): Promise<OrganizationTree> {
     const accessScopes = await this.getUserAccessibleScopes(tenantSchema, userId);
 
@@ -222,11 +202,8 @@ export class OrganizationTreeService {
 
     const descendantResults = await Promise.all(
       Array.from(accessScopes.subsidiaryIncludeSubunits).map((subsidiaryId) =>
-        this.organizationTreeRepository.findDescendantSubsidiaryIds(
-          tenantSchema,
-          subsidiaryId,
-        ),
-      ),
+        this.organizationTreeRepository.findDescendantSubsidiaryIds(tenantSchema, subsidiaryId)
+      )
     );
 
     for (const descendants of descendantResults) {
@@ -237,11 +214,8 @@ export class OrganizationTreeService {
 
     const scopedTalentResults = await Promise.all(
       Array.from(accessScopes.subsidiaryIncludeSubunits).map((subsidiaryId) =>
-        this.organizationTreeRepository.findTalentIdsInSubsidiarySubtree(
-          tenantSchema,
-          subsidiaryId,
-        ),
-      ),
+        this.organizationTreeRepository.findTalentIdsInSubsidiarySubtree(tenantSchema, subsidiaryId)
+      )
     );
 
     for (const talentIds of scopedTalentResults) {
@@ -250,11 +224,10 @@ export class OrganizationTreeService {
       }
     }
 
-    const talentSubsidiaries =
-      await this.organizationTreeRepository.findTalentSubsidiaryIds(
-        tenantSchema,
-        Array.from(accessScopes.talentIds),
-      );
+    const talentSubsidiaries = await this.organizationTreeRepository.findTalentSubsidiaryIds(
+      tenantSchema,
+      Array.from(accessScopes.talentIds)
+    );
 
     for (const talent of talentSubsidiaries) {
       if (!talent.subsidiary_id) {
@@ -262,21 +235,16 @@ export class OrganizationTreeService {
       }
 
       accessibleSubsidiaryIds.add(talent.subsidiary_id);
-      const ancestors =
-        await this.organizationTreeRepository.findAncestorSubsidiaryIds(
-          tenantSchema,
-          talent.subsidiary_id,
-        );
+      const ancestors = await this.organizationTreeRepository.findAncestorSubsidiaryIds(
+        tenantSchema,
+        talent.subsidiary_id
+      );
 
       for (const ancestorId of ancestors) {
         accessibleSubsidiaryIds.add(ancestorId);
       }
     }
 
-    return filterOrganizationTree(
-      tree,
-      accessibleSubsidiaryIds,
-      accessibleTalentIds,
-    );
+    return filterOrganizationTree(tree, accessibleSubsidiaryIds, accessibleTalentIds);
   }
 }

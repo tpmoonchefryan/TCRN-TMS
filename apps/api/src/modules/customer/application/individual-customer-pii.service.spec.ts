@@ -1,8 +1,8 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { ConflictException, NotFoundException } from '@nestjs/common';
-import type { RequestContext } from '@tcrn/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import type { RequestContext } from '@tcrn/shared';
 
 import type { DatabaseService } from '../../database';
 import type { TechEventLogService } from '../../log';
@@ -59,21 +59,19 @@ describe('IndividualCustomerPiiApplicationService', () => {
     mockDatabaseService,
     mockTechEventLogService,
     mockCustomerArchiveAccessService,
-    mockCustomerPiiPlatformApplicationService,
+    mockCustomerPiiPlatformApplicationService
   );
 
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(mockDatabaseService.getPrisma).mockReturnValue(prismaClient as never);
-    vi.mocked(mockRepository.withTransaction).mockImplementation(
-      async (operation) => operation(transactionClient as never),
+    vi.mocked(mockRepository.withTransaction).mockImplementation(async (operation) =>
+      operation(transactionClient as never)
     );
   });
 
   it('creates a portal session and records pii access audit logs', async () => {
-    vi.mocked(
-      mockCustomerArchiveAccessService.requireCustomerArchiveAccess,
-    ).mockResolvedValue({
+    vi.mocked(mockCustomerArchiveAccessService.requireCustomerArchiveAccess).mockResolvedValue({
       id: 'customer-1',
       profileType: ProfileType.INDIVIDUAL,
       profileStoreId: 'store-1',
@@ -85,25 +83,24 @@ describe('IndividualCustomerPiiApplicationService', () => {
       tags: [],
       notes: null,
     });
-    vi.mocked(
-      mockCustomerPiiPlatformApplicationService.createPortalSession,
-    ).mockResolvedValue({
+    vi.mocked(mockCustomerPiiPlatformApplicationService.createPortalSession).mockResolvedValue({
       redirectUrl: 'https://pii-platform.example.com/portal/sessions/session-1',
       expiresAt: '2026-04-14T08:05:00.000Z',
     } as never);
     vi.mocked(mockRepository.insertAccessLog).mockResolvedValue(1 as never);
     vi.mocked(mockTechEventLogService.piiAccess).mockResolvedValue(undefined as never);
 
-    await expect(
-      service.createPortalSession('customer-1', 'talent-1', context),
-    ).resolves.toEqual({
+    await expect(service.createPortalSession('customer-1', 'talent-1', context)).resolves.toEqual({
       redirectUrl: 'https://pii-platform.example.com/portal/sessions/session-1',
       expiresAt: '2026-04-14T08:05:00.000Z',
     });
 
-    expect(
-      mockCustomerPiiPlatformApplicationService.createPortalSession,
-    ).toHaveBeenCalledWith('customer-1', 'talent-1', 'individual', context);
+    expect(mockCustomerPiiPlatformApplicationService.createPortalSession).toHaveBeenCalledWith(
+      'customer-1',
+      'talent-1',
+      'individual',
+      context
+    );
     expect(mockRepository.insertAccessLog).toHaveBeenCalledWith(
       prismaClient,
       'tenant_test',
@@ -112,29 +109,25 @@ describe('IndividualCustomerPiiApplicationService', () => {
         profileStoreId: 'store-1',
         talentId: 'talent-1',
         action: CustomerAction.PII_VIEW,
-      }),
+      })
     );
   });
 
   it('fails closed when the customer does not belong to the requested talent scope', async () => {
-    vi.mocked(
-      mockCustomerArchiveAccessService.requireCustomerArchiveAccess,
-    ).mockRejectedValue(new NotFoundException());
+    vi.mocked(mockCustomerArchiveAccessService.requireCustomerArchiveAccess).mockRejectedValue(
+      new NotFoundException()
+    );
 
-    await expect(
-      service.createPortalSession('customer-1', 'talent-1', context),
-    ).rejects.toThrow(NotFoundException);
+    await expect(service.createPortalSession('customer-1', 'talent-1', context)).rejects.toThrow(
+      NotFoundException
+    );
 
-    expect(
-      mockCustomerPiiPlatformApplicationService.createPortalSession,
-    ).not.toHaveBeenCalled();
+    expect(mockCustomerPiiPlatformApplicationService.createPortalSession).not.toHaveBeenCalled();
     expect(mockRepository.insertAccessLog).not.toHaveBeenCalled();
   });
 
   it('rejects pii updates when the customer version is stale', async () => {
-    vi.mocked(
-      mockCustomerArchiveAccessService.requireCustomerArchiveAccess,
-    ).mockResolvedValue({
+    vi.mocked(mockCustomerArchiveAccessService.requireCustomerArchiveAccess).mockResolvedValue({
       id: 'customer-1',
       profileType: ProfileType.INDIVIDUAL,
       profileStoreId: 'store-1',
@@ -157,19 +150,15 @@ describe('IndividualCustomerPiiApplicationService', () => {
             givenName: 'Jane',
           },
         },
-        context,
-      ),
+        context
+      )
     ).rejects.toThrow(ConflictException);
 
-    expect(
-      mockCustomerPiiPlatformApplicationService.upsertCustomerPii,
-    ).not.toHaveBeenCalled();
+    expect(mockCustomerPiiPlatformApplicationService.upsertCustomerPii).not.toHaveBeenCalled();
   });
 
   it('synchronizes pii to the external platform and records audit logs', async () => {
-    vi.mocked(
-      mockCustomerArchiveAccessService.requireCustomerArchiveAccess,
-    ).mockResolvedValue({
+    vi.mocked(mockCustomerArchiveAccessService.requireCustomerArchiveAccess).mockResolvedValue({
       id: 'customer-1',
       profileType: ProfileType.INDIVIDUAL,
       profileStoreId: 'store-1',
@@ -181,9 +170,7 @@ describe('IndividualCustomerPiiApplicationService', () => {
       tags: [],
       notes: null,
     });
-    vi.mocked(
-      mockCustomerPiiPlatformApplicationService.upsertCustomerPii,
-    ).mockResolvedValue({
+    vi.mocked(mockCustomerPiiPlatformApplicationService.upsertCustomerPii).mockResolvedValue({
       customerId: 'customer-1',
       syncedAt: '2026-04-14T08:00:00.000Z',
     } as never);
@@ -209,16 +196,14 @@ describe('IndividualCustomerPiiApplicationService', () => {
             ],
           },
         },
-        context,
-      ),
+        context
+      )
     ).resolves.toEqual({
       id: 'customer-1',
       message: 'PII data synchronized to TCRN PII Platform',
     });
 
-    expect(
-      mockCustomerPiiPlatformApplicationService.upsertCustomerPii,
-    ).toHaveBeenCalledWith(
+    expect(mockCustomerPiiPlatformApplicationService.upsertCustomerPii).toHaveBeenCalledWith(
       'customer-1',
       'talent-1',
       'individual',
@@ -233,7 +218,7 @@ describe('IndividualCustomerPiiApplicationService', () => {
           },
         ],
       },
-      context,
+      context
     );
     expect(mockRepository.insertPiiUpdateAccessLog).toHaveBeenCalledWith(
       transactionClient,
@@ -243,7 +228,7 @@ describe('IndividualCustomerPiiApplicationService', () => {
         profileStoreId: 'store-1',
         talentId: 'talent-1',
         action: CustomerAction.PII_UPDATE,
-      }),
+      })
     );
     expect(mockRepository.incrementCustomerVersion).toHaveBeenCalledWith(
       transactionClient,
@@ -252,7 +237,7 @@ describe('IndividualCustomerPiiApplicationService', () => {
         customerId: 'customer-1',
         talentId: 'talent-1',
         userId: 'user-1',
-      },
+      }
     );
   });
 });

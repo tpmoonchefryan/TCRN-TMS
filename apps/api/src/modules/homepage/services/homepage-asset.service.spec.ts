@@ -2,10 +2,7 @@ import { BadRequestException } from '@nestjs/common';
 import { describe, expect, it, vi } from 'vitest';
 
 import { BUCKETS } from '../../minio/minio.service';
-import {
-  HOMEPAGE_ASSET_MAX_FILE_SIZE_BYTES,
-  HomepageAssetService,
-} from './homepage-asset.service';
+import { HOMEPAGE_ASSET_MAX_FILE_SIZE_BYTES, HomepageAssetService } from './homepage-asset.service';
 
 function createFile(overrides: Partial<Express.Multer.File> = {}): Express.Multer.File {
   const buffer = Buffer.from('image-bytes');
@@ -51,12 +48,14 @@ describe('HomepageAssetService', () => {
 
     expect(minioService.uploadFile).toHaveBeenCalledWith(
       BUCKETS.HOMEPAGE_ASSETS,
-      expect.stringMatching(/^tenant_default\/550e8400-e29b-41d4-a716-446655440001\/\d+-[0-9a-f-]+\.png$/),
+      expect.stringMatching(
+        /^tenant_default\/550e8400-e29b-41d4-a716-446655440001\/\d+-[0-9a-f-]+\.png$/
+      ),
       Buffer.from('image-bytes'),
-      'image/png',
+      'image/png'
     );
     expect(result.url).toMatch(
-      /^https:\/\/app\.example\.com\/api\/v1\/public\/assets\/homepage-assets\/tenant_default\/550e8400-e29b-41d4-a716-446655440001\/\d+-[0-9a-f-]+\.png$/,
+      /^https:\/\/app\.example\.com\/api\/v1\/public\/assets\/homepage-assets\/tenant_default\/550e8400-e29b-41d4-a716-446655440001\/\d+-[0-9a-f-]+\.png$/
     );
   });
 
@@ -69,17 +68,21 @@ describe('HomepageAssetService', () => {
     };
     const service = new HomepageAssetService(minioService as never, configService as never);
 
-    await expect(service.uploadImage({
-      file: createFile({ mimetype: 'image/svg+xml' }),
-      talentId: 'talent-1',
-      tenantSchema: 'tenant_default',
-    })).rejects.toBeInstanceOf(BadRequestException);
+    await expect(
+      service.uploadImage({
+        file: createFile({ mimetype: 'image/svg+xml' }),
+        talentId: 'talent-1',
+        tenantSchema: 'tenant_default',
+      })
+    ).rejects.toBeInstanceOf(BadRequestException);
 
-    await expect(service.uploadImage({
-      file: createFile({ size: HOMEPAGE_ASSET_MAX_FILE_SIZE_BYTES + 1 }),
-      talentId: 'talent-1',
-      tenantSchema: 'tenant_default',
-    })).rejects.toBeInstanceOf(BadRequestException);
+    await expect(
+      service.uploadImage({
+        file: createFile({ size: HOMEPAGE_ASSET_MAX_FILE_SIZE_BYTES + 1 }),
+        talentId: 'talent-1',
+        tenantSchema: 'tenant_default',
+      })
+    ).rejects.toBeInstanceOf(BadRequestException);
 
     expect(minioService.uploadFile).not.toHaveBeenCalled();
   });

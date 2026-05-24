@@ -1,12 +1,9 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable, NotFoundException } from '@nestjs/common';
+
 import { ErrorCodes, type RequestContext } from '@tcrn/shared';
 
-import {
-  buildMfrFilterSummary,
-  mapMfrPreviewRow,
-} from '../domain/mfr-report.policy';
+import { buildMfrFilterSummary, mapMfrPreviewRow } from '../domain/mfr-report.policy';
 import {
   MfrFilterCriteriaDto,
   type MfrSearchResult,
@@ -21,14 +18,14 @@ import { ReportJobService } from '../services/report-job.service';
 export class MfrReportApplicationService {
   constructor(
     private readonly mfrReportRepository: MfrReportRepository,
-    private readonly reportJobService: ReportJobService,
+    private readonly reportJobService: ReportJobService
   ) {}
 
   async search(
     talentId: string,
     filters: MfrFilterCriteriaDto = {},
     previewLimit: number = 20,
-    context: RequestContext,
+    context: RequestContext
   ): Promise<MfrSearchResult> {
     const talent = await this.mfrReportRepository.findTalent(context.tenantSchema, talentId);
 
@@ -45,7 +42,7 @@ export class MfrReportApplicationService {
         context.tenantSchema,
         talentId,
         filters,
-        previewLimit,
+        previewLimit
       ),
     ]);
 
@@ -60,12 +57,12 @@ export class MfrReportApplicationService {
     talentId: string,
     filters: MfrFilterCriteriaDto = {},
     format: ReportFormat = ReportFormat.XLSX,
-    context: RequestContext,
+    context: RequestContext
   ): Promise<ReportCreateResponse> {
     const estimatedRows = await this.mfrReportRepository.countMembershipRows(
       context.tenantSchema,
       talentId,
-      filters,
+      filters
     );
 
     return this.reportJobService.create(
@@ -74,7 +71,7 @@ export class MfrReportApplicationService {
       filters,
       format,
       estimatedRows,
-      context,
+      context
     );
   }
 }

@@ -1,6 +1,7 @@
-import type { SupportedUiLocale } from '@tcrn/shared';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import type { SupportedUiLocale } from '@tcrn/shared';
 
 import type { ConfigEntityRecord } from '@/domains/config-dictionary-settings/api/settings.api';
 import { SubsidiarySettingsScreen } from '@/domains/config-dictionary-settings/screens/SubsidiarySettingsScreen';
@@ -125,7 +126,9 @@ describe('SubsidiarySettingsScreen', () => {
 
     render(<SubsidiarySettingsScreen tenantId="tenant-1" subsidiaryId="sub-1" />);
 
-    expect(await screen.findByRole('heading', { name: '東京拠点 配下スコープ設定' })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { name: '東京拠点 配下スコープ設定' })
+    ).toBeInTheDocument();
     expect(screen.getByRole('navigation', { name: '設定セクション' })).toBeInTheDocument();
   });
 
@@ -206,7 +209,10 @@ describe('SubsidiarySettingsScreen', () => {
         ];
       }
 
-      if (path === '/api/v1/system-dictionary/CUSTOMER_STATUS?includeInactive=false&page=1&pageSize=20') {
+      if (
+        path ===
+        '/api/v1/system-dictionary/CUSTOMER_STATUS?includeInactive=false&page=1&pageSize=20'
+      ) {
         return {
           success: true,
           data: dictionaryItemsResponse,
@@ -225,7 +231,7 @@ describe('SubsidiarySettingsScreen', () => {
 
       if (
         path ===
-          '/api/v1/configuration-entity/business-segment?scopeType=subsidiary&scopeId=sub-1&includeInherited=true&includeDisabled=true&includeInactive=false&ownerOnly=false&page=1&pageSize=20&sort=sortOrder'
+        '/api/v1/configuration-entity/business-segment?scopeType=subsidiary&scopeId=sub-1&includeInherited=true&includeDisabled=true&includeInactive=false&ownerOnly=false&page=1&pageSize=20&sort=sortOrder'
       ) {
         return {
           success: true,
@@ -357,7 +363,7 @@ describe('SubsidiarySettingsScreen', () => {
             ownerType: 'subsidiary',
             ownerId: 'sub-1',
           }),
-        }),
+        })
       );
     });
 
@@ -366,20 +372,27 @@ describe('SubsidiarySettingsScreen', () => {
     fireEvent.click(screen.getByRole('button', { name: /Custom Domain custom-domain/i }));
     expect(await screen.findByText('tenant.example.com')).toBeInTheDocument();
     expect(mockRequest).toHaveBeenCalledWith(
-      '/api/v1/talents/custom-domain-bindings?scopeType=subsidiary&scopeId=sub-1&includeInherited=true&includeInactive=false',
+      '/api/v1/talents/custom-domain-bindings?scopeType=subsidiary&scopeId=sub-1&includeInherited=true&includeInactive=false'
     );
 
     fireEvent.click(screen.getByRole('button', { name: 'Settings' }));
     expect(screen.getByRole('navigation', { name: 'Settings categories' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Defaults' })).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByRole('button', { name: 'Defaults' })).toHaveAttribute(
+      'aria-current',
+      'page'
+    );
     expect(screen.getAllByText('Date format').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Currency').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Customer import').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Password policy').length).toBeGreaterThan(0);
     expect(screen.queryByLabelText('Default language')).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Edit defaults' }));
-    expect(screen.getByText('Review and adjust the defaults applied within this subsidiary scope.')).toBeInTheDocument();
-    expect(screen.queryByText(/backend defaults contract|settings payload/i)).not.toBeInTheDocument();
+    expect(
+      screen.getByText('Review and adjust the defaults applied within this subsidiary scope.')
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText(/backend defaults contract|settings payload/i)
+    ).not.toBeInTheDocument();
     expect(screen.getByText('Localization')).toBeInTheDocument();
     expect(screen.getByText('Public surfaces')).toBeInTheDocument();
     expect(screen.getAllByText('Customer import').length).toBeGreaterThan(0);
@@ -416,7 +429,7 @@ describe('SubsidiarySettingsScreen', () => {
             },
             version: 3,
           }),
-        }),
+        })
       );
     });
 
@@ -473,7 +486,7 @@ describe('SubsidiarySettingsScreen', () => {
 
       if (
         path ===
-          '/api/v1/configuration-entity/business-segment?scopeType=subsidiary&scopeId=sub-1&includeInherited=true&includeDisabled=true&includeInactive=false&ownerOnly=false&page=1&pageSize=20&sort=sortOrder'
+        '/api/v1/configuration-entity/business-segment?scopeType=subsidiary&scopeId=sub-1&includeInherited=true&includeDisabled=true&includeInactive=false&ownerOnly=false&page=1&pageSize=20&sort=sortOrder'
       ) {
         return {
           success: true,
@@ -514,9 +527,9 @@ describe('SubsidiarySettingsScreen', () => {
             path: '/TOKYO/',
             depth: 1,
             name: localizedFixture('Tokyo', { zh_HANS: '东京分部', ja: '東京拠点' }),
-          localizedName: '',
-          description: localizedFixture('Tokyo branch', { zh_HANS: '东京分部说明' }),
-          localizedDescription: 'Tokyo branch',
+            localizedName: '',
+            description: localizedFixture('Tokyo branch', { zh_HANS: '东京分部说明' }),
+            localizedDescription: 'Tokyo branch',
             sortOrder: 10,
             isActive: true,
             childrenCount: 2,
@@ -552,7 +565,7 @@ describe('SubsidiarySettingsScreen', () => {
 
         if (
           path ===
-            '/api/v1/configuration-entity/business-segment?scopeType=subsidiary&scopeId=sub-1&includeInherited=true&includeDisabled=true&includeInactive=false&ownerOnly=false&page=1&pageSize=20&sort=sortOrder'
+          '/api/v1/configuration-entity/business-segment?scopeType=subsidiary&scopeId=sub-1&includeInherited=true&includeDisabled=true&includeInactive=false&ownerOnly=false&page=1&pageSize=20&sort=sortOrder'
         ) {
           return {
             success: true,
@@ -578,7 +591,9 @@ describe('SubsidiarySettingsScreen', () => {
     localeState.locale = 'zh_HANT';
     installSuccessMocks();
 
-    const { rerender } = render(<SubsidiarySettingsScreen tenantId="tenant-1" subsidiaryId="sub-1" />);
+    const { rerender } = render(
+      <SubsidiarySettingsScreen tenantId="tenant-1" subsidiaryId="sub-1" />
+    );
 
     expect(await screen.findByRole('heading', { name: '分目錄設定' })).toBeInTheDocument();
     expect(screen.getByRole('navigation', { name: '設定分區' })).toBeInTheDocument();
@@ -646,7 +661,7 @@ describe('SubsidiarySettingsScreen', () => {
     expect(await screen.findByRole('heading', { name: 'Subsidiary Settings' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Open business workspace' })).toHaveAttribute(
       'href',
-      '/tenant/tenant-1/subsidiary/sub-1/business',
+      '/tenant/tenant-1/subsidiary/sub-1/business'
     );
   });
 });

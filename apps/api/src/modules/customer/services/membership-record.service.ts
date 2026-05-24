@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable } from '@nestjs/common';
+
 import type { RequestContext } from '@tcrn/shared';
 
 import { MembershipRecordApplicationService } from '../application/membership-record.service';
@@ -17,35 +17,25 @@ import type {
 @Injectable()
 export class MembershipRecordService {
   constructor(
-    private readonly membershipRecordApplicationService: MembershipRecordApplicationService,
+    private readonly membershipRecordApplicationService: MembershipRecordApplicationService
   ) {}
 
   findByCustomer(
     customerId: string,
     talentId: string,
     query: MembershipListQueryDto,
-    context: RequestContext,
+    context: RequestContext
   ) {
     return this.membershipRecordApplicationService.findByCustomer(
       customerId,
       talentId,
       query,
-      context,
+      context
     );
   }
 
-  create(
-    customerId: string,
-    talentId: string,
-    dto: CreateMembershipDto,
-    context: RequestContext,
-  ) {
-    return this.membershipRecordApplicationService.create(
-      customerId,
-      talentId,
-      dto,
-      context,
-    );
+  create(customerId: string, talentId: string, dto: CreateMembershipDto, context: RequestContext) {
+    return this.membershipRecordApplicationService.create(customerId, talentId, dto, context);
   }
 
   update(
@@ -53,14 +43,14 @@ export class MembershipRecordService {
     recordId: string,
     talentId: string,
     dto: UpdateMembershipDto,
-    context: RequestContext,
+    context: RequestContext
   ) {
     return this.membershipRecordApplicationService.update(
       customerId,
       recordId,
       talentId,
       dto,
-      context,
+      context
     );
   }
 

@@ -1,6 +1,5 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
-import { afterEach,beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { RedisService } from '../../../redis';
 import { MarshmallowRateLimitService, RateLimitConfig } from '../marshmallow-rate-limit.service';
@@ -39,19 +38,14 @@ describe.skip('MarshmallowRateLimitService', () => {
         'config-123',
         '192.168.1.1',
         'fingerprint-abc',
-        mockConfig,
+        mockConfig
       );
 
       expect(result.allowed).toBe(true);
     });
 
     it('should track request count', async () => {
-      await service.checkRateLimit(
-        'config-123',
-        '192.168.1.1',
-        'fingerprint-abc',
-        mockConfig,
-      );
+      await service.checkRateLimit('config-123', '192.168.1.1', 'fingerprint-abc', mockConfig);
 
       expect(mockRedisService.incr).toHaveBeenCalled();
     });
@@ -63,7 +57,7 @@ describe.skip('MarshmallowRateLimitService', () => {
         'config-123',
         '192.168.1.1',
         'fingerprint-abc',
-        mockConfig,
+        mockConfig
       );
 
       expect(result.allowed).toBe(false);
@@ -74,37 +68,27 @@ describe.skip('MarshmallowRateLimitService', () => {
       // First call returns IP count (ok)
       // Second call returns fingerprint count (exceeded)
       (mockRedisService.incr as ReturnType<typeof vi.fn>)
-        .mockResolvedValueOnce(5)   // IP
+        .mockResolvedValueOnce(5) // IP
         .mockResolvedValueOnce(21); // fingerprint (limit is 2x IP limit = 20)
 
       const result = await service.checkRateLimit(
         'config-123',
         '192.168.1.1',
         'fingerprint-abc',
-        mockConfig,
+        mockConfig
       );
 
       expect(result.allowed).toBe(false);
     });
 
     it('should set correct TTL for counters', async () => {
-      await service.checkRateLimit(
-        'config-123',
-        '192.168.1.1',
-        'fingerprint-abc',
-        mockConfig,
-      );
+      await service.checkRateLimit('config-123', '192.168.1.1', 'fingerprint-abc', mockConfig);
 
       expect(mockRedisService.expire).toHaveBeenCalled();
     });
 
     it('should track by both IP and fingerprint', async () => {
-      await service.checkRateLimit(
-        'config-123',
-        '192.168.1.1',
-        'fingerprint-abc',
-        mockConfig,
-      );
+      await service.checkRateLimit('config-123', '192.168.1.1', 'fingerprint-abc', mockConfig);
 
       // Should have made calls for IP-based and fingerprint-based counters
       expect(mockRedisService.incr).toHaveBeenCalledTimes(3); // IP + fingerprint + global
@@ -115,11 +99,7 @@ describe.skip('MarshmallowRateLimitService', () => {
     it('should return current rate limit counts', async () => {
       (mockRedisService.get as ReturnType<typeof vi.fn>).mockResolvedValue('5');
 
-      const result = await service.getStatus(
-        'config-123',
-        '192.168.1.1',
-        'fingerprint-abc',
-      );
+      const result = await service.getStatus('config-123', '192.168.1.1', 'fingerprint-abc');
 
       expect(result).toHaveProperty('ipCount');
       expect(result).toHaveProperty('fpCount');

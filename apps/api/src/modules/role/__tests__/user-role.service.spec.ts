@@ -1,13 +1,5 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
-vi.mock('@tcrn/database', () => ({
-  prisma: {
-    $queryRawUnsafe: vi.fn(),
-    $executeRawUnsafe: vi.fn(),
-  },
-}));
 
 import { prisma } from '@tcrn/database';
 
@@ -15,6 +7,13 @@ import { DelegatedAdminService } from '../../delegated-admin/delegated-admin.ser
 import { PermissionSnapshotService } from '../../permission/permission-snapshot.service';
 import { TenantService } from '../../tenant/tenant.service';
 import { UserRoleService } from '../user-role.service';
+
+vi.mock('@tcrn/database', () => ({
+  prisma: {
+    $queryRawUnsafe: vi.fn(),
+    $executeRawUnsafe: vi.fn(),
+  },
+}));
 
 describe('UserRoleService', () => {
   const mockPrisma = prisma as unknown as {
@@ -52,7 +51,7 @@ describe('UserRoleService', () => {
     service = new UserRoleService(
       mockSnapshotService as PermissionSnapshotService,
       mockDelegatedAdminService as DelegatedAdminService,
-      mockTenantService as TenantService,
+      mockTenantService as TenantService
     );
   });
 
@@ -69,7 +68,7 @@ describe('UserRoleService', () => {
         grantorUserId,
         'VIEWER',
         'tenant',
-        null,
+        null
       );
 
       expect(result).toBe(true);
@@ -80,21 +79,25 @@ describe('UserRoleService', () => {
         'system_user',
         'admin',
         'tenant',
-        null,
+        null
       );
       expect(mockSnapshotService.refreshAndCheckPermission).not.toHaveBeenCalled();
     });
 
     it('refreshes a stale tenant admin snapshot before accepting role assignment', async () => {
-      (mockSnapshotService.checkPermission as ReturnType<typeof vi.fn>).mockResolvedValueOnce(false);
-      (mockSnapshotService.refreshAndCheckPermission as ReturnType<typeof vi.fn>).mockResolvedValueOnce(true);
+      (mockSnapshotService.checkPermission as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
+        false
+      );
+      (
+        mockSnapshotService.refreshAndCheckPermission as ReturnType<typeof vi.fn>
+      ).mockResolvedValueOnce(true);
 
       const result = await service.canAssignRoleAtScope(
         testSchema,
         grantorUserId,
         'VIEWER',
         'tenant',
-        null,
+        null
       );
 
       expect(result).toBe(true);
@@ -104,21 +107,25 @@ describe('UserRoleService', () => {
         'system_user',
         'admin',
         'tenant',
-        null,
+        null
       );
       expect(mockDelegatedAdminService.hasDelegationForScope).not.toHaveBeenCalled();
     });
 
     it('rejects tenant-scope assignment when a refreshed canonical admin grant is still absent', async () => {
-      (mockSnapshotService.checkPermission as ReturnType<typeof vi.fn>).mockResolvedValueOnce(false);
-      (mockSnapshotService.refreshAndCheckPermission as ReturnType<typeof vi.fn>).mockResolvedValueOnce(false);
+      (mockSnapshotService.checkPermission as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
+        false
+      );
+      (
+        mockSnapshotService.refreshAndCheckPermission as ReturnType<typeof vi.fn>
+      ).mockResolvedValueOnce(false);
 
       const result = await service.canAssignRoleAtScope(
         testSchema,
         grantorUserId,
         'VIEWER',
         'tenant',
-        null,
+        null
       );
 
       expect(result).toBe(false);
@@ -128,15 +135,19 @@ describe('UserRoleService', () => {
     });
 
     it('does not allow delegated assignment of high-privilege roles without tenant admin permission', async () => {
-      (mockSnapshotService.checkPermission as ReturnType<typeof vi.fn>).mockResolvedValueOnce(false);
-      (mockSnapshotService.refreshAndCheckPermission as ReturnType<typeof vi.fn>).mockResolvedValueOnce(false);
+      (mockSnapshotService.checkPermission as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
+        false
+      );
+      (
+        mockSnapshotService.refreshAndCheckPermission as ReturnType<typeof vi.fn>
+      ).mockResolvedValueOnce(false);
 
       const result = await service.canAssignRoleAtScope(
         testSchema,
         grantorUserId,
         'ADMIN',
         'subsidiary',
-        'sub-123',
+        'sub-123'
       );
 
       expect(result).toBe(false);
@@ -144,16 +155,22 @@ describe('UserRoleService', () => {
     });
 
     it('uses delegated admin checks for non-tenant scopes after canonical admin check fails', async () => {
-      (mockSnapshotService.checkPermission as ReturnType<typeof vi.fn>).mockResolvedValueOnce(false);
-      (mockSnapshotService.refreshAndCheckPermission as ReturnType<typeof vi.fn>).mockResolvedValueOnce(false);
-      (mockDelegatedAdminService.hasDelegationForScope as ReturnType<typeof vi.fn>).mockResolvedValueOnce(true);
+      (mockSnapshotService.checkPermission as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
+        false
+      );
+      (
+        mockSnapshotService.refreshAndCheckPermission as ReturnType<typeof vi.fn>
+      ).mockResolvedValueOnce(false);
+      (
+        mockDelegatedAdminService.hasDelegationForScope as ReturnType<typeof vi.fn>
+      ).mockResolvedValueOnce(true);
 
       const result = await service.canAssignRoleAtScope(
         testSchema,
         grantorUserId,
         'VIEWER',
         'subsidiary',
-        'sub-123',
+        'sub-123'
       );
 
       expect(result).toBe(true);
@@ -161,7 +178,7 @@ describe('UserRoleService', () => {
         testSchema,
         grantorUserId,
         'subsidiary',
-        'sub-123',
+        'sub-123'
       );
     });
   });
@@ -174,7 +191,7 @@ describe('UserRoleService', () => {
 
       expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalledWith(
         expect.stringContaining("r.name->>'zh_HANT'"),
-        'user-2',
+        'user-2'
       );
     });
   });
@@ -203,8 +220,12 @@ describe('UserRoleService', () => {
         .mockResolvedValueOnce([])
         .mockResolvedValueOnce([assignment]);
       (mockSnapshotService.checkPermission as ReturnType<typeof vi.fn>).mockResolvedValueOnce(true);
-      (mockSnapshotService.refreshAndCheckPermission as ReturnType<typeof vi.fn>).mockResolvedValueOnce(false);
-      (mockSnapshotService.refreshUserSnapshots as ReturnType<typeof vi.fn>).mockResolvedValueOnce(undefined);
+      (
+        mockSnapshotService.refreshAndCheckPermission as ReturnType<typeof vi.fn>
+      ).mockResolvedValueOnce(false);
+      (mockSnapshotService.refreshUserSnapshots as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
+        undefined
+      );
       mockPrisma.$executeRawUnsafe.mockResolvedValueOnce(1);
 
       const result = await service.assignRole(
@@ -215,14 +236,14 @@ describe('UserRoleService', () => {
           scopeType: 'tenant',
           inherit: false,
         },
-        grantorUserId,
+        grantorUserId
       );
 
       expect(result).toEqual(assignment);
       expect(mockPrisma.$queryRawUnsafe).toHaveBeenNthCalledWith(
         1,
         expect.stringContaining('WHERE code = $1 AND is_active = true'),
-        'ADMIN',
+        'ADMIN'
       );
       expect(mockPrisma.$executeRawUnsafe).toHaveBeenCalledWith(
         expect.stringContaining('INSERT INTO "tenant_test123".user_role'),
@@ -232,15 +253,13 @@ describe('UserRoleService', () => {
         null,
         false,
         grantorUserId,
-        null,
+        null
       );
       expect(mockSnapshotService.refreshUserSnapshots).toHaveBeenCalledWith(testSchema, 'user-2');
     });
 
     it('rejects workspace-incompatible roles before writing assignments', async () => {
-      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([
-        { id: 'role-1', code: 'PLATFORM_ADMIN' },
-      ]);
+      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([{ id: 'role-1', code: 'PLATFORM_ADMIN' }]);
 
       await expect(
         service.assignRole(
@@ -251,8 +270,8 @@ describe('UserRoleService', () => {
             scopeType: 'tenant',
             inherit: false,
           },
-          grantorUserId,
-        ),
+          grantorUserId
+        )
       ).rejects.toMatchObject({
         response: expect.objectContaining({
           code: 'PERM_ACCESS_DENIED',

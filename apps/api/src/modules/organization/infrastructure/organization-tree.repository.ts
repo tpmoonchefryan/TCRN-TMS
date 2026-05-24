@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable } from '@nestjs/common';
+
 import { prisma } from '@tcrn/database';
 
 import {
@@ -22,24 +22,21 @@ export class OrganizationTreeRepository {
     return prisma.tenant.findUnique({ where: { id: tenantId } });
   }
 
-  findAllSubsidiaries(
-    tenantSchema: string,
-    includeInactive: boolean,
-  ): Promise<RawSubsidiary[]> {
+  findAllSubsidiaries(tenantSchema: string, includeInactive: boolean): Promise<RawSubsidiary[]> {
     const whereClause = includeInactive ? '1=1' : 'is_active = true';
 
     return prisma.$queryRawUnsafe<RawSubsidiary[]>(
       `SELECT id, parent_id, code, path, depth, name, is_active
        FROM "${tenantSchema}".subsidiary
        WHERE ${whereClause}
-       ORDER BY depth, sort_order, NULLIF(name->>'en', ''), code`,
+       ORDER BY depth, sort_order, NULLIF(name->>'en', ''), code`
     );
   }
 
   findMatchedSubsidiaryPaths(
     tenantSchema: string,
     search: string,
-    includeInactive: boolean,
+    includeInactive: boolean
   ): Promise<Array<{ path: string }>> {
     let whereClause = '1=1';
 
@@ -47,21 +44,20 @@ export class OrganizationTreeRepository {
       whereClause += ' AND is_active = true';
     }
 
-    whereClause +=
-      ` AND (code ILIKE $1 OR ${organizationNameSearchExpression('name', '$1')})`;
+    whereClause += ` AND (code ILIKE $1 OR ${organizationNameSearchExpression('name', '$1')})`;
 
     return prisma.$queryRawUnsafe<Array<{ path: string }>>(
       `SELECT path
        FROM "${tenantSchema}".subsidiary
        WHERE ${whereClause}`,
-      `%${search}%`,
+      `%${search}%`
     );
   }
 
   findMatchedTalentSubsidiaryIds(
     tenantSchema: string,
     search: string,
-    includeInactive: boolean,
+    includeInactive: boolean
   ): Promise<Array<{ subsidiary_id: string }>> {
     let whereClause = 'subsidiary_id IS NOT NULL';
 
@@ -69,20 +65,19 @@ export class OrganizationTreeRepository {
       whereClause += ` AND ${getTalentVisibilityClause(false)}`;
     }
 
-    whereClause +=
-      ` AND (code ILIKE $1 OR ${organizationNameSearchExpression('name', '$1')} OR display_name ILIKE $1)`;
+    whereClause += ` AND (code ILIKE $1 OR ${organizationNameSearchExpression('name', '$1')} OR display_name ILIKE $1)`;
 
     return prisma.$queryRawUnsafe<Array<{ subsidiary_id: string }>>(
       `SELECT DISTINCT subsidiary_id
        FROM "${tenantSchema}".talent
        WHERE ${whereClause}`,
-      `%${search}%`,
+      `%${search}%`
     );
   }
 
   findSubsidiaryPathsByIds(
     tenantSchema: string,
-    subsidiaryIds: string[],
+    subsidiaryIds: string[]
   ): Promise<Array<{ path: string }>> {
     if (subsidiaryIds.length === 0) {
       return Promise.resolve([]);
@@ -92,14 +87,11 @@ export class OrganizationTreeRepository {
       `SELECT path
        FROM "${tenantSchema}".subsidiary
        WHERE id = ANY($1::uuid[])`,
-      subsidiaryIds,
+      subsidiaryIds
     );
   }
 
-  findSubsidiariesByPaths(
-    tenantSchema: string,
-    paths: string[],
-  ): Promise<RawSubsidiary[]> {
+  findSubsidiariesByPaths(tenantSchema: string, paths: string[]): Promise<RawSubsidiary[]> {
     if (paths.length === 0) {
       return Promise.resolve([]);
     }
@@ -109,21 +101,20 @@ export class OrganizationTreeRepository {
        FROM "${tenantSchema}".subsidiary
        WHERE path = ANY($1::text[])
        ORDER BY depth, sort_order, NULLIF(name->>'en', ''), code`,
-      paths,
+      paths
     );
   }
 
   findTalentsForTree(
     tenantSchema: string,
     includeInactive: boolean,
-    search?: string,
+    search?: string
   ): Promise<RawTalent[]> {
     let whereClause = getTalentVisibilityClause(includeInactive);
     const params: string[] = [];
 
     if (search) {
-      whereClause +=
-        ` AND (code ILIKE $1 OR ${organizationNameSearchExpression('name', '$1')} OR display_name ILIKE $1)`;
+      whereClause += ` AND (code ILIKE $1 OR ${organizationNameSearchExpression('name', '$1')} OR display_name ILIKE $1)`;
       params.push(`%${search}%`);
     }
 
@@ -133,14 +124,14 @@ export class OrganizationTreeRepository {
        FROM "${tenantSchema}".talent
        WHERE ${whereClause}
        ORDER BY display_name`,
-      ...params,
+      ...params
     );
   }
 
   findDirectTalents(
     tenantSchema: string,
     includeInactive: boolean,
-    search?: string,
+    search?: string
   ): Promise<RawTalent[]> {
     let whereClause = 'subsidiary_id IS NULL';
     const params: string[] = [];
@@ -150,8 +141,7 @@ export class OrganizationTreeRepository {
     }
 
     if (search) {
-      whereClause +=
-        ` AND (code ILIKE $1 OR ${organizationNameSearchExpression('name', '$1')} OR display_name ILIKE $1)`;
+      whereClause += ` AND (code ILIKE $1 OR ${organizationNameSearchExpression('name', '$1')} OR display_name ILIKE $1)`;
       params.push(`%${search}%`);
     }
 
@@ -161,37 +151,37 @@ export class OrganizationTreeRepository {
        FROM "${tenantSchema}".talent
        WHERE ${whereClause}
        ORDER BY display_name`,
-      ...params,
+      ...params
     );
   }
 
   countTalentsBySubsidiary(
     tenantSchema: string,
-    includeInactive: boolean,
+    includeInactive: boolean
   ): Promise<RawTalentCount[]> {
     return prisma.$queryRawUnsafe<RawTalentCount[]>(
       `SELECT subsidiary_id, COUNT(*) as count
        FROM "${tenantSchema}".talent
        WHERE subsidiary_id IS NOT NULL ${includeInactive ? '' : `AND ${getTalentVisibilityClause(false)}`}
-       GROUP BY subsidiary_id`,
+       GROUP BY subsidiary_id`
     );
   }
 
   findUserScopeAccesses(
     tenantSchema: string,
-    userId: string,
+    userId: string
   ): Promise<RawOrganizationScopeAccess[]> {
     return prisma.$queryRawUnsafe<RawOrganizationScopeAccess[]>(
       `SELECT scope_type, scope_id, include_subunits
        FROM "${tenantSchema}".user_scope_access
        WHERE user_id = $1::uuid`,
-      userId,
+      userId
     );
   }
 
   findUserRoleScopeAccesses(
     tenantSchema: string,
-    userId: string,
+    userId: string
   ): Promise<RawOrganizationScopeAccess[]> {
     return prisma.$queryRawUnsafe<RawOrganizationScopeAccess[]>(
       `SELECT DISTINCT
@@ -203,20 +193,20 @@ export class OrganizationTreeRepository {
        WHERE ur.user_id = $1::uuid
          AND (ur.expires_at IS NULL OR ur.expires_at > NOW())
          AND r.is_active = true`,
-      userId,
+      userId
     );
   }
 
   async findDescendantSubsidiaryIds(
     tenantSchema: string,
-    subsidiaryId: string,
+    subsidiaryId: string
   ): Promise<Set<string>> {
     const subsidiaries = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
       `SELECT s2.id
        FROM "${tenantSchema}".subsidiary s1
        JOIN "${tenantSchema}".subsidiary s2 ON s2.path LIKE s1.path || '%'
        WHERE s1.id = $1::uuid`,
-      subsidiaryId,
+      subsidiaryId
     );
 
     return new Set(subsidiaries.map((subsidiary) => subsidiary.id));
@@ -224,14 +214,14 @@ export class OrganizationTreeRepository {
 
   async findTalentIdsInSubsidiarySubtree(
     tenantSchema: string,
-    subsidiaryId: string,
+    subsidiaryId: string
   ): Promise<Set<string>> {
     const talents = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
       `SELECT t.id
        FROM "${tenantSchema}".talent t
        JOIN "${tenantSchema}".subsidiary s ON t.subsidiary_id = s.id
        WHERE s.path LIKE (SELECT path FROM "${tenantSchema}".subsidiary WHERE id = $1::uuid) || '%'`,
-      subsidiaryId,
+      subsidiaryId
     );
 
     return new Set(talents.map((talent) => talent.id));
@@ -239,7 +229,7 @@ export class OrganizationTreeRepository {
 
   findTalentSubsidiaryIds(
     tenantSchema: string,
-    talentIds: string[],
+    talentIds: string[]
   ): Promise<Array<{ id: string; subsidiary_id: string | null }>> {
     if (talentIds.length === 0) {
       return Promise.resolve([]);
@@ -249,20 +239,20 @@ export class OrganizationTreeRepository {
       `SELECT id, subsidiary_id
        FROM "${tenantSchema}".talent
        WHERE id = ANY($1::uuid[])`,
-      talentIds,
+      talentIds
     );
   }
 
   async findAncestorSubsidiaryIds(
     tenantSchema: string,
-    subsidiaryId: string,
+    subsidiaryId: string
   ): Promise<Set<string>> {
     const ancestors = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
       `SELECT s2.id
        FROM "${tenantSchema}".subsidiary s1
        JOIN "${tenantSchema}".subsidiary s2 ON s1.path LIKE s2.path || '%'
        WHERE s1.id = $1::uuid AND s2.id != $1::uuid`,
-      subsidiaryId,
+      subsidiaryId
     );
 
     return new Set(ancestors.map((ancestor) => ancestor.id));

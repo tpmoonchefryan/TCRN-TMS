@@ -1,19 +1,12 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
-import type {
-  HomepageComponentType,
-  ThemeConfig,
-} from '../types/homepage/schema';
+import type { HomepageComponentType, ThemeConfig } from '../types/homepage/schema';
 import type { PublicPresenceAssetRevisionPin } from './assets';
 
 export const PUBLIC_PRESENCE_DOCUMENT_SCHEMA_VERSION = '1.0' as const;
 export const PUBLIC_PRESENCE_REGISTRY_VERSION = '1.0.0' as const;
 export const PUBLIC_PRESENCE_SAFETY_POLICY_VERSION = '1.0.0' as const;
 
-export const PUBLIC_PRESENCE_TEMPLATE_IDS = [
-  'activeTalentHub',
-  'debutReveal',
-] as const;
+export const PUBLIC_PRESENCE_TEMPLATE_IDS = ['activeTalentHub', 'debutReveal'] as const;
 
 export const PUBLIC_PRESENCE_STAGE_SECTION_KINDS = [
   'firstEncounter',
@@ -86,9 +79,7 @@ export const PUBLIC_PRESENCE_WORKFLOW_EVENT_TYPES = [
   'validationSnapshotted',
 ] as const;
 
-export const PUBLIC_PRESENCE_HASH_ALGORITHMS = [
-  'sha256',
-] as const;
+export const PUBLIC_PRESENCE_HASH_ALGORITHMS = ['sha256'] as const;
 
 export const PUBLIC_PRESENCE_REVEAL_PHASES = [
   'teaser',
@@ -152,11 +143,7 @@ export const PUBLIC_PRESENCE_FALLBACK_POLICIES = [
   'lockedSourceOwned',
 ] as const;
 
-export const PUBLIC_PRESENCE_COMPONENT_VISUAL_SUPPORT = [
-  'supported',
-  'limited',
-  'locked',
-] as const;
+export const PUBLIC_PRESENCE_COMPONENT_VISUAL_SUPPORT = ['supported', 'limited', 'locked'] as const;
 
 export const PUBLIC_PRESENCE_SOURCE_POLICIES = [
   'registryOwned',
@@ -164,11 +151,7 @@ export const PUBLIC_PRESENCE_SOURCE_POLICIES = [
   'sourceOnly',
 ] as const;
 
-export const PUBLIC_PRESENCE_PROJECTION_MODES = [
-  'structured',
-  'safeFallback',
-  'omit',
-] as const;
+export const PUBLIC_PRESENCE_PROJECTION_MODES = ['structured', 'safeFallback', 'omit'] as const;
 
 export const PUBLIC_PRESENCE_PROJECTION_SCHEMA_VERSION = '1.0' as const;
 
@@ -177,11 +160,7 @@ export const PUBLIC_PRESENCE_PROJECTED_SECTION_KINDS = [
   'legacyCompatibility',
 ] as const;
 
-export const PUBLIC_PRESENCE_PROJECTION_VISIBILITIES = [
-  'visible',
-  'fallback',
-  'omitted',
-] as const;
+export const PUBLIC_PRESENCE_PROJECTION_VISIBILITIES = ['visible', 'fallback', 'omitted'] as const;
 
 export const PUBLIC_PRESENCE_PROJECTION_SECTION_TYPES = [
   'hero',
@@ -208,11 +187,7 @@ export const PUBLIC_PRESENCE_PROJECTED_MEDIA_KINDS = [
   'embeddedVideo',
 ] as const;
 
-export const PUBLIC_PRESENCE_PROJECTION_EVENT_TYPES = [
-  'built',
-  'rebuilt',
-  'invalidated',
-] as const;
+export const PUBLIC_PRESENCE_PROJECTION_EVENT_TYPES = ['built', 'rebuilt', 'invalidated'] as const;
 
 export const PUBLIC_PRESENCE_UNKNOWN_FIELD_POLICIES = [
   'preserveLocked',
@@ -234,44 +209,27 @@ export const PUBLIC_PRESENCE_FIELD_VALUE_TYPES = [
   'json',
 ] as const;
 
-export type PublicPresenceTemplateId =
-  (typeof PUBLIC_PRESENCE_TEMPLATE_IDS)[number];
-export type PublicPresenceStageSectionKind =
-  (typeof PUBLIC_PRESENCE_STAGE_SECTION_KINDS)[number];
+export type PublicPresenceTemplateId = (typeof PUBLIC_PRESENCE_TEMPLATE_IDS)[number];
+export type PublicPresenceStageSectionKind = (typeof PUBLIC_PRESENCE_STAGE_SECTION_KINDS)[number];
 export type PublicPresenceValidationSeverity =
   (typeof PUBLIC_PRESENCE_VALIDATION_SEVERITIES)[number];
-export type PublicPresenceValidationState =
-  (typeof PUBLIC_PRESENCE_VALIDATION_STATES)[number];
-export type PublicPresenceFieldProvenance =
-  (typeof PUBLIC_PRESENCE_FIELD_PROVENANCES)[number];
-export type PublicPresenceValidationMode =
-  (typeof PUBLIC_PRESENCE_VALIDATION_MODES)[number];
-export type PublicPresenceDocumentState =
-  (typeof PUBLIC_PRESENCE_DOCUMENT_STATES)[number];
-export type PublicPresenceWorkflowEventType =
-  (typeof PUBLIC_PRESENCE_WORKFLOW_EVENT_TYPES)[number];
-export type PublicPresenceHashAlgorithm =
-  (typeof PUBLIC_PRESENCE_HASH_ALGORITHMS)[number];
-export type PublicPresenceRevealPhase =
-  (typeof PUBLIC_PRESENCE_REVEAL_PHASES)[number];
-export type PublicPresencePhaseVisibility =
-  (typeof PUBLIC_PRESENCE_PHASE_VISIBILITIES)[number];
-export type PublicPresenceNoteKind =
-  (typeof PUBLIC_PRESENCE_NOTE_KINDS)[number];
-export type PublicPresenceFanActionSlot =
-  (typeof PUBLIC_PRESENCE_FAN_ACTION_SLOTS)[number];
-export type PublicPresenceUrlCategory =
-  (typeof PUBLIC_PRESENCE_URL_CATEGORIES)[number];
-export type PublicPresenceMediaCategory =
-  (typeof PUBLIC_PRESENCE_MEDIA_CATEGORIES)[number];
-export type PublicPresenceFallbackPolicy =
-  (typeof PUBLIC_PRESENCE_FALLBACK_POLICIES)[number];
+export type PublicPresenceValidationState = (typeof PUBLIC_PRESENCE_VALIDATION_STATES)[number];
+export type PublicPresenceFieldProvenance = (typeof PUBLIC_PRESENCE_FIELD_PROVENANCES)[number];
+export type PublicPresenceValidationMode = (typeof PUBLIC_PRESENCE_VALIDATION_MODES)[number];
+export type PublicPresenceDocumentState = (typeof PUBLIC_PRESENCE_DOCUMENT_STATES)[number];
+export type PublicPresenceWorkflowEventType = (typeof PUBLIC_PRESENCE_WORKFLOW_EVENT_TYPES)[number];
+export type PublicPresenceHashAlgorithm = (typeof PUBLIC_PRESENCE_HASH_ALGORITHMS)[number];
+export type PublicPresenceRevealPhase = (typeof PUBLIC_PRESENCE_REVEAL_PHASES)[number];
+export type PublicPresencePhaseVisibility = (typeof PUBLIC_PRESENCE_PHASE_VISIBILITIES)[number];
+export type PublicPresenceNoteKind = (typeof PUBLIC_PRESENCE_NOTE_KINDS)[number];
+export type PublicPresenceFanActionSlot = (typeof PUBLIC_PRESENCE_FAN_ACTION_SLOTS)[number];
+export type PublicPresenceUrlCategory = (typeof PUBLIC_PRESENCE_URL_CATEGORIES)[number];
+export type PublicPresenceMediaCategory = (typeof PUBLIC_PRESENCE_MEDIA_CATEGORIES)[number];
+export type PublicPresenceFallbackPolicy = (typeof PUBLIC_PRESENCE_FALLBACK_POLICIES)[number];
 export type PublicPresenceComponentVisualSupport =
   (typeof PUBLIC_PRESENCE_COMPONENT_VISUAL_SUPPORT)[number];
-export type PublicPresenceSourcePolicy =
-  (typeof PUBLIC_PRESENCE_SOURCE_POLICIES)[number];
-export type PublicPresenceProjectionMode =
-  (typeof PUBLIC_PRESENCE_PROJECTION_MODES)[number];
+export type PublicPresenceSourcePolicy = (typeof PUBLIC_PRESENCE_SOURCE_POLICIES)[number];
+export type PublicPresenceProjectionMode = (typeof PUBLIC_PRESENCE_PROJECTION_MODES)[number];
 export type PublicPresenceProjectedSectionKind =
   (typeof PUBLIC_PRESENCE_PROJECTED_SECTION_KINDS)[number];
 export type PublicPresenceProjectionVisibility =
@@ -284,8 +242,7 @@ export type PublicPresenceProjectionEventType =
   (typeof PUBLIC_PRESENCE_PROJECTION_EVENT_TYPES)[number];
 export type PublicPresenceUnknownFieldPolicy =
   (typeof PUBLIC_PRESENCE_UNKNOWN_FIELD_POLICIES)[number];
-export type PublicPresenceFieldValueType =
-  (typeof PUBLIC_PRESENCE_FIELD_VALUE_TYPES)[number];
+export type PublicPresenceFieldValueType = (typeof PUBLIC_PRESENCE_FIELD_VALUE_TYPES)[number];
 
 export interface PublicPresenceFieldValue<T = unknown> {
   value: T;
@@ -294,10 +251,7 @@ export interface PublicPresenceFieldValue<T = unknown> {
   note?: string;
 }
 
-export type PublicPresenceFieldRecord = Record<
-  string,
-  PublicPresenceFieldValue<unknown>
->;
+export type PublicPresenceFieldRecord = Record<string, PublicPresenceFieldValue<unknown>>;
 
 export interface PublicPresenceComponentNode {
   id: string;
@@ -349,10 +303,7 @@ export interface PublicPresenceFieldDefinition {
   fieldKey: string;
   jsonPath: string;
   valueType: PublicPresenceFieldValueType;
-  required:
-    | 'always'
-    | 'conditional'
-    | 'optional';
+  required: 'always' | 'conditional' | 'optional';
   provenance: PublicPresenceFieldProvenance[];
   visualEditable: boolean;
   aiEditable: boolean;
@@ -560,8 +511,7 @@ export interface PublicPresenceProjectedSectionBase {
   validationIssueIds: string[];
 }
 
-export interface PublicPresenceProjectedHeroSection
-  extends PublicPresenceProjectedSectionBase {
+export interface PublicPresenceProjectedHeroSection extends PublicPresenceProjectedSectionBase {
   sectionType: 'hero';
   title: string;
   description: string | null;
@@ -570,16 +520,14 @@ export interface PublicPresenceProjectedHeroSection
   primaryAction: PublicPresenceProjectedAction | null;
 }
 
-export interface PublicPresenceProjectedProfileCardSection
-  extends PublicPresenceProjectedSectionBase {
+export interface PublicPresenceProjectedProfileCardSection extends PublicPresenceProjectedSectionBase {
   sectionType: 'profileCard';
   displayName: string | null;
   bio: string | null;
   avatar: PublicPresenceProjectedMedia | null;
 }
 
-export interface PublicPresenceProjectedSocialLinksSection
-  extends PublicPresenceProjectedSectionBase {
+export interface PublicPresenceProjectedSocialLinksSection extends PublicPresenceProjectedSectionBase {
   sectionType: 'socialLinks';
   title: string | null;
   links: PublicPresenceProjectedAction[];
@@ -587,8 +535,7 @@ export interface PublicPresenceProjectedSocialLinksSection
   style: 'icon' | 'button' | 'pill';
 }
 
-export interface PublicPresenceProjectedImageGallerySection
-  extends PublicPresenceProjectedSectionBase {
+export interface PublicPresenceProjectedImageGallerySection extends PublicPresenceProjectedSectionBase {
   sectionType: 'imageGallery';
   title: string | null;
   images: PublicPresenceProjectedMedia[];
@@ -596,8 +543,7 @@ export interface PublicPresenceProjectedImageGallerySection
   showCaptions: boolean;
 }
 
-export interface PublicPresenceProjectedVideoEmbedSection
-  extends PublicPresenceProjectedSectionBase {
+export interface PublicPresenceProjectedVideoEmbedSection extends PublicPresenceProjectedSectionBase {
   sectionType: 'videoEmbed';
   title: string | null;
   providerId: string | null;
@@ -609,21 +555,18 @@ export interface PublicPresenceProjectedVideoEmbedSection
   fallbackAction: PublicPresenceProjectedAction | null;
 }
 
-export interface PublicPresenceProjectedRichTextSection
-  extends PublicPresenceProjectedSectionBase {
+export interface PublicPresenceProjectedRichTextSection extends PublicPresenceProjectedSectionBase {
   sectionType: 'richText';
   html: string;
   textAlign: 'left' | 'center' | 'right';
 }
 
-export interface PublicPresenceProjectedLinkButtonSection
-  extends PublicPresenceProjectedSectionBase {
+export interface PublicPresenceProjectedLinkButtonSection extends PublicPresenceProjectedSectionBase {
   sectionType: 'linkButton';
   action: PublicPresenceProjectedAction;
 }
 
-export interface PublicPresenceProjectedMarshmallowSection
-  extends PublicPresenceProjectedSectionBase {
+export interface PublicPresenceProjectedMarshmallowSection extends PublicPresenceProjectedSectionBase {
   sectionType: 'marshmallow';
   title: string | null;
   description: string | null;
@@ -636,24 +579,21 @@ export interface PublicPresenceProjectedScheduleEvent {
   title: string;
 }
 
-export interface PublicPresenceProjectedScheduleSection
-  extends PublicPresenceProjectedSectionBase {
+export interface PublicPresenceProjectedScheduleSection extends PublicPresenceProjectedSectionBase {
   sectionType: 'schedule';
   title: string | null;
   weekOf: string | null;
   events: PublicPresenceProjectedScheduleEvent[];
 }
 
-export interface PublicPresenceProjectedMusicPlayerSection
-  extends PublicPresenceProjectedSectionBase {
+export interface PublicPresenceProjectedMusicPlayerSection extends PublicPresenceProjectedSectionBase {
   sectionType: 'musicPlayer';
   title: string | null;
   artist: string | null;
   description: string | null;
 }
 
-export interface PublicPresenceProjectedLiveStatusSection
-  extends PublicPresenceProjectedSectionBase {
+export interface PublicPresenceProjectedLiveStatusSection extends PublicPresenceProjectedSectionBase {
   sectionType: 'liveStatus';
   platform: string | null;
   channelName: string | null;
@@ -663,29 +603,25 @@ export interface PublicPresenceProjectedLiveStatusSection
   streamAction: PublicPresenceProjectedAction | null;
 }
 
-export interface PublicPresenceProjectedDividerSection
-  extends PublicPresenceProjectedSectionBase {
+export interface PublicPresenceProjectedDividerSection extends PublicPresenceProjectedSectionBase {
   sectionType: 'divider';
   style: 'solid' | 'dashed' | 'dotted';
   spacing: 'small' | 'medium' | 'large';
 }
 
-export interface PublicPresenceProjectedSpacerSection
-  extends PublicPresenceProjectedSectionBase {
+export interface PublicPresenceProjectedSpacerSection extends PublicPresenceProjectedSectionBase {
   sectionType: 'spacer';
   height: 'small' | 'medium' | 'large' | 'xlarge';
 }
 
-export interface PublicPresenceProjectedBilibiliDynamicSection
-  extends PublicPresenceProjectedSectionBase {
+export interface PublicPresenceProjectedBilibiliDynamicSection extends PublicPresenceProjectedSectionBase {
   sectionType: 'bilibiliDynamic';
   title: string | null;
   description: string | null;
   profileAction: PublicPresenceProjectedAction | null;
 }
 
-export interface PublicPresenceProjectedFallbackCardSection
-  extends PublicPresenceProjectedSectionBase {
+export interface PublicPresenceProjectedFallbackCardSection extends PublicPresenceProjectedSectionBase {
   sectionType: 'fallbackCard';
   title: string;
   description: string | null;

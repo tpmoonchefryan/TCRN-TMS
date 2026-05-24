@@ -1,8 +1,8 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { BadRequestException, NotFoundException } from '@nestjs/common';
-import type { RequestContext } from '@tcrn/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import type { RequestContext } from '@tcrn/shared';
 
 import { BUCKETS } from '../../../minio';
 import { MessageStatus } from '../../dto/marshmallow.dto';
@@ -48,7 +48,7 @@ describe('MarshmallowExportService', () => {
       mockDatabaseService as never,
       mockMinioService as never,
       mockTechEventLogService as never,
-      mockExportQueue as never,
+      mockExportQueue as never
     );
   });
 
@@ -56,18 +56,20 @@ describe('MarshmallowExportService', () => {
     it('creates and queues a marshmallow export job through the layered write path', async () => {
       mockPrisma.$queryRawUnsafe
         .mockResolvedValueOnce([{ id: 'talent-123' }])
-        .mockResolvedValueOnce([{
-          id: 'job-123',
-          status: MarshmallowExportStatus.PENDING,
-          format: 'csv',
-          file_name: null,
-          file_path: null,
-          total_records: 0,
-          processed_records: 0,
-          expires_at: null,
-          created_at: new Date('2026-04-14T10:00:00Z'),
-          completed_at: null,
-        }]);
+        .mockResolvedValueOnce([
+          {
+            id: 'job-123',
+            status: MarshmallowExportStatus.PENDING,
+            format: 'csv',
+            file_name: null,
+            file_path: null,
+            total_records: 0,
+            processed_records: 0,
+            expires_at: null,
+            created_at: new Date('2026-04-14T10:00:00Z'),
+            completed_at: null,
+          },
+        ]);
 
       await expect(
         service.createExportJob(
@@ -77,28 +79,25 @@ describe('MarshmallowExportService', () => {
             status: [MessageStatus.APPROVED],
             includeRejected: false,
           },
-          mockContext,
-        ),
+          mockContext
+        )
       ).resolves.toEqual({
         jobId: 'job-123',
         status: MarshmallowExportStatus.PENDING,
       });
 
-      expect(mockExportQueue.add).toHaveBeenCalledWith(
-        'marshmallow_export',
-        {
-          jobId: 'job-123',
-          talentId: 'talent-123',
-          tenantSchema: 'tenant_test',
-          format: 'csv',
-          filters: {
-            status: [MessageStatus.APPROVED],
-            startDate: undefined,
-            endDate: undefined,
-            includeRejected: false,
-          },
+      expect(mockExportQueue.add).toHaveBeenCalledWith('marshmallow_export', {
+        jobId: 'job-123',
+        talentId: 'talent-123',
+        tenantSchema: 'tenant_test',
+        format: 'csv',
+        filters: {
+          status: [MessageStatus.APPROVED],
+          startDate: undefined,
+          endDate: undefined,
+          includeRejected: false,
         },
-      );
+      });
       expect(mockTechEventLogService.log).toHaveBeenCalledWith(
         expect.objectContaining({
           traceId: 'job-123',
@@ -108,7 +107,7 @@ describe('MarshmallowExportService', () => {
             format: 'csv',
           }),
         }),
-        mockContext,
+        mockContext
       );
     });
 
@@ -116,33 +115,29 @@ describe('MarshmallowExportService', () => {
       mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([]);
 
       await expect(
-        service.createExportJob(
-          'talent-404',
-          { format: 'xlsx' },
-          mockContext,
-        ),
+        service.createExportJob('talent-404', { format: 'xlsx' }, mockContext)
       ).rejects.toThrow(BadRequestException);
     });
   });
 
   describe('getExportJob', () => {
     it('returns a mapped dedicated export job response', async () => {
-      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([{
-        id: 'job-123',
-        status: MarshmallowExportStatus.SUCCESS,
-        format: 'csv',
-        file_name: 'messages.csv',
-        file_path: 'tenant_test/job-123/messages.csv',
-        total_records: 8,
-        processed_records: 8,
-        expires_at: new Date('2026-04-21T10:00:00Z'),
-        created_at: new Date('2026-04-14T10:00:00Z'),
-        completed_at: new Date('2026-04-14T10:02:00Z'),
-      }]);
+      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([
+        {
+          id: 'job-123',
+          status: MarshmallowExportStatus.SUCCESS,
+          format: 'csv',
+          file_name: 'messages.csv',
+          file_path: 'tenant_test/job-123/messages.csv',
+          total_records: 8,
+          processed_records: 8,
+          expires_at: new Date('2026-04-21T10:00:00Z'),
+          created_at: new Date('2026-04-14T10:00:00Z'),
+          completed_at: new Date('2026-04-14T10:02:00Z'),
+        },
+      ]);
 
-      await expect(
-        service.getExportJob('job-123', 'talent-123', 'tenant_test'),
-      ).resolves.toEqual({
+      await expect(service.getExportJob('job-123', 'talent-123', 'tenant_test')).resolves.toEqual({
         id: 'job-123',
         status: MarshmallowExportStatus.SUCCESS,
         format: 'csv',
@@ -157,9 +152,8 @@ describe('MarshmallowExportService', () => {
     });
 
     it('falls back to legacy export_job rows for reads when the dedicated table misses', async () => {
-      mockPrisma.$queryRawUnsafe
-        .mockResolvedValueOnce([])
-        .mockResolvedValueOnce([{
+      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([]).mockResolvedValueOnce([
+        {
           id: 'job-legacy',
           status: MarshmallowExportStatus.SUCCESS,
           format: 'json',
@@ -170,10 +164,11 @@ describe('MarshmallowExportService', () => {
           expires_at: new Date('2026-04-21T10:00:00Z'),
           created_at: new Date('2026-04-14T09:00:00Z'),
           completed_at: new Date('2026-04-14T09:05:00Z'),
-        }]);
+        },
+      ]);
 
       await expect(
-        service.getExportJob('job-legacy', 'talent-123', 'tenant_test'),
+        service.getExportJob('job-legacy', 'talent-123', 'tenant_test')
       ).resolves.toMatchObject({
         id: 'job-legacy',
         status: MarshmallowExportStatus.SUCCESS,
@@ -189,54 +184,56 @@ describe('MarshmallowExportService', () => {
     it('throws NotFoundException when the marshmallow export job does not exist', async () => {
       mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([]).mockResolvedValueOnce([]);
 
-      await expect(
-        service.getExportJob('job-404', 'talent-123', 'tenant_test'),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.getExportJob('job-404', 'talent-123', 'tenant_test')).rejects.toThrow(
+        NotFoundException
+      );
     });
   });
 
   describe('getDownloadUrl', () => {
     it('returns a presigned download URL for completed jobs scoped to the talent', async () => {
-      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([{
-        id: 'job-123',
-        status: MarshmallowExportStatus.SUCCESS,
-        file_path: 'tenant_test/job-123/messages.csv',
-      }]);
+      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([
+        {
+          id: 'job-123',
+          status: MarshmallowExportStatus.SUCCESS,
+          file_path: 'tenant_test/job-123/messages.csv',
+        },
+      ]);
       mockMinioService.getPresignedUrl.mockReturnValue('https://download.example.com/messages.csv');
 
-      await expect(
-        service.getDownloadUrl('job-123', 'talent-123', 'tenant_test'),
-      ).resolves.toBe('https://download.example.com/messages.csv');
+      await expect(service.getDownloadUrl('job-123', 'talent-123', 'tenant_test')).resolves.toBe(
+        'https://download.example.com/messages.csv'
+      );
 
       expect(mockMinioService.getPresignedUrl).toHaveBeenCalledWith(
         BUCKETS.TEMP_REPORTS,
         'tenant_test/job-123/messages.csv',
-        3600,
+        3600
       );
       expect(mockPrisma.$queryRawUnsafe.mock.calls[0]?.[0]).toContain('talent_id = $2::uuid');
     });
 
     it('rejects download when the export is not ready', async () => {
-      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([{
-        id: 'job-123',
-        status: MarshmallowExportStatus.PENDING,
-        file_path: null,
-      }]);
+      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([
+        {
+          id: 'job-123',
+          status: MarshmallowExportStatus.PENDING,
+          file_path: null,
+        },
+      ]);
 
-      await expect(
-        service.getDownloadUrl('job-123', 'talent-123', 'tenant_test'),
-      ).rejects.toThrow(BadRequestException);
+      await expect(service.getDownloadUrl('job-123', 'talent-123', 'tenant_test')).rejects.toThrow(
+        BadRequestException
+      );
     });
   });
 
   describe('worker state paths', () => {
     it('falls back to the legacy table when updateProgress misses the dedicated table', async () => {
-      mockPrisma.$executeRawUnsafe
-        .mockResolvedValueOnce(0)
-        .mockResolvedValueOnce(1);
+      mockPrisma.$executeRawUnsafe.mockResolvedValueOnce(0).mockResolvedValueOnce(1);
 
       await expect(
-        service.updateProgress('job-123', 'tenant_test', 20, 5),
+        service.updateProgress('job-123', 'tenant_test', 20, 5)
       ).resolves.toBeUndefined();
 
       expect(mockPrisma.$executeRawUnsafe).toHaveBeenCalledTimes(2);
@@ -254,8 +251,8 @@ describe('MarshmallowExportService', () => {
           'tenant_test',
           'tenant_test/job-123/messages.csv',
           'messages.csv',
-          20,
-        ),
+          20
+        )
       ).resolves.toBeUndefined();
 
       expect(mockPrisma.$executeRawUnsafe).toHaveBeenCalledTimes(1);
@@ -268,7 +265,7 @@ describe('MarshmallowExportService', () => {
             file_path: 'tenant_test/job-123/messages.csv',
             total_records: 20,
           }),
-        }),
+        })
       );
     });
 
@@ -276,7 +273,7 @@ describe('MarshmallowExportService', () => {
       mockPrisma.$executeRawUnsafe.mockResolvedValueOnce(1);
 
       await expect(
-        service.failJob('job-123', 'tenant_test', 'minio upload failed'),
+        service.failJob('job-123', 'tenant_test', 'minio upload failed')
       ).resolves.toBeUndefined();
 
       expect(mockPrisma.$executeRawUnsafe.mock.calls[0]?.[0]).toContain('marshmallow_export_job');
@@ -287,7 +284,7 @@ describe('MarshmallowExportService', () => {
             job_id: 'job-123',
             error: 'minio upload failed',
           }),
-        }),
+        })
       );
     });
   });

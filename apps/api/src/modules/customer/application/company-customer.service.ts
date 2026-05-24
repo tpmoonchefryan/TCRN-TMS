@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+
 import { ErrorCodes, type RequestContext, TechEventType } from '@tcrn/shared';
 
 import { DatabaseService } from '../../database';
@@ -36,28 +36,20 @@ export class CompanyCustomerApplicationService {
     private readonly databaseService: DatabaseService,
     private readonly techEventLogService: TechEventLogService,
     private readonly customerArchiveAccessService: CustomerArchiveAccessService,
-    private readonly customerPiiPlatformApplicationService: CustomerPiiPlatformApplicationService,
+    private readonly customerPiiPlatformApplicationService: CustomerPiiPlatformApplicationService
   ) {}
 
-  async create(
-    talentId: string,
-    dto: CreateCompanyCustomerDto,
-    context: RequestContext,
-  ) {
+  async create(talentId: string, dto: CreateCompanyCustomerDto, context: RequestContext) {
     const createPiiPayload = hasCompanyPiiPayload(dto.pii) ? dto.pii : null;
 
     if (createPiiPayload) {
-      await this.customerPiiPlatformApplicationService.assertPlatformEnabled(
-        talentId,
-        context,
-      );
+      await this.customerPiiPlatformApplicationService.assertPlatformEnabled(talentId, context);
     }
 
-    const archiveTarget =
-      await this.customerArchiveAccessService.requireTalentArchiveTarget(
-        talentId,
-        context,
-      );
+    const archiveTarget = await this.customerArchiveAccessService.requireTalentArchiveTarget(
+      talentId,
+      context
+    );
 
     try {
       const customer = await this.companyCustomerRepository.withTransaction(async (prisma) => {
@@ -65,14 +57,14 @@ export class CompanyCustomerApplicationService {
           ? await this.companyCustomerRepository.findActiveStatusId(
               prisma,
               context.tenantSchema,
-              dto.statusCode,
+              dto.statusCode
             )
           : null;
         const businessSegmentId = dto.businessSegmentCode
           ? await this.companyCustomerRepository.findActiveBusinessSegmentId(
               prisma,
               context.tenantSchema,
-              dto.businessSegmentCode,
+              dto.businessSegmentCode
             )
           : null;
 
@@ -89,45 +81,35 @@ export class CompanyCustomerApplicationService {
             source: dto.source ?? null,
             notes: dto.notes ?? null,
             userId: context.userId,
-          },
+          }
         );
 
-        await this.companyCustomerRepository.insertCompanyInfo(
-          prisma,
-          context.tenantSchema,
-          {
-            customerId: customer.id,
-            companyLegalName: dto.companyLegalName,
-            companyShortName: dto.companyShortName ?? null,
-            registrationNumber: dto.registrationNumber ?? null,
-            vatId: dto.vatId ?? null,
-            establishmentDate: dto.establishmentDate
-              ? new Date(dto.establishmentDate)
-              : null,
-            businessSegmentId,
-            website: dto.website ?? null,
-          },
-        );
+        await this.companyCustomerRepository.insertCompanyInfo(prisma, context.tenantSchema, {
+          customerId: customer.id,
+          companyLegalName: dto.companyLegalName,
+          companyShortName: dto.companyShortName ?? null,
+          registrationNumber: dto.registrationNumber ?? null,
+          vatId: dto.vatId ?? null,
+          establishmentDate: dto.establishmentDate ? new Date(dto.establishmentDate) : null,
+          businessSegmentId,
+          website: dto.website ?? null,
+        });
 
         if (dto.externalId && dto.consumerCode) {
           const consumer = await this.companyCustomerRepository.findActiveConsumer(
             prisma,
             context.tenantSchema,
-            dto.consumerCode,
+            dto.consumerCode
           );
 
           if (consumer) {
-            await this.companyCustomerRepository.insertExternalId(
-              prisma,
-              context.tenantSchema,
-              {
-                customerId: customer.id,
-                profileStoreId: archiveTarget.profileStoreId,
-                consumerId: consumer.id,
-                externalId: dto.externalId,
-                userId: context.userId,
-              },
-            );
+            await this.companyCustomerRepository.insertExternalId(prisma, context.tenantSchema, {
+              customerId: customer.id,
+              profileStoreId: archiveTarget.profileStoreId,
+              consumerId: consumer.id,
+              externalId: dto.externalId,
+              userId: context.userId,
+            });
           }
         }
 
@@ -148,24 +130,20 @@ export class CompanyCustomerApplicationService {
               source: dto.source,
             },
           },
-          context,
+          context
         );
 
-        await this.companyCustomerRepository.insertAccessLog(
-          prisma,
-          context.tenantSchema,
-          {
-            customerId: customer.id,
-            profileStoreId: archiveTarget.profileStoreId,
-            talentId,
-            action: CustomerAction.CREATE,
-            userId: context.userId,
-            userName: context.userName,
-            ipAddress: context.ipAddress,
-            userAgent: context.userAgent,
-            requestId: context.requestId,
-          },
-        );
+        await this.companyCustomerRepository.insertAccessLog(prisma, context.tenantSchema, {
+          customerId: customer.id,
+          profileStoreId: archiveTarget.profileStoreId,
+          talentId,
+          action: CustomerAction.CREATE,
+          userId: context.userId,
+          userName: context.userName,
+          ipAddress: context.ipAddress,
+          userAgent: context.userAgent,
+          requestId: context.requestId,
+        });
 
         return customer;
       });
@@ -176,7 +154,7 @@ export class CompanyCustomerApplicationService {
           talentId,
           ProfileType.COMPANY,
           createPiiPayload,
-          context,
+          context
         );
 
         await this.techEventLogService.piiAccess(
@@ -186,7 +164,7 @@ export class CompanyCustomerApplicationService {
             customerId: customer.id,
             operatorId: context.userId,
           },
-          context,
+          context
         );
       }
 
@@ -201,7 +179,7 @@ export class CompanyCustomerApplicationService {
             operatorId: context.userId,
             originalError: error instanceof Error ? error.message : String(error),
           },
-          context,
+          context
         );
       }
 
@@ -213,15 +191,12 @@ export class CompanyCustomerApplicationService {
     customerId: string,
     talentId: string,
     dto: UpdateCompanyCustomerDto,
-    context: RequestContext,
+    context: RequestContext
   ) {
     const updatePiiPayload = hasCompanyPiiPayload(dto.pii) ? dto.pii : null;
 
     if (updatePiiPayload) {
-      await this.customerPiiPlatformApplicationService.assertPlatformEnabled(
-        talentId,
-        context,
-      );
+      await this.customerPiiPlatformApplicationService.assertPlatformEnabled(talentId, context);
     }
 
     const prisma = this.databaseService.getPrisma();
@@ -234,20 +209,22 @@ export class CompanyCustomerApplicationService {
       });
     }
 
-    const statusId = dto.statusCode !== undefined && dto.statusCode
-      ? await this.companyCustomerRepository.findActiveStatusId(
-          prisma,
-          context.tenantSchema,
-          dto.statusCode,
-        )
-      : null;
-    const businessSegmentId = dto.businessSegmentCode !== undefined && dto.businessSegmentCode
-      ? await this.companyCustomerRepository.findActiveBusinessSegmentId(
-          prisma,
-          context.tenantSchema,
-          dto.businessSegmentCode,
-        )
-      : null;
+    const statusId =
+      dto.statusCode !== undefined && dto.statusCode
+        ? await this.companyCustomerRepository.findActiveStatusId(
+            prisma,
+            context.tenantSchema,
+            dto.statusCode
+          )
+        : null;
+    const businessSegmentId =
+      dto.businessSegmentCode !== undefined && dto.businessSegmentCode
+        ? await this.companyCustomerRepository.findActiveBusinessSegmentId(
+            prisma,
+            context.tenantSchema,
+            dto.businessSegmentCode
+          )
+        : null;
 
     const updated = await this.companyCustomerRepository.updateCustomerProfile(
       prisma,
@@ -257,7 +234,7 @@ export class CompanyCustomerApplicationService {
         talentId,
         userId: context.userId,
         update: toCompanyCustomerProfileUpdateInput(dto, statusId),
-      },
+      }
     );
 
     if (!updated) {
@@ -273,7 +250,7 @@ export class CompanyCustomerApplicationService {
         prisma,
         context.tenantSchema,
         customerId,
-        companyInfoUpdate,
+        companyInfoUpdate
       );
 
       if (affectedRows === 0) {
@@ -281,7 +258,7 @@ export class CompanyCustomerApplicationService {
           prisma,
           context.tenantSchema,
           customerId,
-          companyInfoUpdate,
+          companyInfoUpdate
         );
       }
     }
@@ -295,25 +272,21 @@ export class CompanyCustomerApplicationService {
         oldValue: buildCompanyCustomerChangeLogOldValue(customer),
         newValue: buildCompanyCustomerChangeLogNewValue(updated.nickname, dto),
       },
-      context,
+      context
     );
 
-    await this.companyCustomerRepository.insertAccessLog(
-      prisma,
-      context.tenantSchema,
-      {
-        customerId,
-        profileStoreId: customer.profileStoreId,
-        talentId,
-        action: CustomerAction.UPDATE,
-        fieldChanges: buildCompanyCustomerAccessLogFieldChanges(dto),
-        userId: context.userId,
-        userName: context.userName,
-        ipAddress: context.ipAddress,
-        userAgent: context.userAgent,
-        requestId: context.requestId,
-      },
-    );
+    await this.companyCustomerRepository.insertAccessLog(prisma, context.tenantSchema, {
+      customerId,
+      profileStoreId: customer.profileStoreId,
+      talentId,
+      action: CustomerAction.UPDATE,
+      fieldChanges: buildCompanyCustomerAccessLogFieldChanges(dto),
+      userId: context.userId,
+      userName: context.userName,
+      ipAddress: context.ipAddress,
+      userAgent: context.userAgent,
+      requestId: context.requestId,
+    });
 
     if (updatePiiPayload) {
       await this.customerPiiPlatformApplicationService.upsertCustomerPii(
@@ -321,7 +294,7 @@ export class CompanyCustomerApplicationService {
         talentId,
         ProfileType.COMPANY,
         updatePiiPayload,
-        context,
+        context
       );
 
       await this.techEventLogService.piiAccess(
@@ -331,27 +304,22 @@ export class CompanyCustomerApplicationService {
           customerId,
           operatorId: context.userId,
         },
-        context,
+        context
       );
     }
 
     return buildCompanyCustomerUpdateResult(updated);
   }
 
-  async createPiiPortalSession(
-    customerId: string,
-    talentId: string,
-    context: RequestContext,
-  ) {
+  async createPiiPortalSession(customerId: string, talentId: string, context: RequestContext) {
     const prisma = this.databaseService.getPrisma();
     const customer = await this.verifyAccess(customerId, talentId, context);
-    const portalSession =
-      await this.customerPiiPlatformApplicationService.createPortalSession(
-        customerId,
-        talentId,
-        ProfileType.COMPANY,
-        context,
-      );
+    const portalSession = await this.customerPiiPlatformApplicationService.createPortalSession(
+      customerId,
+      talentId,
+      ProfileType.COMPANY,
+      context
+    );
 
     await this.techEventLogService.piiAccess(
       TechEventType.PII_ACCESS_REQUESTED,
@@ -363,40 +331,32 @@ export class CompanyCustomerApplicationService {
         ipAddress: context.ipAddress,
         userAgent: context.userAgent,
       },
-      context,
+      context
     );
 
-    await this.companyCustomerRepository.insertAccessLog(
-      prisma,
-      context.tenantSchema,
-      {
-        customerId,
-        profileStoreId: customer.profileStoreId,
-        talentId,
-        action: CustomerAction.PII_VIEW,
-        userId: context.userId,
-        userName: context.userName,
-        ipAddress: context.ipAddress,
-        userAgent: context.userAgent,
-        requestId: context.requestId,
-      },
-    );
+    await this.companyCustomerRepository.insertAccessLog(prisma, context.tenantSchema, {
+      customerId,
+      profileStoreId: customer.profileStoreId,
+      talentId,
+      action: CustomerAction.PII_VIEW,
+      userId: context.userId,
+      userName: context.userName,
+      ipAddress: context.ipAddress,
+      userAgent: context.userAgent,
+      requestId: context.requestId,
+    });
 
     return buildCustomerPiiPortalSessionResult(portalSession);
   }
 
-  private async verifyAccess(
-    customerId: string,
-    talentId: string,
-    context: RequestContext,
-  ) {
+  private async verifyAccess(customerId: string, talentId: string, context: RequestContext) {
     return this.customerArchiveAccessService.requireCustomerArchiveAccess(
       customerId,
       talentId,
       context,
       {
         expectedProfileType: ProfileType.COMPANY,
-      },
+      }
     );
   }
 }

@@ -1,9 +1,5 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
-import {
-  PublicPresenceDocumentSchema,
-  type PublicPresenceTemplateId,
-} from '@tcrn/shared';
+import { PublicPresenceDocumentSchema, type PublicPresenceTemplateId } from '@tcrn/shared';
 
 import type { PublicPresenceDocumentVersionRecord } from '../domain/public-presence-foundation.policy';
 
@@ -42,16 +38,14 @@ export const DEBUT_ACTIVE_HUB_DEPENDENCY_SUGGESTED_FIX =
   'Approve the always-on hub before scheduling the debut switch.';
 
 export function extractRevealAutoSwitchAt(
-  version: PublicPresenceDocumentVersionRecord | null,
+  version: PublicPresenceDocumentVersionRecord | null
 ): string | null {
   if (!version || version.templateId !== 'debutReveal') {
     return null;
   }
 
   const document = PublicPresenceDocumentSchema.parse(version.document);
-  const countdownSection = document.sections.find(
-    (section) => section.kind === 'countdownReveal',
-  );
+  const countdownSection = document.sections.find((section) => section.kind === 'countdownReveal');
   const fieldValue = countdownSection?.fields?.revealAtUtc;
 
   if (!fieldValue || typeof fieldValue !== 'object' || !('value' in fieldValue)) {
@@ -70,16 +64,18 @@ export function buildDebutRevealAutoSwitchDependency(input: {
 }): PublicPresenceStudioReleaseDependency | null {
   const revealAutoSwitchAt = extractRevealAutoSwitchAt(input.debutVersion);
 
-  if (!input.debutVersion || input.debutVersion.templateId !== 'debutReveal' || !revealAutoSwitchAt) {
+  if (
+    !input.debutVersion ||
+    input.debutVersion.templateId !== 'debutReveal' ||
+    !revealAutoSwitchAt
+  ) {
     return null;
   }
 
   const readyTarget = input.publishReadyActiveHubVersion;
   const fallbackTarget = input.latestActiveHubVersion;
   const targetVersion = readyTarget ?? fallbackTarget;
-  const status: PublicPresenceStudioReleaseDependencyStatus = readyTarget
-    ? 'ready'
-    : 'blocked';
+  const status: PublicPresenceStudioReleaseDependencyStatus = readyTarget ? 'ready' : 'blocked';
   const targetVersionState = targetVersion?.documentState ?? null;
   let nextAction: PublicPresenceStudioReleaseDependencyNextAction = 'none';
 
@@ -87,8 +83,8 @@ export function buildDebutRevealAutoSwitchDependency(input: {
     if (!fallbackTarget) {
       nextAction = 'startActiveTalentHubDraft';
     } else if (
-      fallbackTarget.documentState === 'draft'
-      || fallbackTarget.documentState === 'changesRequested'
+      fallbackTarget.documentState === 'draft' ||
+      fallbackTarget.documentState === 'changesRequested'
     ) {
       nextAction = 'openActiveTalentHubDraft';
     } else {

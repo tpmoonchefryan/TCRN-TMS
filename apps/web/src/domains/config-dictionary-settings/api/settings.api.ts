@@ -238,7 +238,10 @@ export interface CreateConfigEntityInput {
   isRequired?: boolean;
 }
 
-export interface UpdateConfigEntityInput extends Omit<CreateConfigEntityInput, 'code' | 'ownerType' | 'ownerId'> {
+export interface UpdateConfigEntityInput extends Omit<
+  CreateConfigEntityInput,
+  'code' | 'ownerType' | 'ownerId'
+> {
   version: number;
 }
 
@@ -373,7 +376,10 @@ export interface ProfileStoreListOptions {
 }
 
 type RequestFn = <T>(path: string, init?: RequestInit) => Promise<T>;
-export type RequestEnvelopeFn = <T>(path: string, init?: RequestInit) => Promise<ApiSuccessEnvelope<T>>;
+export type RequestEnvelopeFn = <T>(
+  path: string,
+  init?: RequestInit
+) => Promise<ApiSuccessEnvelope<T>>;
 
 function readString(value: unknown, fallback: string) {
   return typeof value === 'string' && value.length > 0 ? value : fallback;
@@ -441,7 +447,7 @@ function readNonNegativeNumber(value: unknown) {
 function normalizeProfileStoreListResponse(
   response: ProfileStoreListApiResponse,
   page: number,
-  pageSize: number,
+  pageSize: number
 ): ProfileStoreListResponse {
   const items = response.items ?? [];
   const pagination = response.meta?.pagination;
@@ -473,7 +479,10 @@ function normalizeProfileStoreListResponse(
         pageSize: normalizedPageSize,
         totalCount,
         totalPages,
-        hasNext: typeof pagination.hasNext === 'boolean' ? pagination.hasNext : normalizedPage < totalPages,
+        hasNext:
+          typeof pagination.hasNext === 'boolean'
+            ? pagination.hasNext
+            : normalizedPage < totalPages,
         hasPrev: typeof pagination.hasPrev === 'boolean' ? pagination.hasPrev : normalizedPage > 1,
       },
     },
@@ -482,12 +491,15 @@ function normalizeProfileStoreListResponse(
 
 export function buildTenantSettingsDraft(settings: Record<string, unknown>): TenantSettingsDraft {
   const passwordPolicy =
-    settings.passwordPolicy && typeof settings.passwordPolicy === 'object' && !Array.isArray(settings.passwordPolicy)
-      ? settings.passwordPolicy as Record<string, unknown>
+    settings.passwordPolicy &&
+    typeof settings.passwordPolicy === 'object' &&
+    !Array.isArray(settings.passwordPolicy)
+      ? (settings.passwordPolicy as Record<string, unknown>)
       : {};
 
   return {
-    defaultLanguage: normalizeSupportedUiLocale(readString(settings.defaultLanguage, 'zh_HANS')) ?? 'zh_HANS',
+    defaultLanguage:
+      normalizeSupportedUiLocale(readString(settings.defaultLanguage, 'zh_HANS')) ?? 'zh_HANS',
     timezone: readString(settings.timezone, 'Asia/Shanghai'),
     dateFormat: readString(settings.dateFormat, 'YYYY-MM-DD'),
     currency: readString(settings.currency, 'USD'),
@@ -506,7 +518,9 @@ export function buildTenantSettingsDraft(settings: Record<string, unknown>): Ten
 export const buildTalentSettingsDraft = buildTenantSettingsDraft;
 export const buildSubsidiarySettingsDraft = buildTenantSettingsDraft;
 
-export function buildTenantSettingsUpdatePayload(draft: TenantSettingsDraft): Record<string, unknown> {
+export function buildTenantSettingsUpdatePayload(
+  draft: TenantSettingsDraft
+): Record<string, unknown> {
   return {
     defaultLanguage: draft.defaultLanguage,
     timezone: draft.timezone,
@@ -527,7 +541,10 @@ export function buildTenantSettingsUpdatePayload(draft: TenantSettingsDraft): Re
 export const buildTalentSettingsUpdatePayload = buildTenantSettingsUpdatePayload;
 export const buildSubsidiarySettingsUpdatePayload = buildTenantSettingsUpdatePayload;
 
-export function isTenantSettingsDraftDirty(source: TenantSettingsDraft, draft: TenantSettingsDraft) {
+export function isTenantSettingsDraftDirty(
+  source: TenantSettingsDraft,
+  draft: TenantSettingsDraft
+) {
   return (
     source.defaultLanguage !== draft.defaultLanguage ||
     source.timezone !== draft.timezone ||
@@ -551,25 +568,37 @@ export function readTenantSettings(request: RequestFn) {
 }
 
 export function updateTenantSettings(request: RequestFn, input: UpdateSettingsInput) {
-  return request<ScopeSettingsResponse>('/api/v1/organization/settings', buildJsonRequestInit('PATCH', input));
+  return request<ScopeSettingsResponse>(
+    '/api/v1/organization/settings',
+    buildJsonRequestInit('PATCH', input)
+  );
 }
 
 export function readTenantSenderDomains(request: RequestFn) {
   return request<TenantSenderDomainsResponse>('/api/v1/email/sender-domains');
 }
 
-export function updateTenantSenderDomains(request: RequestFn, input: UpdateTenantSenderDomainsPayload) {
-  return request<TenantSenderDomainsResponse>('/api/v1/email/sender-domains', buildJsonRequestInit('PATCH', input));
+export function updateTenantSenderDomains(
+  request: RequestFn,
+  input: UpdateTenantSenderDomainsPayload
+) {
+  return request<TenantSenderDomainsResponse>(
+    '/api/v1/email/sender-domains',
+    buildJsonRequestInit('PATCH', input)
+  );
 }
 
 export function readTenantTurnstileSettings(request: RequestFn) {
   return request<TenantTurnstileSettingsResponse>('/api/v1/organization/settings/turnstile');
 }
 
-export function updateTenantTurnstileSettings(request: RequestFn, input: UpdateTenantTurnstileSettingsPayload) {
+export function updateTenantTurnstileSettings(
+  request: RequestFn,
+  input: UpdateTenantTurnstileSettingsPayload
+) {
   return request<TenantTurnstileSettingsResponse>(
     '/api/v1/organization/settings/turnstile',
-    buildJsonRequestInit('PATCH', input),
+    buildJsonRequestInit('PATCH', input)
   );
 }
 
@@ -586,7 +615,9 @@ export async function listProfileStores(request: RequestFn, options: ProfileStor
     params.set('search', options.search.trim());
   }
 
-  const response = await request<ProfileStoreListApiResponse>(`/api/v1/profile-stores?${params.toString()}`);
+  const response = await request<ProfileStoreListApiResponse>(
+    `/api/v1/profile-stores?${params.toString()}`
+  );
 
   return normalizeProfileStoreListResponse(response, page, pageSize);
 }
@@ -596,17 +627,20 @@ export function readProfileStoreDetail(request: RequestFn, profileStoreId: strin
 }
 
 export function createProfileStore(request: RequestFn, input: CreateProfileStoreInput) {
-  return request<ProfileStoreCreateResponse>('/api/v1/profile-stores', buildJsonRequestInit('POST', input));
+  return request<ProfileStoreCreateResponse>(
+    '/api/v1/profile-stores',
+    buildJsonRequestInit('POST', input)
+  );
 }
 
 export function updateProfileStore(
   request: RequestFn,
   profileStoreId: string,
-  input: UpdateProfileStoreInput,
+  input: UpdateProfileStoreInput
 ) {
   return request<ProfileStoreUpdateResponse>(
     `/api/v1/profile-stores/${profileStoreId}`,
-    buildJsonRequestInit('PATCH', input),
+    buildJsonRequestInit('PATCH', input)
   );
 }
 
@@ -614,7 +648,7 @@ export function listConfigEntities(
   request: RequestFn,
   entityType: ScopedConfigEntityType,
   options: ListConfigEntitiesOptions,
-  locale?: string,
+  locale?: string
 ) {
   return request<ConfigEntityRecord[]>(
     `/api/v1/configuration-entity/${entityType}${buildQueryString({
@@ -632,7 +666,7 @@ export function listConfigEntities(
     })}`,
     {
       headers: withLocaleHeaders(locale),
-    },
+    }
   );
 }
 
@@ -643,7 +677,7 @@ export async function listConfigEntitiesPage(
   requestEnvelope: RequestEnvelopeFn,
   entityType: ScopedConfigEntityType,
   options: ListConfigEntitiesOptions,
-  locale?: string,
+  locale?: string
 ): Promise<PaginatedResult<ConfigEntityRecord>> {
   const page = options.page ?? 1;
   const pageSize = options.pageSize ?? 20;
@@ -665,7 +699,7 @@ export async function listConfigEntitiesPage(
     `/api/v1/configuration-entity/${entityType}${query}`,
     {
       headers: withLocaleHeaders(locale),
-    },
+    }
   );
 
   return {
@@ -678,16 +712,21 @@ export async function listAllConfigEntities(
   requestEnvelope: RequestEnvelopeFn,
   entityType: ScopedConfigEntityType,
   options: Omit<ListConfigEntitiesOptions, 'page' | 'pageSize'>,
-  locale?: string,
+  locale?: string
 ): Promise<ConfigEntityRecord[]> {
   const items: ConfigEntityRecord[] = [];
 
   for (let page = 1; page <= MAX_CONFIG_ENTITY_BULK_PAGES; page += 1) {
-    const response = await listConfigEntitiesPage(requestEnvelope, entityType, {
-      ...options,
-      page,
-      pageSize: CONFIG_ENTITY_BULK_PAGE_SIZE,
-    }, locale);
+    const response = await listConfigEntitiesPage(
+      requestEnvelope,
+      entityType,
+      {
+        ...options,
+        page,
+        pageSize: CONFIG_ENTITY_BULK_PAGE_SIZE,
+      },
+      locale
+    );
 
     items.push(...response.items);
 
@@ -703,7 +742,7 @@ export function readConfigEntityDetail(
   request: RequestFn,
   entityType: ScopedConfigEntityType,
   entityId: string,
-  locale?: string,
+  locale?: string
 ) {
   return request<ConfigEntityRecord>(`/api/v1/configuration-entity/${entityType}/${entityId}`, {
     headers: withLocaleHeaders(locale),
@@ -714,17 +753,14 @@ export function createConfigEntity(
   request: RequestFn,
   entityType: ScopedConfigEntityType,
   input: CreateConfigEntityInput,
-  locale?: string,
+  locale?: string
 ) {
-  return request<ConfigEntityRecord>(
-    `/api/v1/configuration-entity/${entityType}`,
-    {
-      ...buildJsonRequestInit('POST', input),
-      headers: withLocaleHeaders(locale, {
-        'Content-Type': 'application/json',
-      }),
-    },
-  );
+  return request<ConfigEntityRecord>(`/api/v1/configuration-entity/${entityType}`, {
+    ...buildJsonRequestInit('POST', input),
+    headers: withLocaleHeaders(locale, {
+      'Content-Type': 'application/json',
+    }),
+  });
 }
 
 export function updateConfigEntity(
@@ -732,28 +768,25 @@ export function updateConfigEntity(
   entityType: ScopedConfigEntityType,
   entityId: string,
   input: UpdateConfigEntityInput,
-  locale?: string,
+  locale?: string
 ) {
-  return request<ConfigEntityRecord>(
-    `/api/v1/configuration-entity/${entityType}/${entityId}`,
-    {
-      ...buildJsonRequestInit('PATCH', input),
-      headers: withLocaleHeaders(locale, {
-        'Content-Type': 'application/json',
-      }),
-    },
-  );
+  return request<ConfigEntityRecord>(`/api/v1/configuration-entity/${entityType}/${entityId}`, {
+    ...buildJsonRequestInit('PATCH', input),
+    headers: withLocaleHeaders(locale, {
+      'Content-Type': 'application/json',
+    }),
+  });
 }
 
 export function deactivateConfigEntity(
   request: RequestFn,
   entityType: ScopedConfigEntityType,
   entityId: string,
-  version: number,
+  version: number
 ) {
   return request<{ id: string; isActive: boolean; deactivatedAt: string }>(
     `/api/v1/configuration-entity/${entityType}/${entityId}/deactivate`,
-    buildJsonRequestInit('POST', { version }),
+    buildJsonRequestInit('POST', { version })
   );
 }
 
@@ -761,11 +794,11 @@ export function reactivateConfigEntity(
   request: RequestFn,
   entityType: ScopedConfigEntityType,
   entityId: string,
-  version: number,
+  version: number
 ) {
   return request<{ id: string; isActive: boolean }>(
     `/api/v1/configuration-entity/${entityType}/${entityId}/reactivate`,
-    buildJsonRequestInit('POST', { version }),
+    buildJsonRequestInit('POST', { version })
   );
 }
 
@@ -774,11 +807,11 @@ export function disableInheritedConfigEntity(
   entityType: ScopedConfigEntityType,
   entityId: string,
   scopeType: Exclude<ConfigEntityScopeType, 'tenant'>,
-  scopeId: string,
+  scopeId: string
 ) {
   return request<{ message: string }>(
     `/api/v1/configuration-entity/${entityType}/${entityId}/disable`,
-    buildJsonRequestInit('POST', { scopeType, scopeId }),
+    buildJsonRequestInit('POST', { scopeType, scopeId })
   );
 }
 
@@ -787,11 +820,11 @@ export function enableInheritedConfigEntity(
   entityType: ScopedConfigEntityType,
   entityId: string,
   scopeType: Exclude<ConfigEntityScopeType, 'tenant'>,
-  scopeId: string,
+  scopeId: string
 ) {
   return request<{ message: string }>(
     `/api/v1/configuration-entity/${entityType}/${entityId}/enable`,
-    buildJsonRequestInit('POST', { scopeType, scopeId }),
+    buildJsonRequestInit('POST', { scopeType, scopeId })
   );
 }
 
@@ -803,10 +836,14 @@ export function readSubsidiarySettings(request: RequestFn, subsidiaryId: string)
   return request<ScopeSettingsResponse>(`/api/v1/subsidiaries/${subsidiaryId}/settings`);
 }
 
-export function updateSubsidiarySettings(request: RequestFn, subsidiaryId: string, input: UpdateSettingsInput) {
+export function updateSubsidiarySettings(
+  request: RequestFn,
+  subsidiaryId: string,
+  input: UpdateSettingsInput
+) {
   return request<ScopeSettingsResponse>(
     `/api/v1/subsidiaries/${subsidiaryId}/settings`,
-    buildJsonRequestInit('PATCH', input),
+    buildJsonRequestInit('PATCH', input)
   );
 }
 
@@ -818,10 +855,14 @@ export function readTalentSettings(request: RequestFn, talentId: string) {
   return request<ScopeSettingsResponse>(`/api/v1/talents/${talentId}/settings`);
 }
 
-export function updateTalentSettings(request: RequestFn, talentId: string, input: UpdateSettingsInput) {
+export function updateTalentSettings(
+  request: RequestFn,
+  talentId: string,
+  input: UpdateSettingsInput
+) {
   return request<ScopeSettingsResponse>(
     `/api/v1/talents/${talentId}/settings`,
-    buildJsonRequestInit('PATCH', input),
+    buildJsonRequestInit('PATCH', input)
   );
 }
 
@@ -832,32 +873,32 @@ export function readTalentPublishReadiness(request: RequestFn, talentId: string)
 export function publishTalent(
   request: RequestFn,
   talentId: string,
-  input: TalentLifecycleMutationInput,
+  input: TalentLifecycleMutationInput
 ) {
   return request<TalentLifecycleMutationResponse>(
     `/api/v1/talents/${talentId}/publish`,
-    buildJsonRequestInit('POST', input),
+    buildJsonRequestInit('POST', input)
   );
 }
 
 export function disableTalent(
   request: RequestFn,
   talentId: string,
-  input: TalentLifecycleMutationInput,
+  input: TalentLifecycleMutationInput
 ) {
   return request<TalentLifecycleMutationResponse>(
     `/api/v1/talents/${talentId}/disable`,
-    buildJsonRequestInit('POST', input),
+    buildJsonRequestInit('POST', input)
   );
 }
 
 export function reEnableTalent(
   request: RequestFn,
   talentId: string,
-  input: TalentLifecycleMutationInput,
+  input: TalentLifecycleMutationInput
 ) {
   return request<TalentLifecycleMutationResponse>(
     `/api/v1/talents/${talentId}/re-enable`,
-    buildJsonRequestInit('POST', input),
+    buildJsonRequestInit('POST', input)
   );
 }

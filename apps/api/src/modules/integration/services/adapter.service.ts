@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable } from '@nestjs/common';
+
 import { type RequestContext } from '@tcrn/shared';
 
 import { DatabaseService } from '../../database';
@@ -27,21 +27,21 @@ export class AdapterService {
     changeLogService: ChangeLogService,
     techEventLog: TechEventLogService,
     private readonly adapterReadApplicationService: AdapterReadApplicationService = new AdapterReadApplicationService(
-      new AdapterReadRepository(databaseService),
+      new AdapterReadRepository(databaseService)
     ),
     private readonly adapterWriteApplicationService: AdapterWriteApplicationService = new AdapterWriteApplicationService(
       new AdapterWriteRepository(databaseService),
       adapterReadApplicationService,
       cryptoService,
       changeLogService,
-      techEventLog,
-    ),
+      techEventLog
+    )
   ) {}
 
   async findMany(
     scope: IntegrationAdapterOwnerScope,
     query: AdapterListQueryDto,
-    context: RequestContext,
+    context: RequestContext
   ) {
     return this.adapterReadApplicationService.findMany(scope, query, context);
   }
@@ -53,7 +53,7 @@ export class AdapterService {
   async create(
     dto: CreateAdapterDto,
     context: RequestContext,
-    scope: IntegrationAdapterOwnerScope = { ownerType: OwnerType.TENANT, ownerId: null },
+    scope: IntegrationAdapterOwnerScope = { ownerType: OwnerType.TENANT, ownerId: null }
   ) {
     return this.adapterWriteApplicationService.create(dto, context, scope);
   }
@@ -81,7 +81,7 @@ export class AdapterService {
   async disableInherited(
     adapterId: string,
     scope: IntegrationAdapterOwnerScope,
-    context: RequestContext,
+    context: RequestContext
   ) {
     return this.adapterWriteApplicationService.disableInherited(adapterId, scope, context);
   }
@@ -89,7 +89,7 @@ export class AdapterService {
   async enableInherited(
     adapterId: string,
     scope: IntegrationAdapterOwnerScope,
-    context: RequestContext,
+    context: RequestContext
   ) {
     return this.adapterWriteApplicationService.enableInherited(adapterId, scope, context);
   }

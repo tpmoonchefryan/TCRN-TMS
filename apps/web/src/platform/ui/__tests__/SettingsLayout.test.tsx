@@ -17,7 +17,7 @@ describe('SettingsLayout', () => {
         ariaLabel={customLabel}
       >
         <div>Content</div>
-      </SettingsLayout>,
+      </SettingsLayout>
     );
     expect(screen.getByRole('navigation')).toHaveAttribute('aria-label', customLabel);
   });
@@ -34,10 +34,13 @@ describe('SettingsLayout', () => {
         sectionNavId="settings-sections"
       >
         <div>Content</div>
-      </SettingsLayout>,
+      </SettingsLayout>
     );
 
-    expect(screen.getByRole('link', { name: 'Settings guide' })).toHaveAttribute('href', '#settings-sections');
+    expect(screen.getByRole('link', { name: 'Settings guide' })).toHaveAttribute(
+      'href',
+      '#settings-sections'
+    );
     expect(screen.getByRole('navigation')).toHaveAttribute('id', 'settings-sections');
   });
 
@@ -56,14 +59,16 @@ describe('SettingsLayout', () => {
         ariaLabel="Settings sections"
       >
         <div>Content</div>
-      </SettingsLayout>,
+      </SettingsLayout>
     );
 
     const nav = screen.getByRole('navigation', { name: 'Settings sections' });
     expect(nav).not.toHaveClass('lg:sticky');
     expect(nav.firstElementChild).not.toHaveClass('lg:flex-col');
     expect(screen.getByRole('button', { name: 'Details' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Configuration Entity Management' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Configuration Entity Management' })
+    ).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Settings' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'System Dictionary' })).toBeInTheDocument();
   });
@@ -103,7 +108,10 @@ describe('SettingsLayout', () => {
     await user.keyboard('{ArrowRight}');
     expect(onSectionChange).toHaveBeenLastCalledWith('settings');
     expect(screen.getByRole('button', { name: 'Settings' })).toHaveFocus();
-    expect(screen.getByRole('button', { name: 'Settings' })).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByRole('button', { name: 'Settings' })).toHaveAttribute(
+      'aria-current',
+      'page'
+    );
 
     await user.keyboard('{End}');
     expect(onSectionChange).toHaveBeenLastCalledWith('dictionary');

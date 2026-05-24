@@ -1,7 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
+
 import { prisma } from '@tcrn/database';
 
 import { PermissionSnapshotService } from './permission-snapshot.service';
@@ -15,9 +15,7 @@ import { PermissionSnapshotService } from './permission-snapshot.service';
 export class PermissionSchedulerService {
   private readonly logger = new Logger(PermissionSchedulerService.name);
 
-  constructor(
-    private readonly snapshotService: PermissionSnapshotService,
-  ) {}
+  constructor(private readonly snapshotService: PermissionSnapshotService) {}
 
   /**
    * Full permission snapshot refresh
@@ -57,7 +55,7 @@ export class PermissionSchedulerService {
       const duration = Date.now() - startTime;
       this.logger.log(
         `Permission snapshot refresh completed: ` +
-        `tenants=${totalTenants}, users=${totalUsers}, failed=${failedTenants}, duration=${duration}ms`
+          `tenants=${totalTenants}, users=${totalUsers}, failed=${failedTenants}, duration=${duration}ms`
       );
     } catch (error) {
       this.logger.error('Permission snapshot refresh failed', error);
@@ -79,7 +77,10 @@ export class PermissionSchedulerService {
       try {
         await this.snapshotService.refreshUserSnapshots(tenantSchema, user.userId);
       } catch (error) {
-        this.logger.warn(`Failed to refresh snapshot for user ${user.userId} in ${tenantSchema}`, error);
+        this.logger.warn(
+          `Failed to refresh snapshot for user ${user.userId} in ${tenantSchema}`,
+          error
+        );
       }
     }
 
@@ -91,7 +92,9 @@ export class PermissionSchedulerService {
    * Can be called via internal API or CLI
    */
   async manualRefresh(tenantSchema?: string): Promise<{ tenants: number; users: number }> {
-    this.logger.log(`Manual permission snapshot refresh triggered${tenantSchema ? ` for ${tenantSchema}` : ''}`);
+    this.logger.log(
+      `Manual permission snapshot refresh triggered${tenantSchema ? ` for ${tenantSchema}` : ''}`
+    );
 
     if (tenantSchema) {
       const users = await this.refreshTenantSnapshots(tenantSchema);

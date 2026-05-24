@@ -15,8 +15,8 @@ import {
   buildPublicPresenceStudioEditorPath,
   buildTalentSettingsPath,
 } from '@/platform/routing/workspace-paths';
-import { pickLocaleText } from '@/platform/runtime/locale/locale-text';
 import { useUiLocale } from '@/platform/runtime/locale/locale-provider';
+import { pickLocaleText } from '@/platform/runtime/locale/locale-text';
 import { useSession } from '@/platform/runtime/session/session-provider';
 
 function SurfaceCommandLink({
@@ -53,40 +53,42 @@ function CatalogCompatibilityNotice({
   kind: 'component' | 'template';
 }>) {
   const { locale } = useUiLocale();
-  const heading = kind === 'template'
-    ? pickLocaleText(locale, {
-        en: 'Template Center is now a compatibility stop, not a homepage tab.',
-        zh_HANS: '模板中心现在是兼容入口，不再是主页一级标签。',
-        zh_HANT: '模板中心現在是相容入口，不再是主頁一級標籤。',
-        ja: 'Template Center は互換用の入口であり、ホームページの第一タブではありません。',
-        ko: 'Template Center 는 호환용 진입점이며 더 이상 홈페이지 1차 탭이 아닙니다.',
-        fr: 'Le centre de templates est désormais un point de compatibilité, plus un onglet homepage.',
-      })
-    : pickLocaleText(locale, {
-        en: 'Component Store is now a compatibility stop, not a homepage tab.',
-        zh_HANS: '组件中心现在是兼容入口，不再是主页一级标签。',
-        zh_HANT: '元件中心現在是相容入口，不再是主頁一級標籤。',
-        ja: 'Component Store は互換用の入口であり、ホームページの第一タブではありません。',
-        ko: 'Component Store 는 호환용 진입점이며 더 이상 홈페이지 1차 탭이 아닙니다.',
-        fr: 'Le store de composants est désormais un point de compatibilité, plus un onglet homepage.',
-      });
-  const body = kind === 'template'
-    ? pickLocaleText(locale, {
-        en: 'Use Homepage Management for everyday routing and release work, then open Template IDE only when you need focused asset authoring.',
-        zh_HANS: '日常路由与发布工作请使用主页管理；只有在需要聚焦资产创作时再进入模板 IDE。',
-        zh_HANT: '日常路由與發佈工作請使用主頁管理；只有在需要聚焦資產創作時再進入模板 IDE。',
-        ja: '日常のルーティングと公開作業は Homepage Management で進め、アセット制作に集中したい時だけ Template IDE を開いてください。',
-        ko: '일상적인 라우팅과 공개 작업은 Homepage Management 에서 진행하고, 자산 제작에 집중해야 할 때만 Template IDE 를 여세요.',
-        fr: 'Utilisez Homepage Management pour le routage et la publication au quotidien, puis ouvrez le Template IDE seulement quand un travail d’asset ciblé est nécessaire.',
-      })
-    : pickLocaleText(locale, {
-        en: 'Use Homepage Management for everyday routing and release work, then open Component IDE only when you need focused asset authoring.',
-        zh_HANS: '日常路由与发布工作请使用主页管理；只有在需要聚焦资产创作时再进入组件 IDE。',
-        zh_HANT: '日常路由與發佈工作請使用主頁管理；只有在需要聚焦資產創作時再進入元件 IDE。',
-        ja: '日常のルーティングと公開作業は Homepage Management で進め、アセット制作に集中したい時だけ Component IDE を開いてください。',
-        ko: '일상적인 라우팅과 공개 작업은 Homepage Management 에서 진행하고, 자산 제작에 집중해야 할 때만 Component IDE 를 여세요.',
-        fr: 'Utilisez Homepage Management pour le routage et la publication au quotidien, puis ouvrez le Component IDE seulement quand un travail d’asset ciblé est nécessaire.',
-      });
+  const heading =
+    kind === 'template'
+      ? pickLocaleText(locale, {
+          en: 'Template Center is now a compatibility stop, not a homepage tab.',
+          zh_HANS: '模板中心现在是兼容入口，不再是主页一级标签。',
+          zh_HANT: '模板中心現在是相容入口，不再是主頁一級標籤。',
+          ja: 'Template Center は互換用の入口であり、ホームページの第一タブではありません。',
+          ko: 'Template Center 는 호환용 진입점이며 더 이상 홈페이지 1차 탭이 아닙니다.',
+          fr: 'Le centre de templates est désormais un point de compatibilité, plus un onglet homepage.',
+        })
+      : pickLocaleText(locale, {
+          en: 'Component Store is now a compatibility stop, not a homepage tab.',
+          zh_HANS: '组件中心现在是兼容入口，不再是主页一级标签。',
+          zh_HANT: '元件中心現在是相容入口，不再是主頁一級標籤。',
+          ja: 'Component Store は互換用の入口であり、ホームページの第一タブではありません。',
+          ko: 'Component Store 는 호환용 진입점이며 더 이상 홈페이지 1차 탭이 아닙니다.',
+          fr: 'Le store de composants est désormais un point de compatibilité, plus un onglet homepage.',
+        });
+  const body =
+    kind === 'template'
+      ? pickLocaleText(locale, {
+          en: 'Use Homepage Management for everyday routing and release work, then open Template IDE only when you need focused asset authoring.',
+          zh_HANS: '日常路由与发布工作请使用主页管理；只有在需要聚焦资产创作时再进入模板 IDE。',
+          zh_HANT: '日常路由與發佈工作請使用主頁管理；只有在需要聚焦資產創作時再進入模板 IDE。',
+          ja: '日常のルーティングと公開作業は Homepage Management で進め、アセット制作に集中したい時だけ Template IDE を開いてください。',
+          ko: '일상적인 라우팅과 공개 작업은 Homepage Management 에서 진행하고, 자산 제작에 집중해야 할 때만 Template IDE 를 여세요.',
+          fr: 'Utilisez Homepage Management pour le routage et la publication au quotidien, puis ouvrez le Template IDE seulement quand un travail d’asset ciblé est nécessaire.',
+        })
+      : pickLocaleText(locale, {
+          en: 'Use Homepage Management for everyday routing and release work, then open Component IDE only when you need focused asset authoring.',
+          zh_HANS: '日常路由与发布工作请使用主页管理；只有在需要聚焦资产创作时再进入组件 IDE。',
+          zh_HANT: '日常路由與發佈工作請使用主頁管理；只有在需要聚焦資產創作時再進入元件 IDE。',
+          ja: '日常のルーティングと公開作業は Homepage Management で進め、アセット制作に集中したい時だけ Component IDE を開いてください。',
+          ko: '일상적인 라우팅과 공개 작업은 Homepage Management 에서 진행하고, 자산 제작에 집중해야 할 때만 Component IDE 를 여세요.',
+          fr: 'Utilisez Homepage Management pour le routage et la publication au quotidien, puis ouvrez le Component IDE seulement quand un travail d’asset ciblé est nécessaire.',
+        });
 
   return (
     <PublicPresenceSurface

@@ -1,28 +1,27 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
-import { forwardRef,Global, Module } from '@nestjs/common';
+import { forwardRef, Global, Module } from '@nestjs/common';
 
 import { AuthModule } from '../auth';
 import { LokiQueryApplicationService } from './application/loki-query.service';
 import {
-    ChangeLogController,
-    ComplianceReportController,
-    IntegrationLogController,
-    LogSearchController,
-    TechEventLogController,
+  ChangeLogController,
+  ComplianceReportController,
+  IntegrationLogController,
+  LogSearchController,
+  TechEventLogController,
 } from './controllers';
 import { LokiQueryGateway } from './infrastructure/loki-query.gateway';
 import {
-    ChangeLogQueryService,
-    ChangeLogService,
-    ComplianceReportService,
-    IntegrationLogQueryService,
-    IntegrationLogService,
-    LogMaskingService,
-    LokiPushService,
-    LokiQueryService,
-    TechEventLogQueryService,
-    TechEventLogService,
+  ChangeLogQueryService,
+  ChangeLogService,
+  ComplianceReportService,
+  IntegrationLogQueryService,
+  IntegrationLogService,
+  LogMaskingService,
+  LokiPushService,
+  LokiQueryService,
+  TechEventLogQueryService,
+  TechEventLogService,
 } from './services';
 
 @Global()

@@ -1,7 +1,8 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+import { describe, it } from 'node:test';
+
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
-import { describe, it } from 'node:test';
 
 import { createTenantSchema, prisma } from '../client';
 
@@ -16,7 +17,7 @@ async function getTableCount(schemaName: string, tableName: string): Promise<num
 async function getColumnMaxLength(
   schemaName: string,
   tableName: string,
-  columnName: string,
+  columnName: string
 ): Promise<number | null> {
   const result = await prisma.$queryRawUnsafe<Array<{ length: number | null }>>(
     `
@@ -28,7 +29,7 @@ async function getColumnMaxLength(
     `,
     schemaName,
     tableName,
-    columnName,
+    columnName
   );
 
   return result[0]?.length ?? null;
@@ -37,7 +38,7 @@ async function getColumnMaxLength(
 async function getColumnDataType(
   schemaName: string,
   tableName: string,
-  columnName: string,
+  columnName: string
 ): Promise<string | null> {
   const result = await prisma.$queryRawUnsafe<Array<{ dataType: string | null }>>(
     `
@@ -49,7 +50,7 @@ async function getColumnDataType(
     `,
     schemaName,
     tableName,
-    columnName,
+    columnName
   );
 
   return result[0]?.dataType ?? null;
@@ -84,10 +85,12 @@ async function getIndexNames(
   );
 }
 
-async function getForeignKeys(schemaName: string): Promise<
-  Array<{ tableName: string; constraintName: string; definition: string }>
-> {
-  return prisma.$queryRawUnsafe<Array<{ tableName: string; constraintName: string; definition: string }>>(
+async function getForeignKeys(
+  schemaName: string
+): Promise<Array<{ tableName: string; constraintName: string; definition: string }>> {
+  return prisma.$queryRawUnsafe<
+    Array<{ tableName: string; constraintName: string; definition: string }>
+  >(
     `
       SELECT
         rel.relname AS "tableName",

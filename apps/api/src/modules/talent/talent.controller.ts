@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import {
   Body,
   Controller,
@@ -15,14 +14,39 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiParam, ApiProperty, ApiPropertyOptional, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { ErrorCodes, type LocalizedText, type PartialLocalizedText } from '@tcrn/shared';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiParam,
+  ApiProperty,
+  ApiPropertyOptional,
+  ApiQuery,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
-import { IsArray, IsBoolean, IsIn, IsInt, IsObject, IsOptional, IsString, IsUUID, Matches, Min, MinLength } from 'class-validator';
+import {
+  IsArray,
+  IsBoolean,
+  IsIn,
+  IsInt,
+  IsObject,
+  IsOptional,
+  IsString,
+  IsUUID,
+  Matches,
+  Min,
+  MinLength,
+} from 'class-validator';
+
+import { ErrorCodes, type LocalizedText, type PartialLocalizedText } from '@tcrn/shared';
 
 import { AuthenticatedUser, CurrentUser, RequirePermissions } from '../../common/decorators';
 import { paginated, success } from '../../common/response.util';
-import { CUSTOM_DOMAIN_OWNER_TYPES, CUSTOM_DOMAIN_SSL_MODES } from './domain/talent-custom-domain.policy';
+import {
+  CUSTOM_DOMAIN_OWNER_TYPES,
+  CUSTOM_DOMAIN_SSL_MODES,
+} from './domain/talent-custom-domain.policy';
 import { TalentService } from './talent.service';
 
 const TALENT_NAME_EXAMPLE: LocalizedText = {
@@ -111,7 +135,10 @@ export class CreateTalentDto {
   @IsObject()
   description?: PartialLocalizedText;
 
-  @ApiPropertyOptional({ description: 'Avatar URL', example: 'https://cdn.tcrn.app/avatar/sora.jpg' })
+  @ApiPropertyOptional({
+    description: 'Avatar URL',
+    example: 'https://cdn.tcrn.app/avatar/sora.jpg',
+  })
   @IsOptional()
   @IsString()
   avatarUrl?: string;
@@ -123,7 +150,9 @@ export class CreateTalentDto {
   })
   @IsOptional()
   @IsString()
-  @Matches(/^[a-z0-9-]+$/, { message: 'Homepage path must be lowercase letters, numbers, and hyphens only' })
+  @Matches(/^[a-z0-9-]+$/, {
+    message: 'Homepage path must be lowercase letters, numbers, and hyphens only',
+  })
   homepagePath?: string;
 
   @ApiPropertyOptional({ description: 'IANA timezone identifier', example: 'Asia/Tokyo' })
@@ -165,7 +194,10 @@ export class UpdateTalentDto {
   @IsObject()
   description?: PartialLocalizedText;
 
-  @ApiPropertyOptional({ description: 'Avatar URL', example: 'https://cdn.tcrn.app/avatar/sora.jpg' })
+  @ApiPropertyOptional({
+    description: 'Avatar URL',
+    example: 'https://cdn.tcrn.app/avatar/sora.jpg',
+  })
   @IsOptional()
   @IsString()
   avatarUrl?: string;
@@ -201,7 +233,8 @@ export class UpdateTalentDto {
 
 export class MoveTalentDto {
   @ApiPropertyOptional({
-    description: 'New subsidiary identifier. Structural move remains retired from normal product flow.',
+    description:
+      'New subsidiary identifier. Structural move remains retired from normal product flow.',
     format: 'uuid',
     nullable: true,
     example: '550e8400-e29b-41d4-a716-446655440101',
@@ -281,7 +314,10 @@ export class ListTalentsQueryDto {
   @IsString()
   subsidiaryId?: string;
 
-  @ApiPropertyOptional({ description: 'Search by talent code, name, or display name', example: 'Sora' })
+  @ApiPropertyOptional({
+    description: 'Search by talent code, name, or display name',
+    example: 'Sora',
+  })
   @IsOptional()
   @IsString()
   search?: string;
@@ -297,7 +333,6 @@ export class ListTalentsQueryDto {
   @IsString()
   sort?: string;
 }
-
 
 export class UpsertCustomDomainBindingDto {
   @ApiProperty({
@@ -444,7 +479,10 @@ export class UpdateCustomDomainSslModeDto {
   sslMode: 'auto' | 'self_hosted' | 'cloudflare';
 }
 
-const createSuccessEnvelopeSchema = (dataSchema: Record<string, unknown>, exampleData: unknown) => ({
+const createSuccessEnvelopeSchema = (
+  dataSchema: Record<string, unknown>,
+  exampleData: unknown
+) => ({
   type: 'object',
   properties: {
     success: { type: 'boolean', example: true },
@@ -499,8 +537,17 @@ const TALENT_LIST_ITEM_SCHEMA = {
   type: 'object',
   properties: {
     id: { type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440300' },
-    subsidiaryId: { type: 'string', format: 'uuid', nullable: true, example: '550e8400-e29b-41d4-a716-446655440100' },
-    artistStageId: { type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440210' },
+    subsidiaryId: {
+      type: 'string',
+      format: 'uuid',
+      nullable: true,
+      example: '550e8400-e29b-41d4-a716-446655440100',
+    },
+    artistStageId: {
+      type: 'string',
+      format: 'uuid',
+      example: '550e8400-e29b-41d4-a716-446655440210',
+    },
     code: { type: 'string', example: 'SORA' },
     path: { type: 'string', example: '/TOKYO/SORA/' },
     name: TALENT_NAME_SCHEMA,
@@ -603,7 +650,12 @@ const TALENT_DETAIL_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
     type: 'object',
     properties: {
       ...TALENT_LIST_ITEM_SCHEMA.properties,
-      profileStoreId: { type: 'string', format: 'uuid', nullable: true, example: '550e8400-e29b-41d4-a716-446655440200' },
+      profileStoreId: {
+        type: 'string',
+        format: 'uuid',
+        nullable: true,
+        example: '550e8400-e29b-41d4-a716-446655440200',
+      },
       profileStore: {
         type: 'object',
         nullable: true,
@@ -634,7 +686,14 @@ const TALENT_DETAIL_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
         },
       },
     },
-    required: [...(TALENT_LIST_ITEM_SCHEMA.required as string[]), 'profileStoreId', 'profileStore', 'settings', 'stats', 'externalPagesDomain'],
+    required: [
+      ...(TALENT_LIST_ITEM_SCHEMA.required as string[]),
+      'profileStoreId',
+      'profileStore',
+      'settings',
+      'stats',
+      'externalPagesDomain',
+    ],
   },
   {
     id: '550e8400-e29b-41d4-a716-446655440300',
@@ -665,7 +724,7 @@ const TALENT_DETAIL_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
     createdAt: '2026-04-13T08:00:00.000Z',
     updatedAt: '2026-04-13T09:00:00.000Z',
     version: 1,
-  },
+  }
 );
 
 const TALENT_CREATE_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
@@ -673,16 +732,33 @@ const TALENT_CREATE_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
     type: 'object',
     properties: {
       id: { type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440300' },
-      subsidiaryId: { type: 'string', format: 'uuid', nullable: true, example: '550e8400-e29b-41d4-a716-446655440100' },
-      artistStageId: { type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440210' },
+      subsidiaryId: {
+        type: 'string',
+        format: 'uuid',
+        nullable: true,
+        example: '550e8400-e29b-41d4-a716-446655440100',
+      },
+      artistStageId: {
+        type: 'string',
+        format: 'uuid',
+        example: '550e8400-e29b-41d4-a716-446655440210',
+      },
       code: { type: 'string', example: 'SORA' },
       path: { type: 'string', example: '/TOKYO/SORA/' },
       name: TALENT_NAME_SCHEMA,
       displayName: { type: 'string', example: 'Sora' },
-      avatarUrl: { type: 'string', nullable: true, example: 'https://cdn.tcrn.app/avatar/sora.jpg' },
+      avatarUrl: {
+        type: 'string',
+        nullable: true,
+        example: 'https://cdn.tcrn.app/avatar/sora.jpg',
+      },
       homepagePath: { type: 'string', nullable: true, example: 'sora' },
       timezone: { type: 'string', nullable: true, example: 'Asia/Tokyo' },
-      lifecycleStatus: { type: 'string', enum: ['draft', 'published', 'disabled'], example: 'draft' },
+      lifecycleStatus: {
+        type: 'string',
+        enum: ['draft', 'published', 'disabled'],
+        example: 'draft',
+      },
       publishedAt: { type: 'string', nullable: true, format: 'date-time', example: null },
       publishedBy: { type: 'string', nullable: true, format: 'uuid', example: null },
       isActive: { type: 'boolean', example: false },
@@ -725,7 +801,7 @@ const TALENT_CREATE_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
     isActive: false,
     createdAt: '2026-04-13T08:00:00.000Z',
     version: 1,
-  },
+  }
 );
 
 const TALENT_UPDATE_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
@@ -733,19 +809,40 @@ const TALENT_UPDATE_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
     type: 'object',
     properties: {
       id: { type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440300' },
-      artistStageId: { type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440210' },
+      artistStageId: {
+        type: 'string',
+        format: 'uuid',
+        example: '550e8400-e29b-41d4-a716-446655440210',
+      },
       name: TALENT_NAME_SCHEMA,
       description: TALENT_DESCRIPTION_SCHEMA,
       displayName: { type: 'string', example: 'Sora' },
       homepagePath: { type: 'string', nullable: true, example: 'sora' },
-      lifecycleStatus: { type: 'string', enum: ['draft', 'published', 'disabled'], example: 'draft' },
+      lifecycleStatus: {
+        type: 'string',
+        enum: ['draft', 'published', 'disabled'],
+        example: 'draft',
+      },
       publishedAt: { type: 'string', nullable: true, format: 'date-time', example: null },
       publishedBy: { type: 'string', nullable: true, format: 'uuid', example: null },
       isActive: { type: 'boolean', example: false },
       updatedAt: { type: 'string', format: 'date-time', example: '2026-04-13T09:20:00.000Z' },
       version: { type: 'integer', example: 2 },
     },
-    required: ['id', 'artistStageId', 'name', 'description', 'displayName', 'homepagePath', 'lifecycleStatus', 'publishedAt', 'publishedBy', 'isActive', 'updatedAt', 'version'],
+    required: [
+      'id',
+      'artistStageId',
+      'name',
+      'description',
+      'displayName',
+      'homepagePath',
+      'lifecycleStatus',
+      'publishedAt',
+      'publishedBy',
+      'isActive',
+      'updatedAt',
+      'version',
+    ],
   },
   {
     id: '550e8400-e29b-41d4-a716-446655440300',
@@ -760,7 +857,7 @@ const TALENT_UPDATE_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
     isActive: false,
     updatedAt: '2026-04-13T09:20:00.000Z',
     version: 2,
-  },
+  }
 );
 
 const TALENT_LIFECYCLE_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
@@ -768,14 +865,40 @@ const TALENT_LIFECYCLE_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
     type: 'object',
     properties: {
       id: { type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440300' },
-      artistStageId: { type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440211' },
-      lifecycleStatus: { type: 'string', enum: ['draft', 'published', 'disabled'], example: 'published' },
-      publishedAt: { type: 'string', nullable: true, format: 'date-time', example: '2026-04-13T09:30:00.000Z' },
-      publishedBy: { type: 'string', nullable: true, format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440001' },
+      artistStageId: {
+        type: 'string',
+        format: 'uuid',
+        example: '550e8400-e29b-41d4-a716-446655440211',
+      },
+      lifecycleStatus: {
+        type: 'string',
+        enum: ['draft', 'published', 'disabled'],
+        example: 'published',
+      },
+      publishedAt: {
+        type: 'string',
+        nullable: true,
+        format: 'date-time',
+        example: '2026-04-13T09:30:00.000Z',
+      },
+      publishedBy: {
+        type: 'string',
+        nullable: true,
+        format: 'uuid',
+        example: '550e8400-e29b-41d4-a716-446655440001',
+      },
       isActive: { type: 'boolean', example: true },
       version: { type: 'integer', example: 3 },
     },
-    required: ['id', 'artistStageId', 'lifecycleStatus', 'publishedAt', 'publishedBy', 'isActive', 'version'],
+    required: [
+      'id',
+      'artistStageId',
+      'lifecycleStatus',
+      'publishedAt',
+      'publishedBy',
+      'isActive',
+      'version',
+    ],
   },
   {
     id: '550e8400-e29b-41d4-a716-446655440300',
@@ -785,7 +908,7 @@ const TALENT_LIFECYCLE_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
     publishedBy: '550e8400-e29b-41d4-a716-446655440001',
     isActive: true,
     version: 3,
-  },
+  }
 );
 
 const TALENT_DELETE_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
@@ -807,7 +930,7 @@ const TALENT_DELETE_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
   {
     id: '550e8400-e29b-41d4-a716-446655440300',
     deleted: true,
-  },
+  }
 );
 
 const TALENT_PUBLISH_READINESS_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
@@ -815,7 +938,11 @@ const TALENT_PUBLISH_READINESS_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
     type: 'object',
     properties: {
       id: { type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440300' },
-      lifecycleStatus: { type: 'string', enum: ['draft', 'published', 'disabled'], example: 'draft' },
+      lifecycleStatus: {
+        type: 'string',
+        enum: ['draft', 'published', 'disabled'],
+        example: 'draft',
+      },
       targetState: { type: 'string', example: 'published' },
       recommendedAction: { type: 'string', example: 'publish' },
       canEnterPublishedState: { type: 'boolean', example: false },
@@ -825,7 +952,10 @@ const TALENT_PUBLISH_READINESS_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
           type: 'object',
           properties: {
             code: { type: 'string', example: 'PROFILE_STORE_REQUIRED' },
-            message: { type: 'string', example: 'Talent must be bound to an active profile store before publish.' },
+            message: {
+              type: 'string',
+              example: 'Talent must be bound to an active profile store before publish.',
+            },
           },
           required: ['code', 'message'],
         },
@@ -843,7 +973,16 @@ const TALENT_PUBLISH_READINESS_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
       },
       version: { type: 'integer', example: 1 },
     },
-    required: ['id', 'lifecycleStatus', 'targetState', 'recommendedAction', 'canEnterPublishedState', 'blockers', 'warnings', 'version'],
+    required: [
+      'id',
+      'lifecycleStatus',
+      'targetState',
+      'recommendedAction',
+      'canEnterPublishedState',
+      'blockers',
+      'warnings',
+      'version',
+    ],
   },
   {
     id: '550e8400-e29b-41d4-a716-446655440300',
@@ -864,7 +1003,7 @@ const TALENT_PUBLISH_READINESS_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
       },
     ],
     version: 1,
-  },
+  }
 );
 
 const TALENT_CUSTOM_DOMAIN_CONFIG_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
@@ -873,7 +1012,11 @@ const TALENT_CUSTOM_DOMAIN_CONFIG_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
     properties: {
       customDomain: { type: 'string', nullable: true, example: 'fans.example.com' },
       customDomainVerified: { type: 'boolean', example: true },
-      customDomainVerificationToken: { type: 'string', nullable: true, example: 'aabbccddeeff00112233445566778899' },
+      customDomainVerificationToken: {
+        type: 'string',
+        nullable: true,
+        example: 'aabbccddeeff00112233445566778899',
+      },
       customDomainSslMode: { type: 'string', example: 'cloudflare' },
       homepageCustomPath: { type: 'string', nullable: true, example: 'homepage' },
       marshmallowCustomPath: { type: 'string', nullable: true, example: 'marshmallow' },
@@ -885,7 +1028,11 @@ const TALENT_CUSTOM_DOMAIN_CONFIG_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
             id: { type: 'string', example: 'legacy:fans.example.com' },
             hostname: { type: 'string', example: 'fans.example.com' },
             ownerType: { type: 'string', example: 'talent' },
-            ownerId: { type: 'string', nullable: true, example: '550e8400-e29b-41d4-a716-446655440001' },
+            ownerId: {
+              type: 'string',
+              nullable: true,
+              example: '550e8400-e29b-41d4-a716-446655440001',
+            },
             inherited: { type: 'boolean', example: false },
             selected: { type: 'boolean', example: true },
             routeMode: { type: 'string', example: 'dedicated_talent' },
@@ -898,7 +1045,17 @@ const TALENT_CUSTOM_DOMAIN_CONFIG_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
       inheritedDomains: { type: 'array', items: { type: 'object' } },
       selectedInheritedDomainIds: { type: 'array', items: { type: 'string' } },
     },
-    required: ['customDomain', 'customDomainVerified', 'customDomainVerificationToken', 'customDomainSslMode', 'homepageCustomPath', 'marshmallowCustomPath', 'domains', 'inheritedDomains', 'selectedInheritedDomainIds'],
+    required: [
+      'customDomain',
+      'customDomainVerified',
+      'customDomainVerificationToken',
+      'customDomainSslMode',
+      'homepageCustomPath',
+      'marshmallowCustomPath',
+      'domains',
+      'inheritedDomains',
+      'selectedInheritedDomainIds',
+    ],
   },
   {
     customDomain: 'fans.example.com',
@@ -923,9 +1080,8 @@ const TALENT_CUSTOM_DOMAIN_CONFIG_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
     ],
     inheritedDomains: [],
     selectedInheritedDomainIds: [],
-  },
+  }
 );
-
 
 const TALENT_CUSTOM_DOMAIN_BINDING_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
   {
@@ -939,14 +1095,35 @@ const TALENT_CUSTOM_DOMAIN_BINDING_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
           ownerType: { type: 'string', enum: CUSTOM_DOMAIN_OWNER_TYPES, example: 'tenant' },
           ownerId: { type: 'string', nullable: true, example: null },
           customDomainVerified: { type: 'boolean', example: false },
-          customDomainVerificationToken: { type: 'string', nullable: true, example: 'aabbccddeeff00112233445566778899' },
-          customDomainSslMode: { type: 'string', enum: CUSTOM_DOMAIN_SSL_MODES, example: 'cloudflare' },
+          customDomainVerificationToken: {
+            type: 'string',
+            nullable: true,
+            example: 'aabbccddeeff00112233445566778899',
+          },
+          customDomainSslMode: {
+            type: 'string',
+            enum: CUSTOM_DOMAIN_SSL_MODES,
+            example: 'cloudflare',
+          },
           isActive: { type: 'boolean', example: true },
         },
-        required: ['id', 'hostname', 'ownerType', 'ownerId', 'customDomainVerified', 'customDomainVerificationToken', 'customDomainSslMode', 'isActive'],
+        required: [
+          'id',
+          'hostname',
+          'ownerType',
+          'ownerId',
+          'customDomainVerified',
+          'customDomainVerificationToken',
+          'customDomainSslMode',
+          'isActive',
+        ],
       },
       token: { type: 'string', nullable: true, example: 'aabbccddeeff00112233445566778899' },
-      txtRecord: { type: 'string', nullable: true, example: 'tcrn-verify=aabbccddeeff00112233445566778899' },
+      txtRecord: {
+        type: 'string',
+        nullable: true,
+        example: 'tcrn-verify=aabbccddeeff00112233445566778899',
+      },
     },
     required: ['domain', 'token', 'txtRecord'],
   },
@@ -963,7 +1140,7 @@ const TALENT_CUSTOM_DOMAIN_BINDING_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
     },
     token: 'aabbccddeeff00112233445566778899',
     txtRecord: 'tcrn-verify=aabbccddeeff00112233445566778899',
-  },
+  }
 );
 
 const TALENT_SET_CUSTOM_DOMAIN_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
@@ -972,7 +1149,11 @@ const TALENT_SET_CUSTOM_DOMAIN_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
     properties: {
       customDomain: { type: 'string', nullable: true, example: 'fans.example.com' },
       token: { type: 'string', nullable: true, example: 'aabbccddeeff00112233445566778899' },
-      txtRecord: { type: 'string', nullable: true, example: 'tcrn-verify=aabbccddeeff00112233445566778899' },
+      txtRecord: {
+        type: 'string',
+        nullable: true,
+        example: 'tcrn-verify=aabbccddeeff00112233445566778899',
+      },
     },
     required: ['customDomain', 'token', 'txtRecord'],
   },
@@ -980,7 +1161,7 @@ const TALENT_SET_CUSTOM_DOMAIN_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
     customDomain: 'fans.example.com',
     token: 'aabbccddeeff00112233445566778899',
     txtRecord: 'tcrn-verify=aabbccddeeff00112233445566778899',
-  },
+  }
 );
 
 const TALENT_CUSTOM_DOMAIN_BINDING_LIST_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
@@ -1000,10 +1181,22 @@ const TALENT_CUSTOM_DOMAIN_BINDING_LIST_SUCCESS_SCHEMA = createSuccessEnvelopeSc
             inherited: { type: 'boolean', example: true },
             selected: { type: 'boolean', example: false },
             customDomainVerified: { type: 'boolean', example: true },
-            customDomainVerificationToken: { type: 'string', nullable: true, example: 'aabbccddeeff00112233445566778899' },
-            customDomainSslMode: { type: 'string', enum: CUSTOM_DOMAIN_SSL_MODES, example: 'cloudflare' },
+            customDomainVerificationToken: {
+              type: 'string',
+              nullable: true,
+              example: 'aabbccddeeff00112233445566778899',
+            },
+            customDomainSslMode: {
+              type: 'string',
+              enum: CUSTOM_DOMAIN_SSL_MODES,
+              example: 'cloudflare',
+            },
             isActive: { type: 'boolean', example: true },
-            routeMode: { type: 'string', enum: ['dedicated_talent', 'scoped_talent_path'], example: 'scoped_talent_path' },
+            routeMode: {
+              type: 'string',
+              enum: ['dedicated_talent', 'scoped_talent_path'],
+              example: 'scoped_talent_path',
+            },
           },
           required: [
             'id',
@@ -1041,7 +1234,7 @@ const TALENT_CUSTOM_DOMAIN_BINDING_LIST_SUCCESS_SCHEMA = createSuccessEnvelopeSc
         routeMode: 'scoped_talent_path',
       },
     ],
-  },
+  }
 );
 
 const TALENT_VERIFY_CUSTOM_DOMAIN_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
@@ -1056,7 +1249,7 @@ const TALENT_VERIFY_CUSTOM_DOMAIN_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
   {
     verified: true,
     message: 'Domain verified successfully',
-  },
+  }
 );
 
 const TALENT_CUSTOM_DOMAIN_PATHS_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
@@ -1071,7 +1264,7 @@ const TALENT_CUSTOM_DOMAIN_PATHS_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
   {
     homepageCustomPath: 'homepage',
     marshmallowCustomPath: 'marshmallow',
-  },
+  }
 );
 
 const TALENT_CUSTOM_DOMAIN_SSL_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
@@ -1084,32 +1277,32 @@ const TALENT_CUSTOM_DOMAIN_SSL_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
   },
   {
     customDomainSslMode: 'cloudflare',
-  },
+  }
 );
 
 const TALENT_MOVE_CONFLICT_SCHEMA = createErrorEnvelopeSchema(
   ErrorCodes.RES_CONFLICT,
-  'Talent move has been retired from normal product flow. If structural correction is required, it must be performed via direct database intervention.',
+  'Talent move has been retired from normal product flow. If structural correction is required, it must be performed via direct database intervention.'
 );
 
 const TALENT_BAD_REQUEST_SCHEMA = createErrorEnvelopeSchema(
   ErrorCodes.VALIDATION_FAILED,
-  'Talent request is invalid',
+  'Talent request is invalid'
 );
 
 const TALENT_UNAUTHORIZED_SCHEMA = createErrorEnvelopeSchema(
   'AUTH_UNAUTHORIZED',
-  'Authentication required',
+  'Authentication required'
 );
 
 const TALENT_NOT_FOUND_SCHEMA = createErrorEnvelopeSchema(
   ErrorCodes.RES_NOT_FOUND,
-  'Talent not found',
+  'Talent not found'
 );
 
 const TALENT_CONFLICT_SCHEMA = createErrorEnvelopeSchema(
   ErrorCodes.TALENT_LIFECYCLE_CONFLICT,
-  'Talent cannot perform this lifecycle action from its current state.',
+  'Talent cannot perform this lifecycle action from its current state.'
 );
 
 const TALENT_DELETE_CONFLICT_SCHEMA = {
@@ -1146,8 +1339,7 @@ const TALENT_DELETE_CONFLICT_SCHEMA = {
                   count: { type: 'integer', example: 3 },
                   message: {
                     type: 'string',
-                    example:
-                      'Customer profiles already exist for this talent.',
+                    example: 'Customer profiles already exist for this talent.',
                   },
                 },
                 required: ['code', 'count', 'message'],
@@ -1207,41 +1399,35 @@ export class TalentController {
     description: 'Authentication is required to list talents',
     schema: TALENT_UNAUTHORIZED_SCHEMA,
   })
-  async list(
-    @CurrentUser() user: AuthenticatedUser,
-    @Query() query: ListTalentsQueryDto,
-  ) {
-    const { data, total } = await this.talentService.list(
-      user.tenantSchema,
-      {
-        page: query.page,
-        pageSize: query.pageSize,
-        subsidiaryId: query.subsidiaryId === 'null' ? null : query.subsidiaryId,
-        search: query.search,
-        isActive: query.isActive,
-        sort: query.sort,
-      }
-    );
+  async list(@CurrentUser() user: AuthenticatedUser, @Query() query: ListTalentsQueryDto) {
+    const { data, total } = await this.talentService.list(user.tenantSchema, {
+      page: query.page,
+      pageSize: query.pageSize,
+      subsidiaryId: query.subsidiaryId === 'null' ? null : query.subsidiaryId,
+      search: query.search,
+      isActive: query.isActive,
+      sort: query.sort,
+    });
 
     const enrichedData = data.map((talent) => ({
-        id: talent.id,
-        subsidiaryId: talent.subsidiaryId,
-        artistStageId: talent.artistStageId,
-        code: talent.code,
-        path: talent.path,
-        name: talent.name,
-        displayName: talent.displayName,
-        avatarUrl: talent.avatarUrl,
-        homepagePath: talent.homepagePath,
-        timezone: talent.timezone,
-        lifecycleStatus: talent.lifecycleStatus,
-        publishedAt: talent.publishedAt?.toISOString() ?? null,
-        publishedBy: talent.publishedBy,
-        isActive: talent.isActive,
-        createdAt: talent.createdAt.toISOString(),
-        updatedAt: talent.updatedAt.toISOString(),
-        version: talent.version,
-      }));
+      id: talent.id,
+      subsidiaryId: talent.subsidiaryId,
+      artistStageId: talent.artistStageId,
+      code: talent.code,
+      path: talent.path,
+      name: talent.name,
+      displayName: talent.displayName,
+      avatarUrl: talent.avatarUrl,
+      homepagePath: talent.homepagePath,
+      timezone: talent.timezone,
+      lifecycleStatus: talent.lifecycleStatus,
+      publishedAt: talent.publishedAt?.toISOString() ?? null,
+      publishedBy: talent.publishedBy,
+      isActive: talent.isActive,
+      createdAt: talent.createdAt.toISOString(),
+      updatedAt: talent.updatedAt.toISOString(),
+      version: talent.version,
+    }));
 
     return paginated(enrichedData, {
       page: query.page || 1,
@@ -1264,7 +1450,8 @@ export class TalentController {
   })
   @ApiResponse({
     status: 400,
-    description: 'Talent payload is invalid or conflicts with existing talent/profile-store constraints',
+    description:
+      'Talent payload is invalid or conflicts with existing talent/profile-store constraints',
     schema: TALENT_BAD_REQUEST_SCHEMA,
   })
   @ApiResponse({
@@ -1277,10 +1464,7 @@ export class TalentController {
     description: 'Owning subsidiary was not found',
     schema: TALENT_NOT_FOUND_SCHEMA,
   })
-  async create(
-    @CurrentUser() user: AuthenticatedUser,
-    @Body() dto: CreateTalentDto,
-  ) {
+  async create(@CurrentUser() user: AuthenticatedUser, @Body() dto: CreateTalentDto) {
     const talent = await this.talentService.create(
       user.tenantSchema,
       {
@@ -1373,18 +1557,15 @@ export class TalentController {
   })
   async listCustomDomainBindings(
     @CurrentUser() user: AuthenticatedUser,
-    @Query() query: ListCustomDomainBindingsQueryDto,
+    @Query() query: ListCustomDomainBindingsQueryDto
   ) {
-    const result = await this.talentService.listCustomDomainBindings(
-      user.tenantSchema,
-      {
-        scopeType: query.scopeType,
-        scopeId: query.scopeType === 'tenant' ? null : query.scopeId ?? null,
-        includeInherited: query.includeInherited ?? true,
-        includeInactive: query.includeInactive ?? false,
-        search: query.search,
-      },
-    );
+    const result = await this.talentService.listCustomDomainBindings(user.tenantSchema, {
+      scopeType: query.scopeType,
+      scopeId: query.scopeType === 'tenant' ? null : (query.scopeId ?? null),
+      includeInherited: query.includeInherited ?? true,
+      includeInactive: query.includeInactive ?? false,
+      search: query.search,
+    });
     return success(result);
   }
 
@@ -1413,12 +1594,9 @@ export class TalentController {
   })
   async createCustomDomainBinding(
     @CurrentUser() user: AuthenticatedUser,
-    @Body() body: UpsertCustomDomainBindingDto,
+    @Body() body: UpsertCustomDomainBindingDto
   ) {
-    const result = await this.talentService.createCustomDomainBinding(
-      user.tenantSchema,
-      body,
-    );
+    const result = await this.talentService.createCustomDomainBinding(user.tenantSchema, body);
     return success(result);
   }
 
@@ -1436,7 +1614,8 @@ export class TalentController {
   })
   @ApiResponse({
     status: 200,
-    description: 'Updates a custom-domain binding and returns new DNS TXT details when hostname changed',
+    description:
+      'Updates a custom-domain binding and returns new DNS TXT details when hostname changed',
     schema: TALENT_CUSTOM_DOMAIN_BINDING_SUCCESS_SCHEMA,
   })
   @ApiResponse({
@@ -1457,12 +1636,12 @@ export class TalentController {
   async updateCustomDomainBinding(
     @CurrentUser() user: AuthenticatedUser,
     @Param('domainId', ParseUUIDPipe) domainId: string,
-    @Body() body: UpsertCustomDomainBindingDto,
+    @Body() body: UpsertCustomDomainBindingDto
   ) {
     const result = await this.talentService.updateCustomDomainBinding(
       user.tenantSchema,
       domainId,
-      body,
+      body
     );
     return success(result);
   }
@@ -1502,12 +1681,9 @@ export class TalentController {
   })
   async verifyCustomDomainBinding(
     @CurrentUser() user: AuthenticatedUser,
-    @Param('domainId', ParseUUIDPipe) domainId: string,
+    @Param('domainId', ParseUUIDPipe) domainId: string
   ) {
-    const result = await this.talentService.verifyCustomDomainBinding(
-      user.tenantSchema,
-      domainId,
-    );
+    const result = await this.talentService.verifyCustomDomainBinding(user.tenantSchema, domainId);
     return success(result);
   }
 
@@ -1540,7 +1716,7 @@ export class TalentController {
   })
   async getById(
     @CurrentUser() user: AuthenticatedUser,
-    @Param('talentId', ParseUUIDPipe) talentId: string,
+    @Param('talentId', ParseUUIDPipe) talentId: string
   ) {
     const talent = await this.talentService.findById(talentId, user.tenantSchema);
     if (!talent) {
@@ -1554,7 +1730,7 @@ export class TalentController {
     const [stats, externalPagesDomain, profileStore] = await Promise.all([
       this.talentService.getTalentStats(talentId, user.tenantSchema),
       this.talentService.getExternalPagesDomainConfig(talentId, user.tenantSchema),
-      talent.profileStoreId 
+      talent.profileStoreId
         ? this.talentService.getProfileStoreById(talent.profileStoreId, user.tenantSchema)
         : null,
     ]);
@@ -1564,12 +1740,14 @@ export class TalentController {
       subsidiaryId: talent.subsidiaryId,
       profileStoreId: talent.profileStoreId,
       artistStageId: talent.artistStageId,
-      profileStore: profileStore ? {
-        id: profileStore.id,
-        code: profileStore.code,
-        name: profileStore.name,
-        isDefault: profileStore.isDefault,
-      } : null,
+      profileStore: profileStore
+        ? {
+            id: profileStore.id,
+            code: profileStore.code,
+            name: profileStore.name,
+            isDefault: profileStore.isDefault,
+          }
+        : null,
       code: talent.code,
       path: talent.path,
       name: talent.name,
@@ -1626,14 +1804,9 @@ export class TalentController {
   async update(
     @CurrentUser() user: AuthenticatedUser,
     @Param('talentId', ParseUUIDPipe) talentId: string,
-    @Body() dto: UpdateTalentDto,
+    @Body() dto: UpdateTalentDto
   ) {
-    const talent = await this.talentService.update(
-      talentId,
-      user.tenantSchema,
-      dto,
-      user.id
-    );
+    const talent = await this.talentService.update(talentId, user.tenantSchema, dto, user.id);
 
     return success({
       id: talent.id,
@@ -1697,7 +1870,7 @@ export class TalentController {
   async deleteTalent(
     @CurrentUser() user: AuthenticatedUser,
     @Param('talentId', ParseUUIDPipe) talentId: string,
-    @Query('version', ParseIntPipe) version: number,
+    @Query('version', ParseIntPipe) version: number
   ) {
     const result = await this.talentService.delete(talentId, user.tenantSchema, {
       version,
@@ -1732,7 +1905,7 @@ export class TalentController {
   async move(
     @CurrentUser() user: AuthenticatedUser,
     @Param('talentId', ParseUUIDPipe) talentId: string,
-    @Body() dto: MoveTalentDto,
+    @Body() dto: MoveTalentDto
   ) {
     const talent = await this.talentService.move(
       talentId,
@@ -1784,7 +1957,7 @@ export class TalentController {
   })
   async getPublishReadiness(
     @CurrentUser() user: AuthenticatedUser,
-    @Param('talentId', ParseUUIDPipe) talentId: string,
+    @Param('talentId', ParseUUIDPipe) talentId: string
   ) {
     const readiness = await this.talentService.getPublishReadiness(talentId, user.tenantSchema);
 
@@ -1832,7 +2005,7 @@ export class TalentController {
   async transitionArtistStage(
     @CurrentUser() user: AuthenticatedUser,
     @Param('talentId', ParseUUIDPipe) talentId: string,
-    @Body() dto: TalentStageTransitionDto,
+    @Body() dto: TalentStageTransitionDto
   ) {
     const talent = await this.talentService.transitionArtistStage(
       talentId,
@@ -1842,7 +2015,7 @@ export class TalentController {
         targetArtistStageId: dto.targetArtistStageId,
         transitionId: dto.transitionId,
       },
-      user.id,
+      user.id
     );
 
     return success({
@@ -1897,7 +2070,7 @@ export class TalentController {
   async publish(
     @CurrentUser() user: AuthenticatedUser,
     @Param('talentId', ParseUUIDPipe) talentId: string,
-    @Body() dto: TalentLifecycleMutationDto,
+    @Body() dto: TalentLifecycleMutationDto
   ) {
     const talent = await this.talentService.publish(
       talentId,
@@ -1958,7 +2131,7 @@ export class TalentController {
   async disable(
     @CurrentUser() user: AuthenticatedUser,
     @Param('talentId', ParseUUIDPipe) talentId: string,
-    @Body() dto: TalentLifecycleMutationDto,
+    @Body() dto: TalentLifecycleMutationDto
   ) {
     const talent = await this.talentService.disable(
       talentId,
@@ -2033,7 +2206,7 @@ export class TalentController {
   async reEnable(
     @CurrentUser() user: AuthenticatedUser,
     @Param('talentId', ParseUUIDPipe) talentId: string,
-    @Body() dto: TalentLifecycleMutationDto,
+    @Body() dto: TalentLifecycleMutationDto
   ) {
     const talent = await this.talentService.reEnable(
       talentId,
@@ -2086,7 +2259,7 @@ export class TalentController {
   })
   async getCustomDomainConfig(
     @CurrentUser() user: AuthenticatedUser,
-    @Param('talentId', ParseUUIDPipe) talentId: string,
+    @Param('talentId', ParseUUIDPipe) talentId: string
   ) {
     const config = await this.talentService.getCustomDomainConfig(talentId, user.tenantSchema);
     if (!config) {
@@ -2134,7 +2307,7 @@ export class TalentController {
   async setCustomDomain(
     @CurrentUser() user: AuthenticatedUser,
     @Param('talentId', ParseUUIDPipe) talentId: string,
-    @Body() body: SetCustomDomainDto,
+    @Body() body: SetCustomDomainDto
   ) {
     const result = await this.talentService.setCustomDomain(
       talentId,
@@ -2179,12 +2352,11 @@ export class TalentController {
   })
   async verifyCustomDomain(
     @CurrentUser() user: AuthenticatedUser,
-    @Param('talentId', ParseUUIDPipe) talentId: string,
+    @Param('talentId', ParseUUIDPipe) talentId: string
   ) {
     const result = await this.talentService.verifyCustomDomain(talentId, user.tenantSchema);
     return success(result);
   }
-
 
   /**
    * PATCH /api/v1/talents/:talentId/custom-domain/inherited-selections
@@ -2221,12 +2393,12 @@ export class TalentController {
   async selectInheritedCustomDomains(
     @CurrentUser() user: AuthenticatedUser,
     @Param('talentId', ParseUUIDPipe) talentId: string,
-    @Body() body: SelectInheritedCustomDomainsDto,
+    @Body() body: SelectInheritedCustomDomainsDto
   ) {
     const result = await this.talentService.setSelectedInheritedDomainIds(
       talentId,
       user.tenantSchema,
-      body.domainIds,
+      body.domainIds
     );
     return success(result);
   }
@@ -2261,13 +2433,9 @@ export class TalentController {
   async updateServicePaths(
     @CurrentUser() user: AuthenticatedUser,
     @Param('talentId', ParseUUIDPipe) talentId: string,
-    @Body() body: UpdateCustomDomainPathsDto,
+    @Body() body: UpdateCustomDomainPathsDto
   ) {
-    const result = await this.talentService.updateServicePaths(
-      talentId,
-      user.tenantSchema,
-      body
-    );
+    const result = await this.talentService.updateServicePaths(talentId, user.tenantSchema, body);
     return success(result);
   }
 
@@ -2301,7 +2469,7 @@ export class TalentController {
   async updateSslMode(
     @CurrentUser() user: AuthenticatedUser,
     @Param('talentId', ParseUUIDPipe) talentId: string,
-    @Body() body: UpdateCustomDomainSslModeDto,
+    @Body() body: UpdateCustomDomainSslModeDto
   ) {
     const result = await this.talentService.updateSslMode(
       talentId,

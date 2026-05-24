@@ -1,17 +1,17 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { SUPPORTED_UI_LOCALES, type LocalizedText, type PartialLocalizedText } from '@tcrn/shared';
 import {
-    IsArray,
-    IsBoolean,
-    IsIn,
-    IsObject,
-    IsOptional,
-    IsString,
-    MaxLength,
-    MinLength,
+  IsArray,
+  IsBoolean,
+  IsIn,
+  IsObject,
+  IsOptional,
+  IsString,
+  MaxLength,
+  MinLength,
 } from 'class-validator';
+
+import { SUPPORTED_UI_LOCALES, type LocalizedText, type PartialLocalizedText } from '@tcrn/shared';
 
 const LOCALIZED_TEXT_EXAMPLE: LocalizedText = {
   en: 'Welcome Email',
@@ -97,7 +97,11 @@ export class CreateEmailTemplateDto {
   @IsString({ each: true })
   variables?: string[];
 
-  @ApiProperty({ description: 'Template category', enum: ['system', 'business'], example: 'system' })
+  @ApiProperty({
+    description: 'Template category',
+    enum: ['system', 'business'],
+    example: 'system',
+  })
   @IsIn(['system', 'business'])
   category!: string;
 }
@@ -149,7 +153,11 @@ export class UpdateEmailTemplateDto {
   @IsString({ each: true })
   variables?: string[];
 
-  @ApiPropertyOptional({ description: 'Template category', enum: ['system', 'business'], example: 'system' })
+  @ApiPropertyOptional({
+    description: 'Template category',
+    enum: ['system', 'business'],
+    example: 'system',
+  })
   @IsOptional()
   @IsIn(['system', 'business'])
   category?: string;
@@ -178,7 +186,11 @@ export class PreviewEmailTemplateDto {
 }
 
 export class EmailTemplateQueryDto {
-  @ApiPropertyOptional({ description: 'Filter by category', enum: ['system', 'business'], example: 'system' })
+  @ApiPropertyOptional({
+    description: 'Filter by category',
+    enum: ['system', 'business'],
+    example: 'system',
+  })
   @IsOptional()
   @IsIn(['system', 'business'])
   category?: string;

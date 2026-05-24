@@ -108,7 +108,13 @@ export enum IntegrationDirection {
 /**
  * PII field type for masking
  */
-export type PiiFieldType = 'text' | 'phone_array' | 'email_array' | 'address_array' | 'phone' | 'email';
+export type PiiFieldType =
+  | 'text'
+  | 'phone_array'
+  | 'email_array'
+  | 'address_array'
+  | 'phone'
+  | 'email';
 
 /**
  * PersonalInfo field configuration

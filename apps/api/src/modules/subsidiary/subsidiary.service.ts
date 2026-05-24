@@ -1,13 +1,9 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable } from '@nestjs/common';
 
 import { SubsidiaryReadApplicationService } from './application/subsidiary-read.service';
 import { SubsidiaryWriteApplicationService } from './application/subsidiary-write.service';
-import {
-  type SubsidiaryData,
-  type SubsidiaryListOptions,
-} from './domain/subsidiary-read.policy';
+import { type SubsidiaryData, type SubsidiaryListOptions } from './domain/subsidiary-read.policy';
 import {
   type SubsidiaryCreateInput,
   type SubsidiaryUpdateInput,
@@ -25,12 +21,12 @@ export type { SubsidiaryData } from './domain/subsidiary-read.policy';
 export class SubsidiaryService {
   constructor(
     private readonly subsidiaryReadApplicationService: SubsidiaryReadApplicationService = new SubsidiaryReadApplicationService(
-      new SubsidiaryReadRepository(),
+      new SubsidiaryReadRepository()
     ),
     private readonly subsidiaryWriteApplicationService: SubsidiaryWriteApplicationService = new SubsidiaryWriteApplicationService(
       new SubsidiaryWriteRepository(),
-      subsidiaryReadApplicationService,
-    ),
+      subsidiaryReadApplicationService
+    )
   ) {}
 
   /**
@@ -52,7 +48,7 @@ export class SubsidiaryService {
    */
   async list(
     tenantSchema: string,
-    options: SubsidiaryListOptions = {},
+    options: SubsidiaryListOptions = {}
   ): Promise<{ data: SubsidiaryData[]; total: number }> {
     return this.subsidiaryReadApplicationService.list(tenantSchema, options);
   }
@@ -95,7 +91,7 @@ export class SubsidiaryService {
       tenantSchema,
       newParentId,
       version,
-      userId,
+      userId
     ) as never;
   }
 
@@ -114,7 +110,7 @@ export class SubsidiaryService {
       tenantSchema,
       cascade,
       version,
-      userId,
+      userId
     );
   }
 
@@ -127,12 +123,7 @@ export class SubsidiaryService {
     version: number,
     userId: string
   ): Promise<SubsidiaryData> {
-    return this.subsidiaryWriteApplicationService.reactivate(
-      id,
-      tenantSchema,
-      version,
-      userId,
-    );
+    return this.subsidiaryWriteApplicationService.reactivate(id, tenantSchema, version, userId);
   }
 
   /**

@@ -1,9 +1,10 @@
 'use client';
 
-import type { SupportedUiLocale } from '@tcrn/shared';
 import { Activity } from 'lucide-react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
+
+import type { SupportedUiLocale } from '@tcrn/shared';
 
 import {
   type ChangeLogRecord,

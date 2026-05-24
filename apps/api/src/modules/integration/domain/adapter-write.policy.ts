@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { ADAPTER_CONFIG_KEYS, type LocalizedText } from '@tcrn/shared';
 
 import type { UpdateAdapterDto } from '../dto/integration.dto';
@@ -80,25 +79,25 @@ export const isSecretAdapterConfigKey = (configKey: string): boolean =>
   SECRET_CONFIG_KEYS.includes(configKey as (typeof SECRET_CONFIG_KEYS)[number]);
 
 export const resolveAdapterConfigMutationType = (
-  config: AdapterConfigMutationInput,
+  config: AdapterConfigMutationInput
 ): AdapterConfigMutationType => config.mutation ?? 'replace';
 
 export const isRequiredSecretAdapterConfigKey = (
   adapterType: string,
-  configKey: string,
+  configKey: string
 ): boolean => {
   if (!(adapterType in ADAPTER_CONFIG_KEYS)) {
     return false;
   }
 
   return ADAPTER_CONFIG_KEYS[adapterType as keyof typeof ADAPTER_CONFIG_KEYS].some(
-    (definition) => definition.key === configKey && definition.secret && definition.required,
+    (definition) => definition.key === configKey && definition.secret && definition.required
   );
 };
 
 export const buildAdapterConfigMutationPlan = (
   adapter: IntegrationAdapterMutationRecord,
-  config: AdapterConfigMutationInput,
+  config: AdapterConfigMutationInput
 ): AdapterConfigMutationPlan => {
   const mutation = resolveAdapterConfigMutationType(config);
   const isSecret = isSecretAdapterConfigKey(config.configKey);
@@ -108,19 +107,20 @@ export const buildAdapterConfigMutationPlan = (
     mutation,
     configValue: config.configValue,
     isSecret,
-    isRequiredSecret: isSecret && isRequiredSecretAdapterConfigKey(adapter.adapterType, config.configKey),
+    isRequiredSecret:
+      isSecret && isRequiredSecretAdapterConfigKey(adapter.adapterType, config.configKey),
   };
 };
 
 export const hasAdapterVersionMismatch = (
   adapter: IntegrationAdapterMutationRecord,
-  version: number,
+  version: number
 ) => adapter.version !== version;
 
 export const buildAdapterUpdateMutationPlan = (
   adapter: IntegrationAdapterMutationRecord,
   dto: UpdateAdapterDto,
-  nextName: LocalizedText,
+  nextName: LocalizedText
 ): AdapterUpdateMutationPlan => {
   const oldValue: Record<string, unknown> = {};
   const newValue: Record<string, unknown> = {};
@@ -145,19 +145,15 @@ export const buildAdapterUpdateMutationPlan = (
   };
 };
 
-export const canMutateInheritedAdapterAtScope = (
-  scope: IntegrationAdapterOwnerScope,
-) => scope.ownerId !== null;
+export const canMutateInheritedAdapterAtScope = (scope: IntegrationAdapterOwnerScope) =>
+  scope.ownerId !== null;
 
 export const isAdapterOwnedByScope = (
   adapter: IntegrationAdapterMutationRecord,
-  scope: IntegrationAdapterOwnerScope,
+  scope: IntegrationAdapterOwnerScope
 ) => adapter.ownerType === scope.ownerType && adapter.ownerId === scope.ownerId;
 
-export const buildAdapterConfigUpdateResult = (
-  updatedCount: number,
-  adapterVersion: number,
-) => ({
+export const buildAdapterConfigUpdateResult = (updatedCount: number, adapterVersion: number) => ({
   updatedCount,
   adapterVersion,
 });
@@ -171,7 +167,7 @@ export const buildInheritedAdapterScopeStateResult = (
   adapterId: string,
   code: string,
   scope: IntegrationAdapterOwnerScope,
-  isDisabledHere: boolean,
+  isDisabledHere: boolean
 ) => ({
   id: adapterId,
   code,

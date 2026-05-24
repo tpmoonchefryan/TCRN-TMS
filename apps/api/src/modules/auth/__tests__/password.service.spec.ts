@@ -1,6 +1,5 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
-import { beforeEach,describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 
 import { PasswordService } from '../password.service';
 
@@ -96,7 +95,7 @@ describe('PasswordService', () => {
       const result = service.validate('Vp1!');
 
       expect(result.isValid).toBe(false);
-      expect(result.errors.some(e => e.includes('at least'))).toBe(true);
+      expect(result.errors.some((e) => e.includes('at least'))).toBe(true);
     });
 
     it('should return multiple errors for very weak password', () => {

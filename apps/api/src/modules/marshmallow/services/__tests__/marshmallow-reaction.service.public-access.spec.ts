@@ -27,7 +27,7 @@ describe('MarshmallowReactionRepository public access', () => {
     mockPrisma.$queryRawUnsafe.mockResolvedValue([]);
 
     await expect(
-      repository.findPublishedMessageAccessInTenant('tenant_demo', messageId),
+      repository.findPublishedMessageAccessInTenant('tenant_demo', messageId)
     ).resolves.toBeNull();
 
     const [sql, param] = mockPrisma.$queryRawUnsafe.mock.calls[0] ?? [];

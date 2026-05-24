@@ -1,9 +1,5 @@
 'use client';
 
-import type {
-  PartialLocalizedText,
-  SupportedUiLocale,
-} from '@tcrn/shared';
 import {
   Activity,
   Fingerprint,
@@ -16,6 +12,8 @@ import {
 } from 'lucide-react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
+
+import type { PartialLocalizedText, SupportedUiLocale } from '@tcrn/shared';
 
 import {
   type OrganizationNode,
@@ -296,7 +294,7 @@ function buildSecurityQueryState(
     scopeId: string;
     scopeType: SecurityScopeType;
     tab: SecurityTab;
-  },
+  }
 ) {
   const params = new URLSearchParams();
   params.set('tab', tab);
@@ -358,7 +356,7 @@ function emptyValuePanel<T>(): ValuePanelState<T> {
 
 function collectOrganizationScopeOptions(
   nodes: OrganizationNode[],
-  labelBuilder: (type: ScopedSecurityScopeType, name: string) => string,
+  labelBuilder: (type: ScopedSecurityScopeType, name: string) => string
 ): OrganizationScopeOption[] {
   return nodes.flatMap((node) => [
     {
@@ -398,7 +396,10 @@ function createEmptyBlocklistDraft(scopeType: SecurityScopeType, scopeId: string
   };
 }
 
-function createEmptyExternalDraft(scopeType: SecurityScopeType, scopeId: string): ExternalBlocklistDraft {
+function createEmptyExternalDraft(
+  scopeType: SecurityScopeType,
+  scopeId: string
+): ExternalBlocklistDraft {
   return {
     ownerType: scopeType,
     ownerId: scopeType === 'tenant' ? '' : scopeId,
@@ -488,39 +489,45 @@ function buildAdvancedScopeTokens(draft: BlocklistDraft) {
     draft.scopeCsv
       .split(',')
       .map((item) => item.trim())
-      .filter(Boolean),
+      .filter(Boolean)
   );
 }
 
 function mapBlocklistToDraft(entry: BlocklistEntryRecord): BlocklistDraft {
-  const derivedStructuredEntries = entry.scope
-    .flatMap((token): BlocklistStructuredScopeEntry[] => {
-      if ((STRUCTURED_SCOPE_CATEGORY_TOKENS as readonly string[]).includes(token)) {
-        return [{ category: token as StructuredOwnerScopeCategory }];
-      }
+  const derivedStructuredEntries = entry.scope.flatMap((token): BlocklistStructuredScopeEntry[] => {
+    if ((STRUCTURED_SCOPE_CATEGORY_TOKENS as readonly string[]).includes(token)) {
+      return [{ category: token as StructuredOwnerScopeCategory }];
+    }
 
-      if ((SURFACE_SCOPE_TOKENS as readonly string[]).includes(token)) {
-        return [{ category: 'surface', value: token as (typeof SURFACE_SCOPE_TOKENS)[number] }];
-      }
+    if ((SURFACE_SCOPE_TOKENS as readonly string[]).includes(token)) {
+      return [{ category: 'surface', value: token as (typeof SURFACE_SCOPE_TOKENS)[number] }];
+    }
 
-      return [];
-    });
+    return [];
+  });
   const structuredEntries = entry.scopeSummary?.structuredScope.entries ?? derivedStructuredEntries;
   const structuredScopeCategories = structuredEntries
-    .filter((item): item is Extract<BlocklistStructuredScopeEntry, { category: Exclude<BlocklistStructuredScopeEntry['category'], 'surface'> }> =>
-      item.category !== 'surface',
+    .filter(
+      (
+        item
+      ): item is Extract<
+        BlocklistStructuredScopeEntry,
+        { category: Exclude<BlocklistStructuredScopeEntry['category'], 'surface'> }
+      > => item.category !== 'surface'
     )
     .map((item) => item.category);
   const surfaceScopes = structuredEntries
-    .filter((item): item is Extract<BlocklistStructuredScopeEntry, { category: 'surface' }> =>
-      item.category === 'surface',
+    .filter(
+      (item): item is Extract<BlocklistStructuredScopeEntry, { category: 'surface' }> =>
+        item.category === 'surface'
     )
     .map((item) => item.value);
-  const unsupportedScopeTokens = entry.scopeSummary?.unsupported
-    ?? entry.scope.filter(
+  const unsupportedScopeTokens =
+    entry.scopeSummary?.unsupported ??
+    entry.scope.filter(
       (token) =>
-        !(STRUCTURED_SCOPE_CATEGORY_TOKENS as readonly string[]).includes(token)
-        && !(SURFACE_SCOPE_TOKENS as readonly string[]).includes(token),
+        !(STRUCTURED_SCOPE_CATEGORY_TOKENS as readonly string[]).includes(token) &&
+        !(SURFACE_SCOPE_TOKENS as readonly string[]).includes(token)
     );
 
   return {
@@ -535,9 +542,10 @@ function mapBlocklistToDraft(entry: BlocklistEntryRecord): BlocklistDraft {
     severity: entry.severity,
     action: entry.action,
     replacement: entry.replacement,
-    structuredScopeCategories: structuredScopeCategories.length > 0
-      ? [...new Set(structuredScopeCategories)]
-      : [entry.ownerType],
+    structuredScopeCategories:
+      structuredScopeCategories.length > 0
+        ? [...new Set(structuredScopeCategories)]
+        : [entry.ownerType],
     surfaceScopes: [...new Set(surfaceScopes)],
     unsupportedScopeTokens,
     scopeCsv: unsupportedScopeTokens.join(', '),
@@ -602,7 +610,11 @@ function ToneBadge({
             ? 'bg-indigo-100 text-indigo-800'
             : 'bg-slate-100 text-slate-700';
 
-  return <span className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${toneClasses}`}>{label}</span>;
+  return (
+    <span className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${toneClasses}`}>
+      {label}
+    </span>
+  );
 }
 
 function InlineActionButton({
@@ -647,7 +659,11 @@ function NoticeBanner({
       ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
       : 'border-rose-200 bg-rose-50 text-rose-800';
 
-  return <div className={`rounded-2xl border px-4 py-3 text-sm font-medium ${toneClasses}`}>{message}</div>;
+  return (
+    <div className={`rounded-2xl border px-4 py-3 text-sm font-medium ${toneClasses}`}>
+      {message}
+    </div>
+  );
 }
 
 function Field({
@@ -669,25 +685,67 @@ function Field({
 }
 
 function getSecurityPaginationLabels(
-  locale: SupportedUiLocale ,
+  locale: SupportedUiLocale,
   pagination: ApiPaginationMeta,
-  itemCount: number,
+  itemCount: number
 ) {
   const pageRange = getPaginationRange(pagination, itemCount);
-  const pageSizeLabel = pickLocaleText(locale, { en: 'Rows per page', zh_HANS: '每页条数', zh_HANT: '每页条数', ja: '1 ページの件数', ko: 'Rows per page', fr: 'Rows per page' });
-  const paginationLabel = pickLocaleText(locale, { en: `Page ${pagination.page} of ${pagination.totalPages}`, zh_HANS: `第 ${pagination.page} / ${pagination.totalPages} 页`, zh_HANT: `第 ${pagination.page} / ${pagination.totalPages} 页`, ja: `${pagination.totalPages} ページ中 ${pagination.page} ページ`, ko: `Page ${pagination.page} of ${pagination.totalPages}`, fr: `Page ${pagination.page} of ${pagination.totalPages}` });
+  const pageSizeLabel = pickLocaleText(locale, {
+    en: 'Rows per page',
+    zh_HANS: '每页条数',
+    zh_HANT: '每页条数',
+    ja: '1 ページの件数',
+    ko: 'Rows per page',
+    fr: 'Rows per page',
+  });
+  const paginationLabel = pickLocaleText(locale, {
+    en: `Page ${pagination.page} of ${pagination.totalPages}`,
+    zh_HANS: `第 ${pagination.page} / ${pagination.totalPages} 页`,
+    zh_HANT: `第 ${pagination.page} / ${pagination.totalPages} 页`,
+    ja: `${pagination.totalPages} ページ中 ${pagination.page} ページ`,
+    ko: `Page ${pagination.page} of ${pagination.totalPages}`,
+    fr: `Page ${pagination.page} of ${pagination.totalPages}`,
+  });
   const paginationRangeLabel =
     pagination.totalCount === 0
-      ? pickLocaleText(locale, { en: 'No records are currently visible.', zh_HANS: '当前没有可显示的记录。', zh_HANT: '当前没有可显示的记录。', ja: '現在表示できるレコードはありません。', ko: 'No records are currently visible.', fr: 'No records are currently visible.' })
-      : pickLocaleText(locale, { en: `Showing ${pageRange.start}-${pageRange.end} of ${pagination.totalCount}`, zh_HANS: `显示第 ${pageRange.start}-${pageRange.end} 条，共 ${pagination.totalCount} 条`, zh_HANT: `显示第 ${pageRange.start}-${pageRange.end} 条，共 ${pagination.totalCount} 条`, ja: `${pagination.totalCount} 件中 ${pageRange.start}-${pageRange.end} 件を表示`, ko: `Showing ${pageRange.start}-${pageRange.end} of ${pagination.totalCount}`, fr: `Showing ${pageRange.start}-${pageRange.end} of ${pagination.totalCount}` });
+      ? pickLocaleText(locale, {
+          en: 'No records are currently visible.',
+          zh_HANS: '当前没有可显示的记录。',
+          zh_HANT: '当前没有可显示的记录。',
+          ja: '現在表示できるレコードはありません。',
+          ko: 'No records are currently visible.',
+          fr: 'No records are currently visible.',
+        })
+      : pickLocaleText(locale, {
+          en: `Showing ${pageRange.start}-${pageRange.end} of ${pagination.totalCount}`,
+          zh_HANS: `显示第 ${pageRange.start}-${pageRange.end} 条，共 ${pagination.totalCount} 条`,
+          zh_HANT: `显示第 ${pageRange.start}-${pageRange.end} 条，共 ${pagination.totalCount} 条`,
+          ja: `${pagination.totalCount} 件中 ${pageRange.start}-${pageRange.end} 件を表示`,
+          ko: `Showing ${pageRange.start}-${pageRange.end} of ${pagination.totalCount}`,
+          fr: `Showing ${pageRange.start}-${pageRange.end} of ${pagination.totalCount}`,
+        });
 
   return {
     pageLabel: paginationLabel,
     rangeLabel: paginationRangeLabel,
     rowsPerPageLabel: pageSizeLabel,
     pageSizeAriaLabel: pageSizeLabel,
-    previousLabel: pickLocaleText(locale, { en: 'Previous', zh_HANS: '上一页', zh_HANT: '上一页', ja: '前へ', ko: 'Previous', fr: 'Previous' }),
-    nextLabel: pickLocaleText(locale, { en: 'Next', zh_HANS: '下一页', zh_HANT: '下一页', ja: '次へ', ko: 'Next', fr: 'Next' }),
+    previousLabel: pickLocaleText(locale, {
+      en: 'Previous',
+      zh_HANS: '上一页',
+      zh_HANT: '上一页',
+      ja: '前へ',
+      ko: 'Previous',
+      fr: 'Previous',
+    }),
+    nextLabel: pickLocaleText(locale, {
+      en: 'Next',
+      zh_HANS: '下一页',
+      zh_HANT: '下一页',
+      ja: '次へ',
+      ko: 'Next',
+      fr: 'Next',
+    }),
   };
 }
 
@@ -716,28 +774,32 @@ export function SecurityManagementScreen({
   const urlIpRulesPageSize = parsePageSizeParam(searchParams.get('ipRulesPageSize'));
 
   const [activeTab, setActiveTab] = useState<SecurityTab>(currentTab);
-  const {
-    displayedValue: displayedTab,
-    transitionClassName: tabTransitionClassName,
-  } = useFadeSwapState(activeTab);
+  const { displayedValue: displayedTab, transitionClassName: tabTransitionClassName } =
+    useFadeSwapState(activeTab);
   const [scopeType, setScopeType] = useState<SecurityScopeType>(currentScopeType);
   const [scopeId, setScopeId] = useState(currentScopeId);
   const lastPaginationScopeKeyRef = useRef(`${currentScopeType}:${currentScopeId}`);
   const [organizationScopesPanel, setOrganizationScopesPanel] =
     useState<ValuePanelState<OrganizationScopeOption[]>>(emptyValuePanel);
 
-  const [blocklistPanel, setBlocklistPanel] = useState<ListPanelState<BlocklistEntryRecord>>(emptyListPanel);
-  const [externalPanel, setExternalPanel] = useState<ListPanelState<ExternalBlocklistRecord>>(emptyListPanel);
-  const [ipRulesPanel, setIpRulesPanel] = useState<ListPanelState<IpAccessRuleRecord>>(emptyListPanel);
+  const [blocklistPanel, setBlocklistPanel] =
+    useState<ListPanelState<BlocklistEntryRecord>>(emptyListPanel);
+  const [externalPanel, setExternalPanel] =
+    useState<ListPanelState<ExternalBlocklistRecord>>(emptyListPanel);
+  const [ipRulesPanel, setIpRulesPanel] =
+    useState<ListPanelState<IpAccessRuleRecord>>(emptyListPanel);
   const [blocklistPage, setBlocklistPage] = useState(urlBlocklistPage);
   const [blocklistPageSize, setBlocklistPageSize] = useState<PageSizeOption>(urlBlocklistPageSize);
   const [externalPage, setExternalPage] = useState(urlExternalPage);
   const [externalPageSize, setExternalPageSize] = useState<PageSizeOption>(urlExternalPageSize);
   const [ipRulesPage, setIpRulesPage] = useState(urlIpRulesPage);
   const [ipRulesPageSize, setIpRulesPageSize] = useState<PageSizeOption>(urlIpRulesPageSize);
-  const [fingerprintPanel, setFingerprintPanel] = useState<ValuePanelState<FingerprintResponse>>(emptyValuePanel);
-  const [rateLimitPanel, setRateLimitPanel] = useState<ValuePanelState<RateLimitStatsResponse>>(emptyValuePanel);
-  const [profileStorePanel, setProfileStorePanel] = useState<ValuePanelState<ProfileStoreSummaryRecord[]>>(emptyValuePanel);
+  const [fingerprintPanel, setFingerprintPanel] =
+    useState<ValuePanelState<FingerprintResponse>>(emptyValuePanel);
+  const [rateLimitPanel, setRateLimitPanel] =
+    useState<ValuePanelState<RateLimitStatsResponse>>(emptyValuePanel);
+  const [profileStorePanel, setProfileStorePanel] =
+    useState<ValuePanelState<ProfileStoreSummaryRecord[]>>(emptyValuePanel);
 
   const [blocklistMode, setBlocklistMode] = useState<EntryMode>('create');
   const [selectedBlocklistId, setSelectedBlocklistId] = useState<string | null>(null);
@@ -746,10 +808,10 @@ export function SecurityManagementScreen({
   const [blocklistTranslationDrawerOpen, setBlocklistTranslationDrawerOpen] = useState(false);
   const [blocklistAdvancedOpen, setBlocklistAdvancedOpen] = useState(false);
   const [blocklistDraft, setBlocklistDraft] = useState<BlocklistDraft>(() =>
-    createEmptyBlocklistDraft(currentScopeType, currentScopeId),
+    createEmptyBlocklistDraft(currentScopeType, currentScopeId)
   );
   const [blocklistDraftBaseline, setBlocklistDraftBaseline] = useState<BlocklistDraft>(() =>
-    createEmptyBlocklistDraft(currentScopeType, currentScopeId),
+    createEmptyBlocklistDraft(currentScopeType, currentScopeId)
   );
   const [blocklistSavePending, setBlocklistSavePending] = useState(false);
   const [blocklistTestText, setBlocklistTestText] = useState('');
@@ -768,10 +830,10 @@ export function SecurityManagementScreen({
   const [externalDetailLoading, setExternalDetailLoading] = useState(false);
   const [externalTranslationDrawerOpen, setExternalTranslationDrawerOpen] = useState(false);
   const [externalDraft, setExternalDraft] = useState<ExternalBlocklistDraft>(() =>
-    createEmptyExternalDraft(currentScopeType, currentScopeId),
+    createEmptyExternalDraft(currentScopeType, currentScopeId)
   );
   const [externalDraftBaseline, setExternalDraftBaseline] = useState<ExternalBlocklistDraft>(() =>
-    createEmptyExternalDraft(currentScopeType, currentScopeId),
+    createEmptyExternalDraft(currentScopeType, currentScopeId)
   );
   const [externalSavePending, setExternalSavePending] = useState(false);
   const [translationOptionsState, setTranslationOptionsState] = useState<TranslationOptionsState>({
@@ -781,7 +843,8 @@ export function SecurityManagementScreen({
   });
 
   const [ipRuleDraft, setIpRuleDraft] = useState<IpRuleDraft>(createEmptyIpRuleDraft);
-  const [ipRuleDraftBaseline, setIpRuleDraftBaseline] = useState<IpRuleDraft>(createEmptyIpRuleDraft);
+  const [ipRuleDraftBaseline, setIpRuleDraftBaseline] =
+    useState<IpRuleDraft>(createEmptyIpRuleDraft);
   const [ipRuleDrawerOpen, setIpRuleDrawerOpen] = useState(false);
   const [ipRuleSavePending, setIpRuleSavePending] = useState(false);
   const [ipCheckIp, setIpCheckIp] = useState('');
@@ -796,7 +859,7 @@ export function SecurityManagementScreen({
   const [dialogPending, setDialogPending] = useState(false);
   const blocklistBatchPreview = useMemo(
     () => parseBlocklistBatchPreview(blocklistBatchText),
-    [blocklistBatchText],
+    [blocklistBatchText]
   );
 
   useEffect(() => {
@@ -819,7 +882,7 @@ export function SecurityManagementScreen({
         locale,
         externalTranslationDrawerOpen
           ? copy.sections.externalEditor.translationManagement.languageLoadError
-          : copy.sections.blocklistEditor.translationManagement.languageLoadError,
+          : copy.sections.blocklistEditor.translationManagement.languageLoadError
       );
 
       if (cancelled) {
@@ -853,11 +916,17 @@ export function SecurityManagementScreen({
     setScopeType(currentScopeType);
     setScopeId(currentScopeId);
     setBlocklistPage((current) => (current === urlBlocklistPage ? current : urlBlocklistPage));
-    setBlocklistPageSize((current) => (current === urlBlocklistPageSize ? current : urlBlocklistPageSize));
+    setBlocklistPageSize((current) =>
+      current === urlBlocklistPageSize ? current : urlBlocklistPageSize
+    );
     setExternalPage((current) => (current === urlExternalPage ? current : urlExternalPage));
-    setExternalPageSize((current) => (current === urlExternalPageSize ? current : urlExternalPageSize));
+    setExternalPageSize((current) =>
+      current === urlExternalPageSize ? current : urlExternalPageSize
+    );
     setIpRulesPage((current) => (current === urlIpRulesPage ? current : urlIpRulesPage));
-    setIpRulesPageSize((current) => (current === urlIpRulesPageSize ? current : urlIpRulesPageSize));
+    setIpRulesPageSize((current) =>
+      current === urlIpRulesPageSize ? current : urlIpRulesPageSize
+    );
   }, [
     currentScopeId,
     currentScopeType,
@@ -1013,8 +1082,8 @@ export function SecurityManagementScreen({
     : [];
   const activeScopeLabel = !isScopedSecurityScopeType(scopeType)
     ? workspaceName
-    : activeScopeOptions.find((option) => option.id === scopeId)?.label
-      || `${copy.options.scopeType[scopeType]} · ${copy.scopeLens.unresolvedSelection}`;
+    : activeScopeOptions.find((option) => option.id === scopeId)?.label ||
+      `${copy.options.scopeType[scopeType]} · ${copy.scopeLens.unresolvedSelection}`;
   const scopeLockTitle = pickLocaleText(locale, {
     en: 'Scope lock',
     zh_HANS: '范围锁定',
@@ -1023,23 +1092,24 @@ export function SecurityManagementScreen({
     ko: '범위 잠금',
     fr: 'Verrou de périmètre',
   });
-  const scopeLockDescription = scopeType === 'tenant'
-    ? pickLocaleText(locale, {
-        en: `Policy edits below will be created at the tenant-wide level for ${activeScopeLabel}.`,
-        zh_HANS: `下方策略编辑将按租户级生效，当前范围是 ${activeScopeLabel}。`,
-        zh_HANT: `下方策略編輯將按租戶級生效，目前範圍是 ${activeScopeLabel}。`,
-        ja: `以下のポリシー編集は ${activeScopeLabel} のテナント全体レベルで作成されます。`,
-        ko: `아래 정책 편집은 ${activeScopeLabel}의 테넌트 전체 수준에 생성됩니다.`,
-        fr: `Les modifications de règles ci-dessous seront créées au niveau tenant pour ${activeScopeLabel}.`,
-      })
-    : pickLocaleText(locale, {
-        en: `Policy edits below are locked to ${activeScopeLabel}. Change the level only if you need a different owner before opening or creating rules.`,
-        zh_HANS: `下方策略编辑已锁定到 ${activeScopeLabel}。只有需要更换归属范围时，才需要先切换层级。`,
-        zh_HANT: `下方策略編輯已鎖定到 ${activeScopeLabel}。只有需要更換歸屬範圍時，才需要先切換層級。`,
-        ja: `以下のポリシー編集は ${activeScopeLabel} にロックされています。別の所有範囲が必要な場合のみ、ルールを開く・作成する前に階層を切り替えてください。`,
-        ko: `아래 정책 편집은 ${activeScopeLabel} 범위에 고정됩니다. 다른 소유 범위가 필요할 때만 규칙을 열거나 만들기 전에 레벨을 변경하세요.`,
-        fr: `Les modifications de règles ci-dessous sont verrouillées sur ${activeScopeLabel}. Changez de niveau seulement si vous devez choisir un autre propriétaire avant d’ouvrir ou de créer des règles.`,
-      });
+  const scopeLockDescription =
+    scopeType === 'tenant'
+      ? pickLocaleText(locale, {
+          en: `Policy edits below will be created at the tenant-wide level for ${activeScopeLabel}.`,
+          zh_HANS: `下方策略编辑将按租户级生效，当前范围是 ${activeScopeLabel}。`,
+          zh_HANT: `下方策略編輯將按租戶級生效，目前範圍是 ${activeScopeLabel}。`,
+          ja: `以下のポリシー編集は ${activeScopeLabel} のテナント全体レベルで作成されます。`,
+          ko: `아래 정책 편집은 ${activeScopeLabel}의 테넌트 전체 수준에 생성됩니다.`,
+          fr: `Les modifications de règles ci-dessous seront créées au niveau tenant pour ${activeScopeLabel}.`,
+        })
+      : pickLocaleText(locale, {
+          en: `Policy edits below are locked to ${activeScopeLabel}. Change the level only if you need a different owner before opening or creating rules.`,
+          zh_HANS: `下方策略编辑已锁定到 ${activeScopeLabel}。只有需要更换归属范围时，才需要先切换层级。`,
+          zh_HANT: `下方策略編輯已鎖定到 ${activeScopeLabel}。只有需要更換歸屬範圍時，才需要先切換層級。`,
+          ja: `以下のポリシー編集は ${activeScopeLabel} にロックされています。別の所有範囲が必要な場合のみ、ルールを開く・作成する前に階層を切り替えてください。`,
+          ko: `아래 정책 편집은 ${activeScopeLabel} 범위에 고정됩니다. 다른 소유 범위가 필요할 때만 규칙을 열거나 만들기 전에 레벨을 변경하세요.`,
+          fr: `Les modifications de règles ci-dessous sont verrouillées sur ${activeScopeLabel}. Changez de niveau seulement si vous devez choisir un autre propriétaire avant d’ouvrir ou de créer des règles.`,
+        });
   const advancedScopeTitle = pickLocaleText(locale, {
     en: 'Advanced usage scopes',
     zh_HANS: '高级使用范围',
@@ -1082,8 +1152,10 @@ export function SecurityManagementScreen({
   });
   const unsupportedScopeDescription = pickLocaleText(locale, {
     en: 'This rule was created before the structured builder existed. The old scope text stays in Advanced mode for audit history; replace it only when you intentionally migrate the rule.',
-    zh_HANS: '这条规则创建时还没有结构化范围构建器。旧范围文本会保留在高级模式中作为审计历史；只有在有意迁移规则时才需要替换。',
-    zh_HANT: '這條規則建立時還沒有結構化範圍建構器。舊範圍文字會保留在進階模式中作為稽核歷史；只有在有意遷移規則時才需要替換。',
+    zh_HANS:
+      '这条规则创建时还没有结构化范围构建器。旧范围文本会保留在高级模式中作为审计历史；只有在有意迁移规则时才需要替换。',
+    zh_HANT:
+      '這條規則建立時還沒有結構化範圍建構器。舊範圍文字會保留在進階模式中作為稽核歷史；只有在有意遷移規則時才需要替換。',
     ja: 'このルールは構造化ビルダー導入前に作成されました。旧形式のスコープ文は監査履歴として高度な設定に保持されます。意図的に移行するときだけ置き換えてください。',
     ko: '이 규칙은 구조화된 범위 빌더가 도입되기 전에 만들어졌습니다. 이전 범위 문구는 감사 이력을 위해 고급 모드에 보존되며, 규칙을 의도적으로 마이그레이션할 때만 교체하세요.',
     fr: 'Cette regle a ete creee avant le constructeur structure. L ancien texte de perimetre reste en mode avance pour l historique d audit; remplacez-le seulement lors d une migration volontaire.',
@@ -1134,14 +1206,15 @@ export function SecurityManagementScreen({
         ko: '고급 범위 편집',
         fr: 'Modifier les périmètres avancés',
       });
-  const blocklistDraftDirty = blocklistDrawerOpen
-    && !blocklistDetailLoading
-    && hasDraftChanges(blocklistDraft, blocklistDraftBaseline);
-  const externalDraftDirty = externalDrawerOpen
-    && !externalDetailLoading
-    && hasDraftChanges(externalDraft, externalDraftBaseline);
-  const ipRuleDraftDirty = ipRuleDrawerOpen
-    && hasDraftChanges(ipRuleDraft, ipRuleDraftBaseline);
+  const blocklistDraftDirty =
+    blocklistDrawerOpen &&
+    !blocklistDetailLoading &&
+    hasDraftChanges(blocklistDraft, blocklistDraftBaseline);
+  const externalDraftDirty =
+    externalDrawerOpen &&
+    !externalDetailLoading &&
+    hasDraftChanges(externalDraft, externalDraftBaseline);
+  const ipRuleDraftDirty = ipRuleDrawerOpen && hasDraftChanges(ipRuleDraft, ipRuleDraftBaseline);
   const hasDirtyEditor = blocklistDraftDirty || externalDraftDirty || ipRuleDraftDirty;
 
   useEffect(() => {
@@ -1183,8 +1256,8 @@ export function SecurityManagementScreen({
     }
 
     return (
-      scopeLabelMap.get(`${ownerType}:${ownerId}`)
-      || `${copy.options.scopeType[ownerType]} · ${copy.scopeLens.unresolvedSelection}`
+      scopeLabelMap.get(`${ownerType}:${ownerId}`) ||
+      `${copy.options.scopeType[ownerType]} · ${copy.scopeLens.unresolvedSelection}`
     );
   }
 
@@ -1257,8 +1330,8 @@ export function SecurityManagementScreen({
       setExternalPanel({
         data: response.items,
         pagination:
-          response.pagination
-          ?? buildPaginationMeta(response.items.length, externalPage, externalPageSize),
+          response.pagination ??
+          buildPaginationMeta(response.items.length, externalPage, externalPageSize),
         loading: false,
         error: null,
       });
@@ -1325,7 +1398,10 @@ export function SecurityManagementScreen({
       loading: false,
       error:
         rateLimitResult.status === 'rejected'
-          ? getErrorMessage(rateLimitResult.reason, copy.sections.runtimeSignals.endpointsUnavailable)
+          ? getErrorMessage(
+              rateLimitResult.reason,
+              copy.sections.runtimeSignals.endpointsUnavailable
+            )
           : null,
     });
 
@@ -1334,7 +1410,10 @@ export function SecurityManagementScreen({
       loading: false,
       error:
         profileStoreResult.status === 'rejected'
-          ? getErrorMessage(profileStoreResult.reason, copy.sections.runtimeSignals.profileStoresUnavailable)
+          ? getErrorMessage(
+              profileStoreResult.reason,
+              copy.sections.runtimeSignals.profileStoresUnavailable
+            )
           : null,
     });
   }
@@ -1634,7 +1713,8 @@ export function SecurityManagementScreen({
     try {
       const payload = {
         ownerType: blocklistDraft.ownerType,
-        ownerId: blocklistDraft.ownerType === 'tenant' ? undefined : blocklistDraft.ownerId || undefined,
+        ownerId:
+          blocklistDraft.ownerType === 'tenant' ? undefined : blocklistDraft.ownerId || undefined,
         pattern: blocklistDraft.pattern,
         patternType: blocklistDraft.patternType,
         name: buildLocalizedTextPayload(blocklistDraft.nameBase, blocklistDraft.nameLocaleValues),
@@ -1692,7 +1772,7 @@ export function SecurityManagementScreen({
 
     try {
       const selectedEntry = selectedBlocklistId
-        ? blocklistPanel.data.find((entry) => entry.id === selectedBlocklistId) ?? null
+        ? (blocklistPanel.data.find((entry) => entry.id === selectedBlocklistId) ?? null)
         : null;
       const testPattern = blocklistDraft.pattern.trim() || selectedEntry?.pattern?.trim() || '';
       const testPatternType = blocklistDraft.patternType || selectedEntry?.patternType || 'keyword';
@@ -1728,7 +1808,8 @@ export function SecurityManagementScreen({
     try {
       const payload = {
         ownerType: externalDraft.ownerType,
-        ownerId: externalDraft.ownerType === 'tenant' ? undefined : externalDraft.ownerId || undefined,
+        ownerId:
+          externalDraft.ownerType === 'tenant' ? undefined : externalDraft.ownerId || undefined,
         pattern: externalDraft.pattern,
         patternType: externalDraft.patternType,
         name: buildLocalizedTextPayload(externalDraft.nameBase, externalDraft.nameLocaleValues),
@@ -1778,10 +1859,10 @@ export function SecurityManagementScreen({
   }
 
   const configuredBlocklistTranslationCount = Object.values(blocklistDraft.nameLocaleValues).filter(
-    (value) => value.trim().length > 0,
+    (value) => value.trim().length > 0
   ).length;
   const configuredExternalTranslationCount = Object.values(externalDraft.nameLocaleValues).filter(
-    (value) => value.trim().length > 0,
+    (value) => value.trim().length > 0
   ).length;
   const translationDrawerLabels = {
     addLanguageLabel: pickLocaleText(locale, {
@@ -1914,15 +1995,33 @@ export function SecurityManagementScreen({
             </div>
             <div className="space-y-3">
               <h1 className="text-3xl font-semibold text-slate-950">{copy.header.title}</h1>
-              <p className="max-w-3xl text-sm leading-6 text-slate-600">{formatSecurityHeaderDescription(locale, workspaceName)}</p>
+              <p className="max-w-3xl text-sm leading-6 text-slate-600">
+                {formatSecurityHeaderDescription(locale, workspaceName)}
+              </p>
             </div>
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <SummaryCard label={copy.summary.scopeLensLabel} value={activeScopeLabel} hint={copy.summary.scopeLensHint} />
-            <SummaryCard label={copy.summary.blocklistLabel} value={String(blocklistCount)} hint={copy.summary.blocklistHint} />
-            <SummaryCard label={copy.summary.externalLabel} value={String(externalCount)} hint={copy.summary.externalHint} />
-            <SummaryCard label={copy.summary.blockedIpsLabel} value={String(blockedIpCount)} hint={copy.summary.blockedIpsHint} />
+            <SummaryCard
+              label={copy.summary.scopeLensLabel}
+              value={activeScopeLabel}
+              hint={copy.summary.scopeLensHint}
+            />
+            <SummaryCard
+              label={copy.summary.blocklistLabel}
+              value={String(blocklistCount)}
+              hint={copy.summary.blocklistHint}
+            />
+            <SummaryCard
+              label={copy.summary.externalLabel}
+              value={String(externalCount)}
+              hint={copy.summary.externalHint}
+            />
+            <SummaryCard
+              label={copy.summary.blockedIpsLabel}
+              value={String(blockedIpCount)}
+              hint={copy.summary.blockedIpsHint}
+            />
           </div>
         </div>
 
@@ -2012,8 +2111,8 @@ export function SecurityManagementScreen({
                     });
                   }}
                   disabled={
-                    organizationScopesPanel.loading
-                    || getScopeOptions(scopeType, scopeId).length === 0
+                    organizationScopesPanel.loading ||
+                    getScopeOptions(scopeType, scopeId).length === 0
                   }
                   className={inputClassName}
                 >
@@ -2023,7 +2122,8 @@ export function SecurityManagementScreen({
                       {copy.scopeLens.loadingOptions}
                     </option>
                   ) : null}
-                  {!organizationScopesPanel.loading && getScopeOptions(scopeType, scopeId).length === 0 ? (
+                  {!organizationScopesPanel.loading &&
+                  getScopeOptions(scopeType, scopeId).length === 0 ? (
                     <option value="" disabled>
                       {copy.scopeLens.emptyOptions}
                     </option>
@@ -2043,658 +2143,730 @@ export function SecurityManagementScreen({
       {notice ? <NoticeBanner tone={notice.tone} message={notice.message} /> : null}
 
       <div className={tabTransitionClassName}>
-      {displayedTab === 'blocklist' ? (
-        <>
-          <GlassSurface className="p-6">
-            <FormSection
-              title={copy.sections.blocklistList.title}
-              description={copy.sections.blocklistList.description}
-            >
-              <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_auto_auto_auto]">
-                <Field label={copy.sections.blocklistList.quickAddLabel}>
-                  <input
-                    aria-label={copy.sections.blocklistList.quickAddLabel}
-                    value={blocklistQuickAddPattern}
-                    onChange={(event) => setBlocklistQuickAddPattern(event.target.value)}
-                    onKeyDown={(event) => {
-                      if (event.key === 'Enter') {
-                        event.preventDefault();
-                        void submitQuickBlocklistPattern();
-                      }
-                    }}
-                    placeholder={copy.sections.blocklistList.quickAddPlaceholder}
-                    className={inputClassName}
-                  />
-                </Field>
-                <button
-                  type="button"
-                  onClick={() => void submitQuickBlocklistPattern()}
-                  disabled={blocklistQuickAddPending || blocklistQuickAddPattern.trim().length === 0}
-                  className="inline-flex items-center justify-center rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700 transition hover:border-emerald-300 hover:bg-emerald-100 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400"
-                >
-                  {blocklistQuickAddPending
-                    ? copy.sections.blocklistList.quickAddPending
-                    : copy.sections.blocklistList.quickAddAction}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setBlocklistBatchDrawerOpen(true)}
-                  className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
-                >
-                  {copy.sections.blocklistList.batchAddAction}
-                </button>
-                <button
-                  type="button"
-                  onClick={openBlocklistCreateDrawer}
-                  className="inline-flex items-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-medium text-indigo-700 transition hover:border-indigo-300 hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
-                >
-                  {copy.sections.blocklistEditor.newRule}
-                </button>
-              </div>
-              {blocklistPanel.error ? (
-                <StateView status="denied" title={copy.sections.blocklistList.unavailable} description={blocklistPanel.error} />
-              ) : (
-                <>
-                  <TableShell
-                    ariaLabel={copy.sections.blocklistList.title}
-                    columns={[...copy.sections.blocklistList.columns]}
-                    dataLength={blocklistPanel.data.length}
-                    isLoading={blocklistPanel.loading}
-                    isEmpty={!blocklistPanel.loading && blocklistPanel.data.length === 0}
-                    emptyTitle={copy.sections.blocklistList.emptyTitle}
-                    emptyDescription={copy.sections.blocklistList.emptyDescription}
-                  >
-                    {blocklistPanel.data.map((entry) => {
-                      const entryName = pickSecurityLocalizedName(locale, entry, entry.pattern);
-
-                      return (
-                      <tr key={entry.id} className="align-top">
-                        <td className="px-6 py-4">
-                          <div className="space-y-1">
-                            <p className="text-sm font-semibold text-slate-900">{entryName}</p>
-                            <p className="text-xs text-slate-500">{entry.pattern}</p>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 text-sm text-slate-700">
-                          {resolveScopeLabel(entry.ownerType, entry.ownerId)}
-                        </td>
-                        <td className="px-6 py-4">
-                          <ToneBadge
-                            tone={entry.severity === 'high' ? 'danger' : entry.severity === 'medium' ? 'warning' : 'info'}
-                            label={getSecuritySeverityLabel(locale, entry.severity)}
-                          />
-                        </td>
-                        <td className="px-6 py-4 text-sm text-slate-700">{entry.scope.join(', ') || copy.common.all}</td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex flex-nowrap gap-2 whitespace-nowrap">
-                            <ToneBadge tone={entry.isActive ? 'success' : 'neutral'} label={entry.isActive ? copy.common.active : copy.common.inactive} />
-                            {entry.isInherited ? <ToneBadge tone="info" label={copy.common.inherited} /> : null}
-                            {entry.isDisabledHere ? <ToneBadge tone="warning" label={copy.common.disabledHere} /> : null}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex flex-nowrap gap-2 whitespace-nowrap">
-                            <InlineActionButton onClick={() => void openBlocklistEditor(entry.id)}>{copy.actions.edit}</InlineActionButton>
-                            {entry.canDisable ? (
-                              <InlineActionButton
-                                tone="danger"
-                                onClick={() =>
-                                  openDialog({
-                                    intent: 'danger',
-                                    title: `${copy.dialogs.disableInheritedTitlePrefix} ${entryName}?`,
-                                    description: copy.dialogs.disableInheritedDescription,
-                                    confirmText: copy.actions.disableHere,
-                                    pendingText: copy.dialogs.disabling,
-                                    onConfirm: async () => {
-                                      await disableInheritedBlocklistEntry(request, entry.id, {
-                                        scopeType,
-                                        scopeId: scopeType === 'tenant' ? undefined : scopeId || undefined,
-                                      });
-                                      await refreshBlocklist();
-                                      setNotice({
-                                        tone: 'success',
-                                        message: formatSecurityDisableSuccess(locale, entryName),
-                                      });
-                                    },
-                                  })
-                                }
-                              >
-                                {copy.actions.disableHere}
-                              </InlineActionButton>
-                            ) : null}
-                            {entry.isDisabledHere ? (
-                              <InlineActionButton
-                                tone="primary"
-                                onClick={() =>
-                                  openDialog({
-                                    intent: 'primary',
-                                    title: `${copy.dialogs.reEnableTitlePrefix} ${entryName}?`,
-                                    description: copy.dialogs.reEnableDescription,
-                                    confirmText: copy.actions.reEnable,
-                                    pendingText: copy.dialogs.reEnabling,
-                                    onConfirm: async () => {
-                                      await enableInheritedBlocklistEntry(request, entry.id, {
-                                        scopeType,
-                                        scopeId: scopeType === 'tenant' ? undefined : scopeId || undefined,
-                                      });
-                                      await refreshBlocklist();
-                                      setNotice({
-                                        tone: 'success',
-                                        message: formatSecurityReEnableSuccess(locale, entryName),
-                                      });
-                                    },
-                                  })
-                                }
-                              >
-                                {copy.actions.reEnable}
-                              </InlineActionButton>
-                            ) : null}
-                            {!entry.isInherited ? (
-                              <InlineActionButton
-                                tone="danger"
-                                onClick={() =>
-                                  openDialog({
-                                    intent: 'danger',
-                                    title: `${copy.dialogs.deleteTitlePrefix} ${entryName}?`,
-                                    description: copy.dialogs.deleteRuleDescription,
-                                    confirmText: copy.actions.deleteRule,
-                                    pendingText: copy.dialogs.deleting,
-                                    onConfirm: async () => {
-                                      await deleteBlocklistEntry(request, entry.id);
-                                      await refreshBlocklist();
-                                      if (selectedBlocklistId === entry.id) {
-                                        resetBlocklistEditor();
-                                      }
-                                      setNotice({
-                                        tone: 'success',
-                                        message: formatSecurityDeleteSuccess(locale, entryName),
-                                      });
-                                    },
-                                  })
-                                }
-                              >
-                                <Trash2 className="h-3.5 w-3.5" />
-                                {copy.actions.delete}
-                              </InlineActionButton>
-                            ) : null}
-                          </div>
-                        </td>
-                      </tr>
-                    )})}
-                  </TableShell>
-                  <PaginationFooter
-                    pagination={blocklistPanel.pagination}
-                    itemCount={blocklistPanel.data.length}
-                    labels={getSecurityPaginationLabels(locale, blocklistPanel.pagination, blocklistPanel.data.length)}
-                    onPageChange={setBlocklistPage}
-                    onPageSizeChange={(nextPageSize) => {
-                      setBlocklistPageSize(nextPageSize as PageSizeOption);
-                      setBlocklistPage(1);
-                    }}
-                    isLoading={blocklistPanel.loading}
-                    className="mt-4 rounded-2xl border border-slate-200"
-                  />
-                </>
-              )}
-            </FormSection>
-          </GlassSurface>
-
-          <ActionDrawer
-            open={blocklistDrawerOpen}
-            onOpenChange={setBlocklistDrawerOpenSafely}
-            title={blocklistMode === 'create' ? copy.sections.blocklistEditor.createTitle : copy.sections.blocklistEditor.updateTitle}
-            description={copy.sections.blocklistEditor.description}
-            size="xl"
-            closeButtonAriaLabel={copy.sections.blocklistEditor.closeButtonAriaLabel}
-            closeOnBackdropClick={!blocklistSavePending}
-            closeOnEscape={!blocklistSavePending}
-            footer={
-              <div className="flex flex-wrap justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={() => setBlocklistDrawerOpenSafely(false)}
-                  className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
-                >
-                  {copy.common.cancel}
-                </button>
-                <AsyncSubmitButton
-                  onClick={() => void submitBlocklist()}
-                  isPending={blocklistSavePending}
-                  pendingText={blocklistMode === 'create' ? copy.sections.blocklistEditor.creating : copy.sections.blocklistEditor.saving}
-                >
-                  {blocklistMode === 'create' ? copy.sections.blocklistEditor.createRule : copy.sections.blocklistEditor.saveChanges}
-                </AsyncSubmitButton>
-              </div>
-            }
-          >
-            <div className="mb-5 rounded-2xl border border-indigo-200 bg-indigo-50/80 px-4 py-3 text-sm text-indigo-950">
-              <div className="flex flex-wrap items-start gap-3">
-                <ShieldCheck className="mt-0.5 h-4 w-4 flex-none" />
-                <div className="min-w-0 space-y-1">
-                  <p className="font-semibold">{scopeLockTitle}</p>
-                  <p className="leading-6">{scopeLockDescription}</p>
-                  <p className="text-xs text-indigo-800/80">
-                    {copy.options.scopeType[scopeType]} · {activeScopeLabel}
-                  </p>
-                </div>
-              </div>
-            </div>
-            {blocklistDetailLoading ? (
-              <StateView
-                status="unavailable"
-                title={copy.sections.blocklistEditor.loadingTitle}
-                description={copy.sections.blocklistEditor.loadingDescription}
-              />
-            ) : (
-              <div className="grid gap-4 md:grid-cols-2">
-                <Field label={copy.fields.ownerType}>
-                  <select
-                    aria-label={copy.fields.ownerType}
-                    value={blocklistDraft.ownerType}
-                    onChange={(event) =>
-                      setBlocklistDraft((current) => {
-                        const nextType = event.target.value as SecurityScopeType;
-                        const nextOwnerId = isScopedSecurityScopeType(nextType)
-                          ? getScopeOptions(nextType)[0]?.id ?? ''
-                          : '';
-
-                        return {
-                          ...current,
-                          ownerType: nextType,
-                          ownerId: nextOwnerId,
-                        };
-                      })
-                    }
-                    className={inputClassName}
-                  >
-                    <option value="tenant">{copy.options.scopeType.tenant}</option>
-                    <option value="subsidiary">{copy.options.scopeType.subsidiary}</option>
-                    <option value="talent">{copy.options.scopeType.talent}</option>
-                  </select>
-                </Field>
-                <Field label={copy.fields.ownerId}>
-                  {blocklistDraft.ownerType === 'tenant' ? (
+        {displayedTab === 'blocklist' ? (
+          <>
+            <GlassSurface className="p-6">
+              <FormSection
+                title={copy.sections.blocklistList.title}
+                description={copy.sections.blocklistList.description}
+              >
+                <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_auto_auto_auto]">
+                  <Field label={copy.sections.blocklistList.quickAddLabel}>
                     <input
-                      aria-label={copy.fields.ownerId}
-                      value={copy.scopeLens.tenantPlaceholder}
-                      disabled
+                      aria-label={copy.sections.blocklistList.quickAddLabel}
+                      value={blocklistQuickAddPattern}
+                      onChange={(event) => setBlocklistQuickAddPattern(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter') {
+                          event.preventDefault();
+                          void submitQuickBlocklistPattern();
+                        }
+                      }}
+                      placeholder={copy.sections.blocklistList.quickAddPlaceholder}
                       className={inputClassName}
                     />
-                  ) : (
+                  </Field>
+                  <button
+                    type="button"
+                    onClick={() => void submitQuickBlocklistPattern()}
+                    disabled={
+                      blocklistQuickAddPending || blocklistQuickAddPattern.trim().length === 0
+                    }
+                    className="inline-flex items-center justify-center rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700 transition hover:border-emerald-300 hover:bg-emerald-100 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400"
+                  >
+                    {blocklistQuickAddPending
+                      ? copy.sections.blocklistList.quickAddPending
+                      : copy.sections.blocklistList.quickAddAction}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setBlocklistBatchDrawerOpen(true)}
+                    className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
+                  >
+                    {copy.sections.blocklistList.batchAddAction}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={openBlocklistCreateDrawer}
+                    className="inline-flex items-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-medium text-indigo-700 transition hover:border-indigo-300 hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                  >
+                    {copy.sections.blocklistEditor.newRule}
+                  </button>
+                </div>
+                {blocklistPanel.error ? (
+                  <StateView
+                    status="denied"
+                    title={copy.sections.blocklistList.unavailable}
+                    description={blocklistPanel.error}
+                  />
+                ) : (
+                  <>
+                    <TableShell
+                      ariaLabel={copy.sections.blocklistList.title}
+                      columns={[...copy.sections.blocklistList.columns]}
+                      dataLength={blocklistPanel.data.length}
+                      isLoading={blocklistPanel.loading}
+                      isEmpty={!blocklistPanel.loading && blocklistPanel.data.length === 0}
+                      emptyTitle={copy.sections.blocklistList.emptyTitle}
+                      emptyDescription={copy.sections.blocklistList.emptyDescription}
+                    >
+                      {blocklistPanel.data.map((entry) => {
+                        const entryName = pickSecurityLocalizedName(locale, entry, entry.pattern);
+
+                        return (
+                          <tr key={entry.id} className="align-top">
+                            <td className="px-6 py-4">
+                              <div className="space-y-1">
+                                <p className="text-sm font-semibold text-slate-900">{entryName}</p>
+                                <p className="text-xs text-slate-500">{entry.pattern}</p>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 text-sm text-slate-700">
+                              {resolveScopeLabel(entry.ownerType, entry.ownerId)}
+                            </td>
+                            <td className="px-6 py-4">
+                              <ToneBadge
+                                tone={
+                                  entry.severity === 'high'
+                                    ? 'danger'
+                                    : entry.severity === 'medium'
+                                      ? 'warning'
+                                      : 'info'
+                                }
+                                label={getSecuritySeverityLabel(locale, entry.severity)}
+                              />
+                            </td>
+                            <td className="px-6 py-4 text-sm text-slate-700">
+                              {entry.scope.join(', ') || copy.common.all}
+                            </td>
+                            <td className="whitespace-nowrap px-6 py-4">
+                              <div className="flex flex-nowrap gap-2 whitespace-nowrap">
+                                <ToneBadge
+                                  tone={entry.isActive ? 'success' : 'neutral'}
+                                  label={entry.isActive ? copy.common.active : copy.common.inactive}
+                                />
+                                {entry.isInherited ? (
+                                  <ToneBadge tone="info" label={copy.common.inherited} />
+                                ) : null}
+                                {entry.isDisabledHere ? (
+                                  <ToneBadge tone="warning" label={copy.common.disabledHere} />
+                                ) : null}
+                              </div>
+                            </td>
+                            <td className="whitespace-nowrap px-6 py-4">
+                              <div className="flex flex-nowrap gap-2 whitespace-nowrap">
+                                <InlineActionButton
+                                  onClick={() => void openBlocklistEditor(entry.id)}
+                                >
+                                  {copy.actions.edit}
+                                </InlineActionButton>
+                                {entry.canDisable ? (
+                                  <InlineActionButton
+                                    tone="danger"
+                                    onClick={() =>
+                                      openDialog({
+                                        intent: 'danger',
+                                        title: `${copy.dialogs.disableInheritedTitlePrefix} ${entryName}?`,
+                                        description: copy.dialogs.disableInheritedDescription,
+                                        confirmText: copy.actions.disableHere,
+                                        pendingText: copy.dialogs.disabling,
+                                        onConfirm: async () => {
+                                          await disableInheritedBlocklistEntry(request, entry.id, {
+                                            scopeType,
+                                            scopeId:
+                                              scopeType === 'tenant'
+                                                ? undefined
+                                                : scopeId || undefined,
+                                          });
+                                          await refreshBlocklist();
+                                          setNotice({
+                                            tone: 'success',
+                                            message: formatSecurityDisableSuccess(
+                                              locale,
+                                              entryName
+                                            ),
+                                          });
+                                        },
+                                      })
+                                    }
+                                  >
+                                    {copy.actions.disableHere}
+                                  </InlineActionButton>
+                                ) : null}
+                                {entry.isDisabledHere ? (
+                                  <InlineActionButton
+                                    tone="primary"
+                                    onClick={() =>
+                                      openDialog({
+                                        intent: 'primary',
+                                        title: `${copy.dialogs.reEnableTitlePrefix} ${entryName}?`,
+                                        description: copy.dialogs.reEnableDescription,
+                                        confirmText: copy.actions.reEnable,
+                                        pendingText: copy.dialogs.reEnabling,
+                                        onConfirm: async () => {
+                                          await enableInheritedBlocklistEntry(request, entry.id, {
+                                            scopeType,
+                                            scopeId:
+                                              scopeType === 'tenant'
+                                                ? undefined
+                                                : scopeId || undefined,
+                                          });
+                                          await refreshBlocklist();
+                                          setNotice({
+                                            tone: 'success',
+                                            message: formatSecurityReEnableSuccess(
+                                              locale,
+                                              entryName
+                                            ),
+                                          });
+                                        },
+                                      })
+                                    }
+                                  >
+                                    {copy.actions.reEnable}
+                                  </InlineActionButton>
+                                ) : null}
+                                {!entry.isInherited ? (
+                                  <InlineActionButton
+                                    tone="danger"
+                                    onClick={() =>
+                                      openDialog({
+                                        intent: 'danger',
+                                        title: `${copy.dialogs.deleteTitlePrefix} ${entryName}?`,
+                                        description: copy.dialogs.deleteRuleDescription,
+                                        confirmText: copy.actions.deleteRule,
+                                        pendingText: copy.dialogs.deleting,
+                                        onConfirm: async () => {
+                                          await deleteBlocklistEntry(request, entry.id);
+                                          await refreshBlocklist();
+                                          if (selectedBlocklistId === entry.id) {
+                                            resetBlocklistEditor();
+                                          }
+                                          setNotice({
+                                            tone: 'success',
+                                            message: formatSecurityDeleteSuccess(locale, entryName),
+                                          });
+                                        },
+                                      })
+                                    }
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                    {copy.actions.delete}
+                                  </InlineActionButton>
+                                ) : null}
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </TableShell>
+                    <PaginationFooter
+                      pagination={blocklistPanel.pagination}
+                      itemCount={blocklistPanel.data.length}
+                      labels={getSecurityPaginationLabels(
+                        locale,
+                        blocklistPanel.pagination,
+                        blocklistPanel.data.length
+                      )}
+                      onPageChange={setBlocklistPage}
+                      onPageSizeChange={(nextPageSize) => {
+                        setBlocklistPageSize(nextPageSize as PageSizeOption);
+                        setBlocklistPage(1);
+                      }}
+                      isLoading={blocklistPanel.loading}
+                      className="mt-4 rounded-2xl border border-slate-200"
+                    />
+                  </>
+                )}
+              </FormSection>
+            </GlassSurface>
+
+            <ActionDrawer
+              open={blocklistDrawerOpen}
+              onOpenChange={setBlocklistDrawerOpenSafely}
+              title={
+                blocklistMode === 'create'
+                  ? copy.sections.blocklistEditor.createTitle
+                  : copy.sections.blocklistEditor.updateTitle
+              }
+              description={copy.sections.blocklistEditor.description}
+              size="xl"
+              closeButtonAriaLabel={copy.sections.blocklistEditor.closeButtonAriaLabel}
+              closeOnBackdropClick={!blocklistSavePending}
+              closeOnEscape={!blocklistSavePending}
+              footer={
+                <div className="flex flex-wrap justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setBlocklistDrawerOpenSafely(false)}
+                    className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
+                  >
+                    {copy.common.cancel}
+                  </button>
+                  <AsyncSubmitButton
+                    onClick={() => void submitBlocklist()}
+                    isPending={blocklistSavePending}
+                    pendingText={
+                      blocklistMode === 'create'
+                        ? copy.sections.blocklistEditor.creating
+                        : copy.sections.blocklistEditor.saving
+                    }
+                  >
+                    {blocklistMode === 'create'
+                      ? copy.sections.blocklistEditor.createRule
+                      : copy.sections.blocklistEditor.saveChanges}
+                  </AsyncSubmitButton>
+                </div>
+              }
+            >
+              <div className="mb-5 rounded-2xl border border-indigo-200 bg-indigo-50/80 px-4 py-3 text-sm text-indigo-950">
+                <div className="flex flex-wrap items-start gap-3">
+                  <ShieldCheck className="mt-0.5 h-4 w-4 flex-none" />
+                  <div className="min-w-0 space-y-1">
+                    <p className="font-semibold">{scopeLockTitle}</p>
+                    <p className="leading-6">{scopeLockDescription}</p>
+                    <p className="text-xs text-indigo-800/80">
+                      {copy.options.scopeType[scopeType]} · {activeScopeLabel}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              {blocklistDetailLoading ? (
+                <StateView
+                  status="unavailable"
+                  title={copy.sections.blocklistEditor.loadingTitle}
+                  description={copy.sections.blocklistEditor.loadingDescription}
+                />
+              ) : (
+                <div className="grid gap-4 md:grid-cols-2">
+                  <Field label={copy.fields.ownerType}>
                     <select
-                      aria-label={copy.fields.ownerId}
-                      value={blocklistDraft.ownerId}
+                      aria-label={copy.fields.ownerType}
+                      value={blocklistDraft.ownerType}
+                      onChange={(event) =>
+                        setBlocklistDraft((current) => {
+                          const nextType = event.target.value as SecurityScopeType;
+                          const nextOwnerId = isScopedSecurityScopeType(nextType)
+                            ? (getScopeOptions(nextType)[0]?.id ?? '')
+                            : '';
+
+                          return {
+                            ...current,
+                            ownerType: nextType,
+                            ownerId: nextOwnerId,
+                          };
+                        })
+                      }
+                      className={inputClassName}
+                    >
+                      <option value="tenant">{copy.options.scopeType.tenant}</option>
+                      <option value="subsidiary">{copy.options.scopeType.subsidiary}</option>
+                      <option value="talent">{copy.options.scopeType.talent}</option>
+                    </select>
+                  </Field>
+                  <Field label={copy.fields.ownerId}>
+                    {blocklistDraft.ownerType === 'tenant' ? (
+                      <input
+                        aria-label={copy.fields.ownerId}
+                        value={copy.scopeLens.tenantPlaceholder}
+                        disabled
+                        className={inputClassName}
+                      />
+                    ) : (
+                      <select
+                        aria-label={copy.fields.ownerId}
+                        value={blocklistDraft.ownerId}
+                        onChange={(event) =>
+                          setBlocklistDraft((current) => ({
+                            ...current,
+                            ownerId: event.target.value,
+                          }))
+                        }
+                        disabled={
+                          organizationScopesPanel.loading ||
+                          getScopeOptions(blocklistDraft.ownerType, blocklistDraft.ownerId)
+                            .length === 0
+                        }
+                        className={inputClassName}
+                      >
+                        {getScopeOptions(blocklistDraft.ownerType, blocklistDraft.ownerId)
+                          .length === 0 ? (
+                          <option value="">{copy.scopeLens.emptyOptions}</option>
+                        ) : null}
+                        {getScopeOptions(blocklistDraft.ownerType, blocklistDraft.ownerId).map(
+                          (option) => (
+                            <option key={`${option.type}-${option.id}`} value={option.id}>
+                              {option.label}
+                            </option>
+                          )
+                        )}
+                      </select>
+                    )}
+                  </Field>
+                  <div className="space-y-3 md:col-span-2">
+                    <div className="flex flex-wrap items-end gap-3">
+                      <Field label={copy.fields.ruleName}>
+                        <input
+                          aria-label={copy.fields.ruleName}
+                          value={blocklistDraft.nameBase}
+                          onChange={(event) =>
+                            setBlocklistDraft((current) => ({
+                              ...current,
+                              nameBase: event.target.value,
+                            }))
+                          }
+                          placeholder={copy.placeholders.ruleName}
+                          className={inputClassName}
+                        />
+                      </Field>
+                      <button
+                        type="button"
+                        onClick={() => setBlocklistTranslationDrawerOpen(true)}
+                        className="inline-flex items-center gap-2 rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
+                        aria-label={copy.sections.blocklistEditor.translationManagement.trigger}
+                      >
+                        <Languages className="h-4 w-4" />
+                        <span>{copy.sections.blocklistEditor.translationManagement.trigger}</span>
+                        {configuredBlocklistTranslationCount > 0 ? (
+                          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-600">
+                            {configuredBlocklistTranslationCount}
+                          </span>
+                        ) : null}
+                      </button>
+                    </div>
+                    <p className="text-xs text-slate-500">
+                      {configuredBlocklistTranslationCount > 0
+                        ? copy.sections.blocklistEditor.translationManagement.summary(
+                            configuredBlocklistTranslationCount
+                          )
+                        : copy.sections.blocklistEditor.translationManagement.empty}
+                    </p>
+                    {translationOptionsState.error ? (
+                      <p className="text-xs text-amber-700">{translationOptionsState.error}</p>
+                    ) : null}
+                  </div>
+                  <Field label={copy.fields.category}>
+                    <input
+                      aria-label={copy.fields.category}
+                      value={blocklistDraft.category}
                       onChange={(event) =>
                         setBlocklistDraft((current) => ({
                           ...current,
-                          ownerId: event.target.value,
+                          category: event.target.value,
                         }))
                       }
-                      disabled={
-                        organizationScopesPanel.loading
-                        || getScopeOptions(blocklistDraft.ownerType, blocklistDraft.ownerId).length === 0
+                      placeholder={copy.placeholders.category}
+                      className={inputClassName}
+                    />
+                  </Field>
+                  <Field label={copy.fields.pattern}>
+                    <input
+                      aria-label={copy.fields.pattern}
+                      value={blocklistDraft.pattern}
+                      onChange={(event) =>
+                        setBlocklistDraft((current) => ({
+                          ...current,
+                          pattern: event.target.value,
+                        }))
+                      }
+                      placeholder={copy.placeholders.pattern}
+                      className={inputClassName}
+                    />
+                  </Field>
+                  <Field label={copy.fields.patternType}>
+                    <select
+                      aria-label={copy.fields.patternType}
+                      value={blocklistDraft.patternType}
+                      onChange={(event) =>
+                        setBlocklistDraft((current) => ({
+                          ...current,
+                          patternType: event.target.value as BlocklistPatternType,
+                        }))
                       }
                       className={inputClassName}
                     >
-                      {getScopeOptions(blocklistDraft.ownerType, blocklistDraft.ownerId).length === 0 ? (
-                        <option value="">{copy.scopeLens.emptyOptions}</option>
-                      ) : null}
-                      {getScopeOptions(blocklistDraft.ownerType, blocklistDraft.ownerId).map((option) => (
-                        <option key={`${option.type}-${option.id}`} value={option.id}>
-                          {option.label}
-                        </option>
-                      ))}
+                      <option value="keyword">{copy.options.blocklistPatternType.keyword}</option>
+                      <option value="regex">{copy.options.blocklistPatternType.regex}</option>
+                      <option value="wildcard">{copy.options.blocklistPatternType.wildcard}</option>
                     </select>
-                  )}
-                </Field>
-                <div className="space-y-3 md:col-span-2">
-                  <div className="flex flex-wrap items-end gap-3">
-                    <Field label={copy.fields.ruleName}>
-                      <input
-                        aria-label={copy.fields.ruleName}
-                        value={blocklistDraft.nameBase}
-                        onChange={(event) =>
-                          setBlocklistDraft((current) => ({
-                            ...current,
-                            nameBase: event.target.value,
-                          }))
-                        }
-                        placeholder={copy.placeholders.ruleName}
-                        className={inputClassName}
-                      />
-                    </Field>
-                    <button
-                      type="button"
-                      onClick={() => setBlocklistTranslationDrawerOpen(true)}
-                      className="inline-flex items-center gap-2 rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
-                      aria-label={copy.sections.blocklistEditor.translationManagement.trigger}
+                  </Field>
+                  <Field label={copy.fields.severity}>
+                    <select
+                      aria-label={copy.fields.severity}
+                      value={blocklistDraft.severity}
+                      onChange={(event) =>
+                        setBlocklistDraft((current) => ({
+                          ...current,
+                          severity: event.target.value as BlocklistSeverity,
+                        }))
+                      }
+                      className={inputClassName}
                     >
-                      <Languages className="h-4 w-4" />
-                      <span>{copy.sections.blocklistEditor.translationManagement.trigger}</span>
-                      {configuredBlocklistTranslationCount > 0 ? (
-                        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-600">
-                          {configuredBlocklistTranslationCount}
-                        </span>
-                      ) : null}
-                    </button>
-                  </div>
-                  <p className="text-xs text-slate-500">
-                    {configuredBlocklistTranslationCount > 0
-                      ? copy.sections.blocklistEditor.translationManagement.summary(configuredBlocklistTranslationCount)
-                      : copy.sections.blocklistEditor.translationManagement.empty}
-                  </p>
-                  {translationOptionsState.error ? (
-                    <p className="text-xs text-amber-700">{translationOptionsState.error}</p>
-                  ) : null}
-                </div>
-                <Field label={copy.fields.category}>
-                  <input
-                    aria-label={copy.fields.category}
-                    value={blocklistDraft.category}
-                    onChange={(event) =>
-                      setBlocklistDraft((current) => ({
-                        ...current,
-                        category: event.target.value,
-                      }))
-                    }
-                    placeholder={copy.placeholders.category}
-                    className={inputClassName}
-                  />
-                </Field>
-                <Field label={copy.fields.pattern}>
-                  <input
-                    aria-label={copy.fields.pattern}
-                    value={blocklistDraft.pattern}
-                    onChange={(event) =>
-                      setBlocklistDraft((current) => ({
-                        ...current,
-                        pattern: event.target.value,
-                      }))
-                    }
-                    placeholder={copy.placeholders.pattern}
-                    className={inputClassName}
-                  />
-                </Field>
-                <Field label={copy.fields.patternType}>
-                  <select
-                    aria-label={copy.fields.patternType}
-                    value={blocklistDraft.patternType}
-                    onChange={(event) =>
-                      setBlocklistDraft((current) => ({
-                        ...current,
-                        patternType: event.target.value as BlocklistPatternType,
-                      }))
-                    }
-                    className={inputClassName}
-                  >
-                    <option value="keyword">{copy.options.blocklistPatternType.keyword}</option>
-                    <option value="regex">{copy.options.blocklistPatternType.regex}</option>
-                    <option value="wildcard">{copy.options.blocklistPatternType.wildcard}</option>
-                  </select>
-                </Field>
-                <Field label={copy.fields.severity}>
-                  <select
-                    aria-label={copy.fields.severity}
-                    value={blocklistDraft.severity}
-                    onChange={(event) =>
-                      setBlocklistDraft((current) => ({
-                        ...current,
-                        severity: event.target.value as BlocklistSeverity,
-                      }))
-                    }
-                    className={inputClassName}
-                  >
-                    <option value="low">{copy.options.severity.low}</option>
-                    <option value="medium">{copy.options.severity.medium}</option>
-                    <option value="high">{copy.options.severity.high}</option>
-                  </select>
-                </Field>
-                <Field label={copy.fields.action}>
-                  <select
-                    aria-label={copy.fields.action}
-                    value={blocklistDraft.action}
-                    onChange={(event) =>
-                      setBlocklistDraft((current) => ({
-                        ...current,
-                        action: event.target.value as BlocklistAction,
-                      }))
-                    }
-                    className={inputClassName}
-                  >
-                    <option value="reject">{copy.options.action.reject}</option>
-                    <option value="flag">{copy.options.action.flag}</option>
-                    <option value="replace">{copy.options.action.replace}</option>
-                  </select>
-                </Field>
-                <Field label={copy.fields.replacement}>
-                  <input
-                    aria-label={copy.fields.replacement}
-                    value={blocklistDraft.replacement}
-                    onChange={(event) =>
-                      setBlocklistDraft((current) => ({
-                        ...current,
-                        replacement: event.target.value,
-                      }))
-                    }
-                    placeholder={copy.placeholders.replacement}
-                    className={inputClassName}
-                  />
-                </Field>
-                <div className="space-y-4 rounded-2xl border border-indigo-200 bg-indigo-50/60 p-4 md:col-span-2">
-                  <div className="space-y-1">
-                    <p className="text-sm font-semibold text-slate-900">{structuredScopeTitle}</p>
-                    <p className="text-xs leading-5 text-slate-600">{structuredScopeDescription}</p>
-                  </div>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    {(['tenant', 'subsidiary', 'talent', 'profile-store'] as const).map((category) => (
-                      <label
-                        key={category}
-                        className="flex items-center gap-3 rounded-2xl border border-white/80 bg-white/90 px-4 py-3 text-sm font-medium text-slate-700 shadow-sm"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={blocklistDraft.structuredScopeCategories.includes(category)}
-                          onChange={() => toggleStructuredScopeCategory(category)}
-                        />
-                        {ownerScopeCategoryLabels[category]}
-                      </label>
-                    ))}
-                    <label className="flex items-center gap-3 rounded-2xl border border-white/80 bg-white/90 px-4 py-3 text-sm font-medium text-slate-700 shadow-sm">
-                      <input
-                        type="checkbox"
-                        checked={blocklistDraft.surfaceScopes.includes('marshmallow')}
-                        onChange={(event) =>
-                          setBlocklistDraft((current) => ({
-                            ...current,
-                            surfaceScopes: event.target.checked ? ['marshmallow'] : [],
-                          }))
-                        }
-                      />
-                      {surfaceScopeLabel}
-                    </label>
-                  </div>
-                  {blocklistDraft.unsupportedScopeTokens.length > 0 ? (
-                    <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-                      <p className="font-semibold">{unsupportedScopeTitle}</p>
-                      <p className="mt-1 text-xs leading-5">{unsupportedScopeDescription}</p>
-                      <p className="mt-2 font-mono text-xs">
-                        {blocklistDraft.unsupportedScopeTokens.join(', ')}
+                      <option value="low">{copy.options.severity.low}</option>
+                      <option value="medium">{copy.options.severity.medium}</option>
+                      <option value="high">{copy.options.severity.high}</option>
+                    </select>
+                  </Field>
+                  <Field label={copy.fields.action}>
+                    <select
+                      aria-label={copy.fields.action}
+                      value={blocklistDraft.action}
+                      onChange={(event) =>
+                        setBlocklistDraft((current) => ({
+                          ...current,
+                          action: event.target.value as BlocklistAction,
+                        }))
+                      }
+                      className={inputClassName}
+                    >
+                      <option value="reject">{copy.options.action.reject}</option>
+                      <option value="flag">{copy.options.action.flag}</option>
+                      <option value="replace">{copy.options.action.replace}</option>
+                    </select>
+                  </Field>
+                  <Field label={copy.fields.replacement}>
+                    <input
+                      aria-label={copy.fields.replacement}
+                      value={blocklistDraft.replacement}
+                      onChange={(event) =>
+                        setBlocklistDraft((current) => ({
+                          ...current,
+                          replacement: event.target.value,
+                        }))
+                      }
+                      placeholder={copy.placeholders.replacement}
+                      className={inputClassName}
+                    />
+                  </Field>
+                  <div className="space-y-4 rounded-2xl border border-indigo-200 bg-indigo-50/60 p-4 md:col-span-2">
+                    <div className="space-y-1">
+                      <p className="text-sm font-semibold text-slate-900">{structuredScopeTitle}</p>
+                      <p className="text-xs leading-5 text-slate-600">
+                        {structuredScopeDescription}
                       </p>
                     </div>
-                  ) : null}
-                </div>
-                <div className="space-y-3 rounded-2xl border border-slate-200 bg-white/70 p-4 md:col-span-2">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div className="space-y-1">
-                      <p className="text-sm font-semibold text-slate-900">{advancedScopeTitle}</p>
-                      <p className="text-xs leading-5 text-slate-500">{copy.fields.scopesHint}</p>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {(['tenant', 'subsidiary', 'talent', 'profile-store'] as const).map(
+                        (category) => (
+                          <label
+                            key={category}
+                            className="flex items-center gap-3 rounded-2xl border border-white/80 bg-white/90 px-4 py-3 text-sm font-medium text-slate-700 shadow-sm"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={blocklistDraft.structuredScopeCategories.includes(category)}
+                              onChange={() => toggleStructuredScopeCategory(category)}
+                            />
+                            {ownerScopeCategoryLabels[category]}
+                          </label>
+                        )
+                      )}
+                      <label className="flex items-center gap-3 rounded-2xl border border-white/80 bg-white/90 px-4 py-3 text-sm font-medium text-slate-700 shadow-sm">
+                        <input
+                          type="checkbox"
+                          checked={blocklistDraft.surfaceScopes.includes('marshmallow')}
+                          onChange={(event) =>
+                            setBlocklistDraft((current) => ({
+                              ...current,
+                              surfaceScopes: event.target.checked ? ['marshmallow'] : [],
+                            }))
+                          }
+                        />
+                        {surfaceScopeLabel}
+                      </label>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => setBlocklistAdvancedOpen((current) => !current)}
-                      className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
-                    >
-                      {advancedScopeToggle}
-                    </button>
+                    {blocklistDraft.unsupportedScopeTokens.length > 0 ? (
+                      <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                        <p className="font-semibold">{unsupportedScopeTitle}</p>
+                        <p className="mt-1 text-xs leading-5">{unsupportedScopeDescription}</p>
+                        <p className="mt-2 font-mono text-xs">
+                          {blocklistDraft.unsupportedScopeTokens.join(', ')}
+                        </p>
+                      </div>
+                    ) : null}
                   </div>
-                  {blocklistAdvancedOpen ? (
-                    <Field label={copy.fields.scopes} hint={copy.fields.scopesHint}>
+                  <div className="space-y-3 rounded-2xl border border-slate-200 bg-white/70 p-4 md:col-span-2">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div className="space-y-1">
+                        <p className="text-sm font-semibold text-slate-900">{advancedScopeTitle}</p>
+                        <p className="text-xs leading-5 text-slate-500">{copy.fields.scopesHint}</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setBlocklistAdvancedOpen((current) => !current)}
+                        className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
+                      >
+                        {advancedScopeToggle}
+                      </button>
+                    </div>
+                    {blocklistAdvancedOpen ? (
+                      <Field label={copy.fields.scopes} hint={copy.fields.scopesHint}>
+                        <input
+                          aria-label={copy.fields.scopes}
+                          value={blocklistDraft.scopeCsv}
+                          onChange={(event) =>
+                            setBlocklistDraft((current) => ({
+                              ...current,
+                              scopeCsv: event.target.value,
+                            }))
+                          }
+                          placeholder={copy.placeholders.scopes}
+                          className={inputClassName}
+                        />
+                      </Field>
+                    ) : (
+                      <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">
+                        {[
+                          ...blocklistDraft.structuredScopeCategories,
+                          ...blocklistDraft.surfaceScopes,
+                          ...blocklistDraft.unsupportedScopeTokens,
+                          ...buildAdvancedScopeTokens(blocklistDraft),
+                        ].join(', ') || copy.common.all}
+                      </div>
+                    )}
+                  </div>
+                  <Field label={copy.fields.sortOrder}>
+                    <input
+                      aria-label={copy.fields.sortOrder}
+                      type="number"
+                      value={blocklistDraft.sortOrder}
+                      onChange={(event) =>
+                        setBlocklistDraft((current) => ({
+                          ...current,
+                          sortOrder: event.target.value,
+                        }))
+                      }
+                      className={inputClassName}
+                    />
+                  </Field>
+                  <Field label={copy.fields.description}>
+                    <textarea
+                      aria-label={copy.fields.description}
+                      value={blocklistDraft.description}
+                      onChange={(event) =>
+                        setBlocklistDraft((current) => ({
+                          ...current,
+                          description: event.target.value,
+                        }))
+                      }
+                      rows={4}
+                      className={`${inputClassName} resize-y`}
+                    />
+                  </Field>
+                  <div className="space-y-3">
+                    <label className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-sm text-slate-700">
                       <input
-                        aria-label={copy.fields.scopes}
-                        value={blocklistDraft.scopeCsv}
+                        type="checkbox"
+                        checked={blocklistDraft.inherit}
                         onChange={(event) =>
                           setBlocklistDraft((current) => ({
                             ...current,
-                            scopeCsv: event.target.value,
+                            inherit: event.target.checked,
                           }))
                         }
-                        placeholder={copy.placeholders.scopes}
-                        className={inputClassName}
                       />
-                    </Field>
-                  ) : (
-                    <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">
-                      {[
-                        ...blocklistDraft.structuredScopeCategories,
-                        ...blocklistDraft.surfaceScopes,
-                        ...blocklistDraft.unsupportedScopeTokens,
-                        ...buildAdvancedScopeTokens(blocklistDraft),
-                      ].join(', ') || copy.common.all}
-                    </div>
-                  )}
+                      {copy.fields.inherit}
+                    </label>
+                    <label className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-sm text-slate-700">
+                      <input
+                        type="checkbox"
+                        checked={blocklistDraft.isForceUse}
+                        onChange={(event) =>
+                          setBlocklistDraft((current) => ({
+                            ...current,
+                            isForceUse: event.target.checked,
+                          }))
+                        }
+                      />
+                      {copy.fields.forceUse}
+                    </label>
+                  </div>
                 </div>
-                <Field label={copy.fields.sortOrder}>
-                  <input
-                    aria-label={copy.fields.sortOrder}
-                    type="number"
-                    value={blocklistDraft.sortOrder}
-                    onChange={(event) =>
-                      setBlocklistDraft((current) => ({
-                        ...current,
-                        sortOrder: event.target.value,
-                      }))
-                    }
-                    className={inputClassName}
-                  />
-                </Field>
-                <Field label={copy.fields.description}>
+              )}
+            </ActionDrawer>
+
+            <ActionDrawer
+              open={blocklistBatchDrawerOpen}
+              onOpenChange={(open) => {
+                if (!open && blocklistBatchPending) {
+                  return;
+                }
+
+                setBlocklistBatchDrawerOpen(open);
+              }}
+              title={copy.sections.blocklistBatch.title}
+              description={copy.sections.blocklistBatch.description}
+              size="lg"
+              closeButtonAriaLabel={copy.sections.blocklistBatch.closeButtonAriaLabel}
+              closeOnBackdropClick={!blocklistBatchPending}
+              closeOnEscape={!blocklistBatchPending}
+              footer={
+                <div className="flex flex-wrap justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setBlocklistBatchDrawerOpen(false)}
+                    className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
+                  >
+                    {copy.common.cancel}
+                  </button>
+                  <AsyncSubmitButton
+                    onClick={() => void submitBlocklistBatchImport()}
+                    isPending={blocklistBatchPending}
+                    pendingText={copy.sections.blocklistBatch.pending}
+                    disabled={blocklistBatchPreview.validPatterns.length === 0}
+                  >
+                    {copy.sections.blocklistBatch.submit}
+                  </AsyncSubmitButton>
+                </div>
+              }
+            >
+              <div className="space-y-4">
+                <Field label={copy.sections.blocklistBatch.inputLabel}>
                   <textarea
-                    aria-label={copy.fields.description}
-                    value={blocklistDraft.description}
-                    onChange={(event) =>
-                      setBlocklistDraft((current) => ({
-                        ...current,
-                        description: event.target.value,
-                      }))
-                    }
-                    rows={4}
+                    aria-label={copy.sections.blocklistBatch.inputLabel}
+                    value={blocklistBatchText}
+                    onChange={(event) => setBlocklistBatchText(event.target.value)}
+                    rows={10}
+                    placeholder={copy.sections.blocklistBatch.inputPlaceholder}
                     className={`${inputClassName} resize-y`}
                   />
                 </Field>
-                <div className="space-y-3">
-                  <label className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-sm text-slate-700">
-                    <input
-                      type="checkbox"
-                      checked={blocklistDraft.inherit}
-                      onChange={(event) =>
-                        setBlocklistDraft((current) => ({
-                          ...current,
-                          inherit: event.target.checked,
-                        }))
-                      }
-                    />
-                    {copy.fields.inherit}
-                  </label>
-                  <label className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-sm text-slate-700">
-                    <input
-                      type="checkbox"
-                      checked={blocklistDraft.isForceUse}
-                      onChange={(event) =>
-                        setBlocklistDraft((current) => ({
-                          ...current,
-                          isForceUse: event.target.checked,
-                        }))
-                      }
-                    />
-                    {copy.fields.forceUse}
-                  </label>
-                </div>
-              </div>
-            )}
-          </ActionDrawer>
 
-          <ActionDrawer
-            open={blocklistBatchDrawerOpen}
-            onOpenChange={(open) => {
-              if (!open && blocklistBatchPending) {
-                return;
-              }
-
-              setBlocklistBatchDrawerOpen(open);
-            }}
-            title={copy.sections.blocklistBatch.title}
-            description={copy.sections.blocklistBatch.description}
-            size="lg"
-            closeButtonAriaLabel={copy.sections.blocklistBatch.closeButtonAriaLabel}
-            closeOnBackdropClick={!blocklistBatchPending}
-            closeOnEscape={!blocklistBatchPending}
-            footer={
-              <div className="flex flex-wrap justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={() => setBlocklistBatchDrawerOpen(false)}
-                  className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
-                >
-                  {copy.common.cancel}
-                </button>
-                <AsyncSubmitButton
-                  onClick={() => void submitBlocklistBatchImport()}
-                  isPending={blocklistBatchPending}
-                  pendingText={copy.sections.blocklistBatch.pending}
-                  disabled={blocklistBatchPreview.validPatterns.length === 0}
-                >
-                  {copy.sections.blocklistBatch.submit}
-                </AsyncSubmitButton>
-              </div>
-            }
-          >
-            <div className="space-y-4">
-              <Field label={copy.sections.blocklistBatch.inputLabel}>
-                <textarea
-                  aria-label={copy.sections.blocklistBatch.inputLabel}
-                  value={blocklistBatchText}
-                  onChange={(event) => setBlocklistBatchText(event.target.value)}
-                  rows={10}
-                  placeholder={copy.sections.blocklistBatch.inputPlaceholder}
-                  className={`${inputClassName} resize-y`}
-                />
-              </Field>
-
-              <div className="grid gap-3 md:grid-cols-3">
-                <div className="rounded-2xl border border-emerald-200 bg-emerald-50/80 px-4 py-3 text-sm text-emerald-900">
-                  <p className="font-semibold">{copy.sections.blocklistBatch.previewReady}</p>
-                  <p className="mt-1 text-2xl font-semibold">{blocklistBatchPreview.validPatterns.length}</p>
+                <div className="grid gap-3 md:grid-cols-3">
+                  <div className="rounded-2xl border border-emerald-200 bg-emerald-50/80 px-4 py-3 text-sm text-emerald-900">
+                    <p className="font-semibold">{copy.sections.blocklistBatch.previewReady}</p>
+                    <p className="mt-1 text-2xl font-semibold">
+                      {blocklistBatchPreview.validPatterns.length}
+                    </p>
+                  </div>
+                  <div className="rounded-2xl border border-amber-200 bg-amber-50/80 px-4 py-3 text-sm text-amber-900">
+                    <p className="font-semibold">
+                      {copy.sections.blocklistBatch.previewDuplicates}
+                    </p>
+                    <p className="mt-1 text-2xl font-semibold">
+                      {blocklistBatchPreview.duplicatePatterns.length}
+                    </p>
+                  </div>
+                  <div className="rounded-2xl border border-rose-200 bg-rose-50/80 px-4 py-3 text-sm text-rose-900">
+                    <p className="font-semibold">{copy.sections.blocklistBatch.previewInvalid}</p>
+                    <p className="mt-1 text-2xl font-semibold">
+                      {blocklistBatchPreview.invalidPatterns.length}
+                    </p>
+                  </div>
                 </div>
-                <div className="rounded-2xl border border-amber-200 bg-amber-50/80 px-4 py-3 text-sm text-amber-900">
-                  <p className="font-semibold">{copy.sections.blocklistBatch.previewDuplicates}</p>
-                  <p className="mt-1 text-2xl font-semibold">{blocklistBatchPreview.duplicatePatterns.length}</p>
-                </div>
-                <div className="rounded-2xl border border-rose-200 bg-rose-50/80 px-4 py-3 text-sm text-rose-900">
-                  <p className="font-semibold">{copy.sections.blocklistBatch.previewInvalid}</p>
-                  <p className="mt-1 text-2xl font-semibold">{blocklistBatchPreview.invalidPatterns.length}</p>
-                </div>
-              </div>
 
-              {blocklistBatchPreview.validPatterns.length === 0
-                && blocklistBatchPreview.duplicatePatterns.length === 0
-                && blocklistBatchPreview.invalidPatterns.length === 0 ? (
+                {blocklistBatchPreview.validPatterns.length === 0 &&
+                blocklistBatchPreview.duplicatePatterns.length === 0 &&
+                blocklistBatchPreview.invalidPatterns.length === 0 ? (
                   <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
                     {copy.sections.blocklistBatch.emptyPreview}
                   </div>
                 ) : (
                   <div className="grid gap-4 md:grid-cols-2">
                     <div className="space-y-2 rounded-2xl border border-slate-200 bg-white/80 p-4">
-                      <p className="text-sm font-semibold text-slate-900">{copy.sections.blocklistBatch.previewReady}</p>
+                      <p className="text-sm font-semibold text-slate-900">
+                        {copy.sections.blocklistBatch.previewReady}
+                      </p>
                       {blocklistBatchPreview.validPatterns.length > 0 ? (
                         <ul className="space-y-1 text-sm text-slate-700">
                           {blocklistBatchPreview.validPatterns.map((pattern) => (
@@ -2704,11 +2876,15 @@ export function SecurityManagementScreen({
                           ))}
                         </ul>
                       ) : (
-                        <p className="text-sm text-slate-500">{copy.sections.blocklistBatch.emptyPreview}</p>
+                        <p className="text-sm text-slate-500">
+                          {copy.sections.blocklistBatch.emptyPreview}
+                        </p>
                       )}
                     </div>
                     <div className="space-y-2 rounded-2xl border border-amber-200 bg-white/80 p-4">
-                      <p className="text-sm font-semibold text-slate-900">{copy.sections.blocklistBatch.previewDuplicates}</p>
+                      <p className="text-sm font-semibold text-slate-900">
+                        {copy.sections.blocklistBatch.previewDuplicates}
+                      </p>
                       {blocklistBatchPreview.duplicatePatterns.length > 0 ? (
                         <ul className="space-y-1 text-sm text-slate-700">
                           {blocklistBatchPreview.duplicatePatterns.map((pattern, index) => (
@@ -2718,11 +2894,15 @@ export function SecurityManagementScreen({
                           ))}
                         </ul>
                       ) : (
-                        <p className="text-sm text-slate-500">{copy.sections.blocklistBatch.emptyPreview}</p>
+                        <p className="text-sm text-slate-500">
+                          {copy.sections.blocklistBatch.emptyPreview}
+                        </p>
                       )}
                     </div>
                     <div className="space-y-2 rounded-2xl border border-rose-200 bg-white/80 p-4 md:col-span-2">
-                      <p className="text-sm font-semibold text-slate-900">{copy.sections.blocklistBatch.previewInvalid}</p>
+                      <p className="text-sm font-semibold text-slate-900">
+                        {copy.sections.blocklistBatch.previewInvalid}
+                      </p>
                       {blocklistBatchPreview.invalidPatterns.length > 0 ? (
                         <ul className="space-y-1 text-sm text-slate-700">
                           {blocklistBatchPreview.invalidPatterns.map((pattern, index) => (
@@ -2732,211 +2912,704 @@ export function SecurityManagementScreen({
                           ))}
                         </ul>
                       ) : (
-                        <p className="text-sm text-slate-500">{copy.sections.blocklistBatch.emptyPreview}</p>
+                        <p className="text-sm text-slate-500">
+                          {copy.sections.blocklistBatch.emptyPreview}
+                        </p>
                       )}
                     </div>
                   </div>
                 )}
-            </div>
-          </ActionDrawer>
+              </div>
+            </ActionDrawer>
 
-          <GlassSurface className="p-6">
-            <FormSection
-              title={copy.sections.blocklistTest.title}
-              description={copy.sections.blocklistTest.description}
-              actions={
-                <AsyncSubmitButton onClick={() => void runBlocklistTest()} isPending={blocklistTestPending} pendingText={copy.sections.blocklistTest.pending}>
-                  {copy.sections.blocklistTest.run}
-                </AsyncSubmitButton>
+            <GlassSurface className="p-6">
+              <FormSection
+                title={copy.sections.blocklistTest.title}
+                description={copy.sections.blocklistTest.description}
+                actions={
+                  <AsyncSubmitButton
+                    onClick={() => void runBlocklistTest()}
+                    isPending={blocklistTestPending}
+                    pendingText={copy.sections.blocklistTest.pending}
+                  >
+                    {copy.sections.blocklistTest.run}
+                  </AsyncSubmitButton>
+                }
+              >
+                <Field label={copy.sections.blocklistTest.sampleText}>
+                  <textarea
+                    aria-label={copy.sections.blocklistTest.sampleText}
+                    value={blocklistTestText}
+                    onChange={(event) => setBlocklistTestText(event.target.value)}
+                    rows={5}
+                    placeholder={copy.sections.blocklistTest.placeholder}
+                    className={`${inputClassName} resize-y`}
+                  />
+                </Field>
+
+                {blocklistTestResult ? (
+                  <div className="rounded-2xl border border-emerald-200 bg-emerald-50/80 px-4 py-4 text-sm text-emerald-800">
+                    {blocklistTestResult}
+                  </div>
+                ) : null}
+                {blocklistTestError ? (
+                  <div className="rounded-2xl border border-rose-200 bg-rose-50/80 px-4 py-4 text-sm text-rose-800">
+                    {blocklistTestError}
+                  </div>
+                ) : null}
+              </FormSection>
+            </GlassSurface>
+          </>
+        ) : null}
+
+        {displayedTab === 'external-blocklist' ? (
+          <>
+            <GlassSurface className="p-6">
+              <FormSection
+                title={copy.sections.externalList.title}
+                description={copy.sections.externalList.description}
+                actions={
+                  externalPanel.data.length > 0 ? (
+                    <InlineActionButton
+                      tone="danger"
+                      onClick={() =>
+                        openDialog({
+                          intent: 'danger',
+                          title: copy.sections.externalList.batchDeactivateTitle,
+                          description: copy.sections.externalList.batchDeactivateDescription,
+                          confirmText: copy.sections.externalList.batchDeactivateConfirm,
+                          pendingText: copy.sections.externalList.batchDeactivatePending,
+                          onConfirm: async () => {
+                            await batchToggleExternalBlocklistEntries(request, {
+                              ids: externalPanel.data.map((entry) => entry.id),
+                              isActive: false,
+                            });
+                            await refreshExternalBlocklist();
+                            setNotice({
+                              tone: 'success',
+                              message: copy.sections.externalList.batchDeactivateSuccess,
+                            });
+                          },
+                        })
+                      }
+                    >
+                      {copy.sections.externalList.batchDeactivate}
+                    </InlineActionButton>
+                  ) : null
+                }
+              >
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    onClick={openExternalCreateDrawer}
+                    className="inline-flex items-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-medium text-indigo-700 transition hover:border-indigo-300 hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                  >
+                    {copy.sections.externalEditor.newPattern}
+                  </button>
+                </div>
+                {externalPanel.error ? (
+                  <StateView
+                    status="denied"
+                    title={copy.sections.externalList.unavailable}
+                    description={externalPanel.error}
+                  />
+                ) : (
+                  <>
+                    <TableShell
+                      ariaLabel={copy.sections.externalList.title}
+                      columns={[...copy.sections.externalList.columns]}
+                      dataLength={externalPanel.data.length}
+                      isLoading={externalPanel.loading}
+                      isEmpty={!externalPanel.loading && externalPanel.data.length === 0}
+                      emptyTitle={copy.sections.externalList.emptyTitle}
+                      emptyDescription={copy.sections.externalList.emptyDescription}
+                    >
+                      {externalPanel.data.map((entry) => {
+                        const entryName = pickSecurityLocalizedName(locale, entry, entry.pattern);
+
+                        return (
+                          <tr key={entry.id} className="align-top">
+                            <td className="px-6 py-4">
+                              <div className="space-y-1">
+                                <p className="text-sm font-semibold text-slate-900">{entryName}</p>
+                                <p className="text-xs text-slate-500">{entry.pattern}</p>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 text-sm text-slate-700">
+                              {resolveScopeLabel(entry.ownerType, entry.ownerId)}
+                            </td>
+                            <td className="px-6 py-4">
+                              <ToneBadge
+                                tone={
+                                  entry.severity === 'high'
+                                    ? 'danger'
+                                    : entry.severity === 'medium'
+                                      ? 'warning'
+                                      : 'info'
+                                }
+                                label={getSecuritySeverityLabel(locale, entry.severity)}
+                              />
+                            </td>
+                            <td className="whitespace-nowrap px-6 py-4">
+                              <div className="flex flex-nowrap gap-2 whitespace-nowrap">
+                                <ToneBadge
+                                  tone={entry.isActive ? 'success' : 'neutral'}
+                                  label={entry.isActive ? copy.common.active : copy.common.inactive}
+                                />
+                                {entry.isInherited ? (
+                                  <ToneBadge tone="info" label={copy.common.inherited} />
+                                ) : null}
+                                {entry.isDisabledHere ? (
+                                  <ToneBadge tone="warning" label={copy.common.disabledHere} />
+                                ) : null}
+                              </div>
+                            </td>
+                            <td className="whitespace-nowrap px-6 py-4">
+                              <div className="flex flex-nowrap gap-2 whitespace-nowrap">
+                                <InlineActionButton
+                                  onClick={() => void openExternalEditor(entry.id)}
+                                >
+                                  {copy.actions.edit}
+                                </InlineActionButton>
+                                {entry.canDisable ? (
+                                  <InlineActionButton
+                                    tone="danger"
+                                    onClick={() =>
+                                      openDialog({
+                                        intent: 'danger',
+                                        title: `${copy.dialogs.disableInheritedTitlePrefix} ${entryName}?`,
+                                        description: copy.dialogs.disableInheritedDescription,
+                                        confirmText: copy.actions.disableHere,
+                                        pendingText: copy.dialogs.disabling,
+                                        onConfirm: async () => {
+                                          await disableInheritedExternalBlocklistEntry(
+                                            request,
+                                            entry.id,
+                                            {
+                                              scopeType,
+                                              scopeId:
+                                                scopeType === 'tenant'
+                                                  ? undefined
+                                                  : scopeId || undefined,
+                                            }
+                                          );
+                                          await refreshExternalBlocklist();
+                                          setNotice({
+                                            tone: 'success',
+                                            message: formatSecurityDisableSuccess(
+                                              locale,
+                                              entryName
+                                            ),
+                                          });
+                                        },
+                                      })
+                                    }
+                                  >
+                                    {copy.actions.disableHere}
+                                  </InlineActionButton>
+                                ) : null}
+                                {entry.isDisabledHere ? (
+                                  <InlineActionButton
+                                    tone="primary"
+                                    onClick={() =>
+                                      openDialog({
+                                        intent: 'primary',
+                                        title: `${copy.dialogs.reEnableTitlePrefix} ${entryName}?`,
+                                        description: copy.dialogs.reEnableDescription,
+                                        confirmText: copy.actions.reEnable,
+                                        pendingText: copy.dialogs.reEnabling,
+                                        onConfirm: async () => {
+                                          await enableInheritedExternalBlocklistEntry(
+                                            request,
+                                            entry.id,
+                                            {
+                                              scopeType,
+                                              scopeId:
+                                                scopeType === 'tenant'
+                                                  ? undefined
+                                                  : scopeId || undefined,
+                                            }
+                                          );
+                                          await refreshExternalBlocklist();
+                                          setNotice({
+                                            tone: 'success',
+                                            message: formatSecurityReEnableSuccess(
+                                              locale,
+                                              entryName
+                                            ),
+                                          });
+                                        },
+                                      })
+                                    }
+                                  >
+                                    {copy.actions.reEnable}
+                                  </InlineActionButton>
+                                ) : null}
+                                {!entry.isInherited ? (
+                                  <InlineActionButton
+                                    tone="danger"
+                                    onClick={() =>
+                                      openDialog({
+                                        intent: 'danger',
+                                        title: `${copy.dialogs.deleteTitlePrefix} ${entryName}?`,
+                                        description: copy.dialogs.deletePatternDescription,
+                                        confirmText: copy.actions.deletePattern,
+                                        pendingText: copy.dialogs.deleting,
+                                        onConfirm: async () => {
+                                          await deleteExternalBlocklistEntry(request, entry.id);
+                                          await refreshExternalBlocklist();
+                                          if (selectedExternalId === entry.id) {
+                                            resetExternalEditor();
+                                          }
+                                          setNotice({
+                                            tone: 'success',
+                                            message: formatSecurityDeleteSuccess(locale, entryName),
+                                          });
+                                        },
+                                      })
+                                    }
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                    {copy.actions.delete}
+                                  </InlineActionButton>
+                                ) : null}
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </TableShell>
+                    <PaginationFooter
+                      pagination={externalPanel.pagination}
+                      itemCount={externalPanel.data.length}
+                      labels={getSecurityPaginationLabels(
+                        locale,
+                        externalPanel.pagination,
+                        externalPanel.data.length
+                      )}
+                      onPageChange={setExternalPage}
+                      onPageSizeChange={(nextPageSize) => {
+                        setExternalPageSize(nextPageSize as PageSizeOption);
+                        setExternalPage(1);
+                      }}
+                      isLoading={externalPanel.loading}
+                      className="mt-4 rounded-2xl border border-slate-200"
+                    />
+                  </>
+                )}
+              </FormSection>
+            </GlassSurface>
+
+            <ActionDrawer
+              open={externalDrawerOpen}
+              onOpenChange={setExternalDrawerOpenSafely}
+              title={
+                externalMode === 'create'
+                  ? copy.sections.externalEditor.createTitle
+                  : copy.sections.externalEditor.updateTitle
               }
-            >
-              <Field label={copy.sections.blocklistTest.sampleText}>
-                <textarea
-                  aria-label={copy.sections.blocklistTest.sampleText}
-                  value={blocklistTestText}
-                  onChange={(event) => setBlocklistTestText(event.target.value)}
-                  rows={5}
-                  placeholder={copy.sections.blocklistTest.placeholder}
-                  className={`${inputClassName} resize-y`}
-                />
-              </Field>
-
-              {blocklistTestResult ? (
-                <div className="rounded-2xl border border-emerald-200 bg-emerald-50/80 px-4 py-4 text-sm text-emerald-800">
-                  {blocklistTestResult}
-                </div>
-              ) : null}
-              {blocklistTestError ? (
-                <div className="rounded-2xl border border-rose-200 bg-rose-50/80 px-4 py-4 text-sm text-rose-800">
-                  {blocklistTestError}
-                </div>
-              ) : null}
-            </FormSection>
-          </GlassSurface>
-        </>
-      ) : null}
-
-      {displayedTab === 'external-blocklist' ? (
-        <>
-          <GlassSurface className="p-6">
-            <FormSection
-              title={copy.sections.externalList.title}
-              description={copy.sections.externalList.description}
-              actions={
-                externalPanel.data.length > 0 ? (
-                  <InlineActionButton
-                    tone="danger"
-                    onClick={() =>
-                      openDialog({
-                        intent: 'danger',
-                        title: copy.sections.externalList.batchDeactivateTitle,
-                        description: copy.sections.externalList.batchDeactivateDescription,
-                        confirmText: copy.sections.externalList.batchDeactivateConfirm,
-                        pendingText: copy.sections.externalList.batchDeactivatePending,
-                        onConfirm: async () => {
-                          await batchToggleExternalBlocklistEntries(request, {
-                            ids: externalPanel.data.map((entry) => entry.id),
-                            isActive: false,
-                          });
-                          await refreshExternalBlocklist();
-                          setNotice({
-                            tone: 'success',
-                            message: copy.sections.externalList.batchDeactivateSuccess,
-                          });
-                        },
-                      })
+              description={copy.sections.externalEditor.description}
+              size="xl"
+              closeButtonAriaLabel={copy.sections.externalEditor.closeButtonAriaLabel}
+              closeOnBackdropClick={!externalSavePending}
+              closeOnEscape={!externalSavePending}
+              footer={
+                <div className="flex flex-wrap justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setExternalDrawerOpenSafely(false)}
+                    className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
+                  >
+                    {copy.common.cancel}
+                  </button>
+                  <AsyncSubmitButton
+                    onClick={() => void submitExternalBlocklist()}
+                    isPending={externalSavePending}
+                    pendingText={
+                      externalMode === 'create'
+                        ? copy.sections.externalEditor.creating
+                        : copy.sections.externalEditor.saving
                     }
                   >
-                    {copy.sections.externalList.batchDeactivate}
-                  </InlineActionButton>
-                ) : null
+                    {externalMode === 'create'
+                      ? copy.sections.externalEditor.create
+                      : copy.sections.externalEditor.update}
+                  </AsyncSubmitButton>
+                </div>
               }
             >
-              <div className="flex justify-end">
-                <button
-                  type="button"
-                  onClick={openExternalCreateDrawer}
-                  className="inline-flex items-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-medium text-indigo-700 transition hover:border-indigo-300 hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
-                >
-                  {copy.sections.externalEditor.newPattern}
-                </button>
+              <div className="mb-5 rounded-2xl border border-indigo-200 bg-indigo-50/80 px-4 py-3 text-sm text-indigo-950">
+                <div className="flex flex-wrap items-start gap-3">
+                  <ShieldCheck className="mt-0.5 h-4 w-4 flex-none" />
+                  <div className="min-w-0 space-y-1">
+                    <p className="font-semibold">{scopeLockTitle}</p>
+                    <p className="leading-6">{scopeLockDescription}</p>
+                    <p className="text-xs text-indigo-800/80">
+                      {copy.options.scopeType[scopeType]} · {activeScopeLabel}
+                    </p>
+                  </div>
+                </div>
               </div>
-              {externalPanel.error ? (
-                <StateView status="denied" title={copy.sections.externalList.unavailable} description={externalPanel.error} />
+              {externalDetailLoading ? (
+                <StateView
+                  status="unavailable"
+                  title={copy.sections.externalEditor.loadingTitle}
+                  description={copy.sections.externalEditor.loadingDescription}
+                />
               ) : (
-                <>
-                  <TableShell
-                    ariaLabel={copy.sections.externalList.title}
-                    columns={[...copy.sections.externalList.columns]}
-                    dataLength={externalPanel.data.length}
-                    isLoading={externalPanel.loading}
-                    isEmpty={!externalPanel.loading && externalPanel.data.length === 0}
-                    emptyTitle={copy.sections.externalList.emptyTitle}
-                    emptyDescription={copy.sections.externalList.emptyDescription}
-                  >
-                    {externalPanel.data.map((entry) => {
-                      const entryName = pickSecurityLocalizedName(locale, entry, entry.pattern);
+                <div className="grid gap-4 md:grid-cols-2">
+                  <Field label={copy.fields.ownerType}>
+                    <select
+                      aria-label={copy.fields.ownerType}
+                      value={externalDraft.ownerType}
+                      onChange={(event) =>
+                        setExternalDraft((current) => {
+                          const nextType = event.target.value as SecurityScopeType;
+                          const nextOwnerId = isScopedSecurityScopeType(nextType)
+                            ? (getScopeOptions(nextType)[0]?.id ?? '')
+                            : '';
 
-                      return (
-                      <tr key={entry.id} className="align-top">
-                      <td className="px-6 py-4">
-                        <div className="space-y-1">
-                          <p className="text-sm font-semibold text-slate-900">{entryName}</p>
-                          <p className="text-xs text-slate-500">{entry.pattern}</p>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-slate-700">
-                        {resolveScopeLabel(entry.ownerType, entry.ownerId)}
-                      </td>
-                      <td className="px-6 py-4">
-                        <ToneBadge
-                          tone={entry.severity === 'high' ? 'danger' : entry.severity === 'medium' ? 'warning' : 'info'}
-                          label={getSecuritySeverityLabel(locale, entry.severity)}
+                          return {
+                            ...current,
+                            ownerType: nextType,
+                            ownerId: nextOwnerId,
+                          };
+                        })
+                      }
+                      className={inputClassName}
+                    >
+                      <option value="tenant">{copy.options.scopeType.tenant}</option>
+                      <option value="subsidiary">{copy.options.scopeType.subsidiary}</option>
+                      <option value="talent">{copy.options.scopeType.talent}</option>
+                    </select>
+                  </Field>
+                  <Field label={copy.fields.ownerId}>
+                    {externalDraft.ownerType === 'tenant' ? (
+                      <input
+                        aria-label={copy.fields.ownerId}
+                        value={copy.scopeLens.tenantPlaceholder}
+                        disabled
+                        className={inputClassName}
+                      />
+                    ) : (
+                      <select
+                        aria-label={copy.fields.ownerId}
+                        value={externalDraft.ownerId}
+                        onChange={(event) =>
+                          setExternalDraft((current) => ({
+                            ...current,
+                            ownerId: event.target.value,
+                          }))
+                        }
+                        disabled={
+                          organizationScopesPanel.loading ||
+                          getScopeOptions(externalDraft.ownerType, externalDraft.ownerId).length ===
+                            0
+                        }
+                        className={inputClassName}
+                      >
+                        {getScopeOptions(externalDraft.ownerType, externalDraft.ownerId).length ===
+                        0 ? (
+                          <option value="">{copy.scopeLens.emptyOptions}</option>
+                        ) : null}
+                        {getScopeOptions(externalDraft.ownerType, externalDraft.ownerId).map(
+                          (option) => (
+                            <option key={`${option.type}-${option.id}`} value={option.id}>
+                              {option.label}
+                            </option>
+                          )
+                        )}
+                      </select>
+                    )}
+                  </Field>
+                  <div className="space-y-3 md:col-span-2">
+                    <div className="flex flex-wrap items-end gap-3">
+                      <Field label={copy.fields.ruleName}>
+                        <input
+                          aria-label={copy.fields.ruleName}
+                          value={externalDraft.nameBase}
+                          onChange={(event) =>
+                            setExternalDraft((current) => ({
+                              ...current,
+                              nameBase: event.target.value,
+                            }))
+                          }
+                          placeholder={copy.placeholders.externalRuleName}
+                          className={inputClassName}
                         />
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex flex-nowrap gap-2 whitespace-nowrap">
-                          <ToneBadge tone={entry.isActive ? 'success' : 'neutral'} label={entry.isActive ? copy.common.active : copy.common.inactive} />
-                          {entry.isInherited ? <ToneBadge tone="info" label={copy.common.inherited} /> : null}
-                          {entry.isDisabledHere ? <ToneBadge tone="warning" label={copy.common.disabledHere} /> : null}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex flex-nowrap gap-2 whitespace-nowrap">
-                          <InlineActionButton onClick={() => void openExternalEditor(entry.id)}>{copy.actions.edit}</InlineActionButton>
-                          {entry.canDisable ? (
+                      </Field>
+                      <button
+                        type="button"
+                        onClick={() => setExternalTranslationDrawerOpen(true)}
+                        className="inline-flex items-center gap-2 rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
+                        aria-label={copy.sections.externalEditor.translationManagement.trigger}
+                      >
+                        <Languages className="h-4 w-4" />
+                        <span>{copy.sections.externalEditor.translationManagement.trigger}</span>
+                        {configuredExternalTranslationCount > 0 ? (
+                          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-600">
+                            {configuredExternalTranslationCount}
+                          </span>
+                        ) : null}
+                      </button>
+                    </div>
+                    <p className="text-xs text-slate-500">
+                      {configuredExternalTranslationCount > 0
+                        ? copy.sections.externalEditor.translationManagement.summary(
+                            configuredExternalTranslationCount
+                          )
+                        : copy.sections.externalEditor.translationManagement.empty}
+                    </p>
+                    {translationOptionsState.error ? (
+                      <p className="text-xs text-amber-700">{translationOptionsState.error}</p>
+                    ) : null}
+                  </div>
+                  <Field label={copy.fields.category}>
+                    <input
+                      aria-label={copy.fields.category}
+                      value={externalDraft.category}
+                      onChange={(event) =>
+                        setExternalDraft((current) => ({
+                          ...current,
+                          category: event.target.value,
+                        }))
+                      }
+                      placeholder={copy.placeholders.externalCategory}
+                      className={inputClassName}
+                    />
+                  </Field>
+                  <Field label={copy.fields.pattern}>
+                    <input
+                      aria-label={copy.fields.pattern}
+                      value={externalDraft.pattern}
+                      onChange={(event) =>
+                        setExternalDraft((current) => ({
+                          ...current,
+                          pattern: event.target.value,
+                        }))
+                      }
+                      placeholder={copy.placeholders.externalPattern}
+                      className={inputClassName}
+                    />
+                  </Field>
+                  <Field label={copy.fields.patternType}>
+                    <select
+                      aria-label={copy.fields.patternType}
+                      value={externalDraft.patternType}
+                      onChange={(event) =>
+                        setExternalDraft((current) => ({
+                          ...current,
+                          patternType: event.target.value as ExternalPatternType,
+                        }))
+                      }
+                      className={inputClassName}
+                    >
+                      <option value="domain">{copy.options.externalPatternType.domain}</option>
+                      <option value="url_regex">
+                        {copy.options.externalPatternType.url_regex}
+                      </option>
+                      <option value="keyword">{copy.options.externalPatternType.keyword}</option>
+                    </select>
+                  </Field>
+                  <Field label={copy.fields.severity}>
+                    <select
+                      aria-label={copy.fields.severity}
+                      value={externalDraft.severity}
+                      onChange={(event) =>
+                        setExternalDraft((current) => ({
+                          ...current,
+                          severity: event.target.value as BlocklistSeverity,
+                        }))
+                      }
+                      className={inputClassName}
+                    >
+                      <option value="low">{copy.options.severity.low}</option>
+                      <option value="medium">{copy.options.severity.medium}</option>
+                      <option value="high">{copy.options.severity.high}</option>
+                    </select>
+                  </Field>
+                  <Field label={copy.fields.action}>
+                    <select
+                      aria-label={copy.fields.action}
+                      value={externalDraft.action}
+                      onChange={(event) =>
+                        setExternalDraft((current) => ({
+                          ...current,
+                          action: event.target.value as BlocklistAction,
+                        }))
+                      }
+                      className={inputClassName}
+                    >
+                      <option value="reject">{copy.options.action.reject}</option>
+                      <option value="flag">{copy.options.action.flag}</option>
+                      <option value="replace">{copy.options.action.replace}</option>
+                    </select>
+                  </Field>
+                  <Field label={copy.fields.replacement}>
+                    <input
+                      aria-label={copy.fields.replacement}
+                      value={externalDraft.replacement}
+                      onChange={(event) =>
+                        setExternalDraft((current) => ({
+                          ...current,
+                          replacement: event.target.value,
+                        }))
+                      }
+                      placeholder={copy.placeholders.externalReplacement}
+                      className={inputClassName}
+                    />
+                  </Field>
+                  <Field label={copy.fields.sortOrder}>
+                    <input
+                      aria-label={copy.fields.sortOrder}
+                      type="number"
+                      value={externalDraft.sortOrder}
+                      onChange={(event) =>
+                        setExternalDraft((current) => ({
+                          ...current,
+                          sortOrder: event.target.value,
+                        }))
+                      }
+                      className={inputClassName}
+                    />
+                  </Field>
+                  <Field label={copy.fields.description}>
+                    <textarea
+                      aria-label={copy.fields.description}
+                      value={externalDraft.description}
+                      onChange={(event) =>
+                        setExternalDraft((current) => ({
+                          ...current,
+                          description: event.target.value,
+                        }))
+                      }
+                      rows={4}
+                      className={`${inputClassName} resize-y`}
+                    />
+                  </Field>
+                  <div className="space-y-3">
+                    <label className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-sm text-slate-700">
+                      <input
+                        type="checkbox"
+                        checked={externalDraft.inherit}
+                        onChange={(event) =>
+                          setExternalDraft((current) => ({
+                            ...current,
+                            inherit: event.target.checked,
+                          }))
+                        }
+                      />
+                      {copy.fields.inherit}
+                    </label>
+                    <label className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-sm text-slate-700">
+                      <input
+                        type="checkbox"
+                        checked={externalDraft.isForceUse}
+                        onChange={(event) =>
+                          setExternalDraft((current) => ({
+                            ...current,
+                            isForceUse: event.target.checked,
+                          }))
+                        }
+                      />
+                      {copy.fields.forceUse}
+                    </label>
+                  </div>
+                </div>
+              )}
+            </ActionDrawer>
+          </>
+        ) : null}
+
+        {displayedTab === 'ip-access' ? (
+          <>
+            <GlassSurface className="p-6">
+              <FormSection
+                title={copy.sections.ipRules.listTitle}
+                description={copy.sections.ipRules.listDescription}
+              >
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    onClick={openIpRuleCreateDrawer}
+                    className="inline-flex items-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-medium text-indigo-700 transition hover:border-indigo-300 hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                  >
+                    {copy.sections.ipRules.newRule}
+                  </button>
+                </div>
+                {ipRulesPanel.error ? (
+                  <StateView
+                    status="denied"
+                    title={copy.sections.ipRules.unavailable}
+                    description={ipRulesPanel.error}
+                  />
+                ) : (
+                  <>
+                    <TableShell
+                      ariaLabel={copy.sections.ipRules.listTitle}
+                      columns={[...copy.sections.ipRules.columns]}
+                      dataLength={ipRulesPanel.data.length}
+                      isLoading={ipRulesPanel.loading}
+                      isEmpty={!ipRulesPanel.loading && ipRulesPanel.data.length === 0}
+                      emptyTitle={copy.sections.ipRules.emptyTitle}
+                      emptyDescription={copy.sections.ipRules.emptyDescription}
+                    >
+                      {ipRulesPanel.data.map((rule) => (
+                        <tr key={rule.id}>
+                          <td className="px-6 py-4">
+                            <div className="space-y-1">
+                              <p className="text-sm font-semibold text-slate-900">
+                                {rule.ipPattern}
+                              </p>
+                              <p className="text-xs text-slate-500">
+                                {rule.reason || copy.common.noReason}
+                              </p>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <ToneBadge
+                              tone={rule.ruleType === 'blacklist' ? 'danger' : 'success'}
+                              label={getSecurityIpRuleTypeLabel(locale, rule.ruleType)}
+                            />
+                          </td>
+                          <td className="px-6 py-4 text-sm text-slate-700">
+                            {getSecurityIpRuleScopeLabel(locale, rule.scope)}
+                          </td>
+                          <td className="px-6 py-4 text-sm text-slate-700">
+                            {formatSecurityRuleHits(locale, rule.hitCount, rule.lastHitAt)}
+                          </td>
+                          <td className="px-6 py-4">
+                            <ToneBadge
+                              tone={rule.isActive ? 'success' : 'neutral'}
+                              label={rule.isActive ? copy.common.active : copy.common.inactive}
+                            />
+                          </td>
+                          <td className="whitespace-nowrap px-6 py-4">
                             <InlineActionButton
                               tone="danger"
                               onClick={() =>
                                 openDialog({
                                   intent: 'danger',
-                                  title: `${copy.dialogs.disableInheritedTitlePrefix} ${entryName}?`,
-                                  description: copy.dialogs.disableInheritedDescription,
-                                  confirmText: copy.actions.disableHere,
-                                  pendingText: copy.dialogs.disabling,
-                                  onConfirm: async () => {
-                                    await disableInheritedExternalBlocklistEntry(request, entry.id, {
-                                      scopeType,
-                                      scopeId: scopeType === 'tenant' ? undefined : scopeId || undefined,
-                                    });
-                                    await refreshExternalBlocklist();
-                                    setNotice({
-                                      tone: 'success',
-                                      message: formatSecurityDisableSuccess(locale, entryName),
-                                    });
-                                  },
-                                })
-                              }
-                            >
-                              {copy.actions.disableHere}
-                            </InlineActionButton>
-                          ) : null}
-                          {entry.isDisabledHere ? (
-                            <InlineActionButton
-                              tone="primary"
-                              onClick={() =>
-                                openDialog({
-                                  intent: 'primary',
-                                  title: `${copy.dialogs.reEnableTitlePrefix} ${entryName}?`,
-                                  description: copy.dialogs.reEnableDescription,
-                                  confirmText: copy.actions.reEnable,
-                                  pendingText: copy.dialogs.reEnabling,
-                                  onConfirm: async () => {
-                                    await enableInheritedExternalBlocklistEntry(request, entry.id, {
-                                      scopeType,
-                                      scopeId: scopeType === 'tenant' ? undefined : scopeId || undefined,
-                                    });
-                                    await refreshExternalBlocklist();
-                                    setNotice({
-                                      tone: 'success',
-                                      message: formatSecurityReEnableSuccess(locale, entryName),
-                                    });
-                                  },
-                                })
-                              }
-                            >
-                              {copy.actions.reEnable}
-                            </InlineActionButton>
-                          ) : null}
-                          {!entry.isInherited ? (
-                            <InlineActionButton
-                              tone="danger"
-                              onClick={() =>
-                                openDialog({
-                                  intent: 'danger',
-                                  title: `${copy.dialogs.deleteTitlePrefix} ${entryName}?`,
-                                  description: copy.dialogs.deletePatternDescription,
-                                  confirmText: copy.actions.deletePattern,
+                                  title: pickLocaleText(locale, {
+                                    en: `Delete ${rule.ipPattern}?`,
+                                    zh_HANS: `删除 ${rule.ipPattern}？`,
+                                    zh_HANT: `刪除 ${rule.ipPattern}？`,
+                                    ja: `${rule.ipPattern} を削除しますか？`,
+                                    ko: `${rule.ipPattern} 규칙을 삭제할까요?`,
+                                    fr: `Supprimer ${rule.ipPattern} ?`,
+                                  }),
+                                  description: copy.dialogs.deleteIpDescription,
+                                  confirmText: copy.actions.deleteRule,
                                   pendingText: copy.dialogs.deleting,
                                   onConfirm: async () => {
-                                    await deleteExternalBlocklistEntry(request, entry.id);
-                                    await refreshExternalBlocklist();
-                                    if (selectedExternalId === entry.id) {
-                                      resetExternalEditor();
-                                    }
+                                    await deleteIpAccessRule(request, rule.id);
+                                    await refreshIpRules();
                                     setNotice({
                                       tone: 'success',
-                                      message: formatSecurityDeleteSuccess(locale, entryName),
+                                      message: formatSecurityIpRuleDeleteSuccess(
+                                        locale,
+                                        rule.ipPattern
+                                      ),
                                     });
                                   },
                                 })
@@ -2945,824 +3618,497 @@ export function SecurityManagementScreen({
                               <Trash2 className="h-3.5 w-3.5" />
                               {copy.actions.delete}
                             </InlineActionButton>
-                          ) : null}
-                        </div>
-                      </td>
-                      </tr>
-                    )})}
-                  </TableShell>
-                  <PaginationFooter
-                    pagination={externalPanel.pagination}
-                    itemCount={externalPanel.data.length}
-                    labels={getSecurityPaginationLabels(locale, externalPanel.pagination, externalPanel.data.length)}
-                    onPageChange={setExternalPage}
-                    onPageSizeChange={(nextPageSize) => {
-                      setExternalPageSize(nextPageSize as PageSizeOption);
-                      setExternalPage(1);
-                    }}
-                    isLoading={externalPanel.loading}
-                    className="mt-4 rounded-2xl border border-slate-200"
-                  />
-                </>
-              )}
-            </FormSection>
-          </GlassSurface>
-
-          <ActionDrawer
-            open={externalDrawerOpen}
-            onOpenChange={setExternalDrawerOpenSafely}
-            title={externalMode === 'create' ? copy.sections.externalEditor.createTitle : copy.sections.externalEditor.updateTitle}
-            description={copy.sections.externalEditor.description}
-            size="xl"
-            closeButtonAriaLabel={copy.sections.externalEditor.closeButtonAriaLabel}
-            closeOnBackdropClick={!externalSavePending}
-            closeOnEscape={!externalSavePending}
-            footer={
-              <div className="flex flex-wrap justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={() => setExternalDrawerOpenSafely(false)}
-                  className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
-                >
-                  {copy.common.cancel}
-                </button>
-                <AsyncSubmitButton
-                  onClick={() => void submitExternalBlocklist()}
-                  isPending={externalSavePending}
-                  pendingText={externalMode === 'create' ? copy.sections.externalEditor.creating : copy.sections.externalEditor.saving}
-                >
-                  {externalMode === 'create' ? copy.sections.externalEditor.create : copy.sections.externalEditor.update}
-                </AsyncSubmitButton>
-              </div>
-            }
-          >
-            <div className="mb-5 rounded-2xl border border-indigo-200 bg-indigo-50/80 px-4 py-3 text-sm text-indigo-950">
-              <div className="flex flex-wrap items-start gap-3">
-                <ShieldCheck className="mt-0.5 h-4 w-4 flex-none" />
-                <div className="min-w-0 space-y-1">
-                  <p className="font-semibold">{scopeLockTitle}</p>
-                  <p className="leading-6">{scopeLockDescription}</p>
-                  <p className="text-xs text-indigo-800/80">
-                    {copy.options.scopeType[scopeType]} · {activeScopeLabel}
-                  </p>
-                </div>
-              </div>
-            </div>
-            {externalDetailLoading ? (
-              <StateView
-                status="unavailable"
-                title={copy.sections.externalEditor.loadingTitle}
-                description={copy.sections.externalEditor.loadingDescription}
-              />
-            ) : (
-              <div className="grid gap-4 md:grid-cols-2">
-                <Field label={copy.fields.ownerType}>
-                  <select
-                    aria-label={copy.fields.ownerType}
-                    value={externalDraft.ownerType}
-                    onChange={(event) =>
-                      setExternalDraft((current) => {
-                        const nextType = event.target.value as SecurityScopeType;
-                        const nextOwnerId = isScopedSecurityScopeType(nextType)
-                          ? getScopeOptions(nextType)[0]?.id ?? ''
-                          : '';
-
-                        return {
-                          ...current,
-                          ownerType: nextType,
-                          ownerId: nextOwnerId,
-                        };
-                      })
-                    }
-                    className={inputClassName}
-                  >
-                    <option value="tenant">{copy.options.scopeType.tenant}</option>
-                    <option value="subsidiary">{copy.options.scopeType.subsidiary}</option>
-                    <option value="talent">{copy.options.scopeType.talent}</option>
-                  </select>
-                </Field>
-                <Field label={copy.fields.ownerId}>
-                  {externalDraft.ownerType === 'tenant' ? (
-                    <input
-                      aria-label={copy.fields.ownerId}
-                      value={copy.scopeLens.tenantPlaceholder}
-                      disabled
-                      className={inputClassName}
-                    />
-                  ) : (
-                    <select
-                      aria-label={copy.fields.ownerId}
-                      value={externalDraft.ownerId}
-                      onChange={(event) =>
-                        setExternalDraft((current) => ({
-                          ...current,
-                          ownerId: event.target.value,
-                        }))
-                      }
-                      disabled={
-                        organizationScopesPanel.loading
-                        || getScopeOptions(externalDraft.ownerType, externalDraft.ownerId).length === 0
-                      }
-                      className={inputClassName}
-                    >
-                      {getScopeOptions(externalDraft.ownerType, externalDraft.ownerId).length === 0 ? (
-                        <option value="">{copy.scopeLens.emptyOptions}</option>
-                      ) : null}
-                      {getScopeOptions(externalDraft.ownerType, externalDraft.ownerId).map((option) => (
-                        <option key={`${option.type}-${option.id}`} value={option.id}>
-                          {option.label}
-                        </option>
+                          </td>
+                        </tr>
                       ))}
-                    </select>
-                  )}
-                </Field>
-                <div className="space-y-3 md:col-span-2">
-                  <div className="flex flex-wrap items-end gap-3">
-                    <Field label={copy.fields.ruleName}>
-                      <input
-                        aria-label={copy.fields.ruleName}
-                        value={externalDraft.nameBase}
-                        onChange={(event) =>
-                          setExternalDraft((current) => ({
-                            ...current,
-                            nameBase: event.target.value,
-                          }))
-                        }
-                        placeholder={copy.placeholders.externalRuleName}
-                        className={inputClassName}
-                      />
-                    </Field>
-                    <button
-                      type="button"
-                      onClick={() => setExternalTranslationDrawerOpen(true)}
-                      className="inline-flex items-center gap-2 rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
-                      aria-label={copy.sections.externalEditor.translationManagement.trigger}
-                    >
-                      <Languages className="h-4 w-4" />
-                      <span>{copy.sections.externalEditor.translationManagement.trigger}</span>
-                      {configuredExternalTranslationCount > 0 ? (
-                        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-600">
-                          {configuredExternalTranslationCount}
-                        </span>
-                      ) : null}
-                    </button>
-                  </div>
-                  <p className="text-xs text-slate-500">
-                    {configuredExternalTranslationCount > 0
-                      ? copy.sections.externalEditor.translationManagement.summary(configuredExternalTranslationCount)
-                      : copy.sections.externalEditor.translationManagement.empty}
-                  </p>
-                  {translationOptionsState.error ? (
-                    <p className="text-xs text-amber-700">{translationOptionsState.error}</p>
-                  ) : null}
+                    </TableShell>
+                    <PaginationFooter
+                      pagination={ipRulesPanel.pagination}
+                      itemCount={ipRulesPanel.data.length}
+                      labels={getSecurityPaginationLabels(
+                        locale,
+                        ipRulesPanel.pagination,
+                        ipRulesPanel.data.length
+                      )}
+                      onPageChange={setIpRulesPage}
+                      onPageSizeChange={(nextPageSize) => {
+                        setIpRulesPageSize(nextPageSize as PageSizeOption);
+                        setIpRulesPage(1);
+                      }}
+                      isLoading={ipRulesPanel.loading}
+                      className="mt-4 rounded-2xl border border-slate-200"
+                    />
+                  </>
+                )}
+              </FormSection>
+            </GlassSurface>
+
+            <ActionDrawer
+              open={ipRuleDrawerOpen}
+              onOpenChange={setIpRuleDrawerOpenSafely}
+              title={copy.sections.ipRules.createTitle}
+              description={copy.sections.ipRules.createDescription}
+              size="lg"
+              closeButtonAriaLabel={copy.sections.ipRules.closeButtonAriaLabel}
+              closeOnBackdropClick={!ipRuleSavePending}
+              closeOnEscape={!ipRuleSavePending}
+              footer={
+                <div className="flex flex-wrap justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setIpRuleDrawerOpenSafely(false)}
+                    className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
+                  >
+                    {copy.common.cancel}
+                  </button>
+                  <AsyncSubmitButton
+                    onClick={() => void submitIpRule()}
+                    isPending={ipRuleSavePending}
+                    pendingText={copy.sections.ipRules.creating}
+                  >
+                    {copy.sections.ipRules.create}
+                  </AsyncSubmitButton>
                 </div>
-                <Field label={copy.fields.category}>
-                  <input
-                    aria-label={copy.fields.category}
-                    value={externalDraft.category}
-                    onChange={(event) =>
-                      setExternalDraft((current) => ({
-                        ...current,
-                        category: event.target.value,
-                      }))
-                    }
-                    placeholder={copy.placeholders.externalCategory}
-                    className={inputClassName}
-                  />
-                </Field>
-                <Field label={copy.fields.pattern}>
-                  <input
-                    aria-label={copy.fields.pattern}
-                    value={externalDraft.pattern}
-                    onChange={(event) =>
-                      setExternalDraft((current) => ({
-                        ...current,
-                        pattern: event.target.value,
-                      }))
-                    }
-                    placeholder={copy.placeholders.externalPattern}
-                    className={inputClassName}
-                  />
-                </Field>
-                <Field label={copy.fields.patternType}>
+              }
+            >
+              <div className="grid gap-4 md:grid-cols-2">
+                <Field label={copy.fields.ipRuleType}>
                   <select
-                    aria-label={copy.fields.patternType}
-                    value={externalDraft.patternType}
+                    aria-label={copy.fields.ipRuleType}
+                    value={ipRuleDraft.ruleType}
                     onChange={(event) =>
-                      setExternalDraft((current) => ({
+                      setIpRuleDraft((current) => ({
                         ...current,
-                        patternType: event.target.value as ExternalPatternType,
+                        ruleType: event.target.value as IpRuleType,
                       }))
                     }
                     className={inputClassName}
                   >
-                    <option value="domain">{copy.options.externalPatternType.domain}</option>
-                    <option value="url_regex">{copy.options.externalPatternType.url_regex}</option>
-                    <option value="keyword">{copy.options.externalPatternType.keyword}</option>
+                    <option value="blacklist">{copy.options.ipRuleType.blacklist}</option>
+                    <option value="whitelist">{copy.options.ipRuleType.whitelist}</option>
                   </select>
                 </Field>
-                <Field label={copy.fields.severity}>
+                <Field label={copy.fields.ipRuleScope}>
                   <select
-                    aria-label={copy.fields.severity}
-                    value={externalDraft.severity}
+                    aria-label={copy.fields.ipRuleScope}
+                    value={ipRuleDraft.scope}
                     onChange={(event) =>
-                      setExternalDraft((current) => ({
+                      setIpRuleDraft((current) => ({
                         ...current,
-                        severity: event.target.value as BlocklistSeverity,
+                        scope: event.target.value as IpRuleScope,
                       }))
                     }
                     className={inputClassName}
                   >
-                    <option value="low">{copy.options.severity.low}</option>
-                    <option value="medium">{copy.options.severity.medium}</option>
-                    <option value="high">{copy.options.severity.high}</option>
+                    <option value="admin">{copy.options.ipRuleScope.admin}</option>
+                    <option value="api">{copy.options.ipRuleScope.api}</option>
+                    <option value="public">{copy.options.ipRuleScope.public}</option>
+                    <option value="global">{copy.options.ipRuleScope.global}</option>
                   </select>
                 </Field>
-                <Field label={copy.fields.action}>
-                  <select
-                    aria-label={copy.fields.action}
-                    value={externalDraft.action}
-                    onChange={(event) =>
-                      setExternalDraft((current) => ({
-                        ...current,
-                        action: event.target.value as BlocklistAction,
-                      }))
-                    }
-                    className={inputClassName}
-                  >
-                    <option value="reject">{copy.options.action.reject}</option>
-                    <option value="flag">{copy.options.action.flag}</option>
-                    <option value="replace">{copy.options.action.replace}</option>
-                  </select>
-                </Field>
-                <Field label={copy.fields.replacement}>
+                <Field label={copy.fields.ipPattern}>
                   <input
-                    aria-label={copy.fields.replacement}
-                    value={externalDraft.replacement}
+                    aria-label={copy.fields.ipPattern}
+                    value={ipRuleDraft.ipPattern}
                     onChange={(event) =>
-                      setExternalDraft((current) => ({
+                      setIpRuleDraft((current) => ({
                         ...current,
-                        replacement: event.target.value,
+                        ipPattern: event.target.value,
                       }))
                     }
-                    placeholder={copy.placeholders.externalReplacement}
+                    placeholder={copy.placeholders.ipPattern}
                     className={inputClassName}
                   />
                 </Field>
-                <Field label={copy.fields.sortOrder}>
+                <Field label={copy.fields.expiresAt}>
                   <input
-                    aria-label={copy.fields.sortOrder}
-                    type="number"
-                    value={externalDraft.sortOrder}
+                    aria-label={copy.fields.expiresAt}
+                    type="datetime-local"
+                    value={ipRuleDraft.expiresAt}
                     onChange={(event) =>
-                      setExternalDraft((current) => ({
+                      setIpRuleDraft((current) => ({
                         ...current,
-                        sortOrder: event.target.value,
+                        expiresAt: event.target.value,
                       }))
                     }
                     className={inputClassName}
                   />
                 </Field>
-                <Field label={copy.fields.description}>
+                <Field label={copy.fields.reason}>
                   <textarea
-                    aria-label={copy.fields.description}
-                    value={externalDraft.description}
+                    aria-label={copy.fields.reason}
+                    value={ipRuleDraft.reason}
                     onChange={(event) =>
-                      setExternalDraft((current) => ({
+                      setIpRuleDraft((current) => ({
                         ...current,
-                        description: event.target.value,
+                        reason: event.target.value,
                       }))
                     }
                     rows={4}
+                    placeholder={copy.placeholders.ipReason}
                     className={`${inputClassName} resize-y`}
                   />
                 </Field>
-                <div className="space-y-3">
-                  <label className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-sm text-slate-700">
-                    <input
-                      type="checkbox"
-                      checked={externalDraft.inherit}
-                      onChange={(event) =>
-                        setExternalDraft((current) => ({
-                          ...current,
-                          inherit: event.target.checked,
-                        }))
-                      }
-                    />
-                    {copy.fields.inherit}
-                  </label>
-                  <label className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-sm text-slate-700">
-                    <input
-                      type="checkbox"
-                      checked={externalDraft.isForceUse}
-                      onChange={(event) =>
-                        setExternalDraft((current) => ({
-                          ...current,
-                          isForceUse: event.target.checked,
-                        }))
-                      }
-                    />
-                    {copy.fields.forceUse}
-                  </label>
-                </div>
               </div>
-            )}
-          </ActionDrawer>
-        </>
-      ) : null}
+            </ActionDrawer>
+          </>
+        ) : null}
 
-      {displayedTab === 'ip-access' ? (
-        <>
-          <GlassSurface className="p-6">
-            <FormSection
-              title={copy.sections.ipRules.listTitle}
-              description={copy.sections.ipRules.listDescription}
-            >
-              <div className="flex justify-end">
-                <button
-                  type="button"
-                  onClick={openIpRuleCreateDrawer}
-                  className="inline-flex items-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-medium text-indigo-700 transition hover:border-indigo-300 hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
-                >
-                  {copy.sections.ipRules.newRule}
-                </button>
-              </div>
-              {ipRulesPanel.error ? (
-                <StateView status="denied" title={copy.sections.ipRules.unavailable} description={ipRulesPanel.error} />
-              ) : (
-                <>
+        {displayedTab === 'runtime-signals' ? (
+          <>
+            <GlassSurface className="p-6">
+              <FormSection
+                title={copy.sections.runtimeSignals.title}
+                description={copy.sections.runtimeSignals.description}
+              >
+                <div className="grid gap-4 xl:grid-cols-2">
+                  <div className="rounded-2xl border border-slate-200 bg-white/80 px-5 py-5 shadow-sm">
+                    <div className="flex items-center gap-3">
+                      <div className="rounded-2xl bg-rose-50 p-3 text-rose-700">
+                        <ShieldAlert className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-slate-900">
+                          {copy.sections.runtimeSignals.activeBlocksTitle}
+                        </p>
+                        <p className="text-xs text-slate-500">
+                          {copy.sections.runtimeSignals.activeBlocksHint}
+                        </p>
+                      </div>
+                    </div>
+                    {rateLimitPanel.loading ? (
+                      <p className="mt-4 text-sm text-slate-500">
+                        {copy.sections.runtimeSignals.rateLimitLoading}
+                      </p>
+                    ) : rateLimitPanel.error ? (
+                      <p className="mt-4 text-sm text-rose-700">{rateLimitPanel.error}</p>
+                    ) : rateLimitPanel.data ? (
+                      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                        <SummaryCard
+                          label={copy.summary.blockedIpsLabel}
+                          value={String(rateLimitPanel.data.summary.currentlyBlocked)}
+                          hint={copy.summary.blockedIpsHint}
+                        />
+                        <SummaryCard
+                          label={copy.sections.runtimeSignals.blocked24h}
+                          value={String(rateLimitPanel.data.summary.blockedRequests24h)}
+                          hint={copy.sections.runtimeSignals.blocked24hHint}
+                        />
+                      </div>
+                    ) : null}
+                  </div>
+
+                  <div className="rounded-2xl border border-slate-200 bg-white/80 px-5 py-5 shadow-sm">
+                    <div className="flex items-center gap-3">
+                      <div className="rounded-2xl bg-blue-50 p-3 text-blue-700">
+                        <SearchCheck className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-slate-900">
+                          {copy.sections.runtimeSignals.policyProbeTitle}
+                        </p>
+                        <p className="text-xs text-slate-500">
+                          {copy.sections.runtimeSignals.policyProbeHint}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="mt-4 grid gap-4 md:grid-cols-[1fr_1fr_auto]">
+                      <Field label={copy.fields.probeIp}>
+                        <input
+                          aria-label={copy.fields.probeIp}
+                          value={ipCheckIp}
+                          onChange={(event) => setIpCheckIp(event.target.value)}
+                          placeholder={copy.placeholders.probeIp}
+                          className={inputClassName}
+                        />
+                      </Field>
+                      <Field label={copy.fields.probeScope}>
+                        <select
+                          aria-label={copy.fields.probeScope}
+                          value={ipCheckScope}
+                          onChange={(event) => setIpCheckScope(event.target.value as IpRuleScope)}
+                          className={inputClassName}
+                        >
+                          <option value="admin">{copy.options.ipRuleScope.admin}</option>
+                          <option value="api">{copy.options.ipRuleScope.api}</option>
+                          <option value="public">{copy.options.ipRuleScope.public}</option>
+                          <option value="global">{copy.options.ipRuleScope.global}</option>
+                        </select>
+                      </Field>
+                      <div className="flex items-end">
+                        <AsyncSubmitButton
+                          onClick={() => void runIpCheck()}
+                          isPending={ipCheckPending}
+                          pendingText={copy.sections.ipRules.probing}
+                        >
+                          {copy.sections.ipRules.probe}
+                        </AsyncSubmitButton>
+                      </div>
+                    </div>
+                    {ipCheckResult ? (
+                      <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50/80 px-4 py-4 text-sm text-emerald-800">
+                        {ipCheckResult}
+                      </div>
+                    ) : null}
+                    {ipCheckError ? (
+                      <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50/80 px-4 py-4 text-sm text-rose-800">
+                        {ipCheckError}
+                      </div>
+                    ) : null}
+                  </div>
+
+                  <div className="rounded-2xl border border-slate-200 bg-white/80 px-5 py-5 shadow-sm">
+                    <div className="flex items-center gap-3">
+                      <div className="rounded-2xl bg-indigo-50 p-3 text-indigo-700">
+                        <Fingerprint className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-slate-900">
+                          {copy.sections.runtimeSignals.fingerprintTitle}
+                        </p>
+                        <p className="text-xs text-slate-500">
+                          {copy.sections.runtimeSignals.fingerprintHint}
+                        </p>
+                      </div>
+                    </div>
+                    {fingerprintPanel.loading ? (
+                      <p className="mt-4 text-sm text-slate-500">
+                        {copy.sections.runtimeSignals.fingerprintLoading}
+                      </p>
+                    ) : fingerprintPanel.error ? (
+                      <p className="mt-4 text-sm text-rose-700">{fingerprintPanel.error}</p>
+                    ) : fingerprintPanel.data ? (
+                      <div className="mt-4 space-y-3 text-sm text-slate-700">
+                        <p>
+                          <span className="font-semibold text-slate-900">
+                            {copy.sections.runtimeSignals.fingerprintShort}:
+                          </span>{' '}
+                          {fingerprintPanel.data.shortFingerprint}
+                        </p>
+                        <p className="break-all">
+                          <span className="font-semibold text-slate-900">
+                            {copy.sections.runtimeSignals.fingerprintFull}:
+                          </span>{' '}
+                          {fingerprintPanel.data.fingerprint}
+                        </p>
+                        <p>
+                          <span className="font-semibold text-slate-900">
+                            {copy.sections.runtimeSignals.fingerprintGenerated}:
+                          </span>{' '}
+                          {formatSecurityDateTime(
+                            locale,
+                            fingerprintPanel.data.generatedAt,
+                            copy.common.never
+                          )}
+                        </p>
+                      </div>
+                    ) : null}
+                  </div>
+
+                  <div className="rounded-2xl border border-slate-200 bg-white/80 px-5 py-5 shadow-sm">
+                    <div className="flex items-center gap-3">
+                      <div className="rounded-2xl bg-amber-50 p-3 text-amber-700">
+                        <Activity className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-slate-900">
+                          {copy.sections.runtimeSignals.rateLimitTitle}
+                        </p>
+                        <p className="text-xs text-slate-500">
+                          {copy.sections.runtimeSignals.rateLimitHint}
+                        </p>
+                      </div>
+                    </div>
+                    {rateLimitPanel.loading ? (
+                      <p className="mt-4 text-sm text-slate-500">
+                        {copy.sections.runtimeSignals.rateLimitLoading}
+                      </p>
+                    ) : rateLimitPanel.error ? (
+                      <p className="mt-4 text-sm text-rose-700">{rateLimitPanel.error}</p>
+                    ) : rateLimitPanel.data ? (
+                      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                        <SummaryCard
+                          label={copy.sections.runtimeSignals.requests24h}
+                          value={String(rateLimitPanel.data.summary.totalRequests24h)}
+                          hint={copy.sections.runtimeSignals.requests24hHint}
+                        />
+                        <SummaryCard
+                          label={copy.sections.runtimeSignals.rateLimitTitle}
+                          value={String(rateLimitPanel.data.summary.uniqueIPs24h)}
+                          hint={copy.sections.runtimeSignals.rateLimitHint}
+                        />
+                      </div>
+                    ) : null}
+                  </div>
+
+                  <div className="rounded-2xl border border-slate-200 bg-white/80 px-5 py-5 shadow-sm">
+                    <div className="flex items-center gap-3">
+                      <div className="rounded-2xl bg-emerald-50 p-3 text-emerald-700">
+                        <ShieldEllipsis className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-slate-900">
+                          {copy.sections.runtimeSignals.complianceTitle}
+                        </p>
+                        <p className="text-xs text-slate-500">
+                          {copy.sections.runtimeSignals.complianceHint}
+                        </p>
+                      </div>
+                    </div>
+                    {profileStorePanel.loading ? (
+                      <p className="mt-4 text-sm text-slate-500">
+                        {copy.sections.runtimeSignals.complianceLoading}
+                      </p>
+                    ) : profileStorePanel.error ? (
+                      <p className="mt-4 text-sm text-rose-700">{profileStorePanel.error}</p>
+                    ) : (
+                      <div className="mt-4 space-y-3 text-sm text-slate-700">
+                        <p>
+                          <span className="font-semibold text-slate-900">
+                            {copy.sections.runtimeSignals.visibleStores}:
+                          </span>{' '}
+                          {profileStorePanel.data?.length || 0}
+                        </p>
+                        <p className="text-xs leading-5 text-slate-500">
+                          {copy.sections.runtimeSignals.visibleStoresHint}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </FormSection>
+            </GlassSurface>
+
+            <GlassSurface className="p-6">
+              <FormSection
+                title={copy.sections.runtimeSignals.endpointsTitle}
+                description={copy.sections.runtimeSignals.endpointsDescription}
+              >
+                {rateLimitPanel.error ? (
+                  <StateView
+                    status="unavailable"
+                    title={copy.sections.runtimeSignals.endpointsUnavailable}
+                    description={rateLimitPanel.error}
+                  />
+                ) : (
                   <TableShell
-                    ariaLabel={copy.sections.ipRules.listTitle}
-                    columns={[...copy.sections.ipRules.columns]}
-                    dataLength={ipRulesPanel.data.length}
-                    isLoading={ipRulesPanel.loading}
-                    isEmpty={!ipRulesPanel.loading && ipRulesPanel.data.length === 0}
-                    emptyTitle={copy.sections.ipRules.emptyTitle}
-                    emptyDescription={copy.sections.ipRules.emptyDescription}
+                    ariaLabel={copy.sections.runtimeSignals.endpointsTitle}
+                    columns={[...copy.sections.runtimeSignals.endpointsColumns]}
+                    dataLength={rateLimitPanel.data?.topEndpoints.length || 0}
+                    isLoading={rateLimitPanel.loading}
+                    isEmpty={
+                      !rateLimitPanel.loading &&
+                      (rateLimitPanel.data?.topEndpoints.length || 0) === 0
+                    }
+                    emptyTitle={copy.sections.runtimeSignals.endpointsEmptyTitle}
+                    emptyDescription={copy.sections.runtimeSignals.endpointsEmptyDescription}
                   >
-                    {ipRulesPanel.data.map((rule) => (
-                      <tr key={rule.id}>
-                        <td className="px-6 py-4">
-                          <div className="space-y-1">
-                            <p className="text-sm font-semibold text-slate-900">{rule.ipPattern}</p>
-                            <p className="text-xs text-slate-500">{rule.reason || copy.common.noReason}</p>
-                          </div>
+                    {rateLimitPanel.data?.topEndpoints.map((item) => (
+                      <tr key={`${item.method}-${item.endpoint}`}>
+                        <td className="px-6 py-4 text-sm font-semibold text-slate-900">
+                          {item.endpoint}
                         </td>
-                        <td className="px-6 py-4">
-                          <ToneBadge tone={rule.ruleType === 'blacklist' ? 'danger' : 'success'} label={getSecurityIpRuleTypeLabel(locale, rule.ruleType)} />
-                        </td>
-                        <td className="px-6 py-4 text-sm text-slate-700">{getSecurityIpRuleScopeLabel(locale, rule.scope)}</td>
+                        <td className="px-6 py-4 text-sm text-slate-700">{item.method}</td>
+                        <td className="px-6 py-4 text-sm text-slate-700">{item.current}</td>
+                        <td className="px-6 py-4 text-sm text-slate-700">{item.limit}</td>
                         <td className="px-6 py-4 text-sm text-slate-700">
-                          {formatSecurityRuleHits(locale, rule.hitCount, rule.lastHitAt)}
-                        </td>
-                        <td className="px-6 py-4">
-                          <ToneBadge tone={rule.isActive ? 'success' : 'neutral'} label={rule.isActive ? copy.common.active : copy.common.inactive} />
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <InlineActionButton
-                            tone="danger"
-                            onClick={() =>
-                              openDialog({
-                                intent: 'danger',
-                                title: pickLocaleText(locale, {
-                                  en: `Delete ${rule.ipPattern}?`,
-                                  zh_HANS: `删除 ${rule.ipPattern}？`,
-                                  zh_HANT: `刪除 ${rule.ipPattern}？`,
-                                  ja: `${rule.ipPattern} を削除しますか？`,
-                                  ko: `${rule.ipPattern} 규칙을 삭제할까요?`,
-                                  fr: `Supprimer ${rule.ipPattern} ?`,
-                                }),
-                                description: copy.dialogs.deleteIpDescription,
-                                confirmText: copy.actions.deleteRule,
-                                pendingText: copy.dialogs.deleting,
-                                onConfirm: async () => {
-                                  await deleteIpAccessRule(request, rule.id);
-                                  await refreshIpRules();
-                                  setNotice({
-                                    tone: 'success',
-                                    message: formatSecurityIpRuleDeleteSuccess(locale, rule.ipPattern),
-                                  });
-                                },
-                              })
-                            }
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                            {copy.actions.delete}
-                          </InlineActionButton>
+                          {formatSecurityResetIn(locale, item.resetIn)}
                         </td>
                       </tr>
                     ))}
                   </TableShell>
-                  <PaginationFooter
-                    pagination={ipRulesPanel.pagination}
-                    itemCount={ipRulesPanel.data.length}
-                    labels={getSecurityPaginationLabels(locale, ipRulesPanel.pagination, ipRulesPanel.data.length)}
-                    onPageChange={setIpRulesPage}
-                    onPageSizeChange={(nextPageSize) => {
-                      setIpRulesPageSize(nextPageSize as PageSizeOption);
-                      setIpRulesPage(1);
-                    }}
-                    isLoading={ipRulesPanel.loading}
-                    className="mt-4 rounded-2xl border border-slate-200"
-                  />
-                </>
-              )}
-            </FormSection>
-          </GlassSurface>
+                )}
+              </FormSection>
+            </GlassSurface>
 
-          <ActionDrawer
-            open={ipRuleDrawerOpen}
-            onOpenChange={setIpRuleDrawerOpenSafely}
-            title={copy.sections.ipRules.createTitle}
-            description={copy.sections.ipRules.createDescription}
-            size="lg"
-            closeButtonAriaLabel={copy.sections.ipRules.closeButtonAriaLabel}
-            closeOnBackdropClick={!ipRuleSavePending}
-            closeOnEscape={!ipRuleSavePending}
-            footer={
-              <div className="flex flex-wrap justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={() => setIpRuleDrawerOpenSafely(false)}
-                  className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
-                >
-                  {copy.common.cancel}
-                </button>
-                <AsyncSubmitButton onClick={() => void submitIpRule()} isPending={ipRuleSavePending} pendingText={copy.sections.ipRules.creating}>
-                  {copy.sections.ipRules.create}
-                </AsyncSubmitButton>
-              </div>
-            }
-          >
-            <div className="grid gap-4 md:grid-cols-2">
-              <Field label={copy.fields.ipRuleType}>
-                <select
-                  aria-label={copy.fields.ipRuleType}
-                  value={ipRuleDraft.ruleType}
-                  onChange={(event) =>
-                    setIpRuleDraft((current) => ({
-                      ...current,
-                      ruleType: event.target.value as IpRuleType,
-                    }))
-                  }
-                  className={inputClassName}
-                >
-                  <option value="blacklist">{copy.options.ipRuleType.blacklist}</option>
-                  <option value="whitelist">{copy.options.ipRuleType.whitelist}</option>
-                </select>
-              </Field>
-              <Field label={copy.fields.ipRuleScope}>
-                <select
-                  aria-label={copy.fields.ipRuleScope}
-                  value={ipRuleDraft.scope}
-                  onChange={(event) =>
-                    setIpRuleDraft((current) => ({
-                      ...current,
-                      scope: event.target.value as IpRuleScope,
-                    }))
-                  }
-                  className={inputClassName}
-                >
-                  <option value="admin">{copy.options.ipRuleScope.admin}</option>
-                  <option value="api">{copy.options.ipRuleScope.api}</option>
-                  <option value="public">{copy.options.ipRuleScope.public}</option>
-                  <option value="global">{copy.options.ipRuleScope.global}</option>
-                </select>
-              </Field>
-              <Field label={copy.fields.ipPattern}>
-                <input
-                  aria-label={copy.fields.ipPattern}
-                  value={ipRuleDraft.ipPattern}
-                  onChange={(event) =>
-                    setIpRuleDraft((current) => ({
-                      ...current,
-                      ipPattern: event.target.value,
-                    }))
-                  }
-                  placeholder={copy.placeholders.ipPattern}
-                  className={inputClassName}
-                />
-              </Field>
-              <Field label={copy.fields.expiresAt}>
-                <input
-                  aria-label={copy.fields.expiresAt}
-                  type="datetime-local"
-                  value={ipRuleDraft.expiresAt}
-                  onChange={(event) =>
-                    setIpRuleDraft((current) => ({
-                      ...current,
-                      expiresAt: event.target.value,
-                    }))
-                  }
-                  className={inputClassName}
-                />
-              </Field>
-              <Field label={copy.fields.reason}>
-                <textarea
-                  aria-label={copy.fields.reason}
-                  value={ipRuleDraft.reason}
-                  onChange={(event) =>
-                    setIpRuleDraft((current) => ({
-                      ...current,
-                      reason: event.target.value,
-                    }))
-                  }
-                  rows={4}
-                  placeholder={copy.placeholders.ipReason}
-                  className={`${inputClassName} resize-y`}
-                />
-              </Field>
-            </div>
-          </ActionDrawer>
+            <GlassSurface className="p-6">
+              <FormSection
+                title={copy.sections.runtimeSignals.topIpsTitle}
+                description={copy.sections.runtimeSignals.topIpsDescription}
+              >
+                <div className="grid gap-6 xl:grid-cols-[1.5fr_1fr]">
+                  <TableShell
+                    ariaLabel={copy.sections.runtimeSignals.topIpsTitle}
+                    columns={[...copy.sections.runtimeSignals.topIpsColumns]}
+                    dataLength={rateLimitPanel.data?.topIPs.length || 0}
+                    isLoading={rateLimitPanel.loading}
+                    isEmpty={
+                      !rateLimitPanel.loading && (rateLimitPanel.data?.topIPs.length || 0) === 0
+                    }
+                    emptyTitle={copy.sections.runtimeSignals.topIpsEmptyTitle}
+                    emptyDescription={copy.sections.runtimeSignals.topIpsEmptyDescription}
+                  >
+                    {rateLimitPanel.data?.topIPs.map((item) => (
+                      <tr key={item.ip}>
+                        <td className="px-6 py-4 text-sm font-semibold text-slate-900">
+                          {item.ip}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-slate-700">{item.requests}</td>
+                        <td className="px-6 py-4">
+                          <ToneBadge
+                            tone={item.blocked ? 'danger' : 'success'}
+                            label={item.blocked ? copy.common.blocked : copy.common.allowed}
+                          />
+                        </td>
+                        <td className="px-6 py-4 text-sm text-slate-700">{item.lastSeen}</td>
+                      </tr>
+                    ))}
+                  </TableShell>
 
-        </>
-      ) : null}
-
-      {displayedTab === 'runtime-signals' ? (
-        <>
-          <GlassSurface className="p-6">
-            <FormSection
-              title={copy.sections.runtimeSignals.title}
-              description={copy.sections.runtimeSignals.description}
-            >
-              <div className="grid gap-4 xl:grid-cols-2">
-                <div className="rounded-2xl border border-slate-200 bg-white/80 px-5 py-5 shadow-sm">
-                  <div className="flex items-center gap-3">
-                    <div className="rounded-2xl bg-rose-50 p-3 text-rose-700">
-                      <ShieldAlert className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold text-slate-900">{copy.sections.runtimeSignals.activeBlocksTitle}</p>
-                      <p className="text-xs text-slate-500">{copy.sections.runtimeSignals.activeBlocksHint}</p>
-                    </div>
-                  </div>
-                  {rateLimitPanel.loading ? (
-                    <p className="mt-4 text-sm text-slate-500">{copy.sections.runtimeSignals.rateLimitLoading}</p>
-                  ) : rateLimitPanel.error ? (
-                    <p className="mt-4 text-sm text-rose-700">{rateLimitPanel.error}</p>
-                  ) : rateLimitPanel.data ? (
-                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                      <SummaryCard
-                        label={copy.summary.blockedIpsLabel}
-                        value={String(rateLimitPanel.data.summary.currentlyBlocked)}
-                        hint={copy.summary.blockedIpsHint}
+                  <div className="space-y-3">
+                    {profileStorePanel.error ? (
+                      <StateView
+                        status="denied"
+                        title={copy.sections.runtimeSignals.profileStoresUnavailable}
+                        description={profileStorePanel.error}
                       />
-                      <SummaryCard
-                        label={copy.sections.runtimeSignals.blocked24h}
-                        value={String(rateLimitPanel.data.summary.blockedRequests24h)}
-                        hint={copy.sections.runtimeSignals.blocked24hHint}
-                      />
-                    </div>
-                  ) : null}
-                </div>
-
-                <div className="rounded-2xl border border-slate-200 bg-white/80 px-5 py-5 shadow-sm">
-                  <div className="flex items-center gap-3">
-                    <div className="rounded-2xl bg-blue-50 p-3 text-blue-700">
-                      <SearchCheck className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold text-slate-900">{copy.sections.runtimeSignals.policyProbeTitle}</p>
-                      <p className="text-xs text-slate-500">{copy.sections.runtimeSignals.policyProbeHint}</p>
-                    </div>
-                  </div>
-                  <div className="mt-4 grid gap-4 md:grid-cols-[1fr_1fr_auto]">
-                    <Field label={copy.fields.probeIp}>
-                      <input
-                        aria-label={copy.fields.probeIp}
-                        value={ipCheckIp}
-                        onChange={(event) => setIpCheckIp(event.target.value)}
-                        placeholder={copy.placeholders.probeIp}
-                        className={inputClassName}
-                      />
-                    </Field>
-                    <Field label={copy.fields.probeScope}>
-                      <select
-                        aria-label={copy.fields.probeScope}
-                        value={ipCheckScope}
-                        onChange={(event) => setIpCheckScope(event.target.value as IpRuleScope)}
-                        className={inputClassName}
-                      >
-                        <option value="admin">{copy.options.ipRuleScope.admin}</option>
-                        <option value="api">{copy.options.ipRuleScope.api}</option>
-                        <option value="public">{copy.options.ipRuleScope.public}</option>
-                        <option value="global">{copy.options.ipRuleScope.global}</option>
-                      </select>
-                    </Field>
-                    <div className="flex items-end">
-                      <AsyncSubmitButton onClick={() => void runIpCheck()} isPending={ipCheckPending} pendingText={copy.sections.ipRules.probing}>
-                        {copy.sections.ipRules.probe}
-                      </AsyncSubmitButton>
-                    </div>
-                  </div>
-                  {ipCheckResult ? (
-                    <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50/80 px-4 py-4 text-sm text-emerald-800">
-                      {ipCheckResult}
-                    </div>
-                  ) : null}
-                  {ipCheckError ? (
-                    <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50/80 px-4 py-4 text-sm text-rose-800">
-                      {ipCheckError}
-                    </div>
-                  ) : null}
-                </div>
-
-                <div className="rounded-2xl border border-slate-200 bg-white/80 px-5 py-5 shadow-sm">
-                  <div className="flex items-center gap-3">
-                    <div className="rounded-2xl bg-indigo-50 p-3 text-indigo-700">
-                      <Fingerprint className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold text-slate-900">{copy.sections.runtimeSignals.fingerprintTitle}</p>
-                      <p className="text-xs text-slate-500">{copy.sections.runtimeSignals.fingerprintHint}</p>
-                    </div>
-                  </div>
-                  {fingerprintPanel.loading ? (
-                    <p className="mt-4 text-sm text-slate-500">{copy.sections.runtimeSignals.fingerprintLoading}</p>
-                  ) : fingerprintPanel.error ? (
-                    <p className="mt-4 text-sm text-rose-700">{fingerprintPanel.error}</p>
-                  ) : fingerprintPanel.data ? (
-                    <div className="mt-4 space-y-3 text-sm text-slate-700">
-                      <p>
-                        <span className="font-semibold text-slate-900">{copy.sections.runtimeSignals.fingerprintShort}:</span>{' '}
-                        {fingerprintPanel.data.shortFingerprint}
-                      </p>
-                      <p className="break-all">
-                        <span className="font-semibold text-slate-900">{copy.sections.runtimeSignals.fingerprintFull}:</span>{' '}
-                        {fingerprintPanel.data.fingerprint}
-                      </p>
-                      <p>
-                        <span className="font-semibold text-slate-900">{copy.sections.runtimeSignals.fingerprintGenerated}:</span>{' '}
-                        {formatSecurityDateTime(locale, fingerprintPanel.data.generatedAt, copy.common.never)}
-                      </p>
-                    </div>
-                  ) : null}
-                </div>
-
-                <div className="rounded-2xl border border-slate-200 bg-white/80 px-5 py-5 shadow-sm">
-                  <div className="flex items-center gap-3">
-                    <div className="rounded-2xl bg-amber-50 p-3 text-amber-700">
-                      <Activity className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold text-slate-900">{copy.sections.runtimeSignals.rateLimitTitle}</p>
-                      <p className="text-xs text-slate-500">{copy.sections.runtimeSignals.rateLimitHint}</p>
-                    </div>
-                  </div>
-                  {rateLimitPanel.loading ? (
-                    <p className="mt-4 text-sm text-slate-500">{copy.sections.runtimeSignals.rateLimitLoading}</p>
-                  ) : rateLimitPanel.error ? (
-                    <p className="mt-4 text-sm text-rose-700">{rateLimitPanel.error}</p>
-                  ) : rateLimitPanel.data ? (
-                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                      <SummaryCard
-                        label={copy.sections.runtimeSignals.requests24h}
-                        value={String(rateLimitPanel.data.summary.totalRequests24h)}
-                        hint={copy.sections.runtimeSignals.requests24hHint}
-                      />
-                      <SummaryCard
-                        label={copy.sections.runtimeSignals.rateLimitTitle}
-                        value={String(rateLimitPanel.data.summary.uniqueIPs24h)}
-                        hint={copy.sections.runtimeSignals.rateLimitHint}
-                      />
-                    </div>
-                  ) : null}
-                </div>
-
-                <div className="rounded-2xl border border-slate-200 bg-white/80 px-5 py-5 shadow-sm">
-                  <div className="flex items-center gap-3">
-                    <div className="rounded-2xl bg-emerald-50 p-3 text-emerald-700">
-                      <ShieldEllipsis className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold text-slate-900">{copy.sections.runtimeSignals.complianceTitle}</p>
-                      <p className="text-xs text-slate-500">{copy.sections.runtimeSignals.complianceHint}</p>
-                    </div>
-                  </div>
-                  {profileStorePanel.loading ? (
-                    <p className="mt-4 text-sm text-slate-500">{copy.sections.runtimeSignals.complianceLoading}</p>
-                  ) : profileStorePanel.error ? (
-                    <p className="mt-4 text-sm text-rose-700">{profileStorePanel.error}</p>
-                  ) : (
-                    <div className="mt-4 space-y-3 text-sm text-slate-700">
-                      <p>
-                        <span className="font-semibold text-slate-900">{copy.sections.runtimeSignals.visibleStores}:</span>{' '}
-                        {profileStorePanel.data?.length || 0}
-                      </p>
-                      <p className="text-xs leading-5 text-slate-500">
-                        {copy.sections.runtimeSignals.visibleStoresHint}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </FormSection>
-          </GlassSurface>
-
-          <GlassSurface className="p-6">
-            <FormSection
-              title={copy.sections.runtimeSignals.endpointsTitle}
-              description={copy.sections.runtimeSignals.endpointsDescription}
-            >
-              {rateLimitPanel.error ? (
-                <StateView status="unavailable" title={copy.sections.runtimeSignals.endpointsUnavailable} description={rateLimitPanel.error} />
-              ) : (
-                <TableShell
-                  ariaLabel={copy.sections.runtimeSignals.endpointsTitle}
-                  columns={[...copy.sections.runtimeSignals.endpointsColumns]}
-                  dataLength={rateLimitPanel.data?.topEndpoints.length || 0}
-                  isLoading={rateLimitPanel.loading}
-                  isEmpty={!rateLimitPanel.loading && (rateLimitPanel.data?.topEndpoints.length || 0) === 0}
-                  emptyTitle={copy.sections.runtimeSignals.endpointsEmptyTitle}
-                  emptyDescription={copy.sections.runtimeSignals.endpointsEmptyDescription}
-                >
-                  {rateLimitPanel.data?.topEndpoints.map((item) => (
-                    <tr key={`${item.method}-${item.endpoint}`}>
-                      <td className="px-6 py-4 text-sm font-semibold text-slate-900">{item.endpoint}</td>
-                      <td className="px-6 py-4 text-sm text-slate-700">{item.method}</td>
-                      <td className="px-6 py-4 text-sm text-slate-700">{item.current}</td>
-                      <td className="px-6 py-4 text-sm text-slate-700">{item.limit}</td>
-                      <td className="px-6 py-4 text-sm text-slate-700">{formatSecurityResetIn(locale, item.resetIn)}</td>
-                    </tr>
-                  ))}
-                </TableShell>
-              )}
-            </FormSection>
-          </GlassSurface>
-
-          <GlassSurface className="p-6">
-            <FormSection
-              title={copy.sections.runtimeSignals.topIpsTitle}
-              description={copy.sections.runtimeSignals.topIpsDescription}
-            >
-              <div className="grid gap-6 xl:grid-cols-[1.5fr_1fr]">
-                <TableShell
-                  ariaLabel={copy.sections.runtimeSignals.topIpsTitle}
-                  columns={[...copy.sections.runtimeSignals.topIpsColumns]}
-                  dataLength={rateLimitPanel.data?.topIPs.length || 0}
-                  isLoading={rateLimitPanel.loading}
-                  isEmpty={!rateLimitPanel.loading && (rateLimitPanel.data?.topIPs.length || 0) === 0}
-                  emptyTitle={copy.sections.runtimeSignals.topIpsEmptyTitle}
-                  emptyDescription={copy.sections.runtimeSignals.topIpsEmptyDescription}
-                >
-                  {rateLimitPanel.data?.topIPs.map((item) => (
-                    <tr key={item.ip}>
-                      <td className="px-6 py-4 text-sm font-semibold text-slate-900">{item.ip}</td>
-                      <td className="px-6 py-4 text-sm text-slate-700">{item.requests}</td>
-                      <td className="px-6 py-4">
-                        <ToneBadge tone={item.blocked ? 'danger' : 'success'} label={item.blocked ? copy.common.blocked : copy.common.allowed} />
-                      </td>
-                      <td className="px-6 py-4 text-sm text-slate-700">{item.lastSeen}</td>
-                    </tr>
-                  ))}
-                </TableShell>
-
-                <div className="space-y-3">
-                  {profileStorePanel.error ? (
-                    <StateView
-                      status="denied"
-                      title={copy.sections.runtimeSignals.profileStoresUnavailable}
-                      description={profileStorePanel.error}
-                    />
-                  ) : profileStorePanel.data && profileStorePanel.data.length > 0 ? (
-                    profileStorePanel.data.map((store) => (
-                      <div key={store.id} className="rounded-2xl border border-slate-200 bg-white/80 px-4 py-4 shadow-sm">
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="space-y-1">
-                            <p className="text-sm font-semibold text-slate-900">
-                              {pickSecurityLocalizedName(locale, store, store.code)}
-                            </p>
-                            <p className="text-xs uppercase tracking-[0.18em] text-slate-500">{store.code}</p>
+                    ) : profileStorePanel.data && profileStorePanel.data.length > 0 ? (
+                      profileStorePanel.data.map((store) => (
+                        <div
+                          key={store.id}
+                          className="rounded-2xl border border-slate-200 bg-white/80 px-4 py-4 shadow-sm"
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="space-y-1">
+                              <p className="text-sm font-semibold text-slate-900">
+                                {pickSecurityLocalizedName(locale, store, store.code)}
+                              </p>
+                              <p className="text-xs uppercase tracking-[0.18em] text-slate-500">
+                                {store.code}
+                              </p>
+                            </div>
+                            <ToneBadge
+                              tone={store.isActive ? 'success' : 'neutral'}
+                              label={store.isActive ? copy.common.active : copy.common.inactive}
+                            />
                           </div>
-                          <ToneBadge tone={store.isActive ? 'success' : 'neutral'} label={store.isActive ? copy.common.active : copy.common.inactive} />
+                          <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                            <SummaryCard
+                              label={copy.sections.runtimeSignals.profileStoresTalents}
+                              value={String(store.talentCount)}
+                              hint={copy.sections.runtimeSignals.profileStoresTalentsHint}
+                            />
+                            <SummaryCard
+                              label={copy.sections.runtimeSignals.profileStoresCustomers}
+                              value={String(store.customerCount)}
+                              hint={copy.sections.runtimeSignals.profileStoresCustomersHint}
+                            />
+                          </div>
                         </div>
-                        <div className="mt-4 grid gap-2 sm:grid-cols-2">
-                          <SummaryCard
-                            label={copy.sections.runtimeSignals.profileStoresTalents}
-                            value={String(store.talentCount)}
-                            hint={copy.sections.runtimeSignals.profileStoresTalentsHint}
-                          />
-                          <SummaryCard
-                            label={copy.sections.runtimeSignals.profileStoresCustomers}
-                            value={String(store.customerCount)}
-                            hint={copy.sections.runtimeSignals.profileStoresCustomersHint}
-                          />
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <StateView
-                      status="empty"
-                      title={copy.sections.runtimeSignals.profileStoresEmptyTitle}
-                      description={copy.sections.runtimeSignals.profileStoresEmptyDescription}
-                    />
-                  )}
+                      ))
+                    ) : (
+                      <StateView
+                        status="empty"
+                        title={copy.sections.runtimeSignals.profileStoresEmptyTitle}
+                        description={copy.sections.runtimeSignals.profileStoresEmptyDescription}
+                      />
+                    )}
+                  </div>
                 </div>
-              </div>
-            </FormSection>
-          </GlassSurface>
-        </>
-      ) : null}
+              </FormSection>
+            </GlassSurface>
+          </>
+        ) : null}
       </div>
 
       <ConfirmActionDialog
@@ -3815,7 +4161,9 @@ export function SecurityManagementScreen({
         }}
         saveButtonLabel={copy.sections.blocklistEditor.translationManagement.save}
         cancelButtonLabel={copy.sections.blocklistEditor.translationManagement.cancel}
-        closeButtonAriaLabel={copy.sections.blocklistEditor.translationManagement.closeButtonAriaLabel}
+        closeButtonAriaLabel={
+          copy.sections.blocklistEditor.translationManagement.closeButtonAriaLabel
+        }
         addLanguageLabel={translationDrawerLabels.addLanguageLabel}
         addOtherLanguageLabel={translationDrawerLabels.addOtherLanguageLabel}
         removeLanguageVisibleLabel={translationDrawerLabels.removeLanguageVisibleLabel}
@@ -3843,7 +4191,9 @@ export function SecurityManagementScreen({
         }}
         saveButtonLabel={copy.sections.externalEditor.translationManagement.save}
         cancelButtonLabel={copy.sections.externalEditor.translationManagement.cancel}
-        closeButtonAriaLabel={copy.sections.externalEditor.translationManagement.closeButtonAriaLabel}
+        closeButtonAriaLabel={
+          copy.sections.externalEditor.translationManagement.closeButtonAriaLabel
+        }
         addLanguageLabel={translationDrawerLabels.addLanguageLabel}
         addOtherLanguageLabel={translationDrawerLabels.addOtherLanguageLabel}
         removeLanguageVisibleLabel={translationDrawerLabels.removeLanguageVisibleLabel}

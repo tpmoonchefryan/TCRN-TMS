@@ -321,7 +321,10 @@ describe('PublicPresenceAuthoringIdeScreen', () => {
         return buildAdvancedPreview();
       }
 
-      if (path.startsWith('/api/v1/talents/talent-1/public-presence') && !path.includes('/authoring/')) {
+      if (
+        path.startsWith('/api/v1/talents/talent-1/public-presence') &&
+        !path.includes('/authoring/')
+      ) {
         if (init?.method === 'PATCH') {
           const payload = JSON.parse(String(init.body ?? '{}')) as {
             document?: Record<string, unknown>;
@@ -345,8 +348,8 @@ describe('PublicPresenceAuthoringIdeScreen', () => {
       }
 
       if (
-        path.includes('/authoring/templates/current')
-        || path.includes('/authoring/components/current')
+        path.includes('/authoring/templates/current') ||
+        path.includes('/authoring/components/current')
       ) {
         if (init?.method === 'PUT' || init?.method === 'POST') {
           const payload = JSON.parse(String(init.body ?? '{}')) as {
@@ -363,9 +366,7 @@ describe('PublicPresenceAuthoringIdeScreen', () => {
               warnCount?: number;
             };
           };
-          const artifactKind = path.includes('/templates/')
-            ? 'template'
-            : 'component';
+          const artifactKind = path.includes('/templates/') ? 'template' : 'component';
           const artifactStatus = path.endsWith('/submit')
             ? 'submitted'
             : path.endsWith('/validate')
@@ -383,13 +384,9 @@ describe('PublicPresenceAuthoringIdeScreen', () => {
                 : null,
             sourceBundle: payload.sourceBundle,
             subjectKey: payload.subjectKey ?? 'new',
-            submittedAt:
-              artifactStatus === 'submitted'
-                ? '2026-05-21T01:07:00.000Z'
-                : null,
+            submittedAt: artifactStatus === 'submitted' ? '2026-05-21T01:07:00.000Z' : null,
             updatedAt: '2026-05-21T01:07:00.000Z',
-            validationState:
-              (payload.validationSummary?.warnCount ?? 0) > 0 ? 'warning' : 'ready',
+            validationState: (payload.validationSummary?.warnCount ?? 0) > 0 ? 'warning' : 'ready',
             validationSummary: payload.validationSummary ?? {
               issueCount: 0,
               passCount: 0,
@@ -413,7 +410,7 @@ describe('PublicPresenceAuthoringIdeScreen', () => {
         talentId="talent-1"
         tenantId="tenant-1"
         templateId="activeTalentHub"
-      />,
+      />
     );
 
     expect(screen.getAllByText('Template IDE')[0]).toBeInTheDocument();
@@ -425,11 +422,16 @@ describe('PublicPresenceAuthoringIdeScreen', () => {
     const fileDrawer = screen.getByTestId('ide-file-drawer');
     expect(screen.getByTestId('ide-file-src/template.tsx')).toBeInTheDocument();
     expect(screen.getByTestId('ide-live-preview')).toBeInTheDocument();
-    expect(within(fileDrawer).getByRole('button', { name: 'Validation checks' })).toBeInTheDocument();
+    expect(
+      within(fileDrawer).getByRole('button', { name: 'Validation checks' })
+    ).toBeInTheDocument();
     expect(screen.queryByText(/codemirror-wrapper/i)).not.toBeInTheDocument();
     expect(container.textContent).not.toMatch(/Monaco|CodeMirror|runtime/i);
     expect(container.textContent).not.toMatch(ORDINARY_COPY_BOUNDARY_PATTERN);
-    expect(screen.getByTestId('mock-public-preview')).toHaveAttribute('data-responsive-mode', 'desktop');
+    expect(screen.getByTestId('mock-public-preview')).toHaveAttribute(
+      'data-responsive-mode',
+      'desktop'
+    );
   }, 15_000);
 
   it('marks legacy non-asset template authoring as a compatibility entry', async () => {
@@ -439,17 +441,17 @@ describe('PublicPresenceAuthoringIdeScreen', () => {
         talentId="talent-1"
         tenantId="tenant-1"
         templateId="activeTalentHub"
-      />,
+      />
     );
 
     expect(await screen.findByTestId('legacy-authoring-compatibility-notice')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Open asset workspace' })).toHaveAttribute(
       'href',
-      '/tenant/tenant-1/talent/talent-1/settings?section=config-entities',
+      '/tenant/tenant-1/talent/talent-1/settings?section=config-entities'
     );
     expect(screen.getByRole('link', { name: 'Open Homepage Management' })).toHaveAttribute(
       'href',
-      '/tenant/tenant-1/talent/talent-1/homepage',
+      '/tenant/tenant-1/talent/talent-1/homepage'
     );
   });
 
@@ -459,7 +461,10 @@ describe('PublicPresenceAuthoringIdeScreen', () => {
         return buildAssetDetail();
       }
 
-      if (path === '/api/v1/public-presence/assets/asset-template-1/current?scopeType=tenant' && init?.method === 'PUT') {
+      if (
+        path === '/api/v1/public-presence/assets/asset-template-1/current?scopeType=tenant' &&
+        init?.method === 'PUT'
+      ) {
         const payload = JSON.parse(String(init.body ?? '{}')) as {
           sourceBundle: Array<{
             contents: string;
@@ -488,7 +493,7 @@ describe('PublicPresenceAuthoringIdeScreen', () => {
         assetScopeType="tenant"
         target="template"
         tenantId="tenant-1"
-      />,
+      />
     );
 
     const editor = await screen.findByRole('textbox', { name: 'src/template.tsx' });
@@ -498,7 +503,7 @@ describe('PublicPresenceAuthoringIdeScreen', () => {
     });
     expect(screen.getByRole('link', { name: 'Exit' })).toHaveAttribute(
       'href',
-      '/tenant/tenant-1/settings?section=config-entities',
+      '/tenant/tenant-1/settings?section=config-entities'
     );
     expect(screen.queryByRole('button', { name: 'Submit' })).not.toBeInTheDocument();
 
@@ -514,7 +519,7 @@ describe('PublicPresenceAuthoringIdeScreen', () => {
         '/api/v1/public-presence/assets/asset-template-1/current?scopeType=tenant',
         expect.objectContaining({
           method: 'PUT',
-        }),
+        })
       );
       expect(screen.getAllByText('Draft saved')[0]).toBeInTheDocument();
     });
@@ -527,7 +532,7 @@ describe('PublicPresenceAuthoringIdeScreen', () => {
         talentId="talent-1"
         tenantId="tenant-1"
         componentType="SocialLinks"
-      />,
+      />
     );
 
     expect(screen.getAllByText('Component IDE')[0]).toBeInTheDocument();
@@ -548,7 +553,7 @@ describe('PublicPresenceAuthoringIdeScreen', () => {
         talentId="talent-1"
         tenantId="tenant-1"
         templateId="activeTalentHub"
-      />,
+      />
     );
 
     fireEvent.click(screen.getAllByRole('button', { name: 'Files' })[0]);
@@ -572,26 +577,38 @@ describe('PublicPresenceAuthoringIdeScreen', () => {
     });
     fireEvent.click(within(fileDrawer).getByRole('button', { name: 'Apply' }));
 
-    expect(within(fileDrawer).getByTestId('ide-file-src/custom-blocks/hero-note.tsx')).toBeInTheDocument();
+    expect(
+      within(fileDrawer).getByTestId('ide-file-src/custom-blocks/hero-note.tsx')
+    ).toBeInTheDocument();
     expect(screen.getAllByText('src/custom-blocks/hero-note.tsx').length).toBeGreaterThan(0);
 
     fireEvent.click(within(fileDrawer).getByTestId('ide-file-src/custom-blocks/hero-note.tsx'));
     fireEvent.click(screen.getAllByRole('button', { name: 'Files' })[0]);
-    fireEvent.click(within(screen.getByTestId('ide-file-drawer')).getByRole('button', { name: 'Rename' }));
+    fireEvent.click(
+      within(screen.getByTestId('ide-file-drawer')).getByRole('button', { name: 'Rename' })
+    );
     fireEvent.change(within(screen.getByTestId('ide-file-drawer')).getByRole('textbox'), {
       target: {
         value: 'src/custom-blocks/hero-note-renamed.tsx',
       },
     });
-    fireEvent.click(within(screen.getByTestId('ide-file-drawer')).getByRole('button', { name: 'Apply' }));
+    fireEvent.click(
+      within(screen.getByTestId('ide-file-drawer')).getByRole('button', { name: 'Apply' })
+    );
 
-    expect(screen.getByTestId('ide-file-src/custom-blocks/hero-note-renamed.tsx')).toBeInTheDocument();
+    expect(
+      screen.getByTestId('ide-file-src/custom-blocks/hero-note-renamed.tsx')
+    ).toBeInTheDocument();
 
     fireEvent.click(screen.getByTestId('ide-folder-src/custom-blocks'));
-    fireEvent.click(within(screen.getByTestId('ide-file-drawer')).getByRole('button', { name: 'Delete' }));
+    fireEvent.click(
+      within(screen.getByTestId('ide-file-drawer')).getByRole('button', { name: 'Delete' })
+    );
 
     expect(screen.queryByTestId('ide-folder-src/custom-blocks')).not.toBeInTheDocument();
-    expect(screen.queryByTestId('ide-file-src/custom-blocks/hero-note-renamed.tsx')).not.toBeInTheDocument();
+    expect(
+      screen.queryByTestId('ide-file-src/custom-blocks/hero-note-renamed.tsx')
+    ).not.toBeInTheDocument();
   });
 
   it('rejects blocked workspace paths before applying file explorer changes', async () => {
@@ -603,7 +620,7 @@ describe('PublicPresenceAuthoringIdeScreen', () => {
         talentId="talent-1"
         tenantId="tenant-1"
         componentType="SocialLinks"
-      />,
+      />
     );
 
     fireEvent.click(screen.getAllByRole('button', { name: 'Files' })[0]);
@@ -628,12 +645,15 @@ describe('PublicPresenceAuthoringIdeScreen', () => {
         talentId="talent-1"
         tenantId="tenant-1"
         templateId="activeTalentHub"
-      />,
+      />
     );
 
     fireEvent.click(screen.getAllByRole('button', { name: 'Mobile' })[0]);
 
-    expect(screen.getByTestId('mock-public-preview')).toHaveAttribute('data-responsive-mode', 'mobile');
+    expect(screen.getByTestId('mock-public-preview')).toHaveAttribute(
+      'data-responsive-mode',
+      'mobile'
+    );
   });
 
   it('exposes mobile sheets and utility drawers with dialog semantics and focus return', async () => {
@@ -643,7 +663,7 @@ describe('PublicPresenceAuthoringIdeScreen', () => {
         talentId="talent-1"
         tenantId="tenant-1"
         templateId="activeTalentHub"
-      />,
+      />
     );
 
     const actionsButton = screen.getByTestId('ide-mobile-actions-button');
@@ -686,7 +706,7 @@ describe('PublicPresenceAuthoringIdeScreen', () => {
         talentId="talent-1"
         tenantId="tenant-1"
         templateId="activeTalentHub"
-      />,
+      />
     );
 
     fireEvent.click(screen.getByRole('button', { name: 'Preview view' }));
@@ -730,7 +750,7 @@ describe('PublicPresenceAuthoringIdeScreen', () => {
         talentId="talent-1"
         tenantId="tenant-1"
         templateId="activeTalentHub"
-      />,
+      />
     );
 
     fireEvent.click(screen.getAllByRole('button', { name: 'Files' })[0]);
@@ -754,7 +774,7 @@ describe('PublicPresenceAuthoringIdeScreen', () => {
         talentId="talent-1"
         tenantId="tenant-1"
         templateId="activeTalentHub"
-      />,
+      />
     );
 
     fireEvent.click(screen.getByTestId('ide-mobile-actions-button'));
@@ -768,7 +788,9 @@ describe('PublicPresenceAuthoringIdeScreen', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Preview view' }));
     await waitFor(() => {
-      expect(screen.getByTestId('ide-mobile-surface-status')).toHaveTextContent('Previewing output');
+      expect(screen.getByTestId('ide-mobile-surface-status')).toHaveTextContent(
+        'Previewing output'
+      );
     });
     fireEvent.click(screen.getByTestId('ide-mobile-preview-options-button'));
     expect(screen.getByTestId('ide-mobile-preview-options-sheet')).toBeInTheDocument();
@@ -792,7 +814,7 @@ describe('PublicPresenceAuthoringIdeScreen', () => {
         talentId="talent-1"
         tenantId="tenant-1"
         componentType="SocialLinks"
-      />,
+      />
     );
 
     expect(screen.getByTestId('ide-mobile-surface-status')).toHaveTextContent('Editing code');
@@ -802,7 +824,9 @@ describe('PublicPresenceAuthoringIdeScreen', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Preview view' }));
     await waitFor(() => {
-      expect(screen.getByTestId('ide-mobile-surface-status')).toHaveTextContent('Previewing output');
+      expect(screen.getByTestId('ide-mobile-surface-status')).toHaveTextContent(
+        'Previewing output'
+      );
     });
     fireEvent.click(screen.getByTestId('ide-mobile-preview-options-button'));
     expect(screen.getByText('Sample content')).toBeInTheDocument();
@@ -820,11 +844,14 @@ describe('PublicPresenceAuthoringIdeScreen', () => {
         talentId="talent-1"
         tenantId="tenant-1"
         templateId="activeTalentHub"
-      />,
+      />
     );
 
     expect(screen.queryByRole('button', { name: 'Page source' })).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Custom HTML' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: 'Custom HTML' })).toHaveAttribute(
+      'aria-pressed',
+      'true'
+    );
     expect(await screen.findByRole('textbox', { name: 'src/index.html' })).toBeInTheDocument();
     expect(screen.getByTestId('ide-custom-html-preview')).toBeInTheDocument();
   });
@@ -837,18 +864,24 @@ describe('PublicPresenceAuthoringIdeScreen', () => {
         talentId="talent-1"
         tenantId="tenant-1"
         templateId="activeTalentHub"
-      />,
+      />
     );
 
     expect(screen.getAllByText('Advanced IDE')[0]).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Custom HTML' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: 'Custom HTML' })).toHaveAttribute(
+      'aria-pressed',
+      'true'
+    );
     expect(screen.queryByRole('button', { name: 'Page source' })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Registry snippets' })).toBeInTheDocument();
     expect(screen.getByTestId('ide-custom-html-preview')).toBeInTheDocument();
     expect(screen.getByText('Safe custom page preview')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Registry snippets' }));
-    expect(screen.getByRole('button', { name: 'Registry snippets' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: 'Registry snippets' })).toHaveAttribute(
+      'aria-pressed',
+      'true'
+    );
     expect(screen.getByText('Approved snippet preview')).toBeInTheDocument();
   });
 
@@ -860,7 +893,7 @@ describe('PublicPresenceAuthoringIdeScreen', () => {
         talentId="talent-1"
         tenantId="tenant-1"
         templateId="activeTalentHub"
-      />,
+      />
     );
 
     const editor = await screen.findByRole('textbox', { name: 'src/index.html' });
@@ -877,8 +910,8 @@ describe('PublicPresenceAuthoringIdeScreen', () => {
     });
     expect(
       mockRequest.mock.calls.some(
-        ([path]) => path === '/api/v1/talents/talent-1/public-presence/draft',
-      ),
+        ([path]) => path === '/api/v1/talents/talent-1/public-presence/draft'
+      )
     ).toBe(false);
   });
 
@@ -890,7 +923,7 @@ describe('PublicPresenceAuthoringIdeScreen', () => {
         talentId="talent-1"
         tenantId="tenant-1"
         templateId="activeTalentHub"
-      />,
+      />
     );
 
     const editor = await screen.findByRole('textbox', { name: 'src/index.html' });
@@ -918,23 +951,19 @@ describe('PublicPresenceAuthoringIdeScreen', () => {
 
     await waitFor(() => {
       expect(screen.getByTestId('ide-custom-html-preview').getAttribute('srcdoc')).toContain(
-        'Advanced textarea fallback marker',
+        'Advanced textarea fallback marker'
       );
     });
     expect(
       mockRequest.mock.calls.some(
-        ([path]) => path === '/api/v1/talents/talent-1/public-presence/draft',
-      ),
+        ([path]) => path === '/api/v1/talents/talent-1/public-presence/draft'
+      )
     ).toBe(false);
   });
 
   it('keeps the visible editor focus path saveable for compatibility template routes without legacy draft requests', async () => {
     render(
-      <PublicPresenceAuthoringIdeScreen
-        target="template"
-        talentId="talent-1"
-        tenantId="tenant-1"
-      />,
+      <PublicPresenceAuthoringIdeScreen target="template" talentId="talent-1" tenantId="tenant-1" />
     );
 
     const marker = 'AR38 visible editor marker';
@@ -964,7 +993,7 @@ describe('PublicPresenceAuthoringIdeScreen', () => {
       expect(saveButton).toBeDisabled();
     });
     expect(
-      mockRequest.mock.calls.some(([path]) => String(path).includes('/public-presence/authoring/')),
+      mockRequest.mock.calls.some(([path]) => String(path).includes('/public-presence/authoring/'))
     ).toBe(false);
   });
 
@@ -976,7 +1005,7 @@ describe('PublicPresenceAuthoringIdeScreen', () => {
         talentId="talent-1"
         tenantId="tenant-1"
         templateId="activeTalentHub"
-      />,
+      />
     );
 
     const saveButton = screen.getByRole('button', { name: 'Save draft' });
@@ -1007,7 +1036,7 @@ describe('PublicPresenceAuthoringIdeScreen', () => {
     fireEvent.click(screen.getAllByRole('button', { name: 'Files' })[0]);
     fireEvent.click(await screen.findByTestId('ide-file-src/index.html'));
     expect(
-      (screen.getByRole('textbox', { name: 'src/index.html' }) as HTMLTextAreaElement).value,
+      (screen.getByRole('textbox', { name: 'src/index.html' }) as HTMLTextAreaElement).value
     ).toContain('Fresh AR34 marker');
 
     fireEvent.click(validateButton);
@@ -1024,7 +1053,7 @@ describe('PublicPresenceAuthoringIdeScreen', () => {
         talentId="talent-1"
         tenantId="tenant-1"
         templateId="activeTalentHub"
-      />,
+      />
     );
 
     const saveButton = screen.getByRole('button', { name: 'Save draft' });
@@ -1042,17 +1071,13 @@ describe('PublicPresenceAuthoringIdeScreen', () => {
     });
 
     expect(screen.getByTestId('ide-custom-html-preview').getAttribute('srcdoc')).toContain(
-      'Advanced switch marker',
+      'Advanced switch marker'
     );
   });
 
   it('keeps textarea replacement fallback saveable on compatibility template routes without legacy draft persistence', async () => {
     render(
-      <PublicPresenceAuthoringIdeScreen
-        target="template"
-        talentId="talent-1"
-        tenantId="tenant-1"
-      />,
+      <PublicPresenceAuthoringIdeScreen target="template" talentId="talent-1" tenantId="tenant-1" />
     );
 
     const marker = 'AR38 textarea template marker';
@@ -1080,10 +1105,10 @@ describe('PublicPresenceAuthoringIdeScreen', () => {
       expect(saveButton).toBeDisabled();
     });
     expect(
-      (screen.getByRole('textbox', { name: 'src/template.tsx' }) as HTMLTextAreaElement).value,
+      (screen.getByRole('textbox', { name: 'src/template.tsx' }) as HTMLTextAreaElement).value
     ).toContain(marker);
     expect(
-      mockRequest.mock.calls.some(([path]) => String(path).includes('/public-presence/authoring/')),
+      mockRequest.mock.calls.some(([path]) => String(path).includes('/public-presence/authoring/'))
     ).toBe(false);
   });
 
@@ -1096,7 +1121,7 @@ describe('PublicPresenceAuthoringIdeScreen', () => {
         talentId="talent-1"
         tenantId="tenant-1"
         templateId="activeTalentHub"
-      />,
+      />
     );
 
     fireEvent.click(screen.getAllByRole('button', { name: 'Files' })[0]);
@@ -1143,10 +1168,14 @@ describe('PublicPresenceAuthoringIdeScreen', () => {
 
     fireEvent.click(within(fileDrawer).getByTestId('ide-file-src/custom-blocks/hero-note.tsx'));
     expect(
-      (screen.getByRole('textbox', { name: 'src/custom-blocks/hero-note.tsx' }) as HTMLTextAreaElement).value,
+      (
+        screen.getByRole('textbox', {
+          name: 'src/custom-blocks/hero-note.tsx',
+        }) as HTMLTextAreaElement
+      ).value
     ).toContain(marker);
     expect(
-      mockRequest.mock.calls.some(([path]) => String(path).includes('/public-presence/authoring/')),
+      mockRequest.mock.calls.some(([path]) => String(path).includes('/public-presence/authoring/'))
     ).toBe(false);
   });
 
@@ -1159,7 +1188,7 @@ describe('PublicPresenceAuthoringIdeScreen', () => {
         talentId="talent-1"
         tenantId="tenant-1"
         templateId="activeTalentHub"
-      />,
+      />
     );
 
     const editor = await screen.findByRole('textbox', { name: 'src/template.tsx' });
@@ -1181,7 +1210,7 @@ describe('PublicPresenceAuthoringIdeScreen', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Submit' }));
     expect(
-      mockRequest.mock.calls.some(([path]) => String(path).includes('/public-presence/authoring/')),
+      mockRequest.mock.calls.some(([path]) => String(path).includes('/public-presence/authoring/'))
     ).toBe(false);
   });
 });

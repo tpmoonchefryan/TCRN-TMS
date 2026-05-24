@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import type { ProfileType } from '../dto/customer.dto';
 
 export interface TalentArchiveBindingRecord {
@@ -27,6 +26,5 @@ export interface TalentArchiveReadiness {
   hasActiveArchiveTarget: boolean;
 }
 
-export const hasActiveArchiveTarget = (
-  binding: TalentArchiveBindingRecord | null,
-): boolean => Boolean(binding?.profileStoreId && binding.profileStoreIsActive);
+export const hasActiveArchiveTarget = (binding: TalentArchiveBindingRecord | null): boolean =>
+  Boolean(binding?.profileStoreId && binding.profileStoreIsActive);

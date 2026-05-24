@@ -1,5 +1,6 @@
-import type { SupportedUiLocale } from '@tcrn/shared';
 import type { ReactNode } from 'react';
+
+import type { SupportedUiLocale } from '@tcrn/shared';
 
 import type { TenantDetail } from '@/domains/platform-tenant-management/api/tenant-management.api';
 import { ApiRequestError } from '@/platform/http/api';
@@ -41,8 +42,8 @@ export function getErrorMessage(reason: unknown, fallback: string) {
 
 export function formatDateTime(
   value: string | null | undefined,
-  locale: SupportedUiLocale ,
-  fallback: string,
+  locale: SupportedUiLocale,
+  fallback: string
 ) {
   return formatLocaleDateTime(locale, value ?? null, fallback);
 }
@@ -73,14 +74,18 @@ export function buildDraftFromTenant(tenant: TenantDetail | null): TenantDraft {
   }
 
   const settings = tenant.settings || {};
-  const features = Array.isArray(settings.features) ? settings.features.filter((item) => typeof item === 'string') : [];
+  const features = Array.isArray(settings.features)
+    ? settings.features.filter((item) => typeof item === 'string')
+    : [];
 
   return {
     code: tenant.code,
     name: tenant.name,
     maxTalents: typeof settings.maxTalents === 'number' ? String(settings.maxTalents) : '',
     maxCustomersPerTalent:
-      typeof settings.maxCustomersPerTalent === 'number' ? String(settings.maxCustomersPerTalent) : '',
+      typeof settings.maxCustomersPerTalent === 'number'
+        ? String(settings.maxCustomersPerTalent)
+        : '',
     featuresText: features.join(', '),
     adminUsername: '',
     adminEmail: '',
@@ -124,7 +129,9 @@ export function ToneBadge({
           : 'bg-slate-100 text-slate-700';
 
   return (
-    <span className={`rounded-full px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.14em] ${toneClasses}`}>
+    <span
+      className={`rounded-full px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.14em] ${toneClasses}`}
+    >
       {label}
     </span>
   );
@@ -169,7 +176,11 @@ export function NoticeBanner({
       ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
       : 'border-rose-200 bg-rose-50 text-rose-800';
 
-  return <div className={`rounded-2xl border px-4 py-3 text-sm font-medium ${toneClasses}`}>{message}</div>;
+  return (
+    <div className={`rounded-2xl border px-4 py-3 text-sm font-medium ${toneClasses}`}>
+      {message}
+    </div>
+  );
 }
 
 export function Field({

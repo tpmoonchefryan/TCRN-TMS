@@ -1,6 +1,5 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 // Integration Module Zod Schemas
-
 import { z } from 'zod';
 
 import { LocalizedTextSchema, PartialLocalizedTextSchema } from '../common.schema';
@@ -12,11 +11,18 @@ export const AdapterTypeSchema = z.enum(['oauth', 'api_key', 'webhook', 'ai']);
 export const AiProviderSchema = z.enum(['OPENAI', 'ANTHROPIC', 'GEMINI']);
 export const IntegrationOwnerTypeSchema = z.enum(['tenant', 'subsidiary', 'talent']);
 export const WebhookEventTypeSchema = z.enum([
-  'customer.created', 'customer.updated', 'customer.deactivated',
-  'membership.created', 'membership.expired', 'membership.renewed',
-  'marshmallow.received', 'marshmallow.approved',
-  'report.completed', 'report.failed',
-  'import.completed', 'import.failed',
+  'customer.created',
+  'customer.updated',
+  'customer.deactivated',
+  'membership.created',
+  'membership.expired',
+  'membership.renewed',
+  'marshmallow.received',
+  'marshmallow.approved',
+  'report.completed',
+  'report.failed',
+  'import.completed',
+  'import.failed',
 ]);
 export const IntegrationDirectionSchema = z.enum(['inbound', 'outbound']);
 
@@ -42,93 +48,101 @@ export const AdapterConfigItemSchema = z.object({
 
 export const AdapterConfigMutationSchema = z.enum(['keep', 'replace', 'clear']);
 
-export const AdapterConfigMutationItemSchema = z.object({
-  configKey: z.string().max(64),
-  mutation: AdapterConfigMutationSchema.optional(),
-  configValue: z.string().max(2048).optional(),
-}).superRefine((value, ctx) => {
-  const mutation = value.mutation ?? 'replace';
+export const AdapterConfigMutationItemSchema = z
+  .object({
+    configKey: z.string().max(64),
+    mutation: AdapterConfigMutationSchema.optional(),
+    configValue: z.string().max(2048).optional(),
+  })
+  .superRefine((value, ctx) => {
+    const mutation = value.mutation ?? 'replace';
 
-  if (mutation === 'replace') {
-    if (value.configValue === undefined || value.configValue.length === 0) {
+    if (mutation === 'replace') {
+      if (value.configValue === undefined || value.configValue.length === 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['configValue'],
+          message: 'Replacement config value is required',
+        });
+      }
+      return;
+    }
+
+    if (value.configValue !== undefined) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['configValue'],
-        message: 'Replacement config value is required',
+        message: 'Config value is only allowed for replace mutations',
       });
     }
-    return;
-  }
+  });
 
-  if (value.configValue !== undefined) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      path: ['configValue'],
-      message: 'Config value is only allowed for replace mutations',
-    });
-  }
-});
+export const CreateAdapterSchema = z
+  .object({
+    definitionKey: z.string().max(64).optional(),
+    platformId: z.string().uuid().optional(),
+    code: z
+      .string()
+      .regex(/^[A-Z0-9_]{3,32}$/, 'Code must be 3-32 uppercase alphanumeric with underscores')
+      .optional(),
+    name: LocalizedTextSchema.optional(),
+    adapterType: AdapterTypeSchema.optional(),
+    inherit: z.boolean().optional().default(true),
+    configs: z.array(AdapterConfigItemSchema).optional(),
+  })
+  .superRefine((value, ctx) => {
+    if (value.definitionKey) {
+      const lockedDefinitionFields = [
+        ['platformId', value.platformId],
+        ['adapterType', value.adapterType],
+        ['code', value.code],
+        ['name', value.name],
+      ] as const;
 
-export const CreateAdapterSchema = z.object({
-  definitionKey: z.string().max(64).optional(),
-  platformId: z.string().uuid().optional(),
-  code: z.string().regex(/^[A-Z0-9_]{3,32}$/, 'Code must be 3-32 uppercase alphanumeric with underscores').optional(),
-  name: LocalizedTextSchema.optional(),
-  adapterType: AdapterTypeSchema.optional(),
-  inherit: z.boolean().optional().default(true),
-  configs: z.array(AdapterConfigItemSchema).optional(),
-}).superRefine((value, ctx) => {
-  if (value.definitionKey) {
-    const lockedDefinitionFields = [
-      ['platformId', value.platformId],
-      ['adapterType', value.adapterType],
-      ['code', value.code],
-      ['name', value.name],
-    ] as const;
+      lockedDefinitionFields.forEach(([field, fieldValue]) => {
+        if (fieldValue !== undefined) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: [field],
+            message:
+              'Adapter definition-backed creation does not accept free platform, type, code, or name fields',
+          });
+        }
+      });
+    }
 
-    lockedDefinitionFields.forEach(([field, fieldValue]) => {
-      if (fieldValue !== undefined) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: [field],
-          message: 'Adapter definition-backed creation does not accept free platform, type, code, or name fields',
-        });
-      }
-    });
-  }
+    if (!value.definitionKey && !value.platformId) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['platformId'],
+        message: 'Platform ID is required for legacy adapter creation without a definition key',
+      });
+    }
 
-  if (!value.definitionKey && !value.platformId) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      path: ['platformId'],
-      message: 'Platform ID is required for legacy adapter creation without a definition key',
-    });
-  }
+    if (!value.definitionKey && !value.adapterType) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['adapterType'],
+        message: 'Adapter type is required for legacy adapter creation without a definition key',
+      });
+    }
 
-  if (!value.definitionKey && !value.adapterType) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      path: ['adapterType'],
-      message: 'Adapter type is required for legacy adapter creation without a definition key',
-    });
-  }
+    if (!value.definitionKey && !value.code) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['code'],
+        message: 'Adapter code is required for legacy adapter creation without a definition key',
+      });
+    }
 
-  if (!value.definitionKey && !value.code) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      path: ['code'],
-      message: 'Adapter code is required for legacy adapter creation without a definition key',
-    });
-  }
-
-  if (!value.definitionKey && !value.name) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      path: ['name'],
-      message: 'Adapter name is required for custom adapter creation without a definition key',
-    });
-  }
-});
+    if (!value.definitionKey && !value.name) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['name'],
+        message: 'Adapter name is required for custom adapter creation without a definition key',
+      });
+    }
+  });
 
 export const UpdateAdapterSchema = z.object({
   name: PartialLocalizedTextSchema.optional(),
@@ -157,59 +171,65 @@ export const RetryPolicySchema = z.object({
 
 const MonitoredTalentIdsSchema = z.array(z.string().uuid()).optional();
 
-export const CreateWebhookSchema = z.object({
-  definitionKey: z.string().max(64).optional(),
-  code: z.string().regex(/^[A-Z0-9_]{3,32}$/).optional(),
-  name: LocalizedTextSchema.optional(),
-  url: z.string().url().max(512),
-  secret: z.string().max(128).optional(),
-  events: z.array(WebhookEventTypeSchema).optional(),
-  headers: z.record(z.string(), z.string()).optional(),
-  retryPolicy: RetryPolicySchema.optional(),
-  monitoredTalentIds: MonitoredTalentIdsSchema,
-}).superRefine((value, ctx) => {
-  if (value.definitionKey) {
-    const lockedDefinitionFields = [
-      ['code', value.code],
-      ['name', value.name],
-      ['events', value.events],
-    ] as const;
+export const CreateWebhookSchema = z
+  .object({
+    definitionKey: z.string().max(64).optional(),
+    code: z
+      .string()
+      .regex(/^[A-Z0-9_]{3,32}$/)
+      .optional(),
+    name: LocalizedTextSchema.optional(),
+    url: z.string().url().max(512),
+    secret: z.string().max(128).optional(),
+    events: z.array(WebhookEventTypeSchema).optional(),
+    headers: z.record(z.string(), z.string()).optional(),
+    retryPolicy: RetryPolicySchema.optional(),
+    monitoredTalentIds: MonitoredTalentIdsSchema,
+  })
+  .superRefine((value, ctx) => {
+    if (value.definitionKey) {
+      const lockedDefinitionFields = [
+        ['code', value.code],
+        ['name', value.name],
+        ['events', value.events],
+      ] as const;
 
-    lockedDefinitionFields.forEach(([field, fieldValue]) => {
-      if (fieldValue !== undefined) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: [field],
-          message: 'Webhook definition-backed creation does not accept free code, name, or event fields',
-        });
-      }
-    });
-  }
+      lockedDefinitionFields.forEach(([field, fieldValue]) => {
+        if (fieldValue !== undefined) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: [field],
+            message:
+              'Webhook definition-backed creation does not accept free code, name, or event fields',
+          });
+        }
+      });
+    }
 
-  if (!value.definitionKey && !value.code) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      path: ['code'],
-      message: 'Webhook code is required without a definition key',
-    });
-  }
+    if (!value.definitionKey && !value.code) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['code'],
+        message: 'Webhook code is required without a definition key',
+      });
+    }
 
-  if (!value.definitionKey && !value.name) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      path: ['name'],
-      message: 'Webhook name is required without a definition key',
-    });
-  }
+    if (!value.definitionKey && !value.name) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['name'],
+        message: 'Webhook name is required without a definition key',
+      });
+    }
 
-  if (!value.definitionKey && (!value.events || value.events.length === 0)) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      path: ['events'],
-      message: 'Webhook events are required without a definition key',
-    });
-  }
-});
+    if (!value.definitionKey && (!value.events || value.events.length === 0)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['events'],
+        message: 'Webhook events are required without a definition key',
+      });
+    }
+  });
 
 export const UpdateWebhookSchema = z.object({
   name: PartialLocalizedTextSchema.optional(),

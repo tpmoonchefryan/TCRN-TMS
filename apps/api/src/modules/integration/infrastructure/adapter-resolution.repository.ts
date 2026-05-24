@@ -1,9 +1,8 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable } from '@nestjs/common';
 
-import { DatabaseService } from '../../database';
 import { readLocalizedText } from '../../../platform/persistence/localized-text.persistence';
+import { DatabaseService } from '../../database';
 import type {
   EffectiveAdapterConfigRow,
   EffectiveAdapterLookupRow,
@@ -15,18 +14,16 @@ import type {
 
 @Injectable()
 export class AdapterResolutionRepository {
-  constructor(
-    private readonly databaseService: DatabaseService,
-  ) {}
+  constructor(private readonly databaseService: DatabaseService) {}
 
   async findTalentHierarchy(
     tenantSchema: string,
-    talentId: string,
+    talentId: string
   ): Promise<TalentAdapterHierarchyRecord | null> {
-    const rows = await this.databaseService.getPrisma().$queryRawUnsafe<
-      TalentAdapterHierarchyRecord[]
-    >(
-      `
+    const rows = await this.databaseService
+      .getPrisma()
+      .$queryRawUnsafe<TalentAdapterHierarchyRecord[]>(
+        `
         SELECT
           id,
           subsidiary_id as "subsidiaryId"
@@ -34,27 +31,27 @@ export class AdapterResolutionRepository {
         WHERE id = $1::uuid
         LIMIT 1
       `,
-      talentId,
-    );
+        talentId
+      );
 
     return rows[0] ?? null;
   }
 
   async findSubsidiaryScope(
     tenantSchema: string,
-    subsidiaryId: string,
+    subsidiaryId: string
   ): Promise<SubsidiaryAdapterScopeRecord | null> {
-    const rows = await this.databaseService.getPrisma().$queryRawUnsafe<
-      SubsidiaryAdapterScopeRecord[]
-    >(
-      `
+    const rows = await this.databaseService
+      .getPrisma()
+      .$queryRawUnsafe<SubsidiaryAdapterScopeRecord[]>(
+        `
         SELECT id
         FROM "${tenantSchema}".subsidiary
         WHERE id = $1::uuid
         LIMIT 1
       `,
-      subsidiaryId,
-    );
+        subsidiaryId
+      );
 
     return rows[0] ?? null;
   }
@@ -63,7 +60,7 @@ export class AdapterResolutionRepository {
     tenantSchema: string,
     lineage: EffectiveAdapterScope[],
     platformCode: string,
-    adapterType?: string,
+    adapterType?: string
   ): Promise<EffectiveAdapterLookupRow[]> {
     if (lineage.length === 0) {
       return [];
@@ -93,8 +90,10 @@ export class AdapterResolutionRepository {
 
     conditions.push(`(${ownerClauses.join(' OR ')})`);
 
-    const rows = await this.databaseService.getPrisma().$queryRawUnsafe<EffectiveAdapterLookupRow[]>(
-      `
+    const rows = await this.databaseService
+      .getPrisma()
+      .$queryRawUnsafe<EffectiveAdapterLookupRow[]>(
+        `
         SELECT
           ia.id,
           ia.owner_type as "ownerType",
@@ -115,8 +114,8 @@ export class AdapterResolutionRepository {
           ON sp.id = ia.platform_id
         WHERE ${conditions.join(' AND ')}
       `,
-      ...params,
-    );
+        ...params
+      );
 
     return rows.map((row) => ({
       ...row,
@@ -126,7 +125,7 @@ export class AdapterResolutionRepository {
 
   async findConfigs(
     tenantSchema: string,
-    adapterIds: string[],
+    adapterIds: string[]
   ): Promise<EffectiveAdapterConfigRow[]> {
     if (adapterIds.length === 0) {
       return [];
@@ -146,14 +145,14 @@ export class AdapterResolutionRepository {
         WHERE adapter_id IN (${placeholders})
         ORDER BY created_at ASC, id ASC
       `,
-      ...adapterIds,
+      ...adapterIds
     );
   }
 
   async findOverrides(
     tenantSchema: string,
     adapterIds: string[],
-    scopes: EffectiveAdapterScope[],
+    scopes: EffectiveAdapterScope[]
   ): Promise<EffectiveAdapterOverrideRow[]> {
     if (adapterIds.length === 0 || scopes.length === 0) {
       return [];
@@ -190,7 +189,7 @@ export class AdapterResolutionRepository {
           AND entity_id IN (${adapterPlaceholders.join(', ')})
           AND (${scopeClauses.join(' OR ')})
       `,
-      ...params,
+      ...params
     );
   }
 }

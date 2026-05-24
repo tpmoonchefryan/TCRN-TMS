@@ -1,16 +1,17 @@
 'use client';
 
-import type { SupportedUiLocale } from '@tcrn/shared';
 import { useMemo } from 'react';
 
+import type { SupportedUiLocale } from '@tcrn/shared';
+
 import type { ScopedConfigEntityType } from '@/domains/config-dictionary-settings/api/settings.api';
+import type { DictionaryExplorerPanelCopy } from '@/domains/config-dictionary-settings/components/DictionaryExplorerPanel';
+import type { ScopedConfigEntityWorkspaceCopy } from '@/domains/config-dictionary-settings/components/ScopedConfigEntityWorkspace';
 import {
   CONFIG_ENTITY_CATALOG,
   type ConfigEntityCatalogEntry,
   type ConfigEntityFieldDefinition,
 } from '@/domains/config-dictionary-settings/components/config-entity-catalog';
-import type { DictionaryExplorerPanelCopy } from '@/domains/config-dictionary-settings/components/DictionaryExplorerPanel';
-import type { ScopedConfigEntityWorkspaceCopy } from '@/domains/config-dictionary-settings/components/ScopedConfigEntityWorkspace';
 import { useUiLocale } from '@/platform/runtime/locale/locale-provider';
 import {
   formatLocaleDateTime,
@@ -26,7 +27,7 @@ function buildExactText(
   zh_HANT: string,
   ja: string,
   ko: string,
-  fr: string,
+  fr: string
 ): SettingsFamilyLocalizedText {
   return {
     en,
@@ -38,7 +39,7 @@ function buildExactText(
   };
 }
 
-function formatDateTimeValue(locale: SupportedUiLocale , value: string, fallback: string) {
+function formatDateTimeValue(locale: SupportedUiLocale, value: string, fallback: string) {
   return formatLocaleDateTime(locale, value, fallback);
 }
 
@@ -64,7 +65,8 @@ const COMMON = {
     defaultsCategory: 'Defaults',
     defaultsAndRoutesCategory: 'Defaults and routes',
     unavailable: 'Unavailable',
-  },  zh_HANS: {
+  },
+  zh_HANS: {
     currentTenant: '租户',
     unknown: '未知',
     unassigned: '未分配',
@@ -174,7 +176,7 @@ const COMMON = {
     defaultsAndRoutesCategory: 'Valeurs par defaut et routes',
     unavailable: 'Indisponible',
   },
-} satisfies Record<SupportedUiLocale , Record<string, string>>;
+} satisfies Record<SupportedUiLocale, Record<string, string>>;
 
 const DICTIONARY_PANEL_COPY: Record<SupportedUiLocale, DictionaryExplorerPanelCopy> = {
   en: {
@@ -184,7 +186,8 @@ const DICTIONARY_PANEL_COPY: Record<SupportedUiLocale, DictionaryExplorerPanelCo
     updatedColumn: 'Updated',
     actionsColumn: 'Actions',
     defaultItemsTitle: 'Dictionary items',
-    defaultItemsDescription: 'Browse the effective controlled vocabulary used across downstream modules.',
+    defaultItemsDescription:
+      'Browse the effective controlled vocabulary used across downstream modules.',
     searchAriaLabel: 'Search dictionary items',
     searchPlaceholder: 'Search code or localized name',
     includeInactiveAriaLabel: 'Include inactive dictionary items',
@@ -268,7 +271,8 @@ const DICTIONARY_PANEL_COPY: Record<SupportedUiLocale, DictionaryExplorerPanelCo
     updatedColumn: 'Updated',
     actionsColumn: 'Actions',
     defaultItemsTitle: 'Dictionary items',
-    defaultItemsDescription: 'Browse the effective controlled vocabulary used across downstream modules.',
+    defaultItemsDescription:
+      'Browse the effective controlled vocabulary used across downstream modules.',
     searchAriaLabel: 'Search dictionary items',
     searchPlaceholder: 'Search code or localized name',
     includeInactiveAriaLabel: 'Include inactive dictionary items',
@@ -289,7 +293,8 @@ const DICTIONARY_PANEL_COPY: Record<SupportedUiLocale, DictionaryExplorerPanelCo
     updatedColumn: 'Updated',
     actionsColumn: 'Actions',
     defaultItemsTitle: 'Dictionary items',
-    defaultItemsDescription: 'Browse the effective controlled vocabulary used across downstream modules.',
+    defaultItemsDescription:
+      'Browse the effective controlled vocabulary used across downstream modules.',
     searchAriaLabel: 'Search dictionary items',
     searchPlaceholder: 'Search code or localized name',
     includeInactiveAriaLabel: 'Include inactive dictionary items',
@@ -307,7 +312,14 @@ const DICTIONARY_PANEL_COPY: Record<SupportedUiLocale, DictionaryExplorerPanelCo
 
 const LEGACY_SETTINGS_TEXT_OVERRIDES: Partial<Record<string, SettingsFamilyLocalizedText>> = {
   Tenant: buildExactText('Tenant', '租户', '租戶', 'テナント', '테넌트', 'Locataire'),
-  Subsidiary: buildExactText('Subsidiary', '分目录', '分目錄', '配下スコープ', '하위 조직', 'Périmètre'),
+  Subsidiary: buildExactText(
+    'Subsidiary',
+    '分目录',
+    '分目錄',
+    '配下スコープ',
+    '하위 조직',
+    'Périmètre'
+  ),
   Talent: buildExactText('Talent', '艺人', '藝人', 'タレント', '아티스트', 'Talent'),
   Status: buildExactText('Status', '状态', '狀態', '状態', '상태', 'Statut'),
   Actions: buildExactText('Actions', '操作', '操作', '操作', '작업', 'Actions'),
@@ -315,30 +327,149 @@ const LEGACY_SETTINGS_TEXT_OVERRIDES: Partial<Record<string, SettingsFamilyLocal
   Default: buildExactText('Default', '默认', '預設', '既定', '기본', 'Par defaut'),
   Edit: buildExactText('Edit', '编辑', '編輯', '編集', '수정', 'Modifier'),
   Deactivate: buildExactText('Deactivate', '停用', '停用', '無効化', '비활성화', 'Desactiver'),
-  Reactivate: buildExactText('Reactivate', '重新启用', '重新啟用', '再有効化', '다시 활성화', 'Reactiver'),
+  Reactivate: buildExactText(
+    'Reactivate',
+    '重新启用',
+    '重新啟用',
+    '再有効化',
+    '다시 활성화',
+    'Reactiver'
+  ),
   Publish: buildExactText('Publish', '发布', '發布', '公開', '게시', 'Publier'),
   Disable: buildExactText('Disable', '停用', '停用', '無効化', '비활성화', 'Desactiver'),
-  'Re-enable': buildExactText('Re-enable', '重新启用', '重新啟用', '再有効化', '다시 활성화', 'Reactiver'),
+  'Re-enable': buildExactText(
+    'Re-enable',
+    '重新启用',
+    '重新啟用',
+    '再有効化',
+    '다시 활성화',
+    'Reactiver'
+  ),
   Draft: buildExactText('Draft', '草稿', '草稿', '下書き', '초안', 'Brouillon'),
   Published: buildExactText('Published', '已发布', '已發布', '公開済み', '게시됨', 'Publie'),
   Disabled: buildExactText('Disabled', '停用', '停用', '無効', '비활성', 'Desactive'),
   Ready: buildExactText('Ready', '可发布', '可發布', '公開可能', '준비됨', 'Pret'),
   Blocked: buildExactText('Blocked', '被阻止', '被阻止', 'ブロック中', '차단됨', 'Bloque'),
-  'Open integration': buildExactText('Open integration', '打开集成管理', '打開集成管理', '統合管理を開く', '통합 관리 열기', 'Ouvrir l integration'),
-  'Open security': buildExactText('Open security', '打开安全管理', '打開安全管理', 'セキュリティ管理を開く', '보안 열기', 'Ouvrir la securite'),
-  'Default language': buildExactText('Default language', '默认语言', '預設語言', '既定言語', '기본 언어', 'Langue par defaut'),
-  'Default timezone': buildExactText('Default timezone', '默认时区', '預設時區', '既定タイムゾーン', '기본 시간대', 'Fuseau horaire par defaut'),
-  'Search code or localized name': buildExactText('Search code or localized name', '按代码或本地化名称搜索', '依代碼或本地化名稱搜尋', 'コードまたはローカライズ名で検索', '코드 또는 현지화 이름으로 검색', 'Rechercher par code ou nom localise'),
-  'Dictionary unavailable': buildExactText('Dictionary unavailable', '词典不可用', '詞典不可用', '辞書を読み込めません', '사전을 사용할 수 없습니다', 'Dictionnaire indisponible'),
-  'No dictionary types returned': buildExactText('No dictionary types returned', '未返回词典类型', '未返回詞典類型', '辞書タイプが返されませんでした', '반환된 사전 유형이 없습니다', 'Aucun type de dictionnaire n a ete renvoye'),
-  'Visible Dictionary Types': buildExactText('Visible Dictionary Types', '可见词典类型', '可見詞典類型', '表示中の辞書タイプ', '표시 가능한 사전 유형', 'Types de dictionnaire visibles'),
-  'Profile Stores': buildExactText('Profile Stores', '档案库', '檔案庫', 'プロフィールストア', '프로필 스토어', 'Archives de profil'),
-  'Talent Settings': buildExactText('Talent Settings', '艺人设置', '藝人設定', 'タレント設定', '아티스트 설정', 'Parametres du talent'),
-  'Lifecycle / Publish Readiness': buildExactText('Lifecycle / Publish Readiness', '生命周期 / 发布就绪', '生命週期 / 發布就緒', 'ライフサイクル / 公開準備', '라이프사이클 / 게시 준비 상태', 'Cycle de vie / Etat de preparation'),
-  'Public Availability': buildExactText('Public Availability', '公开可用性', '公開可用性', '公開可用性', '공개 가능 여부', 'Disponibilite publique'),
-  'Homepage / Custom Domain': buildExactText('Homepage / Custom Domain', '主页 / 自定义域名', '主頁 / 自訂網域', 'ホームページ / カスタムドメイン', '홈페이지 / 커스텀 도메인', 'Homepage / Domaine personnalise'),
-  'Public Marshmallow Route': buildExactText('Public Marshmallow Route', '公开棉花糖路由', '公開棉花糖路由', '公開マシュマロルート', '공개 마시멜로 경로', 'Route Marshmallow publique'),
-  'Translation management': buildExactText('Translation management', '翻译管理', '翻譯管理', '翻訳管理', '번역 관리', 'Gestion des traductions'),
+  'Open integration': buildExactText(
+    'Open integration',
+    '打开集成管理',
+    '打開集成管理',
+    '統合管理を開く',
+    '통합 관리 열기',
+    'Ouvrir l integration'
+  ),
+  'Open security': buildExactText(
+    'Open security',
+    '打开安全管理',
+    '打開安全管理',
+    'セキュリティ管理を開く',
+    '보안 열기',
+    'Ouvrir la securite'
+  ),
+  'Default language': buildExactText(
+    'Default language',
+    '默认语言',
+    '預設語言',
+    '既定言語',
+    '기본 언어',
+    'Langue par defaut'
+  ),
+  'Default timezone': buildExactText(
+    'Default timezone',
+    '默认时区',
+    '預設時區',
+    '既定タイムゾーン',
+    '기본 시간대',
+    'Fuseau horaire par defaut'
+  ),
+  'Search code or localized name': buildExactText(
+    'Search code or localized name',
+    '按代码或本地化名称搜索',
+    '依代碼或本地化名稱搜尋',
+    'コードまたはローカライズ名で検索',
+    '코드 또는 현지화 이름으로 검색',
+    'Rechercher par code ou nom localise'
+  ),
+  'Dictionary unavailable': buildExactText(
+    'Dictionary unavailable',
+    '词典不可用',
+    '詞典不可用',
+    '辞書を読み込めません',
+    '사전을 사용할 수 없습니다',
+    'Dictionnaire indisponible'
+  ),
+  'No dictionary types returned': buildExactText(
+    'No dictionary types returned',
+    '未返回词典类型',
+    '未返回詞典類型',
+    '辞書タイプが返されませんでした',
+    '반환된 사전 유형이 없습니다',
+    'Aucun type de dictionnaire n a ete renvoye'
+  ),
+  'Visible Dictionary Types': buildExactText(
+    'Visible Dictionary Types',
+    '可见词典类型',
+    '可見詞典類型',
+    '表示中の辞書タイプ',
+    '표시 가능한 사전 유형',
+    'Types de dictionnaire visibles'
+  ),
+  'Profile Stores': buildExactText(
+    'Profile Stores',
+    '档案库',
+    '檔案庫',
+    'プロフィールストア',
+    '프로필 스토어',
+    'Archives de profil'
+  ),
+  'Talent Settings': buildExactText(
+    'Talent Settings',
+    '艺人设置',
+    '藝人設定',
+    'タレント設定',
+    '아티스트 설정',
+    'Parametres du talent'
+  ),
+  'Lifecycle / Publish Readiness': buildExactText(
+    'Lifecycle / Publish Readiness',
+    '生命周期 / 发布就绪',
+    '生命週期 / 發布就緒',
+    'ライフサイクル / 公開準備',
+    '라이프사이클 / 게시 준비 상태',
+    'Cycle de vie / Etat de preparation'
+  ),
+  'Public Availability': buildExactText(
+    'Public Availability',
+    '公开可用性',
+    '公開可用性',
+    '公開可用性',
+    '공개 가능 여부',
+    'Disponibilite publique'
+  ),
+  'Homepage / Custom Domain': buildExactText(
+    'Homepage / Custom Domain',
+    '主页 / 自定义域名',
+    '主頁 / 自訂網域',
+    'ホームページ / カスタムドメイン',
+    '홈페이지 / 커스텀 도메인',
+    'Homepage / Domaine personnalise'
+  ),
+  'Public Marshmallow Route': buildExactText(
+    'Public Marshmallow Route',
+    '公开棉花糖路由',
+    '公開棉花糖路由',
+    '公開マシュマロルート',
+    '공개 마시멜로 경로',
+    'Route Marshmallow publique'
+  ),
+  'Translation management': buildExactText(
+    'Translation management',
+    '翻译管理',
+    '翻譯管理',
+    '翻訳管理',
+    '번역 관리',
+    'Gestion des traductions'
+  ),
 };
 
 const SCOPED_CONFIG_COPY: Record<SupportedUiLocale, ScopedConfigEntityWorkspaceCopy> = {
@@ -355,10 +486,12 @@ const SCOPED_CONFIG_COPY: Record<SupportedUiLocale, ScopedConfigEntityWorkspaceC
     refreshAriaLabel: 'Refresh configuration list',
     currentScopeOnlyLabel: 'Current scope only',
     currentScopeOnlyAriaLabel: 'Current scope only',
-    currentScopeOnlyDescription: (scopeLabel) => `Hide inherited records and focus on records maintained at this ${scopeLabel}.`,
+    currentScopeOnlyDescription: (scopeLabel) =>
+      `Hide inherited records and focus on records maintained at this ${scopeLabel}.`,
     includeInactiveLabel: 'Include inactive records',
     includeInactiveAriaLabel: 'Include inactive records',
-    includeInactiveDescription: 'Keep inactive local records visible so you can review or reactivate them here.',
+    includeInactiveDescription:
+      'Keep inactive local records visible so you can review or reactivate them here.',
     unavailableTitle: 'Configuration entities unavailable',
     retryLabel: 'Retry',
     codeColumn: 'Code',
@@ -369,7 +502,8 @@ const SCOPED_CONFIG_COPY: Record<SupportedUiLocale, ScopedConfigEntityWorkspaceC
     emptyTitle: (entryLabel) => `No ${entryLabel.toLowerCase()} records returned`,
     emptyOwnedDescription: (entryLabel, scopeLabel) =>
       `No ${entryLabel.toLowerCase()} records are maintained directly at this ${scopeLabel}.`,
-    emptyFilteredDescription: (entryLabel) => `No ${entryLabel.toLowerCase()} records matched the current filters.`,
+    emptyFilteredDescription: (entryLabel) =>
+      `No ${entryLabel.toLowerCase()} records matched the current filters.`,
     emptyActionLabel: 'Create the first record',
     noCodeLabel: 'NO_CODE',
     createdAtLabel: (value) => `Created ${value}`,
@@ -411,7 +545,8 @@ const SCOPED_CONFIG_COPY: Record<SupportedUiLocale, ScopedConfigEntityWorkspaceC
     reactivateConfirm: 'Reactivate',
     reactivateSuccess: (entryLabel, codeOrName) => `${entryLabel} ${codeOrName} reactivated.`,
     disableInScopeTitle: (codeOrName) => `Disable ${codeOrName} in this scope?`,
-    disableInScopeDescription: 'Hide this inherited record here without changing the source record.',
+    disableInScopeDescription:
+      'Hide this inherited record here without changing the source record.',
     disableInScopeConfirm: 'Disable in scope',
     disableInScopeSuccess: (entryLabel, codeOrName) => `${entryLabel} ${codeOrName} hidden here.`,
     enableInScopeTitle: (codeOrName) => `Enable ${codeOrName} in this scope?`,
@@ -427,7 +562,11 @@ const SCOPED_CONFIG_COPY: Record<SupportedUiLocale, ScopedConfigEntityWorkspaceC
     disabledHerePill: 'Disabled here',
     requiredField: (fieldLabel) => `${fieldLabel} is required.`,
     scopeTypeLabel: (scopeType) =>
-      scopeType === 'tenant' ? 'tenant scope' : scopeType === 'subsidiary' ? 'subsidiary scope' : 'talent scope',
+      scopeType === 'tenant'
+        ? 'tenant scope'
+        : scopeType === 'subsidiary'
+          ? 'subsidiary scope'
+          : 'talent scope',
   },
   zh_HANS: {
     visibleRecordsLabel: '可见记录',
@@ -442,7 +581,8 @@ const SCOPED_CONFIG_COPY: Record<SupportedUiLocale, ScopedConfigEntityWorkspaceC
     refreshAriaLabel: '刷新配置列表',
     currentScopeOnlyLabel: '仅看当前范围',
     currentScopeOnlyAriaLabel: '仅看当前范围',
-    currentScopeOnlyDescription: (scopeLabel) => `隐藏继承记录，只查看当前${scopeLabel}直接维护的记录。`,
+    currentScopeOnlyDescription: (scopeLabel) =>
+      `隐藏继承记录，只查看当前${scopeLabel}直接维护的记录。`,
     includeInactiveLabel: '包含停用记录',
     includeInactiveAriaLabel: '包含停用记录',
     includeInactiveDescription: '保留停用记录，方便在这里查看或重新启用。',
@@ -454,7 +594,8 @@ const SCOPED_CONFIG_COPY: Record<SupportedUiLocale, ScopedConfigEntityWorkspaceC
     statusColumn: '状态',
     actionsColumn: '操作',
     emptyTitle: (entryLabel) => `当前没有返回${entryLabel}记录`,
-    emptyOwnedDescription: (entryLabel, scopeLabel) => `当前${scopeLabel}下没有直接维护的${entryLabel}记录。`,
+    emptyOwnedDescription: (entryLabel, scopeLabel) =>
+      `当前${scopeLabel}下没有直接维护的${entryLabel}记录。`,
     emptyFilteredDescription: (entryLabel) => `当前筛选条件下没有匹配的${entryLabel}记录。`,
     emptyActionLabel: '创建第一条记录',
     noCodeLabel: '无代码',
@@ -503,7 +644,8 @@ const SCOPED_CONFIG_COPY: Record<SupportedUiLocale, ScopedConfigEntityWorkspaceC
     enableInScopeTitle: (codeOrName) => `在当前范围恢复 ${codeOrName}？`,
     enableInScopeDescription: '让这条继承记录重新在这里显示。',
     enableInScopeConfirm: '在此启用',
-    enableInScopeSuccess: (entryLabel, codeOrName) => `${entryLabel} ${codeOrName} 已在这里恢复显示。`,
+    enableInScopeSuccess: (entryLabel, codeOrName) =>
+      `${entryLabel} ${codeOrName} 已在这里恢复显示。`,
     stateUpdateError: (entryLabel) => `更新${entryLabel}状态失败。`,
     updatedAtSummary: (value) => `更新于 ${value}`,
     inheritedFromScope: (scopeLabel) => `继承自${scopeLabel}`,
@@ -528,7 +670,8 @@ const SCOPED_CONFIG_COPY: Record<SupportedUiLocale, ScopedConfigEntityWorkspaceC
     refreshAriaLabel: '刷新配置列表',
     currentScopeOnlyLabel: '仅看当前范围',
     currentScopeOnlyAriaLabel: '仅看当前范围',
-    currentScopeOnlyDescription: (scopeLabel) => `隐藏继承记录，只查看当前${scopeLabel}直接维护的记录。`,
+    currentScopeOnlyDescription: (scopeLabel) =>
+      `隐藏继承记录，只查看当前${scopeLabel}直接维护的记录。`,
     includeInactiveLabel: '包含停用记录',
     includeInactiveAriaLabel: '包含停用记录',
     includeInactiveDescription: '保留停用记录，方便在这里查看或重新启用。',
@@ -540,7 +683,8 @@ const SCOPED_CONFIG_COPY: Record<SupportedUiLocale, ScopedConfigEntityWorkspaceC
     statusColumn: '状态',
     actionsColumn: '操作',
     emptyTitle: (entryLabel) => `当前没有返回${entryLabel}记录`,
-    emptyOwnedDescription: (entryLabel, scopeLabel) => `当前${scopeLabel}下没有直接维护的${entryLabel}记录。`,
+    emptyOwnedDescription: (entryLabel, scopeLabel) =>
+      `当前${scopeLabel}下没有直接维护的${entryLabel}记录。`,
     emptyFilteredDescription: (entryLabel) => `当前筛选条件下没有匹配的${entryLabel}记录。`,
     emptyActionLabel: '创建第一条记录',
     noCodeLabel: '无代码',
@@ -589,7 +733,8 @@ const SCOPED_CONFIG_COPY: Record<SupportedUiLocale, ScopedConfigEntityWorkspaceC
     enableInScopeTitle: (codeOrName) => `在当前范围恢复 ${codeOrName}？`,
     enableInScopeDescription: '让这条继承记录重新在这里显示。',
     enableInScopeConfirm: '在此启用',
-    enableInScopeSuccess: (entryLabel, codeOrName) => `${entryLabel} ${codeOrName} 已在这里恢复显示。`,
+    enableInScopeSuccess: (entryLabel, codeOrName) =>
+      `${entryLabel} ${codeOrName} 已在这里恢复显示。`,
     stateUpdateError: (entryLabel) => `更新${entryLabel}状态失败。`,
     updatedAtSummary: (value) => `更新于 ${value}`,
     inheritedFromScope: (scopeLabel) => `继承自${scopeLabel}`,
@@ -614,10 +759,12 @@ const SCOPED_CONFIG_COPY: Record<SupportedUiLocale, ScopedConfigEntityWorkspaceC
     refreshAriaLabel: '設定一覧を更新',
     currentScopeOnlyLabel: '現在のスコープのみ',
     currentScopeOnlyAriaLabel: '現在のスコープのみ',
-    currentScopeOnlyDescription: (scopeLabel) => `継承レコードを隠し、この${scopeLabel}で直接管理しているレコードだけを表示します。`,
+    currentScopeOnlyDescription: (scopeLabel) =>
+      `継承レコードを隠し、この${scopeLabel}で直接管理しているレコードだけを表示します。`,
     includeInactiveLabel: '無効レコードを含める',
     includeInactiveAriaLabel: '無効レコードを含める',
-    includeInactiveDescription: '無効レコードも表示し、この画面で確認や再有効化ができるようにします。',
+    includeInactiveDescription:
+      '無効レコードも表示し、この画面で確認や再有効化ができるようにします。',
     unavailableTitle: '設定エンティティを読み込めません',
     retryLabel: '再試行',
     codeColumn: 'コード',
@@ -626,8 +773,10 @@ const SCOPED_CONFIG_COPY: Record<SupportedUiLocale, ScopedConfigEntityWorkspaceC
     statusColumn: '状態',
     actionsColumn: '操作',
     emptyTitle: (entryLabel) => `${entryLabel}レコードがありません`,
-    emptyOwnedDescription: (entryLabel, scopeLabel) => `この${scopeLabel}で直接管理している${entryLabel}レコードはありません。`,
-    emptyFilteredDescription: (entryLabel) => `現在の条件に一致する${entryLabel}レコードはありません。`,
+    emptyOwnedDescription: (entryLabel, scopeLabel) =>
+      `この${scopeLabel}で直接管理している${entryLabel}レコードはありません。`,
+    emptyFilteredDescription: (entryLabel) =>
+      `現在の条件に一致する${entryLabel}レコードはありません。`,
     emptyActionLabel: '最初のレコードを作成',
     noCodeLabel: 'コードなし',
     createdAtLabel: (value) => `作成: ${value}`,
@@ -667,15 +816,18 @@ const SCOPED_CONFIG_COPY: Record<SupportedUiLocale, ScopedConfigEntityWorkspaceC
     reactivateTitle: (codeOrName) => `${codeOrName}を再有効化しますか？`,
     reactivateDescription: 'この操作でレコードを再び有効にします。',
     reactivateConfirm: '再有効化',
-    reactivateSuccess: (entryLabel, codeOrName) => `${entryLabel} ${codeOrName} を再有効化しました。`,
+    reactivateSuccess: (entryLabel, codeOrName) =>
+      `${entryLabel} ${codeOrName} を再有効化しました。`,
     disableInScopeTitle: (codeOrName) => `このスコープで${codeOrName}を無効化しますか？`,
     disableInScopeDescription: '継承レコードをここでのみ非表示にし、元のレコードは変更しません。',
     disableInScopeConfirm: 'このスコープで無効化',
-    disableInScopeSuccess: (entryLabel, codeOrName) => `${entryLabel} ${codeOrName} をここで非表示にしました。`,
+    disableInScopeSuccess: (entryLabel, codeOrName) =>
+      `${entryLabel} ${codeOrName} をここで非表示にしました。`,
     enableInScopeTitle: (codeOrName) => `このスコープで${codeOrName}を再有効化しますか？`,
     enableInScopeDescription: '継承レコードをここでもう一度表示します。',
     enableInScopeConfirm: 'このスコープで再有効化',
-    enableInScopeSuccess: (entryLabel, codeOrName) => `${entryLabel} ${codeOrName} をここで再表示しました。`,
+    enableInScopeSuccess: (entryLabel, codeOrName) =>
+      `${entryLabel} ${codeOrName} をここで再表示しました。`,
     stateUpdateError: (entryLabel) => `${entryLabel}の状態更新に失敗しました。`,
     updatedAtSummary: (value) => `更新: ${value}`,
     inheritedFromScope: (scopeLabel) => `${scopeLabel}から継承`,
@@ -685,7 +837,11 @@ const SCOPED_CONFIG_COPY: Record<SupportedUiLocale, ScopedConfigEntityWorkspaceC
     disabledHerePill: 'このスコープで無効',
     requiredField: (fieldLabel) => `${fieldLabel}は必須です。`,
     scopeTypeLabel: (scopeType) =>
-      scopeType === 'tenant' ? 'テナントスコープ' : scopeType === 'subsidiary' ? '配下スコープ' : 'タレントスコープ',
+      scopeType === 'tenant'
+        ? 'テナントスコープ'
+        : scopeType === 'subsidiary'
+          ? '配下スコープ'
+          : 'タレントスコープ',
   },
   ko: {
     visibleRecordsLabel: 'Visible Records',
@@ -700,10 +856,12 @@ const SCOPED_CONFIG_COPY: Record<SupportedUiLocale, ScopedConfigEntityWorkspaceC
     refreshAriaLabel: 'Refresh configuration list',
     currentScopeOnlyLabel: 'Current scope only',
     currentScopeOnlyAriaLabel: 'Current scope only',
-    currentScopeOnlyDescription: (scopeLabel) => `Hide inherited records and focus on records maintained at this ${scopeLabel}.`,
+    currentScopeOnlyDescription: (scopeLabel) =>
+      `Hide inherited records and focus on records maintained at this ${scopeLabel}.`,
     includeInactiveLabel: 'Include inactive records',
     includeInactiveAriaLabel: 'Include inactive records',
-    includeInactiveDescription: 'Keep inactive local records visible so you can review or reactivate them here.',
+    includeInactiveDescription:
+      'Keep inactive local records visible so you can review or reactivate them here.',
     unavailableTitle: 'Configuration entities unavailable',
     retryLabel: 'Retry',
     codeColumn: 'Code',
@@ -714,7 +872,8 @@ const SCOPED_CONFIG_COPY: Record<SupportedUiLocale, ScopedConfigEntityWorkspaceC
     emptyTitle: (entryLabel) => `No ${entryLabel.toLowerCase()} records returned`,
     emptyOwnedDescription: (entryLabel, scopeLabel) =>
       `No ${entryLabel.toLowerCase()} records are maintained directly at this ${scopeLabel}.`,
-    emptyFilteredDescription: (entryLabel) => `No ${entryLabel.toLowerCase()} records matched the current filters.`,
+    emptyFilteredDescription: (entryLabel) =>
+      `No ${entryLabel.toLowerCase()} records matched the current filters.`,
     emptyActionLabel: 'Create the first record',
     noCodeLabel: 'NO_CODE',
     createdAtLabel: (value) => `Created ${value}`,
@@ -756,7 +915,8 @@ const SCOPED_CONFIG_COPY: Record<SupportedUiLocale, ScopedConfigEntityWorkspaceC
     reactivateConfirm: 'Reactivate',
     reactivateSuccess: (entryLabel, codeOrName) => `${entryLabel} ${codeOrName} reactivated.`,
     disableInScopeTitle: (codeOrName) => `Disable ${codeOrName} in this scope?`,
-    disableInScopeDescription: 'Hide this inherited record here without changing the source record.',
+    disableInScopeDescription:
+      'Hide this inherited record here without changing the source record.',
     disableInScopeConfirm: 'Disable in scope',
     disableInScopeSuccess: (entryLabel, codeOrName) => `${entryLabel} ${codeOrName} hidden here.`,
     enableInScopeTitle: (codeOrName) => `Enable ${codeOrName} in this scope?`,
@@ -772,7 +932,11 @@ const SCOPED_CONFIG_COPY: Record<SupportedUiLocale, ScopedConfigEntityWorkspaceC
     disabledHerePill: 'Disabled here',
     requiredField: (fieldLabel) => `${fieldLabel} is required.`,
     scopeTypeLabel: (scopeType) =>
-      scopeType === 'tenant' ? 'tenant scope' : scopeType === 'subsidiary' ? 'subsidiary scope' : 'talent scope',
+      scopeType === 'tenant'
+        ? 'tenant scope'
+        : scopeType === 'subsidiary'
+          ? 'subsidiary scope'
+          : 'talent scope',
   },
   fr: {
     visibleRecordsLabel: 'Visible Records',
@@ -787,10 +951,12 @@ const SCOPED_CONFIG_COPY: Record<SupportedUiLocale, ScopedConfigEntityWorkspaceC
     refreshAriaLabel: 'Refresh configuration list',
     currentScopeOnlyLabel: 'Current scope only',
     currentScopeOnlyAriaLabel: 'Current scope only',
-    currentScopeOnlyDescription: (scopeLabel) => `Hide inherited records and focus on records maintained at this ${scopeLabel}.`,
+    currentScopeOnlyDescription: (scopeLabel) =>
+      `Hide inherited records and focus on records maintained at this ${scopeLabel}.`,
     includeInactiveLabel: 'Include inactive records',
     includeInactiveAriaLabel: 'Include inactive records',
-    includeInactiveDescription: 'Keep inactive local records visible so you can review or reactivate them here.',
+    includeInactiveDescription:
+      'Keep inactive local records visible so you can review or reactivate them here.',
     unavailableTitle: 'Configuration entities unavailable',
     retryLabel: 'Retry',
     codeColumn: 'Code',
@@ -801,7 +967,8 @@ const SCOPED_CONFIG_COPY: Record<SupportedUiLocale, ScopedConfigEntityWorkspaceC
     emptyTitle: (entryLabel) => `No ${entryLabel.toLowerCase()} records returned`,
     emptyOwnedDescription: (entryLabel, scopeLabel) =>
       `No ${entryLabel.toLowerCase()} records are maintained directly at this ${scopeLabel}.`,
-    emptyFilteredDescription: (entryLabel) => `No ${entryLabel.toLowerCase()} records matched the current filters.`,
+    emptyFilteredDescription: (entryLabel) =>
+      `No ${entryLabel.toLowerCase()} records matched the current filters.`,
     emptyActionLabel: 'Create the first record',
     noCodeLabel: 'NO_CODE',
     createdAtLabel: (value) => `Created ${value}`,
@@ -843,7 +1010,8 @@ const SCOPED_CONFIG_COPY: Record<SupportedUiLocale, ScopedConfigEntityWorkspaceC
     reactivateConfirm: 'Reactivate',
     reactivateSuccess: (entryLabel, codeOrName) => `${entryLabel} ${codeOrName} reactivated.`,
     disableInScopeTitle: (codeOrName) => `Disable ${codeOrName} in this scope?`,
-    disableInScopeDescription: 'Hide this inherited record here without changing the source record.',
+    disableInScopeDescription:
+      'Hide this inherited record here without changing the source record.',
     disableInScopeConfirm: 'Disable in scope',
     disableInScopeSuccess: (entryLabel, codeOrName) => `${entryLabel} ${codeOrName} hidden here.`,
     enableInScopeTitle: (codeOrName) => `Enable ${codeOrName} in this scope?`,
@@ -859,98 +1027,259 @@ const SCOPED_CONFIG_COPY: Record<SupportedUiLocale, ScopedConfigEntityWorkspaceC
     disabledHerePill: 'Disabled here',
     requiredField: (fieldLabel) => `${fieldLabel} is required.`,
     scopeTypeLabel: (scopeType) =>
-      scopeType === 'tenant' ? 'tenant scope' : scopeType === 'subsidiary' ? 'subsidiary scope' : 'talent scope',
+      scopeType === 'tenant'
+        ? 'tenant scope'
+        : scopeType === 'subsidiary'
+          ? 'subsidiary scope'
+          : 'talent scope',
   },
 };
 
-type ConfigEntityCopyMap = Partial<Record<ScopedConfigEntityType, Partial<ConfigEntityCatalogEntry>>>;
+type ConfigEntityCopyMap = Partial<
+  Record<ScopedConfigEntityType, Partial<ConfigEntityCatalogEntry>>
+>;
 type ConfigFieldCopyMap = Partial<Record<string, Partial<ConfigEntityFieldDefinition>>>;
 
-const CONFIG_ENTITY_COPY: Record<SupportedUiLocale, ConfigEntityCopyMap> & Partial<Record<SupportedUiLocale, ConfigEntityCopyMap>> = {
+const CONFIG_ENTITY_COPY: Record<SupportedUiLocale, ConfigEntityCopyMap> &
+  Partial<Record<SupportedUiLocale, ConfigEntityCopyMap>> = {
   en: {},
   zh_HANS: {
     'business-segment': { label: '业务分段', description: '当前范围拥有的客户域业务线分段。' },
-    'customer-status': { label: '客户状态', description: '供下游客户流程筛选与生命周期提示使用的状态标签。' },
+    'customer-status': {
+      label: '客户状态',
+      description: '供下游客户流程筛选与生命周期提示使用的状态标签。',
+    },
     'address-type': { label: '地址类型', description: '客户与档案表单复用的地址分类值。' },
     'channel-category': { label: '渠道类别', description: '供沟通方式记录继承的高层渠道分组。' },
-    'artist-stage': { label: '艺人阶段', description: '租户拥有的艺人阶段目录，用于艺人创建与生命周期流转。' },
+    'artist-stage': {
+      label: '艺人阶段',
+      description: '租户拥有的艺人阶段目录，用于艺人创建与生命周期流转。',
+    },
     'communication-type': { label: '沟通方式', description: '下游客户联系流程继承的沟通方式。' },
     'reason-category': { label: '原因分类', description: '客户停用原因与运营选择使用的顶层分类。' },
     'inactivation-reason': { label: '停用原因', description: '挂在原因分类下的具体客户停用原因。' },
     'membership-class': { label: '会员类别', description: '当前租户维护的会员类别顶层定义。' },
     'membership-type': { label: '会员类型', description: '挂在会员类别下的会员类型定义。' },
     'membership-level': { label: '会员层级', description: '挂在会员类型下的具体会员层级。' },
-    'profile-store': { label: '档案库', description: '租户级客户档案边界，用于艺人发布与客户访问。' },
-    'custom-domain': { label: '自定义域名', description: '租户、分目录与艺人拥有的公开域名绑定，支持继承与 DNS 验证。' },
+    'profile-store': {
+      label: '档案库',
+      description: '租户级客户档案边界，用于艺人发布与客户访问。',
+    },
+    'custom-domain': {
+      label: '自定义域名',
+      description: '租户、分目录与艺人拥有的公开域名绑定，支持继承与 DNS 验证。',
+    },
     consent: { label: '同意协议', description: '带有本地化内容与生效时间窗的同意协议。' },
   },
   zh_HANT: {
     'business-segment': { label: '業務分段', description: '目前範圍擁有的客戶域業務線分段。' },
-    'customer-status': { label: '客戶狀態', description: '供下游客戶流程篩選與生命週期提示使用的狀態標籤。' },
+    'customer-status': {
+      label: '客戶狀態',
+      description: '供下游客戶流程篩選與生命週期提示使用的狀態標籤。',
+    },
     'address-type': { label: '地址類型', description: '客戶與檔案表單複用的地址分類值。' },
     'channel-category': { label: '渠道類別', description: '供溝通方式記錄繼承的高層渠道分組。' },
-    'artist-stage': { label: '藝人階段', description: '租戶擁有的藝人階段目錄，用於藝人建立與生命週期流轉。' },
+    'artist-stage': {
+      label: '藝人階段',
+      description: '租戶擁有的藝人階段目錄，用於藝人建立與生命週期流轉。',
+    },
     'communication-type': { label: '溝通方式', description: '下游客戶聯絡流程繼承的溝通方式。' },
     'reason-category': { label: '原因分類', description: '客戶停用原因與營運選擇使用的頂層分類。' },
     'inactivation-reason': { label: '停用原因', description: '掛在原因分類下的具體客戶停用原因。' },
     'membership-class': { label: '會員類別', description: '目前租戶維護的會員類別頂層定義。' },
     'membership-type': { label: '會員類型', description: '掛在會員類別下的會員類型定義。' },
     'membership-level': { label: '會員層級', description: '掛在會員類型下的具體會員層級。' },
-    'profile-store': { label: '檔案庫', description: '租戶級客戶檔案邊界，用於藝人發布與客戶存取。' },
-    'custom-domain': { label: '自訂域名', description: '租戶、分目錄與藝人擁有的公開域名綁定，支援繼承與 DNS 驗證。' },
+    'profile-store': {
+      label: '檔案庫',
+      description: '租戶級客戶檔案邊界，用於藝人發布與客戶存取。',
+    },
+    'custom-domain': {
+      label: '自訂域名',
+      description: '租戶、分目錄與藝人擁有的公開域名綁定，支援繼承與 DNS 驗證。',
+    },
     consent: { label: '同意協議', description: '帶有本地化內容與生效時間窗的同意協議。' },
   },
   ja: {
-    'business-segment': { label: '事業セグメント', description: '現在のスコープが所有する顧客ドメインの事業区分です。' },
-    'customer-status': { label: '顧客ステータス', description: '下流の顧客ワークフローで利用する状態ラベルです。' },
-    'address-type': { label: '住所タイプ', description: '顧客・プロフィールフォームで再利用する住所分類です。' },
-    'channel-category': { label: 'チャネルカテゴリ', description: 'コミュニケーション種別が継承する上位チャネル分類です。' },
-    'artist-stage': { label: 'アーティスト段階', description: 'タレント作成とライフサイクル遷移に使う、テナント所有のアーティスト段階カタログです。' },
-    'communication-type': { label: 'コミュニケーション種別', description: '下流の顧客連絡フローで使う連絡方法です。' },
+    'business-segment': {
+      label: '事業セグメント',
+      description: '現在のスコープが所有する顧客ドメインの事業区分です。',
+    },
+    'customer-status': {
+      label: '顧客ステータス',
+      description: '下流の顧客ワークフローで利用する状態ラベルです。',
+    },
+    'address-type': {
+      label: '住所タイプ',
+      description: '顧客・プロフィールフォームで再利用する住所分類です。',
+    },
+    'channel-category': {
+      label: 'チャネルカテゴリ',
+      description: 'コミュニケーション種別が継承する上位チャネル分類です。',
+    },
+    'artist-stage': {
+      label: 'アーティスト段階',
+      description:
+        'タレント作成とライフサイクル遷移に使う、テナント所有のアーティスト段階カタログです。',
+    },
+    'communication-type': {
+      label: 'コミュニケーション種別',
+      description: '下流の顧客連絡フローで使う連絡方法です。',
+    },
     'reason-category': { label: '理由カテゴリ', description: '顧客無効化理由の上位カテゴリです。' },
-    'inactivation-reason': { label: '無効化理由', description: '理由カテゴリに紐づく具体的な無効化理由です。' },
-    'membership-class': { label: '会員カテゴリ', description: 'テナントで管理する会員カテゴリの最上位定義です。' },
-    'membership-type': { label: '会員タイプ', description: '会員カテゴリ配下で管理する会員タイプです。' },
-    'membership-level': { label: '会員レベル', description: '会員タイプ配下で管理する具体的な会員レベルです。' },
-    'profile-store': { label: 'プロフィールストア', description: 'タレント公開と顧客アクセスに使うテナント単位の顧客アーカイブ境界です。' },
-    'custom-domain': { label: 'カスタムドメイン', description: '継承と DNS 検証に対応した、テナント・配下スコープ・タレント所有の公開ドメイン設定です。' },
-    consent: { label: '同意契約', description: 'ローカライズ済み内容と有効期間を持つ同意契約です。' },
+    'inactivation-reason': {
+      label: '無効化理由',
+      description: '理由カテゴリに紐づく具体的な無効化理由です。',
+    },
+    'membership-class': {
+      label: '会員カテゴリ',
+      description: 'テナントで管理する会員カテゴリの最上位定義です。',
+    },
+    'membership-type': {
+      label: '会員タイプ',
+      description: '会員カテゴリ配下で管理する会員タイプです。',
+    },
+    'membership-level': {
+      label: '会員レベル',
+      description: '会員タイプ配下で管理する具体的な会員レベルです。',
+    },
+    'profile-store': {
+      label: 'プロフィールストア',
+      description: 'タレント公開と顧客アクセスに使うテナント単位の顧客アーカイブ境界です。',
+    },
+    'custom-domain': {
+      label: 'カスタムドメイン',
+      description:
+        '継承と DNS 検証に対応した、テナント・配下スコープ・タレント所有の公開ドメイン設定です。',
+    },
+    consent: {
+      label: '同意契約',
+      description: 'ローカライズ済み内容と有効期間を持つ同意契約です。',
+    },
   },
   ko: {
-    'business-segment': { label: '비즈니스 세그먼트', description: '현재 범위가 소유한 고객 도메인 사업 구분입니다.' },
-    'customer-status': { label: '고객 상태', description: '하위 고객 흐름의 필터와 수명주기 표시에 쓰는 상태 라벨입니다.' },
-    'address-type': { label: '주소 유형', description: '고객 및 프로필 양식에서 재사용하는 주소 분류입니다.' },
-    'channel-category': { label: '채널 카테고리', description: '연락 방식이 상속하는 상위 채널 분류입니다.' },
-    'artist-stage': { label: '아티스트 단계', description: '탤런트 생성과 수명주기 흐름에 쓰는 테넌트 소유 아티스트 단계 카탈로그입니다.' },
-    'communication-type': { label: '연락 방식', description: '하위 고객 연락 흐름에서 사용하는 연락 방법입니다.' },
-    'reason-category': { label: '사유 카테고리', description: '고객 비활성화 사유의 상위 분류입니다.' },
-    'inactivation-reason': { label: '비활성화 사유', description: '사유 카테고리에 속한 구체적인 고객 비활성화 사유입니다.' },
-    'membership-class': { label: '멤버십 카테고리', description: '테넌트가 관리하는 멤버십 최상위 분류입니다.' },
-    'membership-type': { label: '멤버십 유형', description: '멤버십 카테고리 아래에서 관리하는 유형입니다.' },
-    'membership-level': { label: '멤버십 레벨', description: '멤버십 유형 아래의 구체적인 레벨입니다.' },
-    'profile-store': { label: '프로필 저장소', description: '탤런트 공개와 고객 접근에 쓰는 테넌트 단위 고객 아카이브 경계입니다.' },
-    'custom-domain': { label: '커스텀 도메인', description: '상속과 DNS 검증을 지원하는 테넌트, 하위 조직, 탤런트 소유 공개 도메인 바인딩입니다.' },
-    consent: { label: '동의 계약', description: '현지화된 내용과 유효 기간을 가진 동의 계약입니다.' },
+    'business-segment': {
+      label: '비즈니스 세그먼트',
+      description: '현재 범위가 소유한 고객 도메인 사업 구분입니다.',
+    },
+    'customer-status': {
+      label: '고객 상태',
+      description: '하위 고객 흐름의 필터와 수명주기 표시에 쓰는 상태 라벨입니다.',
+    },
+    'address-type': {
+      label: '주소 유형',
+      description: '고객 및 프로필 양식에서 재사용하는 주소 분류입니다.',
+    },
+    'channel-category': {
+      label: '채널 카테고리',
+      description: '연락 방식이 상속하는 상위 채널 분류입니다.',
+    },
+    'artist-stage': {
+      label: '아티스트 단계',
+      description: '탤런트 생성과 수명주기 흐름에 쓰는 테넌트 소유 아티스트 단계 카탈로그입니다.',
+    },
+    'communication-type': {
+      label: '연락 방식',
+      description: '하위 고객 연락 흐름에서 사용하는 연락 방법입니다.',
+    },
+    'reason-category': {
+      label: '사유 카테고리',
+      description: '고객 비활성화 사유의 상위 분류입니다.',
+    },
+    'inactivation-reason': {
+      label: '비활성화 사유',
+      description: '사유 카테고리에 속한 구체적인 고객 비활성화 사유입니다.',
+    },
+    'membership-class': {
+      label: '멤버십 카테고리',
+      description: '테넌트가 관리하는 멤버십 최상위 분류입니다.',
+    },
+    'membership-type': {
+      label: '멤버십 유형',
+      description: '멤버십 카테고리 아래에서 관리하는 유형입니다.',
+    },
+    'membership-level': {
+      label: '멤버십 레벨',
+      description: '멤버십 유형 아래의 구체적인 레벨입니다.',
+    },
+    'profile-store': {
+      label: '프로필 저장소',
+      description: '탤런트 공개와 고객 접근에 쓰는 테넌트 단위 고객 아카이브 경계입니다.',
+    },
+    'custom-domain': {
+      label: '커스텀 도메인',
+      description:
+        '상속과 DNS 검증을 지원하는 테넌트, 하위 조직, 탤런트 소유 공개 도메인 바인딩입니다.',
+    },
+    consent: {
+      label: '동의 계약',
+      description: '현지화된 내용과 유효 기간을 가진 동의 계약입니다.',
+    },
   },
   fr: {
-    'business-segment': { label: 'Segment metier', description: 'Segmentation metier du domaine client detenue par le perimetre actuel.' },
-    'customer-status': { label: 'Statut client', description: 'Libelles de statut utilises par les filtres et cycles client.' },
-    'address-type': { label: 'Type d adresse', description: 'Classification d adresse reutilisee dans les formulaires client et profil.' },
-    'channel-category': { label: 'Categorie de canal', description: 'Groupe de canal parent herite par les modes de contact.' },
-    'artist-stage': { label: 'Etape artiste', description: 'Catalogue d etapes artiste gere par le tenant pour la creation et les transitions de cycle de vie.' },
-    'communication-type': { label: 'Mode de contact', description: 'Methode de contact utilisee par les flux client aval.' },
-    'reason-category': { label: 'Categorie de motif', description: 'Classification parent pour les motifs de desactivation client.' },
-    'inactivation-reason': { label: 'Motif de desactivation', description: 'Motif concret rattache a une categorie de motif.' },
-    'membership-class': { label: 'Categorie d adhesion', description: 'Definition de plus haut niveau des adhesions gerees par le tenant.' },
-    'membership-type': { label: 'Type d adhesion', description: 'Type gere sous une categorie d adhesion.' },
-    'membership-level': { label: 'Niveau d adhesion', description: 'Niveau concret gere sous un type d adhesion.' },
-    'profile-store': { label: 'Archive client', description: 'Frontiere d archive client au niveau tenant pour la publication talent et l acces client.' },
-    'custom-domain': { label: 'Domaine personnalise', description: 'Liaisons de domaines publics detenues par le tenant, le perimetre ou le talent, avec heritage et verification DNS.' },
-    consent: { label: 'Accord de consentement', description: 'Accord avec contenu localise et fenetre de validite.' },
+    'business-segment': {
+      label: 'Segment metier',
+      description: 'Segmentation metier du domaine client detenue par le perimetre actuel.',
+    },
+    'customer-status': {
+      label: 'Statut client',
+      description: 'Libelles de statut utilises par les filtres et cycles client.',
+    },
+    'address-type': {
+      label: 'Type d adresse',
+      description: 'Classification d adresse reutilisee dans les formulaires client et profil.',
+    },
+    'channel-category': {
+      label: 'Categorie de canal',
+      description: 'Groupe de canal parent herite par les modes de contact.',
+    },
+    'artist-stage': {
+      label: 'Etape artiste',
+      description:
+        'Catalogue d etapes artiste gere par le tenant pour la creation et les transitions de cycle de vie.',
+    },
+    'communication-type': {
+      label: 'Mode de contact',
+      description: 'Methode de contact utilisee par les flux client aval.',
+    },
+    'reason-category': {
+      label: 'Categorie de motif',
+      description: 'Classification parent pour les motifs de desactivation client.',
+    },
+    'inactivation-reason': {
+      label: 'Motif de desactivation',
+      description: 'Motif concret rattache a une categorie de motif.',
+    },
+    'membership-class': {
+      label: 'Categorie d adhesion',
+      description: 'Definition de plus haut niveau des adhesions gerees par le tenant.',
+    },
+    'membership-type': {
+      label: 'Type d adhesion',
+      description: 'Type gere sous une categorie d adhesion.',
+    },
+    'membership-level': {
+      label: 'Niveau d adhesion',
+      description: 'Niveau concret gere sous un type d adhesion.',
+    },
+    'profile-store': {
+      label: 'Archive client',
+      description:
+        'Frontiere d archive client au niveau tenant pour la publication talent et l acces client.',
+    },
+    'custom-domain': {
+      label: 'Domaine personnalise',
+      description:
+        'Liaisons de domaines publics detenues par le tenant, le perimetre ou le talent, avec heritage et verification DNS.',
+    },
+    consent: {
+      label: 'Accord de consentement',
+      description: 'Accord avec contenu localise et fenetre de validite.',
+    },
   },
 };
 
-const CONFIG_FIELD_COPY: Record<SupportedUiLocale, ConfigFieldCopyMap> & Partial<Record<SupportedUiLocale, ConfigFieldCopyMap>> = {
+const CONFIG_FIELD_COPY: Record<SupportedUiLocale, ConfigFieldCopyMap> &
+  Partial<Record<SupportedUiLocale, ConfigFieldCopyMap>> = {
   en: {},
   zh_HANS: {
     color: { label: '徽标颜色' },
@@ -962,7 +1291,10 @@ const CONFIG_FIELD_COPY: Record<SupportedUiLocale, ConfigFieldCopyMap> & Partial
         { value: 'disabled', label: '已停用' },
       ],
     },
-    homepagePolicyKey: { label: '主页策略键', description: '供租户生命周期策略判定主页可用性使用的引用键。' },
+    homepagePolicyKey: {
+      label: '主页策略键',
+      description: '供租户生命周期策略判定主页可用性使用的引用键。',
+    },
     channelCategoryId: { label: '渠道类别' },
     reasonCategoryId: { label: '原因分类' },
     membershipClassId: { label: '会员类别' },
@@ -988,7 +1320,10 @@ const CONFIG_FIELD_COPY: Record<SupportedUiLocale, ConfigFieldCopyMap> & Partial
         { value: 'disabled', label: '已停用' },
       ],
     },
-    homepagePolicyKey: { label: '主頁策略鍵', description: '供租戶生命週期策略判定主頁可用性使用的參照鍵。' },
+    homepagePolicyKey: {
+      label: '主頁策略鍵',
+      description: '供租戶生命週期策略判定主頁可用性使用的參照鍵。',
+    },
     channelCategoryId: { label: '渠道類別' },
     reasonCategoryId: { label: '原因分類' },
     membershipClassId: { label: '會員類別' },
@@ -1014,12 +1349,18 @@ const CONFIG_FIELD_COPY: Record<SupportedUiLocale, ConfigFieldCopyMap> & Partial
         { value: 'disabled', label: '無効' },
       ],
     },
-    homepagePolicyKey: { label: 'ホームページポリシーキー', description: 'テナントのライフサイクルポリシーが公開可否を判定するための参照キーです。' },
+    homepagePolicyKey: {
+      label: 'ホームページポリシーキー',
+      description: 'テナントのライフサイクルポリシーが公開可否を判定するための参照キーです。',
+    },
     channelCategoryId: { label: 'チャネルカテゴリ' },
     reasonCategoryId: { label: '理由カテゴリ' },
     membershipClassId: { label: '会員カテゴリ' },
     membershipTypeId: { label: '会員タイプ' },
-    externalControl: { label: '外部制御', description: 'この会員タイプが外部システム同期で管理されるかを示します。' },
+    externalControl: {
+      label: '外部制御',
+      description: 'この会員タイプが外部システム同期で管理されるかを示します。',
+    },
     defaultRenewalDays: { label: '既定更新日数' },
     rank: { label: 'ランク順' },
     badgeUrl: { label: 'バッジ URL' },
@@ -1027,7 +1368,10 @@ const CONFIG_FIELD_COPY: Record<SupportedUiLocale, ConfigFieldCopyMap> & Partial
     effectiveFrom: { label: '有効開始' },
     expiresAt: { label: '有効終了' },
     contentUrl: { label: '公開コンテンツ URL' },
-    isRequired: { label: '続行前に必須', description: '関連ワークフローを続ける前にこの同意確認が必要かを制御します。' },
+    isRequired: {
+      label: '続行前に必須',
+      description: '関連ワークフローを続ける前にこの同意確認が必要かを制御します。',
+    },
     contentMarkdownBase: { label: 'Content base value' },
   },
   ko: {
@@ -1040,12 +1384,18 @@ const CONFIG_FIELD_COPY: Record<SupportedUiLocale, ConfigFieldCopyMap> & Partial
         { value: 'disabled', label: '중지됨' },
       ],
     },
-    homepagePolicyKey: { label: '홈페이지 정책 키', description: '테넌트 수명주기 정책이 홈페이지 가용성을 판단할 때 쓰는 참조 키입니다.' },
+    homepagePolicyKey: {
+      label: '홈페이지 정책 키',
+      description: '테넌트 수명주기 정책이 홈페이지 가용성을 판단할 때 쓰는 참조 키입니다.',
+    },
     channelCategoryId: { label: '채널 카테고리' },
     reasonCategoryId: { label: '사유 카테고리' },
     membershipClassId: { label: '멤버십 카테고리' },
     membershipTypeId: { label: '멤버십 유형' },
-    externalControl: { label: '외부 제어', description: '이 멤버십 유형이 외부 시스템 동기화로 관리되는지 표시합니다.' },
+    externalControl: {
+      label: '외부 제어',
+      description: '이 멤버십 유형이 외부 시스템 동기화로 관리되는지 표시합니다.',
+    },
     defaultRenewalDays: { label: '기본 갱신 일수' },
     rank: { label: '레벨 정렬' },
     badgeUrl: { label: '배지 URL' },
@@ -1053,7 +1403,10 @@ const CONFIG_FIELD_COPY: Record<SupportedUiLocale, ConfigFieldCopyMap> & Partial
     effectiveFrom: { label: '유효 시작' },
     expiresAt: { label: '유효 종료' },
     contentUrl: { label: '호스팅 콘텐츠 URL' },
-    isRequired: { label: '진행 전 필수', description: '관련 흐름을 계속하기 전에 이 동의 확인이 필요한지 제어합니다.' },
+    isRequired: {
+      label: '진행 전 필수',
+      description: '관련 흐름을 계속하기 전에 이 동의 확인이 필요한지 제어합니다.',
+    },
     contentMarkdownBase: { label: 'Content base value' },
   },
   fr: {
@@ -1066,12 +1419,19 @@ const CONFIG_FIELD_COPY: Record<SupportedUiLocale, ConfigFieldCopyMap> & Partial
         { value: 'disabled', label: 'Desactive' },
       ],
     },
-    homepagePolicyKey: { label: 'Cle de politique homepage', description: 'Cle de reference utilisee par la politique de cycle de vie du tenant pour decider de la disponibilite homepage.' },
+    homepagePolicyKey: {
+      label: 'Cle de politique homepage',
+      description:
+        'Cle de reference utilisee par la politique de cycle de vie du tenant pour decider de la disponibilite homepage.',
+    },
     channelCategoryId: { label: 'Categorie de canal' },
     reasonCategoryId: { label: 'Categorie de motif' },
     membershipClassId: { label: 'Categorie d adhesion' },
     membershipTypeId: { label: 'Type d adhesion' },
-    externalControl: { label: 'Controle externe', description: 'Indique si ce type d adhesion est gere par synchronisation externe.' },
+    externalControl: {
+      label: 'Controle externe',
+      description: 'Indique si ce type d adhesion est gere par synchronisation externe.',
+    },
     defaultRenewalDays: { label: 'Jours de renouvellement par defaut' },
     rank: { label: 'Ordre du niveau' },
     badgeUrl: { label: 'URL du badge' },
@@ -1079,12 +1439,16 @@ const CONFIG_FIELD_COPY: Record<SupportedUiLocale, ConfigFieldCopyMap> & Partial
     effectiveFrom: { label: 'Debut de validite' },
     expiresAt: { label: 'Fin de validite' },
     contentUrl: { label: 'URL du contenu heberge' },
-    isRequired: { label: 'Obligatoire avant de continuer', description: 'Controle si ce consentement doit etre confirme avant de poursuivre le flux associe.' },
+    isRequired: {
+      label: 'Obligatoire avant de continuer',
+      description:
+        'Controle si ce consentement doit etre confirme avant de poursuivre le flux associe.',
+    },
     contentMarkdownBase: { label: 'Content base value' },
   },
 };
 
-export function getLocalizedConfigEntityCatalog(locale: SupportedUiLocale ) {
+export function getLocalizedConfigEntityCatalog(locale: SupportedUiLocale) {
   if (locale === 'en') {
     return CONFIG_ENTITY_CATALOG;
   }
@@ -1108,7 +1472,7 @@ export function getLocalizedConfigEntityCatalog(locale: SupportedUiLocale ) {
           fields: localizedFields,
         },
       ];
-    }),
+    })
   ) as Record<ScopedConfigEntityType, ConfigEntityCatalogEntry>;
 }
 
@@ -1122,15 +1486,15 @@ export function useSettingsFamilyCopy() {
       pickLocaleText(
         effectiveSelectedLocale,
         typeof valueOrEn === 'string'
-          ? LEGACY_SETTINGS_TEXT_OVERRIDES[valueOrEn] ?? {
+          ? (LEGACY_SETTINGS_TEXT_OVERRIDES[valueOrEn] ?? {
               en: valueOrEn,
               zh_HANS: zh ?? valueOrEn,
               zh_HANT: zh ?? valueOrEn,
               ja: ja ?? valueOrEn,
               ko: valueOrEn,
               fr: valueOrEn,
-            }
-          : valueOrEn,
+            })
+          : valueOrEn
       );
 
     return {

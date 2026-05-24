@@ -1,7 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Controller, Get, ServiceUnavailableException } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+
 import type { HealthCheckResponse } from '@tcrn/shared';
 
 import { Public } from '../../common/decorators/public.decorator';
@@ -85,7 +85,11 @@ export class HealthController {
   @Get('ready')
   @ApiOperation({ summary: 'Readiness probe' })
   @ApiResponse({ status: 200, description: 'Service is ready', schema: HEALTH_STATUS_SCHEMA })
-  @ApiResponse({ status: 503, description: 'Service is not ready', schema: HEALTH_UNAVAILABLE_SCHEMA })
+  @ApiResponse({
+    status: 503,
+    description: 'Service is not ready',
+    schema: HEALTH_UNAVAILABLE_SCHEMA,
+  })
   async ready(): Promise<{ status: string }> {
     const health = await this.healthService.check();
     if (health.status === 'unhealthy') {

@@ -1,9 +1,9 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 // MFR Report Golden File Tests - Data Accuracy Verification
-
-import { describe, it, expect, beforeAll } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
+
+import { describe, it, expect, beforeAll } from 'vitest';
 
 interface MfrTestCase {
   id: string;

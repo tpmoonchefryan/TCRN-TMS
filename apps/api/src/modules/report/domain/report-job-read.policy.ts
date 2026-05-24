@@ -1,10 +1,5 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
-import {
-  type ReportJobListItem,
-  type ReportJobResponse,
-  ReportJobStatus,
-} from '../dto/report.dto';
+import { type ReportJobListItem, type ReportJobResponse, ReportJobStatus } from '../dto/report.dto';
 
 type RawNumericValue = bigint | number | null;
 
@@ -123,9 +118,9 @@ export const mapReportJobDetail = (job: RawReportJobDetail): ReportJobResponse =
     },
     error: job.error_code
       ? {
-        code: job.error_code,
-        message: job.error_message || '',
-      }
+          code: job.error_code,
+          message: job.error_message || '',
+        }
       : undefined,
     failureReason: getFailureReason(job),
     parameterSnapshot: {
@@ -141,16 +136,19 @@ export const mapReportJobDetail = (job: RawReportJobDetail): ReportJobResponse =
       { phase: 'downloaded', at: downloadedAt },
       { phase: 'expired', at: isExpired ? expiresAt : null },
     ],
-    artifacts: job.file_name || job.file_path
-      ? [{
-          kind: 'report-file',
-          downloadState: getArtifactDownloadState(job, now),
-          fileName: job.file_name,
-          fileSizeBytes,
-          expiresAt,
-          downloadedAt,
-        }]
-      : [],
+    artifacts:
+      job.file_name || job.file_path
+        ? [
+            {
+              kind: 'report-file',
+              downloadState: getArtifactDownloadState(job, now),
+              fileName: job.file_name,
+              fileSizeBytes,
+              expiresAt,
+              downloadedAt,
+            },
+          ]
+        : [],
     fileName: job.file_name,
     fileSizeBytes,
     queuedAt,

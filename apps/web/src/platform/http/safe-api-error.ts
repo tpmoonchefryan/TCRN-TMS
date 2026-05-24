@@ -40,7 +40,9 @@ function normalizeMessage(message: string | undefined, fallback: string): string
   return trimmed;
 }
 
-export function getApiErrorDisplayTraceId(error: Pick<ApiRequestError, 'requestId' | 'traceId'>): string | undefined {
+export function getApiErrorDisplayTraceId(
+  error: Pick<ApiRequestError, 'requestId' | 'traceId'>
+): string | undefined {
   return error.traceId ?? error.requestId;
 }
 

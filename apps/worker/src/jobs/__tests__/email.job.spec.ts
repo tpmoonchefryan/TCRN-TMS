@@ -1,7 +1,9 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { createCipheriv } from 'crypto';
+
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { getEmailConfig } from '../email.job';
 
 const { mockLogger, mockPrisma } = vi.hoisted(() => ({
   mockLogger: {
@@ -27,8 +29,6 @@ vi.mock('@tcrn/database', () => ({
 vi.mock('../../logger', () => ({
   workerLogger: mockLogger,
 }));
-
-import { getEmailConfig } from '../email.job';
 
 const ALGORITHM = 'aes-256-gcm';
 const AUTH_TAG_LENGTH = 16;

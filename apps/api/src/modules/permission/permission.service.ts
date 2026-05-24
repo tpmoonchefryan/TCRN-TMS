@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable } from '@nestjs/common';
+
 import { prisma } from '@tcrn/database';
 import {
   type LocalizedText,
@@ -18,11 +18,11 @@ import {
 export type PermissionAction = RbacPermissionAction;
 
 const RBAC_RESOURCE_NAME_BY_CODE = new Map<string, LocalizedText>(
-  RBAC_RESOURCES.map((definition) => [definition.code, definition.name]),
+  RBAC_RESOURCES.map((definition) => [definition.code, definition.name])
 );
 
 function toLocalizedPermissionData(
-  row: Omit<LocalizedPermissionData, 'name'> & { resourceCode: string },
+  row: Omit<LocalizedPermissionData, 'name'> & { resourceCode: string }
 ): LocalizedPermissionData | null {
   const name = RBAC_RESOURCE_NAME_BY_CODE.get(row.resourceCode);
 
@@ -71,7 +71,10 @@ export class PermissionService {
       params.push(options.isActive);
     }
 
-    const results = await prisma.$queryRawUnsafe<Array<Omit<LocalizedPermissionData, 'name'> & { resourceCode: string }>>(`
+    const results = await prisma.$queryRawUnsafe<
+      Array<Omit<LocalizedPermissionData, 'name'> & { resourceCode: string }>
+    >(
+      `
       SELECT 
         p.id, 
         r.code as "resourceCode", 
@@ -84,7 +87,9 @@ export class PermissionService {
       JOIN "${tenantSchema}".resource r ON r.id = p.resource_id
       WHERE ${whereClause}
       ORDER BY r.code, p.action
-    `, ...params);
+    `,
+      ...params
+    );
 
     return results.flatMap((row) => {
       const data = toLocalizedPermissionData(row);
@@ -96,7 +101,10 @@ export class PermissionService {
    * Get permission by ID
    */
   async findById(id: string, tenantSchema: string): Promise<LocalizedPermissionData | null> {
-    const results = await prisma.$queryRawUnsafe<Array<Omit<LocalizedPermissionData, 'name'> & { resourceCode: string }>>(`
+    const results = await prisma.$queryRawUnsafe<
+      Array<Omit<LocalizedPermissionData, 'name'> & { resourceCode: string }>
+    >(
+      `
       SELECT 
         p.id, 
         r.code as "resourceCode", 
@@ -108,7 +116,9 @@ export class PermissionService {
       FROM "${tenantSchema}".policy p
       JOIN "${tenantSchema}".resource r ON r.id = p.resource_id
       WHERE p.id = $1::uuid
-    `, id);
+    `,
+      id
+    );
     return toLocalizedPermissionData(results[0]);
   }
 
@@ -119,7 +129,10 @@ export class PermissionService {
     if (ids.length === 0) return [];
 
     const placeholders = ids.map((_, i) => `$${i + 1}::uuid`).join(',');
-    const results = await prisma.$queryRawUnsafe<Array<Omit<LocalizedPermissionData, 'name'> & { resourceCode: string }>>(`
+    const results = await prisma.$queryRawUnsafe<
+      Array<Omit<LocalizedPermissionData, 'name'> & { resourceCode: string }>
+    >(
+      `
       SELECT 
         p.id, 
         r.code as "resourceCode", 
@@ -131,7 +144,9 @@ export class PermissionService {
       FROM "${tenantSchema}".policy p
       JOIN "${tenantSchema}".resource r ON r.id = p.resource_id
       WHERE p.id IN (${placeholders})
-    `, ...ids);
+    `,
+      ...ids
+    );
 
     return results.flatMap((row) => {
       const data = toLocalizedPermissionData(row);
@@ -143,13 +158,18 @@ export class PermissionService {
    * Get resource definitions for UI
    * Note: Resources and policies are defined in tenant_template schema (global definitions)
    */
-  async getResourceDefinitions(_tenantSchema: string, language: string = 'en'): Promise<ResourceDefinition[]> {
+  async getResourceDefinitions(
+    _tenantSchema: string,
+    language: string = 'en'
+  ): Promise<ResourceDefinition[]> {
     // Get all resources with their associated policy actions from tenant_template (global definitions)
-    const resources = await prisma.$queryRawUnsafe<Array<{
-      code: string;
-      module: string;
-      actions: string;
-    }>>(`
+    const resources = await prisma.$queryRawUnsafe<
+      Array<{
+        code: string;
+        module: string;
+        actions: string;
+      }>
+    >(`
       SELECT 
         r.code,
         r.module,
@@ -162,12 +182,15 @@ export class PermissionService {
     `);
 
     // Group by module
-    const moduleMap = new Map<string, Array<{
-      code: RbacResourceCode;
-      name: string;
-      actions: PermissionAction[];
-    }>>();
-    
+    const moduleMap = new Map<
+      string,
+      Array<{
+        code: RbacResourceCode;
+        name: string;
+        actions: PermissionAction[];
+      }>
+    >();
+
     for (const res of resources) {
       const definition = getRbacResourceDefinition(res.code);
       if (!definition) {
@@ -177,11 +200,9 @@ export class PermissionService {
       if (!moduleMap.has(definition.module)) {
         moduleMap.set(definition.module, []);
       }
-      
-      const actions = res.actions
-        ? res.actions.split(',').filter(isCanonicalPermissionAction)
-        : [];
-      
+
+      const actions = res.actions ? res.actions.split(',').filter(isCanonicalPermissionAction) : [];
+
       const moduleResources = moduleMap.get(definition.module);
       if (moduleResources) {
         moduleResources.push({

@@ -1,14 +1,12 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-import { PrismaClient } from '@tcrn/database';
 import { CronJob } from 'cron';
 import type Redis from 'ioredis';
 
+import { PrismaClient } from '@tcrn/database';
+
 import { scheduleMembershipRenewalJob } from './jobs/membership-renewal.job';
 import { workerLogger as logger } from './logger';
-import {
-  logCleanupQueue,
-  membershipRenewalQueue,
-} from './queues';
+import { logCleanupQueue, membershipRenewalQueue } from './queues';
 
 export interface ActiveTenant {
   id: string;
@@ -93,7 +91,10 @@ export async function getActiveTenants(
 export function createMembershipRenewalHandler(
   prisma: PrismaClient,
   eventLogger: ScheduledJobLogger = logger,
-  { nowProvider = () => Date.now(), scheduleLock = allowAllScheduleLock }: ScheduledJobHandlerOptions = {},
+  {
+    nowProvider = () => Date.now(),
+    scheduleLock = allowAllScheduleLock,
+  }: ScheduledJobHandlerOptions = {}
 ): () => Promise<void> {
   return async () => {
     const nowMillis = nowProvider();
@@ -103,7 +104,7 @@ export function createMembershipRenewalHandler(
 
     if (!acquired) {
       eventLogger.info(
-        `Skipping membership renewal schedule for window ${scheduleDayKey}: another worker already acquired the daily lock`,
+        `Skipping membership renewal schedule for window ${scheduleDayKey}: another worker already acquired the daily lock`
       );
       return;
     }
@@ -120,7 +121,7 @@ export function createMembershipRenewalHandler(
             membershipRenewalQueue,
             tenant.code,
             tenant.schemaName,
-            scheduleDayKey,
+            scheduleDayKey
           );
           eventLogger.info(`Scheduled membership renewal for tenant: ${tenant.code}`);
         } catch (error) {
@@ -143,7 +144,7 @@ export function createLogCleanupHandler(
   prisma: PrismaClient,
   eventLogger: ScheduledJobLogger = logger,
   nowProvider: NowProvider = () => Date.now(),
-  scheduleLock: ScheduledJobLock = allowAllScheduleLock,
+  scheduleLock: ScheduledJobLock = allowAllScheduleLock
 ): () => Promise<void> {
   return async () => {
     const nowMillis = nowProvider();
@@ -153,7 +154,7 @@ export function createLogCleanupHandler(
 
     if (!acquired) {
       eventLogger.info(
-        `Skipping log cleanup schedule for window ${scheduleDayKey}: another worker already acquired the daily lock`,
+        `Skipping log cleanup schedule for window ${scheduleDayKey}: another worker already acquired the daily lock`
       );
       return;
     }
@@ -191,7 +192,7 @@ export function createScheduledCronJobs(
   eventLogger: ScheduledJobLogger = logger,
   start = true,
   nowProvider: NowProvider = () => Date.now(),
-  scheduleLock: ScheduledJobLock = allowAllScheduleLock,
+  scheduleLock: ScheduledJobLock = allowAllScheduleLock
 ): CronJob[] {
   const cronJobs = [
     new CronJob(
@@ -218,7 +219,7 @@ export function createScheduledCronJobs(
 
 export async function setupScheduledJobsRuntime(
   eventLogger: ScheduledJobLogger = logger,
-  options: ScheduledJobsRuntimeOptions = {},
+  options: ScheduledJobsRuntimeOptions = {}
 ): Promise<ScheduledJobRuntime> {
   eventLogger.info('Setting up scheduled jobs...');
 
@@ -233,7 +234,7 @@ export async function setupScheduledJobsRuntime(
     eventLogger,
     options.start ?? true,
     options.nowProvider ?? (() => Date.now()),
-    scheduleLock,
+    scheduleLock
   );
 
   eventLogger.info('Scheduled jobs initialized');

@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+
 import { ErrorCodes } from '@tcrn/shared';
 
 import { BUCKETS, MinioService } from '../../minio';
@@ -15,19 +15,11 @@ import { MarshmallowExportReadRepository } from '../infrastructure/marshmallow-e
 export class MarshmallowExportReadApplicationService {
   constructor(
     private readonly marshmallowExportReadRepository: MarshmallowExportReadRepository,
-    private readonly minioService: MinioService,
+    private readonly minioService: MinioService
   ) {}
 
-  async findById(
-    jobId: string,
-    talentId: string,
-    tenantSchema: string,
-  ) {
-    const job = await this.marshmallowExportReadRepository.findById(
-      tenantSchema,
-      talentId,
-      jobId,
-    );
+  async findById(jobId: string, talentId: string, tenantSchema: string) {
+    const job = await this.marshmallowExportReadRepository.findById(tenantSchema, talentId, jobId);
 
     if (!job) {
       throw new NotFoundException({
@@ -39,15 +31,11 @@ export class MarshmallowExportReadApplicationService {
     return mapMarshmallowExportJobResponse(job, talentId);
   }
 
-  async getDownloadUrl(
-    jobId: string,
-    talentId: string,
-    tenantSchema: string,
-  ): Promise<string> {
+  async getDownloadUrl(jobId: string, talentId: string, tenantSchema: string): Promise<string> {
     const job = await this.marshmallowExportReadRepository.findDownloadTarget(
       tenantSchema,
       talentId,
-      jobId,
+      jobId
     );
 
     if (!job) {
@@ -74,7 +62,7 @@ export class MarshmallowExportReadApplicationService {
     return this.minioService.getPresignedUrl(
       BUCKETS.TEMP_REPORTS,
       job.file_path,
-      MARSHMALLOW_EXPORT_DOWNLOAD_URL_EXPIRY_SECONDS,
+      MARSHMALLOW_EXPORT_DOWNLOAD_URL_EXPIRY_SECONDS
     );
   }
 }

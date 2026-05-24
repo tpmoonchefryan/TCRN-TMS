@@ -1,13 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 // Internal controller for Caddy on-demand TLS domain verification
-
-import {
-  Controller,
-  Get,
-  HttpCode,
-  HttpStatus,
-  Query,
-} from '@nestjs/common';
+import { Controller, Get, HttpCode, HttpStatus, Query } from '@nestjs/common';
 import { ApiExcludeController } from '@nestjs/swagger';
 
 import { Public } from '../../../common/decorators';
@@ -16,7 +9,7 @@ import { DomainLookupService } from '../services/domain-lookup.service';
 /**
  * Internal controller for Caddy on-demand TLS verification
  * This endpoint is called by Caddy to verify if a custom domain should get a certificate
- * 
+ *
  * Caddy will request: GET /api/v1/internal/domain-check?domain=example.com
  * - Return 200 if the domain is allowed (verified custom domain)
  * - Return 404 if the domain is not allowed

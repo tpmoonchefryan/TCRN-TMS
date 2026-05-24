@@ -1,9 +1,9 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { prisma } from '@tcrn/database';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { prisma } from '@tcrn/database';
 
 import { DatabaseService } from '@/modules/database/database.service';
 import { ChangeLogService } from '@/modules/log/services/change-log.service';
@@ -97,7 +97,7 @@ describe('IpAccessService', () => {
 
     it('should allow IP by default when no rules match', async () => {
       mockRedisService.get.mockResolvedValueOnce(null);
-      
+
       const result = await service.checkAccess('10.0.0.1', 'global');
 
       expect(result.allowed).toBe(true);
@@ -250,7 +250,7 @@ describe('IpAccessService', () => {
 
     it('should throw NotFoundException for non-existent rule', async () => {
       await expect(
-        service.removeRule('00000000-0000-0000-0000-000000000000', mockContext),
+        service.removeRule('00000000-0000-0000-0000-000000000000', mockContext)
       ).rejects.toThrow(NotFoundException);
     });
   });

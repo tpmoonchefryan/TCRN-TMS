@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable } from '@nestjs/common';
+
 import { Prisma } from '@tcrn/database';
 
 import { DatabaseService } from '../database';
@@ -96,7 +96,7 @@ export class GlobalConfigService {
       orderBy: { key: 'asc' },
     });
 
-    return configs.map(config => ({
+    return configs.map((config) => ({
       key: config.key,
       value: config.value,
       description: config.description,

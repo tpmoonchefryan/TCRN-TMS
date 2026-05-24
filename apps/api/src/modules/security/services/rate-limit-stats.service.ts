@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable, Logger } from '@nestjs/common';
 
 import { RedisService } from '../../redis';
@@ -94,7 +93,7 @@ export class RateLimitStatsService {
     const allRlKeys = await this.redisService.keys('rl:*');
     const blockedKeys = await this.redisService.keys('blocked:*');
     const uniqueIPsSet = new Set<string>();
-    
+
     let totalRequests = 0;
     let blockedRequests = 0;
 
@@ -104,7 +103,7 @@ export class RateLimitStatsService {
       if (value) {
         const count = parseInt(value, 10);
         totalRequests += count;
-        
+
         // Extract IP from key if present
         const parts = key.split(':');
         if (parts.length >= 3) {
@@ -140,7 +139,7 @@ export class RateLimitStatsService {
     for (const [limiterName, config] of Object.entries(this.limiterConfigs)) {
       const pattern = `rl:${limiterName}:*`;
       const keys = await this.redisService.keys(pattern);
-      
+
       let totalCurrent = 0;
       let maxTtl = 0;
 
@@ -175,15 +174,15 @@ export class RateLimitStatsService {
 
     // Get all rate limit keys and extract IPs
     const allKeys = await this.redisService.keys('rl:*');
-    
+
     for (const key of allKeys) {
       const parts = key.split(':');
       const possibleIp = parts[parts.length - 1];
-      
+
       if (this.isValidIP(possibleIp)) {
         const value = await this.redisService.get(key);
         const requests = value ? parseInt(value, 10) : 0;
-        
+
         const existing = ipStats.get(possibleIp) || { requests: 0, blocked: false };
         existing.requests += requests;
         ipStats.set(possibleIp, existing);
@@ -225,15 +224,15 @@ export class RateLimitStatsService {
     const ipv4Pattern = /^(\d{1,3}\.){3}\d{1,3}$/;
     // IPv6 pattern (simplified)
     const ipv6Pattern = /^[0-9a-fA-F:]+$/;
-    
+
     if (ipv4Pattern.test(str)) {
       const parts = str.split('.');
-      return parts.every(part => {
+      return parts.every((part) => {
         const num = parseInt(part, 10);
         return num >= 0 && num <= 255;
       });
     }
-    
+
     return ipv6Pattern.test(str) && str.includes(':');
   }
 }

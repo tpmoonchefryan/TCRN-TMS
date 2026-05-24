@@ -1,6 +1,7 @@
-import type { SupportedUiLocale } from '@tcrn/shared';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import type { SupportedUiLocale } from '@tcrn/shared';
 
 import { ObservabilityScreen } from '@/domains/observability/screens/ObservabilityScreen';
 

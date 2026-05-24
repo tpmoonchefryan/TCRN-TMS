@@ -1,7 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Controller, Get, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+
 import { ErrorCodes } from '@tcrn/shared';
 
 import { RequirePermissions } from '../../../common/decorators';
@@ -141,9 +141,21 @@ export class LogSearchController {
     required: false,
     description: 'Legacy application filter (kept for compatibility only)',
   })
-  @ApiResponse({ status: 200, description: 'Returns matching log entries', schema: LOG_SEARCH_RESPONSE_SCHEMA })
-  @ApiResponse({ status: 401, description: 'Authentication is required to search logs', schema: LOG_SEARCH_UNAUTHORIZED_SCHEMA })
-  @ApiResponse({ status: 403, description: 'Insufficient permissions to search logs', schema: LOG_SEARCH_FORBIDDEN_SCHEMA })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns matching log entries',
+    schema: LOG_SEARCH_RESPONSE_SCHEMA,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Authentication is required to search logs',
+    schema: LOG_SEARCH_UNAUTHORIZED_SCHEMA,
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Insufficient permissions to search logs',
+    schema: LOG_SEARCH_FORBIDDEN_SCHEMA,
+  })
   async search(
     @Query('keyword') keyword?: string,
     @Query('stream') stream?: string,
@@ -153,7 +165,7 @@ export class LogSearchController {
     @Query('limit') limit?: string,
     @Query('query') query?: string,
     @Query('timeRange') timeRange?: string,
-    @Query('app') app?: string,
+    @Query('app') app?: string
   ) {
     return this.lokiQueryService.query(
       buildCompatibleLogSearchQuery({
@@ -166,22 +178,34 @@ export class LogSearchController {
         query,
         timeRange,
         app,
-      }),
+      })
     );
   }
 
   @Get('change-logs')
   @RequirePermissions({ resource: 'log.change_log', action: 'read' })
   @ApiOperation({ summary: 'Search change logs in Loki' })
-  @ApiResponse({ status: 200, description: 'Returns matching change logs', schema: LOG_SEARCH_RESPONSE_SCHEMA })
-  @ApiResponse({ status: 401, description: 'Authentication is required to search change logs', schema: LOG_SEARCH_UNAUTHORIZED_SCHEMA })
-  @ApiResponse({ status: 403, description: 'Insufficient permissions to search change logs', schema: LOG_SEARCH_FORBIDDEN_SCHEMA })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns matching change logs',
+    schema: LOG_SEARCH_RESPONSE_SCHEMA,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Authentication is required to search change logs',
+    schema: LOG_SEARCH_UNAUTHORIZED_SCHEMA,
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Insufficient permissions to search change logs',
+    schema: LOG_SEARCH_FORBIDDEN_SCHEMA,
+  })
   async searchChangeLogs(
     @Query('objectType') objectType?: string,
     @Query('action') action?: string,
     @Query('start') start?: string,
     @Query('end') end?: string,
-    @Query('limit') limit?: string,
+    @Query('limit') limit?: string
   ) {
     return this.lokiQueryService.queryChangeLogs({
       objectType,
@@ -195,16 +219,28 @@ export class LogSearchController {
   @Get('events')
   @RequirePermissions({ resource: 'log.tech_log', action: 'read' })
   @ApiOperation({ summary: 'Search tech events in Loki' })
-  @ApiResponse({ status: 200, description: 'Returns matching tech events', schema: LOG_SEARCH_RESPONSE_SCHEMA })
-  @ApiResponse({ status: 401, description: 'Authentication is required to search technical events', schema: LOG_SEARCH_UNAUTHORIZED_SCHEMA })
-  @ApiResponse({ status: 403, description: 'Insufficient permissions to search technical events', schema: LOG_SEARCH_FORBIDDEN_SCHEMA })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns matching tech events',
+    schema: LOG_SEARCH_RESPONSE_SCHEMA,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Authentication is required to search technical events',
+    schema: LOG_SEARCH_UNAUTHORIZED_SCHEMA,
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Insufficient permissions to search technical events',
+    schema: LOG_SEARCH_FORBIDDEN_SCHEMA,
+  })
   async searchTechEvents(
     @Query('severity') severity?: string,
     @Query('eventType') eventType?: string,
     @Query('scope') scope?: string,
     @Query('start') start?: string,
     @Query('end') end?: string,
-    @Query('limit') limit?: string,
+    @Query('limit') limit?: string
   ) {
     return this.lokiQueryService.queryTechEvents({
       severity,
@@ -219,16 +255,28 @@ export class LogSearchController {
   @Get('integrations')
   @RequirePermissions({ resource: 'log.integration_log', action: 'read' })
   @ApiOperation({ summary: 'Search integration logs in Loki' })
-  @ApiResponse({ status: 200, description: 'Returns matching integration logs', schema: LOG_SEARCH_RESPONSE_SCHEMA })
-  @ApiResponse({ status: 401, description: 'Authentication is required to search integration logs', schema: LOG_SEARCH_UNAUTHORIZED_SCHEMA })
-  @ApiResponse({ status: 403, description: 'Insufficient permissions to search integration logs', schema: LOG_SEARCH_FORBIDDEN_SCHEMA })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns matching integration logs',
+    schema: LOG_SEARCH_RESPONSE_SCHEMA,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Authentication is required to search integration logs',
+    schema: LOG_SEARCH_UNAUTHORIZED_SCHEMA,
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Insufficient permissions to search integration logs',
+    schema: LOG_SEARCH_FORBIDDEN_SCHEMA,
+  })
   async searchIntegrationLogs(
     @Query('direction') direction?: string,
     @Query('consumerCode') consumerCode?: string,
     @Query('status') status?: string,
     @Query('start') start?: string,
     @Query('end') end?: string,
-    @Query('limit') limit?: string,
+    @Query('limit') limit?: string
   ) {
     return this.lokiQueryService.queryIntegrationLogs({
       direction,

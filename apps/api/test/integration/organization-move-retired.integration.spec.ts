@@ -1,7 +1,9 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import request from 'supertest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+
 import { PrismaClient } from '@tcrn/database';
 import {
   createLocalizedText,
@@ -12,8 +14,6 @@ import {
   type TenantFixture,
   type TestUser,
 } from '@tcrn/shared';
-import request from 'supertest';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { AppModule } from '../../src/app.module';
 import { TokenService } from '../../src/modules/auth/token.service';
@@ -30,9 +30,7 @@ describe('Organization Move Retired Integration', () => {
   let targetSubsidiaryId: string;
 
   const withAuth = (req: request.Test) =>
-    req
-      .set('Authorization', `Bearer ${accessToken}`)
-      .set('X-Tenant-ID', tenantFixture.tenant.id);
+    req.set('Authorization', `Bearer ${accessToken}`).set('X-Tenant-ID', tenantFixture.tenant.id);
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -44,12 +42,9 @@ describe('Organization Move Retired Integration', () => {
 
     prisma = new PrismaClient();
     tenantFixture = await createTestTenantFixture(prisma, 'orgmove');
-    testUser = await createTestUserInTenant(
-      prisma,
-      tenantFixture,
-      `orgmove_admin_${Date.now()}`,
-      ['ADMIN'],
-    );
+    testUser = await createTestUserInTenant(prisma, tenantFixture, `orgmove_admin_${Date.now()}`, [
+      'ADMIN',
+    ]);
 
     const sourceSubsidiary = await createTestSubsidiaryInTenant(prisma, tenantFixture, {
       code: `SUB_MOVE_SRC_${Date.now().toString(36).toUpperCase()}`,
@@ -91,7 +86,7 @@ describe('Organization Move Retired Integration', () => {
 
   it('returns 409 for the retired talent move route', async () => {
     const response = await withAuth(
-      request(app.getHttpServer()).post(`/api/v1/talents/${talentId}/move`),
+      request(app.getHttpServer()).post(`/api/v1/talents/${talentId}/move`)
     )
       .send({
         newSubsidiaryId: targetSubsidiaryId,
@@ -109,7 +104,7 @@ describe('Organization Move Retired Integration', () => {
 
   it('returns 409 for the retired subsidiary move route', async () => {
     const response = await withAuth(
-      request(app.getHttpServer()).post(`/api/v1/subsidiaries/${sourceSubsidiaryId}/move`),
+      request(app.getHttpServer()).post(`/api/v1/subsidiaries/${sourceSubsidiaryId}/move`)
     )
       .send({
         newParentId: targetSubsidiaryId,

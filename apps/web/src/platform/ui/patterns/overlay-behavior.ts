@@ -14,17 +14,19 @@ const focusableSelector = [
 ].join(',');
 
 function getFocusableElements(container: HTMLElement) {
-  return Array.from(container.querySelectorAll<HTMLElement>(focusableSelector)).filter((element) => {
-    if (element.getAttribute('aria-hidden') === 'true') {
-      return false;
-    }
+  return Array.from(container.querySelectorAll<HTMLElement>(focusableSelector)).filter(
+    (element) => {
+      if (element.getAttribute('aria-hidden') === 'true') {
+        return false;
+      }
 
-    if (element.hasAttribute('hidden')) {
-      return false;
-    }
+      if (element.hasAttribute('hidden')) {
+        return false;
+      }
 
-    return element.tabIndex >= 0;
-  });
+      return element.tabIndex >= 0;
+    }
+  );
 }
 
 function focusElement(element: HTMLElement | null | undefined) {
@@ -90,9 +92,8 @@ export function useModalFocus({
       return undefined;
     }
 
-    previouslyFocusedElementRef.current = document.activeElement instanceof HTMLElement
-      ? document.activeElement
-      : null;
+    previouslyFocusedElementRef.current =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
 
     const focusTimer = window.setTimeout(() => {
       const container = containerRef.current;

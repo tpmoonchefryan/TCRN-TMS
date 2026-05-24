@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -23,7 +22,7 @@ describe('MarshmallowReactionApplicationService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     service = new MarshmallowReactionApplicationService(
-      mockRepository as unknown as MarshmallowReactionRepository,
+      mockRepository as unknown as MarshmallowReactionRepository
     );
   });
 
@@ -38,16 +37,14 @@ describe('MarshmallowReactionApplicationService', () => {
     });
     mockRepository.findExistingReactionId.mockResolvedValue(null);
     mockRepository.insertReaction.mockResolvedValue(undefined);
-    mockRepository.findReactionCounts.mockResolvedValue([
-      { reaction: '❤️', count: BigInt(1) },
-    ]);
+    mockRepository.findReactionCounts.mockResolvedValue([{ reaction: '❤️', count: BigInt(1) }]);
     mockRepository.updateMessageReactionCounts.mockResolvedValue(undefined);
 
     await expect(
       service.toggleReaction('message-1', '❤️', {
         fingerprint: 'fp-1',
         ip: '127.0.0.1',
-      }),
+      })
     ).resolves.toEqual({
       added: true,
       counts: { '❤️': 1 },
@@ -72,7 +69,7 @@ describe('MarshmallowReactionApplicationService', () => {
       service.toggleReaction('message-1', '❤️', {
         fingerprint: 'fp-1',
         ip: '127.0.0.1',
-      }),
+      })
     ).resolves.toEqual({
       added: false,
       counts: {},
@@ -87,7 +84,7 @@ describe('MarshmallowReactionApplicationService', () => {
       service.toggleReaction('missing-message', '❤️', {
         fingerprint: 'fp-1',
         ip: '127.0.0.1',
-      }),
+      })
     ).rejects.toThrow(NotFoundException);
   });
 
@@ -105,7 +102,7 @@ describe('MarshmallowReactionApplicationService', () => {
       service.toggleReaction('message-1', '❤️', {
         fingerprint: 'fp-1',
         ip: '127.0.0.1',
-      }),
+      })
     ).rejects.toThrow(BadRequestException);
   });
 
@@ -115,9 +112,7 @@ describe('MarshmallowReactionApplicationService', () => {
       { messageId: 'message-1', reaction: '🔥' },
     ]);
 
-    await expect(
-      service.getUserReactions(['message-1'], 'fp-1', 'tenant_demo'),
-    ).resolves.toEqual({
+    await expect(service.getUserReactions(['message-1'], 'fp-1', 'tenant_demo')).resolves.toEqual({
       'message-1': ['❤️', '🔥'],
     });
   });

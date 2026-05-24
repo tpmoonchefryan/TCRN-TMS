@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable, Logger } from '@nestjs/common';
 
 import { TechEventLogService } from '../../log';
@@ -20,7 +19,7 @@ export class HomepageSchedulerApplicationService {
 
   constructor(
     private readonly homepageSchedulerRepository: HomepageSchedulerRepository,
-    private readonly techEventLogService: TechEventLogService,
+    private readonly techEventLogService: TechEventLogService
   ) {}
 
   async archiveOldDrafts(): Promise<void> {
@@ -33,19 +32,19 @@ export class HomepageSchedulerApplicationService {
         await this.techEventLogService.info(
           HOMEPAGE_DRAFT_ARCHIVAL_COMPLETED_EVENT,
           buildHomepageDraftArchivalCompletedMessage(result.archived),
-          buildHomepageDraftArchivalCompletedPayload(result),
+          buildHomepageDraftArchivalCompletedPayload(result)
         );
       }
 
       this.logger.log(`Archival completed: ${result.archived} versions archived`);
     } catch (error) {
       this.logger.error(
-        `Draft archival failed: ${error instanceof Error ? error.message : String(error)}`,
+        `Draft archival failed: ${error instanceof Error ? error.message : String(error)}`
       );
       await this.techEventLogService.error(
         HOMEPAGE_DRAFT_ARCHIVAL_FAILED_EVENT,
         'Failed to archive old draft versions',
-        error instanceof Error ? error : new Error(String(error)),
+        error instanceof Error ? error : new Error(String(error))
       );
     }
   }
@@ -58,10 +57,7 @@ export class HomepageSchedulerApplicationService {
     for (const tenantSchema of tenantSchemas) {
       archived = accumulateArchivedDraftCount(
         archived,
-        await this.homepageSchedulerRepository.archiveOldDraftVersions(
-          tenantSchema,
-          cutoffDate,
-        ),
+        await this.homepageSchedulerRepository.archiveOldDraftVersions(tenantSchema, cutoffDate)
       );
     }
 

@@ -1,10 +1,11 @@
+import type { ReactNode } from 'react';
+
 import {
   isRbacRoleAvailableForScopeType,
   isRbacRoleAvailableForTenantTier,
   type RbacTenantTier,
   type SupportedUiLocale,
 } from '@tcrn/shared';
-import type { ReactNode } from 'react';
 
 import type {
   OrganizationNode,
@@ -15,10 +16,7 @@ import type {
   SystemUserRoleAssignment,
 } from '@/domains/user-management/api/user-management.api';
 import { type ApiPaginationMeta, ApiRequestError } from '@/platform/http/api';
-import {
-  getPaginationRange,
-  type PageSizeOption,
-} from '@/platform/runtime/pagination/pagination';
+import { getPaginationRange, type PageSizeOption } from '@/platform/runtime/pagination/pagination';
 import { PaginationFooter } from '@/platform/ui';
 
 import {
@@ -34,10 +32,7 @@ export interface OrganizationScopeOption {
   hint: string;
 }
 
-export function buildOrganizationScopeOptions(
-  tree: OrganizationTreeResponse,
-  tenantLabel: string,
-) {
+export function buildOrganizationScopeOptions(tree: OrganizationTreeResponse, tenantLabel: string) {
   const options: OrganizationScopeOption[] = [
     {
       id: 'tenant-root',
@@ -92,7 +87,7 @@ export function getErrorMessage(reason: unknown, fallback: string) {
 export function resolveScopedLabel(
   scopeType: 'tenant' | 'subsidiary' | 'talent',
   scopeName: string | null,
-  sharedCopy: UserManagementCopy['shared'],
+  sharedCopy: UserManagementCopy['shared']
 ) {
   if (scopeName) {
     return scopeName;
@@ -105,16 +100,19 @@ export function resolveScopedLabel(
   return sharedCopy.unnamedScope;
 }
 
-export function resolveRoleDisplayName(detail: {
-  roleName: SystemRoleListItem['name'];
-}, locale: SupportedUiLocale) {
+export function resolveRoleDisplayName(
+  detail: {
+    roleName: SystemRoleListItem['name'];
+  },
+  locale: SupportedUiLocale
+) {
   return pickLocalizedName({ name: detail.roleName }, locale);
 }
 
 export function filterAssignableRoles(
   roles: SystemRoleListItem[],
   tenantTier: string | null | undefined,
-  scopeType: 'tenant' | 'subsidiary' | 'talent',
+  scopeType: 'tenant' | 'subsidiary' | 'talent'
 ) {
   const normalizedTier: RbacTenantTier = tenantTier === 'ac' ? 'ac' : 'standard';
 
@@ -132,7 +130,7 @@ export function filterAssignableRoles(
 
 export function isRoleVisibleInWorkspace(
   role: Pick<SystemRoleListItem, 'code'>,
-  tenantTier: string | null | undefined,
+  tenantTier: string | null | undefined
 ) {
   return isRbacRoleAvailableForTenantTier(role.code, tenantTier === 'ac' ? 'ac' : 'standard');
 }
@@ -155,7 +153,11 @@ export function ToneBadge({
             ? 'bg-indigo-100 text-indigo-800'
             : 'bg-slate-100 text-slate-700';
 
-  return <span className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${toneClasses}`}>{label}</span>;
+  return (
+    <span className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${toneClasses}`}>
+      {label}
+    </span>
+  );
 }
 
 export function InlineActionButton({
@@ -200,7 +202,11 @@ export function NoticeBanner({
       ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
       : 'border-rose-200 bg-rose-50 text-rose-800';
 
-  return <div className={`rounded-2xl border px-4 py-3 text-sm font-medium ${toneClasses}`}>{message}</div>;
+  return (
+    <div className={`rounded-2xl border px-4 py-3 text-sm font-medium ${toneClasses}`}>
+      {message}
+    </div>
+  );
 }
 
 export function SummaryCard({
@@ -239,7 +245,9 @@ export function ScopeAssignmentCard({
           <p className="text-sm font-semibold text-slate-900">
             {resolveRoleDisplayName(assignment, locale)}
           </p>
-          <p className="text-xs uppercase tracking-[0.18em] text-slate-400">{assignment.roleCode}</p>
+          <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+            {assignment.roleCode}
+          </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <ToneBadge
@@ -252,7 +260,9 @@ export function ScopeAssignmentCard({
       <p className="mt-3 text-sm text-slate-700">
         {resolveScopedLabel(assignment.scopeType, assignment.scopeName, sharedCopy)}
       </p>
-      <p className="mt-1 text-xs text-slate-500">{assignment.scopePath || sharedCopy.tenantWideAssignment}</p>
+      <p className="mt-1 text-xs text-slate-500">
+        {assignment.scopePath || sharedCopy.tenantWideAssignment}
+      </p>
       <p className="mt-2 text-xs text-slate-500">
         {sharedCopy.grantedLabel}{' '}
         {formatUserManagementDateTime(assignment.grantedAt, locale, sharedCopy.unavailable)}
@@ -260,7 +270,7 @@ export function ScopeAssignmentCard({
           ? ` • ${sharedCopy.expiresLabel} ${formatUserManagementDateTime(
               assignment.expiresAt,
               locale,
-              sharedCopy.unavailable,
+              sharedCopy.unavailable
             )}`
           : ''}
       </p>
@@ -270,14 +280,14 @@ export function ScopeAssignmentCard({
 }
 
 function getUserManagementPaginationCopy(
-  locale: SupportedUiLocale ,
+  locale: SupportedUiLocale,
   pagination: ApiPaginationMeta,
-  itemCount: number,
+  itemCount: number
 ) {
   const range = getPaginationRange(pagination, itemCount);
   const localeCode = locale;
 
-  if ((localeCode === 'zh_HANS' || localeCode === 'zh_HANT')) {
+  if (localeCode === 'zh_HANS' || localeCode === 'zh_HANT') {
     return {
       page: `第 ${pagination.page} / ${pagination.totalPages} 页`,
       range:
@@ -323,7 +333,7 @@ export function UserManagementPaginationFooter({
   onPrevious,
   onNext,
 }: Readonly<{
-  locale: SupportedUiLocale ;
+  locale: SupportedUiLocale;
   pagination: ApiPaginationMeta;
   itemCount: number;
   pageSize: PageSizeOption;

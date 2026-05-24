@@ -1,10 +1,11 @@
 'use client';
 
-import { SUPPORTED_UI_LOCALES, type SupportedUiLocale } from '@tcrn/shared';
 import { ArrowLeft, Building2, UserRound } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
+
+import { SUPPORTED_UI_LOCALES, type SupportedUiLocale } from '@tcrn/shared';
 
 import {
   checkCustomerProfilePermission,
@@ -110,15 +111,13 @@ function pickText(locale: SupportedUiLocale, value: CustomerCreateLocaleText) {
   return pickLocaleText(locale, value);
 }
 
-
-
 function pickLocalizedName(
   locale: SupportedUiLocale,
   record: {
     code: string;
     name: CustomerCreateLocaleText;
     localizedName?: string | null;
-  },
+  }
 ) {
   return pickLocaleText(locale, record.name) || record.localizedName || record.code;
 }
@@ -183,10 +182,7 @@ function getLocalizedLanguageOptionLabel(locale: SupportedUiLocale, value: Suppo
   }
 }
 
-export function CustomerCreateScreen({
-  tenantId,
-  talentId,
-}: Readonly<CustomerCreateScreenProps>) {
+export function CustomerCreateScreen({ tenantId, talentId }: Readonly<CustomerCreateScreenProps>) {
   const router = useRouter();
   const { locale } = useUiLocale();
   const effectiveSelectedLocale = locale;
@@ -194,7 +190,9 @@ export function CustomerCreateScreen({
   const backToCustomersHref = `/tenant/${tenantId}/talent/${talentId}/customers`;
   const [profileType, setProfileType] = useState<CustomerProfileType>('individual');
   const [draft, setDraft] = useState<CustomerDraft>(DEFAULT_DRAFT);
-  const [membershipDraft, setMembershipDraft] = useState<MembershipDraft>(() => buildDefaultMembershipDraft());
+  const [membershipDraft, setMembershipDraft] = useState<MembershipDraft>(() =>
+    buildDefaultMembershipDraft()
+  );
   const [accessState, setAccessState] = useState<CreateAccessState>({
     status: 'loading',
     message: null,
@@ -248,17 +246,14 @@ export function CustomerCreateScreen({
           status: 'error',
           message: getErrorMessage(
             reason,
-            pickText(
-              effectiveSelectedLocale,
-              {
-                en: 'Customer-create access could not be verified.',
-                zh_HANS: '无法确认客户创建权限。',
-                zh_HANT: '無法確認客戶建立權限。',
-                ja: '顧客作成権限を確認できませんでした。',
-                ko: '고객 생성 권한을 확인하지 못했습니다.',
-                fr: 'Impossible de vérifier l’accès à la création client.',
-              },
-            ),
+            pickText(effectiveSelectedLocale, {
+              en: 'Customer-create access could not be verified.',
+              zh_HANS: '无法确认客户创建权限。',
+              zh_HANT: '無法確認客戶建立權限。',
+              ja: '顧客作成権限を確認できませんでした。',
+              ko: '고객 생성 권한을 확인하지 못했습니다.',
+              fr: 'Impossible de vérifier l’accès à la création client.',
+            })
           ),
         });
       }
@@ -312,17 +307,14 @@ export function CustomerCreateScreen({
           loading: false,
           error: getErrorMessage(
             reason,
-            pickText(
-              effectiveSelectedLocale,
-              {
-                en: 'Membership options are temporarily unavailable.',
-                zh_HANS: '会员选项暂时不可用。',
-                zh_HANT: '會員選項暫時不可用。',
-                ja: '会員オプションを一時的に利用できません。',
-                ko: '멤버십 옵션을 일시적으로 사용할 수 없습니다.',
-                fr: 'Les options d’adhésion sont temporairement indisponibles.',
-              },
-            ),
+            pickText(effectiveSelectedLocale, {
+              en: 'Membership options are temporarily unavailable.',
+              zh_HANS: '会员选项暂时不可用。',
+              zh_HANT: '會員選項暫時不可用。',
+              ja: '会員オプションを一時的に利用できません。',
+              ko: '멤버십 옵션을 일시적으로 사용할 수 없습니다.',
+              fr: 'Les options d’adhésion sont temporairement indisponibles.',
+            })
           ),
         });
       }
@@ -341,15 +333,15 @@ export function CustomerCreateScreen({
         ...membershipClass,
         label: pickLocalizedName(effectiveSelectedLocale, membershipClass),
       })),
-    [effectiveSelectedLocale, membershipOptions.classes],
+    [effectiveSelectedLocale, membershipOptions.classes]
   );
 
   const selectedMembershipClass = useMemo(
     () =>
       membershipOptions.classes.find(
-        (membershipClass) => membershipClass.code === membershipDraft.membershipClassCode,
+        (membershipClass) => membershipClass.code === membershipDraft.membershipClassCode
       ) ?? null,
-    [membershipDraft.membershipClassCode, membershipOptions.classes],
+    [membershipDraft.membershipClassCode, membershipOptions.classes]
   );
 
   const membershipTypeOptions = useMemo(
@@ -358,15 +350,15 @@ export function CustomerCreateScreen({
         ...membershipType,
         label: pickLocalizedName(effectiveSelectedLocale, membershipType),
       })),
-    [effectiveSelectedLocale, selectedMembershipClass],
+    [effectiveSelectedLocale, selectedMembershipClass]
   );
 
   const selectedMembershipType = useMemo(
     () =>
       selectedMembershipClass?.types.find(
-        (membershipType) => membershipType.code === membershipDraft.membershipTypeCode,
+        (membershipType) => membershipType.code === membershipDraft.membershipTypeCode
       ) ?? null,
-    [membershipDraft.membershipTypeCode, selectedMembershipClass],
+    [membershipDraft.membershipTypeCode, selectedMembershipClass]
   );
 
   const membershipLevelOptions = useMemo(
@@ -375,19 +367,17 @@ export function CustomerCreateScreen({
         ...level,
         label: pickLocalizedName(effectiveSelectedLocale, level),
       })),
-    [effectiveSelectedLocale, selectedMembershipType],
+    [effectiveSelectedLocale, selectedMembershipType]
   );
 
   const clearValidationError = (...fields: readonly ValidationField[]) => {
-    setValidationError((current) =>
-      current && fields.includes(current.field) ? null : current,
-    );
+    setValidationError((current) => (current && fields.includes(current.field) ? null : current));
   };
 
   const setFieldValidationError = (
     field: ValidationField,
     message: string,
-    focusTarget?: HTMLElement | null,
+    focusTarget?: HTMLElement | null
   ) => {
     setValidationError({ field, message });
     setErrorMessage(null);
@@ -402,17 +392,14 @@ export function CustomerCreateScreen({
 
     const nickname = draft.nickname.trim();
     const companyLegalName = draft.companyLegalName.trim();
-    const membershipRequirementMessage = pickText(
-      effectiveSelectedLocale,
-      {
-        en: 'Platform, membership class, type, level, and valid-from date are required when adding membership.',
-        zh_HANS: '添加会员时，平台、会员分类、会员类型、会员等级和生效日期为必填项。',
-        zh_HANT: '新增會員時，平台、會員分類、會員類型、會員等級與生效日期為必填項。',
-        ja: '会員を追加する場合、プラットフォーム、会員クラス、会員タイプ、会員レベル、有効開始日は必須です。',
-        ko: '멤버십을 추가하려면 플랫폼, 멤버십 분류, 유형, 등급, 시작일이 필요합니다.',
-        fr: 'La plateforme, la classe, le type, le niveau d’adhésion et la date de début sont requis pour ajouter une adhésion.',
-      },
-    );
+    const membershipRequirementMessage = pickText(effectiveSelectedLocale, {
+      en: 'Platform, membership class, type, level, and valid-from date are required when adding membership.',
+      zh_HANS: '添加会员时，平台、会员分类、会员类型、会员等级和生效日期为必填项。',
+      zh_HANT: '新增會員時，平台、會員分類、會員類型、會員等級與生效日期為必填項。',
+      ja: '会員を追加する場合、プラットフォーム、会員クラス、会員タイプ、会員レベル、有効開始日は必須です。',
+      ko: '멤버십을 추가하려면 플랫폼, 멤버십 분류, 유형, 등급, 시작일이 필요합니다.',
+      fr: 'La plateforme, la classe, le type, le niveau d’adhésion et la date de début sont requis pour ajouter une adhésion.',
+    });
 
     if (!nickname) {
       setFieldValidationError(
@@ -425,7 +412,7 @@ export function CustomerCreateScreen({
           ko: '고객 이름은 필수입니다.',
           fr: 'Le nom du client est obligatoire.',
         }),
-        nicknameInputRef.current,
+        nicknameInputRef.current
       );
       return;
     }
@@ -441,7 +428,7 @@ export function CustomerCreateScreen({
           ko: '회사 법적 명칭은 필수입니다.',
           fr: 'La raison sociale est obligatoire.',
         }),
-        companyLegalNameInputRef.current,
+        companyLegalNameInputRef.current
       );
       return;
     }
@@ -451,7 +438,7 @@ export function CustomerCreateScreen({
         setFieldValidationError(
           'membershipPlatform',
           membershipRequirementMessage,
-          membershipPlatformRef.current,
+          membershipPlatformRef.current
         );
         return;
       }
@@ -460,7 +447,7 @@ export function CustomerCreateScreen({
         setFieldValidationError(
           'membershipClass',
           membershipRequirementMessage,
-          membershipClassRef.current,
+          membershipClassRef.current
         );
         return;
       }
@@ -469,7 +456,7 @@ export function CustomerCreateScreen({
         setFieldValidationError(
           'membershipType',
           membershipRequirementMessage,
-          membershipTypeRef.current,
+          membershipTypeRef.current
         );
         return;
       }
@@ -478,7 +465,7 @@ export function CustomerCreateScreen({
         setFieldValidationError(
           'membershipLevel',
           membershipRequirementMessage,
-          membershipLevelRef.current,
+          membershipLevelRef.current
         );
         return;
       }
@@ -487,7 +474,7 @@ export function CustomerCreateScreen({
         setFieldValidationError(
           'membershipValidFrom',
           membershipRequirementMessage,
-          membershipValidFromRef.current,
+          membershipValidFromRef.current
         );
         return;
       }
@@ -532,42 +519,36 @@ export function CustomerCreateScreen({
           setErrorMessage(
             getErrorMessage(
               reason,
-              pickText(
-                effectiveSelectedLocale,
-                {
-                  en: 'Customer was created, but the membership record could not be saved. Please open the customer list and complete membership setup there.',
-                  zh_HANS: '客户已创建，但会员记录保存失败。请进入客户列表后补充会员信息。',
-                  zh_HANT: '客戶已建立，但會員記錄保存失敗。請進入客戶列表後補充會員資訊。',
-                  ja: '顧客は作成されましたが、会員記録を保存できませんでした。顧客一覧から会員設定を完了してください。',
-                  ko: '고객은 생성되었지만 멤버십 기록을 저장하지 못했습니다. 고객 목록에서 멤버십 설정을 완료해 주세요.',
-                  fr: 'Le client a bien été créé, mais l’adhésion n’a pas pu être enregistrée. Ouvrez la liste des clients pour terminer la configuration.',
-                },
-              ),
-            ),
+              pickText(effectiveSelectedLocale, {
+                en: 'Customer was created, but the membership record could not be saved. Please open the customer list and complete membership setup there.',
+                zh_HANS: '客户已创建，但会员记录保存失败。请进入客户列表后补充会员信息。',
+                zh_HANT: '客戶已建立，但會員記錄保存失敗。請進入客戶列表後補充會員資訊。',
+                ja: '顧客は作成されましたが、会員記録を保存できませんでした。顧客一覧から会員設定を完了してください。',
+                ko: '고객은 생성되었지만 멤버십 기록을 저장하지 못했습니다. 고객 목록에서 멤버십 설정을 완료해 주세요.',
+                fr: 'Le client a bien été créé, mais l’adhésion n’a pas pu être enregistrée. Ouvrez la liste des clients pour terminer la configuration.',
+              })
+            )
           );
           return;
         }
       }
 
       router.replace(
-        `/tenant/${tenantId}/talent/${talentId}/customers?created=${encodeURIComponent(nickname)}`,
+        `/tenant/${tenantId}/talent/${talentId}/customers?created=${encodeURIComponent(nickname)}`
       );
     } catch (reason) {
       setErrorMessage(
         getErrorMessage(
           reason,
-          pickText(
-            effectiveSelectedLocale,
-            {
-              en: 'Failed to create customer.',
-              zh_HANS: '创建客户失败。',
-              zh_HANT: '建立客戶失敗。',
-              ja: '顧客の作成に失敗しました。',
-              ko: '고객을 생성하지 못했습니다.',
-              fr: 'La création du client a échoué.',
-            },
-          ),
-        ),
+          pickText(effectiveSelectedLocale, {
+            en: 'Failed to create customer.',
+            zh_HANS: '创建客户失败。',
+            zh_HANT: '建立客戶失敗。',
+            ja: '顧客の作成に失敗しました。',
+            ko: '고객을 생성하지 못했습니다.',
+            fr: 'La création du client a échoué.',
+          })
+        )
       );
     } finally {
       setIsSubmitting(false);
@@ -664,7 +645,11 @@ export function CustomerCreateScreen({
         <div className="flex flex-wrap items-start justify-between gap-6">
           <div className="space-y-4">
             <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-600">
-              {profileType === 'company' ? <Building2 className="h-3.5 w-3.5" /> : <UserRound className="h-3.5 w-3.5" />}
+              {profileType === 'company' ? (
+                <Building2 className="h-3.5 w-3.5" />
+              ) : (
+                <UserRound className="h-3.5 w-3.5" />
+              )}
               {pickText(effectiveSelectedLocale, {
                 en: 'Customer creation',
                 zh_HANS: '创建客户',
@@ -686,17 +671,14 @@ export function CustomerCreateScreen({
                 })}
               </h1>
               <p className="max-w-3xl text-sm leading-6 text-slate-600">
-                {pickText(
-                  effectiveSelectedLocale,
-                  {
-                    en: 'Create a new individual or company customer for this talent.',
-                    zh_HANS: '为当前艺人创建新的个人客户或企业客户。',
-                    zh_HANT: '為目前藝人建立新的個人客戶或企業客戶。',
-                    ja: 'このタレント向けに個人顧客または法人顧客を作成します。',
-                    ko: '이 탤런트에 연결할 개인 또는 법인 고객을 생성합니다.',
-                    fr: 'Créez un nouveau client individuel ou entreprise pour ce talent.',
-                  },
-                )}
+                {pickText(effectiveSelectedLocale, {
+                  en: 'Create a new individual or company customer for this talent.',
+                  zh_HANS: '为当前艺人创建新的个人客户或企业客户。',
+                  zh_HANT: '為目前藝人建立新的個人客戶或企業客戶。',
+                  ja: 'このタレント向けに個人顧客または法人顧客を作成します。',
+                  ko: '이 탤런트에 연결할 개인 또는 법인 고객을 생성합니다.',
+                  fr: 'Créez un nouveau client individuel ou entreprise pour ce talent.',
+                })}
               </p>
             </div>
           </div>
@@ -719,30 +701,32 @@ export function CustomerCreateScreen({
               })}
             </p>
             <div className="flex flex-wrap gap-3">
-              {([
-                {
-                  key: 'individual',
-                  label: pickText(effectiveSelectedLocale, {
-                    en: 'Individual',
-                    zh_HANS: '个人客户',
-                    zh_HANT: '個人客戶',
-                    ja: '個人顧客',
-                    ko: '개인 고객',
-                    fr: 'Client individuel',
-                  }),
-                },
-                {
-                  key: 'company',
-                  label: pickText(effectiveSelectedLocale, {
-                    en: 'Company',
-                    zh_HANS: '企业客户',
-                    zh_HANT: '企業客戶',
-                    ja: '法人顧客',
-                    ko: '법인 고객',
-                    fr: 'Client entreprise',
-                  }),
-                },
-              ] as const).map((option) => {
+              {(
+                [
+                  {
+                    key: 'individual',
+                    label: pickText(effectiveSelectedLocale, {
+                      en: 'Individual',
+                      zh_HANS: '个人客户',
+                      zh_HANT: '個人客戶',
+                      ja: '個人顧客',
+                      ko: '개인 고객',
+                      fr: 'Client individuel',
+                    }),
+                  },
+                  {
+                    key: 'company',
+                    label: pickText(effectiveSelectedLocale, {
+                      en: 'Company',
+                      zh_HANS: '企业客户',
+                      zh_HANT: '企業客戶',
+                      ja: '法人顧客',
+                      ko: '법인 고객',
+                      fr: 'Client entreprise',
+                    }),
+                  },
+                ] as const
+              ).map((option) => {
                 const isActive = profileType === option.key;
 
                 return (
@@ -796,7 +780,9 @@ export function CustomerCreateScreen({
                   ko: '예: Ari',
                   fr: 'Ex. : Ari',
                 })}
-                aria-describedby={validationError?.field === 'nickname' ? 'customer-name-error' : undefined}
+                aria-describedby={
+                  validationError?.field === 'nickname' ? 'customer-name-error' : undefined
+                }
                 aria-invalid={validationError?.field === 'nickname' ? 'true' : 'false'}
                 required
               />
@@ -866,7 +852,11 @@ export function CustomerCreateScreen({
                     ko: '예: Acme Corporation',
                     fr: 'Ex. : Acme Corporation',
                   })}
-                  aria-describedby={validationError?.field === 'companyLegalName' ? 'company-legal-name-error' : undefined}
+                  aria-describedby={
+                    validationError?.field === 'companyLegalName'
+                      ? 'company-legal-name-error'
+                      : undefined
+                  }
                   aria-invalid={validationError?.field === 'companyLegalName' ? 'true' : 'false'}
                   required
                 />
@@ -921,17 +911,14 @@ export function CustomerCreateScreen({
                   })}
                 </p>
                 <p className="text-sm leading-6 text-slate-600">
-                  {pickText(
-                    effectiveSelectedLocale,
-                    {
-                      en: 'Optionally assign the first platform membership while creating this customer.',
-                      zh_HANS: '可在创建客户时一并设置首条平台会员记录。',
-                      zh_HANT: '建立客戶時可一併設定第一筆平台會員記錄。',
-                      ja: '顧客作成時に最初のプラットフォーム会員情報を任意で追加できます。',
-                      ko: '고객 생성과 함께 첫 번째 플랫폼 멤버십을 선택적으로 추가할 수 있습니다.',
-                      fr: 'Vous pouvez également attribuer la première adhésion à une plateforme lors de la création du client.',
-                    },
-                  )}
+                  {pickText(effectiveSelectedLocale, {
+                    en: 'Optionally assign the first platform membership while creating this customer.',
+                    zh_HANS: '可在创建客户时一并设置首条平台会员记录。',
+                    zh_HANT: '建立客戶時可一併設定第一筆平台會員記錄。',
+                    ja: '顧客作成時に最初のプラットフォーム会員情報を任意で追加できます。',
+                    ko: '고객 생성과 함께 첫 번째 플랫폼 멤버십을 선택적으로 추가할 수 있습니다.',
+                    fr: 'Vous pouvez également attribuer la première adhésion à une plateforme lors de la création du client.',
+                  })}
                 </p>
               </div>
 
@@ -948,14 +935,16 @@ export function CustomerCreateScreen({
                   }}
                   className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
                 />
-                <span>{pickText(effectiveSelectedLocale, {
-                  en: 'Add membership now',
-                  zh_HANS: '现在添加会员',
-                  zh_HANT: '現在新增會員',
-                  ja: '今すぐ会員を追加',
-                  ko: '지금 멤버십 추가',
-                  fr: 'Ajouter une adhésion maintenant',
-                })}</span>
+                <span>
+                  {pickText(effectiveSelectedLocale, {
+                    en: 'Add membership now',
+                    zh_HANS: '现在添加会员',
+                    zh_HANT: '現在新增會員',
+                    ja: '今すぐ会員を追加',
+                    ko: '지금 멤버십 추가',
+                    fr: 'Ajouter une adhésion maintenant',
+                  })}
+                </span>
               </label>
             </div>
 
@@ -989,8 +978,12 @@ export function CustomerCreateScreen({
                     }}
                     disabled={membershipOptions.loading || membershipOptions.platforms.length === 0}
                     className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 disabled:cursor-not-allowed disabled:bg-slate-100"
-                    aria-describedby={isMembershipValidationError ? 'membership-validation-error' : undefined}
-                    aria-invalid={validationError?.field === 'membershipPlatform' ? 'true' : 'false'}
+                    aria-describedby={
+                      isMembershipValidationError ? 'membership-validation-error' : undefined
+                    }
+                    aria-invalid={
+                      validationError?.field === 'membershipPlatform' ? 'true' : 'false'
+                    }
                   >
                     <option value="">
                       {membershipOptions.loading
@@ -1044,7 +1037,9 @@ export function CustomerCreateScreen({
                     }}
                     disabled={membershipOptions.loading || membershipClassOptions.length === 0}
                     className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 disabled:cursor-not-allowed disabled:bg-slate-100"
-                    aria-describedby={isMembershipValidationError ? 'membership-validation-error' : undefined}
+                    aria-describedby={
+                      isMembershipValidationError ? 'membership-validation-error' : undefined
+                    }
                     aria-invalid={validationError?.field === 'membershipClass' ? 'true' : 'false'}
                   >
                     <option value="">
@@ -1097,12 +1092,14 @@ export function CustomerCreateScreen({
                       clearValidationError(...MEMBERSHIP_VALIDATION_FIELDS);
                     }}
                     disabled={
-                      membershipOptions.loading
-                      || !membershipDraft.membershipClassCode
-                      || membershipTypeOptions.length === 0
+                      membershipOptions.loading ||
+                      !membershipDraft.membershipClassCode ||
+                      membershipTypeOptions.length === 0
                     }
                     className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 disabled:cursor-not-allowed disabled:bg-slate-100"
-                    aria-describedby={isMembershipValidationError ? 'membership-validation-error' : undefined}
+                    aria-describedby={
+                      isMembershipValidationError ? 'membership-validation-error' : undefined
+                    }
                     aria-invalid={validationError?.field === 'membershipType' ? 'true' : 'false'}
                   >
                     <option value="">
@@ -1163,12 +1160,14 @@ export function CustomerCreateScreen({
                       clearValidationError(...MEMBERSHIP_VALIDATION_FIELDS);
                     }}
                     disabled={
-                      membershipOptions.loading
-                      || !membershipDraft.membershipTypeCode
-                      || membershipLevelOptions.length === 0
+                      membershipOptions.loading ||
+                      !membershipDraft.membershipTypeCode ||
+                      membershipLevelOptions.length === 0
                     }
                     className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 disabled:cursor-not-allowed disabled:bg-slate-100"
-                    aria-describedby={isMembershipValidationError ? 'membership-validation-error' : undefined}
+                    aria-describedby={
+                      isMembershipValidationError ? 'membership-validation-error' : undefined
+                    }
                     aria-invalid={validationError?.field === 'membershipLevel' ? 'true' : 'false'}
                   >
                     <option value="">
@@ -1230,8 +1229,12 @@ export function CustomerCreateScreen({
                       clearValidationError(...MEMBERSHIP_VALIDATION_FIELDS);
                     }}
                     className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
-                    aria-describedby={isMembershipValidationError ? 'membership-validation-error' : undefined}
-                    aria-invalid={validationError?.field === 'membershipValidFrom' ? 'true' : 'false'}
+                    aria-describedby={
+                      isMembershipValidationError ? 'membership-validation-error' : undefined
+                    }
+                    aria-invalid={
+                      validationError?.field === 'membershipValidFrom' ? 'true' : 'false'
+                    }
                   />
                 </label>
 
@@ -1271,14 +1274,16 @@ export function CustomerCreateScreen({
                     }
                     className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
                   />
-                  <span>{pickText(effectiveSelectedLocale, {
-                    en: 'Enable auto-renew',
-                    zh_HANS: '启用自动续期',
-                    zh_HANT: '啟用自動續期',
-                    ja: '自動更新を有効化',
-                    ko: '자동 갱신 사용',
-                    fr: 'Activer le renouvellement automatique',
-                  })}</span>
+                  <span>
+                    {pickText(effectiveSelectedLocale, {
+                      en: 'Enable auto-renew',
+                      zh_HANS: '启用自动续期',
+                      zh_HANT: '啟用自動續期',
+                      ja: '自動更新を有効化',
+                      ko: '자동 갱신 사용',
+                      fr: 'Activer le renouvellement automatique',
+                    })}
+                  </span>
                 </label>
 
                 <div
@@ -1296,17 +1301,14 @@ export function CustomerCreateScreen({
                       })
                     : membershipOptions.error
                       ? membershipOptions.error
-                      : pickText(
-                          effectiveSelectedLocale,
-                          {
-                            en: 'Membership choices come from the current tenant/talent configuration scope.',
-                            zh_HANS: '会员选项来自当前租户/艺人的配置作用域。',
-                            zh_HANT: '會員選項來自目前租戶／藝人的設定範圍。',
-                            ja: '会員候補は現在のテナント/タレント設定スコープから取得されます。',
-                            ko: '멤버십 선택지는 현재 테넌트/탤런트 설정 범위에서 가져옵니다.',
-                            fr: 'Les options d’adhésion proviennent du périmètre de configuration actuel du tenant ou du talent.',
-                          },
-                        )}
+                      : pickText(effectiveSelectedLocale, {
+                          en: 'Membership choices come from the current tenant/talent configuration scope.',
+                          zh_HANS: '会员选项来自当前租户/艺人的配置作用域。',
+                          zh_HANT: '會員選項來自目前租戶／藝人的設定範圍。',
+                          ja: '会員候補は現在のテナント/タレント設定スコープから取得されます。',
+                          ko: '멤버십 선택지는 현재 테넌트/탤런트 설정 범위에서 가져옵니다.',
+                          fr: 'Les options d’adhésion proviennent du périmètre de configuration actuel du tenant ou du talent.',
+                        })}
                 </div>
 
                 <label className="space-y-2 lg:col-span-2">
@@ -1330,17 +1332,14 @@ export function CustomerCreateScreen({
                     }
                     rows={3}
                     className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
-                    placeholder={pickText(
-                      effectiveSelectedLocale,
-                      {
-                        en: 'Optional note for the first membership record.',
-                        zh_HANS: '首条会员记录的可选备注。',
-                        zh_HANT: '第一筆會員記錄的可選備註。',
-                        ja: '最初の会員記録に関する任意メモです。',
-                        ko: '첫 번째 멤버십 기록에 남길 선택 메모입니다.',
-                        fr: 'Note facultative pour le premier enregistrement d’adhésion.',
-                      },
-                    )}
+                    placeholder={pickText(effectiveSelectedLocale, {
+                      en: 'Optional note for the first membership record.',
+                      zh_HANS: '首条会员记录的可选备注。',
+                      zh_HANT: '第一筆會員記錄的可選備註。',
+                      ja: '最初の会員記録に関する任意メモです。',
+                      ko: '첫 번째 멤버십 기록에 남길 선택 메모입니다.',
+                      fr: 'Note facultative pour le premier enregistrement d’adhésion.',
+                    })}
                   />
                 </label>
               </div>
@@ -1360,20 +1359,19 @@ export function CustomerCreateScreen({
             </span>
             <textarea
               value={draft.notes}
-              onChange={(event) => setDraft((current) => ({ ...current, notes: event.target.value }))}
+              onChange={(event) =>
+                setDraft((current) => ({ ...current, notes: event.target.value }))
+              }
               rows={5}
               className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
-              placeholder={pickText(
-                effectiveSelectedLocale,
-                {
-                  en: 'Optional internal note.',
-                  zh_HANS: '可选内部备注。',
-                  zh_HANT: '可選內部備註。',
-                  ja: '任意の内部メモです。',
-                  ko: '선택 입력용 내부 메모입니다.',
-                  fr: 'Note interne facultative.',
-                },
-              )}
+              placeholder={pickText(effectiveSelectedLocale, {
+                en: 'Optional internal note.',
+                zh_HANS: '可选内部备注。',
+                zh_HANT: '可選內部備註。',
+                ja: '任意の内部メモです。',
+                ko: '선택 입력용 내부 메모입니다.',
+                fr: 'Note interne facultative.',
+              })}
             />
           </label>
 

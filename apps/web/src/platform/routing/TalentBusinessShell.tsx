@@ -1,13 +1,6 @@
 'use client';
 
-import {
-  Building2,
-  FileSpreadsheet,
-  Globe2,
-  LayoutDashboard,
-  Mailbox,
-  Users2,
-} from 'lucide-react';
+import { Building2, FileSpreadsheet, Globe2, LayoutDashboard, Mailbox, Users2 } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
@@ -40,7 +33,7 @@ function getTalentBusinessTitle(
     overview: string;
     reports: string;
     settings: string;
-  },
+  }
 ) {
   switch (section) {
     case 'customers':
@@ -148,7 +141,8 @@ export function TalentBusinessShell({
   ];
 
   const organizationHref = `/tenant/${tenantId}/organization-structure`;
-  const userName = session.user.displayName || session.user.username || copy.common.authenticatedUser;
+  const userName =
+    session.user.displayName || session.user.username || copy.common.authenticatedUser;
   const pageTitle = getTalentBusinessTitle(section, copy.talentBusiness.titles);
   const resolvedTalentName =
     talentName ||
@@ -192,7 +186,6 @@ export function TalentBusinessShell({
     { label: pageTitle, isCurrent: true },
   ];
 
-
   return (
     <AppFrame
       isMobileSidebarOpen={isMobileNavOpen}
@@ -208,7 +201,9 @@ export function TalentBusinessShell({
           onOpenChange={setIsMobileNavOpen}
           header={
             <div className="space-y-2">
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">TCRN TMS</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
+                TCRN TMS
+              </p>
               <div className="space-y-1">
                 <p className="text-base font-semibold text-slate-900">
                   {session.tenantName || copy.common.currentTenant}
@@ -221,7 +216,7 @@ export function TalentBusinessShell({
             <div className="space-y-2">
               <Link
                 href={organizationHref}
-                className="flex w-full items-center gap-2 rounded-xl border border-slate-200 bg-white/70 px-3 py-2 text-sm font-medium text-slate-700 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 hover:border-slate-300 hover:bg-white"
+                className="flex w-full items-center gap-2 rounded-xl border border-slate-200 bg-white/70 px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:border-slate-300 hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
               >
                 <Building2 className="h-4 w-4" />
                 {copy.tenantGovernance.nav.organizationStructure}
@@ -242,9 +237,7 @@ export function TalentBusinessShell({
               <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500 sm:hidden">
                 {copy.talentBusiness.shellLabel}
               </p>
-              <p className="text-lg font-semibold text-slate-900">
-                {pageTitle}
-              </p>
+              <p className="text-lg font-semibold text-slate-900">{pageTitle}</p>
             </div>
           }
           rightArea={

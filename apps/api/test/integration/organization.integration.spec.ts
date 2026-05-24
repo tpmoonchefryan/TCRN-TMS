@@ -1,13 +1,14 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 // Organization Module Integration Tests
-
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+
+import { PrismaClient } from '@tcrn/database';
+
 import { AppModule } from '../../src/app.module';
 import { bootstrapTestApp } from '../../src/testing/bootstrap-test-app';
-import { PrismaClient } from '@tcrn/database';
 
 // Check if database is available
 const checkDatabaseConnection = async (): Promise<boolean> => {
@@ -48,7 +49,7 @@ describeFn('Organization Integration Tests', () => {
 
   afterAll(async () => {
     if (!dbAvailable) return;
-    
+
     await prisma?.$disconnect();
     await app?.close();
   });
@@ -57,9 +58,7 @@ describeFn('Organization Integration Tests', () => {
     it('should reject unauthenticated tenant list request', async () => {
       if (!dbAvailable) return;
 
-      const response = await request(app.getHttpServer())
-        .get('/api/v1/tenants')
-        .expect(401);
+      const response = await request(app.getHttpServer()).get('/api/v1/tenants').expect(401);
 
       expect(response.body.error.message).toBeDefined();
     });
@@ -69,9 +68,7 @@ describeFn('Organization Integration Tests', () => {
     it('should reject unauthenticated subsidiary request', async () => {
       if (!dbAvailable) return;
 
-      const response = await request(app.getHttpServer())
-        .get('/api/v1/subsidiaries')
-        .expect(401);
+      const response = await request(app.getHttpServer()).get('/api/v1/subsidiaries').expect(401);
 
       expect(response.body.error.message).toBeDefined();
     });
@@ -83,11 +80,11 @@ describeFn('Organization Integration Tests', () => {
       const validCodes = ['SUB_001', 'MAIN', 'TEST_SUBSIDIARY'];
       const invalidCodes = ['sub with spaces', '123-invalid', ''];
 
-      validCodes.forEach(code => {
+      validCodes.forEach((code) => {
         expect(/^[A-Z0-9_]+$/.test(code)).toBe(true);
       });
 
-      invalidCodes.forEach(code => {
+      invalidCodes.forEach((code) => {
         expect(/^[A-Z0-9_]+$/.test(code)).toBe(false);
       });
     });
@@ -97,9 +94,7 @@ describeFn('Organization Integration Tests', () => {
     it('should reject unauthenticated talent request', async () => {
       if (!dbAvailable) return;
 
-      const response = await request(app.getHttpServer())
-        .get('/api/v1/talents')
-        .expect(401);
+      const response = await request(app.getHttpServer()).get('/api/v1/talents').expect(401);
 
       expect(response.body.error.message).toBeDefined();
     });
@@ -111,11 +106,11 @@ describeFn('Organization Integration Tests', () => {
       const validPaths = ['talent-name', 'my-channel', 'vtuber123'];
       const invalidPaths = ['UPPERCASE', 'has spaces', 'special@char'];
 
-      validPaths.forEach(path => {
+      validPaths.forEach((path) => {
         expect(/^[a-z0-9-]+$/.test(path)).toBe(true);
       });
 
-      invalidPaths.forEach(path => {
+      invalidPaths.forEach((path) => {
         expect(/^[a-z0-9-]+$/.test(path)).toBe(false);
       });
     });
@@ -138,8 +133,8 @@ describeFn('Organization Integration Tests', () => {
 
     it('should validate tier codes', () => {
       const validTiers = ['standard', 'professional', 'enterprise'];
-      
-      validTiers.forEach(tier => {
+
+      validTiers.forEach((tier) => {
         expect(['standard', 'professional', 'enterprise']).toContain(tier);
       });
     });
@@ -151,7 +146,7 @@ describe('Organization Data Isolation', () => {
     // Schema name should be tenant_{code}
     const tenantCode = 'ACME';
     const expectedSchema = `tenant_${tenantCode.toLowerCase()}`;
-    
+
     expect(expectedSchema).toBe('tenant_acme');
   });
 
@@ -160,11 +155,11 @@ describe('Organization Data Isolation', () => {
     const validCodes = ['ACME', 'COMPANY_123', 'A'.repeat(32)];
     const invalidCodes = ['a'.repeat(33), 'has-hyphen', 'has spaces'];
 
-    validCodes.forEach(code => {
+    validCodes.forEach((code) => {
       expect(code.length <= 32 && /^[A-Z0-9_]+$/.test(code)).toBe(true);
     });
 
-    invalidCodes.forEach(code => {
+    invalidCodes.forEach((code) => {
       expect(code.length <= 32 && /^[A-Z0-9_]+$/.test(code)).toBe(false);
     });
   });

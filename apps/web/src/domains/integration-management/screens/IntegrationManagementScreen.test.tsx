@@ -1,11 +1,12 @@
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { localizedFixture } from '@/domains/config-dictionary-settings/testing/localized-fixtures';
 
+import { SUPPORTED_UI_LOCALES, type SupportedUiLocale } from '@tcrn/shared';
+
+import { localizedFixture } from '@/domains/config-dictionary-settings/testing/localized-fixtures';
 import { IntegrationManagementScreen } from '@/domains/integration-management/screens/IntegrationManagementScreen';
 import { ApiRequestError } from '@/platform/http/api';
-import { SUPPORTED_UI_LOCALES, type SupportedUiLocale } from '@tcrn/shared';
 
 const mockRequest = vi.fn();
 const mockRequestEnvelope = vi.fn();
@@ -113,9 +114,39 @@ const aiAdapterDefinition = {
       secret: false,
       defaultValue: 'OPENAI',
       options: [
-        { value: 'OPENAI', label: { en: 'OpenAI', zh_HANS: 'OpenAI', zh_HANT: 'OpenAI', ja: 'OpenAI', ko: 'OpenAI', fr: 'OpenAI' } },
-        { value: 'ANTHROPIC', label: { en: 'Anthropic', zh_HANS: 'Anthropic', zh_HANT: 'Anthropic', ja: 'Anthropic', ko: 'Anthropic', fr: 'Anthropic' } },
-        { value: 'GEMINI', label: { en: 'Gemini', zh_HANS: 'Gemini', zh_HANT: 'Gemini', ja: 'Gemini', ko: 'Gemini', fr: 'Gemini' } },
+        {
+          value: 'OPENAI',
+          label: {
+            en: 'OpenAI',
+            zh_HANS: 'OpenAI',
+            zh_HANT: 'OpenAI',
+            ja: 'OpenAI',
+            ko: 'OpenAI',
+            fr: 'OpenAI',
+          },
+        },
+        {
+          value: 'ANTHROPIC',
+          label: {
+            en: 'Anthropic',
+            zh_HANS: 'Anthropic',
+            zh_HANT: 'Anthropic',
+            ja: 'Anthropic',
+            ko: 'Anthropic',
+            fr: 'Anthropic',
+          },
+        },
+        {
+          value: 'GEMINI',
+          label: {
+            en: 'Gemini',
+            zh_HANS: 'Gemini',
+            zh_HANT: 'Gemini',
+            ja: 'Gemini',
+            ko: 'Gemini',
+            fr: 'Gemini',
+          },
+        },
       ],
     },
     {
@@ -212,14 +243,17 @@ async function selectSubsidiaryScope(user: ReturnType<typeof userEvent.setup>) {
 async function openRowAction(
   user: ReturnType<typeof userEvent.setup>,
   rowText: string,
-  actionName: string | RegExp,
+  actionName: string | RegExp
 ) {
   const row = (await screen.findByText(rowText)).closest('tr');
   expect(row).not.toBeNull();
   await user.click(within(row as HTMLTableRowElement).getByRole('button', { name: actionName }));
 }
 
-async function openAdapterBasics(user: ReturnType<typeof userEvent.setup>, adapterCode = 'TCRN_PII_PLATFORM') {
+async function openAdapterBasics(
+  user: ReturnType<typeof userEvent.setup>,
+  adapterCode = 'TCRN_PII_PLATFORM'
+) {
   await openRowAction(user, adapterCode, 'Open');
   const drawer = await screen.findByRole('dialog', { name: 'Configure Adapter' });
   expect(within(drawer).getByRole('heading', { name: 'Adapter Profile' })).toBeInTheDocument();
@@ -227,10 +261,16 @@ async function openAdapterBasics(user: ReturnType<typeof userEvent.setup>, adapt
   return drawer;
 }
 
-async function openAdapterSecrets(user: ReturnType<typeof userEvent.setup>, adapterCode = 'TCRN_PII_PLATFORM') {
+async function openAdapterSecrets(
+  user: ReturnType<typeof userEvent.setup>,
+  adapterCode = 'TCRN_PII_PLATFORM'
+) {
   await openRowAction(user, adapterCode, 'Configure');
   const drawer = await screen.findByRole('dialog', { name: 'Configure Adapter' });
-  expect(within(drawer).getByRole('tab', { name: 'Secrets' })).toHaveAttribute('aria-selected', 'true');
+  expect(within(drawer).getByRole('tab', { name: 'Secrets' })).toHaveAttribute(
+    'aria-selected',
+    'true'
+  );
 }
 
 HTMLDialogElement.prototype.showModal = vi.fn(function mockShowModal(this: HTMLDialogElement) {
@@ -354,11 +394,13 @@ describe('IntegrationManagementScreen', () => {
         throw new ApiRequestError(
           'Email configuration is only available for AC tenant administrators',
           'AC_TENANT_ONLY',
-          403,
+          403
         );
       }
 
-      if (path === '/api/v1/configuration-entity/consumer?includeInactive=true&page=1&pageSize=100') {
+      if (
+        path === '/api/v1/configuration-entity/consumer?includeInactive=true&page=1&pageSize=100'
+      ) {
         consumerCalls += 1;
         return [];
       }
@@ -382,7 +424,9 @@ describe('IntegrationManagementScreen', () => {
 
     render(<IntegrationManagementScreen tenantId="tenant-1" />);
 
-    expect(await screen.findByRole('heading', { name: 'Integration Management' })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { name: 'Integration Management' })
+    ).toBeInTheDocument();
     expect(await screen.findByText('Select a scope first')).toBeInTheDocument();
     expect(screen.getByText('Start with tenant root')).toBeInTheDocument();
     expect(screen.getByText('Need a scoped override?')).toBeInTheDocument();
@@ -401,8 +445,8 @@ describe('IntegrationManagementScreen', () => {
     expect(await screen.findByText('BILI_EXPORT')).toBeInTheDocument();
     expect(
       screen.getByText(
-        'API clients stay in Account Center and do not appear in tenant workspaces. Use this scope for adapters, webhooks, and email.',
-      ),
+        'API clients stay in Account Center and do not appear in tenant workspaces. Use this scope for adapters, webhooks, and email.'
+      )
     ).toBeInTheDocument();
     expect(adapterCalls).toBe(1);
     expect(adapterDefinitionCalls).toBe(1);
@@ -429,7 +473,9 @@ describe('IntegrationManagementScreen', () => {
     render(<IntegrationManagementScreen tenantId="tenant-1" />);
 
     expect(await screen.findByRole('heading', { name: '集成管理' })).toBeInTheDocument();
-    expect(screen.getByText('选择租户根、分目录或艺人，以切换右侧的集成工作区。')).toBeInTheDocument();
+    expect(
+      screen.getByText('选择租户根、分目录或艺人，以切换右侧的集成工作区。')
+    ).toBeInTheDocument();
     expect(screen.queryByText(/子公司/)).not.toBeInTheDocument();
   });
 
@@ -440,7 +486,10 @@ describe('IntegrationManagementScreen', () => {
         return organizationTreeResponse;
       }
 
-      if (path === '/api/v1/configuration-entity/social-platform?includeInactive=false&page=1&pageSize=100') {
+      if (
+        path ===
+        '/api/v1/configuration-entity/social-platform?includeInactive=false&page=1&pageSize=100'
+      ) {
         return [
           {
             id: 'platform-1',
@@ -455,7 +504,10 @@ describe('IntegrationManagementScreen', () => {
         ];
       }
 
-      if (path === '/api/v1/subsidiaries/subsidiary-1/integration/adapters?includeInherited=true&includeDisabled=true') {
+      if (
+        path ===
+        '/api/v1/subsidiaries/subsidiary-1/integration/adapters?includeInherited=true&includeDisabled=true'
+      ) {
         return [
           {
             id: 'adapter-sub-1',
@@ -514,15 +566,15 @@ describe('IntegrationManagementScreen', () => {
 
     await waitFor(() => {
       expect(mockRequest).toHaveBeenCalledWith(
-        '/api/v1/subsidiaries/subsidiary-1/integration/adapters?includeInherited=true&includeDisabled=true',
+        '/api/v1/subsidiaries/subsidiary-1/integration/adapters?includeInherited=true&includeDisabled=true'
       );
     });
 
     expect(await screen.findByText('TOKYO_SYNC')).toBeInTheDocument();
     expect(
       screen.getByText(
-        'API clients stay in Account Center. Tokyo Branch inherits that contract, so only adapters are editable here.',
-      ),
+        'API clients stay in Account Center. Tokyo Branch inherits that contract, so only adapters are editable here.'
+      )
     ).toBeInTheDocument();
     expect(screen.queryByRole('tab', { name: 'Webhooks' })).not.toBeInTheDocument();
     expect(screen.queryByRole('tab', { name: 'Email' })).not.toBeInTheDocument();
@@ -540,7 +592,10 @@ describe('IntegrationManagementScreen', () => {
         return organizationTreeResponse;
       }
 
-      if (path === '/api/v1/configuration-entity/social-platform?includeInactive=false&page=1&pageSize=100') {
+      if (
+        path ===
+        '/api/v1/configuration-entity/social-platform?includeInactive=false&page=1&pageSize=100'
+      ) {
         return [];
       }
 
@@ -548,7 +603,10 @@ describe('IntegrationManagementScreen', () => {
         return tenantAdapters;
       }
 
-      if (path === '/api/v1/subsidiaries/subsidiary-1/integration/adapters?includeInherited=true&includeDisabled=true') {
+      if (
+        path ===
+        '/api/v1/subsidiaries/subsidiary-1/integration/adapters?includeInherited=true&includeDisabled=true'
+      ) {
         return [
           {
             id: 'adapter-sub-1',
@@ -605,7 +663,9 @@ describe('IntegrationManagementScreen', () => {
 
     await selectTenantRootScope(user);
     await waitFor(() => {
-      expect(mockRequest).toHaveBeenCalledWith('/api/v1/integration/adapters?includeInherited=true&includeDisabled=true');
+      expect(mockRequest).toHaveBeenCalledWith(
+        '/api/v1/integration/adapters?includeInherited=true&includeDisabled=true'
+      );
     });
 
     await selectSubsidiaryScope(user);
@@ -649,7 +709,10 @@ describe('IntegrationManagementScreen', () => {
     let consumerPrefix: string | null = null;
 
     mockRequest.mockImplementation(async (path: string, init?: RequestInit) => {
-      if (path === '/api/v1/configuration-entity/social-platform?includeInactive=false&page=1&pageSize=100') {
+      if (
+        path ===
+        '/api/v1/configuration-entity/social-platform?includeInactive=false&page=1&pageSize=100'
+      ) {
         return [
           {
             id: 'platform-1',
@@ -729,7 +792,9 @@ describe('IntegrationManagementScreen', () => {
         return [];
       }
 
-      if (path === '/api/v1/configuration-entity/consumer?includeInactive=true&page=1&pageSize=100') {
+      if (
+        path === '/api/v1/configuration-entity/consumer?includeInactive=true&page=1&pageSize=100'
+      ) {
         return [
           {
             id: 'consumer-1',
@@ -766,14 +831,18 @@ describe('IntegrationManagementScreen', () => {
         throw new ApiRequestError(
           'Email configuration is only available for AC tenant administrators',
           'AC_TENANT_ONLY',
-          403,
+          403
         );
       }
 
-      if (path === '/api/v1/configuration-entity/consumer/consumer-1/generate-key' && init?.method === 'POST') {
+      if (
+        path === '/api/v1/configuration-entity/consumer/consumer-1/generate-key' &&
+        init?.method === 'POST'
+      ) {
         consumerPrefix = 'tcrn_pk';
         return {
-          message: 'API key generated successfully. Please save it securely - it will not be shown again.',
+          message:
+            'API key generated successfully. Please save it securely - it will not be shown again.',
           apiKey: 'tcrn_pk_live_secret_value',
           apiKeyPrefix: 'tcrn_pk',
         };
@@ -784,7 +853,9 @@ describe('IntegrationManagementScreen', () => {
 
     render(<IntegrationManagementScreen tenantId="tenant-ac" workspaceKind="ac" />);
 
-    expect(await screen.findByRole('heading', { name: 'Integration Management' })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { name: 'Integration Management' })
+    ).toBeInTheDocument();
     expect(await screen.findByText('BILI_EXPORT')).toBeInTheDocument();
 
     await user.click(screen.getByRole('tab', { name: 'API Keys' }));
@@ -799,18 +870,25 @@ describe('IntegrationManagementScreen', () => {
     await user.click(await screen.findByRole('button', { name: 'Generate key' }));
     expect(await screen.findByText('Generate API key for CRM_SYNC?')).toBeInTheDocument();
 
-    await user.click(within(screen.getByRole('dialog', { name: 'Generate API key for CRM_SYNC?' })).getByRole('button', { name: 'Generate key' }));
+    await user.click(
+      within(screen.getByRole('dialog', { name: 'Generate API key for CRM_SYNC?' })).getByRole(
+        'button',
+        { name: 'Generate key' }
+      )
+    );
 
     await waitFor(() => {
       expect(mockRequest).toHaveBeenCalledWith(
         '/api/v1/configuration-entity/consumer/consumer-1/generate-key',
         expect.objectContaining({
           method: 'POST',
-        }),
+        })
       );
     });
 
-    expect((await screen.findAllByText(/API key generated successfully/)).length).toBeGreaterThan(0);
+    expect((await screen.findAllByText(/API key generated successfully/)).length).toBeGreaterThan(
+      0
+    );
     expect(await screen.findByText('tcrn_pk_live_secret_value')).toBeInTheDocument();
 
     await user.click(screen.getByRole('tab', { name: 'Email' }));
@@ -849,7 +927,10 @@ describe('IntegrationManagementScreen', () => {
         return organizationTreeResponse;
       }
 
-      if (path === '/api/v1/configuration-entity/social-platform?includeInactive=false&page=1&pageSize=100') {
+      if (
+        path ===
+        '/api/v1/configuration-entity/social-platform?includeInactive=false&page=1&pageSize=100'
+      ) {
         return [
           {
             id: 'platform-1',
@@ -905,18 +986,21 @@ describe('IntegrationManagementScreen', () => {
 
     await user.click(screen.getByRole('button', { name: 'Next' }));
 
-    expect(mockReplace).toHaveBeenCalledWith('/tenant/tenant-1/integration-management?adapterPage=2');
+    expect(mockReplace).toHaveBeenCalledWith(
+      '/tenant/tenant-1/integration-management?adapterPage=2'
+    );
     expect(await screen.findByText('ADAPTER_21')).toBeInTheDocument();
     expect(screen.queryByText('ADAPTER_01')).not.toBeInTheDocument();
 
     await user.selectOptions(screen.getByRole('combobox', { name: 'Rows per page' }), '50');
 
-    expect(mockReplace).toHaveBeenCalledWith('/tenant/tenant-1/integration-management?adapterPageSize=50');
+    expect(mockReplace).toHaveBeenCalledWith(
+      '/tenant/tenant-1/integration-management?adapterPageSize=50'
+    );
     expect(await screen.findByText('ADAPTER_25')).toBeInTheDocument();
     expect(screen.getByText('Page 1 of 1')).toBeInTheDocument();
     expect(screen.getByText('ADAPTER_01')).toBeInTheDocument();
   });
-
 
   it('hydrates adapter pagination from URL without collapsing before scope data loads', async () => {
     const user = userEvent.setup();
@@ -948,7 +1032,10 @@ describe('IntegrationManagementScreen', () => {
         return organizationTreeResponse;
       }
 
-      if (path === '/api/v1/configuration-entity/social-platform?includeInactive=false&page=1&pageSize=100') {
+      if (
+        path ===
+        '/api/v1/configuration-entity/social-platform?includeInactive=false&page=1&pageSize=100'
+      ) {
         return [
           {
             id: 'platform-1',
@@ -1016,7 +1103,10 @@ describe('IntegrationManagementScreen', () => {
         return organizationTreeResponse;
       }
 
-      if (path === '/api/v1/configuration-entity/social-platform?includeInactive=false&page=1&pageSize=100') {
+      if (
+        path ===
+        '/api/v1/configuration-entity/social-platform?includeInactive=false&page=1&pageSize=100'
+      ) {
         return [
           {
             id: 'platform-1',
@@ -1102,7 +1192,9 @@ describe('IntegrationManagementScreen', () => {
         return [];
       }
 
-      if (path === '/api/v1/configuration-entity/consumer?includeInactive=true&page=1&pageSize=100') {
+      if (
+        path === '/api/v1/configuration-entity/consumer?includeInactive=true&page=1&pageSize=100'
+      ) {
         return [];
       }
 
@@ -1114,11 +1206,14 @@ describe('IntegrationManagementScreen', () => {
         throw new ApiRequestError(
           'Email configuration is only available for AC tenant administrators',
           'AC_TENANT_ONLY',
-          403,
+          403
         );
       }
 
-      if (path === '/api/v1/integration/adapters/adapter-1/configs/api_key/reveal' && init?.method === 'POST') {
+      if (
+        path === '/api/v1/integration/adapters/adapter-1/configs/api_key/reveal' &&
+        init?.method === 'POST'
+      ) {
         return {
           configKey: 'api_key',
           configValue: 'revealed-secret-value',
@@ -1142,7 +1237,7 @@ describe('IntegrationManagementScreen', () => {
               },
             ],
             adapterVersion: 3,
-          }),
+          })
         );
 
         latestBaseUrl = 'https://new.example.com';
@@ -1163,7 +1258,9 @@ describe('IntegrationManagementScreen', () => {
     expect(await screen.findByText('TCRN_PII_PLATFORM')).toBeInTheDocument();
     expect(screen.getByText('Scope capability matrix')).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'Adapter Profile' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('heading', { name: 'Configuration & secrets' })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('heading', { name: 'Configuration & secrets' })
+    ).not.toBeInTheDocument();
 
     await openAdapterSecrets(user);
 
@@ -1172,7 +1269,9 @@ describe('IntegrationManagementScreen', () => {
     expect(screen.getByRole('tab', { name: 'Webhook/API Client' })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: 'Email Templates' })).toBeInTheDocument();
     expect(await screen.findByDisplayValue('******')).toBeInTheDocument();
-    expect(screen.getByText(/Required masked secret stays unchanged unless you type a replacement/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Required masked secret stays unchanged unless you type a replacement/i)
+    ).toBeInTheDocument();
 
     await user.click(screen.getByRole('tab', { name: 'Basics' }));
     expect(screen.getByRole('tab', { name: 'Basics' })).toHaveAttribute('aria-selected', 'true');
@@ -1197,11 +1296,13 @@ describe('IntegrationManagementScreen', () => {
         '/api/v1/integration/adapters/adapter-1/configs',
         expect.objectContaining({
           method: 'PATCH',
-        }),
+        })
       );
     });
 
-    expect(await screen.findByText('TCRN_PII_PLATFORM adapter configs updated.')).toBeInTheDocument();
+    expect(
+      await screen.findByText('TCRN_PII_PLATFORM adapter configs updated.')
+    ).toBeInTheDocument();
     expect(await screen.findByDisplayValue('https://new.example.com')).toBeInTheDocument();
   });
 
@@ -1214,7 +1315,10 @@ describe('IntegrationManagementScreen', () => {
         return organizationTreeResponse;
       }
 
-      if (path === '/api/v1/configuration-entity/social-platform?includeInactive=false&page=1&pageSize=100') {
+      if (
+        path ===
+        '/api/v1/configuration-entity/social-platform?includeInactive=false&page=1&pageSize=100'
+      ) {
         return [
           {
             id: 'platform-1',
@@ -1278,12 +1382,14 @@ describe('IntegrationManagementScreen', () => {
               isSecret: true,
             },
             ...(accessTokenStillPresent
-              ? [{
-                  id: 'config-2',
-                  configKey: 'access_token',
-                  configValue: '******',
-                  isSecret: true,
-                }]
+              ? [
+                  {
+                    id: 'config-2',
+                    configKey: 'access_token',
+                    configValue: '******',
+                    isSecret: true,
+                  },
+                ]
               : []),
           ],
           createdAt: '2026-04-17T08:00:00.000Z',
@@ -1302,7 +1408,9 @@ describe('IntegrationManagementScreen', () => {
         return [];
       }
 
-      if (path === '/api/v1/configuration-entity/consumer?includeInactive=true&page=1&pageSize=100') {
+      if (
+        path === '/api/v1/configuration-entity/consumer?includeInactive=true&page=1&pageSize=100'
+      ) {
         return [];
       }
 
@@ -1314,7 +1422,7 @@ describe('IntegrationManagementScreen', () => {
         throw new ApiRequestError(
           'Email configuration is only available for AC tenant administrators',
           'AC_TENANT_ONLY',
-          403,
+          403
         );
       }
 
@@ -1332,7 +1440,7 @@ describe('IntegrationManagementScreen', () => {
               },
             ],
             adapterVersion: 3,
-          }),
+          })
         );
         accessTokenStillPresent = false;
         return {
@@ -1349,7 +1457,9 @@ describe('IntegrationManagementScreen', () => {
     await selectTenantRootScope(user);
     expect(await screen.findByText('TCRN_PII_PLATFORM')).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'Adapter Profile' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('heading', { name: 'Configuration & secrets' })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('heading', { name: 'Configuration & secrets' })
+    ).not.toBeInTheDocument();
     await openAdapterSecrets(user);
 
     expect(screen.getByText(/Required masked secret stays unchanged/i)).toBeInTheDocument();
@@ -1368,11 +1478,13 @@ describe('IntegrationManagementScreen', () => {
         '/api/v1/integration/adapters/adapter-1/configs',
         expect.objectContaining({
           method: 'PATCH',
-        }),
+        })
       );
     });
 
-    expect(await screen.findByText('TCRN_PII_PLATFORM adapter configs updated.')).toBeInTheDocument();
+    expect(
+      await screen.findByText('TCRN_PII_PLATFORM adapter configs updated.')
+    ).toBeInTheDocument();
   });
 
   it('keeps related configure sections as guidance without embedding top-level editors', async () => {
@@ -1383,7 +1495,10 @@ describe('IntegrationManagementScreen', () => {
         return organizationTreeResponse;
       }
 
-      if (path === '/api/v1/configuration-entity/social-platform?includeInactive=false&page=1&pageSize=100') {
+      if (
+        path ===
+        '/api/v1/configuration-entity/social-platform?includeInactive=false&page=1&pageSize=100'
+      ) {
         return [
           {
             id: 'platform-1',
@@ -1482,7 +1597,10 @@ describe('IntegrationManagementScreen', () => {
         return organizationTreeResponse;
       }
 
-      if (path === '/api/v1/configuration-entity/social-platform?includeInactive=false&page=1&pageSize=100') {
+      if (
+        path ===
+        '/api/v1/configuration-entity/social-platform?includeInactive=false&page=1&pageSize=100'
+      ) {
         return [
           {
             id: 'platform-1',
@@ -1605,7 +1723,9 @@ describe('IntegrationManagementScreen', () => {
     await user.type(adapterNameInput, 'Changed PII Relay');
 
     await user.click((await screen.findAllByRole('button', { name: /Tokyo Branch/i }))[0]);
-    expect(await screen.findByRole('dialog', { name: 'Discard unsaved changes?' })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('dialog', { name: 'Discard unsaved changes?' })
+    ).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Keep editing' }));
     expect(screen.getByDisplayValue('Changed PII Relay')).toBeInTheDocument();
 
@@ -1613,7 +1733,9 @@ describe('IntegrationManagementScreen', () => {
     expect(chatRow).not.toBeNull();
     await user.click(within(chatRow as HTMLTableRowElement).getByRole('button', { name: 'Open' }));
 
-    expect(await screen.findByRole('dialog', { name: 'Discard unsaved changes?' })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('dialog', { name: 'Discard unsaved changes?' })
+    ).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Keep editing' }));
     expect(screen.getByDisplayValue('Changed PII Relay')).toBeInTheDocument();
 
@@ -1631,7 +1753,10 @@ describe('IntegrationManagementScreen', () => {
         return organizationTreeResponse;
       }
 
-      if (path === '/api/v1/configuration-entity/social-platform?includeInactive=false&page=1&pageSize=100') {
+      if (
+        path ===
+        '/api/v1/configuration-entity/social-platform?includeInactive=false&page=1&pageSize=100'
+      ) {
         return [
           {
             id: 'platform-1',
@@ -1709,7 +1834,10 @@ describe('IntegrationManagementScreen', () => {
         };
       }
 
-      if (path === '/api/v1/integration/adapters/adapter-1/configs/client_secret/reveal' && init?.method === 'POST') {
+      if (
+        path === '/api/v1/integration/adapters/adapter-1/configs/client_secret/reveal' &&
+        init?.method === 'POST'
+      ) {
         return {
           configKey: 'client_secret',
           configValue: 'revealed-secret-value',
@@ -1743,7 +1871,9 @@ describe('IntegrationManagementScreen', () => {
 
     await user.click(screen.getByRole('tab', { name: 'Webhooks' }));
     expect(await screen.findByText('Webhook Endpoints')).toBeInTheDocument();
-    expect(screen.queryByRole('dialog', { name: 'Discard unsaved changes?' })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('dialog', { name: 'Discard unsaved changes?' })
+    ).not.toBeInTheDocument();
 
     await user.click(screen.getByRole('tab', { name: 'Adapters' }));
     await openAdapterSecrets(user);
@@ -1753,7 +1883,9 @@ describe('IntegrationManagementScreen', () => {
     await user.type(baseUrlInput, 'https://new.example.com');
 
     await user.click(screen.getByRole('tab', { name: 'Webhooks' }));
-    expect(await screen.findByRole('dialog', { name: 'Discard unsaved changes?' })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('dialog', { name: 'Discard unsaved changes?' })
+    ).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Keep editing' }));
     expect(screen.getByDisplayValue('https://new.example.com')).toBeInTheDocument();
 
@@ -1868,7 +2000,9 @@ describe('IntegrationManagementScreen', () => {
     await user.click(screen.getByRole('button', { name: 'New adapter' }));
     const drawer = await screen.findByRole('dialog', { name: 'Configure Adapter' });
 
-    expect(within(drawer).getByRole('combobox', { name: 'Supported adapter' })).toHaveValue('ai-adapter');
+    expect(within(drawer).getByRole('combobox', { name: 'Supported adapter' })).toHaveValue(
+      'ai-adapter'
+    );
     expect(within(drawer).queryByLabelText('Platform')).not.toBeInTheDocument();
     expect(within(drawer).queryByLabelText('Adapter type')).not.toBeInTheDocument();
     expect(within(drawer).getAllByText('AI Adapter').length).toBeGreaterThan(0);
@@ -2028,7 +2162,9 @@ describe('IntegrationManagementScreen', () => {
     await user.click(screen.getByRole('button', { name: 'New webhook' }));
     const drawer = await screen.findByRole('dialog', { name: 'New Webhook' });
 
-    expect(within(drawer).getByRole('combobox', { name: 'Supported webhook' })).toHaveValue('customer-lifecycle');
+    expect(within(drawer).getByRole('combobox', { name: 'Supported webhook' })).toHaveValue(
+      'customer-lifecycle'
+    );
     expect(within(drawer).queryByLabelText('Webhook code')).not.toBeInTheDocument();
     expect(within(drawer).queryByLabelText('Name (EN)')).not.toBeInTheDocument();
     expect(within(drawer).getByText('Monitored talents')).toBeInTheDocument();
@@ -2036,7 +2172,7 @@ describe('IntegrationManagementScreen', () => {
 
     await user.type(
       within(drawer).getByLabelText('Endpoint URL'),
-      'https://example.com/webhooks/customer',
+      'https://example.com/webhooks/customer'
     );
     await user.click(within(drawer).getByRole('checkbox', { name: /Tokino Sora/ }));
     await user.click(within(drawer).getByRole('button', { name: 'Create webhook' }));
@@ -2138,7 +2274,10 @@ describe('IntegrationManagementScreen', () => {
         return organizationTreeResponse;
       }
 
-      if (path === '/api/v1/configuration-entity/social-platform?includeInactive=false&page=1&pageSize=100') {
+      if (
+        path ===
+        '/api/v1/configuration-entity/social-platform?includeInactive=false&page=1&pageSize=100'
+      ) {
         return [];
       }
 

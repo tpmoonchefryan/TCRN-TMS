@@ -1,9 +1,8 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import 'reflect-metadata';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { createLocalizedText, type RequestContext } from '@tcrn/shared';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { AdapterReadApplicationService } from '../../application/adapter-read.service';
 import { AdapterWriteApplicationService } from '../../application/adapter-write.service';
@@ -43,7 +42,7 @@ describe('AdapterService', () => {
     {} as never,
     {} as never,
     mockAdapterReadApplicationService,
-    mockAdapterWriteApplicationService,
+    mockAdapterWriteApplicationService
   );
 
   beforeEach(() => {
@@ -67,25 +66,16 @@ describe('AdapterService', () => {
       code: 'BILI_SYNC',
     } as never);
 
-    await expect(
-      service.findMany(scope, query as never, context),
-    ).resolves.toEqual([{ id: 'adapter-1' }]);
-    await expect(
-      service.findById('adapter-1', context),
-    ).resolves.toEqual({
+    await expect(service.findMany(scope, query as never, context)).resolves.toEqual([
+      { id: 'adapter-1' },
+    ]);
+    await expect(service.findById('adapter-1', context)).resolves.toEqual({
       id: 'adapter-1',
       code: 'BILI_SYNC',
     });
 
-    expect(mockAdapterReadApplicationService.findMany).toHaveBeenCalledWith(
-      scope,
-      query,
-      context,
-    );
-    expect(mockAdapterReadApplicationService.findById).toHaveBeenCalledWith(
-      'adapter-1',
-      context,
-    );
+    expect(mockAdapterReadApplicationService.findMany).toHaveBeenCalledWith(scope, query, context);
+    expect(mockAdapterReadApplicationService.findById).toHaveBeenCalledWith('adapter-1', context);
   });
 
   it('delegates write, config, reveal, and lifecycle paths to the layered adapter write application service', async () => {
@@ -147,44 +137,34 @@ describe('AdapterService', () => {
       isDisabledHere: false,
     } as never);
 
+    await expect(service.create(createDto as never, context, scope)).resolves.toEqual({
+      id: 'adapter-1',
+    });
+    await expect(service.update('adapter-1', updateDto as never, context)).resolves.toEqual({
+      id: 'adapter-1',
+    });
     await expect(
-      service.create(createDto as never, context, scope),
-    ).resolves.toEqual({ id: 'adapter-1' });
-    await expect(
-      service.update('adapter-1', updateDto as never, context),
-    ).resolves.toEqual({ id: 'adapter-1' });
-    await expect(
-      service.updateConfigs('adapter-1', updateConfigsDto as never, context),
+      service.updateConfigs('adapter-1', updateConfigsDto as never, context)
     ).resolves.toEqual({
       updatedCount: 1,
       adapterVersion: 5,
     });
-    await expect(
-      service.revealConfig('adapter-1', 'client_secret', context),
-    ).resolves.toEqual({
+    await expect(service.revealConfig('adapter-1', 'client_secret', context)).resolves.toEqual({
       configKey: 'client_secret',
     });
-    await expect(
-      service.deactivate('adapter-1', context),
-    ).resolves.toEqual({
+    await expect(service.deactivate('adapter-1', context)).resolves.toEqual({
       id: 'adapter-1',
       isActive: false,
     });
-    await expect(
-      service.reactivate('adapter-1', context),
-    ).resolves.toEqual({
+    await expect(service.reactivate('adapter-1', context)).resolves.toEqual({
       id: 'adapter-1',
       isActive: true,
     });
-    await expect(
-      service.disableInherited('adapter-1', scope, context),
-    ).resolves.toEqual({
+    await expect(service.disableInherited('adapter-1', scope, context)).resolves.toEqual({
       id: 'adapter-1',
       isDisabledHere: true,
     });
-    await expect(
-      service.enableInherited('adapter-1', scope, context),
-    ).resolves.toEqual({
+    await expect(service.enableInherited('adapter-1', scope, context)).resolves.toEqual({
       id: 'adapter-1',
       isDisabledHere: false,
     });
@@ -192,40 +172,40 @@ describe('AdapterService', () => {
     expect(mockAdapterWriteApplicationService.create).toHaveBeenCalledWith(
       createDto,
       context,
-      scope,
+      scope
     );
     expect(mockAdapterWriteApplicationService.update).toHaveBeenCalledWith(
       'adapter-1',
       updateDto,
-      context,
+      context
     );
     expect(mockAdapterWriteApplicationService.updateConfigs).toHaveBeenCalledWith(
       'adapter-1',
       updateConfigsDto,
-      context,
+      context
     );
     expect(mockAdapterWriteApplicationService.revealConfig).toHaveBeenCalledWith(
       'adapter-1',
       'client_secret',
-      context,
+      context
     );
     expect(mockAdapterWriteApplicationService.deactivate).toHaveBeenCalledWith(
       'adapter-1',
-      context,
+      context
     );
     expect(mockAdapterWriteApplicationService.reactivate).toHaveBeenCalledWith(
       'adapter-1',
-      context,
+      context
     );
     expect(mockAdapterWriteApplicationService.disableInherited).toHaveBeenCalledWith(
       'adapter-1',
       scope,
-      context,
+      context
     );
     expect(mockAdapterWriteApplicationService.enableInherited).toHaveBeenCalledWith(
       'adapter-1',
       scope,
-      context,
+      context
     );
   });
 });

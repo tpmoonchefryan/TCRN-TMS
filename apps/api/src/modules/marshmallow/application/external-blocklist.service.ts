@@ -1,16 +1,14 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import {
   BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+
 import { ErrorCodes, type RequestContext } from '@tcrn/shared';
 
-import {
-  mergeLocalizedTextPatch,
-} from '../../../platform/persistence/localized-text.persistence';
+import { mergeLocalizedTextPatch } from '../../../platform/persistence/localized-text.persistence';
 import {
   assertValidExternalBlocklistPattern,
   type ExternalBlocklistItemWithMeta,
@@ -26,19 +24,19 @@ import type {
   OwnerType,
   UpdateExternalBlocklistDto,
 } from '../dto/external-blocklist.dto';
-import { ExternalBlocklistRepository } from '../infrastructure/external-blocklist.repository';
 import { ExternalBlocklistCacheRepository } from '../infrastructure/external-blocklist-cache.repository';
+import { ExternalBlocklistRepository } from '../infrastructure/external-blocklist.repository';
 
 @Injectable()
 export class ExternalBlocklistApplicationService {
   constructor(
     private readonly externalBlocklistRepository: ExternalBlocklistRepository,
-    private readonly externalBlocklistCacheRepository: ExternalBlocklistCacheRepository,
+    private readonly externalBlocklistCacheRepository: ExternalBlocklistCacheRepository
   ) {}
 
   async findMany(
     tenantSchema: string,
-    query: ExternalBlocklistQueryDto,
+    query: ExternalBlocklistQueryDto
   ): Promise<{ items: ExternalBlocklistItemWithMeta[]; total: number }> {
     const scopeType = (query.scopeType ?? 'tenant') as OwnerType;
     const scopeId = query.scopeId ?? null;
@@ -51,34 +49,26 @@ export class ExternalBlocklistApplicationService {
     const scopeChain = await this.externalBlocklistRepository.getScopeChain(
       tenantSchema,
       scopeType,
-      scopeId,
+      scopeId
     );
     const effectiveScopes = includeInherited
       ? scopeChain
       : [getExternalBlocklistScope(scopeType, scopeId)];
 
-    const total = await this.externalBlocklistRepository.countMany(
-      tenantSchema,
-      effectiveScopes,
-      {
-        category: query.category,
-        includeInactive,
-      },
-    );
-    const items = await this.externalBlocklistRepository.findMany(
-      tenantSchema,
-      effectiveScopes,
-      {
-        category: query.category,
-        includeInactive,
-        page,
-        pageSize,
-      },
-    );
+    const total = await this.externalBlocklistRepository.countMany(tenantSchema, effectiveScopes, {
+      category: query.category,
+      includeInactive,
+    });
+    const items = await this.externalBlocklistRepository.findMany(tenantSchema, effectiveScopes, {
+      category: query.category,
+      includeInactive,
+      page,
+      pageSize,
+    });
     const disabledIds = await this.externalBlocklistRepository.getDisabledIds(
       tenantSchema,
       scopeType,
-      scopeId,
+      scopeId
     );
 
     const enrichedItems = items
@@ -94,34 +84,33 @@ export class ExternalBlocklistApplicationService {
   async findWithInheritance(
     tenantSchema: string,
     scopeType: OwnerType,
-    scopeId: string | null,
+    scopeId: string | null
   ): Promise<ExternalBlocklistItemWithMeta[]> {
     const resolvedScopeId = scopeId ?? null;
     const scopeChain = await this.externalBlocklistRepository.getScopeChain(
       tenantSchema,
       scopeType,
-      resolvedScopeId,
+      resolvedScopeId
     );
     const items = await this.externalBlocklistRepository.findWithInheritance(
       tenantSchema,
       scopeChain,
-      getExternalBlocklistScope(scopeType, resolvedScopeId),
+      getExternalBlocklistScope(scopeType, resolvedScopeId)
     );
     const disabledIds = await this.externalBlocklistRepository.getDisabledIds(
       tenantSchema,
       scopeType,
-      resolvedScopeId,
+      resolvedScopeId
     );
 
     return items
       .filter((item) => !disabledIds.has(item.id))
-      .map((item) => mapExternalBlocklistItemWithMeta(item, scopeType, resolvedScopeId, disabledIds));
+      .map((item) =>
+        mapExternalBlocklistItemWithMeta(item, scopeType, resolvedScopeId, disabledIds)
+      );
   }
 
-  async findById(
-    tenantSchema: string,
-    id: string,
-  ): Promise<ExternalBlocklistItem | null> {
+  async findById(tenantSchema: string, id: string): Promise<ExternalBlocklistItem | null> {
     const item = await this.externalBlocklistRepository.findById(tenantSchema, id);
     return item ? normalizeExternalBlocklistItem(item) : null;
   }
@@ -129,7 +118,7 @@ export class ExternalBlocklistApplicationService {
   async create(
     tenantSchema: string,
     dto: CreateExternalBlocklistDto,
-    context: RequestContext,
+    context: RequestContext
   ): Promise<ExternalBlocklistItem> {
     this.ensureValidPattern(dto.patternType, dto.pattern);
 
@@ -139,13 +128,10 @@ export class ExternalBlocklistApplicationService {
         ...dto,
         extraData: null,
       },
-      context.userId ?? null,
+      context.userId ?? null
     );
 
-    await this.externalBlocklistCacheRepository.clearForOwner(
-      dto.ownerType,
-      dto.ownerId ?? null,
-    );
+    await this.externalBlocklistCacheRepository.clearForOwner(dto.ownerType, dto.ownerId ?? null);
 
     return normalizeExternalBlocklistItem(item);
   }
@@ -154,7 +140,7 @@ export class ExternalBlocklistApplicationService {
     tenantSchema: string,
     id: string,
     dto: UpdateExternalBlocklistDto,
-    context: RequestContext,
+    context: RequestContext
   ): Promise<ExternalBlocklistItem> {
     const existing = await this.externalBlocklistRepository.findById(tenantSchema, id);
     if (!existing) {
@@ -174,7 +160,7 @@ export class ExternalBlocklistApplicationService {
     if (dto.pattern !== undefined || dto.patternType !== undefined) {
       this.ensureValidPattern(
         dto.patternType ?? existing.patternType,
-        dto.pattern ?? existing.pattern,
+        dto.pattern ?? existing.pattern
       );
     }
     const updateDto: UpdateExternalBlocklistDto & {
@@ -189,7 +175,7 @@ export class ExternalBlocklistApplicationService {
       tenantSchema,
       id,
       updateDto,
-      context.userId ?? null,
+      context.userId ?? null
     );
 
     if (!item) {
@@ -201,7 +187,7 @@ export class ExternalBlocklistApplicationService {
 
     await this.externalBlocklistCacheRepository.clearForOwner(
       existing.ownerType as OwnerType,
-      existing.ownerId,
+      existing.ownerId
     );
 
     return normalizeExternalBlocklistItem(item);
@@ -219,7 +205,7 @@ export class ExternalBlocklistApplicationService {
     await this.externalBlocklistRepository.delete(tenantSchema, id);
     await this.externalBlocklistCacheRepository.clearForOwner(
       existing.ownerType as OwnerType,
-      existing.ownerId,
+      existing.ownerId
     );
   }
 
@@ -227,13 +213,13 @@ export class ExternalBlocklistApplicationService {
     tenantSchema: string,
     ids: string[],
     isActive: boolean,
-    context: RequestContext,
+    context: RequestContext
   ): Promise<{ updated: number }> {
     const updated = await this.externalBlocklistRepository.batchToggle(
       tenantSchema,
       ids,
       isActive,
-      context.userId ?? null,
+      context.userId ?? null
     );
 
     await this.externalBlocklistCacheRepository.clearAll();
@@ -245,7 +231,7 @@ export class ExternalBlocklistApplicationService {
     tenantSchema: string,
     id: string,
     dto: DisableExternalBlocklistDto,
-    userId: string,
+    userId: string
   ): Promise<{ id: string; disabled: boolean }> {
     const scopeId = dto.scopeId ?? null;
     const entry = await this.externalBlocklistRepository.findDisableCandidate(tenantSchema, id);
@@ -276,7 +262,7 @@ export class ExternalBlocklistApplicationService {
       id,
       dto.scopeType,
       scopeId,
-      userId,
+      userId
     );
     await this.externalBlocklistCacheRepository.clearForOwner(dto.scopeType, scopeId);
 
@@ -286,16 +272,11 @@ export class ExternalBlocklistApplicationService {
   async enableInScope(
     tenantSchema: string,
     id: string,
-    dto: DisableExternalBlocklistDto,
+    dto: DisableExternalBlocklistDto
   ): Promise<{ id: string; enabled: boolean }> {
     const scopeId = dto.scopeId ?? null;
 
-    await this.externalBlocklistRepository.enableInScope(
-      tenantSchema,
-      id,
-      dto.scopeType,
-      scopeId,
-    );
+    await this.externalBlocklistRepository.enableInScope(tenantSchema, id, dto.scopeType, scopeId);
     await this.externalBlocklistCacheRepository.clearForOwner(dto.scopeType, scopeId);
 
     return { id, enabled: true };

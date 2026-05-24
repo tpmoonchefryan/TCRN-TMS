@@ -1,15 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import {
-    IsEnum,
-    IsInt,
-    IsOptional,
-    IsString,
-    Max,
-    Min,
-} from 'class-validator';
+import { IsEnum, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 
 export enum ImportJobType {
   INDIVIDUAL_IMPORT = 'individual_import',
@@ -52,7 +44,13 @@ export class ImportJobQueryDto {
   @Min(1)
   page?: number = 1;
 
-  @ApiPropertyOptional({ description: 'Items per page', example: 20, minimum: 1, maximum: 50, default: 20 })
+  @ApiPropertyOptional({
+    description: 'Items per page',
+    example: 20,
+    minimum: 1,
+    maximum: 50,
+    default: 20,
+  })
   @IsOptional()
   @Type(() => Number)
   @IsInt()

@@ -1,10 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import {
-  ErrorCodes,
-  normalizeLocalizedText,
-} from '@tcrn/shared';
+
+import { ErrorCodes, normalizeLocalizedText } from '@tcrn/shared';
 
 import {
   decorateEmailTemplate,
@@ -22,9 +19,7 @@ import type { RenderedEmail, SupportedLocale } from '../interfaces/email.interfa
 
 @Injectable()
 export class EmailTemplateApplicationService {
-  constructor(
-    private readonly emailTemplateRepository: EmailTemplateRepository,
-  ) {}
+  constructor(private readonly emailTemplateRepository: EmailTemplateRepository) {}
 
   async findAll(query?: EmailTemplateQueryDto) {
     const templates = await this.emailTemplateRepository.findMany({
@@ -66,10 +61,18 @@ export class EmailTemplateApplicationService {
   async update(code: string, dto: UpdateEmailTemplateDto) {
     const current = await this.getTemplateOrThrow(code);
     const updated = await this.emailTemplateRepository.update(code, {
-      name: dto.name ? normalizeLocalizedText({ ...current.name, ...dto.name }, current.name.en) : undefined,
-      subject: dto.subject ? normalizeLocalizedText({ ...current.subject, ...dto.subject }, current.subject.en) : undefined,
-      bodyHtml: dto.bodyHtml ? normalizeLocalizedText({ ...current.bodyHtml, ...dto.bodyHtml }, current.bodyHtml.en) : undefined,
-      bodyText: dto.bodyText ? normalizeLocalizedText({ ...current.bodyText, ...dto.bodyText }, current.bodyText.en) : undefined,
+      name: dto.name
+        ? normalizeLocalizedText({ ...current.name, ...dto.name }, current.name.en)
+        : undefined,
+      subject: dto.subject
+        ? normalizeLocalizedText({ ...current.subject, ...dto.subject }, current.subject.en)
+        : undefined,
+      bodyHtml: dto.bodyHtml
+        ? normalizeLocalizedText({ ...current.bodyHtml, ...dto.bodyHtml }, current.bodyHtml.en)
+        : undefined,
+      bodyText: dto.bodyText
+        ? normalizeLocalizedText({ ...current.bodyText, ...dto.bodyText }, current.bodyText.en)
+        : undefined,
       variables: dto.variables,
       category: dto.category,
       isActive: dto.isActive,
@@ -93,7 +96,7 @@ export class EmailTemplateApplicationService {
   renderTemplate(
     template: EmailTemplateStoredRecord,
     locale: SupportedLocale,
-    variables: Record<string, string>,
+    variables: Record<string, string>
   ): RenderedEmail {
     return renderEmailTemplate(template, locale, variables);
   }
@@ -101,13 +104,13 @@ export class EmailTemplateApplicationService {
   async preview(
     code: string,
     locale: SupportedLocale = 'en',
-    variables: Record<string, string> = {},
+    variables: Record<string, string> = {}
   ): Promise<RenderedEmail> {
     const template = await this.getTemplateOrThrow(code);
     return renderEmailTemplate(
       template,
       locale,
-      fillPreviewVariables(template.variables, variables),
+      fillPreviewVariables(template.variables, variables)
     );
   }
 

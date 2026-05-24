@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { ConflictException, Injectable } from '@nestjs/common';
+
 import { prisma } from '@tcrn/database';
 import { ErrorCodes, type RequestContext } from '@tcrn/shared';
 
@@ -21,7 +21,7 @@ export class CustomerProfileWriteService {
     private readonly changeLogService: ChangeLogService,
     private readonly techEventLogService: TechEventLogService,
     private readonly customerArchiveAccessService: CustomerArchiveAccessService,
-    private readonly customerPiiPlatformApplicationService: CustomerPiiPlatformApplicationService,
+    private readonly customerPiiPlatformApplicationService: CustomerPiiPlatformApplicationService
   ) {}
 
   async deactivate(
@@ -29,14 +29,13 @@ export class CustomerProfileWriteService {
     talentId: string,
     reasonCode: string | undefined,
     version: number,
-    context: RequestContext,
+    context: RequestContext
   ) {
-    const customer =
-      await this.customerArchiveAccessService.requireCustomerArchiveAccess(
-        customerId,
-        talentId,
-        context,
-      );
+    const customer = await this.customerArchiveAccessService.requireCustomerArchiveAccess(
+      customerId,
+      talentId,
+      context
+    );
 
     if (hasCustomerProfileVersionMismatch(customer, version)) {
       throw new ConflictException({
@@ -48,7 +47,7 @@ export class CustomerProfileWriteService {
     const inactivationReasonId = reasonCode
       ? await this.customerProfileWriteRepository.findActiveInactivationReasonId(
           context.tenantSchema,
-          reasonCode,
+          reasonCode
         )
       : null;
     const occurredAt = new Date();
@@ -71,7 +70,7 @@ export class CustomerProfileWriteService {
         oldValue: { isActive: true },
         newValue: { isActive: false, inactivationReasonId },
       },
-      context,
+      context
     );
 
     await this.customerProfileWriteRepository.createAccessLog(context.tenantSchema, {
@@ -97,7 +96,7 @@ export class CustomerProfileWriteService {
           reasonCode: reasonCode ?? null,
           occurredAt,
         },
-        context,
+        context
       );
     } catch (error) {
       await this.techEventLogService.warn(
@@ -111,7 +110,7 @@ export class CustomerProfileWriteService {
           reasonCode: reasonCode ?? null,
           originalError: error instanceof Error ? error.message : String(error),
         },
-        context,
+        context
       );
       throw error;
     }
@@ -119,17 +118,12 @@ export class CustomerProfileWriteService {
     return buildCustomerProfileActivationResult(customerId, false);
   }
 
-  async reactivate(
-    customerId: string,
-    talentId: string,
-    context: RequestContext,
-  ) {
-    const customer =
-      await this.customerArchiveAccessService.requireCustomerArchiveAccess(
-        customerId,
-        talentId,
-        context,
-      );
+  async reactivate(customerId: string, talentId: string, context: RequestContext) {
+    const customer = await this.customerArchiveAccessService.requireCustomerArchiveAccess(
+      customerId,
+      talentId,
+      context
+    );
 
     const occurredAt = new Date();
 
@@ -150,7 +144,7 @@ export class CustomerProfileWriteService {
         oldValue: { isActive: false },
         newValue: { isActive: true },
       },
-      context,
+      context
     );
 
     await this.customerProfileWriteRepository.createAccessLog(context.tenantSchema, {
@@ -175,7 +169,7 @@ export class CustomerProfileWriteService {
           isActive: true,
           occurredAt,
         },
-        context,
+        context
       );
     } catch (error) {
       await this.techEventLogService.warn(
@@ -188,7 +182,7 @@ export class CustomerProfileWriteService {
           operatorId: context.userId,
           originalError: error instanceof Error ? error.message : String(error),
         },
-        context,
+        context
       );
       throw error;
     }

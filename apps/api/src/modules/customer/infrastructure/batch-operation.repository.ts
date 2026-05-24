@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable } from '@nestjs/common';
 
 import { DatabaseService } from '../../database';
@@ -11,7 +10,7 @@ export class BatchOperationRepository {
   async deactivateCustomer(
     tenantSchema: string,
     customerId: string,
-    userId: string,
+    userId: string
   ): Promise<void> {
     const prisma = this.databaseService.getPrisma();
 
@@ -24,14 +23,14 @@ export class BatchOperationRepository {
         WHERE id = $1::uuid
       `,
       customerId,
-      userId,
+      userId
     );
   }
 
   async reactivateCustomer(
     tenantSchema: string,
     customerId: string,
-    userId: string,
+    userId: string
   ): Promise<void> {
     const prisma = this.databaseService.getPrisma();
 
@@ -44,14 +43,11 @@ export class BatchOperationRepository {
         WHERE id = $1::uuid
       `,
       customerId,
-      userId,
+      userId
     );
   }
 
-  async getCustomerTags(
-    tenantSchema: string,
-    customerId: string,
-  ): Promise<string[] | null> {
+  async getCustomerTags(tenantSchema: string, customerId: string): Promise<string[] | null> {
     const prisma = this.databaseService.getPrisma();
     const result = await prisma.$queryRawUnsafe<Array<{ tags: string[] | null }>>(
       `
@@ -59,7 +55,7 @@ export class BatchOperationRepository {
         FROM "${tenantSchema}".customer_profile
         WHERE id = $1::uuid
       `,
-      customerId,
+      customerId
     );
 
     return result[0]?.tags ?? (result.length > 0 ? [] : null);
@@ -69,7 +65,7 @@ export class BatchOperationRepository {
     tenantSchema: string,
     customerId: string,
     tags: string[],
-    userId: string,
+    userId: string
   ): Promise<void> {
     const prisma = this.databaseService.getPrisma();
 
@@ -83,14 +79,11 @@ export class BatchOperationRepository {
       `,
       customerId,
       tags,
-      userId,
+      userId
     );
   }
 
-  async findActiveMembershipId(
-    tenantSchema: string,
-    customerId: string,
-  ): Promise<string | null> {
+  async findActiveMembershipId(tenantSchema: string, customerId: string): Promise<string | null> {
     const prisma = this.databaseService.getPrisma();
     const membership = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
       `
@@ -100,7 +93,7 @@ export class BatchOperationRepository {
           AND status = 'active'
         LIMIT 1
       `,
-      customerId,
+      customerId
     );
 
     return membership[0]?.id ?? null;
@@ -108,7 +101,7 @@ export class BatchOperationRepository {
 
   async findMembershipClassIdByCode(
     tenantSchema: string,
-    membershipClassCode: string,
+    membershipClassCode: string
   ): Promise<string | null> {
     const prisma = this.databaseService.getPrisma();
     const membershipClass = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
@@ -117,7 +110,7 @@ export class BatchOperationRepository {
         FROM "${tenantSchema}".membership_class
         WHERE code = $1
       `,
-      membershipClassCode,
+      membershipClassCode
     );
 
     return membershipClass[0]?.id ?? null;
@@ -128,7 +121,7 @@ export class BatchOperationRepository {
     customerId: string,
     membershipClassId: string,
     validFrom?: string,
-    validTo?: string,
+    validTo?: string
   ): Promise<void> {
     const prisma = this.databaseService.getPrisma();
 
@@ -157,14 +150,14 @@ export class BatchOperationRepository {
       customerId,
       membershipClassId,
       validFrom,
-      validTo,
+      validTo
     );
   }
 
   async updateMembershipRecordValidity(
     tenantSchema: string,
     membershipId: string,
-    updates: { validFrom?: string; validTo?: string },
+    updates: { validFrom?: string; validTo?: string }
   ): Promise<void> {
     const clauses: string[] = [];
     const params: unknown[] = [membershipId];
@@ -195,7 +188,7 @@ export class BatchOperationRepository {
         SET ${clauses.join(', ')}
         WHERE id = $1::uuid
       `,
-      ...params,
+      ...params
     );
   }
 }

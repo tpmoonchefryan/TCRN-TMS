@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { PrismaClient } from '@prisma/client';
 
 const globalForPrisma = globalThis as unknown as {
@@ -13,9 +12,7 @@ function shouldLogPrismaQueries() {
 
 const createPrismaClient = () =>
   new PrismaClient({
-    log: shouldLogPrismaQueries()
-      ? ['query', 'error', 'warn']
-      : ['error', 'warn'],
+    log: shouldLogPrismaQueries() ? ['query', 'error', 'warn'] : ['error', 'warn'],
   });
 
 export const prisma = globalForPrisma.prisma ?? createPrismaClient();

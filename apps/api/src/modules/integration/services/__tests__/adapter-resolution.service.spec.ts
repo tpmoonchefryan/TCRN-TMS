@@ -1,9 +1,8 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import 'reflect-metadata';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { RequestContext } from '@tcrn/shared';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { AdapterResolutionApplicationService } from '../../application/adapter-resolution.service';
 import { OwnerType } from '../../dto/integration.dto';
@@ -40,13 +39,10 @@ describe('AdapterResolutionService', () => {
       id: 'adapter-1',
     } as never);
 
-    await expect(
-      service.resolveEffectiveAdapter(target, context),
-    ).resolves.toEqual({ id: 'adapter-1' });
+    await expect(service.resolveEffectiveAdapter(target, context)).resolves.toEqual({
+      id: 'adapter-1',
+    });
 
-    expect(mockApplicationService.resolveEffectiveAdapter).toHaveBeenCalledWith(
-      target,
-      context,
-    );
+    expect(mockApplicationService.resolveEffectiveAdapter).toHaveBeenCalledWith(target, context);
   });
 });

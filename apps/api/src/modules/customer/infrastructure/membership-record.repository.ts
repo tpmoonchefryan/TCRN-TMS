@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable } from '@nestjs/common';
+
 import { prisma } from '@tcrn/database';
 import type { LocalizedText } from '@tcrn/shared';
 
@@ -18,7 +18,7 @@ export class MembershipRecordRepository {
   async findAccessRecord(
     tenantSchema: string,
     customerId: string,
-    talentId: string,
+    talentId: string
   ): Promise<MembershipRecordAccessRecord | null> {
     const customers = await prisma.$queryRawUnsafe<MembershipRecordAccessRecord[]>(
       `SELECT
@@ -31,7 +31,7 @@ export class MembershipRecordRepository {
          AND t.id = $2::uuid
          AND t.profile_store_id IS NOT NULL`,
       customerId,
-      talentId,
+      talentId
     );
 
     return customers[0] ?? null;
@@ -47,7 +47,7 @@ export class MembershipRecordRepository {
       sort?: string;
       take: number;
       skip: number;
-    },
+    }
   ): Promise<MembershipRecordListItem[]> {
     const { whereClause, params } = this.buildListFilters(args);
     const sortColumnMap: Record<string, string> = {
@@ -85,7 +85,7 @@ export class MembershipRecordRepository {
        WHERE ${whereClause}
        ORDER BY ${orderByColumn} DESC
        LIMIT ${args.take} OFFSET ${args.skip}`,
-      ...params,
+      ...params
     );
   }
 
@@ -96,7 +96,7 @@ export class MembershipRecordRepository {
       platformCode?: string;
       isActive?: boolean;
       includeExpired: boolean;
-    },
+    }
   ): Promise<number> {
     const { whereClause, params } = this.buildListFilters({
       ...args,
@@ -108,38 +108,32 @@ export class MembershipRecordRepository {
        FROM "${tenantSchema}".membership_record mr
        JOIN "${tenantSchema}".social_platform sp ON sp.id = mr.platform_id
        WHERE ${whereClause}`,
-      ...params,
+      ...params
     );
 
     return Number(countResult[0]?.count ?? 0);
   }
 
-  async countActiveByCustomer(
-    tenantSchema: string,
-    customerId: string,
-  ): Promise<number> {
+  async countActiveByCustomer(tenantSchema: string, customerId: string): Promise<number> {
     const result = await prisma.$queryRawUnsafe<Array<{ count: bigint }>>(
       `SELECT COUNT(*) as count
        FROM "${tenantSchema}".membership_record
        WHERE customer_id = $1::uuid
          AND is_expired = false
          AND (valid_to IS NULL OR valid_to > NOW())`,
-      customerId,
+      customerId
     );
 
     return Number(result[0]?.count ?? 0);
   }
 
-  async countExpiredByCustomer(
-    tenantSchema: string,
-    customerId: string,
-  ): Promise<number> {
+  async countExpiredByCustomer(tenantSchema: string, customerId: string): Promise<number> {
     const result = await prisma.$queryRawUnsafe<Array<{ count: bigint }>>(
       `SELECT COUNT(*) as count
        FROM "${tenantSchema}".membership_record
        WHERE customer_id = $1::uuid
          AND (is_expired = true OR valid_to <= NOW())`,
-      customerId,
+      customerId
     );
 
     return Number(result[0]?.count ?? 0);
@@ -147,13 +141,15 @@ export class MembershipRecordRepository {
 
   async findActivePlatformByCode(
     tenantSchema: string,
-    platformCode: string,
+    platformCode: string
   ): Promise<{ id: string; code: string; displayName: string } | null> {
-    const platforms = await prisma.$queryRawUnsafe<Array<{
-      id: string;
-      code: string;
-      displayName: string;
-    }>>(
+    const platforms = await prisma.$queryRawUnsafe<
+      Array<{
+        id: string;
+        code: string;
+        displayName: string;
+      }>
+    >(
       `SELECT
          id,
          code,
@@ -161,7 +157,7 @@ export class MembershipRecordRepository {
        FROM "${tenantSchema}".social_platform
        WHERE code = $1
          AND is_active = true`,
-      platformCode,
+      platformCode
     );
 
     return platforms[0] ?? null;
@@ -169,7 +165,7 @@ export class MembershipRecordRepository {
 
   async findActiveMembershipLevelByCode(
     tenantSchema: string,
-    membershipLevelCode: string,
+    membershipLevelCode: string
   ): Promise<{
     id: string;
     code: string;
@@ -177,13 +173,15 @@ export class MembershipRecordRepository {
     membershipTypeId: string;
     membershipClassId: string;
   } | null> {
-    const levels = await prisma.$queryRawUnsafe<Array<{
-      id: string;
-      code: string;
-      name: LocalizedText;
-      membershipTypeId: string;
-      membershipClassId: string;
-    }>>(
+    const levels = await prisma.$queryRawUnsafe<
+      Array<{
+        id: string;
+        code: string;
+        name: LocalizedText;
+        membershipTypeId: string;
+        membershipClassId: string;
+      }>
+    >(
       `SELECT
          ml.id,
          ml.code,
@@ -194,7 +192,7 @@ export class MembershipRecordRepository {
        JOIN "${tenantSchema}".membership_type mt ON mt.id = ml.membership_type_id
        WHERE ml.code = $1
          AND ml.is_active = true`,
-      membershipLevelCode,
+      membershipLevelCode
     );
 
     return levels[0] ?? null;
@@ -213,7 +211,7 @@ export class MembershipRecordRepository {
       autoRenew: boolean;
       note?: string | null;
       userId: string;
-    },
+    }
   ): Promise<MembershipRecordCreateResultRow> {
     const records = await prisma.$queryRawUnsafe<MembershipRecordCreateResultRow[]>(
       `INSERT INTO "${tenantSchema}".membership_record (
@@ -238,7 +236,7 @@ export class MembershipRecordRepository {
       args.validTo,
       args.autoRenew,
       args.note ?? null,
-      args.userId,
+      args.userId
     );
 
     return records[0];
@@ -253,7 +251,7 @@ export class MembershipRecordRepository {
       diff: string;
       userId: string;
       ipAddress?: string;
-    },
+    }
   ) {
     return prisma.$executeRawUnsafe(
       `INSERT INTO "${tenantSchema}".change_log (
@@ -266,14 +264,14 @@ export class MembershipRecordRepository {
       args.objectName,
       args.diff,
       args.userId,
-      args.ipAddress ?? '0.0.0.0',
+      args.ipAddress ?? '0.0.0.0'
     );
   }
 
   async findOwnedRecord(
     tenantSchema: string,
     customerId: string,
-    recordId: string,
+    recordId: string
   ): Promise<MembershipRecordUpdateLookupRow | null> {
     const records = await prisma.$queryRawUnsafe<MembershipRecordUpdateLookupRow[]>(
       `SELECT
@@ -289,7 +287,7 @@ export class MembershipRecordRepository {
        WHERE mr.id = $1::uuid
          AND mr.customer_id = $2::uuid`,
       recordId,
-      customerId,
+      customerId
     );
 
     return records[0] ?? null;
@@ -303,7 +301,7 @@ export class MembershipRecordRepository {
       autoRenew: boolean;
       note: string | null;
       userId: string;
-    },
+    }
   ): Promise<MembershipRecordUpdatedRow> {
     const records = await prisma.$queryRawUnsafe<MembershipRecordUpdatedRow[]>(
       `UPDATE "${tenantSchema}".membership_record
@@ -323,7 +321,7 @@ export class MembershipRecordRepository {
       args.autoRenew,
       args.note,
       args.userId,
-      recordId,
+      recordId
     );
 
     return records[0];
@@ -331,7 +329,7 @@ export class MembershipRecordRepository {
 
   async findHighestActiveSummary(
     tenantSchema: string,
-    customerId: string,
+    customerId: string
   ): Promise<MembershipSummaryHighestLevel | null> {
     const levels = await prisma.$queryRawUnsafe<MembershipSummaryHighestLevel[]>(
       `SELECT
@@ -348,21 +346,18 @@ export class MembershipRecordRepository {
          AND (mr.valid_to IS NULL OR mr.valid_to > NOW())
        ORDER BY ml.rank DESC
        LIMIT 1`,
-      customerId,
+      customerId
     );
 
     return levels[0] ?? null;
   }
 
-  async countTotalByCustomer(
-    tenantSchema: string,
-    customerId: string,
-  ): Promise<number> {
+  async countTotalByCustomer(tenantSchema: string, customerId: string): Promise<number> {
     const result = await prisma.$queryRawUnsafe<Array<{ count: bigint }>>(
       `SELECT COUNT(*) as count
        FROM "${tenantSchema}".membership_record
        WHERE customer_id = $1::uuid`,
-      customerId,
+      customerId
     );
 
     return Number(result[0]?.count ?? 0);

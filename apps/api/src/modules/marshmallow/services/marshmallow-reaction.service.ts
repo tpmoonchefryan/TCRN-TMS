@@ -1,8 +1,5 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
-import {
-  Injectable,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 
 import { MarshmallowReactionApplicationService } from '../application/marshmallow-reaction.service';
 import type { MarshmallowReactionContext } from '../domain/marshmallow-reaction.policy';
@@ -10,7 +7,7 @@ import type { MarshmallowReactionContext } from '../domain/marshmallow-reaction.
 @Injectable()
 export class MarshmallowReactionService {
   constructor(
-    private readonly marshmallowReactionApplicationService: MarshmallowReactionApplicationService,
+    private readonly marshmallowReactionApplicationService: MarshmallowReactionApplicationService
   ) {}
 
   /**
@@ -19,13 +16,9 @@ export class MarshmallowReactionService {
   toggleReaction(
     messageId: string,
     reaction: string,
-    context: MarshmallowReactionContext,
+    context: MarshmallowReactionContext
   ): Promise<{ added: boolean; counts: Record<string, number> }> {
-    return this.marshmallowReactionApplicationService.toggleReaction(
-      messageId,
-      reaction,
-      context,
-    );
+    return this.marshmallowReactionApplicationService.toggleReaction(messageId, reaction, context);
   }
 
   /**
@@ -35,12 +28,12 @@ export class MarshmallowReactionService {
   getUserReactions(
     messageIds: string[],
     fingerprint: string,
-    tenantSchema?: string,
+    tenantSchema?: string
   ): Promise<Record<string, string[]>> {
     return this.marshmallowReactionApplicationService.getUserReactions(
       messageIds,
       fingerprint,
-      tenantSchema,
+      tenantSchema
     );
   }
 }

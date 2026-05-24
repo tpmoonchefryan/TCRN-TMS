@@ -1,6 +1,7 @@
-import type { SupportedUiLocale } from '@tcrn/shared';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import type { SupportedUiLocale } from '@tcrn/shared';
 
 import { HomepageManagementScreen } from '@/domains/homepage-management/screens/HomepageManagementScreen';
 
@@ -137,7 +138,9 @@ describe('HomepageManagementScreen', () => {
         };
       }
 
-      if (path === '/api/v1/talents/talent-1/homepage/versions?page=1&pageSize=20&status=published') {
+      if (
+        path === '/api/v1/talents/talent-1/homepage/versions?page=1&pageSize=20&status=published'
+      ) {
         return {
           items: [
             {
@@ -177,7 +180,7 @@ describe('HomepageManagementScreen', () => {
 
     await waitFor(() => {
       expect(mockRequest).toHaveBeenCalledWith(
-        '/api/v1/talents/talent-1/homepage/versions?page=1&pageSize=20&status=published',
+        '/api/v1/talents/talent-1/homepage/versions?page=1&pageSize=20&status=published'
       );
     });
 
@@ -246,9 +249,7 @@ describe('HomepageManagementScreen', () => {
     await waitFor(() => {
       expect(writeText).toHaveBeenCalledWith(longHomepageUrl);
     });
-    expect(
-      screen.getByRole('button', { name: 'Copied value: Homepage URL' })
-    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Copied value: Homepage URL' })).toBeInTheDocument();
   });
 
   it('hydrates version ledger pagination from the URL and keeps filter changes shareable', async () => {
@@ -285,7 +286,9 @@ describe('HomepageManagementScreen', () => {
         };
       }
 
-      if (path === '/api/v1/talents/talent-1/homepage/versions?page=2&pageSize=50&status=published') {
+      if (
+        path === '/api/v1/talents/talent-1/homepage/versions?page=2&pageSize=50&status=published'
+      ) {
         return {
           items: [
             {
@@ -342,16 +345,19 @@ describe('HomepageManagementScreen', () => {
     render(<HomepageManagementScreen tenantId="tenant-1" talentId="talent-1" />);
 
     expect(await screen.findByText('ProfileCard, Schedule')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Published' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: 'Published' })).toHaveAttribute(
+      'aria-pressed',
+      'true'
+    );
 
     fireEvent.click(screen.getByRole('button', { name: 'Draft' }));
 
     await waitFor(() => {
       expect(mockRequest).toHaveBeenCalledWith(
-        '/api/v1/talents/talent-1/homepage/versions?page=1&pageSize=50&status=draft',
+        '/api/v1/talents/talent-1/homepage/versions?page=1&pageSize=50&status=draft'
       );
       expect(replace).toHaveBeenCalledWith(
-        '/tenant/tenant-1/talent/talent-1/homepage?status=draft&pageSize=50',
+        '/tenant/tenant-1/talent/talent-1/homepage?status=draft&pageSize=50'
       );
     });
 
@@ -509,7 +515,7 @@ describe('HomepageManagementScreen', () => {
         expect.objectContaining({
           method: 'POST',
           body: JSON.stringify({}),
-        }),
+        })
       );
     });
 

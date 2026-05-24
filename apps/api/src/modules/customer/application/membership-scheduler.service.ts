@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable, Logger } from '@nestjs/common';
 
 import { TechEventLogService } from '../../log';
@@ -22,7 +21,7 @@ export class MembershipSchedulerApplicationService {
 
   constructor(
     private readonly membershipSchedulerRepository: MembershipSchedulerRepository,
-    private readonly techEventLogService: TechEventLogService,
+    private readonly techEventLogService: TechEventLogService
   ) {}
 
   async processMembershipBatch(): Promise<void> {
@@ -38,7 +37,7 @@ export class MembershipSchedulerApplicationService {
         try {
           totalStats = accumulateMembershipBatchStats(
             totalStats,
-            await this.processTenantMembershipBatch(tenantSchema),
+            await this.processTenantMembershipBatch(tenantSchema)
           );
         } catch (tenantError) {
           this.logger.error(`Failed to process tenant ${tenantSchema}`, tenantError);
@@ -47,11 +46,11 @@ export class MembershipSchedulerApplicationService {
 
       const duration = Date.now() - startTime;
       this.logger.log(
-        `Membership batch completed: renewed=${totalStats.renewed}, renewFailed=${totalStats.failed}, expired=${totalStats.expired}, duration=${duration}ms`,
+        `Membership batch completed: renewed=${totalStats.renewed}, renewFailed=${totalStats.failed}, expired=${totalStats.expired}, duration=${duration}ms`
       );
 
       await this.techEventLogService.log(
-        buildMembershipBatchCompletedEvent(totalStats, duration, tenantSchemas.length),
+        buildMembershipBatchCompletedEvent(totalStats, duration, tenantSchemas.length)
       );
     } catch (error) {
       this.logger.error('Membership batch processing failed', error);
@@ -61,28 +60,21 @@ export class MembershipSchedulerApplicationService {
 
   async getUpcomingExpirations(
     daysAhead = 7,
-    tenantSchema: string,
+    tenantSchema: string
   ): Promise<UpcomingExpirationRecord[]> {
     const now = new Date();
     const futureDate = new Date();
     futureDate.setDate(futureDate.getDate() + daysAhead);
 
-    return this.membershipSchedulerRepository.getUpcomingExpirations(
-      tenantSchema,
-      now,
-      futureDate,
-    );
+    return this.membershipSchedulerRepository.getUpcomingExpirations(tenantSchema, now, futureDate);
   }
 
-  private async processTenantMembershipBatch(
-    tenantSchema: string,
-  ): Promise<MembershipBatchStats> {
+  private async processTenantMembershipBatch(tenantSchema: string): Promise<MembershipBatchStats> {
     const now = new Date();
-    const autoRenewCandidates =
-      await this.membershipSchedulerRepository.findMembershipsToAutoRenew(
-        tenantSchema,
-        now,
-      );
+    const autoRenewCandidates = await this.membershipSchedulerRepository.findMembershipsToAutoRenew(
+      tenantSchema,
+      now
+    );
 
     let stats = createEmptyMembershipBatchStats();
 
@@ -90,18 +82,18 @@ export class MembershipSchedulerApplicationService {
       try {
         const newValidTo = calculateRenewedMembershipValidTo(
           candidate.validTo,
-          candidate.defaultRenewalDays,
+          candidate.defaultRenewalDays
         );
 
         await this.membershipSchedulerRepository.renewMembershipValidity(
           tenantSchema,
           candidate.id,
-          newValidTo,
+          newValidTo
         );
         await this.membershipSchedulerRepository.insertAutoRenewChangeLog(
           tenantSchema,
           candidate.id,
-          buildMembershipAutoRenewChangeLogDiff(candidate.validTo, newValidTo),
+          buildMembershipAutoRenewChangeLogDiff(candidate.validTo, newValidTo)
         );
         stats = {
           ...stats,
@@ -116,24 +108,18 @@ export class MembershipSchedulerApplicationService {
       }
     }
 
-    const expired = await this.membershipSchedulerRepository.expireMemberships(
-      tenantSchema,
-      now,
-    );
+    const expired = await this.membershipSchedulerRepository.expireMemberships(tenantSchema, now);
 
     if (expired > 0) {
       const expiredMembershipIds =
-        await this.membershipSchedulerRepository.findExpiredMembershipIds(
-          tenantSchema,
-          now,
-        );
+        await this.membershipSchedulerRepository.findExpiredMembershipIds(tenantSchema, now);
 
       for (const membershipId of expiredMembershipIds) {
         try {
           await this.membershipSchedulerRepository.insertExpirationChangeLog(
             tenantSchema,
             membershipId,
-            buildMembershipExpiredChangeLogDiff(now),
+            buildMembershipExpiredChangeLogDiff(now)
           );
         } catch {
           // Ignore individual change-log failures to preserve the current scheduled contract.

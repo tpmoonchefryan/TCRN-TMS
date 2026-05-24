@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable, NotFoundException } from '@nestjs/common';
+
 import { ErrorCodes, type RequestContext } from '@tcrn/shared';
 
 import {
@@ -12,10 +12,7 @@ import {
   collectHomepageVersionActorIds,
   type HomepageVersionDetail,
 } from '../domain/homepage-version.policy';
-import type {
-  VersionListItem,
-  VersionListQueryDto,
-} from '../dto/homepage.dto';
+import type { VersionListItem, VersionListQueryDto } from '../dto/homepage.dto';
 import { HomepageVersionRepository } from '../infrastructure/homepage-version.repository';
 
 @Injectable()
@@ -25,31 +22,25 @@ export class HomepageVersionApplicationService {
   async listVersions(
     talentId: string,
     query: VersionListQueryDto,
-    context: RequestContext,
+    context: RequestContext
   ): Promise<{ items: VersionListItem[]; total: number }> {
     const tenantSchema = context.tenantSchema ?? '';
     const homepageId = await this.getHomepageIdOrThrow(tenantSchema, talentId);
     const [versions, total] = await Promise.all([
       this.homepageVersionRepository.findHomepageVersions(tenantSchema, homepageId, query),
-      this.homepageVersionRepository.countHomepageVersions(
-        tenantSchema,
-        homepageId,
-        query.status,
-      ),
+      this.homepageVersionRepository.countHomepageVersions(tenantSchema, homepageId, query.status),
     ]);
 
     const actors = await this.homepageVersionRepository.findSystemUsersByIds(
       tenantSchema,
       collectHomepageVersionActorIds(
-        ...versions.flatMap((version) => [version.createdBy, version.publishedBy]),
-      ),
+        ...versions.flatMap((version) => [version.createdBy, version.publishedBy])
+      )
     );
     const actorMap = buildHomepageVersionActorMap(actors);
 
     return {
-      items: versions.map((version) =>
-        buildHomepageVersionListItem({ version, actorMap }),
-      ),
+      items: versions.map((version) => buildHomepageVersionListItem({ version, actorMap })),
       total,
     };
   }
@@ -57,14 +48,14 @@ export class HomepageVersionApplicationService {
   async getVersion(
     talentId: string,
     versionId: string,
-    context: RequestContext,
+    context: RequestContext
   ): Promise<HomepageVersionDetail> {
     const tenantSchema = context.tenantSchema ?? '';
     const homepageId = await this.getHomepageIdOrThrow(tenantSchema, talentId);
     const version = await this.homepageVersionRepository.findHomepageVersionDetail(
       tenantSchema,
       homepageId,
-      versionId,
+      versionId
     );
 
     if (!version) {
@@ -76,7 +67,7 @@ export class HomepageVersionApplicationService {
 
     const actors = await this.homepageVersionRepository.findSystemUsersByIds(
       tenantSchema,
-      collectHomepageVersionActorIds(version.createdBy, version.publishedBy),
+      collectHomepageVersionActorIds(version.createdBy, version.publishedBy)
     );
 
     return buildHomepageVersionDetail({
@@ -88,7 +79,7 @@ export class HomepageVersionApplicationService {
   async restoreVersion(
     talentId: string,
     versionId: string,
-    context: RequestContext,
+    context: RequestContext
   ): Promise<{
     newDraftVersion: { id: string; versionNumber: number };
     restoredFrom: { id: string; versionNumber: number };
@@ -98,7 +89,7 @@ export class HomepageVersionApplicationService {
     const sourceVersion = await this.homepageVersionRepository.findHomepageVersionRestoreSource(
       tenantSchema,
       homepageId,
-      versionId,
+      versionId
     );
 
     if (!sourceVersion) {
@@ -111,7 +102,7 @@ export class HomepageVersionApplicationService {
     const versionNumber =
       (await this.homepageVersionRepository.findLatestHomepageVersionNumber(
         tenantSchema,
-        homepageId,
+        homepageId
       )) + 1;
 
     const newDraftVersion = await this.homepageVersionRepository.createDraftVersionFromSource({
@@ -127,7 +118,7 @@ export class HomepageVersionApplicationService {
     await this.homepageVersionRepository.assignDraftVersion(
       tenantSchema,
       homepageId,
-      newDraftVersion.id,
+      newDraftVersion.id
     );
     await this.homepageVersionRepository.insertRestoreChangeLog({
       schema: tenantSchema,
@@ -144,13 +135,10 @@ export class HomepageVersionApplicationService {
     });
   }
 
-  private async getHomepageIdOrThrow(
-    tenantSchema: string,
-    talentId: string,
-  ): Promise<string> {
+  private async getHomepageIdOrThrow(tenantSchema: string, talentId: string): Promise<string> {
     const homepageId = await this.homepageVersionRepository.findHomepageIdByTalentId(
       tenantSchema,
-      talentId,
+      talentId
     );
 
     if (!homepageId) {

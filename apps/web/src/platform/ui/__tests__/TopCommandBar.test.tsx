@@ -6,11 +6,7 @@ import { TopCommandBar } from '../patterns/TopCommandBar';
 describe('TopCommandBar', () => {
   it('supports caller-supplied ariaLabel for search', () => {
     const customLabel = '自定义搜索';
-    render(
-      <TopCommandBar
-        searchProps={{ ariaLabel: customLabel, placeholder: '搜索...' }}
-      />,
-    );
+    render(<TopCommandBar searchProps={{ ariaLabel: customLabel, placeholder: '搜索...' }} />);
     expect(screen.getByRole('searchbox')).toHaveAttribute('aria-label', customLabel);
   });
 
@@ -26,8 +22,11 @@ describe('TopCommandBar', () => {
     render(
       <TopCommandBar
         breadcrumbAriaLabel="Workspace breadcrumb"
-        breadcrumbItems={[{ label: 'Tenant', href: '/tenant/1' }, { label: 'Settings', isCurrent: true }]}
-      />,
+        breadcrumbItems={[
+          { label: 'Tenant', href: '/tenant/1' },
+          { label: 'Settings', isCurrent: true },
+        ]}
+      />
     );
 
     expect(screen.getByRole('navigation', { name: 'Workspace breadcrumb' })).toBeInTheDocument();
@@ -40,14 +39,17 @@ describe('TopCommandBar', () => {
         mobileSearchButtonLabel="Open mobile search"
         mobileSearchCloseLabel="Close mobile search"
         searchProps={{ ariaLabel: 'Search records', placeholder: 'Search' }}
-      />,
+      />
     );
 
     const trigger = screen.getByRole('button', { name: 'Open mobile search' });
     expect(trigger).toHaveAttribute('aria-expanded', 'false');
 
     fireEvent.click(trigger);
-    expect(screen.getByRole('button', { name: 'Close mobile search' })).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByRole('button', { name: 'Close mobile search' })).toHaveAttribute(
+      'aria-expanded',
+      'true'
+    );
     expect(screen.getAllByRole('searchbox', { name: 'Search records' })).toHaveLength(2);
   });
 });

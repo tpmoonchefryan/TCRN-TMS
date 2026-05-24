@@ -1,11 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import {
-  ErrorCodes,
-  mergeLocalizedText,
-  normalizeLocalizedText,
-} from '@tcrn/shared';
+
+import { ErrorCodes, mergeLocalizedText, normalizeLocalizedText } from '@tcrn/shared';
 
 import {
   assertSubsidiaryVersion,
@@ -21,17 +17,13 @@ import { SubsidiaryReadApplicationService } from './subsidiary-read.service';
 export class SubsidiaryWriteApplicationService {
   constructor(
     private readonly subsidiaryWriteRepository: SubsidiaryWriteRepository,
-    private readonly subsidiaryReadApplicationService: SubsidiaryReadApplicationService,
+    private readonly subsidiaryReadApplicationService: SubsidiaryReadApplicationService
   ) {}
 
-  async create(
-    tenantSchema: string,
-    data: SubsidiaryCreateInput,
-    userId: string,
-  ) {
+  async create(tenantSchema: string, data: SubsidiaryCreateInput, userId: string) {
     const existing = await this.subsidiaryReadApplicationService.findByCode(
       data.code,
-      tenantSchema,
+      tenantSchema
     );
 
     if (existing) {
@@ -59,16 +51,11 @@ export class SubsidiaryWriteApplicationService {
         description: normalizeLocalizedText(data.description, data.name.en),
         ...buildSubsidiaryPath(data.code, parent),
       },
-      userId,
+      userId
     );
   }
 
-  async update(
-    id: string,
-    tenantSchema: string,
-    data: SubsidiaryUpdateInput,
-    userId: string,
-  ) {
+  async update(id: string, tenantSchema: string, data: SubsidiaryUpdateInput, userId: string) {
     const current = await this.getSubsidiaryOrThrow(id, tenantSchema);
     assertSubsidiaryVersion(current.version, data.version);
 
@@ -79,13 +66,16 @@ export class SubsidiaryWriteApplicationService {
         ...data,
         name: data.name ? mergeLocalizedText(current.name, data.name) : undefined,
         description: data.description
-          ? normalizeLocalizedText({
-              ...current.description,
-              ...data.description,
-            }, current.description.en)
+          ? normalizeLocalizedText(
+              {
+                ...current.description,
+                ...data.description,
+              },
+              current.description.en
+            )
           : undefined,
       },
-      userId,
+      userId
     );
   }
 
@@ -94,7 +84,7 @@ export class SubsidiaryWriteApplicationService {
     _tenantSchema: string,
     _newParentId: string | null,
     _version: number,
-    _userId: string,
+    _userId: string
   ) {
     return throwRetiredSubsidiaryMoveError();
   }
@@ -104,17 +94,13 @@ export class SubsidiaryWriteApplicationService {
     tenantSchema: string,
     cascade: boolean,
     version: number,
-    userId: string,
+    userId: string
   ): Promise<{ subsidiaries: number; talents: number }> {
     const current = await this.getSubsidiaryOrThrow(id, tenantSchema);
     assertSubsidiaryVersion(current.version, version);
 
     if (cascade) {
-      return this.subsidiaryWriteRepository.deactivateCascade(
-        tenantSchema,
-        current.path,
-        userId,
-      );
+      return this.subsidiaryWriteRepository.deactivateCascade(tenantSchema, current.path, userId);
     }
 
     await this.subsidiaryWriteRepository.deactivateSingle(id, tenantSchema, userId);
@@ -125,12 +111,7 @@ export class SubsidiaryWriteApplicationService {
     };
   }
 
-  async reactivate(
-    id: string,
-    tenantSchema: string,
-    version: number,
-    userId: string,
-  ) {
+  async reactivate(id: string, tenantSchema: string, version: number, userId: string) {
     const current = await this.getSubsidiaryOrThrow(id, tenantSchema);
     assertSubsidiaryVersion(current.version, version);
 

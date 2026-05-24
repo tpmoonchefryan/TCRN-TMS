@@ -42,7 +42,9 @@ export const PaginationFooter: React.FC<PaginationFooterProps> = ({
   const isNextDisabled = !pagination.hasNext || isLoading;
 
   return (
-    <div className={`flex flex-col gap-4 border-t border-slate-200 bg-white/70 px-4 py-3 text-sm text-slate-600 sm:flex-row sm:items-center sm:justify-between ${className}`}>
+    <div
+      className={`flex flex-col gap-4 border-t border-slate-200 bg-white/70 px-4 py-3 text-sm text-slate-600 sm:flex-row sm:items-center sm:justify-between ${className}`}
+    >
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2" aria-live="polite">
         <span className="font-medium text-slate-700">{labels.pageLabel}</span>
         <span>{rangeLabel}</span>

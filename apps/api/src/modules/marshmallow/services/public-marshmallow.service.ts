@@ -1,29 +1,25 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 import { HttpService } from '@nestjs/axios';
 import {
-    BadRequestException,
-    ForbiddenException,
-    Injectable,
-    Logger,
-    NotFoundException,
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  Logger,
+  NotFoundException,
 } from '@nestjs/common';
-import { ErrorCodes, LogSeverity, TechEventType, type LocalizedText } from '@tcrn/shared';
 import { firstValueFrom } from 'rxjs';
+
+import { ErrorCodes, LogSeverity, TechEventType, type LocalizedText } from '@tcrn/shared';
 
 import { DatabaseService } from '../../database';
 import { TechEventLogService } from '../../log';
-import {
-    CaptchaMode,
-    PublicMessagesQueryDto,
-    SubmitMessageDto,
-} from '../dto/marshmallow.dto';
+import { CaptchaMode, PublicMessagesQueryDto, SubmitMessageDto } from '../dto/marshmallow.dto';
 import { extractBilibiliImagesFromModules } from '../utils/bilibili-dynamic-images';
 import { CaptchaContext, CaptchaService } from './captcha.service';
 import { MarshmallowRateLimitService } from './marshmallow-rate-limit.service';
 import { MarshmallowReactionService } from './marshmallow-reaction.service';
 import { ProfanityFilterService } from './profanity-filter.service';
 import { TrustScoreService } from './trust-score.service';
-
 
 @Injectable()
 export class PublicMarshmallowService {
@@ -37,14 +33,14 @@ export class PublicMarshmallowService {
     private readonly reactionService: MarshmallowReactionService,
     private readonly techEventLog: TechEventLogService,
     private readonly trustScoreService: TrustScoreService,
-    private readonly httpService: HttpService,
+    private readonly httpService: HttpService
   ) {}
 
   private readonly logger = new Logger(PublicMarshmallowService.name);
 
   private buildPublicReplyAuthor(
     displayName: string | null,
-    avatarUrl: string | null,
+    avatarUrl: string | null
   ): {
     displayName: string;
     avatarUrl: string | null;
@@ -92,46 +88,49 @@ export class PublicMarshmallowService {
 
   private async getTenantSchemaByCode(tenantCode: string) {
     const prisma = this.databaseService.getPrisma();
-    const tenants = await prisma.$queryRawUnsafe<Array<{ schemaName: string }>>(`
+    const tenants = await prisma.$queryRawUnsafe<Array<{ schemaName: string }>>(
+      `
       SELECT t.schema_name as "schemaName"
       FROM public.tenant t
       WHERE LOWER(t.code) = LOWER($1)
         AND t.is_active = true
       LIMIT 1
-    `, tenantCode);
+    `,
+      tenantCode
+    );
 
     return tenants[0]?.schemaName ?? null;
   }
 
-  private async findConfigForTalent(
-    schema: string,
-    talentId: string,
-  ) {
+  private async findConfigForTalent(schema: string, talentId: string) {
     const prisma = this.databaseService.getPrisma();
-    const configs = await prisma.$queryRawUnsafe<Array<{
-      id: string;
-      isEnabled: boolean;
-      title: string;
-      welcomeText: string;
-      placeholderText: string;
-      thankYouText: string;
-      allowAnonymous: boolean;
-      captchaMode: string;
-      moderationEnabled: boolean;
-      autoApprove: boolean;
-      profanityFilterEnabled: boolean;
-      externalBlocklistEnabled: boolean;
-      maxMessageLength: number;
-      minMessageLength: number;
-      rateLimitPerIp: number;
-      rateLimitWindowHours: number;
-      reactionsEnabled: boolean;
-      allowedReactions: string[];
-      theme: Record<string, unknown>;
-      avatarUrl: string | null;
-      termsContent: LocalizedText;
-      privacyContent: LocalizedText;
-    }>>(`
+    const configs = await prisma.$queryRawUnsafe<
+      Array<{
+        id: string;
+        isEnabled: boolean;
+        title: string;
+        welcomeText: string;
+        placeholderText: string;
+        thankYouText: string;
+        allowAnonymous: boolean;
+        captchaMode: string;
+        moderationEnabled: boolean;
+        autoApprove: boolean;
+        profanityFilterEnabled: boolean;
+        externalBlocklistEnabled: boolean;
+        maxMessageLength: number;
+        minMessageLength: number;
+        rateLimitPerIp: number;
+        rateLimitWindowHours: number;
+        reactionsEnabled: boolean;
+        allowedReactions: string[];
+        theme: Record<string, unknown>;
+        avatarUrl: string | null;
+        termsContent: LocalizedText;
+        privacyContent: LocalizedText;
+      }>
+    >(
+      `
       SELECT id, is_enabled as "isEnabled", title, welcome_text as "welcomeText",
              placeholder_text as "placeholderText", thank_you_text as "thankYouText",
              allow_anonymous as "allowAnonymous", captcha_mode as "captchaMode",
@@ -146,7 +145,9 @@ export class PublicMarshmallowService {
              privacy_content as "privacyContent"
       FROM "${schema}".marshmallow_config
       WHERE talent_id = $1::uuid
-    `, talentId);
+    `,
+      talentId
+    );
 
     return configs[0] ?? null;
   }
@@ -164,16 +165,21 @@ export class PublicMarshmallowService {
       const schema = t.schemaName;
       try {
         // Search by marshmallow_path or code (for fallback compatibility)
-        const talents = await prisma.$queryRawUnsafe<Array<{
-          id: string;
-          displayName: string;
-          avatarUrl: string | null;
-        }>>(`
+        const talents = await prisma.$queryRawUnsafe<
+          Array<{
+            id: string;
+            displayName: string;
+            avatarUrl: string | null;
+          }>
+        >(
+          `
           SELECT id, display_name as "displayName", avatar_url as "avatarUrl"
           FROM "${schema}".talent
           WHERE (LOWER(marshmallow_path) = LOWER($1) OR LOWER(code) = LOWER($1))
             AND lifecycle_status = 'published'
-        `, path);
+        `,
+          path
+        );
 
         if (talents.length > 0) {
           const talent = talents[0];
@@ -186,7 +192,7 @@ export class PublicMarshmallowService {
         this.logger.warn(
           `Skipping marshmallow schema ${schema} during public lookup: ${
             error instanceof Error ? error.message : String(error)
-          }`,
+          }`
         );
       }
     }
@@ -194,10 +200,7 @@ export class PublicMarshmallowService {
     return null;
   }
 
-  private async findTalentAndConfigByCodes(
-    tenantCode: string,
-    talentCode: string,
-  ) {
+  private async findTalentAndConfigByCodes(tenantCode: string, talentCode: string) {
     const prisma = this.databaseService.getPrisma();
     const tenantSchema = await this.getTenantSchemaByCode(tenantCode);
 
@@ -205,17 +208,22 @@ export class PublicMarshmallowService {
       return null;
     }
 
-    const talents = await prisma.$queryRawUnsafe<Array<{
-      id: string;
-      displayName: string;
-      avatarUrl: string | null;
-    }>>(`
+    const talents = await prisma.$queryRawUnsafe<
+      Array<{
+        id: string;
+        displayName: string;
+        avatarUrl: string | null;
+      }>
+    >(
+      `
       SELECT id, display_name as "displayName", avatar_url as "avatarUrl"
       FROM "${tenantSchema}".talent
       WHERE LOWER(code) = LOWER($1)
         AND lifecycle_status = 'published'
       LIMIT 1
-    `, talentCode);
+    `,
+      talentCode
+    );
 
     const talent = talents[0];
     if (!talent) {
@@ -235,7 +243,7 @@ export class PublicMarshmallowService {
   }
 
   private requireEnabledLookupResult(
-    result: Awaited<ReturnType<PublicMarshmallowService['findTalentAndConfigByPath']>>,
+    result: Awaited<ReturnType<PublicMarshmallowService['findTalentAndConfigByPath']>>
   ) {
     if (!result) {
       throw new NotFoundException({
@@ -260,7 +268,7 @@ export class PublicMarshmallowService {
 
   private async requireEnabledLookupByCodes(tenantCode: string, talentCode: string) {
     return this.requireEnabledLookupResult(
-      await this.findTalentAndConfigByCodes(tenantCode, talentCode),
+      await this.findTalentAndConfigByCodes(tenantCode, talentCode)
     );
   }
 
@@ -281,7 +289,7 @@ export class PublicMarshmallowService {
       theme: Record<string, unknown>;
       termsContent: LocalizedText;
       privacyContent: LocalizedText;
-    },
+    }
   ) {
     return {
       talent: {
@@ -306,7 +314,7 @@ export class PublicMarshmallowService {
 
   private async getMessagesFromLookup(
     result: ReturnType<PublicMarshmallowService['requireEnabledLookupResult']>,
-    query: PublicMessagesQueryDto,
+    query: PublicMessagesQueryDto
   ) {
     const prisma = this.databaseService.getPrisma();
     const { config, tenantSchema } = result;
@@ -320,23 +328,26 @@ export class PublicMarshmallowService {
       params.push(cursor);
     }
 
-    const messages = await prisma.$queryRawUnsafe<Array<{
-      id: string;
-      content: string;
-      senderName: string | null;
-      isAnonymous: boolean;
-      isRead: boolean;
-      replyContent: string | null;
-      repliedAt: Date | null;
-      repliedById: string | null;
-      repliedByName: string | null;
-      repliedByAvatar: string | null;
-      reactionCounts: Record<string, number> | null;
-      isPinned: boolean;
-      createdAt: Date;
-      imageUrl: string | null;
-      imageUrls: string[] | null;
-    }>>(`
+    const messages = await prisma.$queryRawUnsafe<
+      Array<{
+        id: string;
+        content: string;
+        senderName: string | null;
+        isAnonymous: boolean;
+        isRead: boolean;
+        replyContent: string | null;
+        repliedAt: Date | null;
+        repliedById: string | null;
+        repliedByName: string | null;
+        repliedByAvatar: string | null;
+        reactionCounts: Record<string, number> | null;
+        isPinned: boolean;
+        createdAt: Date;
+        imageUrl: string | null;
+        imageUrls: string[] | null;
+      }>
+    >(
+      `
       SELECT m.id, m.content, m.sender_name as "senderName", m.is_anonymous as "isAnonymous",
              m.is_read as "isRead", m.reply_content as "replyContent", m.replied_at as "repliedAt",
              m.replied_by as "repliedById", u.display_name as "repliedByName",
@@ -348,7 +359,9 @@ export class PublicMarshmallowService {
       WHERE m.config_id = $1::uuid AND m.status = 'approved' ${cursorCondition}
       ORDER BY m.is_pinned DESC, m.created_at DESC
       LIMIT $2
-    `, ...params);
+    `,
+      ...params
+    );
 
     const hasMore = messages.length > limit;
     const items = hasMore ? messages.slice(0, -1) : messages;
@@ -358,7 +371,7 @@ export class PublicMarshmallowService {
       userReactions = await this.reactionService.getUserReactions(
         items.map((message) => message.id),
         fingerprint,
-        tenantSchema,
+        tenantSchema
       );
     }
 
@@ -388,7 +401,7 @@ export class PublicMarshmallowService {
   private async submitMessageFromLookup(
     result: Awaited<ReturnType<PublicMarshmallowService['requireEnabledLookupByPath']>>,
     dto: SubmitMessageDto,
-    context: { ip: string; userAgent: string },
+    context: { ip: string; userAgent: string }
   ): Promise<{ id: string; status: string; message: string }> {
     const prisma = this.databaseService.getPrisma();
     const { talent, config, tenantSchema } = result;
@@ -428,7 +441,7 @@ export class PublicMarshmallowService {
       {
         rateLimitPerIp: config.rateLimitPerIp,
         rateLimitWindowHours: config.rateLimitWindowHours,
-      },
+      }
     );
 
     if (!rateLimitResult.allowed) {
@@ -449,25 +462,28 @@ export class PublicMarshmallowService {
     const captchaDecision = await this.captchaService.shouldRequireCaptcha(
       config.captchaMode as CaptchaMode,
       captchaContext,
-      tenantSchema,
+      tenantSchema
     );
 
     if (captchaDecision.forceReject) {
-      await this.techEventLog.log({
-        eventType: TechEventType.SECURITY_EVENT,
-        scope: 'security',
-        severity: LogSeverity.WARN,
-        payload: {
-          type: 'marshmallow_bot_detected',
-          reason: captchaDecision.reason,
-          ip: context.ip,
-          fingerprint: dto.fingerprint,
+      await this.techEventLog.log(
+        {
+          eventType: TechEventType.SECURITY_EVENT,
+          scope: 'security',
+          severity: LogSeverity.WARN,
+          payload: {
+            type: 'marshmallow_bot_detected',
+            reason: captchaDecision.reason,
+            ip: context.ip,
+            fingerprint: dto.fingerprint,
+          },
         },
-      }, {
-        tenantSchema,
-        ipAddress: context.ip,
-        userAgent: context.userAgent,
-      });
+        {
+          tenantSchema,
+          ipAddress: context.ip,
+          userAgent: context.userAgent,
+        }
+      );
 
       throw new ForbiddenException({
         code: 'REQUEST_BLOCKED',
@@ -494,7 +510,7 @@ export class PublicMarshmallowService {
         dto.turnstileToken,
         context.ip,
         dto.fingerprint,
-        tenantSchema,
+        tenantSchema
       );
 
       if (!verified) {
@@ -513,22 +529,25 @@ export class PublicMarshmallowService {
     if (filterResult.action === 'reject') {
       await this.trustScoreService.recordContentResult(dto.fingerprint, context.ip, 'rejected');
 
-      await this.techEventLog.log({
-        eventType: TechEventType.SYSTEM_ERROR,
-        scope: 'security',
-        severity: LogSeverity.WARN,
-        payload: {
-          type: 'marshmallow_content_rejected',
-          talentId: talent.id,
-          flags: filterResult.flags,
-          score: filterResult.score,
-          ip: context.ip,
+      await this.techEventLog.log(
+        {
+          eventType: TechEventType.SYSTEM_ERROR,
+          scope: 'security',
+          severity: LogSeverity.WARN,
+          payload: {
+            type: 'marshmallow_content_rejected',
+            talentId: talent.id,
+            flags: filterResult.flags,
+            score: filterResult.score,
+            ip: context.ip,
+          },
         },
-      }, {
-        tenantSchema,
-        ipAddress: context.ip,
-        userAgent: context.userAgent,
-      });
+        {
+          tenantSchema,
+          ipAddress: context.ip,
+          userAgent: context.userAgent,
+        }
+      );
 
       throw new BadRequestException({
         code: 'CONTENT_REJECTED',
@@ -570,7 +589,8 @@ export class PublicMarshmallowService {
       }
     }
 
-    const messages = await prisma.$queryRawUnsafe<Array<{ id: string; status: string }>>(`
+    const messages = await prisma.$queryRawUnsafe<Array<{ id: string; status: string }>>(
+      `
       INSERT INTO "${tenantSchema}".marshmallow_message (
         id, config_id, talent_id, content, sender_name, is_anonymous, status,
         ip_address, user_agent, fingerprint_hash, profanity_flags, image_url, image_urls, social_link, created_at
@@ -592,7 +612,7 @@ export class PublicMarshmallowService {
       filterResult.flags || [],
       imageUrl,
       imageUrls,
-      socialLink,
+      socialLink
     );
 
     const message = messages[0];
@@ -610,25 +630,21 @@ export class PublicMarshmallowService {
   async submitMessage(
     path: string,
     dto: SubmitMessageDto,
-    context: { ip: string; userAgent: string },
+    context: { ip: string; userAgent: string }
   ): Promise<{ id: string; status: string; message: string }> {
-    return this.submitMessageFromLookup(
-      await this.requireEnabledLookupByPath(path),
-      dto,
-      context,
-    );
+    return this.submitMessageFromLookup(await this.requireEnabledLookupByPath(path), dto, context);
   }
 
   async submitMessageByCodes(
     tenantCode: string,
     talentCode: string,
     dto: SubmitMessageDto,
-    context: { ip: string; userAgent: string },
+    context: { ip: string; userAgent: string }
   ): Promise<{ id: string; status: string; message: string }> {
     return this.submitMessageFromLookup(
       await this.requireEnabledLookupByCodes(tenantCode, talentCode),
       dto,
-      context,
+      context
     );
   }
 
@@ -639,14 +655,10 @@ export class PublicMarshmallowService {
     return this.getMessagesFromLookup(await this.requireEnabledLookupByPath(path), query);
   }
 
-  async getMessagesByCodes(
-    tenantCode: string,
-    talentCode: string,
-    query: PublicMessagesQueryDto,
-  ) {
+  async getMessagesByCodes(tenantCode: string, talentCode: string, query: PublicMessagesQueryDto) {
     return this.getMessagesFromLookup(
       await this.requireEnabledLookupByCodes(tenantCode, talentCode),
-      query,
+      query
     );
   }
 
@@ -659,7 +671,10 @@ export class PublicMarshmallowService {
   }
 
   async getConfigByCodes(tenantCode: string, talentCode: string) {
-    const { talent, config, tenantSchema } = await this.requireEnabledLookupByCodes(tenantCode, talentCode);
+    const { talent, config, tenantSchema } = await this.requireEnabledLookupByCodes(
+      tenantCode,
+      talentCode
+    );
     return this.buildPublicConfigResponse(tenantSchema, talent, config);
   }
 
@@ -670,22 +685,25 @@ export class PublicMarshmallowService {
   async markAsRead(
     path: string,
     messageId: string,
-    context: { fingerprint: string; ip: string },
+    context: { fingerprint: string; ip: string }
   ): Promise<{ success: boolean; isRead: boolean }> {
-    await this.techEventLog.log({
-      eventType: 'MARSHMALLOW_PUBLIC_MARK_READ_BLOCKED',
-      scope: 'marshmallow',
-      severity: LogSeverity.WARN,
-      payload: {
-        type: 'marshmallow_public_mark_read_blocked',
-        path,
-        messageId,
-        fingerprint: context.fingerprint,
-        ip: context.ip,
+    await this.techEventLog.log(
+      {
+        eventType: 'MARSHMALLOW_PUBLIC_MARK_READ_BLOCKED',
+        scope: 'marshmallow',
+        severity: LogSeverity.WARN,
+        payload: {
+          type: 'marshmallow_public_mark_read_blocked',
+          path,
+          messageId,
+          fingerprint: context.fingerprint,
+          ip: context.ip,
+        },
       },
-    }, {
-      ipAddress: context.ip,
-    });
+      {
+        ipAddress: context.ip,
+      }
+    );
 
     throw new ForbiddenException({
       code: ErrorCodes.PERM_ACCESS_DENIED,
@@ -706,18 +724,21 @@ export class PublicMarshmallowService {
       talentId: string;
       tenantSchema: string;
       ip: string;
-    },
+    }
   ): Promise<{ success: boolean; isRead: boolean }> {
     const prisma = this.databaseService.getPrisma();
 
     // Verify the message belongs to the talent in the SSO token
     // Support both marshmallow_path and code for path matching
-    const messages = await prisma.$queryRawUnsafe<Array<{
-      id: string;
-      isRead: boolean;
-      status: string;
-      talentId: string;
-    }>>(`
+    const messages = await prisma.$queryRawUnsafe<
+      Array<{
+        id: string;
+        isRead: boolean;
+        status: string;
+        talentId: string;
+      }>
+    >(
+      `
       SELECT m.id, m.is_read as "isRead", m.status, m.talent_id as "talentId"
       FROM "${context.tenantSchema}".marshmallow_message m
       JOIN "${context.tenantSchema}".marshmallow_config c ON m.config_id = c.id
@@ -726,7 +747,10 @@ export class PublicMarshmallowService {
         AND (LOWER(t.marshmallow_path) = LOWER($2) OR LOWER(t.code) = LOWER($2))
         AND c.is_enabled = true
         AND t.lifecycle_status = 'published'
-    `, messageId, path);
+    `,
+      messageId,
+      path
+    );
 
     if (messages.length === 0) {
       throw new NotFoundException({
@@ -756,11 +780,15 @@ export class PublicMarshmallowService {
     // Toggle read status
     const newIsRead = !message.isRead;
 
-    await prisma.$executeRawUnsafe(`
+    await prisma.$executeRawUnsafe(
+      `
       UPDATE "${context.tenantSchema}".marshmallow_message
       SET is_read = $1
       WHERE id = $2::uuid
-    `, newIsRead, messageId);
+    `,
+      newIsRead,
+      messageId
+    );
 
     return {
       success: true,
@@ -783,18 +811,26 @@ export class PublicMarshmallowService {
       talentId: string;
       tenantSchema: string;
       ip: string;
-    },
-  ): Promise<{ success: boolean; replyContent: string; repliedAt: string; repliedBy: { id: string; displayName: string } }> {
+    }
+  ): Promise<{
+    success: boolean;
+    replyContent: string;
+    repliedAt: string;
+    repliedBy: { id: string; displayName: string };
+  }> {
     const prisma = this.databaseService.getPrisma();
 
     // Verify the message belongs to the talent in the SSO token
     // Support both marshmallow_path and code for path matching
-    const messages = await prisma.$queryRawUnsafe<Array<{
-      id: string;
-      status: string;
-      talentId: string;
-      replyContent: string | null;
-    }>>(`
+    const messages = await prisma.$queryRawUnsafe<
+      Array<{
+        id: string;
+        status: string;
+        talentId: string;
+        replyContent: string | null;
+      }>
+    >(
+      `
       SELECT m.id, m.status, m.talent_id as "talentId", m.reply_content as "replyContent"
       FROM "${context.tenantSchema}".marshmallow_message m
       JOIN "${context.tenantSchema}".marshmallow_config c ON m.config_id = c.id
@@ -803,7 +839,10 @@ export class PublicMarshmallowService {
         AND (LOWER(t.marshmallow_path) = LOWER($2) OR LOWER(t.code) = LOWER($2))
         AND c.is_enabled = true
         AND t.lifecycle_status = 'published'
-    `, messageId, path);
+    `,
+      messageId,
+      path
+    );
 
     if (messages.length === 0) {
       throw new NotFoundException({
@@ -832,44 +871,53 @@ export class PublicMarshmallowService {
 
     // Update message with reply - append if existing reply exists
     const now = new Date();
-    const formattedTime = now.toLocaleString('zh-CN', { 
-      year: 'numeric', 
-      month: '2-digit', 
+    const formattedTime = now.toLocaleString('zh-CN', {
+      year: 'numeric',
+      month: '2-digit',
       day: '2-digit',
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
     });
     let newReplyContent = content;
-    
+
     // If there's an existing reply, append the new content with a separator and author info
     if (message.replyContent) {
       newReplyContent = `${message.replyContent}\n\n---\n\n**${context.displayName}** (${formattedTime}):\n${content}`;
     }
-    
-    await prisma.$executeRawUnsafe(`
+
+    await prisma.$executeRawUnsafe(
+      `
       UPDATE "${context.tenantSchema}".marshmallow_message
       SET reply_content = $1, replied_at = $2, replied_by = $3::uuid, is_read = true
       WHERE id = $4::uuid
-    `, newReplyContent, now, context.userId, messageId);
+    `,
+      newReplyContent,
+      now,
+      context.userId,
+      messageId
+    );
 
-    await this.techEventLog.log({
-      eventType: 'MARSHMALLOW_PUBLIC_REPLY_AUTH',
-      scope: 'marshmallow',
-      severity: LogSeverity.INFO,
-      payload: {
-        type: 'marshmallow_public_reply_auth',
-        path,
-        messageId,
-        talentId: context.talentId,
-        userId: context.userId,
-        email: context.email,
-        displayName: context.displayName,
-        appendedToExistingReply: Boolean(message.replyContent),
+    await this.techEventLog.log(
+      {
+        eventType: 'MARSHMALLOW_PUBLIC_REPLY_AUTH',
+        scope: 'marshmallow',
+        severity: LogSeverity.INFO,
+        payload: {
+          type: 'marshmallow_public_reply_auth',
+          path,
+          messageId,
+          talentId: context.talentId,
+          userId: context.userId,
+          email: context.email,
+          displayName: context.displayName,
+          appendedToExistingReply: Boolean(message.replyContent),
+        },
       },
-    }, {
-      tenantSchema: context.tenantSchema,
-      ipAddress: context.ip,
-    });
+      {
+        tenantSchema: context.tenantSchema,
+        ipAddress: context.ip,
+      }
+    );
 
     return {
       success: true,
@@ -893,11 +941,11 @@ export class PublicMarshmallowService {
 
     // 1. Extract Dynamic ID
     let dynamicId: string | null = null;
-    
+
     // Match opus/<ID> or t.bilibili.com/<ID>
     const match = url.match(/(?:opus\/|t\.bilibili\.com\/)(\d+)/);
     if (match) {
-        dynamicId = match[1];
+      dynamicId = match[1];
     }
 
     if (!dynamicId) return [];
@@ -905,30 +953,36 @@ export class PublicMarshmallowService {
     // 2. Fetch Dynamic Details from Bilibili API
     // API: https://api.bilibili.com/x/polymer/web-dynamic/v1/detail?id=<ID>
     try {
-        const { data } = await firstValueFrom(
-            this.httpService.get(`https://api.bilibili.com/x/polymer/web-dynamic/v1/detail?id=${dynamicId}`, {
-                headers: {
-                    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                },
-            })
+      const { data } = await firstValueFrom(
+        this.httpService.get(
+          `https://api.bilibili.com/x/polymer/web-dynamic/v1/detail?id=${dynamicId}`,
+          {
+            headers: {
+              'User-Agent':
+                'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            },
+          }
+        )
+      );
+
+      if (data?.code === 0 && data?.data?.item) {
+        const item = data.data.item;
+        const images = extractBilibiliImagesFromModules(item.modules, (imageUrl) =>
+          this.normalizeBilibiliUrl(imageUrl)
         );
+        if (images.length > 0) return images;
+      }
 
-        if (data?.code === 0 && data?.data?.item) {
-             const item = data.data.item;
-             const images = extractBilibiliImagesFromModules(
-                 item.modules,
-                 (imageUrl) => this.normalizeBilibiliUrl(imageUrl),
-             );
-             if (images.length > 0) return images;
-        }
-        
-        // If API fails or no image found, try scraping the page (Fallback)
-        this.logger.warn(`Bilibili API failed for ${dynamicId} (Code: ${data?.code}), trying fallback scraping...`);
-        return this.resolveBilibiliImagesFromPage(dynamicId);
-
+      // If API fails or no image found, try scraping the page (Fallback)
+      this.logger.warn(
+        `Bilibili API failed for ${dynamicId} (Code: ${data?.code}), trying fallback scraping...`
+      );
+      return this.resolveBilibiliImagesFromPage(dynamicId);
     } catch (error) {
-        this.logger.warn(`Error fetching Bilibili API for ${dynamicId}: ${error}, trying fallback scraping...`);
-        return this.resolveBilibiliImagesFromPage(dynamicId);
+      this.logger.warn(
+        `Error fetching Bilibili API for ${dynamicId}: ${error}, trying fallback scraping...`
+      );
+      return this.resolveBilibiliImagesFromPage(dynamicId);
     }
   }
 
@@ -936,67 +990,69 @@ export class PublicMarshmallowService {
    * Fallback: Scrape Opus page for __INITIAL_STATE__
    */
   private async resolveBilibiliImagesFromPage(dynamicId: string): Promise<string[]> {
-      try {
-          // Use native fetch to match the behavior of the successful debug script
-          const response = await fetch(`https://www.bilibili.com/opus/${dynamicId}`, {
-              headers: {
-                  'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-              },
-          });
-          
-          if (!response.ok) {
-              this.logger.warn(`Bilibili fallback fetch failed: ${response.status}`);
-              return [];
-          }
+    try {
+      // Use native fetch to match the behavior of the successful debug script
+      const response = await fetch(`https://www.bilibili.com/opus/${dynamicId}`, {
+        headers: {
+          'User-Agent':
+            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        },
+      });
 
-          const html = await response.text();
-          this.logger.log(`Bilibili fallback HTML length: ${html.length}`);
-          
-          // Regex to extract __INITIAL_STATE__
-          const stateMatch = html.match(/window\.__INITIAL_STATE__\s*=\s*({.+?});/);
-          if (!stateMatch) {
-              this.logger.warn('Bilibili fallback: __INITIAL_STATE__ not found in HTML');
-              return [];
-          }
-          
-          this.logger.log('Bilibili fallback: __INITIAL_STATE__ found');
-          const state = JSON.parse(stateMatch[1]);
-          const modules = state.detail?.modules;
-          
-          const images = extractBilibiliImagesFromModules(
-              modules,
-              (imageUrl) => this.normalizeBilibiliUrl(imageUrl),
-          );
-          if (images.length > 0) return images;
-          
-          // Strategy 3: Regex match on the entire state string (Fallthrough)
-          // This is useful if the structure is nested differently than expected
-          const stateStr = JSON.stringify(state);
-          const regexMatches = stateStr.matchAll(/https?:\/\/(i[0-9]|bfs)\.hdslb\.com\/bfs\/new_dyn\/[a-zA-Z0-9]+\.(png|jpg|jpeg|webp)/g);
-          const regexImages: string[] = [];
-          for (const match of regexMatches) {
-               regexImages.push(this.normalizeBilibiliUrl(match[0]));
-          }
-          
-          if (regexImages.length > 0) {
-               this.logger.log(`Bilibili fallback: Regex found ${regexImages.length} images`);
-               // Deduplicate
-               return Array.from(new Set(regexImages));
-          }
-
-          this.logger.warn('Bilibili fallback: No images found in modules or regex');
-          return [];
-      } catch (error) {
-          this.logger.error(`Error scraping Bilibili page ${dynamicId}: ${error}`);
-          return [];
+      if (!response.ok) {
+        this.logger.warn(`Bilibili fallback fetch failed: ${response.status}`);
+        return [];
       }
+
+      const html = await response.text();
+      this.logger.log(`Bilibili fallback HTML length: ${html.length}`);
+
+      // Regex to extract __INITIAL_STATE__
+      const stateMatch = html.match(/window\.__INITIAL_STATE__\s*=\s*({.+?});/);
+      if (!stateMatch) {
+        this.logger.warn('Bilibili fallback: __INITIAL_STATE__ not found in HTML');
+        return [];
+      }
+
+      this.logger.log('Bilibili fallback: __INITIAL_STATE__ found');
+      const state = JSON.parse(stateMatch[1]);
+      const modules = state.detail?.modules;
+
+      const images = extractBilibiliImagesFromModules(modules, (imageUrl) =>
+        this.normalizeBilibiliUrl(imageUrl)
+      );
+      if (images.length > 0) return images;
+
+      // Strategy 3: Regex match on the entire state string (Fallthrough)
+      // This is useful if the structure is nested differently than expected
+      const stateStr = JSON.stringify(state);
+      const regexMatches = stateStr.matchAll(
+        /https?:\/\/(i[0-9]|bfs)\.hdslb\.com\/bfs\/new_dyn\/[a-zA-Z0-9]+\.(png|jpg|jpeg|webp)/g
+      );
+      const regexImages: string[] = [];
+      for (const match of regexMatches) {
+        regexImages.push(this.normalizeBilibiliUrl(match[0]));
+      }
+
+      if (regexImages.length > 0) {
+        this.logger.log(`Bilibili fallback: Regex found ${regexImages.length} images`);
+        // Deduplicate
+        return Array.from(new Set(regexImages));
+      }
+
+      this.logger.warn('Bilibili fallback: No images found in modules or regex');
+      return [];
+    } catch (error) {
+      this.logger.error(`Error scraping Bilibili page ${dynamicId}: ${error}`);
+      return [];
+    }
   }
 
   private normalizeBilibiliUrl(url: string): string {
-      if (!url) return '';
-      if (url.startsWith('http://')) {
-          return url.replace('http://', 'https://');
-      }
-      return url;
+    if (!url) return '';
+    if (url.startsWith('http://')) {
+      return url.replace('http://', 'https://');
+    }
+    return url;
   }
 }

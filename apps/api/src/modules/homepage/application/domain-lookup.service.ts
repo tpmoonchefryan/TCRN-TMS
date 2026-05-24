@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable, Logger } from '@nestjs/common';
 
 import {
@@ -16,29 +15,29 @@ export type { DomainLookupResult } from '../domain/public-homepage-read.policy';
 export class DomainLookupService {
   private readonly logger = new Logger(DomainLookupService.name);
 
-  constructor(
-    private readonly publicHomepageReadRepository: PublicHomepageReadRepository,
-  ) {}
+  constructor(private readonly publicHomepageReadRepository: PublicHomepageReadRepository) {}
 
-  async lookupDomain(domain: string, talentCode: string | null = null): Promise<DomainLookupResult | null> {
+  async lookupDomain(
+    domain: string,
+    talentCode: string | null = null
+  ): Promise<DomainLookupResult | null> {
     this.logger.debug(`[lookupDomain] Looking up domain: "${domain}"`);
     const normalizedDomain = normalizeLookupDomain(domain);
     const tenantSchemas = await this.publicHomepageReadRepository.listActiveTenantSchemas();
 
     for (const schema of tenantSchemas) {
       try {
-        const bindingRoute =
-          await this.publicHomepageReadRepository.findVerifiedDomainBindingRoute(
-            schema,
-            normalizedDomain,
-            talentCode,
-          );
+        const bindingRoute = await this.publicHomepageReadRepository.findVerifiedDomainBindingRoute(
+          schema,
+          normalizedDomain,
+          talentCode
+        );
 
         if (bindingRoute) {
           const result = resolveLookupBindingRoute(bindingRoute, talentCode);
 
           this.logger.debug(
-            `[lookupDomain] Found domain binding "${domain}" in schema "${schema}" -> route mode "${result.routeMode}"`,
+            `[lookupDomain] Found domain binding "${domain}" in schema "${schema}" -> route mode "${result.routeMode}"`
           );
 
           return result;
@@ -48,14 +47,14 @@ export class DomainLookupService {
           ? null
           : await this.publicHomepageReadRepository.findVerifiedDomainRoute(
               schema,
-              normalizedDomain,
+              normalizedDomain
             );
 
         if (route) {
           const result = resolveLookupRoute(route, schema);
 
           this.logger.debug(
-            `[lookupDomain] Found legacy talent domain "${domain}" in schema "${schema}" -> homepage "${result.homepagePath}", marshmallow "${result.marshmallowPath}"`,
+            `[lookupDomain] Found legacy talent domain "${domain}" in schema "${schema}" -> homepage "${result.homepagePath}", marshmallow "${result.marshmallowPath}"`
           );
 
           return result;
@@ -63,7 +62,7 @@ export class DomainLookupService {
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         this.logger.debug(
-          `[lookupDomain] Skipping schema "${schema}" due to lookup error: ${message}`,
+          `[lookupDomain] Skipping schema "${schema}" due to lookup error: ${message}`
         );
       }
     }

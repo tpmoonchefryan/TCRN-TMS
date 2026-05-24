@@ -162,11 +162,17 @@ describe('public-presence-studio.catalog', () => {
   beforeEach(() => {
     mockRequest.mockReset();
     mockRequest.mockImplementation(async (path: string) => {
-      if (path === '/api/v1/public-presence/assets?assetKind=template&scopeType=talent&scopeId=talent-1') {
+      if (
+        path ===
+        '/api/v1/public-presence/assets?assetKind=template&scopeType=talent&scopeId=talent-1'
+      ) {
         return [];
       }
 
-      if (path === '/api/v1/public-presence/assets?assetKind=component&scopeType=talent&scopeId=talent-1') {
+      if (
+        path ===
+        '/api/v1/public-presence/assets?assetKind=component&scopeType=talent&scopeId=talent-1'
+      ) {
         return [];
       }
 
@@ -176,7 +182,10 @@ describe('public-presence-studio.catalog', () => {
 
   it('routes Template Center through the talent-scoped asset workspace without legacy draft activity', async () => {
     mockRequest.mockImplementation(async (path: string) => {
-      if (path === '/api/v1/public-presence/assets?assetKind=template&scopeType=talent&scopeId=talent-1') {
+      if (
+        path ===
+        '/api/v1/public-presence/assets?assetKind=template&scopeType=talent&scopeId=talent-1'
+      ) {
         return [buildTemplateAssetEntry()];
       }
 
@@ -184,31 +193,43 @@ describe('public-presence-studio.catalog', () => {
     });
 
     const { container } = render(
-      <LegacyTemplateCenterCompatibilityScreen talentId="talent-1" tenantId="tenant-1" />,
+      <LegacyTemplateCenterCompatibilityScreen talentId="talent-1" tenantId="tenant-1" />
     );
 
-    expect(screen.getByTestId('catalog-compatibility-notice').textContent).toMatch(/compatibility stop/i);
+    expect(screen.getByTestId('catalog-compatibility-notice').textContent).toMatch(
+      /compatibility stop/i
+    );
     expect(screen.getByRole('link', { name: 'Open Homepage Management' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Open asset workspace' })).toHaveAttribute(
       'href',
-      '/tenant/tenant-1/talent/talent-1/settings?section=config-entities',
+      '/tenant/tenant-1/talent/talent-1/settings?section=config-entities'
     );
     await waitFor(() => {
       expect(screen.getAllByText('Active Talent Hub Local').length).toBeGreaterThan(0);
     });
     expect(screen.getByTestId('asset-family-template')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Add template asset' })).toBeInTheDocument();
-    expect(container.textContent).not.toMatch(/Recent draft activity|Open saved draft|Create homepage from this draft/i);
-    expect(mockRequest.mock.calls.every(([path]) => !String(path).includes('/authoring/'))).toBe(true);
+    expect(container.textContent).not.toMatch(
+      /Recent draft activity|Open saved draft|Create homepage from this draft/i
+    );
+    expect(mockRequest.mock.calls.every(([path]) => !String(path).includes('/authoring/'))).toBe(
+      true
+    );
   });
 
   it('routes Component Store through the talent-scoped asset workspace and opens inspect via asset detail', async () => {
     mockRequest.mockImplementation(async (path: string) => {
-      if (path === '/api/v1/public-presence/assets?assetKind=component&scopeType=talent&scopeId=talent-1') {
+      if (
+        path ===
+        '/api/v1/public-presence/assets?assetKind=component&scopeType=talent&scopeId=talent-1'
+      ) {
         return [buildComponentAssetEntry()];
       }
 
-      if (path === '/api/v1/public-presence/assets/asset-component-1?scopeType=talent&scopeId=talent-1') {
+      if (
+        path ===
+        '/api/v1/public-presence/assets/asset-component-1?scopeType=talent&scopeId=talent-1'
+      ) {
         const asset = buildComponentAssetEntry();
         return {
           ...asset,
@@ -219,16 +240,14 @@ describe('public-presence-studio.catalog', () => {
       throw new Error(`Unhandled request: ${path}`);
     });
 
-    render(
-      <LegacyComponentStoreCompatibilityScreen talentId="talent-1" tenantId="tenant-1" />,
-    );
+    render(<LegacyComponentStoreCompatibilityScreen talentId="talent-1" tenantId="tenant-1" />);
 
     expect(await screen.findByText('Social Links Local')).toBeInTheDocument();
     expect(screen.getByTestId('asset-family-component')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Add component asset' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Open asset workspace' })).toHaveAttribute(
       'href',
-      '/tenant/tenant-1/talent/talent-1/settings?section=config-entities',
+      '/tenant/tenant-1/talent/talent-1/settings?section=config-entities'
     );
 
     const componentCard = screen.getByText('Social Links Local').closest('div.rounded-3xl');
@@ -242,8 +261,10 @@ describe('public-presence-studio.catalog', () => {
     expect(screen.getByText('Revision history')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Open component IDE' })).toHaveAttribute(
       'href',
-      '/studio/public-presence/tenant-1/assets/component/asset-component-1?scopeType=talent&scopeId=talent-1',
+      '/studio/public-presence/tenant-1/assets/component/asset-component-1?scopeType=talent&scopeId=talent-1'
     );
-    expect(mockRequest.mock.calls.every(([path]) => !String(path).includes('/authoring/'))).toBe(true);
+    expect(mockRequest.mock.calls.every(([path]) => !String(path).includes('/authoring/'))).toBe(
+      true
+    );
   });
 });

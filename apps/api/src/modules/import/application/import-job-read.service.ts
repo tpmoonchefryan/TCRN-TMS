@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable, NotFoundException } from '@nestjs/common';
+
 import { ErrorCodes, type RequestContext } from '@tcrn/shared';
 
 import { CustomerArchiveAccessService } from '../../customer/application/customer-archive-access.service';
@@ -16,15 +16,11 @@ import { ImportJobReadRepository } from '../infrastructure/import-job-read.repos
 export class ImportJobReadApplicationService {
   constructor(
     private readonly importJobReadRepository: ImportJobReadRepository,
-    private readonly customerArchiveAccessService: CustomerArchiveAccessService,
+    private readonly customerArchiveAccessService: CustomerArchiveAccessService
   ) {}
 
   async findById(jobId: string, talentId: string, context: RequestContext) {
-    const job = await this.importJobReadRepository.findById(
-      context.tenantSchema,
-      jobId,
-      talentId,
-    );
+    const job = await this.importJobReadRepository.findById(context.tenantSchema, jobId, talentId);
 
     if (!job) {
       throw new NotFoundException({
@@ -39,15 +35,14 @@ export class ImportJobReadApplicationService {
   async findMany(
     talentId: string,
     query: ImportJobQueryDto,
-    context: RequestContext,
+    context: RequestContext
   ): Promise<{ items: ReturnType<typeof mapImportJobResponse>[]; total: number }> {
     let archiveTarget: { profileStoreId: string };
     try {
-      archiveTarget =
-        await this.customerArchiveAccessService.requireTalentArchiveTarget(
-          talentId,
-          context,
-        );
+      archiveTarget = await this.customerArchiveAccessService.requireTalentArchiveTarget(
+        talentId,
+        context
+      );
     } catch {
       return { items: [], total: 0 };
     }
@@ -60,7 +55,7 @@ export class ImportJobReadApplicationService {
           profileStoreId: archiveTarget.profileStoreId,
           status: query.status,
         },
-        pagination,
+        pagination
       ),
       this.importJobReadRepository.countMany(context.tenantSchema, {
         profileStoreId: archiveTarget.profileStoreId,
@@ -78,7 +73,7 @@ export class ImportJobReadApplicationService {
     const errors = await this.importJobReadRepository.getErrors(
       context.tenantSchema,
       jobId,
-      talentId,
+      talentId
     );
 
     return mapImportErrors(errors);

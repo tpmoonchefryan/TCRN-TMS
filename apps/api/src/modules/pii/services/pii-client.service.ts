@@ -1,11 +1,12 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+import * as fs from 'fs';
+import * as https from 'https';
 
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import type { RequestContext } from '@tcrn/shared';
 import axios, { AxiosError, AxiosInstance } from 'axios';
-import * as fs from 'fs';
-import * as https from 'https';
+
+import type { RequestContext } from '@tcrn/shared';
 
 import type {
   CustomerPiiPlatformLifecyclePayload,
@@ -35,7 +36,7 @@ export class PiiClientService {
 
   constructor(
     private readonly configService: ConfigService,
-    private readonly integrationLogService: IntegrationLogService,
+    private readonly integrationLogService: IntegrationLogService
   ) {
     this.initializeClient();
   }
@@ -74,7 +75,7 @@ export class PiiClientService {
     payload: CustomerPiiPlatformWritePayload,
     serviceToken: string,
     tenantId: string,
-    tenantSchema?: string,
+    tenantSchema?: string
   ): Promise<{ customerId: string; syncedAt: string }> {
     return this.executeWithRetry(async () => {
       const startTime = Date.now();
@@ -90,16 +91,19 @@ export class PiiClientService {
           },
         });
 
-        await this.logOutbound({
-          externalSystem: 'tcrn-pii-platform',
-          endpoint: url,
-          method: 'PUT',
-          requestHeaders: { 'X-Tenant-ID': tenantId },
-          responseStatus: response.status,
-          responseHeaders: response.headers as Record<string, string>,
-          latencyMs: Date.now() - startTime,
-          success: true,
-        }, tenantSchema);
+        await this.logOutbound(
+          {
+            externalSystem: 'tcrn-pii-platform',
+            endpoint: url,
+            method: 'PUT',
+            requestHeaders: { 'X-Tenant-ID': tenantId },
+            responseStatus: response.status,
+            responseHeaders: response.headers as Record<string, string>,
+            latencyMs: Date.now() - startTime,
+            success: true,
+          },
+          tenantSchema
+        );
 
         return response.data.data;
       } catch (error) {
@@ -110,7 +114,7 @@ export class PiiClientService {
           error,
           startTime,
           tenantSchema,
-          'tcrn-pii-platform',
+          'tcrn-pii-platform'
         );
         throw error;
       }
@@ -122,7 +126,7 @@ export class PiiClientService {
     payload: CustomerPiiPlatformPortalSessionPayload,
     serviceToken: string,
     tenantId: string,
-    tenantSchema?: string,
+    tenantSchema?: string
   ): Promise<{ redirectUrl: string; expiresAt: string }> {
     return this.executeWithRetry(async () => {
       const startTime = Date.now();
@@ -138,16 +142,19 @@ export class PiiClientService {
           },
         });
 
-        await this.logOutbound({
-          externalSystem: 'tcrn-pii-platform',
-          endpoint: url,
-          method: 'POST',
-          requestHeaders: { 'X-Tenant-ID': tenantId },
-          responseStatus: response.status,
-          responseHeaders: response.headers as Record<string, string>,
-          latencyMs: Date.now() - startTime,
-          success: true,
-        }, tenantSchema);
+        await this.logOutbound(
+          {
+            externalSystem: 'tcrn-pii-platform',
+            endpoint: url,
+            method: 'POST',
+            requestHeaders: { 'X-Tenant-ID': tenantId },
+            responseStatus: response.status,
+            responseHeaders: response.headers as Record<string, string>,
+            latencyMs: Date.now() - startTime,
+            success: true,
+          },
+          tenantSchema
+        );
 
         return response.data.data;
       } catch (error) {
@@ -158,7 +165,7 @@ export class PiiClientService {
           error,
           startTime,
           tenantSchema,
-          'tcrn-pii-platform',
+          'tcrn-pii-platform'
         );
         throw error;
       }
@@ -170,7 +177,7 @@ export class PiiClientService {
     payload: CustomerPiiPlatformLifecyclePayload,
     serviceToken: string,
     tenantId: string,
-    tenantSchema?: string,
+    tenantSchema?: string
   ): Promise<{ customerId: string; lifecycleStatus: 'active' | 'inactive'; syncedAt: string }> {
     return this.executeWithRetry(async () => {
       const startTime = Date.now();
@@ -186,16 +193,19 @@ export class PiiClientService {
           },
         });
 
-        await this.logOutbound({
-          externalSystem: 'tcrn-pii-platform',
-          endpoint: url,
-          method: 'PUT',
-          requestHeaders: { 'X-Tenant-ID': tenantId },
-          responseStatus: response.status,
-          responseHeaders: response.headers as Record<string, string>,
-          latencyMs: Date.now() - startTime,
-          success: true,
-        }, tenantSchema);
+        await this.logOutbound(
+          {
+            externalSystem: 'tcrn-pii-platform',
+            endpoint: url,
+            method: 'PUT',
+            requestHeaders: { 'X-Tenant-ID': tenantId },
+            responseStatus: response.status,
+            responseHeaders: response.headers as Record<string, string>,
+            latencyMs: Date.now() - startTime,
+            success: true,
+          },
+          tenantSchema
+        );
 
         return response.data.data;
       } catch (error) {
@@ -206,7 +216,7 @@ export class PiiClientService {
           error,
           startTime,
           tenantSchema,
-          'tcrn-pii-platform',
+          'tcrn-pii-platform'
         );
         throw error;
       }
@@ -218,7 +228,7 @@ export class PiiClientService {
     payload: ReportPiiPlatformRequestPayload,
     serviceToken: string,
     tenantId: string,
-    tenantSchema?: string,
+    tenantSchema?: string
   ): Promise<{ requestId: string; redirectUrl: string; expiresAt: string }> {
     return this.executeWithRetry(async () => {
       const startTime = Date.now();
@@ -234,16 +244,19 @@ export class PiiClientService {
           },
         });
 
-        await this.logOutbound({
-          externalSystem: 'tcrn-pii-platform',
-          endpoint: url,
-          method: 'POST',
-          requestHeaders: { 'X-Tenant-ID': tenantId },
-          responseStatus: response.status,
-          responseHeaders: response.headers as Record<string, string>,
-          latencyMs: Date.now() - startTime,
-          success: true,
-        }, tenantSchema);
+        await this.logOutbound(
+          {
+            externalSystem: 'tcrn-pii-platform',
+            endpoint: url,
+            method: 'POST',
+            requestHeaders: { 'X-Tenant-ID': tenantId },
+            responseStatus: response.status,
+            responseHeaders: response.headers as Record<string, string>,
+            latencyMs: Date.now() - startTime,
+            success: true,
+          },
+          tenantSchema
+        );
 
         return response.data.data;
       } catch (error) {
@@ -254,7 +267,7 @@ export class PiiClientService {
           error,
           startTime,
           tenantSchema,
-          'tcrn-pii-platform',
+          'tcrn-pii-platform'
         );
         throw error;
       }
@@ -294,7 +307,7 @@ export class PiiClientService {
    */
   private async executeWithRetry<T>(
     operation: () => Promise<T>,
-    retryCount: number = 0,
+    retryCount: number = 0
   ): Promise<T> {
     try {
       return await operation();
@@ -302,11 +315,11 @@ export class PiiClientService {
       if (this.shouldRetry(error) && retryCount < RETRY_CONFIG.maxRetries) {
         const delay = Math.min(
           RETRY_CONFIG.initialDelayMs * Math.pow(RETRY_CONFIG.backoffMultiplier, retryCount),
-          RETRY_CONFIG.maxDelayMs,
+          RETRY_CONFIG.maxDelayMs
         );
 
         this.logger.warn(
-          `PII service request failed, retrying in ${delay}ms (attempt ${retryCount + 1}/${RETRY_CONFIG.maxRetries})`,
+          `PII service request failed, retrying in ${delay}ms (attempt ${retryCount + 1}/${RETRY_CONFIG.maxRetries})`
         );
 
         await this.sleep(delay);
@@ -346,28 +359,28 @@ export class PiiClientService {
     error: unknown,
     startTime: number,
     tenantSchema?: string,
-    externalSystem: string = 'pii-service',
+    externalSystem: string = 'pii-service'
   ): Promise<void> {
     const axiosError = error as AxiosError;
 
-    await this.logOutbound({
-      externalSystem,
-      endpoint: url,
-      method,
-      requestHeaders: { 'X-Tenant-ID': tenantId },
-      responseStatus: axiosError.response?.status || 0,
-      responseHeaders: axiosError.response?.headers as Record<string, string>,
-      responseBody: axiosError.response?.data,
-      latencyMs: Date.now() - startTime,
-      success: false,
-      errorMessage: axiosError.message,
-    }, tenantSchema);
+    await this.logOutbound(
+      {
+        externalSystem,
+        endpoint: url,
+        method,
+        requestHeaders: { 'X-Tenant-ID': tenantId },
+        responseStatus: axiosError.response?.status || 0,
+        responseHeaders: axiosError.response?.headers as Record<string, string>,
+        responseBody: axiosError.response?.data,
+        latencyMs: Date.now() - startTime,
+        success: false,
+        errorMessage: axiosError.message,
+      },
+      tenantSchema
+    );
   }
 
-  private async logOutbound(
-    data: OutboundLogDto,
-    tenantSchema?: string,
-  ): Promise<void> {
+  private async logOutbound(data: OutboundLogDto, tenantSchema?: string): Promise<void> {
     if (tenantSchema) {
       await this.integrationLogService.logOutbound(data, {
         tenantSchema,

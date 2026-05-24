@@ -96,8 +96,14 @@ function FieldRow({
   return (
     <div className="min-w-0 rounded-2xl border border-slate-200 bg-white/80 px-4 py-4 shadow-sm">
       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{label}</p>
-      <p className="mt-2 min-w-0 whitespace-normal break-all text-base font-semibold text-slate-950">{value}</p>
-      {hint ? <p className="mt-2 min-w-0 whitespace-normal break-all text-sm leading-6 text-slate-600">{hint}</p> : null}
+      <p className="mt-2 min-w-0 whitespace-normal break-all text-base font-semibold text-slate-950">
+        {value}
+      </p>
+      {hint ? (
+        <p className="mt-2 min-w-0 whitespace-normal break-all text-sm leading-6 text-slate-600">
+          {hint}
+        </p>
+      ) : null}
     </div>
   );
 }
@@ -157,10 +163,8 @@ export function TenantSettingsScreen({
   const queryString = searchParams.toString();
   const urlSection = parseTenantSettingsSection(searchParams.get('section'));
   const [activeSectionId, setActiveSectionId] = useState<TenantSettingsSection>(urlSection);
-  const {
-    displayedValue: displayedSectionId,
-    transitionClassName: sectionTransitionClassName,
-  } = useFadeSwapState(activeSectionId);
+  const { displayedValue: displayedSectionId, transitionClassName: sectionTransitionClassName } =
+    useFadeSwapState(activeSectionId);
   const { request, requestEnvelope, session } = useSession();
   const {
     common,
@@ -176,7 +180,9 @@ export function TenantSettingsScreen({
     error: null,
     loading: true,
   });
-  const [initialDraft, setInitialDraft] = useState<TenantSettingsDraft>(() => buildTenantSettingsDraft({}));
+  const [initialDraft, setInitialDraft] = useState<TenantSettingsDraft>(() =>
+    buildTenantSettingsDraft({})
+  );
   const [draft, setDraft] = useState<TenantSettingsDraft>(() => buildTenantSettingsDraft({}));
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -184,22 +190,29 @@ export function TenantSettingsScreen({
   const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isDefaultsDrawerOpen, setIsDefaultsDrawerOpen] = useState(false);
-  const [activeSettingsCategory, setActiveSettingsCategory] = useState<TenantSettingsCategory>('defaults');
+  const [activeSettingsCategory, setActiveSettingsCategory] =
+    useState<TenantSettingsCategory>('defaults');
   const [emailPanel, setEmailPanel] = useState<AsyncPanelState<TenantSenderDomainsResponse>>({
     data: null,
     error: null,
     loading: false,
   });
-  const [emailDraft, setEmailDraft] = useState<TenantEmailSenderDraft>(() => buildTenantEmailSenderDraft(null));
+  const [emailDraft, setEmailDraft] = useState<TenantEmailSenderDraft>(() =>
+    buildTenantEmailSenderDraft(null)
+  );
   const [emailSaveError, setEmailSaveError] = useState<string | null>(null);
   const [emailSaveSuccess, setEmailSaveSuccess] = useState<string | null>(null);
   const [isEmailSaving, setIsEmailSaving] = useState(false);
-  const [turnstilePanel, setTurnstilePanel] = useState<AsyncPanelState<TenantTurnstileSettingsResponse>>({
+  const [turnstilePanel, setTurnstilePanel] = useState<
+    AsyncPanelState<TenantTurnstileSettingsResponse>
+  >({
     data: null,
     error: null,
     loading: false,
   });
-  const [turnstileDraft, setTurnstileDraft] = useState<TenantTurnstileDraft>(() => buildTenantTurnstileDraft(null));
+  const [turnstileDraft, setTurnstileDraft] = useState<TenantTurnstileDraft>(() =>
+    buildTenantTurnstileDraft(null)
+  );
   const [turnstileSaveError, setTurnstileSaveError] = useState<string | null>(null);
   const [turnstileSaveSuccess, setTurnstileSaveSuccess] = useState<string | null>(null);
   const [isTurnstileSaving, setIsTurnstileSaving] = useState(false);
@@ -254,14 +267,27 @@ export function TenantSettingsScreen({
             dictionaryResult[0]?.status === 'rejected'
               ? getErrorMessage(
                   dictionaryResult[0].reason,
-                  text('System dictionary is unavailable.', '系统词典暂不可用。', 'システム辞書を読み込めません。'),
+                  text(
+                    'System dictionary is unavailable.',
+                    '系统词典暂不可用。',
+                    'システム辞書を読み込めません。'
+                  )
                 )
               : null,
           loading: false,
         });
       } catch (reason) {
         if (!cancelled) {
-          setLoadError(getErrorMessage(reason, text('Failed to load tenant settings.', '加载租户设置失败。', 'テナント設定の読み込みに失敗しました。')));
+          setLoadError(
+            getErrorMessage(
+              reason,
+              text(
+                'Failed to load tenant settings.',
+                '加载租户设置失败。',
+                'テナント設定の読み込みに失敗しました。'
+              )
+            )
+          );
           setDictionaryPanel((current) => ({ ...current, loading: false }));
         }
       } finally {
@@ -371,7 +397,7 @@ export function TenantSettingsScreen({
           ja: 'テナント既定値を保存しました。',
           ko: '테넌트 기본값을 저장했습니다.',
           fr: 'Les valeurs par défaut du tenant ont été enregistrées.',
-        }),
+        })
       );
     } catch (reason) {
       setSaveError(
@@ -384,8 +410,8 @@ export function TenantSettingsScreen({
             ja: 'テナント設定の保存に失敗しました。',
             ko: '테넌트 설정을 저장하지 못했습니다.',
             fr: 'Impossible d’enregistrer les paramètres du tenant.',
-          }),
-        ),
+          })
+        )
       );
     } finally {
       setIsSaving(false);
@@ -427,7 +453,7 @@ export function TenantSettingsScreen({
             ja: 'メール送信ドメインを読み込めません。',
             ko: '이메일 발신 도메인을 불러오지 못했습니다.',
             fr: 'Impossible de charger les domaines d’envoi.',
-          }),
+          })
         ),
         loading: false,
       });
@@ -463,7 +489,7 @@ export function TenantSettingsScreen({
             ja: 'Turnstile 設定を読み込めません。',
             ko: 'Turnstile 설정을 불러오지 못했습니다.',
             fr: 'Impossible de charger les paramètres Turnstile.',
-          }),
+          })
         ),
         loading: false,
       });
@@ -471,7 +497,8 @@ export function TenantSettingsScreen({
   }
 
   function handleSettingsCategoryChange(categoryId: string) {
-    const nextCategoryId = categoryId === 'email' || categoryId === 'captcha' ? categoryId : 'defaults';
+    const nextCategoryId =
+      categoryId === 'email' || categoryId === 'captcha' ? categoryId : 'defaults';
     setActiveSettingsCategory(nextCategoryId);
 
     if (nextCategoryId === 'email' && !emailPanel.data && !emailPanel.loading) {
@@ -512,7 +539,7 @@ export function TenantSettingsScreen({
           ja: 'メール送信設定を保存しました。',
           ko: '이메일 발신 설정이 저장되었습니다.',
           fr: 'Les préférences d’envoi ont été enregistrées.',
-        }),
+        })
       );
     } catch (reason) {
       setEmailSaveError(
@@ -525,8 +552,8 @@ export function TenantSettingsScreen({
             ja: 'メール送信設定を保存できません。',
             ko: '이메일 발신 설정을 저장하지 못했습니다.',
             fr: 'Impossible d’enregistrer les préférences d’envoi.',
-          }),
-        ),
+          })
+        )
       );
     } finally {
       setIsEmailSaving(false);
@@ -562,7 +589,7 @@ export function TenantSettingsScreen({
           ja: 'Turnstile 設定を保存しました。',
           ko: 'Turnstile 설정이 저장되었습니다.',
           fr: 'Les paramètres Turnstile ont été enregistrés.',
-        }),
+        })
       );
     } catch (reason) {
       setTurnstileSaveError(
@@ -575,8 +602,8 @@ export function TenantSettingsScreen({
             ja: 'Turnstile 設定を保存できません。',
             ko: 'Turnstile 설정을 저장하지 못했습니다.',
             fr: 'Impossible d’enregistrer les paramètres Turnstile.',
-          }),
-        ),
+          })
+        )
       );
     } finally {
       setIsTurnstileSaving(false);
@@ -616,316 +643,381 @@ export function TenantSettingsScreen({
         }}
       >
         <div className={sectionTransitionClassName}>
-        {displayedSectionId === 'details' ? (
-          <div className="space-y-6">
-            <GlassSurface className="p-8">
-              <div className="flex flex-wrap items-start justify-between gap-6">
-                <div className="space-y-4">
-                <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-600">
-                  <Building2 className="h-3.5 w-3.5" />
-                  {text({
-                    en: 'Tenant settings',
-                    zh_HANS: '租户设置',
-                    zh_HANT: '租戶設定',
-                    ja: 'テナント設定',
-                    ko: '테넌트 설정',
-                    fr: 'Paramètres du tenant',
-                  })}
+          {displayedSectionId === 'details' ? (
+            <div className="space-y-6">
+              <GlassSurface className="p-8">
+                <div className="flex flex-wrap items-start justify-between gap-6">
+                  <div className="space-y-4">
+                    <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-600">
+                      <Building2 className="h-3.5 w-3.5" />
+                      {text({
+                        en: 'Tenant settings',
+                        zh_HANS: '租户设置',
+                        zh_HANT: '租戶設定',
+                        ja: 'テナント設定',
+                        ko: '테넌트 설정',
+                        fr: 'Paramètres du tenant',
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                    <FieldRow
+                      label={text('Tenant', '租户', 'テナント')}
+                      value={session?.tenantName || common.currentTenant}
+                    />
+                    <FieldRow
+                      label={text('Default language', '默认语言', '既定言語')}
+                      value={draft.defaultLanguage || common.inheritedUnset}
+                    />
+                    <FieldRow
+                      label={common.configEntities}
+                      value={String(configEntityFamilyCount)}
+                    />
+                    <FieldRow
+                      label={text('Dictionary Types', '词典类型', '辞書タイプ')}
+                      value={String(dictionaryCount)}
+                    />
                   </div>
                 </div>
+              </GlassSurface>
 
-                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                  <FieldRow label={text('Tenant', '租户', 'テナント')} value={session?.tenantName || common.currentTenant} />
-                  <FieldRow
-                    label={text('Default language', '默认语言', '既定言語')}
-                    value={draft.defaultLanguage || common.inheritedUnset}
+              <GlassSurface className="p-6">
+                <FormSection
+                  title={common.details}
+                  description={text(
+                    'Review tenant identity and quick links to related management pages.',
+                    '查看租户身份信息及相关管理入口。',
+                    'テナント識別情報と関連管理ページへの入口を確認します。'
+                  )}
+                >
+                  <div className="grid gap-4 lg:grid-cols-2">
+                    <FieldRow
+                      label={text('Tenant Tier', '租户层级', 'テナント階層')}
+                      value={session?.tenantTier || common.unknown}
+                      hint={text(
+                        'Available management features vary by tenant tier.',
+                        '不同租户层级可用的管理能力不同。',
+                        'テナント階層によって利用できる管理機能が異なります。'
+                      )}
+                    />
+                    <FieldRow
+                      label={text('Tenant Code', '租户代码', 'テナントコード')}
+                      value={session?.tenantCode || common.unassigned}
+                      hint={text(
+                        'Tenant code is the stable identifier for this tenant.',
+                        '租户代码是当前租户的稳定标识。',
+                        'テナントコードはこのテナントの安定した識別子です。'
+                      )}
+                    />
+                  </div>
+
+                  <div className="grid gap-4 lg:grid-cols-2">
+                    <SectionEntryLink
+                      title={text('Business Workspace', '业务工作区', '業務ワークスペース')}
+                      description={text(
+                        'Open the tenant-level business workspace for cross-talent operations, reporting, and workspace handoff.',
+                        '打开租户级业务工作区，用于跨艺人运营、报表与工作区交接。',
+                        '複数タレント横断の運用、レポート、ワークスペース連携のためにテナント業務ワークスペースを開きます。'
+                      )}
+                      href={buildTenantBusinessPath(tenantId)}
+                      cta={text(
+                        'Open business workspace',
+                        '打开业务工作区',
+                        '業務ワークスペースを開く'
+                      )}
+                    />
+                    <SectionEntryLink
+                      title={text('Interface Management', '接口管理', 'インターフェース管理')}
+                      description={text(
+                        'Open adapter interface management. Webhooks and email sender settings are managed from their own pages.',
+                        '打开适配器接口管理。Webhook 与邮件发信设置分别在独立页面管理。',
+                        'アダプターインターフェース管理を開きます。Webhook とメール送信設定はそれぞれ専用画面で管理します。'
+                      )}
+                      href={`/tenant/${tenantId}/interface-management`}
+                      cta={text(
+                        'Open interface management',
+                        '打开接口管理',
+                        'インターフェース管理を開く'
+                      )}
+                    />
+                    <SectionEntryLink
+                      title={text('Security', '安全管理', 'セキュリティ管理')}
+                      description={text(
+                        'Open security, compliance, and blocklist settings.',
+                        '打开安全、合规和封禁设置。',
+                        'セキュリティ、コンプライアンス、ブロックリスト設定を開きます。'
+                      )}
+                      href={`/tenant/${tenantId}/security`}
+                      cta={text('Open security', '打开安全管理', 'セキュリティ管理を開く')}
+                    />
+                  </div>
+                </FormSection>
+              </GlassSurface>
+            </div>
+          ) : null}
+
+          {displayedSectionId === 'config-entities' ? (
+            <div className="space-y-6">
+              <GlassSurface className="p-6">
+                <FormSection
+                  title={common.configEntities}
+                  description={text({
+                    en: 'Maintain tenant-owned configuration families here, then manage homepage template and component assets in the dedicated inventory below.',
+                    zh_HANS:
+                      '先在这里维护租户自有配置实体，再在下方专用清单中管理主页模板与组件资产。',
+                    zh_HANT:
+                      '先在這裡維護租戶自有配置實體，再在下方專用清單中管理主頁模板與元件資產。',
+                    ja: 'まずここでテナント所有の設定エンティティを管理し、その下の専用インベントリでホームページのテンプレート資産とコンポーネント資産を管理します。',
+                    ko: '먼저 여기서 테넌트 소유 구성 엔티티를 관리한 뒤, 아래 전용 인벤토리에서 홈페이지 템플릿 및 컴포넌트 자산을 관리하세요.',
+                    fr: 'Gérez d’abord ici les familles de configuration du tenant, puis les assets template et composant de homepage dans l’inventaire dédié ci-dessous.',
+                  })}
+                >
+                  <ScopedConfigEntityWorkspace
+                    request={request}
+                    requestEnvelope={requestEnvelope}
+                    scopeType="tenant"
+                    locale={locale}
+                    copy={scopedConfigCopy}
+                    catalog={localizedConfigEntityCatalog}
                   />
-                  <FieldRow label={common.configEntities} value={String(configEntityFamilyCount)} />
-                  <FieldRow label={text('Dictionary Types', '词典类型', '辞書タイプ')} value={String(dictionaryCount)} />
-                </div>
-              </div>
-            </GlassSurface>
+                </FormSection>
+              </GlassSurface>
 
+              <GlassSurface className="p-6">
+                <FormSection
+                  title={text({
+                    en: 'Homepage Assets',
+                    zh_HANS: '主页资产',
+                    zh_HANT: '主頁資產',
+                    ja: 'ホームページ資産',
+                    ko: '홈페이지 자산',
+                    fr: 'Assets de homepage',
+                  })}
+                  description={text({
+                    en: 'Template and component assets now live inside Entity Management so duplication, ownership, and IDE entry stay scoped to this tenant.',
+                    zh_HANS:
+                      '模板与组件资产现在纳入 Entity Management，确保复制、归属和 IDE 入口都绑定到当前租户范围。',
+                    zh_HANT:
+                      '模板與元件資產現在納入 Entity Management，確保複製、歸屬與 IDE 入口都綁定到目前租戶範圍。',
+                    ja: 'テンプレート資産とコンポーネント資産は Entity Management に統合され、このテナント範囲で複製・所有権・IDE 入口を揃えて扱います。',
+                    ko: '템플릿 및 컴포넌트 자산은 이제 Entity Management 안에서 관리되며, 복제·소유권·IDE 진입이 현재 테넌트 범위에 맞춰집니다.',
+                    fr: 'Les assets template et composant vivent désormais dans Entity Management afin que duplication, propriété et entrée IDE restent liées à ce tenant.',
+                  })}
+                >
+                  <PublicPresenceAssetWorkspace
+                    locale={locale}
+                    request={request}
+                    scopeType="tenant"
+                    tenantId={tenantId}
+                  />
+                </FormSection>
+              </GlassSurface>
+            </div>
+          ) : null}
+
+          {displayedSectionId === 'settings' ? (
             <GlassSurface className="p-6">
-              <FormSection
-                title={common.details}
-                description={text(
-                  'Review tenant identity and quick links to related management pages.',
-                  '查看租户身份信息及相关管理入口。',
-                  'テナント識別情報と関連管理ページへの入口を確認します。',
-                )}
-              >
-                <div className="grid gap-4 lg:grid-cols-2">
-                  <FieldRow
-                    label={text('Tenant Tier', '租户层级', 'テナント階層')}
-                    value={session?.tenantTier || common.unknown}
-                    hint={text(
-                      'Available management features vary by tenant tier.',
-                      '不同租户层级可用的管理能力不同。',
-                      'テナント階層によって利用できる管理機能が異なります。',
-                    )}
-                  />
-                  <FieldRow
-                    label={text('Tenant Code', '租户代码', 'テナントコード')}
-                    value={session?.tenantCode || common.unassigned}
-                    hint={text(
-                      'Tenant code is the stable identifier for this tenant.',
-                      '租户代码是当前租户的稳定标识。',
-                      'テナントコードはこのテナントの安定した識別子です。',
-                    )}
-                  />
-                </div>
-
-                <div className="grid gap-4 lg:grid-cols-2">
-                  <SectionEntryLink
-                    title={text('Business Workspace', '业务工作区', '業務ワークスペース')}
-                    description={text(
-                      'Open the tenant-level business workspace for cross-talent operations, reporting, and workspace handoff.',
-                      '打开租户级业务工作区，用于跨艺人运营、报表与工作区交接。',
-                      '複数タレント横断の運用、レポート、ワークスペース連携のためにテナント業務ワークスペースを開きます。',
-                    )}
-                    href={buildTenantBusinessPath(tenantId)}
-                    cta={text('Open business workspace', '打开业务工作区', '業務ワークスペースを開く')}
-                  />
-                  <SectionEntryLink
-                    title={text('Interface Management', '接口管理', 'インターフェース管理')}
-                    description={text(
-                      'Open adapter interface management. Webhooks and email sender settings are managed from their own pages.',
-                      '打开适配器接口管理。Webhook 与邮件发信设置分别在独立页面管理。',
-                      'アダプターインターフェース管理を開きます。Webhook とメール送信設定はそれぞれ専用画面で管理します。',
-                    )}
-                    href={`/tenant/${tenantId}/interface-management`}
-                    cta={text('Open interface management', '打开接口管理', 'インターフェース管理を開く')}
-                  />
-                  <SectionEntryLink
-                    title={text('Security', '安全管理', 'セキュリティ管理')}
-                    description={text(
-                      'Open security, compliance, and blocklist settings.',
-                      '打开安全、合规和封禁设置。',
-                      'セキュリティ、コンプライアンス、ブロックリスト設定を開きます。',
-                    )}
-                    href={`/tenant/${tenantId}/security`}
-                    cta={text('Open security', '打开安全管理', 'セキュリティ管理を開く')}
-                  />
-                </div>
-              </FormSection>
-            </GlassSurface>
-          </div>
-        ) : null}
-
-        {displayedSectionId === 'config-entities' ? (
-          <div className="space-y-6">
-            <GlassSurface className="p-6">
-              <FormSection
-                title={common.configEntities}
-                description={text({
-                  en: 'Maintain tenant-owned configuration families here, then manage homepage template and component assets in the dedicated inventory below.',
-                  zh_HANS: '先在这里维护租户自有配置实体，再在下方专用清单中管理主页模板与组件资产。',
-                  zh_HANT: '先在這裡維護租戶自有配置實體，再在下方專用清單中管理主頁模板與元件資產。',
-                  ja: 'まずここでテナント所有の設定エンティティを管理し、その下の専用インベントリでホームページのテンプレート資産とコンポーネント資産を管理します。',
-                  ko: '먼저 여기서 테넌트 소유 구성 엔티티를 관리한 뒤, 아래 전용 인벤토리에서 홈페이지 템플릿 및 컴포넌트 자산을 관리하세요.',
-                  fr: 'Gérez d’abord ici les familles de configuration du tenant, puis les assets template et composant de homepage dans l’inventaire dédié ci-dessous.',
-                })}
-              >
-                <ScopedConfigEntityWorkspace
-                  request={request}
-                  requestEnvelope={requestEnvelope}
-                  scopeType="tenant"
-                  locale={locale}
-                  copy={scopedConfigCopy}
-                  catalog={localizedConfigEntityCatalog}
-                />
-              </FormSection>
-            </GlassSurface>
-
-            <GlassSurface className="p-6">
-              <FormSection
-                title={text({
-                  en: 'Homepage Assets',
-                  zh_HANS: '主页资产',
-                  zh_HANT: '主頁資產',
-                  ja: 'ホームページ資産',
-                  ko: '홈페이지 자산',
-                  fr: 'Assets de homepage',
-                })}
-                description={text({
-                  en: 'Template and component assets now live inside Entity Management so duplication, ownership, and IDE entry stay scoped to this tenant.',
-                  zh_HANS: '模板与组件资产现在纳入 Entity Management，确保复制、归属和 IDE 入口都绑定到当前租户范围。',
-                  zh_HANT: '模板與元件資產現在納入 Entity Management，確保複製、歸屬與 IDE 入口都綁定到目前租戶範圍。',
-                  ja: 'テンプレート資産とコンポーネント資産は Entity Management に統合され、このテナント範囲で複製・所有権・IDE 入口を揃えて扱います。',
-                  ko: '템플릿 및 컴포넌트 자산은 이제 Entity Management 안에서 관리되며, 복제·소유권·IDE 진입이 현재 테넌트 범위에 맞춰집니다.',
-                  fr: 'Les assets template et composant vivent désormais dans Entity Management afin que duplication, propriété et entrée IDE restent liées à ce tenant.',
-                })}
-              >
-                <PublicPresenceAssetWorkspace
-                  locale={locale}
-                  request={request}
-                  scopeType="tenant"
-                  tenantId={tenantId}
-                />
-              </FormSection>
-            </GlassSurface>
-          </div>
-        ) : null}
-
-        {displayedSectionId === 'settings' ? (
-          <GlassSurface className="p-6">
               <FormSection
                 title={common.settings}
-                description={activeSettingsCategory === 'email'
-                  ? text(
-                      'Select verified AC-assigned sending domains and non-secret sender preferences.',
-                      '选择 AC 分配且已验证的发信域名，以及非密钥类发信偏好。',
-                      'AC が割り当て検証済みの送信ドメインと非秘密の送信者設定を選択します。',
-                    )
-                  : activeSettingsCategory === 'captcha'
+                description={
+                  activeSettingsCategory === 'email'
                     ? text(
-                        'Manage tenant Cloudflare Turnstile keys and readiness for public CAPTCHA.',
-                        '管理租户级 Cloudflare Turnstile 密钥与公开验证码就绪状态。',
-                        '公開 CAPTCHA 用のテナント Cloudflare Turnstile キーと準備状況を管理します。',
+                        'Select verified AC-assigned sending domains and non-secret sender preferences.',
+                        '选择 AC 分配且已验证的发信域名，以及非密钥类发信偏好。',
+                        'AC が割り当て検証済みの送信ドメインと非秘密の送信者設定を選択します。'
                       )
-                    : text(
-                        'Review tenant defaults before opening the edit workflow.',
-                        '先查看租户默认值，再进入编辑流程。',
-                        '編集ワークフローを開く前にテナント既定値を確認します。',
-                      )}
-                actions={activeSettingsCategory === 'defaults' ? (
-                  <button
-                    type="button"
-                    onClick={() => setIsDefaultsDrawerOpen(true)}
-                    className="rounded-xl bg-slate-950 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
-                  >
-                    {text('Edit defaults', '编辑默认值', '既定値を編集')}
-                  </button>
-                ) : null}
-            >
-              <SettingsCategoryWorkbench
-                ariaLabel={common.settingsCategoriesAriaLabel}
-                categories={[
-                  { id: 'defaults', label: common.defaultsCategory },
-                  { id: 'email', label: text('Email', '邮件', 'メール') },
-                  { id: 'captcha', label: text('CAPTCHA', '验证码', 'CAPTCHA') },
-                ]}
-                activeCategoryId={activeSettingsCategory}
-                onCategoryChange={handleSettingsCategoryChange}
-              >
-                {activeSettingsCategory === 'defaults' ? (
-                  <>
-                    <SettingsDefaultsSummaryGrid
-                      draft={initialDraft}
-                      getSourceHint={(key) => formatSourceHint(settings.inheritedFrom[key], overrideSet.has(key))}
-                      text={text}
-                    />
-
-                    {!isDefaultsDrawerOpen && saveError ? <p className="text-sm font-medium text-red-600">{saveError}</p> : null}
-                    {!isDefaultsDrawerOpen && saveSuccess ? <p className="text-sm font-medium text-emerald-700">{saveSuccess}</p> : null}
-                  </>
-                ) : null}
-
-                {activeSettingsCategory === 'email' ? (
-                  emailPanel.loading ? (
-                    <p className="text-sm font-medium text-slate-500">
-                      {text('Loading email sender domains…', '正在加载发信域名…', 'メール送信ドメインを読み込み中…')}
-                    </p>
-                  ) : emailPanel.error ? (
-                    <p className="text-sm font-medium text-red-600">{emailPanel.error}</p>
-                  ) : (
-                    <TenantEmailSettingsFields
-                      domains={emailPanel.data?.domains ?? []}
-                      draft={emailDraft}
-                      error={emailSaveError}
-                      success={emailSaveSuccess}
-                      isSaving={isEmailSaving}
-                      onDraftChange={setEmailDraft}
-                      onSave={() => void handleSaveEmailSenderPreferences()}
-                      text={text}
-                    />
-                  )
-                ) : null}
-
-                {activeSettingsCategory === 'captcha' ? (
-                  turnstilePanel.loading ? (
-                    <p className="text-sm font-medium text-slate-500">
-                      {text('Loading Turnstile settings…', '正在加载 Turnstile 设置…', 'Turnstile 設定を読み込み中…')}
-                    </p>
-                  ) : turnstilePanel.error ? (
-                    <p className="text-sm font-medium text-red-600">{turnstilePanel.error}</p>
-                  ) : turnstilePanel.data ? (
-                    <TurnstileSettingsFields
-                      response={turnstilePanel.data}
-                      draft={turnstileDraft}
-                      error={turnstileSaveError}
-                      success={turnstileSaveSuccess}
-                      isSaving={isTurnstileSaving}
-                      onDraftChange={setTurnstileDraft}
-                      onSave={() => void handleSaveTurnstileSettings()}
-                      text={text}
-                    />
+                    : activeSettingsCategory === 'captcha'
+                      ? text(
+                          'Manage tenant Cloudflare Turnstile keys and readiness for public CAPTCHA.',
+                          '管理租户级 Cloudflare Turnstile 密钥与公开验证码就绪状态。',
+                          '公開 CAPTCHA 用のテナント Cloudflare Turnstile キーと準備状況を管理します。'
+                        )
+                      : text(
+                          'Review tenant defaults before opening the edit workflow.',
+                          '先查看租户默认值，再进入编辑流程。',
+                          '編集ワークフローを開く前にテナント既定値を確認します。'
+                        )
+                }
+                actions={
+                  activeSettingsCategory === 'defaults' ? (
+                    <button
+                      type="button"
+                      onClick={() => setIsDefaultsDrawerOpen(true)}
+                      className="rounded-xl bg-slate-950 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
+                    >
+                      {text('Edit defaults', '编辑默认值', '既定値を編集')}
+                    </button>
                   ) : null
-                ) : null}
-              </SettingsCategoryWorkbench>
-            </FormSection>
-          </GlassSurface>
-        ) : null}
+                }
+              >
+                <SettingsCategoryWorkbench
+                  ariaLabel={common.settingsCategoriesAriaLabel}
+                  categories={[
+                    { id: 'defaults', label: common.defaultsCategory },
+                    { id: 'email', label: text('Email', '邮件', 'メール') },
+                    { id: 'captcha', label: text('CAPTCHA', '验证码', 'CAPTCHA') },
+                  ]}
+                  activeCategoryId={activeSettingsCategory}
+                  onCategoryChange={handleSettingsCategoryChange}
+                >
+                  {activeSettingsCategory === 'defaults' ? (
+                    <>
+                      <SettingsDefaultsSummaryGrid
+                        draft={initialDraft}
+                        getSourceHint={(key) =>
+                          formatSourceHint(settings.inheritedFrom[key], overrideSet.has(key))
+                        }
+                        text={text}
+                      />
 
-        {displayedSectionId === 'dictionary' ? (
-          <GlassSurface className="p-6">
+                      {!isDefaultsDrawerOpen && saveError ? (
+                        <p className="text-sm font-medium text-red-600">{saveError}</p>
+                      ) : null}
+                      {!isDefaultsDrawerOpen && saveSuccess ? (
+                        <p className="text-sm font-medium text-emerald-700">{saveSuccess}</p>
+                      ) : null}
+                    </>
+                  ) : null}
+
+                  {activeSettingsCategory === 'email' ? (
+                    emailPanel.loading ? (
+                      <p className="text-sm font-medium text-slate-500">
+                        {text(
+                          'Loading email sender domains…',
+                          '正在加载发信域名…',
+                          'メール送信ドメインを読み込み中…'
+                        )}
+                      </p>
+                    ) : emailPanel.error ? (
+                      <p className="text-sm font-medium text-red-600">{emailPanel.error}</p>
+                    ) : (
+                      <TenantEmailSettingsFields
+                        domains={emailPanel.data?.domains ?? []}
+                        draft={emailDraft}
+                        error={emailSaveError}
+                        success={emailSaveSuccess}
+                        isSaving={isEmailSaving}
+                        onDraftChange={setEmailDraft}
+                        onSave={() => void handleSaveEmailSenderPreferences()}
+                        text={text}
+                      />
+                    )
+                  ) : null}
+
+                  {activeSettingsCategory === 'captcha' ? (
+                    turnstilePanel.loading ? (
+                      <p className="text-sm font-medium text-slate-500">
+                        {text(
+                          'Loading Turnstile settings…',
+                          '正在加载 Turnstile 设置…',
+                          'Turnstile 設定を読み込み中…'
+                        )}
+                      </p>
+                    ) : turnstilePanel.error ? (
+                      <p className="text-sm font-medium text-red-600">{turnstilePanel.error}</p>
+                    ) : turnstilePanel.data ? (
+                      <TurnstileSettingsFields
+                        response={turnstilePanel.data}
+                        draft={turnstileDraft}
+                        error={turnstileSaveError}
+                        success={turnstileSaveSuccess}
+                        isSaving={isTurnstileSaving}
+                        onDraftChange={setTurnstileDraft}
+                        onSave={() => void handleSaveTurnstileSettings()}
+                        text={text}
+                      />
+                    ) : null
+                  ) : null}
+                </SettingsCategoryWorkbench>
+              </FormSection>
+            </GlassSurface>
+          ) : null}
+
+          {displayedSectionId === 'dictionary' ? (
+            <GlassSurface className="p-6">
               <FormSection
-              title={common.dictionary}
-              description={text(
-                'Review dictionary items available in this tenant.',
-                '查看当前租户可用的词典内容。',
-                'このテナントで利用できる辞書項目を確認します。',
-              )}
-            >
-              {dictionaryPanel.error ? (
-                <SectionPlaceholder title={text('Dictionary unavailable', '词典不可用', '辞書を読み込めません')} description={dictionaryPanel.error} />
-              ) : dictionaryPanel.data ? (
-                <>
-                  <div className="grid gap-4 xl:grid-cols-3">
-                    <FieldRow label={text('Visible Dictionary Types', '可见词典类型', '表示中の辞書タイプ')} value={String(dictionaryCount)} />
-                    <FieldRow label={common.configEntities} value={String(configEntityFamilyCount)} />
-                    <FieldRow label={text('Tenant Overrides', '租户覆盖项', 'テナント上書き数')} value={String(settings.overrides.length)} />
-                  </div>
-                <DictionaryExplorerPanel
-                  request={request}
-                  requestEnvelope={requestEnvelope}
-                  types={dictionaryPanel.data}
-                  locale={locale}
-                  copy={dictionaryExplorerCopy}
-                  allowIncludeInactiveToggle
-                    intro={(
-                      <>
-                        <p>{text('Review the dictionary items available in this tenant.', '查看当前租户可用的词典项。', 'このテナントで利用できる辞書項目を確認します。')}</p>
-                        <p className="mt-2">
-                          {text(
-                            'Open System Dictionary if you need to change the vocabulary itself.',
-                            '如需调整词典内容，请前往系统词典。',
-                            '辞書項目自体を変更する場合はシステム辞書を開いてください。',
-                          )}
-                        </p>
-                      </>
+                title={common.dictionary}
+                description={text(
+                  'Review dictionary items available in this tenant.',
+                  '查看当前租户可用的词典内容。',
+                  'このテナントで利用できる辞書項目を確認します。'
+                )}
+              >
+                {dictionaryPanel.error ? (
+                  <SectionPlaceholder
+                    title={text('Dictionary unavailable', '词典不可用', '辞書を読み込めません')}
+                    description={dictionaryPanel.error}
+                  />
+                ) : dictionaryPanel.data ? (
+                  <>
+                    <div className="grid gap-4 xl:grid-cols-3">
+                      <FieldRow
+                        label={text(
+                          'Visible Dictionary Types',
+                          '可见词典类型',
+                          '表示中の辞書タイプ'
+                        )}
+                        value={String(dictionaryCount)}
+                      />
+                      <FieldRow
+                        label={common.configEntities}
+                        value={String(configEntityFamilyCount)}
+                      />
+                      <FieldRow
+                        label={text('Tenant Overrides', '租户覆盖项', 'テナント上書き数')}
+                        value={String(settings.overrides.length)}
+                      />
+                    </div>
+                    <DictionaryExplorerPanel
+                      request={request}
+                      requestEnvelope={requestEnvelope}
+                      types={dictionaryPanel.data}
+                      locale={locale}
+                      copy={dictionaryExplorerCopy}
+                      allowIncludeInactiveToggle
+                      intro={
+                        <>
+                          <p>
+                            {text(
+                              'Review the dictionary items available in this tenant.',
+                              '查看当前租户可用的词典项。',
+                              'このテナントで利用できる辞書項目を確認します。'
+                            )}
+                          </p>
+                          <p className="mt-2">
+                            {text(
+                              'Open System Dictionary if you need to change the vocabulary itself.',
+                              '如需调整词典内容，请前往系统词典。',
+                              '辞書項目自体を変更する場合はシステム辞書を開いてください。'
+                            )}
+                          </p>
+                        </>
+                      }
+                      emptyDescription={text(
+                        'No dictionary types are currently available for this tenant.',
+                        '当前租户下没有可用的词典类型。',
+                        'このテナントで利用できる辞書タイプはありません。'
+                      )}
+                    />
+                  </>
+                ) : (
+                  <SectionPlaceholder
+                    title={text(
+                      'No dictionary types returned',
+                      '未返回词典类型',
+                      '辞書タイプが返されませんでした'
                     )}
-                    emptyDescription={text(
+                    description={text(
                       'No dictionary types are currently available for this tenant.',
                       '当前租户下没有可用的词典类型。',
-                      'このテナントで利用できる辞書タイプはありません。',
+                      'このテナントで利用できる辞書タイプはありません。'
                     )}
                   />
-                </>
-              ) : (
-                <SectionPlaceholder
-                  title={text('No dictionary types returned', '未返回词典类型', '辞書タイプが返されませんでした')}
-                  description={text(
-                    'No dictionary types are currently available for this tenant.',
-                    '当前租户下没有可用的词典类型。',
-                    'このテナントで利用できる辞書タイプはありません。',
-                  )}
-                />
-              )}
-            </FormSection>
-          </GlassSurface>
-        ) : null}
+                )}
+              </FormSection>
+            </GlassSurface>
+          ) : null}
         </div>
       </SettingsLayout>
 
@@ -941,13 +1033,17 @@ export function TenantSettingsScreen({
         description={text(
           'Change localization, public surface, import, and security defaults used by this tenant scope.',
           '修改当前租户范围使用的本地化、公开入口、导入与安全默认值。',
-          'このテナントスコープで使用するローカライズ、公開サーフェス、インポート、セキュリティ既定値を変更します。',
+          'このテナントスコープで使用するローカライズ、公開サーフェス、インポート、セキュリティ既定値を変更します。'
         )}
         size="lg"
-        closeButtonAriaLabel={text('Close tenant defaults editor', '关闭租户默认值编辑器', 'テナント既定値エディターを閉じる')}
-        footer={(
+        closeButtonAriaLabel={text(
+          'Close tenant defaults editor',
+          '关闭租户默认值编辑器',
+          'テナント既定値エディターを閉じる'
+        )}
+        footer={
           <ActionDrawerFooter
-            secondary={(
+            secondary={
               <button
                 type="button"
                 onClick={() => {
@@ -959,37 +1055,43 @@ export function TenantSettingsScreen({
               >
                 {text('Cancel', '取消', 'キャンセル')}
               </button>
-            )}
-            primary={(
+            }
+            primary={
               <button
                 type="button"
                 onClick={() => void handleSave()}
                 disabled={isSaving || !hasDirtyDraft}
                 className="rounded-xl bg-slate-950 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {isSaving ? common.saving : text('Save tenant defaults', '保存租户默认值', 'テナント既定値を保存')}
+                {isSaving
+                  ? common.saving
+                  : text('Save tenant defaults', '保存租户默认值', 'テナント既定値を保存')}
               </button>
-            )}
+            }
           />
-        )}
+        }
       >
         <FormSection
           title={common.settings}
           description={text(
             'Review and adjust the defaults applied across this tenant.',
             '查看并调整整个租户范围内应用的默认设置。',
-            'このテナント全体に適用される既定値を確認して調整します。',
+            'このテナント全体に適用される既定値を確認して調整します。'
           )}
         >
           <SettingsDefaultsFormFields
             draft={draft}
-            getSourceHint={(key) => formatSourceHint(settings.inheritedFrom[key], overrideSet.has(key))}
+            getSourceHint={(key) =>
+              formatSourceHint(settings.inheritedFrom[key], overrideSet.has(key))
+            }
             onDraftChange={setDraft}
             text={text}
           />
 
           {saveError ? <p className="text-sm font-medium text-red-600">{saveError}</p> : null}
-          {saveSuccess ? <p className="text-sm font-medium text-emerald-700">{saveSuccess}</p> : null}
+          {saveSuccess ? (
+            <p className="text-sm font-medium text-emerald-700">{saveSuccess}</p>
+          ) : null}
         </FormSection>
       </ActionDrawer>
     </div>

@@ -16,7 +16,7 @@ function asString(value: unknown, fallback = '') {
 }
 
 export function derivePublicMarshmallowThemeSurface(
-  rawTheme: Record<string, unknown>,
+  rawTheme: Record<string, unknown>
 ): PublicMarshmallowThemeSurface {
   const theme = asRecord(rawTheme);
   const accentColor = asString(theme.accentColor) || '#be185d';

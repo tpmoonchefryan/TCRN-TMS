@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable } from '@nestjs/common';
 
 import { CustomerArchiveAccessService } from '../customer/application/customer-archive-access.service';
@@ -12,13 +11,21 @@ import {
 } from './application/talent-lifecycle.service';
 import { TalentReadService } from './application/talent-read.service';
 import { TalentWriteService } from './application/talent-write.service';
-import type { CustomDomainOwnerType, CustomDomainSslMode, TalentCustomDomainBindingListOptions } from './domain/talent-custom-domain.policy';
+import type {
+  CustomDomainOwnerType,
+  CustomDomainSslMode,
+  TalentCustomDomainBindingListOptions,
+} from './domain/talent-custom-domain.policy';
 import type {
   TalentData,
   TalentListOptions,
   TalentPublishReadiness,
 } from './domain/talent-read.policy';
-import type { TalentExternalPagesDomainConfig, TalentProfileStoreRecord, TalentStats } from './domain/talent-read.policy';
+import type {
+  TalentExternalPagesDomainConfig,
+  TalentProfileStoreRecord,
+  TalentStats,
+} from './domain/talent-read.policy';
 import type {
   TalentCreateInput,
   TalentDeleteInput,
@@ -46,22 +53,20 @@ export class TalentService {
   constructor(
     databaseService: DatabaseService = new DatabaseService(),
     private readonly talentReadService: TalentReadService = new TalentReadService(
-      new TalentReadRepository(),
+      new TalentReadRepository()
     ),
     private readonly talentLifecycleService: TalentLifecycleService = new TalentLifecycleService(
       new TalentReadService(new TalentReadRepository()),
-      new CustomerArchiveAccessService(
-        new CustomerArchiveRepository(databaseService),
-      ),
-      new TalentLifecycleRepository(),
+      new CustomerArchiveAccessService(new CustomerArchiveRepository(databaseService)),
+      new TalentLifecycleRepository()
     ),
     private readonly talentWriteService: TalentWriteService = new TalentWriteService(
       new TalentReadService(new TalentReadRepository()),
-      new TalentWriteRepository(),
+      new TalentWriteRepository()
     ),
     private readonly talentCustomDomainService: TalentCustomDomainService = new TalentCustomDomainService(
-      new TalentCustomDomainRepository(),
-    ),
+      new TalentCustomDomainRepository()
+    )
   ) {}
 
   /**
@@ -90,7 +95,7 @@ export class TalentService {
    */
   async getProfileStoreById(
     profileStoreId: string,
-    tenantSchema: string,
+    tenantSchema: string
   ): Promise<TalentProfileStoreRecord | null> {
     return this.talentReadService.getProfileStoreById(profileStoreId, tenantSchema);
   }
@@ -98,10 +103,7 @@ export class TalentService {
   /**
    * Get talent statistics (customer count, etc.)
    */
-  async getTalentStats(
-    talentId: string,
-    tenantSchema: string,
-  ): Promise<TalentStats> {
+  async getTalentStats(talentId: string, tenantSchema: string): Promise<TalentStats> {
     return this.talentReadService.getTalentStats(talentId, tenantSchema);
   }
 
@@ -110,12 +112,9 @@ export class TalentService {
    */
   async getExternalPagesDomainConfig(
     talentId: string,
-    tenantSchema: string,
+    tenantSchema: string
   ): Promise<TalentExternalPagesDomainConfig> {
-    return this.talentReadService.getExternalPagesDomainConfig(
-      talentId,
-      tenantSchema,
-    );
+    return this.talentReadService.getExternalPagesDomainConfig(talentId, tenantSchema);
   }
 
   /**
@@ -131,11 +130,7 @@ export class TalentService {
   /**
    * Create a new talent
    */
-  async create(
-    tenantSchema: string,
-    data: TalentCreateInput,
-    userId: string,
-  ): Promise<TalentData> {
+  async create(tenantSchema: string, data: TalentCreateInput, userId: string): Promise<TalentData> {
     return this.talentWriteService.create(tenantSchema, data, userId);
   }
 
@@ -146,7 +141,7 @@ export class TalentService {
     id: string,
     tenantSchema: string,
     data: TalentUpdateInput,
-    userId: string,
+    userId: string
   ): Promise<TalentData> {
     return this.talentWriteService.update(id, tenantSchema, data, userId);
   }
@@ -154,7 +149,7 @@ export class TalentService {
   async delete(
     id: string,
     tenantSchema: string,
-    data: TalentDeleteInput,
+    data: TalentDeleteInput
   ): Promise<TalentDeleteResult> {
     return this.talentWriteService.delete(id, tenantSchema, data);
   }
@@ -167,21 +162,12 @@ export class TalentService {
     tenantSchema: string,
     newSubsidiaryId: string | null,
     version: number,
-    userId: string,
+    userId: string
   ): Promise<TalentData> {
-    return this.talentLifecycleService.move(
-      id,
-      tenantSchema,
-      newSubsidiaryId,
-      version,
-      userId,
-    );
+    return this.talentLifecycleService.move(id, tenantSchema, newSubsidiaryId, version, userId);
   }
 
-  async getPublishReadiness(
-    id: string,
-    tenantSchema: string
-  ): Promise<TalentPublishReadiness> {
+  async getPublishReadiness(id: string, tenantSchema: string): Promise<TalentPublishReadiness> {
     return this.talentLifecycleService.getPublishReadiness(id, tenantSchema);
   }
 
@@ -209,26 +195,16 @@ export class TalentService {
     version: number,
     userId: string
   ): Promise<TalentData> {
-    return this.talentLifecycleService.reEnable(
-      id,
-      tenantSchema,
-      version,
-      userId,
-    );
+    return this.talentLifecycleService.reEnable(id, tenantSchema, version, userId);
   }
 
   async transitionArtistStage(
     id: string,
     tenantSchema: string,
     input: TalentStageTransitionInput,
-    userId: string,
+    userId: string
   ): Promise<TalentData> {
-    return this.talentLifecycleService.transitionArtistStage(
-      id,
-      tenantSchema,
-      input,
-      userId,
-    );
+    return this.talentLifecycleService.transitionArtistStage(id, tenantSchema, input, userId);
   }
 
   // =============================================================================
@@ -239,29 +215,15 @@ export class TalentService {
    * Get unified custom domain configuration
    * homepage_path → Homepage routing, marshmallow_path → Marshmallow routing
    */
-  async getCustomDomainConfig(
-    talentId: string,
-    tenantSchema: string
-  ) {
-    return this.talentCustomDomainService.getCustomDomainConfig(
-      talentId,
-      tenantSchema,
-    );
+  async getCustomDomainConfig(talentId: string, tenantSchema: string) {
+    return this.talentCustomDomainService.getCustomDomainConfig(talentId, tenantSchema);
   }
 
   /**
    * Set custom domain for talent
    */
-  async setCustomDomain(
-    talentId: string,
-    tenantSchema: string,
-    customDomain: string | null
-  ) {
-    return this.talentCustomDomainService.setCustomDomain(
-      talentId,
-      tenantSchema,
-      customDomain,
-    );
+  async setCustomDomain(talentId: string, tenantSchema: string, customDomain: string | null) {
+    return this.talentCustomDomainService.setCustomDomain(talentId, tenantSchema, customDomain);
   }
 
   /**
@@ -271,10 +233,7 @@ export class TalentService {
     talentId: string,
     tenantSchema: string
   ): Promise<{ verified: boolean; message: string }> {
-    return this.talentCustomDomainService.verifyCustomDomain(
-      talentId,
-      tenantSchema,
-    );
+    return this.talentCustomDomainService.verifyCustomDomain(talentId, tenantSchema);
   }
 
   /**
@@ -293,11 +252,7 @@ export class TalentService {
     homepageCustomPath: string | null;
     marshmallowCustomPath: string | null;
   }> {
-    return this.talentCustomDomainService.updateServicePaths(
-      talentId,
-      tenantSchema,
-      paths,
-    );
+    return this.talentCustomDomainService.updateServicePaths(talentId, tenantSchema, paths);
   }
 
   /**
@@ -308,11 +263,7 @@ export class TalentService {
     tenantSchema: string,
     sslMode: 'auto' | 'self_hosted' | 'cloudflare'
   ): Promise<{ customDomainSslMode: string }> {
-    return this.talentCustomDomainService.updateSslMode(
-      talentId,
-      tenantSchema,
-      sslMode,
-    );
+    return this.talentCustomDomainService.updateSslMode(talentId, tenantSchema, sslMode);
   }
 
   /**
@@ -327,22 +278,16 @@ export class TalentService {
       hostname: string;
       customDomainSslMode?: CustomDomainSslMode;
       isActive?: boolean;
-    },
+    }
   ) {
-    return this.talentCustomDomainService.createCustomDomainBinding(
-      tenantSchema,
-      input,
-    );
+    return this.talentCustomDomainService.createCustomDomainBinding(tenantSchema, input);
   }
 
   async listCustomDomainBindings(
     tenantSchema: string,
-    input: TalentCustomDomainBindingListOptions,
+    input: TalentCustomDomainBindingListOptions
   ) {
-    return this.talentCustomDomainService.listCustomDomainBindings(
-      tenantSchema,
-      input,
-    );
+    return this.talentCustomDomainService.listCustomDomainBindings(tenantSchema, input);
   }
 
   async updateCustomDomainBinding(
@@ -354,41 +299,24 @@ export class TalentService {
       hostname: string;
       customDomainSslMode?: CustomDomainSslMode;
       isActive?: boolean;
-    },
+    }
   ) {
-    return this.talentCustomDomainService.updateCustomDomainBinding(
-      tenantSchema,
-      domainId,
-      input,
-    );
+    return this.talentCustomDomainService.updateCustomDomainBinding(tenantSchema, domainId, input);
   }
 
-  async verifyCustomDomainBinding(
-    tenantSchema: string,
-    domainId: string,
-  ) {
-    return this.talentCustomDomainService.verifyCustomDomainBinding(
-      tenantSchema,
-      domainId,
-    );
+  async verifyCustomDomainBinding(tenantSchema: string, domainId: string) {
+    return this.talentCustomDomainService.verifyCustomDomainBinding(tenantSchema, domainId);
   }
 
-  async setSelectedInheritedDomainIds(
-    talentId: string,
-    tenantSchema: string,
-    domainIds: string[],
-  ) {
+  async setSelectedInheritedDomainIds(talentId: string, tenantSchema: string, domainIds: string[]) {
     return this.talentCustomDomainService.setSelectedInheritedDomainIds(
       talentId,
       tenantSchema,
-      domainIds,
+      domainIds
     );
   }
 
-  async findByCustomDomain(
-    customDomain: string,
-    tenantSchema: string
-  ): Promise<TalentData | null> {
+  async findByCustomDomain(customDomain: string, tenantSchema: string): Promise<TalentData | null> {
     return this.talentReadService.findByCustomDomain(customDomain, tenantSchema);
   }
 }

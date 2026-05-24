@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Module } from '@nestjs/common';
 
 import { AdapterReadApplicationService } from './application/adapter-read.service';
@@ -54,12 +53,6 @@ import {
     ApiKeyService,
     ApiKeyGuard,
   ],
-  exports: [
-    AdapterService,
-    AdapterResolutionService,
-    WebhookService,
-    ApiKeyService,
-    ApiKeyGuard,
-  ],
+  exports: [AdapterService, AdapterResolutionService, WebhookService, ApiKeyService, ApiKeyGuard],
 })
 export class IntegrationModule {}

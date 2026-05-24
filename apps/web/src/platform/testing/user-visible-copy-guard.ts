@@ -27,10 +27,15 @@ const FORBIDDEN_USER_VISIBLE_COPY: readonly ForbiddenCopyMatch[] = [
 ];
 
 export function findForbiddenUserVisibleCopy(text: string): string[] {
-  return FORBIDDEN_USER_VISIBLE_COPY.filter(({ pattern }) => pattern.test(text)).map(({ label }) => label);
+  return FORBIDDEN_USER_VISIBLE_COPY.filter(({ pattern }) => pattern.test(text)).map(
+    ({ label }) => label
+  );
 }
 
-export function assertNoForbiddenUserVisibleCopy(text: string, options: CopyGuardOptions = {}): void {
+export function assertNoForbiddenUserVisibleCopy(
+  text: string,
+  options: CopyGuardOptions = {}
+): void {
   const matches = findForbiddenUserVisibleCopy(text);
   if (matches.length === 0) {
     return;

@@ -61,7 +61,7 @@ describe('Import/Export Integration Tests', () => {
         WHERE id = $1::uuid
       `,
       targetTalentId,
-      testUser.id,
+      testUser.id
     );
   };
 
@@ -255,9 +255,8 @@ describe('Import/Export Integration Tests', () => {
         request(app.getHttpServer()).post(
           `/api/v1/talents/${talentId}/imports/customers/individuals`
         ),
-        false,
-      )
-        .expect(400);
+        false
+      ).expect(400);
 
       expect(response.body.success).toBe(false);
       expect(response.body.error.code).toBe('VALIDATION_FAILED');
@@ -269,7 +268,7 @@ describe('Import/Export Integration Tests', () => {
         request(app.getHttpServer()).get(
           `/api/v1/talents/${talentId}/imports/customers/individuals/template`
         ),
-        false,
+        false
       ).expect(200);
 
       expect(response.headers['content-type']).toMatch(/text\/csv/);
@@ -285,7 +284,7 @@ describe('Import/Export Integration Tests', () => {
         request(app.getHttpServer()).get(
           `/api/v1/talents/${talentId}/imports/customers/companies/template`
         ),
-        false,
+        false
       ).expect(200);
 
       expect(response.headers['content-type']).toMatch(/text\/csv/);
@@ -308,7 +307,7 @@ describe('Import/Export Integration Tests', () => {
         request(app.getHttpServer()).post(
           `/api/v1/talents/${talentId}/imports/customers/individuals`
         ),
-        false,
+        false
       )
         .field('consumerCode', 'CRM_SYSTEM')
         .attach('file', Buffer.from(csvContent, 'utf8'), 'individual_import.csv')
@@ -353,7 +352,7 @@ describe('Import/Export Integration Tests', () => {
         request(app.getHttpServer()).post(
           `/api/v1/talents/${talentId}/imports/customers/individuals`
         ),
-        false,
+        false
       )
         .field('consumerCode', 'CRM_SYSTEM')
         .attach('file', Buffer.from(csvContent, 'utf8'), 'individual_import_invalid_headers.csv')
@@ -370,7 +369,7 @@ describe('Import/Export Integration Tests', () => {
     it('should list import jobs for the current talent profile store', async () => {
       const response = await withAuth(
         request(app.getHttpServer()).get(`/api/v1/talents/${talentId}/imports/customers`),
-        false,
+        false
       )
         .query({ page: 1, pageSize: 10 })
         .expect(200);
@@ -383,7 +382,7 @@ describe('Import/Export Integration Tests', () => {
     it('should filter import jobs by status', async () => {
       const response = await withAuth(
         request(app.getHttpServer()).get(`/api/v1/talents/${talentId}/imports/customers`),
-        false,
+        false
       )
         .query({ status: ImportJobStatus.PENDING })
         .expect(200);
@@ -399,7 +398,7 @@ describe('Import/Export Integration Tests', () => {
         request(app.getHttpServer()).get(
           `/api/v1/talents/${talentId}/imports/customers/individual_import/${importJobId}`
         ),
-        false,
+        false
       ).expect(200);
 
       expect(response.body.success).toBe(true);
@@ -412,7 +411,7 @@ describe('Import/Export Integration Tests', () => {
         request(app.getHttpServer()).get(
           `/api/v1/talents/${talentId}/imports/customers/individual_import/${missingImportJobId}`
         ),
-        false,
+        false
       ).expect(400);
 
       expect(response.body.success).toBe(false);
@@ -427,7 +426,7 @@ describe('Import/Export Integration Tests', () => {
         request(app.getHttpServer()).delete(
           `/api/v1/talents/${talentId}/imports/customers/individual_import/${missingImportJobId}`
         ),
-        false,
+        false
       ).expect(400);
 
       expect(response.body.success).toBe(false);

@@ -7,7 +7,7 @@ import {
   resolveLocaleRecord,
 } from '@/platform/runtime/locale/locale-text';
 
-type UserManagementLocale = SupportedUiLocale ;
+type UserManagementLocale = SupportedUiLocale;
 
 const ROLE_ACTION_LABELS: Record<SupportedUiLocale, Record<PermissionAction, string>> = {
   en: {
@@ -204,7 +204,14 @@ const LANGUAGE_LABELS: Record<SupportedUiLocale, Record<SupportedUiLocale, strin
   },
 };
 
-const ROLE_RESOURCE_COLUMN_LABELS: Record<SupportedUiLocale, string> = { en: 'Resource', zh_HANS: '资源', zh_HANT: '资源', ja: 'リソース', ko: 'Resource', fr: 'Resource' };
+const ROLE_RESOURCE_COLUMN_LABELS: Record<SupportedUiLocale, string> = {
+  en: 'Resource',
+  zh_HANS: '资源',
+  zh_HANT: '资源',
+  ja: 'リソース',
+  ko: 'Resource',
+  fr: 'Resource',
+};
 
 const EXPLICIT_PERMISSION_COUNT_LABELS: Record<SupportedUiLocale, (count: number) => string> = {
   en: (count) => `${count} explicit permission${count === 1 ? '' : 's'}`,
@@ -212,7 +219,8 @@ const EXPLICIT_PERMISSION_COUNT_LABELS: Record<SupportedUiLocale, (count: number
   zh_HANT: (count) => `${count} 條顯式權限`,
   ja: (count) => `${count} 件の明示的権限`,
   ko: (count) => `${count} explicit permission${count === 1 ? '' : 's'}`,
-  fr: (count) => `${count} autorisation${count === 1 ? '' : 's'} explicite${count === 1 ? '' : 's'}`,
+  fr: (count) =>
+    `${count} autorisation${count === 1 ? '' : 's'} explicite${count === 1 ? '' : 's'}`,
 };
 
 const COPY = {
@@ -266,11 +274,13 @@ const COPY = {
       description:
         'Manage users, role definitions, and delegation here. Use dedicated pages when you need to create or edit.',
       summaryVisibleUsersLabel: 'Visible Users',
-      summaryVisibleUsersHint: (_workspaceSessionLabel: string) => 'Users matching the current filters.',
+      summaryVisibleUsersHint: (_workspaceSessionLabel: string) =>
+        'Users matching the current filters.',
       summaryActiveRolesLabel: 'Active Roles',
       summaryActiveRolesHint: 'Only roles available for assignment on this page are shown here.',
       summaryDelegationsLabel: 'Delegations',
-      summaryDelegationsHint: 'Delegated-admin records can target subsidiary or talent scope from this page.',
+      summaryDelegationsHint:
+        'Delegated-admin records can target subsidiary or talent scope from this page.',
       tabs: {
         users: 'Users',
         roles: 'Roles',
@@ -325,7 +335,8 @@ const COPY = {
       },
       roles: {
         title: 'System roles',
-        description: 'Review role coverage here, then open a dedicated role page when deeper changes are needed.',
+        description:
+          'Review role coverage here, then open a dedicated role page when deeper changes are needed.',
         newRole: 'New role',
         unavailableTitle: 'System roles unavailable',
         emptyTitle: 'No active roles available',
@@ -341,7 +352,8 @@ const COPY = {
         edit: 'Edit',
         delete: 'Delete',
         deleteTitle: (name: string) => `Delete ${name}?`,
-        deleteDescription: 'Only custom roles can be deleted here. Protected system roles stay read-only.',
+        deleteDescription:
+          'Only custom roles can be deleted here. Protected system roles stay read-only.',
         deleteConfirm: 'Delete role',
         deletePending: 'Deleting role…',
         deleteSuccess: (name: string) => `${name} was deleted.`,
@@ -349,13 +361,15 @@ const COPY = {
       },
       delegation: {
         title: 'Delegated administration',
-        description: 'Delegate subsidiary or talent administration with a clear scope and current grant list.',
+        description:
+          'Delegate subsidiary or talent administration with a clear scope and current grant list.',
         grantTitle: 'Grant delegated admin',
         grantDescription: 'Choose a visible scope and assign a user or role.',
         grantButton: 'Grant delegation',
         grantPending: 'Granting delegation…',
         loadingTitle: 'Loading delegatable scopes',
-        loadingDescription: 'The organization tree is loading so the form can offer the right scopes.',
+        loadingDescription:
+          'The organization tree is loading so the form can offer the right scopes.',
         noScopesTitle: 'No delegatable scopes available',
         noScopesDescription:
           'No visible subsidiary or talent scopes are available for delegated administration.',
@@ -367,7 +381,8 @@ const COPY = {
         delegateTypeUser: 'User',
         delegateTypeRole: 'Role',
         delegateLabel: 'Delegate',
-        sourceNote: 'Delegation options come from the visible organization tree plus the current users and roles.',
+        sourceNote:
+          'Delegation options come from the visible organization tree plus the current users and roles.',
         selectScopeError: 'Select a scope before granting delegated administration.',
         selectDelegateError: 'Select a delegate before granting delegated administration.',
         createError: 'Failed to create delegated admin assignment.',
@@ -412,8 +427,10 @@ const COPY = {
       backToInventory: 'Back to users',
       badge: (workspaceLabel: string) => workspaceLabel,
       createTitle: 'Create system user',
-      createDescription: 'Create a new user on a dedicated page so profile data and role access stay focused.',
-      editDescription: 'Use this page to update profile data, scoped role access, and security actions.',
+      createDescription:
+        'Create a new user on a dedicated page so profile data and role access stay focused.',
+      editDescription:
+        'Use this page to update profile data, scoped role access, and security actions.',
       accountProfileTitle: 'Account profile',
       fields: {
         username: 'Username',
@@ -441,7 +458,8 @@ const COPY = {
       lastLoginNeverHint: 'This user has not logged in yet.',
       updateSuccess: (name: string) => `${name} was updated.`,
       scopedAssignmentsTitle: 'Scoped role assignments',
-      scopedAssignmentsDescription: 'Assign roles at tenant, subsidiary, or talent scope from this page. The list page stays focused on browsing.',
+      scopedAssignmentsDescription:
+        'Assign roles at tenant, subsidiary, or talent scope from this page. The list page stays focused on browsing.',
       scopeField: 'Scope',
       roleField: 'Role',
       expiresAtField: 'Expires at',
@@ -449,13 +467,15 @@ const COPY = {
       assignmentSubmit: 'Assign role',
       assignmentPending: 'Assigning role…',
       noAssignmentsTitle: 'No scoped roles assigned',
-      noAssignmentsDescription: 'This user has no role assignments yet. Use the form above to grant one at the right scope.',
+      noAssignmentsDescription:
+        'This user has no role assignments yet. Use the form above to grant one at the right scope.',
       assignmentCreated: (roleName: string) => `${roleName} was assigned.`,
       assignmentUpdated: 'Role assignment was updated.',
       assignmentRemoved: 'Role assignment was removed.',
       assignmentSavePending: 'Saving…',
       directScopeAccessTitle: 'Direct scope access',
-      directScopeAccessDescription: 'Review direct access rules here. Use the dedicated access flow to change them.',
+      directScopeAccessDescription:
+        'Review direct access rules here. Use the dedicated access flow to change them.',
       noDirectScopeAccessTitle: 'No direct scope access rules',
       noDirectScopeAccessDescription: 'This user has no direct access rules.',
     },
@@ -470,8 +490,10 @@ const COPY = {
       titleFallback: 'System role',
       backToInventory: 'Back to roles',
       badge: (workspaceLabel: string) => workspaceLabel,
-      createDescription: 'Define role details and the explicit permissions required for this scope.',
-      editDescription: 'Review role details, explicit permissions, and where this role is assigned.',
+      createDescription:
+        'Define role details and the explicit permissions required for this scope.',
+      editDescription:
+        'Review role details, explicit permissions, and where this role is assigned.',
       summaryExplicitPermissionsLabel: 'Explicit Permissions',
       summaryExplicitPermissionsHint:
         'Unset actions inherit the broader catalog defaults or remain unavailable.',
@@ -481,7 +503,8 @@ const COPY = {
       summaryBoundScopesLabel: 'Bound Scopes',
       summaryBoundScopesHint: 'Shows where this role is currently assigned.',
       scopeBindingsTitle: 'Assignment-derived scope bindings',
-      scopeBindingsDescription: 'This role is currently assigned at the tenant, subsidiary, or talent level.',
+      scopeBindingsDescription:
+        'This role is currently assigned at the tenant, subsidiary, or talent level.',
       scopeBindingsEmpty:
         'No current assignments bind this role to a tenant, subsidiary, or talent scope.',
       assignedUsersTitle: 'Assigned users',
@@ -497,10 +520,10 @@ const COPY = {
       isActiveDescription: 'Active roles remain eligible for assignment in this scope.',
       createHint:
         'Role code becomes the stable identifier after creation. Leave actions unset to avoid granting behavior you do not need.',
-      editHint: 'Role code stays immutable after creation. Protected roles can still be edited here, but only custom roles can be deleted from the list.',
+      editHint:
+        'Role code stays immutable after creation. Protected roles can still be edited here, but only custom roles can be deleted from the list.',
       permissionMatrixTitle: 'Permission matrix',
-      permissionMatrixDescription:
-        'Explicit effects can be left unset, granted, or denied.',
+      permissionMatrixDescription: 'Explicit effects can be left unset, granted, or denied.',
       notAvailable: 'N/A',
       submitCreate: 'Create role',
       submitSave: 'Save role',
@@ -516,7 +539,8 @@ const COPY = {
         cancel: 'Cancel',
         closeButtonAriaLabel: 'Close role name translations drawer',
         empty: 'No additional translations configured yet.',
-        summary: (count: number) => `${count} additional locale ${count === 1 ? 'value' : 'values'} configured.`,
+        summary: (count: number) =>
+          `${count} additional locale ${count === 1 ? 'value' : 'values'} configured.`,
         languageLoadError:
           'Language options are temporarily unavailable. Load the System Dictionary languages and try again.',
       },
@@ -568,12 +592,14 @@ const COPY = {
     },
     management: {
       pageUnavailableTitle: '用户管理不可用',
-      pageUnavailableDescription: (_workspaceAccessLabel: string) => '当前范围无法加载用户、角色或委派管理数据。',
+      pageUnavailableDescription: (_workspaceAccessLabel: string) =>
+        '当前范围无法加载用户、角色或委派管理数据。',
       badge: (workspaceLabel: string) => workspaceLabel,
       title: '身份、角色与委派管理',
       description: '在同一处管理用户、角色与委派；创建或编辑时进入独立页面。',
       summaryVisibleUsersLabel: '可见用户',
-      summaryVisibleUsersHint: (_workspaceSessionLabel: string) => '按当前会话上下文和筛选条件得到的用户结果。',
+      summaryVisibleUsersHint: (_workspaceSessionLabel: string) =>
+        '按当前会话上下文和筛选条件得到的用户结果。',
       summaryActiveRolesLabel: '生效角色',
       summaryActiveRolesHint: '这里只显示当前范围允许使用的激活角色。',
       summaryDelegationsLabel: '委派记录',
@@ -613,14 +639,16 @@ const COPY = {
         requireTotpError: '设置 TOTP 要求失败。',
         deactivate: '停用',
         deactivateTitle: (name: string) => `停用 ${name}？`,
-        deactivateDescription: (_workspaceAccessLabel: string) => '停用后，该用户将失去当前访问权限，直到重新激活。',
+        deactivateDescription: (_workspaceAccessLabel: string) =>
+          '停用后，该用户将失去当前访问权限，直到重新激活。',
         deactivateConfirm: '停用用户',
         deactivatePending: '正在停用用户…',
         deactivateSuccess: (name: string) => `${name} 已停用。`,
         deactivateError: '停用系统用户失败。',
         reactivate: '重新激活',
         reactivateTitle: (name: string) => `重新激活 ${name}？`,
-        reactivateDescription: (_workspaceAccessLabel: string) => '重新激活后，该用户可恢复访问权限，不会重置其他账户资料。',
+        reactivateDescription: (_workspaceAccessLabel: string) =>
+          '重新激活后，该用户可恢复访问权限，不会重置其他账户资料。',
         reactivateConfirm: '重新激活用户',
         reactivatePending: '正在重新激活用户…',
         reactivateSuccess: (name: string) => `${name} 已重新激活。`,
@@ -632,7 +660,8 @@ const COPY = {
         newRole: '新建角色',
         unavailableTitle: '系统角色不可用',
         emptyTitle: '没有可用的激活角色',
-        emptyDescription: (_workspaceAccessLabel: string) => '这里只显示当前范围允许使用的激活角色。',
+        emptyDescription: (_workspaceAccessLabel: string) =>
+          '这里只显示当前范围允许使用的激活角色。',
         columns: ['角色', '覆盖面', '用户数', '状态', '更新时间', '操作'],
         permissions: (count: number) => `${count} 条权限`,
         assignedUsers: (count: number) => `${count} 位分配用户`,
@@ -672,7 +701,8 @@ const COPY = {
         selectScopeError: '请先选择一个范围。',
         selectDelegateError: '请先选择一个委派对象。',
         createError: '创建委派管理失败。',
-        createSuccess: (delegateName: string, scopeName: string) => `${delegateName} 已获得 ${scopeName} 的委派管理权限。`,
+        createSuccess: (delegateName: string, scopeName: string) =>
+          `${delegateName} 已获得 ${scopeName} 的委派管理权限。`,
         unavailableTitle: '委派管理不可用',
         emptyTitle: '尚未配置委派管理',
         emptyDescription: (isAcWorkspace: boolean) =>
@@ -723,7 +753,8 @@ const COPY = {
         preferredLanguage: '首选语言',
       },
       forceResetDescription: '让引导阶段密码仅短期有效，首次认证后必须立即重置。',
-      immutableIdentityDescription: '用户名和邮箱在此处不可修改。密码轮换保留给个人资料和安全流程，不再藏在拥挤的列表页里。',
+      immutableIdentityDescription:
+        '用户名和邮箱在此处不可修改。密码轮换保留给个人资料和安全流程，不再藏在拥挤的列表页里。',
       submitCreate: '创建用户',
       submitSave: '保存资料',
       pendingCreate: '正在创建用户…',
@@ -737,7 +768,8 @@ const COPY = {
       lastLoginNeverHint: '该用户尚未登录过。',
       updateSuccess: (name: string) => `${name} 已更新。`,
       scopedAssignmentsTitle: '范围角色分配',
-      scopedAssignmentsDescription: '可在此按租户、分目录或艺人范围直接分配角色，列表页仅保留浏览。',
+      scopedAssignmentsDescription:
+        '可在此按租户、分目录或艺人范围直接分配角色，列表页仅保留浏览。',
       scopeField: '范围',
       roleField: '角色',
       expiresAtField: '到期时间',
@@ -857,12 +889,14 @@ const COPY = {
     },
     management: {
       pageUnavailableTitle: '用户管理不可用',
-      pageUnavailableDescription: (_workspaceAccessLabel: string) => '当前范围无法加载用户、角色或委派管理数据。',
+      pageUnavailableDescription: (_workspaceAccessLabel: string) =>
+        '当前范围无法加载用户、角色或委派管理数据。',
       badge: (workspaceLabel: string) => workspaceLabel,
       title: '身份、角色与委派管理',
       description: '在同一处管理用户、角色与委派；创建或编辑时进入独立页面。',
       summaryVisibleUsersLabel: '可见用户',
-      summaryVisibleUsersHint: (_workspaceSessionLabel: string) => '按当前会话上下文和筛选条件得到的用户结果。',
+      summaryVisibleUsersHint: (_workspaceSessionLabel: string) =>
+        '按当前会话上下文和筛选条件得到的用户结果。',
       summaryActiveRolesLabel: '生效角色',
       summaryActiveRolesHint: '这里只显示当前范围允许使用的激活角色。',
       summaryDelegationsLabel: '委派记录',
@@ -902,14 +936,16 @@ const COPY = {
         requireTotpError: '设置 TOTP 要求失败。',
         deactivate: '停用',
         deactivateTitle: (name: string) => `停用 ${name}？`,
-        deactivateDescription: (_workspaceAccessLabel: string) => '停用后，该用户将失去当前访问权限，直到重新激活。',
+        deactivateDescription: (_workspaceAccessLabel: string) =>
+          '停用后，该用户将失去当前访问权限，直到重新激活。',
         deactivateConfirm: '停用用户',
         deactivatePending: '正在停用用户…',
         deactivateSuccess: (name: string) => `${name} 已停用。`,
         deactivateError: '停用系统用户失败。',
         reactivate: '重新激活',
         reactivateTitle: (name: string) => `重新激活 ${name}？`,
-        reactivateDescription: (_workspaceAccessLabel: string) => '重新激活后，该用户可恢复访问权限，不会重置其他账户资料。',
+        reactivateDescription: (_workspaceAccessLabel: string) =>
+          '重新激活后，该用户可恢复访问权限，不会重置其他账户资料。',
         reactivateConfirm: '重新激活用户',
         reactivatePending: '正在重新激活用户…',
         reactivateSuccess: (name: string) => `${name} 已重新激活。`,
@@ -921,7 +957,8 @@ const COPY = {
         newRole: '新建角色',
         unavailableTitle: '系统角色不可用',
         emptyTitle: '没有可用的激活角色',
-        emptyDescription: (_workspaceAccessLabel: string) => '这里只显示当前范围允许使用的激活角色。',
+        emptyDescription: (_workspaceAccessLabel: string) =>
+          '这里只显示当前范围允许使用的激活角色。',
         columns: ['角色', '覆盖面', '用户数', '状态', '更新时间', '操作'],
         permissions: (count: number) => `${count} 条权限`,
         assignedUsers: (count: number) => `${count} 位分配用户`,
@@ -961,7 +998,8 @@ const COPY = {
         selectScopeError: '请先选择一个范围。',
         selectDelegateError: '请先选择一个委派对象。',
         createError: '创建委派管理失败。',
-        createSuccess: (delegateName: string, scopeName: string) => `${delegateName} 已获得 ${scopeName} 的委派管理权限。`,
+        createSuccess: (delegateName: string, scopeName: string) =>
+          `${delegateName} 已获得 ${scopeName} 的委派管理权限。`,
         unavailableTitle: '委派管理不可用',
         emptyTitle: '尚未配置委派管理',
         emptyDescription: (isAcWorkspace: boolean) =>
@@ -1012,7 +1050,8 @@ const COPY = {
         preferredLanguage: '首选语言',
       },
       forceResetDescription: '让引导阶段密码仅短期有效，首次认证后必须立即重置。',
-      immutableIdentityDescription: '用户名和邮箱在此处不可修改。密码轮换保留给个人资料和安全流程，不再藏在拥挤的列表页里。',
+      immutableIdentityDescription:
+        '用户名和邮箱在此处不可修改。密码轮换保留给个人资料和安全流程，不再藏在拥挤的列表页里。',
       submitCreate: '创建用户',
       submitSave: '保存资料',
       pendingCreate: '正在创建用户…',
@@ -1026,7 +1065,8 @@ const COPY = {
       lastLoginNeverHint: '该用户尚未登录过。',
       updateSuccess: (name: string) => `${name} 已更新。`,
       scopedAssignmentsTitle: '范围角色分配',
-      scopedAssignmentsDescription: '可在此按租户、分目录或艺人范围直接分配角色，列表页仅保留浏览。',
+      scopedAssignmentsDescription:
+        '可在此按租户、分目录或艺人范围直接分配角色，列表页仅保留浏览。',
       scopeField: '范围',
       roleField: '角色',
       expiresAtField: '到期时间',
@@ -1146,12 +1186,15 @@ const COPY = {
     },
     management: {
       pageUnavailableTitle: 'ユーザー管理を読み込めません',
-      pageUnavailableDescription: (_workspaceAccessLabel: string) => '現在の範囲でユーザー、ロール、委任管理データを読み込めませんでした。',
+      pageUnavailableDescription: (_workspaceAccessLabel: string) =>
+        '現在の範囲でユーザー、ロール、委任管理データを読み込めませんでした。',
       badge: (workspaceLabel: string) => workspaceLabel,
       title: 'ID・ロール・委任管理',
-      description: 'ユーザー、ロール定義、委任権限を一つの画面で管理し、一覧ページに重い編集フォームを混在させません。',
+      description:
+        'ユーザー、ロール定義、委任権限を一つの画面で管理し、一覧ページに重い編集フォームを混在させません。',
       summaryVisibleUsersLabel: '表示中のユーザー',
-      summaryVisibleUsersHint: (_workspaceSessionLabel: string) => '現在のセッション条件と検索フィルターに一致したユーザー数です。',
+      summaryVisibleUsersHint: (_workspaceSessionLabel: string) =>
+        '現在のセッション条件と検索フィルターに一致したユーザー数です。',
       summaryActiveRolesLabel: '有効ロール',
       summaryActiveRolesHint: '現在の範囲で利用できる有効ロールのみを表示します。',
       summaryDelegationsLabel: '委任件数',
@@ -1184,21 +1227,24 @@ const COPY = {
         edit: '編集',
         requireTotp: 'TOTP を必須化',
         requireTotpTitle: (name: string) => `${name} に TOTP を必須化しますか？`,
-        requireTotpDescription: '次回ログイン時、このユーザーは TOTP 登録を完了する必要があります。',
+        requireTotpDescription:
+          '次回ログイン時、このユーザーは TOTP 登録を完了する必要があります。',
         requireTotpConfirm: 'TOTP を必須化',
         requireTotpPending: 'TOTP 要件を保存中…',
         requireTotpSuccess: (name: string) => `${name} は次回ログイン時に TOTP 設定が必要です。`,
         requireTotpError: 'TOTP 必須設定の保存に失敗しました。',
         deactivate: '無効化',
         deactivateTitle: (name: string) => `${name} を無効化しますか？`,
-        deactivateDescription: (_workspaceAccessLabel: string) => '無効化すると、このユーザーは現在のアクセス権を失います。',
+        deactivateDescription: (_workspaceAccessLabel: string) =>
+          '無効化すると、このユーザーは現在のアクセス権を失います。',
         deactivateConfirm: 'ユーザーを無効化',
         deactivatePending: 'ユーザーを無効化中…',
         deactivateSuccess: (name: string) => `${name} を無効化しました。`,
         deactivateError: 'システムユーザーの無効化に失敗しました。',
         reactivate: '再有効化',
         reactivateTitle: (name: string) => `${name} を再有効化しますか？`,
-        reactivateDescription: (_workspaceAccessLabel: string) => '再有効化すると、このユーザーは他のプロフィール情報を変えずにアクセスを回復します。',
+        reactivateDescription: (_workspaceAccessLabel: string) =>
+          '再有効化すると、このユーザーは他のプロフィール情報を変えずにアクセスを回復します。',
         reactivateConfirm: 'ユーザーを再有効化',
         reactivatePending: 'ユーザーを再有効化中…',
         reactivateSuccess: (name: string) => `${name} を再有効化しました。`,
@@ -1210,7 +1256,8 @@ const COPY = {
         newRole: 'ロール作成',
         unavailableTitle: 'システムロールを読み込めません',
         emptyTitle: '有効なロールがありません',
-        emptyDescription: (_workspaceAccessLabel: string) => 'この一覧には現在の範囲で有効なロールのみ表示されます。',
+        emptyDescription: (_workspaceAccessLabel: string) =>
+          'この一覧には現在の範囲で有効なロールのみ表示されます。',
         columns: ['ロール', '権限範囲', '割当ユーザー', '状態', '更新日時', '操作'],
         permissions: (count: number) => `${count} 件の権限`,
         assignedUsers: (count: number) => `${count} 人の割当ユーザー`,
@@ -1221,7 +1268,8 @@ const COPY = {
         edit: '編集',
         delete: '削除',
         deleteTitle: (name: string) => `${name} を削除しますか？`,
-        deleteDescription: 'ここで削除できるのはカスタムロールのみです。保護されたシステムロールは一覧で参照のみ可能です。',
+        deleteDescription:
+          'ここで削除できるのはカスタムロールのみです。保護されたシステムロールは一覧で参照のみ可能です。',
         deleteConfirm: 'ロールを削除',
         deletePending: 'ロールを削除中…',
         deleteSuccess: (name: string) => `${name} を削除しました。`,
@@ -1229,7 +1277,8 @@ const COPY = {
       },
       delegation: {
         title: '委任管理',
-        description: '配下スコープまたはタレント範囲に対する管理権限をユーザーまたはロールへ委任し、既存の付与を一覧で管理します。',
+        description:
+          '配下スコープまたはタレント範囲に対する管理権限をユーザーまたはロールへ委任し、既存の付与を一覧で管理します。',
         grantTitle: '委任管理を付与',
         grantDescription: '表示可能な範囲を選択し、その範囲をユーザーまたはロールへ委任します。',
         grantButton: '委任を付与',
@@ -1246,11 +1295,13 @@ const COPY = {
         delegateTypeUser: 'ユーザー',
         delegateTypeRole: 'ロール',
         delegateLabel: '委任先',
-        sourceNote: '委任候補は表示中の組織ツリーと読み込み済みのユーザー・ロール一覧から取得されます。',
+        sourceNote:
+          '委任候補は表示中の組織ツリーと読み込み済みのユーザー・ロール一覧から取得されます。',
         selectScopeError: '委任前に範囲を選択してください。',
         selectDelegateError: '委任前に対象を選択してください。',
         createError: '委任管理の作成に失敗しました。',
-        createSuccess: (delegateName: string, scopeName: string) => `${delegateName} に ${scopeName} の委任管理を付与しました。`,
+        createSuccess: (delegateName: string, scopeName: string) =>
+          `${delegateName} に ${scopeName} の委任管理を付与しました。`,
         unavailableTitle: '委任管理を読み込めません',
         emptyTitle: '委任管理は未設定です',
         emptyDescription: (isAcWorkspace: boolean) =>
@@ -1290,7 +1341,8 @@ const COPY = {
       badge: (workspaceLabel: string) => workspaceLabel,
       createTitle: 'システムユーザーを作成',
       createDescription: '専用ページでユーザーを作成し、ID 情報と範囲割当てを整理して扱います。',
-      editDescription: 'ID 情報、範囲ロール割当て、セキュリティ操作を専用ページで整理して扱います。',
+      editDescription:
+        'ID 情報、範囲ロール割当て、セキュリティ操作を専用ページで整理して扱います。',
       accountProfileTitle: 'アカウント情報',
       fields: {
         username: 'ユーザー名',
@@ -1302,7 +1354,8 @@ const COPY = {
         preferredLanguage: '優先言語',
       },
       forceResetDescription: '初期パスワードを短命にし、最初の認証後ただちに再設定させます。',
-      immutableIdentityDescription: 'ここではユーザー名とメールアドレスは変更できません。パスワード更新はプロフィールやセキュリティ導線で行います。',
+      immutableIdentityDescription:
+        'ここではユーザー名とメールアドレスは変更できません。パスワード更新はプロフィールやセキュリティ導線で行います。',
       submitCreate: 'ユーザーを作成',
       submitSave: 'プロフィールを保存',
       pendingCreate: 'ユーザーを作成中…',
@@ -1316,7 +1369,8 @@ const COPY = {
       lastLoginNeverHint: 'このユーザーはまだログインしていません。',
       updateSuccess: (name: string) => `${name} を更新しました。`,
       scopedAssignmentsTitle: '範囲ロール割当て',
-      scopedAssignmentsDescription: 'テナント、配下スコープ、タレント範囲でロールを直接割り当てます。一覧ページは閲覧に集中させます。',
+      scopedAssignmentsDescription:
+        'テナント、配下スコープ、タレント範囲でロールを直接割り当てます。一覧ページは閲覧に集中させます。',
       scopeField: '範囲',
       roleField: 'ロール',
       expiresAtField: '有効期限',
@@ -1324,13 +1378,15 @@ const COPY = {
       assignmentSubmit: 'ロールを割り当て',
       assignmentPending: 'ロールを割当て中…',
       noAssignmentsTitle: '範囲ロールが未設定です',
-      noAssignmentsDescription: 'このユーザーにはまだロール割当てがありません。上の入力欄で適切な範囲にロールを付与してください。',
+      noAssignmentsDescription:
+        'このユーザーにはまだロール割当てがありません。上の入力欄で適切な範囲にロールを付与してください。',
       assignmentCreated: (roleName: string) => `${roleName} を割り当てました。`,
       assignmentUpdated: 'ロール割当てを更新しました。',
       assignmentRemoved: 'ロール割当てを削除しました。',
       assignmentSavePending: '保存中…',
       directScopeAccessTitle: '直接範囲アクセス',
-      directScopeAccessDescription: 'ここで直接スコープアクセス記録を確認できます。変更は専用のアクセス画面から行います。',
+      directScopeAccessDescription:
+        'ここで直接スコープアクセス記録を確認できます。変更は専用のアクセス画面から行います。',
       noDirectScopeAccessTitle: '直接範囲アクセスはありません',
       noDirectScopeAccessDescription: 'このユーザーには現在、直接アクセスルールがありません。',
     },
@@ -1348,16 +1404,21 @@ const COPY = {
       createDescription: '現在の範囲で必要なロール情報と明示的な権限を定義します。',
       editDescription: '一覧に戻らずにロール情報、明示的権限、現在の範囲カバーを確認します。',
       summaryExplicitPermissionsLabel: '明示的権限',
-      summaryExplicitPermissionsHint: '未設定の操作はカタログ既定値を継承するか、利用不可のまま残ります。',
+      summaryExplicitPermissionsHint:
+        '未設定の操作はカタログ既定値を継承するか、利用不可のまま残ります。',
       summaryAssignedUsersLabel: '割当ユーザー',
       summaryAssignedUsersHint: '属性や権限を編集しても、現行割当はここで確認できます。',
       summaryBoundScopesLabel: '紐付け範囲',
-      summaryBoundScopesHint: '範囲紐付けは現在のロール割当から導出され、別テーブルではありません。',
+      summaryBoundScopesHint:
+        '範囲紐付けは現在のロール割当から導出され、別テーブルではありません。',
       scopeBindingsTitle: '割当て由来の範囲紐付け',
-      scopeBindingsDescription: '現在の範囲カバーは、テナント・配下スコープ・タレント範囲で有効なロール割当から導出されます。',
-      scopeBindingsEmpty: 'このロールをテナント、配下スコープ、タレント範囲へ紐付ける現在の割当はありません。',
+      scopeBindingsDescription:
+        '現在の範囲カバーは、テナント・配下スコープ・タレント範囲で有効なロール割当から導出されます。',
+      scopeBindingsEmpty:
+        'このロールをテナント、配下スコープ、タレント範囲へ紐付ける現在の割当はありません。',
       assignedUsersTitle: '割当ユーザー',
-      assignedUsersDescription: 'どのユーザーがこのロールを保持し、どの範囲で付与されているかを確認します。',
+      assignedUsersDescription:
+        'どのユーザーがこのロールを保持し、どの範囲で付与されているかを確認します。',
       assignedUsersEmpty: '現在このロールを持つユーザーはいません。',
       fields: {
         roleCode: 'ロールコード',
@@ -1366,8 +1427,10 @@ const COPY = {
         isActive: 'ロールを有効にする',
       },
       isActiveDescription: '有効ロールのみ、現在の範囲で引き続き割当可能です。',
-      createHint: 'ロールコードは作成後の安定識別子になります。不要な挙動を避けるため、不要な操作は未設定のままにしてください。',
-      editHint: 'ロールコードは作成後に変更できません。保護ロールもここで編集できますが、一覧で削除できるのはカスタムロールのみです。',
+      createHint:
+        'ロールコードは作成後の安定識別子になります。不要な挙動を避けるため、不要な操作は未設定のままにしてください。',
+      editHint:
+        'ロールコードは作成後に変更できません。保護ロールもここで編集できますが、一覧で削除できるのはカスタムロールのみです。',
       permissionMatrixTitle: '権限マトリクス',
       permissionMatrixDescription: '明示的効果は未設定、許可、拒否のいずれかを選べます。',
       notAvailable: '対象外',
@@ -1445,11 +1508,13 @@ const COPY = {
       description:
         'Manage users, role definitions, and delegation here. Use dedicated pages when you need to create or edit.',
       summaryVisibleUsersLabel: 'Visible Users',
-      summaryVisibleUsersHint: (_workspaceSessionLabel: string) => 'Users matching the current filters.',
+      summaryVisibleUsersHint: (_workspaceSessionLabel: string) =>
+        'Users matching the current filters.',
       summaryActiveRolesLabel: 'Active Roles',
       summaryActiveRolesHint: 'Only roles available for assignment on this page are shown here.',
       summaryDelegationsLabel: 'Delegations',
-      summaryDelegationsHint: 'Delegated-admin records can target subsidiary or talent scope from this page.',
+      summaryDelegationsHint:
+        'Delegated-admin records can target subsidiary or talent scope from this page.',
       tabs: {
         users: 'Users',
         roles: 'Roles',
@@ -1504,7 +1569,8 @@ const COPY = {
       },
       roles: {
         title: 'System roles',
-        description: 'Review role coverage here, then open a dedicated role page when deeper changes are needed.',
+        description:
+          'Review role coverage here, then open a dedicated role page when deeper changes are needed.',
         newRole: 'New role',
         unavailableTitle: 'System roles unavailable',
         emptyTitle: 'No active roles available',
@@ -1520,7 +1586,8 @@ const COPY = {
         edit: 'Edit',
         delete: 'Delete',
         deleteTitle: (name: string) => `Delete ${name}?`,
-        deleteDescription: 'Only custom roles can be deleted here. Protected system roles stay read-only.',
+        deleteDescription:
+          'Only custom roles can be deleted here. Protected system roles stay read-only.',
         deleteConfirm: 'Delete role',
         deletePending: 'Deleting role…',
         deleteSuccess: (name: string) => `${name} was deleted.`,
@@ -1528,13 +1595,15 @@ const COPY = {
       },
       delegation: {
         title: 'Delegated administration',
-        description: 'Delegate subsidiary or talent administration with a clear scope and current grant list.',
+        description:
+          'Delegate subsidiary or talent administration with a clear scope and current grant list.',
         grantTitle: 'Grant delegated admin',
         grantDescription: 'Choose a visible scope and assign a user or role.',
         grantButton: 'Grant delegation',
         grantPending: 'Granting delegation…',
         loadingTitle: 'Loading delegatable scopes',
-        loadingDescription: 'The organization tree is loading so the form can offer the right scopes.',
+        loadingDescription:
+          'The organization tree is loading so the form can offer the right scopes.',
         noScopesTitle: 'No delegatable scopes available',
         noScopesDescription:
           'No visible subsidiary or talent scopes are available for delegated administration.',
@@ -1546,7 +1615,8 @@ const COPY = {
         delegateTypeUser: 'User',
         delegateTypeRole: 'Role',
         delegateLabel: 'Delegate',
-        sourceNote: 'Delegation options come from the visible organization tree plus the current users and roles.',
+        sourceNote:
+          'Delegation options come from the visible organization tree plus the current users and roles.',
         selectScopeError: 'Select a scope before granting delegated administration.',
         selectDelegateError: 'Select a delegate before granting delegated administration.',
         createError: 'Failed to create delegated admin assignment.',
@@ -1591,8 +1661,10 @@ const COPY = {
       backToInventory: 'Back to users',
       badge: (workspaceLabel: string) => workspaceLabel,
       createTitle: 'Create system user',
-      createDescription: 'Create a new user on a dedicated page so profile data and role access stay focused.',
-      editDescription: 'Use this page to update profile data, scoped role access, and security actions.',
+      createDescription:
+        'Create a new user on a dedicated page so profile data and role access stay focused.',
+      editDescription:
+        'Use this page to update profile data, scoped role access, and security actions.',
       accountProfileTitle: 'Account profile',
       fields: {
         username: 'Username',
@@ -1620,7 +1692,8 @@ const COPY = {
       lastLoginNeverHint: 'This user has not logged in yet.',
       updateSuccess: (name: string) => `${name} was updated.`,
       scopedAssignmentsTitle: 'Scoped role assignments',
-      scopedAssignmentsDescription: 'Assign roles at tenant, subsidiary, or talent scope from this page. The list page stays focused on browsing.',
+      scopedAssignmentsDescription:
+        'Assign roles at tenant, subsidiary, or talent scope from this page. The list page stays focused on browsing.',
       scopeField: 'Scope',
       roleField: 'Role',
       expiresAtField: 'Expires at',
@@ -1628,13 +1701,15 @@ const COPY = {
       assignmentSubmit: 'Assign role',
       assignmentPending: 'Assigning role…',
       noAssignmentsTitle: 'No scoped roles assigned',
-      noAssignmentsDescription: 'This user has no role assignments yet. Use the form above to grant one at the right scope.',
+      noAssignmentsDescription:
+        'This user has no role assignments yet. Use the form above to grant one at the right scope.',
       assignmentCreated: (roleName: string) => `${roleName} was assigned.`,
       assignmentUpdated: 'Role assignment was updated.',
       assignmentRemoved: 'Role assignment was removed.',
       assignmentSavePending: 'Saving…',
       directScopeAccessTitle: 'Direct scope access',
-      directScopeAccessDescription: 'Review direct access rules here. Use the dedicated access flow to change them.',
+      directScopeAccessDescription:
+        'Review direct access rules here. Use the dedicated access flow to change them.',
       noDirectScopeAccessTitle: 'No direct scope access rules',
       noDirectScopeAccessDescription: 'This user has no direct access rules.',
     },
@@ -1649,8 +1724,10 @@ const COPY = {
       titleFallback: 'System role',
       backToInventory: 'Back to roles',
       badge: (workspaceLabel: string) => workspaceLabel,
-      createDescription: 'Define role details and the explicit permissions required for this scope.',
-      editDescription: 'Review role details, explicit permissions, and where this role is assigned.',
+      createDescription:
+        'Define role details and the explicit permissions required for this scope.',
+      editDescription:
+        'Review role details, explicit permissions, and where this role is assigned.',
       summaryExplicitPermissionsLabel: 'Explicit Permissions',
       summaryExplicitPermissionsHint:
         'Unset actions inherit the broader catalog defaults or remain unavailable.',
@@ -1660,7 +1737,8 @@ const COPY = {
       summaryBoundScopesLabel: 'Bound Scopes',
       summaryBoundScopesHint: 'Shows where this role is currently assigned.',
       scopeBindingsTitle: 'Assignment-derived scope bindings',
-      scopeBindingsDescription: 'This role is currently assigned at the tenant, subsidiary, or talent level.',
+      scopeBindingsDescription:
+        'This role is currently assigned at the tenant, subsidiary, or talent level.',
       scopeBindingsEmpty:
         'No current assignments bind this role to a tenant, subsidiary, or talent scope.',
       assignedUsersTitle: 'Assigned users',
@@ -1676,10 +1754,10 @@ const COPY = {
       isActiveDescription: 'Active roles remain eligible for assignment in this scope.',
       createHint:
         'Role code becomes the stable identifier after creation. Leave actions unset to avoid granting behavior you do not need.',
-      editHint: 'Role code stays immutable after creation. Protected roles can still be edited here, but only custom roles can be deleted from the list.',
+      editHint:
+        'Role code stays immutable after creation. Protected roles can still be edited here, but only custom roles can be deleted from the list.',
       permissionMatrixTitle: 'Permission matrix',
-      permissionMatrixDescription:
-        'Explicit effects can be left unset, granted, or denied.',
+      permissionMatrixDescription: 'Explicit effects can be left unset, granted, or denied.',
       notAvailable: 'N/A',
       submitCreate: 'Create role',
       submitSave: 'Save role',
@@ -1695,7 +1773,8 @@ const COPY = {
         cancel: 'Cancel',
         closeButtonAriaLabel: 'Close role name translations drawer',
         empty: 'No additional translations configured yet.',
-        summary: (count: number) => `${count} additional locale ${count === 1 ? 'value' : 'values'} configured.`,
+        summary: (count: number) =>
+          `${count} additional locale ${count === 1 ? 'value' : 'values'} configured.`,
         languageLoadError:
           'Language options are temporarily unavailable. Load the System Dictionary languages and try again.',
       },
@@ -1755,11 +1834,13 @@ const COPY = {
       description:
         'Manage users, role definitions, and delegation here. Use dedicated pages when you need to create or edit.',
       summaryVisibleUsersLabel: 'Visible Users',
-      summaryVisibleUsersHint: (_workspaceSessionLabel: string) => 'Users matching the current filters.',
+      summaryVisibleUsersHint: (_workspaceSessionLabel: string) =>
+        'Users matching the current filters.',
       summaryActiveRolesLabel: 'Active Roles',
       summaryActiveRolesHint: 'Only roles available for assignment on this page are shown here.',
       summaryDelegationsLabel: 'Delegations',
-      summaryDelegationsHint: 'Delegated-admin records can target subsidiary or talent scope from this page.',
+      summaryDelegationsHint:
+        'Delegated-admin records can target subsidiary or talent scope from this page.',
       tabs: {
         users: 'Users',
         roles: 'Roles',
@@ -1814,7 +1895,8 @@ const COPY = {
       },
       roles: {
         title: 'System roles',
-        description: 'Review role coverage here, then open a dedicated role page when deeper changes are needed.',
+        description:
+          'Review role coverage here, then open a dedicated role page when deeper changes are needed.',
         newRole: 'New role',
         unavailableTitle: 'System roles unavailable',
         emptyTitle: 'No active roles available',
@@ -1830,7 +1912,8 @@ const COPY = {
         edit: 'Edit',
         delete: 'Delete',
         deleteTitle: (name: string) => `Delete ${name}?`,
-        deleteDescription: 'Only custom roles can be deleted here. Protected system roles stay read-only.',
+        deleteDescription:
+          'Only custom roles can be deleted here. Protected system roles stay read-only.',
         deleteConfirm: 'Delete role',
         deletePending: 'Deleting role…',
         deleteSuccess: (name: string) => `${name} was deleted.`,
@@ -1838,13 +1921,15 @@ const COPY = {
       },
       delegation: {
         title: 'Delegated administration',
-        description: 'Delegate subsidiary or talent administration with a clear scope and current grant list.',
+        description:
+          'Delegate subsidiary or talent administration with a clear scope and current grant list.',
         grantTitle: 'Grant delegated admin',
         grantDescription: 'Choose a visible scope and assign a user or role.',
         grantButton: 'Grant delegation',
         grantPending: 'Granting delegation…',
         loadingTitle: 'Loading delegatable scopes',
-        loadingDescription: 'The organization tree is loading so the form can offer the right scopes.',
+        loadingDescription:
+          'The organization tree is loading so the form can offer the right scopes.',
         noScopesTitle: 'No delegatable scopes available',
         noScopesDescription:
           'No visible subsidiary or talent scopes are available for delegated administration.',
@@ -1856,7 +1941,8 @@ const COPY = {
         delegateTypeUser: 'User',
         delegateTypeRole: 'Role',
         delegateLabel: 'Delegate',
-        sourceNote: 'Delegation options come from the visible organization tree plus the current users and roles.',
+        sourceNote:
+          'Delegation options come from the visible organization tree plus the current users and roles.',
         selectScopeError: 'Select a scope before granting delegated administration.',
         selectDelegateError: 'Select a delegate before granting delegated administration.',
         createError: 'Failed to create delegated admin assignment.',
@@ -1901,8 +1987,10 @@ const COPY = {
       backToInventory: 'Back to users',
       badge: (workspaceLabel: string) => workspaceLabel,
       createTitle: 'Create system user',
-      createDescription: 'Create a new user on a dedicated page so profile data and role access stay focused.',
-      editDescription: 'Use this page to update profile data, scoped role access, and security actions.',
+      createDescription:
+        'Create a new user on a dedicated page so profile data and role access stay focused.',
+      editDescription:
+        'Use this page to update profile data, scoped role access, and security actions.',
       accountProfileTitle: 'Account profile',
       fields: {
         username: 'Username',
@@ -1930,7 +2018,8 @@ const COPY = {
       lastLoginNeverHint: 'This user has not logged in yet.',
       updateSuccess: (name: string) => `${name} was updated.`,
       scopedAssignmentsTitle: 'Scoped role assignments',
-      scopedAssignmentsDescription: 'Assign roles at tenant, subsidiary, or talent scope from this page. The list page stays focused on browsing.',
+      scopedAssignmentsDescription:
+        'Assign roles at tenant, subsidiary, or talent scope from this page. The list page stays focused on browsing.',
       scopeField: 'Scope',
       roleField: 'Role',
       expiresAtField: 'Expires at',
@@ -1938,13 +2027,15 @@ const COPY = {
       assignmentSubmit: 'Assign role',
       assignmentPending: 'Assigning role…',
       noAssignmentsTitle: 'No scoped roles assigned',
-      noAssignmentsDescription: 'This user has no role assignments yet. Use the form above to grant one at the right scope.',
+      noAssignmentsDescription:
+        'This user has no role assignments yet. Use the form above to grant one at the right scope.',
       assignmentCreated: (roleName: string) => `${roleName} was assigned.`,
       assignmentUpdated: 'Role assignment was updated.',
       assignmentRemoved: 'Role assignment was removed.',
       assignmentSavePending: 'Saving…',
       directScopeAccessTitle: 'Direct scope access',
-      directScopeAccessDescription: 'Review direct access rules here. Use the dedicated access flow to change them.',
+      directScopeAccessDescription:
+        'Review direct access rules here. Use the dedicated access flow to change them.',
       noDirectScopeAccessTitle: 'No direct scope access rules',
       noDirectScopeAccessDescription: 'This user has no direct access rules.',
     },
@@ -1959,8 +2050,10 @@ const COPY = {
       titleFallback: 'System role',
       backToInventory: 'Back to roles',
       badge: (workspaceLabel: string) => workspaceLabel,
-      createDescription: 'Define role details and the explicit permissions required for this scope.',
-      editDescription: 'Review role details, explicit permissions, and where this role is assigned.',
+      createDescription:
+        'Define role details and the explicit permissions required for this scope.',
+      editDescription:
+        'Review role details, explicit permissions, and where this role is assigned.',
       summaryExplicitPermissionsLabel: 'Explicit Permissions',
       summaryExplicitPermissionsHint:
         'Unset actions inherit the broader catalog defaults or remain unavailable.',
@@ -1970,7 +2063,8 @@ const COPY = {
       summaryBoundScopesLabel: 'Bound Scopes',
       summaryBoundScopesHint: 'Shows where this role is currently assigned.',
       scopeBindingsTitle: 'Assignment-derived scope bindings',
-      scopeBindingsDescription: 'This role is currently assigned at the tenant, subsidiary, or talent level.',
+      scopeBindingsDescription:
+        'This role is currently assigned at the tenant, subsidiary, or talent level.',
       scopeBindingsEmpty:
         'No current assignments bind this role to a tenant, subsidiary, or talent scope.',
       assignedUsersTitle: 'Assigned users',
@@ -1986,10 +2080,10 @@ const COPY = {
       isActiveDescription: 'Active roles remain eligible for assignment in this scope.',
       createHint:
         'Role code becomes the stable identifier after creation. Leave actions unset to avoid granting behavior you do not need.',
-      editHint: 'Role code stays immutable after creation. Protected roles can still be edited here, but only custom roles can be deleted from the list.',
+      editHint:
+        'Role code stays immutable after creation. Protected roles can still be edited here, but only custom roles can be deleted from the list.',
       permissionMatrixTitle: 'Permission matrix',
-      permissionMatrixDescription:
-        'Explicit effects can be left unset, granted, or denied.',
+      permissionMatrixDescription: 'Explicit effects can be left unset, granted, or denied.',
       notAvailable: 'N/A',
       submitCreate: 'Create role',
       submitSave: 'Save role',
@@ -2005,7 +2099,8 @@ const COPY = {
         cancel: 'Cancel',
         closeButtonAriaLabel: 'Close role name translations drawer',
         empty: 'No additional translations configured yet.',
-        summary: (count: number) => `${count} additional locale ${count === 1 ? 'value' : 'values'} configured.`,
+        summary: (count: number) =>
+          `${count} additional locale ${count === 1 ? 'value' : 'values'} configured.`,
         languageLoadError:
           'Language options are temporarily unavailable. Load the System Dictionary languages and try again.',
       },
@@ -2018,41 +2113,48 @@ const COPY = {
 } as const;
 
 export type UserManagementCopy = (typeof COPY)[SupportedUiLocale];
-const USER_MANAGEMENT_COPY_RECORD = COPY as unknown as Record<SupportedUiLocale, UserManagementCopy>;
+const USER_MANAGEMENT_COPY_RECORD = COPY as unknown as Record<
+  SupportedUiLocale,
+  UserManagementCopy
+>;
 
 function resolveUserManagementCopyByLocale(locale: UserManagementLocale) {
   return resolveLocaleRecord(locale, USER_MANAGEMENT_COPY_RECORD) as UserManagementCopy;
 }
 
-
-
 export function formatUserManagementDateTime(
   value: string | null | undefined,
   locale: UserManagementLocale,
-  fallback: string,
+  fallback: string
 ) {
   return formatLocaleDateTime(locale, value ?? null, fallback);
 }
 
-export function getLocalizedRbacActionLabel(action: PermissionAction, locale: UserManagementLocale) {
+export function getLocalizedRbacActionLabel(
+  action: PermissionAction,
+  locale: UserManagementLocale
+) {
   return ROLE_ACTION_LABELS[locale][action];
 }
 
 export function getLocalizedRolePermissionOptionLabel(
   value: RbacRolePolicyEffect | 'unset',
-  locale: UserManagementLocale,
+  locale: UserManagementLocale
 ) {
   return ROLE_PERMISSION_OPTION_LABELS[locale][value];
 }
 
 export function getLocalizedScopeTypeLabel(
   value: 'tenant' | 'subsidiary' | 'talent',
-  locale: UserManagementLocale,
+  locale: UserManagementLocale
 ) {
   return SCOPE_TYPE_LABELS[locale][value];
 }
 
-export function getLocalizedDelegateTypeLabel(value: 'user' | 'role', locale: UserManagementLocale) {
+export function getLocalizedDelegateTypeLabel(
+  value: 'user' | 'role',
+  locale: UserManagementLocale
+) {
   return DELEGATE_TYPE_LABELS[locale][value];
 }
 
@@ -2066,7 +2168,7 @@ export function getLocalizedRoleResourceColumnLabel(locale: UserManagementLocale
 
 export function getLocalizedExplicitPermissionCountLabel(
   count: number,
-  locale: UserManagementLocale,
+  locale: UserManagementLocale
 ) {
   return EXPLICIT_PERMISSION_COUNT_LABELS[locale](count);
 }
@@ -2077,7 +2179,7 @@ export function pickLocalizedName(
     localizedName?: string | null;
     code?: string | null;
   },
-  locale: UserManagementLocale,
+  locale: UserManagementLocale
 ) {
   if (values.localizedName?.trim()) {
     return values.localizedName;

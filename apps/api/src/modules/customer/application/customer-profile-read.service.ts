@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable, NotFoundException } from '@nestjs/common';
+
 import { ErrorCodes, emptyLocalizedText, type RequestContext } from '@tcrn/shared';
 
 import {
@@ -15,19 +15,14 @@ import { CustomerArchiveAccessService } from './customer-archive-access.service'
 export class CustomerProfileReadService {
   constructor(
     private readonly customerArchiveAccessService: CustomerArchiveAccessService,
-    private readonly customerProfileReadRepository: CustomerProfileReadRepository,
+    private readonly customerProfileReadRepository: CustomerProfileReadRepository
   ) {}
 
-  async findMany(
-    talentId: string,
-    query: CustomerListQueryDto,
-    context: RequestContext,
-  ) {
-    const archiveTarget =
-      await this.customerArchiveAccessService.requireTalentArchiveTarget(
-        talentId,
-        context,
-      );
+  async findMany(talentId: string, query: CustomerListQueryDto, context: RequestContext) {
+    const archiveTarget = await this.customerArchiveAccessService.requireTalentArchiveTarget(
+      talentId,
+      context
+    );
 
     const page = query.page ?? 1;
     const pageSize = query.pageSize ?? 20;
@@ -46,7 +41,7 @@ export class CustomerProfileReadService {
           sort: query.sort ?? 'createdAt',
           order: query.order ?? 'desc',
         },
-        { page, pageSize },
+        { page, pageSize }
       ),
       this.customerProfileReadRepository.countMany(context.tenantSchema, {
         profileStoreId: archiveTarget.profileStoreId,
@@ -62,7 +57,7 @@ export class CustomerProfileReadService {
 
     const membershipMap = await this.customerProfileReadRepository.findActiveMembershipSummaries(
       context.tenantSchema,
-      items.map((item) => item.id),
+      items.map((item) => item.id)
     );
 
     let filteredItems = items;
@@ -75,7 +70,7 @@ export class CustomerProfileReadService {
 
     return {
       items: filteredItems.map((item) =>
-        mapCustomerProfileListItem(item, membershipMap.get(item.id) ?? null),
+        mapCustomerProfileListItem(item, membershipMap.get(item.id) ?? null)
       ),
       meta: {
         pagination: {
@@ -88,22 +83,17 @@ export class CustomerProfileReadService {
     };
   }
 
-  async findById(
-    customerId: string,
-    talentId: string,
-    context: RequestContext,
-  ) {
-    const customerAccess =
-      await this.customerArchiveAccessService.requireCustomerArchiveAccess(
-        customerId,
-        talentId,
-        context,
-      );
+  async findById(customerId: string, talentId: string, context: RequestContext) {
+    const customerAccess = await this.customerArchiveAccessService.requireCustomerArchiveAccess(
+      customerId,
+      talentId,
+      context
+    );
 
     const customer = await this.customerProfileReadRepository.findById(
       context.tenantSchema,
       customerId,
-      customerAccess.profileStoreId,
+      customerAccess.profileStoreId
     );
 
     if (!customer) {
@@ -126,58 +116,43 @@ export class CustomerProfileReadService {
       membershipRecordCount,
       accessLogs,
     ] = await Promise.all([
-      this.customerProfileReadRepository.findTalentSummary(
-        context.tenantSchema,
-        customer.talentId,
-      ),
+      this.customerProfileReadRepository.findTalentSummary(context.tenantSchema, customer.talentId),
       this.customerProfileReadRepository.findProfileStoreSummary(
         context.tenantSchema,
-        customer.profileStoreId,
+        customer.profileStoreId
       ),
       this.customerProfileReadRepository.findTalentSummary(
         context.tenantSchema,
-        customer.originTalentId,
+        customer.originTalentId
       ),
       customer.lastModifiedTalentId
         ? this.customerProfileReadRepository.findTalentSummary(
             context.tenantSchema,
-            customer.lastModifiedTalentId,
+            customer.lastModifiedTalentId
           )
         : Promise.resolve(null),
       customer.statusId
         ? this.customerProfileReadRepository.findStatusSummary(
             context.tenantSchema,
-            customer.statusId,
+            customer.statusId
           )
         : Promise.resolve(null),
       customer.inactivationReasonId
         ? this.customerProfileReadRepository.findInactivationReasonSummary(
             context.tenantSchema,
-            customer.inactivationReasonId,
+            customer.inactivationReasonId
           )
         : Promise.resolve(null),
       customer.profileType === 'company'
-        ? this.customerProfileReadRepository.findCompanyInfo(
-            context.tenantSchema,
-            customer.id,
-          )
+        ? this.customerProfileReadRepository.findCompanyInfo(context.tenantSchema, customer.id)
         : Promise.resolve(null),
       this.customerProfileReadRepository.findHighestActiveMembership(
         context.tenantSchema,
-        customer.id,
+        customer.id
       ),
-      this.customerProfileReadRepository.countPlatformIdentities(
-        context.tenantSchema,
-        customer.id,
-      ),
-      this.customerProfileReadRepository.countMembershipRecords(
-        context.tenantSchema,
-        customer.id,
-      ),
-      this.customerProfileReadRepository.findRecentAccessLogs(
-        context.tenantSchema,
-        customer.id,
-      ),
+      this.customerProfileReadRepository.countPlatformIdentities(context.tenantSchema, customer.id),
+      this.customerProfileReadRepository.countMembershipRecords(context.tenantSchema, customer.id),
+      this.customerProfileReadRepository.findRecentAccessLogs(context.tenantSchema, customer.id),
     ]);
 
     return mapCustomerProfileDetailItem({

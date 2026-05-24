@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+
 import { ErrorCodes } from '@tcrn/shared';
 
 import {
@@ -16,14 +16,12 @@ import { MarshmallowReactionRepository } from '../infrastructure/marshmallow-rea
 export class MarshmallowReactionApplicationService {
   private readonly logger = new Logger(MarshmallowReactionApplicationService.name);
 
-  constructor(
-    private readonly marshmallowReactionRepository: MarshmallowReactionRepository,
-  ) {}
+  constructor(private readonly marshmallowReactionRepository: MarshmallowReactionRepository) {}
 
   async toggleReaction(
     messageId: string,
     reaction: string,
-    context: MarshmallowReactionContext,
+    context: MarshmallowReactionContext
   ): Promise<{ added: boolean; counts: Record<string, number> }> {
     const result = await this.findMessageWithTenant(messageId);
 
@@ -37,26 +35,22 @@ export class MarshmallowReactionApplicationService {
     const { tenantSchema } = result;
     assertMarshmallowReactionAllowed(result.config, reaction);
 
-    const existingReactionId =
-      await this.marshmallowReactionRepository.findExistingReactionId(
-        tenantSchema,
-        messageId,
-        context.fingerprint,
-        reaction,
-      );
+    const existingReactionId = await this.marshmallowReactionRepository.findExistingReactionId(
+      tenantSchema,
+      messageId,
+      context.fingerprint,
+      reaction
+    );
 
     const added = !existingReactionId;
     if (existingReactionId) {
-      await this.marshmallowReactionRepository.deleteReaction(
-        tenantSchema,
-        existingReactionId,
-      );
+      await this.marshmallowReactionRepository.deleteReaction(tenantSchema, existingReactionId);
     } else {
       await this.marshmallowReactionRepository.insertReaction(
         tenantSchema,
         messageId,
         reaction,
-        context,
+        context
       );
     }
 
@@ -67,7 +61,7 @@ export class MarshmallowReactionApplicationService {
   async getUserReactions(
     messageIds: string[],
     fingerprint: string,
-    tenantSchema?: string,
+    tenantSchema?: string
   ): Promise<Record<string, string[]>> {
     if (messageIds.length === 0) {
       return {};
@@ -79,13 +73,12 @@ export class MarshmallowReactionApplicationService {
         await this.marshmallowReactionRepository.findUserReactions(
           tenantSchema,
           messageIds,
-          fingerprint,
-        ),
+          fingerprint
+        )
       );
     }
 
-    const tenantSchemas =
-      await this.marshmallowReactionRepository.listSearchableTenantSchemas();
+    const tenantSchemas = await this.marshmallowReactionRepository.listSearchableTenantSchemas();
     let result: Record<string, string[]> = {};
 
     for (const schemaName of tenantSchemas) {
@@ -95,14 +88,14 @@ export class MarshmallowReactionApplicationService {
           await this.marshmallowReactionRepository.findUserReactions(
             schemaName,
             messageIds,
-            fingerprint,
-          ),
+            fingerprint
+          )
         );
       } catch (error) {
         this.logger.warn(
           `Skipping marshmallow reaction scan in schema ${schemaName}: ${
             error instanceof Error ? error.message : String(error)
-          }`,
+          }`
         );
       }
     }
@@ -111,16 +104,14 @@ export class MarshmallowReactionApplicationService {
   }
 
   private async findMessageWithTenant(messageId: string) {
-    const tenantSchemas =
-      await this.marshmallowReactionRepository.listSearchableTenantSchemas();
+    const tenantSchemas = await this.marshmallowReactionRepository.listSearchableTenantSchemas();
 
     for (const schemaName of tenantSchemas) {
       try {
-        const record =
-          await this.marshmallowReactionRepository.findPublishedMessageAccessInTenant(
-            schemaName,
-            messageId,
-          );
+        const record = await this.marshmallowReactionRepository.findPublishedMessageAccessInTenant(
+          schemaName,
+          messageId
+        );
 
         if (record) {
           return buildMarshmallowReactionLookupResult(schemaName, record);
@@ -129,7 +120,7 @@ export class MarshmallowReactionApplicationService {
         this.logger.warn(
           `Skipping marshmallow reaction lookup in schema ${schemaName}: ${
             error instanceof Error ? error.message : String(error)
-          }`,
+          }`
         );
       }
     }
@@ -139,19 +130,16 @@ export class MarshmallowReactionApplicationService {
 
   private async updateReactionCounts(
     tenantSchema: string,
-    messageId: string,
+    messageId: string
   ): Promise<Record<string, number>> {
     const counts = buildMarshmallowReactionCounts(
-      await this.marshmallowReactionRepository.findReactionCounts(
-        tenantSchema,
-        messageId,
-      ),
+      await this.marshmallowReactionRepository.findReactionCounts(tenantSchema, messageId)
     );
 
     await this.marshmallowReactionRepository.updateMessageReactionCounts(
       tenantSchema,
       messageId,
-      counts,
+      counts
     );
 
     return counts;

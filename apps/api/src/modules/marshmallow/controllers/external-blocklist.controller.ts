@@ -1,31 +1,31 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import {
-    Body,
-    Controller,
-    Delete,
-    Get,
-    HttpCode,
-    NotFoundException,
-    Param,
-    ParseUUIDPipe,
-    Patch,
-    Post,
-    Query,
-    Req,
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  NotFoundException,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+  Query,
+  Req,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { ErrorCodes, type RequestContext } from '@tcrn/shared';
 import { Request } from 'express';
+
+import { ErrorCodes, type RequestContext } from '@tcrn/shared';
 
 import { CurrentUser, RequirePermissions } from '../../../common/decorators';
 import {
-    BatchToggleDto,
-    CreateExternalBlocklistDto,
-    DisableExternalBlocklistDto,
-    ExternalBlocklistQueryDto,
-    OwnerType,
-    UpdateExternalBlocklistDto,
+  BatchToggleDto,
+  CreateExternalBlocklistDto,
+  DisableExternalBlocklistDto,
+  ExternalBlocklistQueryDto,
+  OwnerType,
+  UpdateExternalBlocklistDto,
 } from '../dto/external-blocklist.dto';
 import { ExternalBlocklistService } from '../services/external-blocklist.service';
 import {
@@ -63,13 +63,29 @@ export class ExternalBlocklistController {
   @Get()
   @RequirePermissions({ resource: 'security.external_blocklist', action: 'read' })
   @ApiOperation({ summary: 'List external blocklist patterns' })
-  @ApiResponse({ status: 200, description: 'Returns patterns list', schema: EXTERNAL_BLOCKLIST_LIST_SCHEMA })
-  @ApiResponse({ status: 400, description: 'External-blocklist query is invalid', schema: MARSHMALLOW_BAD_REQUEST_SCHEMA })
-  @ApiResponse({ status: 401, description: 'Authentication is required to list external blocklist patterns', schema: MARSHMALLOW_UNAUTHORIZED_SCHEMA })
-  @ApiResponse({ status: 403, description: 'Insufficient permissions to list external blocklist patterns', schema: MARSHMALLOW_FORBIDDEN_SCHEMA })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns patterns list',
+    schema: EXTERNAL_BLOCKLIST_LIST_SCHEMA,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'External-blocklist query is invalid',
+    schema: MARSHMALLOW_BAD_REQUEST_SCHEMA,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Authentication is required to list external blocklist patterns',
+    schema: MARSHMALLOW_UNAUTHORIZED_SCHEMA,
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Insufficient permissions to list external blocklist patterns',
+    schema: MARSHMALLOW_FORBIDDEN_SCHEMA,
+  })
   async findMany(
     @Query() query: ExternalBlocklistQueryDto,
-    @CurrentUser() user: AuthenticatedUser,
+    @CurrentUser() user: AuthenticatedUser
   ) {
     const result = await this.service.findMany(user.tenantSchema, query);
     return {
@@ -92,20 +108,40 @@ export class ExternalBlocklistController {
   @Get('scope/:scopeType/:scopeId')
   @RequirePermissions({ resource: 'security.external_blocklist', action: 'read' })
   @ApiOperation({ summary: 'Get patterns with inheritance for scope' })
-  @ApiParam({ name: 'scopeType', description: 'Owner scope type', schema: { type: 'string', enum: ['tenant', 'subsidiary', 'talent'] } })
-  @ApiParam({ name: 'scopeId', description: 'Owner scope identifier', schema: { type: 'string', format: 'uuid' } })
-  @ApiResponse({ status: 200, description: 'Returns inherited patterns', schema: EXTERNAL_BLOCKLIST_SCOPE_SCHEMA })
-  @ApiResponse({ status: 401, description: 'Authentication is required to read inherited blocklist patterns', schema: MARSHMALLOW_UNAUTHORIZED_SCHEMA })
-  @ApiResponse({ status: 403, description: 'Insufficient permissions to read inherited blocklist patterns', schema: MARSHMALLOW_FORBIDDEN_SCHEMA })
+  @ApiParam({
+    name: 'scopeType',
+    description: 'Owner scope type',
+    schema: { type: 'string', enum: ['tenant', 'subsidiary', 'talent'] },
+  })
+  @ApiParam({
+    name: 'scopeId',
+    description: 'Owner scope identifier',
+    schema: { type: 'string', format: 'uuid' },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns inherited patterns',
+    schema: EXTERNAL_BLOCKLIST_SCOPE_SCHEMA,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Authentication is required to read inherited blocklist patterns',
+    schema: MARSHMALLOW_UNAUTHORIZED_SCHEMA,
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Insufficient permissions to read inherited blocklist patterns',
+    schema: MARSHMALLOW_FORBIDDEN_SCHEMA,
+  })
   async findWithInheritance(
     @Param('scopeType') scopeType: string,
     @Param('scopeId', ParseUUIDPipe) scopeId: string,
-    @CurrentUser() user: AuthenticatedUser,
+    @CurrentUser() user: AuthenticatedUser
   ) {
     const items = await this.service.findWithInheritance(
-      user.tenantSchema, 
-      scopeType as OwnerType, 
-      scopeId,
+      user.tenantSchema,
+      scopeType as OwnerType,
+      scopeId
     );
     return {
       success: true,
@@ -119,18 +155,34 @@ export class ExternalBlocklistController {
   @Get('talent/:talentId')
   @RequirePermissions({ resource: 'security.external_blocklist', action: 'read' })
   @ApiOperation({ summary: 'Get patterns with inheritance for talent' })
-  @ApiParam({ name: 'talentId', description: 'Talent identifier', schema: { type: 'string', format: 'uuid' } })
-  @ApiResponse({ status: 200, description: 'Returns inherited patterns', schema: EXTERNAL_BLOCKLIST_SCOPE_SCHEMA })
-  @ApiResponse({ status: 401, description: 'Authentication is required to read talent inherited blocklist patterns', schema: MARSHMALLOW_UNAUTHORIZED_SCHEMA })
-  @ApiResponse({ status: 403, description: 'Insufficient permissions to read talent inherited blocklist patterns', schema: MARSHMALLOW_FORBIDDEN_SCHEMA })
+  @ApiParam({
+    name: 'talentId',
+    description: 'Talent identifier',
+    schema: { type: 'string', format: 'uuid' },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns inherited patterns',
+    schema: EXTERNAL_BLOCKLIST_SCOPE_SCHEMA,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Authentication is required to read talent inherited blocklist patterns',
+    schema: MARSHMALLOW_UNAUTHORIZED_SCHEMA,
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Insufficient permissions to read talent inherited blocklist patterns',
+    schema: MARSHMALLOW_FORBIDDEN_SCHEMA,
+  })
   async findWithInheritanceTalent(
     @Param('talentId', ParseUUIDPipe) talentId: string,
-    @CurrentUser() user: AuthenticatedUser,
+    @CurrentUser() user: AuthenticatedUser
   ) {
     const items = await this.service.findWithInheritance(
-      user.tenantSchema, 
-      OwnerType.TALENT, 
-      talentId,
+      user.tenantSchema,
+      OwnerType.TALENT,
+      talentId
     );
     return {
       success: true,
@@ -144,15 +196,32 @@ export class ExternalBlocklistController {
   @Get(':id')
   @RequirePermissions({ resource: 'security.external_blocklist', action: 'read' })
   @ApiOperation({ summary: 'Get external blocklist pattern by ID' })
-  @ApiParam({ name: 'id', description: 'External-blocklist identifier', schema: { type: 'string', format: 'uuid' } })
-  @ApiResponse({ status: 200, description: 'Returns pattern', schema: EXTERNAL_BLOCKLIST_ITEM_ENVELOPE_SCHEMA })
-  @ApiResponse({ status: 401, description: 'Authentication is required to read external blocklist patterns', schema: MARSHMALLOW_UNAUTHORIZED_SCHEMA })
-  @ApiResponse({ status: 403, description: 'Insufficient permissions to read external blocklist patterns', schema: MARSHMALLOW_FORBIDDEN_SCHEMA })
-  @ApiResponse({ status: 404, description: 'External blocklist pattern was not found', schema: MARSHMALLOW_NOT_FOUND_SCHEMA })
-  async findById(
-    @Param('id', ParseUUIDPipe) id: string,
-    @CurrentUser() user: AuthenticatedUser,
-  ) {
+  @ApiParam({
+    name: 'id',
+    description: 'External-blocklist identifier',
+    schema: { type: 'string', format: 'uuid' },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns pattern',
+    schema: EXTERNAL_BLOCKLIST_ITEM_ENVELOPE_SCHEMA,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Authentication is required to read external blocklist patterns',
+    schema: MARSHMALLOW_UNAUTHORIZED_SCHEMA,
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Insufficient permissions to read external blocklist patterns',
+    schema: MARSHMALLOW_FORBIDDEN_SCHEMA,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'External blocklist pattern was not found',
+    schema: MARSHMALLOW_NOT_FOUND_SCHEMA,
+  })
+  async findById(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: AuthenticatedUser) {
     const item = await this.service.findById(user.tenantSchema, id);
     if (!item) {
       throw new NotFoundException({
@@ -173,15 +242,35 @@ export class ExternalBlocklistController {
   @Post()
   @RequirePermissions({ resource: 'security.external_blocklist', action: 'create' })
   @ApiOperation({ summary: 'Create external blocklist pattern' })
-  @ApiResponse({ status: 201, description: 'Pattern created', schema: EXTERNAL_BLOCKLIST_ITEM_ENVELOPE_SCHEMA })
-  @ApiResponse({ status: 400, description: 'External-blocklist payload is invalid', schema: MARSHMALLOW_BAD_REQUEST_SCHEMA })
-  @ApiResponse({ status: 401, description: 'Authentication is required to create external blocklist patterns', schema: MARSHMALLOW_UNAUTHORIZED_SCHEMA })
-  @ApiResponse({ status: 403, description: 'Insufficient permissions to create external blocklist patterns', schema: MARSHMALLOW_FORBIDDEN_SCHEMA })
-  @ApiResponse({ status: 409, description: 'External blocklist pattern already exists in the same scope', schema: MARSHMALLOW_ALREADY_EXISTS_SCHEMA })
+  @ApiResponse({
+    status: 201,
+    description: 'Pattern created',
+    schema: EXTERNAL_BLOCKLIST_ITEM_ENVELOPE_SCHEMA,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'External-blocklist payload is invalid',
+    schema: MARSHMALLOW_BAD_REQUEST_SCHEMA,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Authentication is required to create external blocklist patterns',
+    schema: MARSHMALLOW_UNAUTHORIZED_SCHEMA,
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Insufficient permissions to create external blocklist patterns',
+    schema: MARSHMALLOW_FORBIDDEN_SCHEMA,
+  })
+  @ApiResponse({
+    status: 409,
+    description: 'External blocklist pattern already exists in the same scope',
+    schema: MARSHMALLOW_ALREADY_EXISTS_SCHEMA,
+  })
   async create(
     @Body() dto: CreateExternalBlocklistDto,
     @CurrentUser() user: AuthenticatedUser,
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     const context = this.buildContext(user, req);
     const item = await this.service.create(user.tenantSchema, dto, context);
@@ -197,18 +286,46 @@ export class ExternalBlocklistController {
   @Patch(':id')
   @RequirePermissions({ resource: 'security.external_blocklist', action: 'update' })
   @ApiOperation({ summary: 'Update external blocklist pattern' })
-  @ApiParam({ name: 'id', description: 'External-blocklist identifier', schema: { type: 'string', format: 'uuid' } })
-  @ApiResponse({ status: 200, description: 'Pattern updated', schema: EXTERNAL_BLOCKLIST_ITEM_ENVELOPE_SCHEMA })
-  @ApiResponse({ status: 400, description: 'External-blocklist update is invalid', schema: MARSHMALLOW_BAD_REQUEST_SCHEMA })
-  @ApiResponse({ status: 401, description: 'Authentication is required to update external blocklist patterns', schema: MARSHMALLOW_UNAUTHORIZED_SCHEMA })
-  @ApiResponse({ status: 403, description: 'Insufficient permissions to update external blocklist patterns', schema: MARSHMALLOW_FORBIDDEN_SCHEMA })
-  @ApiResponse({ status: 404, description: 'External blocklist pattern was not found', schema: MARSHMALLOW_NOT_FOUND_SCHEMA })
-  @ApiResponse({ status: 409, description: 'External blocklist update conflicted with current stored version or scope state', schema: MARSHMALLOW_CONFLICT_SCHEMA })
+  @ApiParam({
+    name: 'id',
+    description: 'External-blocklist identifier',
+    schema: { type: 'string', format: 'uuid' },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Pattern updated',
+    schema: EXTERNAL_BLOCKLIST_ITEM_ENVELOPE_SCHEMA,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'External-blocklist update is invalid',
+    schema: MARSHMALLOW_BAD_REQUEST_SCHEMA,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Authentication is required to update external blocklist patterns',
+    schema: MARSHMALLOW_UNAUTHORIZED_SCHEMA,
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Insufficient permissions to update external blocklist patterns',
+    schema: MARSHMALLOW_FORBIDDEN_SCHEMA,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'External blocklist pattern was not found',
+    schema: MARSHMALLOW_NOT_FOUND_SCHEMA,
+  })
+  @ApiResponse({
+    status: 409,
+    description: 'External blocklist update conflicted with current stored version or scope state',
+    schema: MARSHMALLOW_CONFLICT_SCHEMA,
+  })
   async update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateExternalBlocklistDto,
     @CurrentUser() user: AuthenticatedUser,
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     const context = this.buildContext(user, req);
     const item = await this.service.update(user.tenantSchema, id, dto, context);
@@ -224,15 +341,32 @@ export class ExternalBlocklistController {
   @Delete(':id')
   @RequirePermissions({ resource: 'security.external_blocklist', action: 'delete' })
   @ApiOperation({ summary: 'Delete external blocklist pattern' })
-  @ApiParam({ name: 'id', description: 'External-blocklist identifier', schema: { type: 'string', format: 'uuid' } })
-  @ApiResponse({ status: 200, description: 'Pattern deleted', schema: EXTERNAL_BLOCKLIST_DELETE_SCHEMA })
-  @ApiResponse({ status: 401, description: 'Authentication is required to delete external blocklist patterns', schema: MARSHMALLOW_UNAUTHORIZED_SCHEMA })
-  @ApiResponse({ status: 403, description: 'Insufficient permissions to delete external blocklist patterns', schema: MARSHMALLOW_FORBIDDEN_SCHEMA })
-  @ApiResponse({ status: 404, description: 'External blocklist pattern was not found', schema: MARSHMALLOW_NOT_FOUND_SCHEMA })
-  async delete(
-    @Param('id', ParseUUIDPipe) id: string,
-    @CurrentUser() user: AuthenticatedUser,
-  ) {
+  @ApiParam({
+    name: 'id',
+    description: 'External-blocklist identifier',
+    schema: { type: 'string', format: 'uuid' },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Pattern deleted',
+    schema: EXTERNAL_BLOCKLIST_DELETE_SCHEMA,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Authentication is required to delete external blocklist patterns',
+    schema: MARSHMALLOW_UNAUTHORIZED_SCHEMA,
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Insufficient permissions to delete external blocklist patterns',
+    schema: MARSHMALLOW_FORBIDDEN_SCHEMA,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'External blocklist pattern was not found',
+    schema: MARSHMALLOW_NOT_FOUND_SCHEMA,
+  })
+  async delete(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: AuthenticatedUser) {
     await this.service.delete(user.tenantSchema, id);
     return {
       success: true,
@@ -247,23 +381,42 @@ export class ExternalBlocklistController {
   @HttpCode(200)
   @RequirePermissions({ resource: 'security.external_blocklist', action: 'update' })
   @ApiOperation({ summary: 'Disable inherited pattern in current scope' })
-  @ApiParam({ name: 'id', description: 'Inherited external-blocklist identifier', schema: { type: 'string', format: 'uuid' } })
-  @ApiResponse({ status: 200, description: 'Pattern disabled', schema: EXTERNAL_BLOCKLIST_DISABLE_SCHEMA })
-  @ApiResponse({ status: 400, description: 'Disable request is invalid', schema: MARSHMALLOW_BAD_REQUEST_SCHEMA })
-  @ApiResponse({ status: 401, description: 'Authentication is required to disable inherited blocklist patterns', schema: MARSHMALLOW_UNAUTHORIZED_SCHEMA })
-  @ApiResponse({ status: 403, description: 'Insufficient permissions to disable inherited blocklist patterns', schema: MARSHMALLOW_FORBIDDEN_SCHEMA })
-  @ApiResponse({ status: 404, description: 'Inherited external blocklist pattern was not found', schema: MARSHMALLOW_NOT_FOUND_SCHEMA })
+  @ApiParam({
+    name: 'id',
+    description: 'Inherited external-blocklist identifier',
+    schema: { type: 'string', format: 'uuid' },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Pattern disabled',
+    schema: EXTERNAL_BLOCKLIST_DISABLE_SCHEMA,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Disable request is invalid',
+    schema: MARSHMALLOW_BAD_REQUEST_SCHEMA,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Authentication is required to disable inherited blocklist patterns',
+    schema: MARSHMALLOW_UNAUTHORIZED_SCHEMA,
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Insufficient permissions to disable inherited blocklist patterns',
+    schema: MARSHMALLOW_FORBIDDEN_SCHEMA,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Inherited external blocklist pattern was not found',
+    schema: MARSHMALLOW_NOT_FOUND_SCHEMA,
+  })
   async disableInScope(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: DisableExternalBlocklistDto,
-    @CurrentUser() user: AuthenticatedUser,
+    @CurrentUser() user: AuthenticatedUser
   ) {
-    const result = await this.service.disableInScope(
-      user.tenantSchema,
-      id,
-      dto,
-      user.id,
-    );
+    const result = await this.service.disableInScope(user.tenantSchema, id, dto, user.id);
     return {
       success: true,
       data: result,
@@ -277,22 +430,42 @@ export class ExternalBlocklistController {
   @HttpCode(200)
   @RequirePermissions({ resource: 'security.external_blocklist', action: 'update' })
   @ApiOperation({ summary: 'Enable pattern in current scope' })
-  @ApiParam({ name: 'id', description: 'Inherited external-blocklist identifier', schema: { type: 'string', format: 'uuid' } })
-  @ApiResponse({ status: 200, description: 'Pattern enabled', schema: EXTERNAL_BLOCKLIST_ENABLE_SCHEMA })
-  @ApiResponse({ status: 400, description: 'Enable request is invalid', schema: MARSHMALLOW_BAD_REQUEST_SCHEMA })
-  @ApiResponse({ status: 401, description: 'Authentication is required to enable inherited blocklist patterns', schema: MARSHMALLOW_UNAUTHORIZED_SCHEMA })
-  @ApiResponse({ status: 403, description: 'Insufficient permissions to enable inherited blocklist patterns', schema: MARSHMALLOW_FORBIDDEN_SCHEMA })
-  @ApiResponse({ status: 404, description: 'Inherited external blocklist pattern was not found', schema: MARSHMALLOW_NOT_FOUND_SCHEMA })
+  @ApiParam({
+    name: 'id',
+    description: 'Inherited external-blocklist identifier',
+    schema: { type: 'string', format: 'uuid' },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Pattern enabled',
+    schema: EXTERNAL_BLOCKLIST_ENABLE_SCHEMA,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Enable request is invalid',
+    schema: MARSHMALLOW_BAD_REQUEST_SCHEMA,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Authentication is required to enable inherited blocklist patterns',
+    schema: MARSHMALLOW_UNAUTHORIZED_SCHEMA,
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Insufficient permissions to enable inherited blocklist patterns',
+    schema: MARSHMALLOW_FORBIDDEN_SCHEMA,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Inherited external blocklist pattern was not found',
+    schema: MARSHMALLOW_NOT_FOUND_SCHEMA,
+  })
   async enableInScope(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: DisableExternalBlocklistDto,
-    @CurrentUser() user: AuthenticatedUser,
+    @CurrentUser() user: AuthenticatedUser
   ) {
-    const result = await this.service.enableInScope(
-      user.tenantSchema,
-      id,
-      dto,
-    );
+    const result = await this.service.enableInScope(user.tenantSchema, id, dto);
     return {
       success: true,
       data: result,
@@ -306,21 +479,37 @@ export class ExternalBlocklistController {
   @HttpCode(200)
   @RequirePermissions({ resource: 'security.external_blocklist', action: 'update' })
   @ApiOperation({ summary: 'Batch toggle active status' })
-  @ApiResponse({ status: 200, description: 'Patterns updated', schema: EXTERNAL_BLOCKLIST_BATCH_SCHEMA })
-  @ApiResponse({ status: 400, description: 'Batch-toggle payload is invalid', schema: MARSHMALLOW_BAD_REQUEST_SCHEMA })
-  @ApiResponse({ status: 401, description: 'Authentication is required to batch-toggle external blocklist patterns', schema: MARSHMALLOW_UNAUTHORIZED_SCHEMA })
-  @ApiResponse({ status: 403, description: 'Insufficient permissions to batch-toggle external blocklist patterns', schema: MARSHMALLOW_FORBIDDEN_SCHEMA })
+  @ApiResponse({
+    status: 200,
+    description: 'Patterns updated',
+    schema: EXTERNAL_BLOCKLIST_BATCH_SCHEMA,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Batch-toggle payload is invalid',
+    schema: MARSHMALLOW_BAD_REQUEST_SCHEMA,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Authentication is required to batch-toggle external blocklist patterns',
+    schema: MARSHMALLOW_UNAUTHORIZED_SCHEMA,
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Insufficient permissions to batch-toggle external blocklist patterns',
+    schema: MARSHMALLOW_FORBIDDEN_SCHEMA,
+  })
   async batchToggle(
     @Body() dto: BatchToggleDto,
     @CurrentUser() user: AuthenticatedUser,
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     const context = this.buildContext(user, req);
     const result = await this.service.batchToggle(
       user.tenantSchema,
       dto.ids,
       dto.isActive,
-      context,
+      context
     );
     return {
       success: true,
@@ -328,10 +517,7 @@ export class ExternalBlocklistController {
     };
   }
 
-  private buildContext(
-    user: { id: string; username: string },
-    req: Request,
-  ): RequestContext {
+  private buildContext(user: { id: string; username: string }, req: Request): RequestContext {
     return {
       userId: user.id,
       userName: user.username,

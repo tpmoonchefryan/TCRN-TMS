@@ -33,7 +33,7 @@ function getTenantGovernancePageTitle(
     userManagement: string;
     webhookManagement: string;
     workspaceLanding: string;
-  },
+  }
 ) {
   if (pathname === `/tenant/${tenantId}`) {
     return titles.workspaceLanding;
@@ -163,7 +163,8 @@ export function TenantGovernanceShell({
     },
   ];
 
-  const userName = session.user.displayName || session.user.username || copy.common.authenticatedUser;
+  const userName =
+    session.user.displayName || session.user.username || copy.common.authenticatedUser;
   const pageTitle = getTenantGovernancePageTitle(tenantId, pathname, {
     ...copy.tenantGovernance.titles,
     interfaceManagement: integrationLabels.interfaceManagement,
@@ -216,7 +217,9 @@ export function TenantGovernanceShell({
           onOpenChange={setIsMobileNavOpen}
           header={
             <div className="space-y-2">
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">TCRN TMS</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
+                TCRN TMS
+              </p>
               <div className="space-y-1">
                 <p className="text-base font-semibold text-slate-900">
                   {session.tenantName || copy.common.currentTenant}
@@ -239,9 +242,7 @@ export function TenantGovernanceShell({
               <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500 sm:hidden">
                 {copy.tenantGovernance.shellLabel}
               </p>
-              <p className="text-lg font-semibold text-slate-900">
-                {pageTitle}
-              </p>
+              <p className="text-lg font-semibold text-slate-900">{pageTitle}</p>
             </div>
           }
           rightArea={

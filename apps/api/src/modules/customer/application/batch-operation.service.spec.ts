@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { BadRequestException } from '@nestjs/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -37,7 +36,7 @@ describe('BatchOperationApplicationService', () => {
 
     service = new BatchOperationApplicationService(
       mockRepository as unknown as BatchOperationRepository,
-      mockQueueGateway as unknown as BatchOperationQueueGateway,
+      mockQueueGateway as unknown as BatchOperationQueueGateway
     );
   });
 
@@ -49,8 +48,8 @@ describe('BatchOperationApplicationService', () => {
           customerIds: [],
           action: BatchAction.DEACTIVATE,
         },
-        mockContext,
-      ),
+        mockContext
+      )
     ).rejects.toThrow(BadRequestException);
   });
 
@@ -63,7 +62,7 @@ describe('BatchOperationApplicationService', () => {
         customerIds: Array(51).fill('customer-id'),
         action: BatchAction.DEACTIVATE,
       },
-      mockContext,
+      mockContext
     );
 
     expect(result).toEqual({
@@ -75,7 +74,7 @@ describe('BatchOperationApplicationService', () => {
         talentId: 'talent-123',
         action: BatchAction.DEACTIVATE,
         customerIds: Array(51).fill('customer-id'),
-      }),
+      })
     );
   });
 
@@ -86,7 +85,7 @@ describe('BatchOperationApplicationService', () => {
         customerIds: ['customer-1', 'customer-2'],
         action: BatchAction.DEACTIVATE,
       },
-      mockContext,
+      mockContext
     );
 
     expect(result).toMatchObject({
@@ -108,7 +107,7 @@ describe('BatchOperationApplicationService', () => {
         action: BatchAction.ADD_TAGS,
         tags: ['new', 'vip'],
       },
-      mockContext,
+      mockContext
     );
 
     expect(result).toMatchObject({ success: 1, failed: 0 });
@@ -116,7 +115,7 @@ describe('BatchOperationApplicationService', () => {
       'tenant_test',
       'customer-1',
       ['vip', 'new'],
-      'user-123',
+      'user-123'
     );
   });
 
@@ -132,7 +131,7 @@ describe('BatchOperationApplicationService', () => {
         membershipClassCode: 'VIP',
         validFrom: '2026-04-14T00:00:00.000Z',
       },
-      mockContext,
+      mockContext
     );
 
     expect(result).toMatchObject({ success: 1, failed: 0 });
@@ -141,7 +140,7 @@ describe('BatchOperationApplicationService', () => {
       'customer-1',
       'membership-class-1',
       '2026-04-14T00:00:00.000Z',
-      undefined,
+      undefined
     );
   });
 
@@ -156,7 +155,7 @@ describe('BatchOperationApplicationService', () => {
         customerIds: ['customer-1', 'customer-2'],
         action: BatchAction.DEACTIVATE,
       },
-      mockContext,
+      mockContext
     );
 
     expect(result).toMatchObject({

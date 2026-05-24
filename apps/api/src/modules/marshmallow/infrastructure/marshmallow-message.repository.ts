@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable } from '@nestjs/common';
+
 import type { RequestContext } from '@tcrn/shared';
 
 import { DatabaseService } from '../../database';
@@ -28,11 +28,13 @@ export class MarshmallowMessageRepository {
   async findMany(
     talentId: string,
     tenantSchema: string,
-    query: MessageListQueryDto,
+    query: MessageListQueryDto
   ): Promise<MarshmallowAdminMessageRow[]> {
     const prisma = this.databaseService.getPrisma();
-    const { offset, orderByField, orderDirection, params, whereClause } =
-      this.buildListQueryParts(talentId, query);
+    const { offset, orderByField, orderDirection, params, whereClause } = this.buildListQueryParts(
+      talentId,
+      query
+    );
     const pageSize = query.pageSize ?? 20;
 
     return prisma.$queryRawUnsafe<MarshmallowAdminMessageRow[]>(
@@ -50,14 +52,14 @@ export class MarshmallowMessageRepository {
         ORDER BY is_pinned DESC, ${orderByField} ${orderDirection}
         LIMIT ${pageSize} OFFSET ${offset}
       `,
-      ...params,
+      ...params
     );
   }
 
   async countMany(
     talentId: string,
     tenantSchema: string,
-    query: MessageListQueryDto,
+    query: MessageListQueryDto
   ): Promise<number> {
     const prisma = this.databaseService.getPrisma();
     const { params, whereClause } = this.buildListQueryParts(talentId, query);
@@ -67,7 +69,7 @@ export class MarshmallowMessageRepository {
         FROM "${tenantSchema}".marshmallow_message
         WHERE ${whereClause}
       `,
-      ...params,
+      ...params
     );
 
     return Number(result[0]?.count ?? 0);
@@ -75,7 +77,7 @@ export class MarshmallowMessageRepository {
 
   async findStatsByTalentId(
     talentId: string,
-    tenantSchema: string,
+    tenantSchema: string
   ): Promise<MarshmallowMessageStatsRow | null> {
     const prisma = this.databaseService.getPrisma();
     const stats = await prisma.$queryRawUnsafe<MarshmallowMessageStatsRow[]>(
@@ -88,7 +90,7 @@ export class MarshmallowMessageRepository {
         FROM "${tenantSchema}".marshmallow_message
         WHERE talent_id = $1::uuid
       `,
-      talentId,
+      talentId
     );
 
     return stats[0] ?? null;
@@ -96,7 +98,7 @@ export class MarshmallowMessageRepository {
 
   async findUsersByIds(
     tenantSchema: string,
-    userIds: string[],
+    userIds: string[]
   ): Promise<MarshmallowReplierRecord[]> {
     if (userIds.length === 0) {
       return [];
@@ -109,14 +111,14 @@ export class MarshmallowMessageRepository {
         FROM "${tenantSchema}".system_user
         WHERE id = ANY($1::uuid[])
       `,
-      userIds,
+      userIds
     );
   }
 
   async findMessageById(
     talentId: string,
     tenantSchema: string,
-    messageId: string,
+    messageId: string
   ): Promise<MarshmallowMessageDetailRecord | null> {
     const prisma = this.databaseService.getPrisma();
     const messages = await prisma.$queryRawUnsafe<MarshmallowMessageDetailRecord[]>(
@@ -131,7 +133,7 @@ export class MarshmallowMessageRepository {
         WHERE id = $1::uuid AND talent_id = $2::uuid
       `,
       messageId,
-      talentId,
+      talentId
     );
 
     return messages[0] ?? null;
@@ -140,7 +142,7 @@ export class MarshmallowMessageRepository {
   async countOwnedMessages(
     talentId: string,
     tenantSchema: string,
-    messageIds: string[],
+    messageIds: string[]
   ): Promise<number> {
     const prisma = this.databaseService.getPrisma();
     const result = await prisma.$queryRawUnsafe<Array<{ count: bigint }>>(
@@ -150,7 +152,7 @@ export class MarshmallowMessageRepository {
         WHERE id = ANY($1::uuid[]) AND talent_id = $2::uuid
       `,
       messageIds,
-      talentId,
+      talentId
     );
 
     return Number(result[0]?.count ?? 0);
@@ -160,7 +162,7 @@ export class MarshmallowMessageRepository {
     talentId: string,
     tenantSchema: string,
     messageId: string,
-    userId: string,
+    userId: string
   ): Promise<MarshmallowMessageModerationRow> {
     const prisma = this.databaseService.getPrisma();
     const updated = await prisma.$queryRawUnsafe<MarshmallowMessageModerationRow[]>(
@@ -172,7 +174,7 @@ export class MarshmallowMessageRepository {
       `,
       userId,
       messageId,
-      talentId,
+      talentId
     );
 
     return updated[0];
@@ -183,7 +185,7 @@ export class MarshmallowMessageRepository {
     tenantSchema: string,
     messageId: string,
     dto: RejectMessageDto,
-    userId: string,
+    userId: string
   ): Promise<MarshmallowMessageModerationRow> {
     const prisma = this.databaseService.getPrisma();
     const updated = await prisma.$queryRawUnsafe<MarshmallowMessageModerationRow[]>(
@@ -198,7 +200,7 @@ export class MarshmallowMessageRepository {
       dto.note ?? null,
       userId,
       messageId,
-      talentId,
+      talentId
     );
 
     return updated[0];
@@ -207,7 +209,7 @@ export class MarshmallowMessageRepository {
   async unreject(
     talentId: string,
     tenantSchema: string,
-    messageId: string,
+    messageId: string
   ): Promise<MarshmallowMessageModerationRow> {
     const prisma = this.databaseService.getPrisma();
     const updated = await prisma.$queryRawUnsafe<MarshmallowMessageModerationRow[]>(
@@ -219,7 +221,7 @@ export class MarshmallowMessageRepository {
         RETURNING id, status, moderated_at as "moderatedAt"
       `,
       messageId,
-      talentId,
+      talentId
     );
 
     return updated[0];
@@ -230,7 +232,7 @@ export class MarshmallowMessageRepository {
     tenantSchema: string,
     messageId: string,
     dto: ReplyMessageDto,
-    userId: string,
+    userId: string
   ): Promise<MarshmallowMessageReplyRow> {
     const prisma = this.databaseService.getPrisma();
     const updated = await prisma.$queryRawUnsafe<MarshmallowMessageReplyRow[]>(
@@ -243,7 +245,7 @@ export class MarshmallowMessageRepository {
       dto.content,
       userId,
       messageId,
-      talentId,
+      talentId
     );
 
     return updated[0];
@@ -253,7 +255,7 @@ export class MarshmallowMessageRepository {
     talentId: string,
     tenantSchema: string,
     messageId: string,
-    changes: MarshmallowMessageUpdateFieldChange[],
+    changes: MarshmallowMessageUpdateFieldChange[]
   ): Promise<MarshmallowMessageUpdateRow> {
     const prisma = this.databaseService.getPrisma();
     const setClauses: string[] = [];
@@ -276,7 +278,7 @@ export class MarshmallowMessageRepository {
         WHERE id = $${paramIndex}::uuid AND talent_id = $${paramIndex + 1}::uuid
         RETURNING id, is_read as "isRead", is_starred as "isStarred", is_pinned as "isPinned"
       `,
-      ...params,
+      ...params
     );
 
     return updated[0];
@@ -286,7 +288,7 @@ export class MarshmallowMessageRepository {
     talentId: string,
     tenantSchema: string,
     dto: BatchActionDto,
-    userId: string,
+    userId: string
   ): Promise<void> {
     const prisma = this.databaseService.getPrisma();
 
@@ -300,7 +302,7 @@ export class MarshmallowMessageRepository {
           `,
           dto.messageIds,
           talentId,
-          userId,
+          userId
         );
         return;
       case 'reject':
@@ -313,7 +315,7 @@ export class MarshmallowMessageRepository {
           dto.messageIds,
           talentId,
           dto.rejectionReason ?? 'other',
-          userId,
+          userId
         );
         return;
       case 'star':
@@ -324,7 +326,7 @@ export class MarshmallowMessageRepository {
             WHERE id = ANY($1::uuid[]) AND talent_id = $2::uuid
           `,
           dto.messageIds,
-          talentId,
+          talentId
         );
         return;
       case 'unstar':
@@ -335,7 +337,7 @@ export class MarshmallowMessageRepository {
             WHERE id = ANY($1::uuid[]) AND talent_id = $2::uuid
           `,
           dto.messageIds,
-          talentId,
+          talentId
         );
         return;
       case 'markRead':
@@ -346,7 +348,7 @@ export class MarshmallowMessageRepository {
             WHERE id = ANY($1::uuid[]) AND talent_id = $2::uuid
           `,
           dto.messageIds,
-          talentId,
+          talentId
         );
         return;
       case 'markUnread':
@@ -357,7 +359,7 @@ export class MarshmallowMessageRepository {
             WHERE id = ANY($1::uuid[]) AND talent_id = $2::uuid
           `,
           dto.messageIds,
-          talentId,
+          talentId
         );
         return;
       case 'delete':
@@ -367,7 +369,7 @@ export class MarshmallowMessageRepository {
             WHERE id = ANY($1::uuid[]) AND talent_id = $2::uuid
           `,
           dto.messageIds,
-          talentId,
+          talentId
         );
         return;
     }
@@ -382,7 +384,7 @@ export class MarshmallowMessageRepository {
       objectName: string;
       diff: Record<string, unknown>;
     },
-    context: RequestContext,
+    context: RequestContext
   ): Promise<void> {
     const prisma = this.databaseService.getPrisma();
     await prisma.$executeRawUnsafe(
@@ -400,13 +402,13 @@ export class MarshmallowMessageRepository {
       data.objectName,
       JSON.stringify(data.diff),
       context.userId,
-      context.ipAddress ?? null,
+      context.ipAddress ?? null
     );
   }
 
   private buildListQueryParts(
     talentId: string,
-    query: MessageListQueryDto,
+    query: MessageListQueryDto
   ): {
     whereClause: string;
     params: unknown[];

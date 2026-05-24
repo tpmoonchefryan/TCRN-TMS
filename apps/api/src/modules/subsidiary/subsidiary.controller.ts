@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import {
   Body,
   Controller,
@@ -13,10 +12,19 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiParam, ApiProperty, ApiPropertyOptional, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { ErrorCodes, type LocalizedText, type PartialLocalizedText } from '@tcrn/shared';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiParam,
+  ApiProperty,
+  ApiPropertyOptional,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { IsBoolean, IsInt, IsObject, IsOptional, IsString, Matches, Min } from 'class-validator';
+
+import { ErrorCodes, type LocalizedText, type PartialLocalizedText } from '@tcrn/shared';
 
 import { AuthenticatedUser, CurrentUser } from '../../common/decorators/current-user.decorator';
 import { paginated, success } from '../../common/response.util';
@@ -119,7 +127,8 @@ export class UpdateSubsidiaryDto {
 
 export class MoveSubsidiaryDto {
   @ApiPropertyOptional({
-    description: 'New parent subsidiary identifier. Structural move remains retired from normal product flow.',
+    description:
+      'New parent subsidiary identifier. Structural move remains retired from normal product flow.',
     format: 'uuid',
     nullable: true,
     example: '550e8400-e29b-41d4-a716-446655440101',
@@ -173,7 +182,8 @@ export class ListSubsidiariesQueryDto {
   pageSize?: number;
 
   @ApiPropertyOptional({
-    description: 'Filter by parent subsidiary identifier. Use `null` to fetch root-level subsidiaries.',
+    description:
+      'Filter by parent subsidiary identifier. Use `null` to fetch root-level subsidiaries.',
     format: 'uuid',
     example: '550e8400-e29b-41d4-a716-446655440100',
   })
@@ -181,7 +191,10 @@ export class ListSubsidiariesQueryDto {
   @IsString()
   parentId?: string;
 
-  @ApiPropertyOptional({ description: 'Search by subsidiary code or localized name', example: 'Tokyo' })
+  @ApiPropertyOptional({
+    description: 'Search by subsidiary code or localized name',
+    example: 'Tokyo',
+  })
   @IsOptional()
   @IsString()
   search?: string;
@@ -198,7 +211,10 @@ export class ListSubsidiariesQueryDto {
   sort?: string;
 }
 
-const createSuccessEnvelopeSchema = (dataSchema: Record<string, unknown>, exampleData: unknown) => ({
+const createSuccessEnvelopeSchema = (
+  dataSchema: Record<string, unknown>,
+  exampleData: unknown
+) => ({
   type: 'object',
   properties: {
     success: { type: 'boolean', example: true },
@@ -346,25 +362,22 @@ const SUBSIDIARY_PAGINATED_SCHEMA = {
   },
 };
 
-const SUBSIDIARY_DETAIL_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
-  SUBSIDIARY_LIST_ITEM_SCHEMA,
-  {
-    id: '550e8400-e29b-41d4-a716-446655440100',
-    parentId: null,
-    code: 'TOKYO',
-    path: '/TOKYO/',
-    depth: 1,
-    name: LOCALIZED_TEXT_EXAMPLE,
-    description: LOCALIZED_DESCRIPTION_EXAMPLE,
-    sortOrder: 0,
-    isActive: true,
-    childrenCount: 2,
-    talentCount: 5,
-    createdAt: '2026-04-13T08:00:00.000Z',
-    updatedAt: '2026-04-13T09:00:00.000Z',
-    version: 1,
-  },
-);
+const SUBSIDIARY_DETAIL_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(SUBSIDIARY_LIST_ITEM_SCHEMA, {
+  id: '550e8400-e29b-41d4-a716-446655440100',
+  parentId: null,
+  code: 'TOKYO',
+  path: '/TOKYO/',
+  depth: 1,
+  name: LOCALIZED_TEXT_EXAMPLE,
+  description: LOCALIZED_DESCRIPTION_EXAMPLE,
+  sortOrder: 0,
+  isActive: true,
+  childrenCount: 2,
+  talentCount: 5,
+  createdAt: '2026-04-13T08:00:00.000Z',
+  updatedAt: '2026-04-13T09:00:00.000Z',
+  version: 1,
+});
 
 const SUBSIDIARY_CREATE_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
   {
@@ -408,7 +421,7 @@ const SUBSIDIARY_CREATE_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
     isActive: true,
     createdAt: '2026-04-13T08:00:00.000Z',
     version: 1,
-  },
+  }
 );
 
 const SUBSIDIARY_UPDATE_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
@@ -431,12 +444,12 @@ const SUBSIDIARY_UPDATE_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
     sortOrder: 10,
     updatedAt: '2026-04-13T09:15:00.000Z',
     version: 2,
-  },
+  }
 );
 
 const SUBSIDIARY_MOVE_CONFLICT_SCHEMA = createErrorEnvelopeSchema(
   ErrorCodes.RES_CONFLICT,
-  'Subsidiary move has been retired from normal product flow. If structural correction is required, it must be performed via direct database intervention.',
+  'Subsidiary move has been retired from normal product flow. If structural correction is required, it must be performed via direct database intervention.'
 );
 
 const SUBSIDIARY_ACTIVATION_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
@@ -463,7 +476,7 @@ const SUBSIDIARY_ACTIVATION_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
       subsidiaries: 1,
       talents: 2,
     },
-  },
+  }
 );
 
 const SUBSIDIARY_REACTIVATION_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
@@ -480,22 +493,22 @@ const SUBSIDIARY_REACTIVATION_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
     id: '550e8400-e29b-41d4-a716-446655440100',
     isActive: true,
     version: 3,
-  },
+  }
 );
 
 const SUBSIDIARY_BAD_REQUEST_SCHEMA = createErrorEnvelopeSchema(
   ErrorCodes.RES_VERSION_MISMATCH,
-  'Data has been modified. Please refresh and try again.',
+  'Data has been modified. Please refresh and try again.'
 );
 
 const SUBSIDIARY_UNAUTHORIZED_SCHEMA = createErrorEnvelopeSchema(
   'AUTH_UNAUTHORIZED',
-  'Authentication required',
+  'Authentication required'
 );
 
 const SUBSIDIARY_NOT_FOUND_SCHEMA = createErrorEnvelopeSchema(
   ErrorCodes.RES_NOT_FOUND,
-  'Subsidiary not found',
+  'Subsidiary not found'
 );
 
 /**
@@ -524,21 +537,15 @@ export class SubsidiaryController {
     description: 'Authentication is required to list subsidiaries',
     schema: SUBSIDIARY_UNAUTHORIZED_SCHEMA,
   })
-  async list(
-    @CurrentUser() user: AuthenticatedUser,
-    @Query() query: ListSubsidiariesQueryDto,
-  ) {
-    const { data, total } = await this.subsidiaryService.list(
-      user.tenantSchema,
-      {
-        page: query.page,
-        pageSize: query.pageSize,
-        parentId: query.parentId === 'null' ? null : query.parentId,
-        search: query.search,
-        isActive: query.isActive,
-        sort: query.sort,
-      }
-    );
+  async list(@CurrentUser() user: AuthenticatedUser, @Query() query: ListSubsidiariesQueryDto) {
+    const { data, total } = await this.subsidiaryService.list(user.tenantSchema, {
+      page: query.page,
+      pageSize: query.pageSize,
+      parentId: query.parentId === 'null' ? null : query.parentId,
+      search: query.search,
+      isActive: query.isActive,
+      sort: query.sort,
+    });
 
     // Get additional counts
     const enrichedData = await Promise.all(
@@ -587,7 +594,8 @@ export class SubsidiaryController {
   })
   @ApiResponse({
     status: 400,
-    description: 'Subsidiary payload is invalid or conflicts with an existing code/version constraint',
+    description:
+      'Subsidiary payload is invalid or conflicts with an existing code/version constraint',
     schema: SUBSIDIARY_BAD_REQUEST_SCHEMA,
   })
   @ApiResponse({
@@ -600,10 +608,7 @@ export class SubsidiaryController {
     description: 'Parent subsidiary was not found',
     schema: SUBSIDIARY_NOT_FOUND_SCHEMA,
   })
-  async create(
-    @CurrentUser() user: AuthenticatedUser,
-    @Body() dto: CreateSubsidiaryDto,
-  ) {
+  async create(@CurrentUser() user: AuthenticatedUser, @Body() dto: CreateSubsidiaryDto) {
     const subsidiary = await this.subsidiaryService.create(
       user.tenantSchema,
       {
@@ -659,7 +664,7 @@ export class SubsidiaryController {
   })
   async getById(
     @CurrentUser() user: AuthenticatedUser,
-    @Param('subsidiaryId', ParseUUIDPipe) subsidiaryId: string,
+    @Param('subsidiaryId', ParseUUIDPipe) subsidiaryId: string
   ) {
     const subsidiary = await this.subsidiaryService.findById(subsidiaryId, user.tenantSchema);
     if (!subsidiary) {
@@ -726,7 +731,7 @@ export class SubsidiaryController {
   async update(
     @CurrentUser() user: AuthenticatedUser,
     @Param('subsidiaryId', ParseUUIDPipe) subsidiaryId: string,
-    @Body() dto: UpdateSubsidiaryDto,
+    @Body() dto: UpdateSubsidiaryDto
   ) {
     const subsidiary = await this.subsidiaryService.update(
       subsidiaryId,
@@ -770,7 +775,7 @@ export class SubsidiaryController {
   async move(
     @CurrentUser() user: AuthenticatedUser,
     @Param('subsidiaryId', ParseUUIDPipe) subsidiaryId: string,
-    @Body() dto: MoveSubsidiaryDto,
+    @Body() dto: MoveSubsidiaryDto
   ) {
     const result = await this.subsidiaryService.move(
       subsidiaryId,
@@ -825,7 +830,7 @@ export class SubsidiaryController {
   async deactivate(
     @CurrentUser() user: AuthenticatedUser,
     @Param('subsidiaryId', ParseUUIDPipe) subsidiaryId: string,
-    @Body() dto: DeactivateSubsidiaryDto,
+    @Body() dto: DeactivateSubsidiaryDto
   ) {
     const result = await this.subsidiaryService.deactivate(
       subsidiaryId,
@@ -880,7 +885,7 @@ export class SubsidiaryController {
   async reactivate(
     @CurrentUser() user: AuthenticatedUser,
     @Param('subsidiaryId', ParseUUIDPipe) subsidiaryId: string,
-    @Body() body: ReactivateSubsidiaryDto,
+    @Body() body: ReactivateSubsidiaryDto
   ) {
     const subsidiary = await this.subsidiaryService.reactivate(
       subsidiaryId,

@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable, Logger, NestMiddleware, UnauthorizedException } from '@nestjs/common';
 import { NextFunction, Request, Response } from 'express';
 
@@ -35,10 +34,10 @@ export class TenantMiddleware implements NestMiddleware {
     try {
       // Try to get tenant from JWT claims (set by auth middleware)
       const jwtTenantId = (req as unknown as { user?: { tenantId?: string } }).user?.tenantId;
-      
+
       // Or from X-Tenant-ID header (for API consumers)
       const headerTenantId = req.headers['x-tenant-id'] as string;
-      
+
       const tenantId = jwtTenantId || headerTenantId;
 
       if (!tenantId) {
@@ -48,8 +47,10 @@ export class TenantMiddleware implements NestMiddleware {
 
       // Get tenant details
       // Check if input is UUID
-      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(tenantId);
-      
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        tenantId
+      );
+
       let tenant;
       if (isUuid) {
         tenant = await this.tenantService.getTenantById(tenantId);
@@ -87,12 +88,7 @@ export class TenantMiddleware implements NestMiddleware {
   }
 
   private isPublicEndpoint(path: string): boolean {
-    const publicPaths = [
-      '/health',
-      '/api/v1/health',
-      '/api/docs',
-      '/api/v1/auth/login',
-    ];
+    const publicPaths = ['/health', '/api/v1/health', '/api/docs', '/api/v1/auth/login'];
 
     return publicPaths.some((p) => path.startsWith(p));
   }

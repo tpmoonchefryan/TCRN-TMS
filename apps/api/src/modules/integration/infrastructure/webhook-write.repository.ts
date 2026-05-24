@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable } from '@nestjs/common';
+
 import { Prisma } from '@tcrn/database';
 import type { LocalizedText } from '@tcrn/shared';
 
@@ -43,7 +43,7 @@ export interface WebhookActiveStatePersistenceInput {
 }
 
 function asRecord(
-  value: Prisma.JsonValue | Record<string, unknown> | null | undefined,
+  value: Prisma.JsonValue | Record<string, unknown> | null | undefined
 ): Record<string, unknown> | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
     return null;
@@ -52,12 +52,12 @@ function asRecord(
   return value as Record<string, unknown>;
 }
 
-function mapWebhookRecord<T extends Omit<WebhookRecord, 'extraData' | 'name'> & {
-  extraData: Prisma.JsonValue | Record<string, unknown> | null;
-  name: Prisma.JsonValue;
-}>(
-  record: T,
-): WebhookRecord {
+function mapWebhookRecord<
+  T extends Omit<WebhookRecord, 'extraData' | 'name'> & {
+    extraData: Prisma.JsonValue | Record<string, unknown> | null;
+    name: Prisma.JsonValue;
+  },
+>(record: T): WebhookRecord {
   return {
     ...record,
     name: readLocalizedText(record.name, 'webhook.name'),
@@ -67,20 +67,16 @@ function mapWebhookRecord<T extends Omit<WebhookRecord, 'extraData' | 'name'> & 
 
 @Injectable()
 export class WebhookWriteRepository {
-  constructor(
-    private readonly databaseService: DatabaseService,
-  ) {}
+  constructor(private readonly databaseService: DatabaseService) {}
 
-  withTransaction<T>(
-    operation: (prisma: Prisma.TransactionClient) => Promise<T>,
-  ): Promise<T> {
+  withTransaction<T>(operation: (prisma: Prisma.TransactionClient) => Promise<T>): Promise<T> {
     return this.databaseService.getPrisma().$transaction((prisma) => operation(prisma));
   }
 
   async findByCode(
     prisma: Prisma.TransactionClient,
     code: string,
-    tenantSchema: string | null,
+    tenantSchema: string | null
   ): Promise<{ id: string } | null> {
     if (tenantSchema) {
       const rows = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
@@ -90,7 +86,7 @@ export class WebhookWriteRepository {
           WHERE code = $1
           LIMIT 1
         `,
-        code,
+        code
       );
 
       return rows[0] ?? null;
@@ -105,13 +101,17 @@ export class WebhookWriteRepository {
   async findById(
     prisma: Prisma.TransactionClient,
     id: string,
-    tenantSchema: string | null,
+    tenantSchema: string | null
   ): Promise<WebhookRecord | null> {
     if (tenantSchema) {
-      const rows = await prisma.$queryRawUnsafe<Array<Omit<WebhookRecord, 'extraData' | 'name'> & {
-        extraData: Prisma.JsonValue | null;
-        name: Prisma.JsonValue;
-      }>>(
+      const rows = await prisma.$queryRawUnsafe<
+        Array<
+          Omit<WebhookRecord, 'extraData' | 'name'> & {
+            extraData: Prisma.JsonValue | null;
+            name: Prisma.JsonValue;
+          }
+        >
+      >(
         `
           SELECT
             id,
@@ -137,7 +137,7 @@ export class WebhookWriteRepository {
           WHERE id = $1::uuid
           LIMIT 1
         `,
-        id,
+        id
       );
 
       return rows[0] ? mapWebhookRecord(rows[0]) : null;
@@ -153,7 +153,7 @@ export class WebhookWriteRepository {
   async create(
     prisma: Prisma.TransactionClient,
     tenantSchema: string | null,
-    input: WebhookCreatePersistenceInput,
+    input: WebhookCreatePersistenceInput
   ): Promise<string> {
     if (tenantSchema) {
       const created = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
@@ -201,7 +201,7 @@ export class WebhookWriteRepository {
         input.events,
         JSON.stringify(input.headers),
         JSON.stringify(input.retryPolicy),
-        input.userId,
+        input.userId
       );
 
       return created[0]?.id ?? '';
@@ -231,7 +231,7 @@ export class WebhookWriteRepository {
     prisma: Prisma.TransactionClient,
     tenantSchema: string | null,
     id: string,
-    input: WebhookUpdatePersistenceInput,
+    input: WebhookUpdatePersistenceInput
   ): Promise<void> {
     if (tenantSchema) {
       await prisma.$executeRawUnsafe(
@@ -258,7 +258,7 @@ export class WebhookWriteRepository {
         input.events,
         JSON.stringify(input.headers),
         JSON.stringify(input.retryPolicy),
-        input.userId,
+        input.userId
       );
 
       return;
@@ -283,7 +283,7 @@ export class WebhookWriteRepository {
   async delete(
     prisma: Prisma.TransactionClient,
     tenantSchema: string | null,
-    id: string,
+    id: string
   ): Promise<void> {
     if (tenantSchema) {
       await prisma.$executeRawUnsafe(
@@ -291,7 +291,7 @@ export class WebhookWriteRepository {
           DELETE FROM "${tenantSchema}".webhook
           WHERE id = $1::uuid
         `,
-        id,
+        id
       );
 
       return;
@@ -306,7 +306,7 @@ export class WebhookWriteRepository {
     prisma: Prisma.TransactionClient,
     tenantSchema: string | null,
     id: string,
-    input: WebhookActiveStatePersistenceInput,
+    input: WebhookActiveStatePersistenceInput
   ): Promise<void> {
     if (tenantSchema) {
       await prisma.$executeRawUnsafe(
@@ -325,7 +325,7 @@ export class WebhookWriteRepository {
         input.isActive,
         input.disabledAt,
         input.consecutiveFailures,
-        input.userId,
+        input.userId
       );
 
       return;

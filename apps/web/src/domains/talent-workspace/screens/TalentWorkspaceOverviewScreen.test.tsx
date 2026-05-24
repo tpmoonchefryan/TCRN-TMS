@@ -35,23 +35,23 @@ describe('TalentWorkspaceOverviewScreen', () => {
 
     expect(await screen.findByRole('link', { name: /Customer Management/i })).toHaveAttribute(
       'href',
-      '/tenant/tenant-1/talent/talent-1/customers',
+      '/tenant/tenant-1/talent/talent-1/customers'
     );
     expect(screen.getByRole('link', { name: /Homepage Management/i })).toHaveAttribute(
       'href',
-      '/tenant/tenant-1/talent/talent-1/homepage',
+      '/tenant/tenant-1/talent/talent-1/homepage'
     );
     expect(screen.getByRole('link', { name: /Marshmallow Management/i })).toHaveAttribute(
       'href',
-      '/tenant/tenant-1/talent/talent-1/marshmallow',
+      '/tenant/tenant-1/talent/talent-1/marshmallow'
     );
     expect(screen.getByRole('link', { name: /^Reports/i })).toHaveAttribute(
       'href',
-      '/tenant/tenant-1/talent/talent-1/reports',
+      '/tenant/tenant-1/talent/talent-1/reports'
     );
     expect(screen.getByRole('link', { name: 'Open organization structure' })).toHaveAttribute(
       'href',
-      '/tenant/tenant-1/organization-structure',
+      '/tenant/tenant-1/organization-structure'
     );
   });
 });

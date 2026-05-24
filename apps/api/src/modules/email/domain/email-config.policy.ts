@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import {
   DEFAULT_EMAIL_FROM_ADDRESS,
   DEFAULT_EMAIL_FROM_NAME,
@@ -30,7 +29,7 @@ interface EmailConfigEnvFallbackInput {
 
 export const buildDecryptedEmailConfig = (
   storedConfig: StoredEmailConfig,
-  decryptField: (value: string) => string,
+  decryptField: (value: string) => string
 ): DecryptedEmailConfig => {
   const result: DecryptedEmailConfig = {
     provider: storedConfig.provider,
@@ -68,7 +67,7 @@ export const buildDecryptedEmailConfig = (
 
 export const buildMaskedEmailConfigResponse = (
   config: DecryptedEmailConfig,
-  options: EmailConfigMaskOptions,
+  options: EmailConfigMaskOptions
 ): EmailConfigResponse => {
   const response: EmailConfigResponse = {
     provider: config.provider,
@@ -109,7 +108,7 @@ export const buildMaskedEmailConfigResponse = (
 export const buildStoredEmailConfig = (
   dto: SaveEmailConfigDto,
   existingDecrypted: DecryptedEmailConfig | null,
-  encryptSecret: (value: string) => string,
+  encryptSecret: (value: string) => string
 ): StoredEmailConfig => {
   const newConfig: StoredEmailConfig = {
     provider: dto.provider,
@@ -129,7 +128,7 @@ export const buildStoredEmailConfig = (
     const secretId = resolveStoredSecret(
       dto.tencentSes.secretId,
       existingDecrypted?.tencentSes?.secretId,
-      encryptSecret,
+      encryptSecret
     );
     if (secretId) {
       tencentSes.secretId = secretId;
@@ -138,7 +137,7 @@ export const buildStoredEmailConfig = (
     const secretKey = resolveStoredSecret(
       dto.tencentSes.secretKey,
       existingDecrypted?.tencentSes?.secretKey,
-      encryptSecret,
+      encryptSecret
     );
     if (secretKey) {
       tencentSes.secretKey = secretKey;
@@ -160,7 +159,7 @@ export const buildStoredEmailConfig = (
     const password = resolveStoredSecret(
       dto.smtp.password,
       existingDecrypted?.smtp?.password,
-      encryptSecret,
+      encryptSecret
     );
     if (password) {
       smtp.password = password;
@@ -170,7 +169,7 @@ export const buildStoredEmailConfig = (
   }
 
   const tenantSenderOverrides = normalizeTenantSenderOverrides(
-    dto.tenantSenderOverrides ?? existingDecrypted?.tenantSenderOverrides,
+    dto.tenantSenderOverrides ?? existingDecrypted?.tenantSenderOverrides
   );
 
   if (tenantSenderOverrides) {
@@ -181,7 +180,7 @@ export const buildStoredEmailConfig = (
 };
 
 const normalizeTenantSenderOverrides = (
-  value: DecryptedEmailConfig['tenantSenderOverrides'] | undefined,
+  value: DecryptedEmailConfig['tenantSenderOverrides'] | undefined
 ): DecryptedEmailConfig['tenantSenderOverrides'] | undefined => {
   if (!value) {
     return undefined;
@@ -199,14 +198,16 @@ const normalizeTenantSenderOverrides = (
     })
     .filter((entry) => {
       const [tenantSchema, override] = entry;
-      return tenantSchema.length > 0 && !!(override.fromAddress || override.fromName || override.replyTo);
+      return (
+        tenantSchema.length > 0 && !!(override.fromAddress || override.fromName || override.replyTo)
+      );
     });
 
   return entries.length > 0 ? Object.fromEntries(entries) : undefined;
 };
 
 export const buildEnvFallbackEmailConfig = (
-  input: EmailConfigEnvFallbackInput,
+  input: EmailConfigEnvFallbackInput
 ): DecryptedEmailConfig | null => {
   if (!input.secretId || !input.secretKey) {
     return null;
@@ -225,9 +226,7 @@ export const buildEnvFallbackEmailConfig = (
   };
 };
 
-export const isEmailConfigured = (
-  config: DecryptedEmailConfig | null,
-): boolean => {
+export const isEmailConfigured = (config: DecryptedEmailConfig | null): boolean => {
   if (!config) {
     return false;
   }
@@ -246,7 +245,7 @@ export const isEmailConfigured = (
 const resolveStoredSecret = (
   value: string | undefined,
   existingPlaintext: string | undefined,
-  encryptSecret: (value: string) => string,
+  encryptSecret: (value: string) => string
 ): string | undefined => {
   if (!value) {
     return undefined;

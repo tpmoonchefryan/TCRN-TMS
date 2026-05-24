@@ -31,7 +31,7 @@ describe('PaginationFooter', () => {
         labels={labels}
         onPageChange={onPageChange}
         onPageSizeChange={onPageSizeChange}
-      />,
+      />
     );
 
     expect(screen.getByText('Page 2 of 3')).toBeInTheDocument();
@@ -56,7 +56,7 @@ describe('PaginationFooter', () => {
         onPageChange={vi.fn()}
         onPageSizeChange={vi.fn()}
         isLoading
-      />,
+      />
     );
 
     expect(screen.getByRole('button', { name: 'Previous' })).toBeDisabled();

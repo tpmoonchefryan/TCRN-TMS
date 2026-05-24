@@ -1,8 +1,9 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { WebhookManagementScreen } from '@/domains/webhook-management/screens/WebhookManagementScreen';
 import { SUPPORTED_UI_LOCALES, type SupportedUiLocale } from '@tcrn/shared';
+
+import { WebhookManagementScreen } from '@/domains/webhook-management/screens/WebhookManagementScreen';
 
 const mockRequest = vi.fn();
 const mockReplace = vi.fn();
@@ -90,7 +91,9 @@ describe('WebhookManagementScreen', () => {
 
     await waitFor(() => {
       expect(mockRequest).not.toHaveBeenCalledWith('/api/v1/integration/adapter-definitions');
-      expect(mockRequest).not.toHaveBeenCalledWith('/api/v1/configuration-entity/consumer?includeInactive=true&page=1&pageSize=100');
+      expect(mockRequest).not.toHaveBeenCalledWith(
+        '/api/v1/configuration-entity/consumer?includeInactive=true&page=1&pageSize=100'
+      );
       expect(mockRequest).not.toHaveBeenCalledWith('/api/v1/email/config');
     });
   });

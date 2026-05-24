@@ -1,10 +1,11 @@
 'use client';
 
-import type { SupportedUiLocale } from '@tcrn/shared';
 import { Plus, Search, UserMinus, UserRoundCheck, Users2 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { startTransition, useDeferredValue, useEffect, useState } from 'react';
+
+import type { SupportedUiLocale } from '@tcrn/shared';
 
 import {
   checkCustomerProfilePermission,
@@ -33,7 +34,13 @@ import {
   parsePageSizeParam,
 } from '@/platform/runtime/pagination/pagination';
 import { useSession } from '@/platform/runtime/session/session-provider';
-import { ConfirmActionDialog, GlassSurface, PaginationFooter, StateView, TableShell } from '@/platform/ui';
+import {
+  ConfirmActionDialog,
+  GlassSurface,
+  PaginationFooter,
+  StateView,
+  TableShell,
+} from '@/platform/ui';
 
 type ActivityFilter = 'all' | 'active' | 'inactive';
 type MembershipFilter = 'all' | 'members' | 'non-members';
@@ -96,7 +103,11 @@ function formatCount(value: number, locale: SupportedUiLocale) {
   return formatLocaleNumber(locale, value);
 }
 
-function formatMembershipSummary(activeCount: number, totalCount: number, locale: SupportedUiLocale) {
+function formatMembershipSummary(
+  activeCount: number,
+  totalCount: number,
+  locale: SupportedUiLocale
+) {
   const active = formatCount(activeCount, locale);
   const total = formatCount(totalCount, locale);
 
@@ -136,31 +147,53 @@ function formatCreatedAt(value: string, locale: SupportedUiLocale) {
   });
 }
 
-function formatActionTitle(action: 'deactivate' | 'reactivate', customerName: string, locale: SupportedUiLocale) {
+function formatActionTitle(
+  action: 'deactivate' | 'reactivate',
+  customerName: string,
+  locale: SupportedUiLocale
+) {
   return pickLocaleText(locale, {
     en: action === 'deactivate' ? `Deactivate ${customerName}?` : `Reactivate ${customerName}?`,
     zh_HANS: action === 'deactivate' ? `停用 ${customerName}？` : `重新激活 ${customerName}？`,
     zh_HANT: action === 'deactivate' ? `停用 ${customerName}？` : `重新啟用 ${customerName}？`,
-    ja: action === 'deactivate' ? `${customerName} を無効化しますか？` : `${customerName} を再有効化しますか？`,
-    ko: action === 'deactivate' ? `${customerName} 고객을 비활성화할까요?` : `${customerName} 고객을 다시 활성화할까요?`,
+    ja:
+      action === 'deactivate'
+        ? `${customerName} を無効化しますか？`
+        : `${customerName} を再有効化しますか？`,
+    ko:
+      action === 'deactivate'
+        ? `${customerName} 고객을 비활성화할까요?`
+        : `${customerName} 고객을 다시 활성화할까요?`,
     fr: action === 'deactivate' ? `Désactiver ${customerName} ?` : `Réactiver ${customerName} ?`,
   });
 }
 
-function formatActionSuccess(action: 'deactivate' | 'reactivate', customerName: string, locale: SupportedUiLocale) {
+function formatActionSuccess(
+  action: 'deactivate' | 'reactivate',
+  customerName: string,
+  locale: SupportedUiLocale
+) {
   return pickLocaleText(locale, {
-    en: action === 'deactivate'
-      ? `${customerName} was deactivated.`
-      : `${customerName} was reactivated.`,
+    en:
+      action === 'deactivate'
+        ? `${customerName} was deactivated.`
+        : `${customerName} was reactivated.`,
     zh_HANS: action === 'deactivate' ? `${customerName} 已停用。` : `${customerName} 已重新激活。`,
     zh_HANT: action === 'deactivate' ? `${customerName} 已停用。` : `${customerName} 已重新啟用。`,
-    ja: action === 'deactivate' ? `${customerName} を無効化しました。` : `${customerName} を再有効化しました。`,
-    ko: action === 'deactivate' ? `${customerName} 고객을 비활성화했습니다.` : `${customerName} 고객을 다시 활성화했습니다.`,
-    fr: action === 'deactivate' ? `${customerName} a été désactivé.` : `${customerName} a été réactivé.`,
+    ja:
+      action === 'deactivate'
+        ? `${customerName} を無効化しました。`
+        : `${customerName} を再有効化しました。`,
+    ko:
+      action === 'deactivate'
+        ? `${customerName} 고객을 비활성화했습니다.`
+        : `${customerName} 고객을 다시 활성화했습니다.`,
+    fr:
+      action === 'deactivate'
+        ? `${customerName} a été désactivé.`
+        : `${customerName} a été réactivé.`,
   });
 }
-
-
 
 function parseActivityFilter(value: string | null): ActivityFilter {
   return value === 'active' || value === 'inactive' ? value : 'all';
@@ -243,7 +276,11 @@ function StatusBadge({
           ? 'bg-rose-100 text-rose-800'
           : 'bg-slate-100 text-slate-700';
 
-  return <span className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${toneClasses}`}>{label}</span>;
+  return (
+    <span className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${toneClasses}`}>
+      {label}
+    </span>
+  );
 }
 
 function ActionButton({
@@ -288,7 +325,11 @@ function NoticeBanner({
       ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
       : 'border-rose-200 bg-rose-50 text-rose-800';
 
-  return <div className={`rounded-2xl border px-4 py-3 text-sm font-medium ${toneClasses}`}>{message}</div>;
+  return (
+    <div className={`rounded-2xl border px-4 py-3 text-sm font-medium ${toneClasses}`}>
+      {message}
+    </div>
+  );
 }
 
 export function CustomerManagementScreen({
@@ -331,7 +372,9 @@ export function CustomerManagementScreen({
   useEffect(() => {
     setSearch((current) => (current === urlSearch ? current : urlSearch));
     setActivityFilter((current) => (current === urlActivityFilter ? current : urlActivityFilter));
-    setMembershipFilter((current) => (current === urlMembershipFilter ? current : urlMembershipFilter));
+    setMembershipFilter((current) =>
+      current === urlMembershipFilter ? current : urlMembershipFilter
+    );
     setPage((current) => (current === urlPage ? current : urlPage));
     setPageSize((current) => (current === urlPageSize ? current : urlPageSize));
   }, [urlActivityFilter, urlMembershipFilter, urlPage, urlPageSize, urlSearch]);
@@ -396,7 +439,7 @@ export function CustomerManagementScreen({
       membershipFilter: MembershipFilter;
       page: number;
       pageSize: PageSizeOption;
-    }>,
+    }>
   ) {
     const nextSearch = nextState.search ?? search;
     const nextActivityFilter = nextState.activityFilter ?? activityFilter;
@@ -465,14 +508,8 @@ export function CustomerManagementScreen({
           page,
           pageSize,
           search: deferredSearch.trim() || undefined,
-          isActive:
-            activityFilter === 'all'
-              ? undefined
-              : activityFilter === 'active',
-          hasMembership:
-            membershipFilter === 'all'
-              ? undefined
-              : membershipFilter === 'members',
+          isActive: activityFilter === 'all' ? undefined : activityFilter === 'active',
+          hasMembership: membershipFilter === 'all' ? undefined : membershipFilter === 'members',
         });
 
         if (!cancelled) {
@@ -516,14 +553,8 @@ export function CustomerManagementScreen({
       page,
       pageSize,
       search: deferredSearch.trim() || undefined,
-      isActive:
-        activityFilter === 'all'
-          ? undefined
-          : activityFilter === 'active',
-      hasMembership:
-        membershipFilter === 'all'
-          ? undefined
-          : membershipFilter === 'members',
+      isActive: activityFilter === 'all' ? undefined : activityFilter === 'active',
+      hasMembership: membershipFilter === 'all' ? undefined : membershipFilter === 'members',
     });
 
     setPanel({
@@ -662,7 +693,13 @@ export function CustomerManagementScreen({
   }
 
   if (panel.error && panel.data.length === 0) {
-    return <StateView status="error" title={customerCopy.customerLedgerUnavailableTitle} description={panel.error} />;
+    return (
+      <StateView
+        status="error"
+        title={customerCopy.customerLedgerUnavailableTitle}
+        description={panel.error}
+      />
+    );
   }
 
   return (
@@ -676,7 +713,9 @@ export function CustomerManagementScreen({
             </div>
             <div className="space-y-3">
               <h1 className="text-3xl font-semibold text-slate-950">{customerCopy.title}</h1>
-              <p className="max-w-3xl text-sm leading-6 text-slate-600">{customerCopy.description}</p>
+              <p className="max-w-3xl text-sm leading-6 text-slate-600">
+                {customerCopy.description}
+              </p>
             </div>
           </div>
 
@@ -777,11 +816,13 @@ export function CustomerManagementScreen({
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
-              {([
-                { key: 'all', label: customerCopy.membershipAll },
-                { key: 'members', label: customerCopy.membershipOnlyMembers },
-                { key: 'non-members', label: customerCopy.membershipOnlyNonMembers },
-              ] as const).map((candidate) => {
+              {(
+                [
+                  { key: 'all', label: customerCopy.membershipAll },
+                  { key: 'members', label: customerCopy.membershipOnlyMembers },
+                  { key: 'non-members', label: customerCopy.membershipOnlyNonMembers },
+                ] as const
+              ).map((candidate) => {
                 const isActive = membershipFilter === candidate.key;
 
                 return (
@@ -806,11 +847,14 @@ export function CustomerManagementScreen({
                 );
               })}
             </div>
-
           </div>
 
           {panel.error ? (
-            <StateView status="error" title={customerCopy.customerLedgerUnavailableTitle} description={panel.error} />
+            <StateView
+              status="error"
+              title={customerCopy.customerLedgerUnavailableTitle}
+              description={panel.error}
+            />
           ) : (
             <>
               <TableShell
@@ -835,7 +879,9 @@ export function CustomerManagementScreen({
                       <div className="space-y-1">
                         <p className="font-semibold text-slate-900">{customer.nickname}</p>
                         <p className="text-xs text-slate-500">
-                          {customer.companyShortName || customer.originTalent?.displayName || customerCopy.directCustomerRecord}
+                          {customer.companyShortName ||
+                            customer.originTalent?.displayName ||
+                            customerCopy.directCustomerRecord}
                         </p>
                         {customer.tags.length > 0 ? (
                           <div className="flex flex-wrap gap-1.5 pt-1">
@@ -865,33 +911,51 @@ export function CustomerManagementScreen({
                       <div className="space-y-2">
                         <StatusBadge
                           tone={customer.isActive ? 'success' : 'danger'}
-                          label={customer.status?.name || (customer.isActive ? customerCopy.statusActive : customerCopy.statusInactive)}
+                          label={
+                            customer.status?.name ||
+                            (customer.isActive
+                              ? customerCopy.statusActive
+                              : customerCopy.statusInactive)
+                          }
                         />
-                        <p className="text-xs text-slate-500">{customer.primaryLanguage || customerCopy.languageUnset}</p>
+                        <p className="text-xs text-slate-500">
+                          {customer.primaryLanguage || customerCopy.languageUnset}
+                        </p>
                       </div>
                     </td>
                     <td className="px-6 py-4 text-sm text-slate-600">
                       {customer.membershipSummary ? (
                         <div className="space-y-1">
                           <p className="font-medium text-slate-900">
-                            {customer.membershipSummary.highestLevel.platformName} {customer.membershipSummary.highestLevel.levelName}
+                            {customer.membershipSummary.highestLevel.platformName}{' '}
+                            {customer.membershipSummary.highestLevel.levelName}
                           </p>
                           <p className="text-xs text-slate-500">
                             {formatMembershipSummary(
                               customer.membershipSummary.activeCount,
                               customer.membershipSummary.totalCount,
-                              locale,
+                              locale
                             )}
                           </p>
                         </div>
                       ) : (
-                        <span className="text-xs font-medium text-slate-500">{customerCopy.membershipNone}</span>
+                        <span className="text-xs font-medium text-slate-500">
+                          {customerCopy.membershipNone}
+                        </span>
                       )}
                     </td>
                     <td className="px-6 py-4 text-sm text-slate-600">
                       <div className="space-y-1">
-                        <p>{formatLocaleDateTime(locale, customer.updatedAt, getDateTimeFallback(locale))}</p>
-                        <p className="text-xs text-slate-500">{formatCreatedAt(customer.createdAt, locale)}</p>
+                        <p>
+                          {formatLocaleDateTime(
+                            locale,
+                            customer.updatedAt,
+                            getDateTimeFallback(locale)
+                          )}
+                        </p>
+                        <p className="text-xs text-slate-500">
+                          {formatCreatedAt(customer.createdAt, locale)}
+                        </p>
                       </div>
                     </td>
                     <td className="px-6 py-4">
@@ -902,7 +966,9 @@ export function CustomerManagementScreen({
                           onClick={() => void prepareDeactivateDialog(customer)}
                         >
                           <UserMinus className="h-3.5 w-3.5" />
-                          {preparingCustomerId === customer.id ? customerCopy.deactivatePending : customerCopy.deactivateLabel}
+                          {preparingCustomerId === customer.id
+                            ? customerCopy.deactivatePending
+                            : customerCopy.deactivateLabel}
                         </ActionButton>
                       ) : (
                         <ActionButton
@@ -916,7 +982,11 @@ export function CustomerManagementScreen({
                               description: customerCopy.reactivateDescription,
                               confirmText: customerCopy.reactivateConfirm,
                               pendingText: customerCopy.reactivatePending,
-                              successMessage: formatActionSuccess('reactivate', customer.nickname, locale),
+                              successMessage: formatActionSuccess(
+                                'reactivate',
+                                customer.nickname,
+                                locale
+                              ),
                               errorFallback: customerCopy.reactivateRequestFallback,
                               intent: 'primary',
                             })
@@ -966,7 +1036,14 @@ export function CustomerManagementScreen({
         title={dialogState?.title || ''}
         description={dialogState?.description || ''}
         confirmText={dialogState?.confirmText ?? customerCopy.deactivateConfirm}
-        cancelText={pickLocaleText(locale, { en: 'Cancel', zh_HANS: '取消', zh_HANT: '取消', ja: 'キャンセル', ko: '취소', fr: 'Annuler' })}
+        cancelText={pickLocaleText(locale, {
+          en: 'Cancel',
+          zh_HANS: '取消',
+          zh_HANT: '取消',
+          ja: 'キャンセル',
+          ko: '취소',
+          fr: 'Annuler',
+        })}
         pendingText={dialogState?.pendingText}
         intent={dialogState?.intent}
         isPending={dialogPending}

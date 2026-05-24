@@ -60,7 +60,9 @@ function normalizeUiLocaleOrDefault(input?: string | null): SupportedUiLocale {
   return normalizeSupportedUiLocale(input) ?? 'en';
 }
 
-function normalizeAuthenticatedSessionResult(result: AuthenticatedSessionResult): AuthenticatedSessionResult {
+function normalizeAuthenticatedSessionResult(
+  result: AuthenticatedSessionResult
+): AuthenticatedSessionResult {
   return {
     ...result,
     user: {
@@ -120,7 +122,10 @@ export async function login(input: LoginInput): Promise<LoginFlowResult> {
   return mapLoginFlow(data);
 }
 
-export async function verifyTotp(sessionToken: string, code: string): Promise<AuthenticatedSessionResult> {
+export async function verifyTotp(
+  sessionToken: string,
+  code: string
+): Promise<AuthenticatedSessionResult> {
   const response = await fetch('/api/v1/auth/totp/verify', {
     method: 'POST',
     credentials: 'include',
@@ -130,13 +135,15 @@ export async function verifyTotp(sessionToken: string, code: string): Promise<Au
     body: JSON.stringify({ sessionToken, code }),
   });
 
-  return normalizeAuthenticatedSessionResult(await readApiData<AuthenticatedSessionResult>(response));
+  return normalizeAuthenticatedSessionResult(
+    await readApiData<AuthenticatedSessionResult>(response)
+  );
 }
 
 export async function forceResetPassword(
   sessionToken: string,
   newPassword: string,
-  newPasswordConfirm: string,
+  newPasswordConfirm: string
 ): Promise<AuthenticatedSessionResult> {
   const response = await fetch('/api/v1/auth/password/reset', {
     method: 'POST',
@@ -147,10 +154,14 @@ export async function forceResetPassword(
     body: JSON.stringify({ sessionToken, newPassword, newPasswordConfirm }),
   });
 
-  return normalizeAuthenticatedSessionResult(await readApiData<AuthenticatedSessionResult>(response));
+  return normalizeAuthenticatedSessionResult(
+    await readApiData<AuthenticatedSessionResult>(response)
+  );
 }
 
-export async function refreshAccessToken(): Promise<Pick<AuthenticatedSessionResult, 'accessToken' | 'tokenType' | 'expiresIn'>> {
+export async function refreshAccessToken(): Promise<
+  Pick<AuthenticatedSessionResult, 'accessToken' | 'tokenType' | 'expiresIn'>
+> {
   const response = await fetch('/api/v1/auth/refresh', {
     method: 'POST',
     credentials: 'include',
@@ -160,7 +171,9 @@ export async function refreshAccessToken(): Promise<Pick<AuthenticatedSessionRes
     body: JSON.stringify({}),
   });
 
-  return readApiData<Pick<AuthenticatedSessionResult, 'accessToken' | 'tokenType' | 'expiresIn'>>(response);
+  return readApiData<Pick<AuthenticatedSessionResult, 'accessToken' | 'tokenType' | 'expiresIn'>>(
+    response
+  );
 }
 
 export async function getCurrentUser(accessToken: string): Promise<CurrentUserProfile> {
@@ -175,7 +188,9 @@ export async function getCurrentUser(accessToken: string): Promise<CurrentUserPr
   return normalizeCurrentUserProfile(await readApiData<CurrentUserProfile>(response));
 }
 
-export async function readPostLoginOrganizationTree(accessToken: string): Promise<OrganizationTreeResponse> {
+export async function readPostLoginOrganizationTree(
+  accessToken: string
+): Promise<OrganizationTreeResponse> {
   const response = await fetch('/api/v1/organization/tree?includeInactive=false', {
     method: 'GET',
     credentials: 'include',

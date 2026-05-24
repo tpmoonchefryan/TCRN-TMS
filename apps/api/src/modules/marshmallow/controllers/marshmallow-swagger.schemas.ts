@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { ErrorCodes, SUPPORTED_UI_LOCALES, type LocalizedText } from '@tcrn/shared';
 
 const createErrorEnvelopeSchema = (code: string, message: string) => ({
@@ -28,7 +27,7 @@ const createLocalizedTextSchema = (examples: LocalizedText) => ({
     SUPPORTED_UI_LOCALES.map((locale) => [
       locale,
       { type: 'string', nullable: true, example: examples[locale] },
-    ]),
+    ])
   ),
   required: [...SUPPORTED_UI_LOCALES],
 });
@@ -37,7 +36,7 @@ const createSuccessEnvelopeSchema = (
   dataSchema: Record<string, unknown>,
   exampleData: unknown,
   metaSchema?: Record<string, unknown>,
-  exampleMeta?: unknown,
+  exampleMeta?: unknown
 ) => {
   const properties: Record<string, unknown> = {
     success: { type: 'boolean', example: true },
@@ -324,7 +323,12 @@ const MESSAGE_ITEM_SCHEMA = {
     isStarred: { type: 'boolean', example: true },
     isPinned: { type: 'boolean', example: false },
     replyContent: { type: 'string', nullable: true, example: 'Thank you for watching!' },
-    repliedAt: { type: 'string', format: 'date-time', nullable: true, example: '2026-04-13T12:10:00.000Z' },
+    repliedAt: {
+      type: 'string',
+      format: 'date-time',
+      nullable: true,
+      example: '2026-04-13T12:10:00.000Z',
+    },
     repliedBy: {
       type: 'object',
       nullable: true,
@@ -536,9 +540,19 @@ export const MARSHMALLOW_EXPORT_JOB_SCHEMA = {
       nullable: true,
       example: 'https://minio.example.com/temp-reports/marshmallow-export-20260413.csv',
     },
-    expiresAt: { type: 'string', format: 'date-time', nullable: true, example: '2026-04-20T12:00:00.000Z' },
+    expiresAt: {
+      type: 'string',
+      format: 'date-time',
+      nullable: true,
+      example: '2026-04-20T12:00:00.000Z',
+    },
     createdAt: { type: 'string', format: 'date-time', example: '2026-04-13T12:00:00.000Z' },
-    completedAt: { type: 'string', format: 'date-time', nullable: true, example: '2026-04-13T12:05:00.000Z' },
+    completedAt: {
+      type: 'string',
+      format: 'date-time',
+      nullable: true,
+      example: '2026-04-13T12:05:00.000Z',
+    },
   },
   required: [
     'id',
@@ -571,7 +585,8 @@ export const MARSHMALLOW_EXPORT_DOWNLOAD_SCHEMA = {
   properties: {
     url: {
       type: 'string',
-      example: 'https://minio.example.com/temp-reports/marshmallow-export-20260413.csv?X-Amz-Signature=...',
+      example:
+        'https://minio.example.com/temp-reports/marshmallow-export-20260413.csv?X-Amz-Signature=...',
     },
   },
   required: ['url'],
@@ -598,7 +613,11 @@ const EXTERNAL_BLOCKLIST_ITEM_SCHEMA = {
     pattern: { type: 'string', example: 'discord.gg/' },
     patternType: { type: 'string', example: 'url_regex' },
     name: createLocalizedTextSchema(EXTERNAL_BLOCKLIST_NAME_EXAMPLE),
-    description: { type: 'string', nullable: true, example: 'Reject external Discord invite links' },
+    description: {
+      type: 'string',
+      nullable: true,
+      example: 'Reject external Discord invite links',
+    },
     category: { type: 'string', nullable: true, example: 'spam' },
     severity: { type: 'string', example: 'high' },
     action: { type: 'string', example: 'reject' },
@@ -727,7 +746,7 @@ export const EXTERNAL_BLOCKLIST_SCOPE_SCHEMA = createSuccessEnvelopeSchema(
       updatedAt: '2026-04-13T12:05:00.000Z',
       version: 2,
     },
-  ],
+  ]
 );
 
 export const EXTERNAL_BLOCKLIST_ITEM_ENVELOPE_SCHEMA = createSuccessEnvelopeSchema(
@@ -755,7 +774,7 @@ export const EXTERNAL_BLOCKLIST_ITEM_ENVELOPE_SCHEMA = createSuccessEnvelopeSche
     createdAt: '2026-04-13T12:00:00.000Z',
     updatedAt: '2026-04-13T12:05:00.000Z',
     version: 2,
-  },
+  }
 );
 
 export const EXTERNAL_BLOCKLIST_DELETE_SCHEMA = {
@@ -783,7 +802,7 @@ export const EXTERNAL_BLOCKLIST_DISABLE_SCHEMA = createSuccessEnvelopeSchema(
   {
     id: '550e8400-e29b-41d4-a716-446655440700',
     disabled: true,
-  },
+  }
 );
 
 export const EXTERNAL_BLOCKLIST_ENABLE_SCHEMA = createSuccessEnvelopeSchema(
@@ -798,7 +817,7 @@ export const EXTERNAL_BLOCKLIST_ENABLE_SCHEMA = createSuccessEnvelopeSchema(
   {
     id: '550e8400-e29b-41d4-a716-446655440700',
     enabled: true,
-  },
+  }
 );
 
 export const EXTERNAL_BLOCKLIST_BATCH_SCHEMA = createSuccessEnvelopeSchema(
@@ -811,7 +830,7 @@ export const EXTERNAL_BLOCKLIST_BATCH_SCHEMA = createSuccessEnvelopeSchema(
   },
   {
     updated: 3,
-  },
+  }
 );
 
 export const PUBLIC_MARSHMALLOW_CONFIG_SCHEMA = {
@@ -935,13 +954,22 @@ const PUBLIC_MESSAGE_ITEM_SCHEMA = {
     isAnonymous: { type: 'boolean', example: false },
     isRead: { type: 'boolean', example: false },
     replyContent: { type: 'string', nullable: true, example: 'Thank you!' },
-    repliedAt: { type: 'string', format: 'date-time', nullable: true, example: '2026-04-13T12:10:00.000Z' },
+    repliedAt: {
+      type: 'string',
+      format: 'date-time',
+      nullable: true,
+      example: '2026-04-13T12:10:00.000Z',
+    },
     repliedBy: {
       type: 'object',
       nullable: true,
       properties: {
         displayName: { type: 'string', example: 'Aki Rosenthal' },
-        avatarUrl: { type: 'string', nullable: true, example: 'https://cdn.example.com/avatars/aki.png' },
+        avatarUrl: {
+          type: 'string',
+          nullable: true,
+          example: 'https://cdn.example.com/avatars/aki.png',
+        },
       },
       required: ['displayName', 'avatarUrl'],
     },
@@ -1089,7 +1117,11 @@ export const PUBLIC_MARSHMALLOW_VALIDATE_SSO_SCHEMA = {
         id: { type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440100' },
         displayName: { type: 'string', example: 'Aki Rosenthal' },
         email: { type: 'string', example: 'aki@example.com' },
-        talentId: { type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440001' },
+        talentId: {
+          type: 'string',
+          format: 'uuid',
+          example: '550e8400-e29b-41d4-a716-446655440001',
+        },
       },
       required: ['id', 'displayName', 'email', 'talentId'],
     },
@@ -1135,50 +1167,50 @@ export const PUBLIC_MARSHMALLOW_REPLY_SCHEMA = {
 
 export const MARSHMALLOW_BAD_REQUEST_SCHEMA = createErrorEnvelopeSchema(
   ErrorCodes.VALIDATION_FAILED,
-  'Marshmallow request is invalid',
+  'Marshmallow request is invalid'
 );
 
 export const MARSHMALLOW_UNAUTHORIZED_SCHEMA = createErrorEnvelopeSchema(
   'AUTH_UNAUTHORIZED',
-  'Authentication required',
+  'Authentication required'
 );
 
 export const MARSHMALLOW_FORBIDDEN_SCHEMA = createErrorEnvelopeSchema(
   ErrorCodes.PERM_ACCESS_DENIED,
-  'Access denied',
+  'Access denied'
 );
 
 export const MARSHMALLOW_NOT_FOUND_SCHEMA = createErrorEnvelopeSchema(
   ErrorCodes.RES_NOT_FOUND,
-  'Marshmallow resource not found',
+  'Marshmallow resource not found'
 );
 
 export const MARSHMALLOW_CONFLICT_SCHEMA = createErrorEnvelopeSchema(
   ErrorCodes.RES_CONFLICT,
-  'Current resource state conflicts with this request',
+  'Current resource state conflicts with this request'
 );
 
 export const MARSHMALLOW_VERSION_CONFLICT_SCHEMA = createErrorEnvelopeSchema(
   ErrorCodes.RES_VERSION_MISMATCH,
-  'Data has been modified by another user',
+  'Data has been modified by another user'
 );
 
 export const MARSHMALLOW_ALREADY_EXISTS_SCHEMA = createErrorEnvelopeSchema(
   ErrorCodes.RES_ALREADY_EXISTS,
-  'Resource already exists',
+  'Resource already exists'
 );
 
 export const PUBLIC_MARSHMALLOW_BAD_REQUEST_SCHEMA = createErrorEnvelopeSchema(
   ErrorCodes.VALIDATION_FAILED,
-  'Public marshmallow request is invalid',
+  'Public marshmallow request is invalid'
 );
 
 export const PUBLIC_MARSHMALLOW_FORBIDDEN_SCHEMA = createErrorEnvelopeSchema(
   ErrorCodes.PERM_ACCESS_DENIED,
-  'Public marshmallow action is not allowed',
+  'Public marshmallow action is not allowed'
 );
 
 export const PUBLIC_MARSHMALLOW_NOT_FOUND_SCHEMA = createErrorEnvelopeSchema(
   ErrorCodes.RES_NOT_FOUND,
-  'Public marshmallow resource not found',
+  'Public marshmallow resource not found'
 );

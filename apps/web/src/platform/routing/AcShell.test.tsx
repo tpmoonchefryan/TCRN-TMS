@@ -75,26 +75,36 @@ describe('AcShell', () => {
         <AcShell tenantId="tenant-ac">
           <div>AC content</div>
         </AcShell>
-      </UiLocaleProvider>,
+      </UiLocaleProvider>
     );
 
     expect(
-      within(screen.getByRole('navigation', { name: 'Main navigation' })).getByText('User Management'),
+      within(screen.getByRole('navigation', { name: 'Main navigation' })).getByText(
+        'User Management'
+      )
     ).toBeInTheDocument();
     expect(
-      within(screen.getByRole('navigation', { name: 'Main navigation' })).getByText('Interface Management'),
+      within(screen.getByRole('navigation', { name: 'Main navigation' })).getByText(
+        'Interface Management'
+      )
     ).toBeInTheDocument();
     expect(
-      within(screen.getByRole('navigation', { name: 'Main navigation' })).getByText('Webhook Management'),
+      within(screen.getByRole('navigation', { name: 'Main navigation' })).getByText(
+        'Webhook Management'
+      )
     ).toBeInTheDocument();
     expect(
-      within(screen.getByRole('navigation', { name: 'Main navigation' })).getByText('API Client Management'),
+      within(screen.getByRole('navigation', { name: 'Main navigation' })).getByText(
+        'API Client Management'
+      )
     ).toBeInTheDocument();
     expect(
-      within(screen.getByRole('navigation', { name: 'Main navigation' })).queryByText('Integration Management'),
+      within(screen.getByRole('navigation', { name: 'Main navigation' })).queryByText(
+        'Integration Management'
+      )
     ).not.toBeInTheDocument();
     expect(
-      within(screen.getByRole('navigation', { name: 'Main navigation' })).queryByText('My Profile'),
+      within(screen.getByRole('navigation', { name: 'Main navigation' })).queryByText('My Profile')
     ).not.toBeInTheDocument();
     expect(screen.getByRole('navigation', { name: 'Main navigation' })).toBeInTheDocument();
 
@@ -102,10 +112,14 @@ describe('AcShell', () => {
     fireEvent.click(screen.getByRole('option', { name: '日本語' }));
 
     expect(
-      within(screen.getByRole('navigation', { name: 'メインナビゲーション' })).getByText('ユーザー管理'),
+      within(screen.getByRole('navigation', { name: 'メインナビゲーション' })).getByText(
+        'ユーザー管理'
+      )
     ).toBeInTheDocument();
     expect(
-      within(screen.getByRole('navigation', { name: 'メインナビゲーション' })).queryByText('マイプロフィール'),
+      within(screen.getByRole('navigation', { name: 'メインナビゲーション' })).queryByText(
+        'マイプロフィール'
+      )
     ).not.toBeInTheDocument();
     expect(screen.getByRole('navigation', { name: 'メインナビゲーション' })).toBeInTheDocument();
 
@@ -133,7 +147,7 @@ describe('AcShell', () => {
         <AcShell tenantId="tenant-ac">
           <div>AC content</div>
         </AcShell>
-      </UiLocaleProvider>,
+      </UiLocaleProvider>
     );
 
     fireEvent.click(screen.getByRole('button', { name: 'Account menu' }));
@@ -154,7 +168,7 @@ describe('AcShell', () => {
         <AcShell tenantId="tenant-ac">
           <div>AC content</div>
         </AcShell>
-      </UiLocaleProvider>,
+      </UiLocaleProvider>
     );
 
     await waitFor(() => {
@@ -173,7 +187,7 @@ describe('AcShell', () => {
         <AcShell tenantId="tenant-ac">
           <div>AC profile security</div>
         </AcShell>
-      </UiLocaleProvider>,
+      </UiLocaleProvider>
     );
 
     const navigation = screen.getByRole('navigation', { name: 'Main navigation' });
@@ -190,14 +204,21 @@ describe('AcShell', () => {
         <AcShell tenantId="tenant-ac">
           <div>AC API clients</div>
         </AcShell>
-      </UiLocaleProvider>,
+      </UiLocaleProvider>
     );
 
     const navigation = screen.getByRole('navigation', { name: 'Main navigation' });
 
-    expect(within(navigation).getByRole('link', { name: 'API Client Management' })).toHaveAttribute('aria-current', 'page');
-    expect(within(navigation).getByRole('link', { name: 'Interface Management' })).not.toHaveAttribute('aria-current');
-    expect(within(navigation).getByRole('link', { name: 'Webhook Management' })).not.toHaveAttribute('aria-current');
+    expect(within(navigation).getByRole('link', { name: 'API Client Management' })).toHaveAttribute(
+      'aria-current',
+      'page'
+    );
+    expect(
+      within(navigation).getByRole('link', { name: 'Interface Management' })
+    ).not.toHaveAttribute('aria-current');
+    expect(
+      within(navigation).getByRole('link', { name: 'Webhook Management' })
+    ).not.toHaveAttribute('aria-current');
     expect(screen.getAllByText('API Client Management').length).toBeGreaterThan(0);
   });
 });

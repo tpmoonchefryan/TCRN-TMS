@@ -1,9 +1,10 @@
 'use client';
 
-import { SUPPORTED_UI_LOCALES, type SupportedUiLocale } from '@tcrn/shared';
 import { MonitorSmartphone, Trash2, UserRound } from 'lucide-react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { startTransition, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+
+import { SUPPORTED_UI_LOCALES, type SupportedUiLocale } from '@tcrn/shared';
 
 import {
   changeCurrentPassword,
@@ -124,7 +125,7 @@ function buildSessionUserSnapshot(profile: CurrentProfile): SessionUserSnapshot 
 
 function hasSessionUserDrift(
   currentUser: SessionUserSnapshot | null | undefined,
-  nextUser: SessionUserSnapshot,
+  nextUser: SessionUserSnapshot
 ) {
   if (!currentUser) {
     return true;
@@ -151,7 +152,7 @@ function buildProfileSessionsQueryState(
   }: {
     page: number;
     pageSize: PageSizeOption;
-  },
+  }
 ) {
   const params = new URLSearchParams(searchParams.toString());
 
@@ -181,7 +182,9 @@ function SummaryCard({
   return (
     <div className="min-w-0 rounded-2xl border border-slate-200 bg-white/80 px-4 py-4 shadow-sm">
       <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">{label}</p>
-      <p className="mt-2 break-words text-xl font-semibold leading-8 text-slate-950 sm:text-2xl">{value}</p>
+      <p className="mt-2 break-words text-xl font-semibold leading-8 text-slate-950 sm:text-2xl">
+        {value}
+      </p>
       <p className="mt-2 text-xs leading-5 text-slate-500">{hint}</p>
     </div>
   );
@@ -261,7 +264,7 @@ export function ProfileScreen({
     ? copy.header.securityDescription
     : copy.header.description;
   const sessionUserRef = useRef<SessionUserSnapshot | null>(
-    session?.user ? { ...session.user } : null,
+    session?.user ? { ...session.user } : null
   );
 
   const [profile, setProfile] = useState<CurrentProfile | null>(null);
@@ -310,7 +313,7 @@ export function ProfileScreen({
 
   const sessionsPagination = useMemo(
     () => buildPaginationMeta(sessions.length, sessionsPage, sessionsPageSize),
-    [sessions.length, sessionsPage, sessionsPageSize],
+    [sessions.length, sessionsPage, sessionsPageSize]
   );
 
   const paginatedSessions = useMemo(() => {
@@ -321,14 +324,16 @@ export function ProfileScreen({
 
   useEffect(() => {
     setSessionsPage((current) => (current === urlSessionsPage ? current : urlSessionsPage));
-    setSessionsPageSize((current) => (current === urlSessionsPageSize ? current : urlSessionsPageSize));
+    setSessionsPageSize((current) =>
+      current === urlSessionsPageSize ? current : urlSessionsPageSize
+    );
   }, [urlSessionsPage, urlSessionsPageSize]);
 
   function applySessionsQueryState(
     nextState: Partial<{
       page: number;
       pageSize: PageSizeOption;
-    }>,
+    }>
   ) {
     const nextPage = nextState.page ?? sessionsPage;
     const nextPageSize = nextState.pageSize ?? sessionsPageSize;
@@ -391,16 +396,19 @@ export function ProfileScreen({
     sessionsPagination.totalPages,
   ]);
 
-  const applyProfileState = useCallback((nextProfile: CurrentProfile) => {
-    setProfile(nextProfile);
-    setProfileDraft(buildProfileDraft(nextProfile));
-    const nextSessionUser = buildSessionUserSnapshot(nextProfile);
+  const applyProfileState = useCallback(
+    (nextProfile: CurrentProfile) => {
+      setProfile(nextProfile);
+      setProfileDraft(buildProfileDraft(nextProfile));
+      const nextSessionUser = buildSessionUserSnapshot(nextProfile);
 
-    if (hasSessionUserDrift(sessionUserRef.current, nextSessionUser)) {
-      sessionUserRef.current = nextSessionUser;
-      updateSessionUser(nextSessionUser);
-    }
-  }, [updateSessionUser]);
+      if (hasSessionUserDrift(sessionUserRef.current, nextSessionUser)) {
+        sessionUserRef.current = nextSessionUser;
+        updateSessionUser(nextSessionUser);
+      }
+    },
+    [updateSessionUser]
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -453,14 +461,20 @@ export function ProfileScreen({
 
   if (loading) {
     return (
-        <GlassSurface className="p-8">
-          <p className="text-sm font-medium text-slate-500">{copy.state.loading}</p>
-        </GlassSurface>
-      );
+      <GlassSurface className="p-8">
+        <p className="text-sm font-medium text-slate-500">{copy.state.loading}</p>
+      </GlassSurface>
+    );
   }
 
   if (loadError || !profile || !profileDraft) {
-    return <StateView status="error" title={copy.state.unavailableTitle} description={loadError || undefined} />;
+    return (
+      <StateView
+        status="error"
+        title={copy.state.unavailableTitle}
+        description={loadError || undefined}
+      />
+    );
   }
 
   const sessionsPageRange = getPaginationRange(sessionsPagination, paginatedSessions.length);
@@ -861,10 +875,18 @@ export function ProfileScreen({
               value={profile.displayName || profile.username}
               hint={copy.header.summaryUserHint}
             />
-            <SummaryCard label={copy.header.summaryEmailLabel} value={profile.email} hint={copy.header.summaryEmailHint} />
+            <SummaryCard
+              label={copy.header.summaryEmailLabel}
+              value={profile.email}
+              hint={copy.header.summaryEmailHint}
+            />
             <SummaryCard
               label={copy.header.summaryTotpLabel}
-              value={profile.totpEnabled ? copy.header.summaryTotpEnabled : copy.header.summaryTotpDisabled}
+              value={
+                profile.totpEnabled
+                  ? copy.header.summaryTotpEnabled
+                  : copy.header.summaryTotpDisabled
+              }
               hint={copy.header.summaryTotpHint}
             />
             <SummaryCard
@@ -904,7 +926,11 @@ export function ProfileScreen({
                   >
                     {copy.details.reset}
                   </button>
-                  <AsyncSubmitButton onClick={() => void handleSaveProfile()} isPending={isSavingProfile} pendingText={copy.details.savePending}>
+                  <AsyncSubmitButton
+                    onClick={() => void handleSaveProfile()}
+                    isPending={isSavingProfile}
+                    pendingText={copy.details.savePending}
+                  >
                     {copy.details.save}
                   </AsyncSubmitButton>
                 </>
@@ -912,7 +938,9 @@ export function ProfileScreen({
             >
               <div className="grid gap-4 md:grid-cols-2">
                 <label className="space-y-2">
-                  <span className="text-sm font-semibold text-slate-900">{copy.details.displayNameLabel}</span>
+                  <span className="text-sm font-semibold text-slate-900">
+                    {copy.details.displayNameLabel}
+                  </span>
                   <input
                     aria-label={copy.details.displayNameLabel}
                     value={profileDraft.displayName}
@@ -923,14 +951,16 @@ export function ProfileScreen({
                               ...current,
                               displayName: event.target.value,
                             }
-                          : current,
+                          : current
                       )
                     }
                     className={inputClassName}
                   />
                 </label>
                 <label className="space-y-2">
-                  <span className="text-sm font-semibold text-slate-900">{copy.details.phoneLabel}</span>
+                  <span className="text-sm font-semibold text-slate-900">
+                    {copy.details.phoneLabel}
+                  </span>
                   <input
                     aria-label={copy.details.phoneLabel}
                     value={profileDraft.phone}
@@ -941,14 +971,16 @@ export function ProfileScreen({
                               ...current,
                               phone: event.target.value,
                             }
-                          : current,
+                          : current
                       )
                     }
                     className={inputClassName}
                   />
                 </label>
                 <label className="space-y-2">
-                  <span className="text-sm font-semibold text-slate-900">{copy.details.preferredLanguageLabel}</span>
+                  <span className="text-sm font-semibold text-slate-900">
+                    {copy.details.preferredLanguageLabel}
+                  </span>
                   <select
                     aria-label={copy.details.preferredLanguageLabel}
                     value={profileDraft.preferredLanguage}
@@ -959,7 +991,7 @@ export function ProfileScreen({
                               ...current,
                               preferredLanguage: event.target.value as SupportedUiLocale,
                             }
-                          : current,
+                          : current
                       )
                     }
                     className={inputClassName}
@@ -979,7 +1011,11 @@ export function ProfileScreen({
                   />
                   <SummaryCard
                     label={copy.details.passwordExpiresLabel}
-                    value={formatProfileDateTime(profile.passwordExpiresAt, locale, copy.details.notScheduled)}
+                    value={formatProfileDateTime(
+                      profile.passwordExpiresAt,
+                      locale,
+                      copy.details.notScheduled
+                    )}
                     hint={copy.details.passwordExpiresHint}
                   />
                 </div>
@@ -988,19 +1024,24 @@ export function ProfileScreen({
           </GlassSurface>
 
           <GlassSurface className="p-6">
-            <FormSection
-              title={copy.avatarEmail.title}
-              description={copy.avatarEmail.description}
-            >
+            <FormSection title={copy.avatarEmail.title} description={copy.avatarEmail.description}>
               <div className="grid gap-6 xl:grid-cols-2">
                 <div className="rounded-2xl border border-slate-200 bg-white/85 px-5 py-5 shadow-sm">
                   <div className="space-y-4">
                     <div className="space-y-2">
-                      <p className="text-sm font-semibold text-slate-950">{copy.avatarEmail.avatarTitle}</p>
-                      <p className="text-sm leading-6 text-slate-600">{copy.avatarEmail.avatarDescription}</p>
+                      <p className="text-sm font-semibold text-slate-950">
+                        {copy.avatarEmail.avatarTitle}
+                      </p>
+                      <p className="text-sm leading-6 text-slate-600">
+                        {copy.avatarEmail.avatarDescription}
+                      </p>
                     </div>
                     {profile.avatarUrl ? (
-                      <img src={profile.avatarUrl} alt={copy.avatarEmail.currentAvatarAlt} className="h-20 w-20 rounded-2xl object-cover" />
+                      <img
+                        src={profile.avatarUrl}
+                        alt={copy.avatarEmail.currentAvatarAlt}
+                        className="h-20 w-20 rounded-2xl object-cover"
+                      />
                     ) : (
                       <div className="flex h-20 w-20 items-center justify-center rounded-2xl border border-dashed border-slate-300 text-sm text-slate-500">
                         {copy.avatarEmail.noAvatar}
@@ -1013,7 +1054,11 @@ export function ProfileScreen({
                       onChange={(event) => setAvatarFile(event.target.files?.[0] || null)}
                     />
                     <div className="flex flex-wrap gap-3">
-                      <AsyncSubmitButton onClick={() => void handleUploadAvatar()} isPending={isUploadingAvatar} pendingText={copy.avatarEmail.uploadPending}>
+                      <AsyncSubmitButton
+                        onClick={() => void handleUploadAvatar()}
+                        isPending={isUploadingAvatar}
+                        pendingText={copy.avatarEmail.uploadPending}
+                      >
                         {copy.avatarEmail.uploadAction}
                       </AsyncSubmitButton>
                       <button
@@ -1022,7 +1067,9 @@ export function ProfileScreen({
                         disabled={!profile.avatarUrl || isDeletingAvatar}
                         className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
                       >
-                        {isDeletingAvatar ? copy.avatarEmail.deletePending : copy.avatarEmail.deleteAction}
+                        {isDeletingAvatar
+                          ? copy.avatarEmail.deletePending
+                          : copy.avatarEmail.deleteAction}
                       </button>
                     </div>
                   </div>
@@ -1031,8 +1078,12 @@ export function ProfileScreen({
                 <div className="rounded-2xl border border-slate-200 bg-white/85 px-5 py-5 shadow-sm">
                   <div className="space-y-4">
                     <div className="space-y-2">
-                      <p className="text-sm font-semibold text-slate-950">{copy.avatarEmail.emailTitle}</p>
-                      <p className="text-sm leading-6 text-slate-600">{copy.avatarEmail.emailDescription}</p>
+                      <p className="text-sm font-semibold text-slate-950">
+                        {copy.avatarEmail.emailTitle}
+                      </p>
+                      <p className="text-sm leading-6 text-slate-600">
+                        {copy.avatarEmail.emailDescription}
+                      </p>
                     </div>
                     <input
                       aria-label={copy.avatarEmail.newEmailLabel}
@@ -1076,25 +1127,42 @@ export function ProfileScreen({
       ) : null}
 
       {isSecurityMode ? (
-        <section id="security-controls" aria-labelledby="security-controls-heading" className="scroll-mt-24 space-y-6">
+        <section
+          id="security-controls"
+          aria-labelledby="security-controls-heading"
+          className="scroll-mt-24 space-y-6"
+        >
           <h2 id="security-controls-heading" className="sr-only">
             {copy.cards.securityTitle}
           </h2>
 
           <GlassSurface className="p-6">
-            <FormSection title={copy.cards.securityTitle} description={copy.cards.securityDescription}>
+            <FormSection
+              title={copy.cards.securityTitle}
+              description={copy.cards.securityDescription}
+            >
               <div className="grid gap-4 lg:grid-cols-2">
                 <SecurityActionCard
                   title={copy.password.title}
                   description={copy.password.description}
-                  meta={formatProfileDateTime(profile.passwordExpiresAt, locale, copy.details.notScheduled)}
+                  meta={formatProfileDateTime(
+                    profile.passwordExpiresAt,
+                    locale,
+                    copy.details.notScheduled
+                  )}
                   actionLabel={copy.password.openAction}
                   onAction={() => setSecurityDrawer('password')}
                 />
                 <SecurityActionCard
                   title={copy.totp.title}
-                  description={profile.totpEnabled ? copy.totp.description : copy.totp.disabledDescription}
-                  meta={profile.totpEnabled ? copy.header.summaryTotpEnabled : copy.header.summaryTotpDisabled}
+                  description={
+                    profile.totpEnabled ? copy.totp.description : copy.totp.disabledDescription
+                  }
+                  meta={
+                    profile.totpEnabled
+                      ? copy.header.summaryTotpEnabled
+                      : copy.header.summaryTotpDisabled
+                  }
                   actionLabel={copy.totp.manageAction}
                   onAction={() => setSecurityDrawer('totp')}
                 />
@@ -1119,15 +1187,25 @@ export function ProfileScreen({
                       <div className="flex items-start gap-3">
                         <MonitorSmartphone className="mt-0.5 h-4 w-4 text-slate-500" />
                         <div className="space-y-1">
-                          <p className="text-sm font-semibold text-slate-900">{entry.deviceInfo || copy.sessions.unknownDevice}</p>
+                          <p className="text-sm font-semibold text-slate-900">
+                            {entry.deviceInfo || copy.sessions.unknownDevice}
+                          </p>
                           <p className="text-xs text-slate-500">{entry.id}</p>
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-sm text-slate-700">{entry.ipAddress || copy.sessions.unavailable}</td>
-                    <td className="px-6 py-4 text-sm text-slate-700">{entry.isCurrent ? copy.sessions.currentSession : copy.sessions.revocable}</td>
-                    <td className="px-6 py-4 text-sm text-slate-700">{formatProfileDateTime(entry.createdAt, locale, copy.sessions.unavailable)}</td>
-                    <td className="px-6 py-4 text-sm text-slate-700">{formatProfileDateTime(entry.lastActiveAt, locale, copy.sessions.unavailable)}</td>
+                    <td className="px-6 py-4 text-sm text-slate-700">
+                      {entry.ipAddress || copy.sessions.unavailable}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-slate-700">
+                      {entry.isCurrent ? copy.sessions.currentSession : copy.sessions.revocable}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-slate-700">
+                      {formatProfileDateTime(entry.createdAt, locale, copy.sessions.unavailable)}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-slate-700">
+                      {formatProfileDateTime(entry.lastActiveAt, locale, copy.sessions.unavailable)}
+                    </td>
                     <td className="px-6 py-4">
                       <button
                         type="button"
@@ -1215,7 +1293,9 @@ export function ProfileScreen({
       >
         <div className="grid gap-4">
           <label className="space-y-2">
-            <span className="text-sm font-semibold text-slate-900">{copy.password.currentLabel}</span>
+            <span className="text-sm font-semibold text-slate-900">
+              {copy.password.currentLabel}
+            </span>
             <input
               aria-label={copy.password.currentLabel}
               type="password"
@@ -1245,7 +1325,9 @@ export function ProfileScreen({
             />
           </label>
           <label className="space-y-2">
-            <span className="text-sm font-semibold text-slate-900">{copy.password.confirmLabel}</span>
+            <span className="text-sm font-semibold text-slate-900">
+              {copy.password.confirmLabel}
+            </span>
             <input
               aria-label={copy.password.confirmLabel}
               type="password"
@@ -1276,10 +1358,18 @@ export function ProfileScreen({
               <div className="rounded-2xl border border-slate-200 bg-white/85 px-5 py-5 shadow-sm">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div className="space-y-2">
-                    <p className="text-sm font-semibold text-slate-950">{copy.totp.disabledTitle}</p>
-                    <p className="text-sm leading-6 text-slate-600">{copy.totp.disabledDescription}</p>
+                    <p className="text-sm font-semibold text-slate-950">
+                      {copy.totp.disabledTitle}
+                    </p>
+                    <p className="text-sm leading-6 text-slate-600">
+                      {copy.totp.disabledDescription}
+                    </p>
                   </div>
-                  <AsyncSubmitButton onClick={() => void handlePrepareTotp()} isPending={isPreparingTotp} pendingText={copy.totp.preparePending}>
+                  <AsyncSubmitButton
+                    onClick={() => void handlePrepareTotp()}
+                    isPending={isPreparingTotp}
+                    pendingText={copy.totp.preparePending}
+                  >
                     {copy.totp.prepareAction}
                   </AsyncSubmitButton>
                 </div>
@@ -1288,11 +1378,15 @@ export function ProfileScreen({
               {totpSetup ? (
                 <div className="grid gap-4 xl:grid-cols-2">
                   <div className="rounded-2xl border border-slate-200 bg-white/85 px-5 py-5 shadow-sm">
-                    <p className="text-sm font-semibold text-slate-950">{copy.totp.setupMaterialTitle}</p>
+                    <p className="text-sm font-semibold text-slate-950">
+                      {copy.totp.setupMaterialTitle}
+                    </p>
                     <div className="mt-3 space-y-4">
                       {totpSetup.qrCode ? (
                         <div className="space-y-3">
-                          <p className="text-sm font-semibold text-slate-900">{copy.totp.qrCodeLabel}</p>
+                          <p className="text-sm font-semibold text-slate-900">
+                            {copy.totp.qrCodeLabel}
+                          </p>
                           <div className="inline-flex rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
                             <img
                               src={totpSetup.qrCode}
@@ -1305,13 +1399,22 @@ export function ProfileScreen({
                       ) : null}
                       <div className="space-y-2 text-sm text-slate-700">
                         <p>
-                          <span className="font-semibold text-slate-900">{copy.totp.accountLabel}:</span> {totpSetup.account}
+                          <span className="font-semibold text-slate-900">
+                            {copy.totp.accountLabel}:
+                          </span>{' '}
+                          {totpSetup.account}
                         </p>
                         <p className="break-all">
-                          <span className="font-semibold text-slate-900">{copy.totp.secretLabel}:</span> {totpSetup.secret}
+                          <span className="font-semibold text-slate-900">
+                            {copy.totp.secretLabel}:
+                          </span>{' '}
+                          {totpSetup.secret}
                         </p>
                         <p className="break-all">
-                          <span className="font-semibold text-slate-900">{copy.totp.otpAuthUrlLabel}:</span> {totpSetup.otpauthUrl}
+                          <span className="font-semibold text-slate-900">
+                            {copy.totp.otpAuthUrlLabel}:
+                          </span>{' '}
+                          {totpSetup.otpauthUrl}
                         </p>
                       </div>
                     </div>
@@ -1319,8 +1422,12 @@ export function ProfileScreen({
                   <div className="rounded-2xl border border-slate-200 bg-white/85 px-5 py-5 shadow-sm">
                     <div className="space-y-4">
                       <div className="space-y-2">
-                        <p className="text-sm font-semibold text-slate-950">{copy.totp.enableTitle}</p>
-                        <p className="text-sm leading-6 text-slate-600">{copy.totp.enableDescription}</p>
+                        <p className="text-sm font-semibold text-slate-950">
+                          {copy.totp.enableTitle}
+                        </p>
+                        <p className="text-sm leading-6 text-slate-600">
+                          {copy.totp.enableDescription}
+                        </p>
                       </div>
                       <input
                         aria-label={copy.totp.codeLabel}
@@ -1329,7 +1436,11 @@ export function ProfileScreen({
                         placeholder={copy.totp.codePlaceholder}
                         className={inputClassName}
                       />
-                      <AsyncSubmitButton onClick={() => void handleEnableTotp()} isPending={isEnablingTotp} pendingText={copy.totp.enablePending}>
+                      <AsyncSubmitButton
+                        onClick={() => void handleEnableTotp()}
+                        isPending={isEnablingTotp}
+                        pendingText={copy.totp.enablePending}
+                      >
                         {copy.totp.enableAction}
                       </AsyncSubmitButton>
                     </div>
@@ -1343,7 +1454,9 @@ export function ProfileScreen({
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <p className="text-sm font-semibold text-slate-950">{copy.totp.disableTitle}</p>
-                    <p className="text-sm leading-6 text-slate-600">{copy.totp.disableDescription}</p>
+                    <p className="text-sm leading-6 text-slate-600">
+                      {copy.totp.disableDescription}
+                    </p>
                   </div>
                   <input
                     aria-label={copy.totp.disablePasswordLabel}
@@ -1352,7 +1465,11 @@ export function ProfileScreen({
                     onChange={(event) => setTotpDisablePassword(event.target.value)}
                     className={inputClassName}
                   />
-                  <AsyncSubmitButton onClick={() => void handleDisableTotp()} isPending={isDisablingTotp} pendingText={copy.totp.disablePending}>
+                  <AsyncSubmitButton
+                    onClick={() => void handleDisableTotp()}
+                    isPending={isDisablingTotp}
+                    pendingText={copy.totp.disablePending}
+                  >
                     {copy.totp.disableAction}
                   </AsyncSubmitButton>
                 </div>
@@ -1360,8 +1477,12 @@ export function ProfileScreen({
               <div className="rounded-2xl border border-slate-200 bg-white/85 px-5 py-5 shadow-sm">
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <p className="text-sm font-semibold text-slate-950">{copy.totp.regenerateTitle}</p>
-                    <p className="text-sm leading-6 text-slate-600">{copy.totp.regenerateDescription}</p>
+                    <p className="text-sm font-semibold text-slate-950">
+                      {copy.totp.regenerateTitle}
+                    </p>
+                    <p className="text-sm leading-6 text-slate-600">
+                      {copy.totp.regenerateDescription}
+                    </p>
                   </div>
                   <input
                     aria-label={copy.totp.regeneratePasswordLabel}

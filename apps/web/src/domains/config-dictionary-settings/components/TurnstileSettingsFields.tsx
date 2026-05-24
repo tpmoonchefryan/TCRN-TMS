@@ -6,7 +6,11 @@ import type {
 } from '@/domains/config-dictionary-settings/api/settings.api';
 import type { SettingsFamilyLocalizedText } from '@/domains/config-dictionary-settings/screens/settings-family.copy';
 
-type SettingsText = (valueOrEn: string | SettingsFamilyLocalizedText, zh?: string, ja?: string) => string;
+type SettingsText = (
+  valueOrEn: string | SettingsFamilyLocalizedText,
+  zh?: string,
+  ja?: string
+) => string;
 
 export interface TenantTurnstileDraft {
   siteKey: string;
@@ -27,7 +31,7 @@ export interface TurnstileSettingsFieldsProps {
 }
 
 export function buildTenantTurnstileDraft(
-  response: TenantTurnstileSettingsResponse | null,
+  response: TenantTurnstileSettingsResponse | null
 ): TenantTurnstileDraft {
   return {
     siteKey: response?.siteKey ?? '',
@@ -60,9 +64,7 @@ function sourceLabel(response: TenantTurnstileSettingsResponse, text: SettingsTe
 }
 
 function boolStatus(value: boolean, text: SettingsText) {
-  return value
-    ? text('Configured', '已配置', '設定済み')
-    : text('Missing', '缺失', '未設定');
+  return value ? text('Configured', '已配置', '設定済み') : text('Missing', '缺失', '未設定');
 }
 
 export function TurnstileSettingsFields({
@@ -92,12 +94,12 @@ export function TurnstileSettingsFields({
               ? text(
                   'Server-side bypass is active in development/test.',
                   '开发/测试环境正在使用服务端旁路。',
-                  '開発/テスト環境ではサーバー側バイパスが有効です。',
+                  '開発/テスト環境ではサーバー側バイパスが有効です。'
                 )
               : text(
                   'Staging and production require both keys when CAPTCHA is required.',
                   '预发和生产环境要求 Site Key 与 Secret Key 同时完整。',
-                  'ステージングと本番では両方のキーが必要です。',
+                  'ステージングと本番では両方のキーが必要です。'
                 )}
           </p>
         </div>
@@ -107,7 +109,11 @@ export function TurnstileSettingsFields({
           </p>
           <p className="mt-2 text-sm font-semibold text-slate-950">{sourceLabel(response, text)}</p>
           <p className="mt-1 text-xs leading-5 text-slate-500">
-            {text('Tenant keys take priority over platform fallback.', '租户密钥优先于平台环境兜底。', 'テナントキーが優先されます。')}
+            {text(
+              'Tenant keys take priority over platform fallback.',
+              '租户密钥优先于平台环境兜底。',
+              'テナントキーが優先されます。'
+            )}
           </p>
         </div>
         <div className="rounded-xl border border-slate-200 bg-white/80 px-4 py-3">
@@ -115,17 +121,21 @@ export function TurnstileSettingsFields({
             {text('Key status', '密钥状态', 'キー状態')}
           </p>
           <p className="mt-2 text-sm font-semibold text-slate-950">
-            {text('Site Key', 'Site Key', 'Site Key')}: {boolStatus(response.siteKeyConfigured, text)}
+            {text('Site Key', 'Site Key', 'Site Key')}:{' '}
+            {boolStatus(response.siteKeyConfigured, text)}
           </p>
           <p className="mt-1 text-sm font-semibold text-slate-950">
-            {text('Secret Key', 'Secret Key', 'Secret Key')}: {boolStatus(response.secretKeyConfigured, text)}
+            {text('Secret Key', 'Secret Key', 'Secret Key')}:{' '}
+            {boolStatus(response.secretKeyConfigured, text)}
           </p>
         </div>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
         <label className="space-y-2">
-          <span className="text-sm font-semibold text-slate-900">Cloudflare Turnstile Site Key</span>
+          <span className="text-sm font-semibold text-slate-900">
+            Cloudflare Turnstile Site Key
+          </span>
           <input
             aria-label="Cloudflare Turnstile Site Key"
             value={draft.siteKey}
@@ -134,12 +144,18 @@ export function TurnstileSettingsFields({
             placeholder="0x4AAAAAA..."
           />
           <p className="text-xs leading-5 text-slate-500">
-            {text('Public browser key. Leave empty to clear the tenant-owned Site Key.', '公开浏览器密钥；留空会清除租户自有 Site Key。', '公開ブラウザーキー。空にするとテナントの Site Key を消去します。')}
+            {text(
+              'Public browser key. Leave empty to clear the tenant-owned Site Key.',
+              '公开浏览器密钥；留空会清除租户自有 Site Key。',
+              '公開ブラウザーキー。空にするとテナントの Site Key を消去します。'
+            )}
           </p>
         </label>
 
         <label className="space-y-2">
-          <span className="text-sm font-semibold text-slate-900">Cloudflare Turnstile Secret Key</span>
+          <span className="text-sm font-semibold text-slate-900">
+            Cloudflare Turnstile Secret Key
+          </span>
           <input
             aria-label="Cloudflare Turnstile Secret Key"
             value={draft.secretKey}
@@ -152,11 +168,18 @@ export function TurnstileSettingsFields({
               })
             }
             className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 font-mono text-sm text-slate-900 shadow-sm transition focus:border-indigo-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/40"
-            placeholder={response.secretKeyMasked ?? text('Paste a new secret key', '粘贴新的 Secret Key', '新しい Secret Key を貼り付け')}
+            placeholder={
+              response.secretKeyMasked ??
+              text('Paste a new secret key', '粘贴新的 Secret Key', '新しい Secret Key を貼り付け')
+            }
             type="password"
           />
           <p className="text-xs leading-5 text-slate-500">
-            {text('Existing secrets are never revealed. Enter a value only when replacing it.', '已有 Secret Key 不会回显；只有需要替换时才输入新值。', '既存の Secret Key は表示しません。置換時のみ入力します。')}
+            {text(
+              'Existing secrets are never revealed. Enter a value only when replacing it.',
+              '已有 Secret Key 不会回显；只有需要替换时才输入新值。',
+              '既存の Secret Key は表示しません。置換時のみ入力します。'
+            )}
           </p>
         </label>
       </div>
@@ -165,27 +188,49 @@ export function TurnstileSettingsFields({
         <div className="flex flex-wrap items-center gap-3">
           <button
             type="button"
-            onClick={() => onDraftChange({ ...draft, secretKey: '', secretKeyMutation: 'keep', confirmClear: false })}
+            onClick={() =>
+              onDraftChange({
+                ...draft,
+                secretKey: '',
+                secretKeyMutation: 'keep',
+                confirmClear: false,
+              })
+            }
             className={`rounded-full px-3 py-1.5 text-sm font-medium ${
-              draft.secretKeyMutation === 'keep' ? 'bg-slate-950 text-white' : 'border border-slate-300 bg-white text-slate-700'
+              draft.secretKeyMutation === 'keep'
+                ? 'bg-slate-950 text-white'
+                : 'border border-slate-300 bg-white text-slate-700'
             }`}
           >
             {text('Keep secret', '保留 Secret Key', 'Secret Key を保持')}
           </button>
           <button
             type="button"
-            onClick={() => onDraftChange({ ...draft, secretKeyMutation: 'replace', confirmClear: false })}
+            onClick={() =>
+              onDraftChange({ ...draft, secretKeyMutation: 'replace', confirmClear: false })
+            }
             className={`rounded-full px-3 py-1.5 text-sm font-medium ${
-              draft.secretKeyMutation === 'replace' ? 'bg-slate-950 text-white' : 'border border-slate-300 bg-white text-slate-700'
+              draft.secretKeyMutation === 'replace'
+                ? 'bg-slate-950 text-white'
+                : 'border border-slate-300 bg-white text-slate-700'
             }`}
           >
             {text('Replace secret', '替换 Secret Key', 'Secret Key を置換')}
           </button>
           <button
             type="button"
-            onClick={() => onDraftChange({ ...draft, secretKey: '', secretKeyMutation: 'clear', confirmClear: false })}
+            onClick={() =>
+              onDraftChange({
+                ...draft,
+                secretKey: '',
+                secretKeyMutation: 'clear',
+                confirmClear: false,
+              })
+            }
             className={`rounded-full px-3 py-1.5 text-sm font-medium ${
-              draft.secretKeyMutation === 'clear' ? 'bg-red-700 text-white' : 'border border-red-200 bg-white text-red-700'
+              draft.secretKeyMutation === 'clear'
+                ? 'bg-red-700 text-white'
+                : 'border border-red-200 bg-white text-red-700'
             }`}
           >
             {text('Clear secret', '清除 Secret Key', 'Secret Key を削除')}
@@ -203,7 +248,7 @@ export function TurnstileSettingsFields({
               {text(
                 'I understand that staging and production will be unavailable for required CAPTCHA until a Secret Key is configured.',
                 '我确认：清除后，在重新配置 Secret Key 前，预发和生产环境中需要验证码的公开提交会不可用。',
-                'Secret Key を再設定するまで、ステージングと本番で CAPTCHA 必須の公開送信が利用不可になることを理解しました。',
+                'Secret Key を再設定するまで、ステージングと本番で CAPTCHA 必須の公開送信が利用不可になることを理解しました。'
               )}
             </span>
           </label>

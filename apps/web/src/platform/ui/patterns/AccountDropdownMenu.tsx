@@ -54,15 +54,15 @@ export const AccountDropdownMenu: React.FC<AccountDropdownMenuProps> = ({
         ref={triggerRef}
         id={triggerId}
         type="button"
-        className={`flex items-center gap-2 p-1 rounded-full hover:bg-slate-200/50 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500`}
+        className={`flex items-center gap-2 rounded-full p-1 transition-colors hover:bg-slate-200/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500`}
         onClick={togglePopover}
         aria-haspopup="menu"
         aria-expanded={isOpen}
         aria-label={resolvedLabels.trigger}
       >
-        <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold overflow-hidden border border-indigo-200">
+        <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full border border-indigo-200 bg-indigo-100 font-bold text-indigo-700">
           {user.avatarUrl ? (
-            <img src={user.avatarUrl} alt={user.name} className="w-full h-full object-cover" />
+            <img src={user.avatarUrl} alt={user.name} className="h-full w-full object-cover" />
           ) : (
             user.name.charAt(0).toUpperCase()
           )}
@@ -78,24 +78,30 @@ export const AccountDropdownMenu: React.FC<AccountDropdownMenuProps> = ({
           aria-labelledby={triggerId}
           onKeyDown={handleKeyDown}
         >
-          <div className="px-4 py-3 border-b border-slate-200/50">
-            <p className="text-sm font-bold text-slate-800 truncate">{user.name}</p>
-            <p className="text-xs text-slate-500 truncate">{user.email}</p>
+          <div className="border-b border-slate-200/50 px-4 py-3">
+            <p className="truncate text-sm font-bold text-slate-800">{user.name}</p>
+            <p className="truncate text-xs text-slate-500">{user.email}</p>
           </div>
           <div className="py-1">
             <button
               type="button"
-              onClick={() => { onNavigateProfile(); closePopover(); }}
+              onClick={() => {
+                onNavigateProfile();
+                closePopover();
+              }}
               role="menuitem"
-              className="w-full text-left block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 focus:bg-slate-100 focus:outline-none focus-visible:bg-slate-100"
+              className="block w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus:bg-slate-100 focus:outline-none focus-visible:bg-slate-100"
             >
               {resolvedLabels.profile}
             </button>
             <button
               type="button"
-              onClick={() => { onNavigateSecurity(); closePopover(); }}
+              onClick={() => {
+                onNavigateSecurity();
+                closePopover();
+              }}
               role="menuitem"
-              className="w-full text-left block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 focus:bg-slate-100 focus:outline-none focus-visible:bg-slate-100"
+              className="block w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus:bg-slate-100 focus:outline-none focus-visible:bg-slate-100"
             >
               {resolvedLabels.security}
             </button>
@@ -109,7 +115,7 @@ export const AccountDropdownMenu: React.FC<AccountDropdownMenuProps> = ({
               }}
               role="menuitem"
               disabled={isSignOutPending}
-              className={`w-full text-left block px-4 py-2 text-sm text-red-600 hover:bg-red-50 focus:bg-red-50 focus:outline-none focus-visible:bg-red-50 ${isSignOutPending ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`block w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 focus:bg-red-50 focus:outline-none focus-visible:bg-red-50 ${isSignOutPending ? 'cursor-not-allowed opacity-50' : ''}`}
             >
               {isSignOutPending ? resolvedLabels.signingOut : resolvedLabels.signOut}
             </button>

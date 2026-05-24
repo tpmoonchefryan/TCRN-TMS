@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Prisma } from '@tcrn/database';
 import type { LocalizedText } from '@tcrn/shared';
 
@@ -67,10 +66,7 @@ function isJsonRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-function getNumericProperty(
-  record: Record<string, unknown>,
-  ...keys: string[]
-): number | null {
+function getNumericProperty(record: Record<string, unknown>, ...keys: string[]): number | null {
   for (const key of keys) {
     const value = record[key];
     if (typeof value === 'number' && Number.isFinite(value)) {
@@ -96,8 +92,8 @@ export function normalizeMonitoredTalentIds(extraData: Record<string, unknown> |
       candidate
         .filter((value): value is string => typeof value === 'string')
         .map((value) => value.trim())
-        .filter(Boolean),
-    ),
+        .filter(Boolean)
+    )
   );
 
   return monitoredTalentIds;
@@ -105,7 +101,7 @@ export function normalizeMonitoredTalentIds(extraData: Record<string, unknown> |
 
 export function mergeWebhookExtraData(
   extraData: Record<string, unknown> | null,
-  monitoredTalentIds: string[] | undefined,
+  monitoredTalentIds: string[] | undefined
 ) {
   if (monitoredTalentIds === undefined) {
     return extraData;
@@ -115,7 +111,7 @@ export function mergeWebhookExtraData(
   delete nextExtraData.monitoredTalentIds;
 
   const normalizedIds = Array.from(
-    new Set(monitoredTalentIds.map((value) => value.trim()).filter(Boolean)),
+    new Set(monitoredTalentIds.map((value) => value.trim()).filter(Boolean))
   );
 
   if (normalizedIds.length > 0) {

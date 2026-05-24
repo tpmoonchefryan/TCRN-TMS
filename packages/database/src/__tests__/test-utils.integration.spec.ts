@@ -1,6 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
+
+import assert from 'node:assert/strict';
 
 import { createTestTenantFixture } from '@tcrn/shared';
 
@@ -24,10 +25,12 @@ function normalizeSchemaDefinition(definition: string, schemaName: string): stri
     .replace(new RegExp(`\\b${escapeRegExp(schemaName)}\\.`, 'g'), '<SCHEMA>.');
 }
 
-async function getForeignKeys(schemaName: string): Promise<
-  Array<{ tableName: string; constraintName: string; definition: string }>
-> {
-  return prisma.$queryRawUnsafe<Array<{ tableName: string; constraintName: string; definition: string }>>(
+async function getForeignKeys(
+  schemaName: string
+): Promise<Array<{ tableName: string; constraintName: string; definition: string }>> {
+  return prisma.$queryRawUnsafe<
+    Array<{ tableName: string; constraintName: string; definition: string }>
+  >(
     `
       SELECT
         rel.relname AS "tableName",

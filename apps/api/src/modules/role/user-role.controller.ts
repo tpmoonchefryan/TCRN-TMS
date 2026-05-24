@@ -1,16 +1,15 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import {
-    Body,
-    Controller,
-    Delete,
-    Get,
-    HttpCode,
-    HttpStatus,
-    Param,
-    Patch,
-    Post,
-    Req,
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  Patch,
+  Post,
+  Req,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { IsBoolean, IsDateString, IsEnum, IsOptional, IsString } from 'class-validator';
@@ -21,7 +20,6 @@ import { getPrimaryAcceptLanguage } from '../../common/request-locale.util';
 import { success } from '../../common/response.util';
 import { ScopeType } from '../permission/permission-snapshot.service';
 import { UserRoleService } from './user-role.service';
-
 
 // DTOs
 class AssignRoleDto {
@@ -78,11 +76,15 @@ export class UserRoleController {
   async getUserRoles(
     @CurrentUser() user: AuthenticatedUser,
     @Param('userId') userId: string,
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     const language = getPrimaryAcceptLanguage(req);
 
-    const assignments = await this.userRoleService.getUserRoles(userId, user.tenantSchema, language);
+    const assignments = await this.userRoleService.getUserRoles(
+      userId,
+      user.tenantSchema,
+      language
+    );
 
     const data = assignments.map((a) => ({
       id: a.id,
@@ -97,10 +99,12 @@ export class UserRoleController {
       scopePath: a.scopePath,
       inherit: a.inherit,
       grantedAt: a.grantedAt.toISOString(),
-      grantedBy: a.grantedById ? {
-        id: a.grantedById,
-        username: a.grantedByUsername,
-      } : null,
+      grantedBy: a.grantedById
+        ? {
+            id: a.grantedById,
+            username: a.grantedByUsername,
+          }
+        : null,
       expiresAt: a.expiresAt?.toISOString() || null,
     }));
 
@@ -117,7 +121,7 @@ export class UserRoleController {
   async assignRole(
     @CurrentUser() currentUser: AuthenticatedUser,
     @Param('userId') userId: string,
-    @Body() dto: AssignRoleDto,
+    @Body() dto: AssignRoleDto
   ) {
     const assignment = await this.userRoleService.assignRole(
       userId,
@@ -155,14 +159,15 @@ export class UserRoleController {
   async updateAssignment(
     @CurrentUser() user: AuthenticatedUser,
     @Param('assignmentId') assignmentId: string,
-    @Body() dto: UpdateAssignmentDto,
+    @Body() dto: UpdateAssignmentDto
   ) {
     const assignment = await this.userRoleService.updateAssignment(
       assignmentId,
       user.tenantSchema,
       {
         inherit: dto.inherit,
-        expiresAt: dto.expiresAt === null ? null : dto.expiresAt ? new Date(dto.expiresAt) : undefined,
+        expiresAt:
+          dto.expiresAt === null ? null : dto.expiresAt ? new Date(dto.expiresAt) : undefined,
       }
     );
 
@@ -184,7 +189,7 @@ export class UserRoleController {
   @ApiOperation({ summary: 'Remove role assignment' })
   async removeAssignment(
     @CurrentUser() user: AuthenticatedUser,
-    @Param('assignmentId') assignmentId: string,
+    @Param('assignmentId') assignmentId: string
   ) {
     await this.userRoleService.removeAssignment(assignmentId, user.tenantSchema);
 

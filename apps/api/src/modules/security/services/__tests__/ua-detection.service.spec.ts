@@ -1,6 +1,5 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
-import { beforeEach,describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 
 import { UaDetectionService } from '../ua-detection.service';
 
@@ -45,14 +44,18 @@ describe('UaDetectionService', () => {
       });
 
       it('should allow Bingbot', () => {
-        const result = service.check('Mozilla/5.0 (compatible; bingbot/2.0; +http://www.bing.com/bingbot.htm)');
+        const result = service.check(
+          'Mozilla/5.0 (compatible; bingbot/2.0; +http://www.bing.com/bingbot.htm)'
+        );
 
         expect(result.allowed).toBe(true);
         expect(result.isBot).toBe(true);
       });
 
       it('should allow Facebook crawler', () => {
-        const result = service.check('facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)');
+        const result = service.check(
+          'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)'
+        );
 
         expect(result.allowed).toBe(true);
         expect(result.isBot).toBe(true);
@@ -66,7 +69,9 @@ describe('UaDetectionService', () => {
       });
 
       it('should allow Discord bot', () => {
-        const result = service.check('Mozilla/5.0 (compatible; Discordbot/2.0; +https://discordapp.com)');
+        const result = service.check(
+          'Mozilla/5.0 (compatible; Discordbot/2.0; +https://discordapp.com)'
+        );
 
         expect(result.allowed).toBe(true);
         expect(result.isBot).toBe(true);
@@ -155,7 +160,7 @@ describe('UaDetectionService', () => {
     describe('legitimate browsers', () => {
       it('should allow Chrome browser', () => {
         const result = service.check(
-          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
         );
 
         expect(result.allowed).toBe(true);
@@ -165,7 +170,7 @@ describe('UaDetectionService', () => {
 
       it('should allow Firefox browser', () => {
         const result = service.check(
-          'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0',
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0'
         );
 
         expect(result.allowed).toBe(true);
@@ -175,7 +180,7 @@ describe('UaDetectionService', () => {
 
       it('should allow Safari browser', () => {
         const result = service.check(
-          'Mozilla/5.0 (Macintosh; Intel Mac OS X 14_2_1) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2 Safari/605.1.15',
+          'Mozilla/5.0 (Macintosh; Intel Mac OS X 14_2_1) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2 Safari/605.1.15'
         );
 
         expect(result.allowed).toBe(true);
@@ -185,7 +190,7 @@ describe('UaDetectionService', () => {
 
       it('should allow mobile Chrome', () => {
         const result = service.check(
-          'Mozilla/5.0 (Linux; Android 10; SM-G975F) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
+          'Mozilla/5.0 (Linux; Android 10; SM-G975F) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36'
         );
 
         expect(result.allowed).toBe(true);
@@ -205,7 +210,7 @@ describe('UaDetectionService', () => {
 
     it('should still allow legitimate browsers in strict mode', () => {
       const result = service.checkStrict(
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36',
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36'
       );
 
       expect(result.allowed).toBe(true);

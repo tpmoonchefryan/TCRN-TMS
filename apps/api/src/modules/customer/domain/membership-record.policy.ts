@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import type { LocalizedText } from '@tcrn/shared';
 
 export interface MembershipRecordAccessRecord {
@@ -62,9 +61,7 @@ export interface MembershipSummaryHighestLevel {
   color: string | null;
 }
 
-export const mapMembershipRecordListItem = (
-  item: MembershipRecordListItem,
-) => ({
+export const mapMembershipRecordListItem = (item: MembershipRecordListItem) => ({
   id: item.id,
   platform: {
     code: item.platformCode,
@@ -102,7 +99,7 @@ export const buildMembershipRecordCreateResult = (
   membershipLevel: {
     code: string;
     name: LocalizedText;
-  },
+  }
 ) => ({
   id: record.id,
   platform: {
@@ -119,9 +116,7 @@ export const buildMembershipRecordCreateResult = (
   createdAt: record.createdAt,
 });
 
-export const buildMembershipRecordUpdateResult = (
-  updated: MembershipRecordUpdatedRow,
-) => ({
+export const buildMembershipRecordUpdateResult = (updated: MembershipRecordUpdatedRow) => ({
   id: updated.id,
   validTo: updated.validTo,
   autoRenew: updated.autoRenew,
@@ -131,47 +126,47 @@ export const buildMembershipRecordUpdateResult = (
 
 export const buildMembershipRecordObjectName = (
   platformCode: string,
-  membershipLevelCode: string,
+  membershipLevelCode: string
 ) => `${platformCode}:${membershipLevelCode}`;
 
-export const buildMembershipRecordCreateChangeLogDiff = (
-  args: {
-    platformCode: string;
-    membershipLevelCode: string;
-    validFrom: string;
-    validTo?: string;
-  },
-) => JSON.stringify({
-  new: {
-    platformCode: args.platformCode,
-    membershipLevelCode: args.membershipLevelCode,
-    validFrom: args.validFrom,
-    validTo: args.validTo,
-  },
-});
+export const buildMembershipRecordCreateChangeLogDiff = (args: {
+  platformCode: string;
+  membershipLevelCode: string;
+  validFrom: string;
+  validTo?: string;
+}) =>
+  JSON.stringify({
+    new: {
+      platformCode: args.platformCode,
+      membershipLevelCode: args.membershipLevelCode,
+      validFrom: args.validFrom,
+      validTo: args.validTo,
+    },
+  });
 
 export const buildMembershipRecordUpdateChangeLogDiff = (
   record: MembershipRecordUpdateLookupRow,
-  updated: MembershipRecordUpdatedRow,
-) => JSON.stringify({
-  old: {
-    validTo: record.validTo,
-    autoRenew: record.autoRenew,
-    note: record.note,
-  },
-  new: {
-    validTo: updated.validTo,
-    autoRenew: updated.autoRenew,
-    note: updated.note,
-  },
-});
+  updated: MembershipRecordUpdatedRow
+) =>
+  JSON.stringify({
+    old: {
+      validTo: record.validTo,
+      autoRenew: record.autoRenew,
+      note: record.note,
+    },
+    new: {
+      validTo: updated.validTo,
+      autoRenew: updated.autoRenew,
+      note: updated.note,
+    },
+  });
 
 export const buildMembershipSummaryResult = (
   highestLevel: MembershipSummaryHighestLevel | null,
   counts: {
     activeCount: number;
     totalCount: number;
-  },
+  }
 ) => {
   if (!highestLevel) {
     return null;

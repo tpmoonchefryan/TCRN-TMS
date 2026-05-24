@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { randomUUID } from 'crypto';
 
 type HeaderValue = string | string[] | undefined;
@@ -21,7 +20,10 @@ export function isValidTraceId(value: unknown): value is string {
   return typeof value === 'string' && SAFE_TRACE_ID_PATTERN.test(value.trim());
 }
 
-export function resolveHeaderValue(headers: Record<string, HeaderValue>, name: string): string | undefined {
+export function resolveHeaderValue(
+  headers: Record<string, HeaderValue>,
+  name: string
+): string | undefined {
   const directValue = headers[name] ?? headers[name.toLowerCase()] ?? headers[name.toUpperCase()];
   const value = Array.isArray(directValue) ? directValue[0] : directValue;
   return typeof value === 'string' ? value.trim() : undefined;
@@ -43,7 +45,7 @@ export function extractTraceIdFromTraceparent(traceparent: string | undefined): 
 
 export function resolveTraceIdFromHeaders(
   headers: Record<string, HeaderValue>,
-  createId: () => string = generateTraceId,
+  createId: () => string = generateTraceId
 ): string {
   const explicitTraceId = resolveHeaderValue(headers, 'x-trace-id');
   if (isValidTraceId(explicitTraceId)) {
@@ -55,7 +57,9 @@ export function resolveTraceIdFromHeaders(
     return requestId;
   }
 
-  const traceparentTraceId = extractTraceIdFromTraceparent(resolveHeaderValue(headers, 'traceparent'));
+  const traceparentTraceId = extractTraceIdFromTraceparent(
+    resolveHeaderValue(headers, 'traceparent')
+  );
   if (traceparentTraceId) {
     return traceparentTraceId;
   }

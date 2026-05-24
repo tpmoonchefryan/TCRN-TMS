@@ -11,9 +11,7 @@ import {
   readOrganizationTree,
 } from '@/domains/organization-access/api/organization.api';
 import { ApiRequestError } from '@/platform/http/api';
-import {
-  buildTalentWorkspacePath,
-} from '@/platform/routing/workspace-paths';
+import { buildTalentWorkspacePath } from '@/platform/routing/workspace-paths';
 import { useUiLocale } from '@/platform/runtime/locale/locale-provider';
 import { pickLocaleText } from '@/platform/runtime/locale/locale-text';
 import {
@@ -89,8 +87,12 @@ export function HierarchyBusinessOverviewScreen({
   const { locale } = useUiLocale();
   const { request, session } = useSession();
   const [talents, setTalents] = useState<OrganizationTalent[]>([]);
-  const [scopeName, setScopeName] = useState<string | null>(scopeType === 'tenant' ? session?.tenantName ?? null : null);
-  const [scopePath, setScopePath] = useState<string | null>(scopeType === 'tenant' ? session?.tenantCode ?? null : null);
+  const [scopeName, setScopeName] = useState<string | null>(
+    scopeType === 'tenant' ? (session?.tenantName ?? null) : null
+  );
+  const [scopePath, setScopePath] = useState<string | null>(
+    scopeType === 'tenant' ? (session?.tenantCode ?? null) : null
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(urlPage);
@@ -105,7 +107,7 @@ export function HierarchyBusinessOverviewScreen({
     nextState: Partial<{
       page: number;
       pageSize: PageSizeOption;
-    }>,
+    }>
   ) {
     const nextPage = nextState.page ?? page;
     const nextPageSize = nextState.pageSize ?? pageSize;
@@ -173,7 +175,7 @@ export function HierarchyBusinessOverviewScreen({
                 ja: '現在の組織構造で選択した配下スコープを見つけられませんでした。',
                 ko: '현재 조직 구조에서 선택한 하위 조직을 찾을 수 없습니다.',
                 fr: 'Le périmètre sélectionné est introuvable dans la structure actuelle.',
-              }),
+              })
             );
           } else {
             setTalents(collectTalents([subsidiary]));
@@ -193,8 +195,8 @@ export function HierarchyBusinessOverviewScreen({
                 ja: '階層業務ワークスペースの読み込みに失敗しました。',
                 ko: '계층 비즈니스 워크스페이스를 불러오지 못했습니다.',
                 fr: 'Impossible de charger l’espace métier hiérarchique.',
-              }),
-            ),
+              })
+            )
           );
         }
       } finally {
@@ -212,22 +214,24 @@ export function HierarchyBusinessOverviewScreen({
   }, [request, scopeType, locale, session?.tenantCode, session?.tenantName, subsidiaryId]);
 
   const publishedTalents = useMemo(
-    () => talents.filter((talent) => talent.lifecycleStatus === 'published' && talent.isActive).length,
-    [talents],
+    () =>
+      talents.filter((talent) => talent.lifecycleStatus === 'published' && talent.isActive).length,
+    [talents]
   );
   const draftTalents = useMemo(
     () => talents.filter((talent) => talent.lifecycleStatus === 'draft').length,
-    [talents],
+    [talents]
   );
   const disabledTalents = useMemo(
-    () => talents.filter((talent) => talent.lifecycleStatus === 'disabled' || !talent.isActive).length,
-    [talents],
+    () =>
+      talents.filter((talent) => talent.lifecycleStatus === 'disabled' || !talent.isActive).length,
+    [talents]
   );
 
   const pagination = buildPaginationMeta(talents.length, page, pageSize);
   const paginatedTalents = talents.slice(
     (pagination.page - 1) * pagination.pageSize,
-    pagination.page * pagination.pageSize,
+    pagination.page * pagination.pageSize
   );
   const pageRange = getPaginationRange(pagination, paginatedTalents.length);
 
@@ -288,31 +292,34 @@ export function HierarchyBusinessOverviewScreen({
     );
   }
 
-  const scopeLabel = scopeType === 'tenant'
-    ? pickLocaleText(locale, {
-        en: 'Tenant scope',
-        zh_HANS: '租户范围',
-        zh_HANT: '租戶範圍',
-        ja: 'テナントスコープ',
-        ko: '테넌트 범위',
-        fr: 'Portée du tenant',
-      })
-    : pickLocaleText(locale, {
-        en: 'Subsidiary scope',
-        zh_HANS: '分目录范围',
-        zh_HANT: '分目錄範圍',
-        ja: '配下スコープ',
-        ko: '하위 조직 범위',
-        fr: 'Portée du périmètre',
-      });
-  const scopeSummary = scopePath || pickLocaleText(locale, {
-    en: 'Current organization scope',
-    zh_HANS: '当前组织范围',
-    zh_HANT: '目前組織範圍',
-    ja: '現在の組織スコープ',
-    ko: '현재 조직 범위',
-    fr: 'Portée organisationnelle actuelle',
-  });
+  const scopeLabel =
+    scopeType === 'tenant'
+      ? pickLocaleText(locale, {
+          en: 'Tenant scope',
+          zh_HANS: '租户范围',
+          zh_HANT: '租戶範圍',
+          ja: 'テナントスコープ',
+          ko: '테넌트 범위',
+          fr: 'Portée du tenant',
+        })
+      : pickLocaleText(locale, {
+          en: 'Subsidiary scope',
+          zh_HANS: '分目录范围',
+          zh_HANT: '分目錄範圍',
+          ja: '配下スコープ',
+          ko: '하위 조직 범위',
+          fr: 'Portée du périmètre',
+        });
+  const scopeSummary =
+    scopePath ||
+    pickLocaleText(locale, {
+      en: 'Current organization scope',
+      zh_HANS: '当前组织范围',
+      zh_HANT: '目前組織範圍',
+      ja: '現在の組織スコープ',
+      ko: '현재 조직 범위',
+      fr: 'Portée organisationnelle actuelle',
+    });
   const moduleCards = [
     {
       key: 'reports',
@@ -390,8 +397,10 @@ export function HierarchyBusinessOverviewScreen({
               <p className="max-w-3xl text-sm leading-6 text-slate-600">
                 {pickLocaleText(locale, {
                   en: 'This scope-level business workspace stays separate from governance screens. Use it for cross-talent operations and jump into individual talent workspaces only when you need artist-facing modules.',
-                  zh_HANS: '这里是独立于治理界面的层级业务工作区，用于跨艺人的运营工作；只有在需要进入艺人业务模块时才跳转到具体艺人工作区。',
-                  zh_HANT: '這裡是獨立於治理介面的層級業務工作區，用於跨藝人的營運工作；只有在需要進入藝人業務模組時才跳轉到具體藝人工作區。',
+                  zh_HANS:
+                    '这里是独立于治理界面的层级业务工作区，用于跨艺人的运营工作；只有在需要进入艺人业务模块时才跳转到具体艺人工作区。',
+                  zh_HANT:
+                    '這裡是獨立於治理介面的層級業務工作區，用於跨藝人的營運工作；只有在需要進入藝人業務模組時才跳轉到具體藝人工作區。',
                   ja: 'ここは統治画面から切り離された階層業務ワークスペースです。複数タレント横断の運用をここで行い、アーティスト向けモジュールが必要なときだけ個別ワークスペースへ移動します。',
                   ko: '이 공간은 거버넌스 화면과 분리된 계층 비즈니스 워크스페이스입니다. 여러 탤런트에 걸친 운영은 여기서 처리하고, 아티스트 전용 모듈이 필요할 때만 개별 워크스페이스로 이동합니다.',
                   fr: 'Cet espace métier hiérarchique reste séparé des écrans de gouvernance. Gérez ici les opérations transversales et n’ouvrez les espaces artistes qu’en cas de besoin.',

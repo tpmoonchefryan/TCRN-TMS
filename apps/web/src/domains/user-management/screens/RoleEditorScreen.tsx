@@ -1,15 +1,16 @@
 'use client';
 
+import { ArrowLeft, Languages } from 'lucide-react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+
 import {
   RBAC_CANONICAL_ACTIONS,
   RBAC_MODULE_LABELS,
   RBAC_RESOURCES,
   type RbacRolePolicyEffect,
 } from '@tcrn/shared';
-import { ArrowLeft, Languages } from 'lucide-react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
 
 import {
   createSystemRole,
@@ -81,7 +82,8 @@ const inputClassName =
 
 const EMPTY_ROLE_PERMISSION_STATES = Object.fromEntries(
   RBAC_RESOURCES.flatMap((resource) =>
-    resource.supportedActions.map((action) => [`${resource.code}:${action}`, 'unset'])),
+    resource.supportedActions.map((action) => [`${resource.code}:${action}`, 'unset'])
+  )
 ) as Record<string, RolePermissionSelection>;
 
 const ROLE_RESOURCE_GROUPS = Object.entries(RBAC_MODULE_LABELS)
@@ -103,9 +105,7 @@ function createEmptyRoleEditorDraft(): RoleEditorDraft {
   };
 }
 
-function buildRoleEditorDraft(
-  detail?: SystemRoleDetailResponse | null,
-): RoleEditorDraft {
+function buildRoleEditorDraft(detail?: SystemRoleDetailResponse | null): RoleEditorDraft {
   const permissionStates = { ...EMPTY_ROLE_PERMISSION_STATES };
 
   detail?.permissions.forEach((permission) => {
@@ -150,7 +150,7 @@ function normalizeOptionalString(value: string) {
 function validateRoleEditorDraft(
   mode: 'create' | 'edit',
   draft: RoleEditorDraft,
-  roleEditorCopy: ReturnType<typeof useUserManagementCopy>['copy']['roleEditor'],
+  roleEditorCopy: ReturnType<typeof useUserManagementCopy>['copy']['roleEditor']
 ) {
   if (mode === 'create') {
     const normalizedCode = draft.code.trim().toUpperCase();
@@ -206,9 +206,13 @@ export function RoleEditorScreen({
     loading: false,
   });
   const [scopeBindingsPage, setScopeBindingsPage] = useState(1);
-  const [scopeBindingsPageSize, setScopeBindingsPageSize] = useState<PageSizeOption>(PAGE_SIZE_OPTIONS[0]);
+  const [scopeBindingsPageSize, setScopeBindingsPageSize] = useState<PageSizeOption>(
+    PAGE_SIZE_OPTIONS[0]
+  );
   const [assignedUsersPage, setAssignedUsersPage] = useState(1);
-  const [assignedUsersPageSize, setAssignedUsersPageSize] = useState<PageSizeOption>(PAGE_SIZE_OPTIONS[0]);
+  const [assignedUsersPageSize, setAssignedUsersPageSize] = useState<PageSizeOption>(
+    PAGE_SIZE_OPTIONS[0]
+  );
 
   useEffect(() => {
     if (mode !== 'edit' || !systemRoleId) {
@@ -267,7 +271,7 @@ export function RoleEditorScreen({
         request,
         requestEnvelope,
         locale,
-        roleEditorCopy.translationManagement.languageLoadError,
+        roleEditorCopy.translationManagement.languageLoadError
       );
 
       if (cancelled) {
@@ -297,21 +301,23 @@ export function RoleEditorScreen({
   const scopeBindingsPagination = buildPaginationMeta(
     detail?.scopeBindings.length ?? 0,
     scopeBindingsPage,
-    scopeBindingsPageSize,
+    scopeBindingsPageSize
   );
-  const paginatedScopeBindings = detail?.scopeBindings.slice(
-    (scopeBindingsPagination.page - 1) * scopeBindingsPagination.pageSize,
-    scopeBindingsPagination.page * scopeBindingsPagination.pageSize,
-  ) ?? [];
+  const paginatedScopeBindings =
+    detail?.scopeBindings.slice(
+      (scopeBindingsPagination.page - 1) * scopeBindingsPagination.pageSize,
+      scopeBindingsPagination.page * scopeBindingsPagination.pageSize
+    ) ?? [];
   const assignedUsersPagination = buildPaginationMeta(
     detail?.assignedUsers.length ?? 0,
     assignedUsersPage,
-    assignedUsersPageSize,
+    assignedUsersPageSize
   );
-  const paginatedAssignedUsers = detail?.assignedUsers.slice(
-    (assignedUsersPagination.page - 1) * assignedUsersPagination.pageSize,
-    assignedUsersPagination.page * assignedUsersPagination.pageSize,
-  ) ?? [];
+  const paginatedAssignedUsers =
+    detail?.assignedUsers.slice(
+      (assignedUsersPagination.page - 1) * assignedUsersPagination.pageSize,
+      assignedUsersPagination.page * assignedUsersPagination.pageSize
+    ) ?? [];
 
   useEffect(() => {
     if (scopeBindingsPage !== scopeBindingsPagination.page) {
@@ -385,7 +391,7 @@ export function RoleEditorScreen({
         tone: 'error',
         message: getErrorMessage(
           reason,
-          mode === 'create' ? roleEditorCopy.createError : roleEditorCopy.updateError,
+          mode === 'create' ? roleEditorCopy.createError : roleEditorCopy.updateError
         ),
       });
     } finally {
@@ -404,15 +410,23 @@ export function RoleEditorScreen({
   }
 
   if (mode === 'edit' && (loadError || !detail)) {
-    return <StateView status="error" title={roleEditorCopy.unavailableTitle} description={loadError || undefined} />;
+    return (
+      <StateView
+        status="error"
+        title={roleEditorCopy.unavailableTitle}
+        description={loadError || undefined}
+      />
+    );
   }
 
   const title =
     mode === 'create'
       ? roleEditorCopy.createTitle
-      : (detail?.localizedName || detail?.name.en || detail?.code || roleEditorCopy.titleFallback);
+      : detail?.localizedName || detail?.name.en || detail?.code || roleEditorCopy.titleFallback;
   const explicitPermissionCount = buildRolePermissionPayload(draft.permissionStates).length;
-  const configuredTranslationCount = Object.values(draft.nameLocaleValues).filter((value) => value.trim().length > 0).length;
+  const configuredTranslationCount = Object.values(draft.nameLocaleValues).filter(
+    (value) => value.trim().length > 0
+  ).length;
   const translationDrawerLabels = {
     addLanguageLabel: pickLocaleText(locale, {
       en: 'Add language',
@@ -506,8 +520,12 @@ export function RoleEditorScreen({
           <GlassSurface className="p-6">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="space-y-1">
-                <h2 className="text-lg font-semibold text-slate-900">{roleEditorCopy.scopeBindingsTitle}</h2>
-                <p className="text-sm leading-6 text-slate-600">{roleEditorCopy.scopeBindingsDescription}</p>
+                <h2 className="text-lg font-semibold text-slate-900">
+                  {roleEditorCopy.scopeBindingsTitle}
+                </h2>
+                <p className="text-sm leading-6 text-slate-600">
+                  {roleEditorCopy.scopeBindingsDescription}
+                </p>
               </div>
               <ToneBadge tone="info" label={sharedCopy.scopeCount(detail.scopeBindings.length)} />
             </div>
@@ -534,12 +552,19 @@ export function RoleEditorScreen({
                       </div>
                       <div className="flex flex-wrap gap-2">
                         <ToneBadge tone="info" label={sharedCopy.userCount(binding.userCount)} />
-                        <ToneBadge tone="neutral" label={sharedCopy.assignmentCount(binding.assignmentCount)} />
+                        <ToneBadge
+                          tone="neutral"
+                          label={sharedCopy.assignmentCount(binding.assignmentCount)}
+                        />
                       </div>
                     </div>
-                    <p className="mt-2 text-xs text-slate-500">{binding.scopePath || sharedCopy.tenantWideBinding}</p>
+                    <p className="mt-2 text-xs text-slate-500">
+                      {binding.scopePath || sharedCopy.tenantWideBinding}
+                    </p>
                     {binding.inheritedAssignmentCount > 0 ? (
-                      <p className="mt-2 text-xs text-slate-500">{sharedCopy.inheritedAssignments(binding.inheritedAssignmentCount)}</p>
+                      <p className="mt-2 text-xs text-slate-500">
+                        {sharedCopy.inheritedAssignments(binding.inheritedAssignmentCount)}
+                      </p>
                     ) : null}
                   </div>
                 ))
@@ -570,10 +595,17 @@ export function RoleEditorScreen({
           <GlassSurface className="p-6">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="space-y-1">
-                <h2 className="text-lg font-semibold text-slate-900">{roleEditorCopy.assignedUsersTitle}</h2>
-                <p className="text-sm leading-6 text-slate-600">{roleEditorCopy.assignedUsersDescription}</p>
+                <h2 className="text-lg font-semibold text-slate-900">
+                  {roleEditorCopy.assignedUsersTitle}
+                </h2>
+                <p className="text-sm leading-6 text-slate-600">
+                  {roleEditorCopy.assignedUsersDescription}
+                </p>
               </div>
-              <ToneBadge tone="info" label={sharedCopy.assignmentCount(detail.assignedUsers.length)} />
+              <ToneBadge
+                tone="info"
+                label={sharedCopy.assignmentCount(detail.assignedUsers.length)}
+              />
             </div>
 
             <div className="mt-4 space-y-3">
@@ -583,7 +615,10 @@ export function RoleEditorScreen({
                 </p>
               ) : (
                 paginatedAssignedUsers.map((assignment) => (
-                  <div key={assignment.assignmentId} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                  <div
+                    key={assignment.assignmentId}
+                    className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3"
+                  >
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div className="space-y-1">
                         <p className="text-sm font-semibold text-slate-900">
@@ -594,23 +629,33 @@ export function RoleEditorScreen({
                       <div className="flex flex-wrap gap-2">
                         <ToneBadge
                           tone={assignment.isActive ? 'success' : 'warning'}
-                          label={assignment.isActive ? sharedCopy.userActive : sharedCopy.userInactive}
+                          label={
+                            assignment.isActive ? sharedCopy.userActive : sharedCopy.userInactive
+                          }
                         />
-                        {assignment.inherit ? <ToneBadge tone="neutral" label={sharedCopy.inherit} /> : null}
+                        {assignment.inherit ? (
+                          <ToneBadge tone="neutral" label={sharedCopy.inherit} />
+                        ) : null}
                       </div>
                     </div>
                     <p className="mt-3 text-sm text-slate-700">
                       {resolveScopedLabel(assignment.scopeType, assignment.scopeName, sharedCopy)}
                     </p>
-                    <p className="mt-1 text-xs text-slate-500">{assignment.scopePath || sharedCopy.tenantWideAssignment}</p>
+                    <p className="mt-1 text-xs text-slate-500">
+                      {assignment.scopePath || sharedCopy.tenantWideAssignment}
+                    </p>
                     <p className="mt-2 text-xs text-slate-500">
                       {sharedCopy.grantedLabel}{' '}
-                      {formatUserManagementDateTime(assignment.grantedAt, locale, sharedCopy.unavailable)}
+                      {formatUserManagementDateTime(
+                        assignment.grantedAt,
+                        locale,
+                        sharedCopy.unavailable
+                      )}
                       {assignment.expiresAt
                         ? ` • ${sharedCopy.expiresLabel} ${formatUserManagementDateTime(
                             assignment.expiresAt,
                             locale,
-                            sharedCopy.unavailable,
+                            sharedCopy.unavailable
                           )}`
                         : ''}
                     </p>
@@ -646,7 +691,9 @@ export function RoleEditorScreen({
         <div className="space-y-6">
           <div className="grid gap-4 md:grid-cols-2">
             <label className="space-y-2">
-              <span className="text-sm font-semibold text-slate-900">{roleEditorCopy.fields.roleCode}</span>
+              <span className="text-sm font-semibold text-slate-900">
+                {roleEditorCopy.fields.roleCode}
+              </span>
               <input
                 aria-label={roleEditorCopy.fields.roleCode}
                 value={draft.code}
@@ -663,7 +710,9 @@ export function RoleEditorScreen({
             <div className="space-y-3">
               <div className="flex flex-wrap items-end gap-3">
                 <label className="min-w-0 flex-1 space-y-2">
-                  <span className="text-sm font-semibold text-slate-900">{roleEditorCopy.fields.nameBase}</span>
+                  <span className="text-sm font-semibold text-slate-900">
+                    {roleEditorCopy.fields.nameBase}
+                  </span>
                   <input
                     aria-label={roleEditorCopy.fields.nameBase}
                     value={draft.nameBase}
@@ -704,7 +753,9 @@ export function RoleEditorScreen({
 
           <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_240px]">
             <label className="space-y-2">
-              <span className="text-sm font-semibold text-slate-900">{roleEditorCopy.fields.description}</span>
+              <span className="text-sm font-semibold text-slate-900">
+                {roleEditorCopy.fields.description}
+              </span>
               <textarea
                 aria-label={roleEditorCopy.fields.description}
                 rows={4}
@@ -732,23 +783,29 @@ export function RoleEditorScreen({
                 className="mt-1 h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-500"
               />
               <div className="space-y-1">
-                <p className="text-sm font-semibold text-slate-950">{roleEditorCopy.fields.isActive}</p>
-                <p className="text-sm leading-6 text-slate-600">{roleEditorCopy.isActiveDescription}</p>
+                <p className="text-sm font-semibold text-slate-950">
+                  {roleEditorCopy.fields.isActive}
+                </p>
+                <p className="text-sm leading-6 text-slate-600">
+                  {roleEditorCopy.isActiveDescription}
+                </p>
               </div>
             </label>
           </div>
 
           <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-600">
-            {mode === 'create'
-              ? roleEditorCopy.createHint
-              : roleEditorCopy.editHint}
+            {mode === 'create' ? roleEditorCopy.createHint : roleEditorCopy.editHint}
           </div>
 
           <div className="space-y-4">
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div className="space-y-1">
-                <h2 className="text-lg font-semibold text-slate-900">{roleEditorCopy.permissionMatrixTitle}</h2>
-                <p className="text-sm leading-6 text-slate-600">{roleEditorCopy.permissionMatrixDescription}</p>
+                <h2 className="text-lg font-semibold text-slate-900">
+                  {roleEditorCopy.permissionMatrixTitle}
+                </h2>
+                <p className="text-sm leading-6 text-slate-600">
+                  {roleEditorCopy.permissionMatrixDescription}
+                </p>
               </div>
               <ToneBadge
                 tone="info"
@@ -758,7 +815,10 @@ export function RoleEditorScreen({
 
             <div className="space-y-4">
               {ROLE_RESOURCE_GROUPS.map((group) => (
-                <div key={group.moduleCode} className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                <div
+                  key={group.moduleCode}
+                  className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
+                >
                   <div className="border-b border-slate-200 bg-slate-50 px-4 py-3">
                     <p className="text-sm font-semibold text-slate-900">{group.labels[locale]}</p>
                   </div>
@@ -787,7 +847,9 @@ export function RoleEditorScreen({
                                 <p className="text-sm font-semibold text-slate-900">
                                   {pickLocalizedName(resource, locale)}
                                 </p>
-                                <p className="text-xs uppercase tracking-[0.18em] text-slate-400">{resource.code}</p>
+                                <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                                  {resource.code}
+                                </p>
                               </div>
                             </th>
                             {RBAC_CANONICAL_ACTIONS.map((action) => {
@@ -801,7 +863,8 @@ export function RoleEditorScreen({
                                       aria-label={`${pickLocalizedName(resource, locale)} ${getLocalizedRbacActionLabel(action, locale)}`}
                                       value={draft.permissionStates[permissionKey]}
                                       onChange={(event) => {
-                                        const nextValue = event.target.value as RolePermissionSelection;
+                                        const nextValue = event.target
+                                          .value as RolePermissionSelection;
 
                                         setDraft((current) => ({
                                           ...current,
@@ -841,7 +904,9 @@ export function RoleEditorScreen({
             <AsyncSubmitButton
               type="button"
               isPending={submitting}
-              pendingText={mode === 'create' ? roleEditorCopy.pendingCreate : roleEditorCopy.pendingSave}
+              pendingText={
+                mode === 'create' ? roleEditorCopy.pendingCreate : roleEditorCopy.pendingSave
+              }
               onClick={() => {
                 void handleSaveRole();
               }}

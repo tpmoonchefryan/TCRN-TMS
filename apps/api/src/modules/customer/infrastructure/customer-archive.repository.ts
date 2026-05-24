@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable } from '@nestjs/common';
 
 import { DatabaseService } from '../../database';
@@ -14,12 +13,12 @@ export class CustomerArchiveRepository {
 
   async findTalentArchiveBinding(
     tenantSchema: string,
-    talentId: string,
+    talentId: string
   ): Promise<TalentArchiveBindingRecord | null> {
-    const rows = await this.databaseService.getPrisma().$queryRawUnsafe<
-      TalentArchiveBindingRecord[]
-    >(
-      `SELECT
+    const rows = await this.databaseService
+      .getPrisma()
+      .$queryRawUnsafe<TalentArchiveBindingRecord[]>(
+        `SELECT
          t.id,
          t.profile_store_id as "profileStoreId",
          ps.is_active as "profileStoreIsActive"
@@ -27,8 +26,8 @@ export class CustomerArchiveRepository {
        LEFT JOIN "${tenantSchema}".profile_store ps
          ON ps.id = t.profile_store_id
        WHERE t.id = $1::uuid`,
-      talentId,
-    );
+        talentId
+      );
 
     return rows[0] ?? null;
   }
@@ -36,12 +35,12 @@ export class CustomerArchiveRepository {
   async findCustomerArchiveAccess(
     tenantSchema: string,
     customerId: string,
-    talentId: string,
+    talentId: string
   ): Promise<CustomerArchiveAccessRecord | null> {
-    const rows = await this.databaseService.getPrisma().$queryRawUnsafe<
-      CustomerArchiveAccessRecord[]
-    >(
-      `SELECT
+    const rows = await this.databaseService
+      .getPrisma()
+      .$queryRawUnsafe<CustomerArchiveAccessRecord[]>(
+        `SELECT
          cp.id,
          cp.profile_type as "profileType",
          cp.profile_store_id as "profileStoreId",
@@ -58,9 +57,9 @@ export class CustomerArchiveRepository {
        WHERE cp.id = $1::uuid
          AND t.id = $2::uuid
          AND t.profile_store_id IS NOT NULL`,
-      customerId,
-      talentId,
-    );
+        customerId,
+        talentId
+      );
 
     return rows[0] ?? null;
   }

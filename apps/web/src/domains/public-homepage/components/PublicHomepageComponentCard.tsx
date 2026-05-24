@@ -1,6 +1,5 @@
 'use client';
 
-import { type ThemeConfig } from '@tcrn/shared';
 import {
   Activity,
   CalendarRange,
@@ -14,18 +13,15 @@ import {
 } from 'lucide-react';
 import { type CSSProperties, type ReactNode, useMemo } from 'react';
 
-import {
-  type PublicHomepageComponentRecord,
-} from '@/domains/public-homepage/api/public-homepage.api';
+import { type ThemeConfig } from '@tcrn/shared';
+
+import { type PublicHomepageComponentRecord } from '@/domains/public-homepage/api/public-homepage.api';
 import {
   normalizeHomepageLayoutProps,
   resolveHomepageLayoutSurfaceStyle,
   resolveHomepageLayoutWrapperStyle,
 } from '@/domains/public-homepage/components/public-homepage-layout';
-import {
-  PublicPresenceBadge,
-  PublicPresenceSurface,
-} from '@/domains/public-presence';
+import { PublicPresenceBadge, PublicPresenceSurface } from '@/domains/public-presence';
 import { useUiLocale } from '@/platform/runtime/locale/locale-provider';
 
 type VisibleHomepageComponent = PublicHomepageComponentRecord;
@@ -119,7 +115,7 @@ function applyVideoEmbedOptions(
   options: {
     autoplay: boolean;
     showControls: boolean;
-  },
+  }
 ) {
   if (!value.includes('youtube.com/embed')) {
     return value;
@@ -249,7 +245,7 @@ function UnsupportedComponent({
 }
 
 function getThemeTextStyles(
-  theme: ThemeConfig,
+  theme: ThemeConfig
 ): Record<'primary' | 'secondary' | 'link', CSSProperties> {
   return {
     primary: { color: theme.colors.text },
@@ -318,7 +314,7 @@ function RichTextCard({
         '--tw-prose-captions': theme.colors.textSecondary,
         '--tw-prose-code': theme.colors.text,
       }) as CSSProperties,
-    [textAlign, theme.colors.text, theme.colors.textSecondary],
+    [textAlign, theme.colors.text, theme.colors.textSecondary]
   );
 
   if (!sanitized.trim()) {
@@ -395,7 +391,7 @@ export function PublicHomepageComponentCard({
     case 'SocialLinks': {
       const platforms = Array.isArray(props.platforms)
         ? props.platforms.filter(
-            (item): item is Record<string, unknown> => !!item && typeof item === 'object',
+            (item): item is Record<string, unknown> => !!item && typeof item === 'object'
           )
         : [];
 
@@ -403,47 +399,47 @@ export function PublicHomepageComponentCard({
         return null;
       }
 
-        return (
-          <CardFrame theme={theme} layout={layout} className="p-6">
-            <div
-              className="mb-4 flex items-center gap-2 text-sm font-semibold"
-              style={textStyles.secondary}
-            >
-              <ExternalLink className="h-4 w-4" />
-              {copy.socialLinks}
-            </div>
-            <div className="flex flex-wrap gap-3">
-              {platforms.map((entry, index) => {
-                const url = asString(entry.url);
+      return (
+        <CardFrame theme={theme} layout={layout} className="p-6">
+          <div
+            className="mb-4 flex items-center gap-2 text-sm font-semibold"
+            style={textStyles.secondary}
+          >
+            <ExternalLink className="h-4 w-4" />
+            {copy.socialLinks}
+          </div>
+          <div className="flex flex-wrap gap-3">
+            {platforms.map((entry, index) => {
+              const url = asString(entry.url);
 
-                if (!url) {
-                  return null;
-                }
+              if (!url) {
+                return null;
+              }
 
-                const platformCode = asString(entry.platformCode, `link-${index}`);
-                const label = asString(entry.label) || getSocialPlatformLabel(platformCode);
+              const platformCode = asString(entry.platformCode, `link-${index}`);
+              const label = asString(entry.label) || getSocialPlatformLabel(platformCode);
 
-                return (
-                  <a
-                    key={`${platformCode}-${index}`}
-                    href={url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center gap-2 rounded-md border border-dashed border-sky-200 bg-white/85 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-sky-300 hover:bg-white focus:outline-none focus:ring-2 focus:ring-sky-200 motion-reduce:transition-none"
-                  >
-                    <ExternalLink className="h-4 w-4" />
-                    {label}
-                  </a>
-                );
-              })}
-            </div>
-          </CardFrame>
-        );
-      }
+              return (
+                <a
+                  key={`${platformCode}-${index}`}
+                  href={url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-2 rounded-md border border-dashed border-sky-200 bg-white/85 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-sky-300 hover:bg-white focus:outline-none focus:ring-2 focus:ring-sky-200 motion-reduce:transition-none"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  {label}
+                </a>
+              );
+            })}
+          </div>
+        </CardFrame>
+      );
+    }
     case 'ImageGallery': {
       const images = Array.isArray(props.images)
         ? props.images.filter(
-            (item): item is Record<string, unknown> => !!item && typeof item === 'object',
+            (item): item is Record<string, unknown> => !!item && typeof item === 'object'
           )
         : [];
 
@@ -622,7 +618,7 @@ export function PublicHomepageComponentCard({
       const weekOf = asString(props.weekOf);
       const events = Array.isArray(props.events)
         ? props.events.filter(
-            (item): item is Record<string, unknown> => !!item && typeof item === 'object',
+            (item): item is Record<string, unknown> => !!item && typeof item === 'object'
           )
         : [];
 
@@ -811,7 +807,11 @@ export function PublicHomepageComponentCard({
       const refreshInterval = asNumber(props.refreshInterval, 0);
 
       return (
-        <CardFrame theme={theme} layout={layout} className={cardStyle === 'compact' ? 'p-5' : 'p-6'}>
+        <CardFrame
+          theme={theme}
+          layout={layout}
+          className={cardStyle === 'compact' ? 'p-5' : 'p-6'}
+        >
           {showHeader ? (
             <div
               className="mb-4 flex items-center gap-2 text-sm font-semibold"
@@ -831,7 +831,7 @@ export function PublicHomepageComponentCard({
                 '{refresh}',
                 refreshInterval > 0
                   ? copy.refreshSuffix.replace('{seconds}', String(refreshInterval))
-                  : '',
+                  : ''
               )}
           </p>
           {uid ? (

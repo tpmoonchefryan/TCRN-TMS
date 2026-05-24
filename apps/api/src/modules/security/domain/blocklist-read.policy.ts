@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { summarizeBlocklistScopes, type LocalizedText } from '@tcrn/shared';
 
 import { readLocalizedText } from '../../../platform/persistence/localized-text.persistence';
@@ -110,7 +109,7 @@ export interface BlocklistEntryWithMeta {
 }
 
 export const normalizeBlocklistListOptions = (
-  query: BlocklistListQueryDto,
+  query: BlocklistListQueryDto
 ): BlocklistListOptions => ({
   page: query.page ?? 1,
   pageSize: query.pageSize ?? 20,
@@ -127,10 +126,9 @@ export const normalizeBlocklistListOptions = (
 export const buildBlocklistListItem = (
   row: BlocklistListRow,
   options: Pick<BlocklistListOptions, 'scopeType' | 'scopeId'>,
-  disabledIds: Set<string>,
+  disabledIds: Set<string>
 ): BlocklistEntryWithMeta => {
-  const isInherited =
-    row.ownerType !== options.scopeType || row.ownerId !== options.scopeId;
+  const isInherited = row.ownerType !== options.scopeType || row.ownerId !== options.scopeId;
 
   return {
     ...row,

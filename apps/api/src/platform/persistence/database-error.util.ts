@@ -29,7 +29,7 @@ function collectErrorText(error: unknown): string {
 
 export function isMissingDatabaseRelationError(
   error: unknown,
-  relationNames: readonly string[],
+  relationNames: readonly string[]
 ): boolean {
   const text = collectErrorText(error).toLowerCase();
 

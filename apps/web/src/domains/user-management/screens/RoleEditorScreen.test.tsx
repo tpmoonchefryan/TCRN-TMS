@@ -1,8 +1,9 @@
-import type { SupportedUiLocale } from '@tcrn/shared';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { localizedFixture } from '@/domains/config-dictionary-settings/testing/localized-fixtures';
 
+import type { SupportedUiLocale } from '@tcrn/shared';
+
+import { localizedFixture } from '@/domains/config-dictionary-settings/testing/localized-fixtures';
 import { RoleEditorScreen } from '@/domains/user-management/screens/RoleEditorScreen';
 
 const mockRequest = vi.fn();
@@ -92,7 +93,7 @@ describe('RoleEditorScreen', () => {
               },
             ],
           }),
-        }),
+        })
       );
     });
 
@@ -251,7 +252,7 @@ describe('RoleEditorScreen', () => {
               },
             ],
           }),
-        }),
+        })
       );
     });
 
@@ -296,8 +297,8 @@ describe('RoleEditorScreen', () => {
 
     expect(
       await screen.findByText(
-        'Language options are temporarily unavailable. Load the System Dictionary languages and try again.',
-      ),
+        'Language options are temporarily unavailable. Load the System Dictionary languages and try again.'
+      )
     ).toBeInTheDocument();
     expect(screen.queryByText(/Supported UI locales are shown instead/i)).not.toBeInTheDocument();
   });

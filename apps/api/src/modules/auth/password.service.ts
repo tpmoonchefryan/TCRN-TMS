@@ -1,9 +1,8 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable } from '@nestjs/common';
-import { AppConfig } from '@tcrn/shared';
 import * as argon2 from 'argon2';
 
+import { AppConfig } from '@tcrn/shared';
 
 /**
  * Password Validation Result
@@ -107,7 +106,7 @@ export class PasswordService {
 
     const expiryDate = new Date(passwordChangedAt);
     expiryDate.setDate(expiryDate.getDate() + AppConfig.PASSWORD.EXPIRY_DAYS);
-    
+
     return new Date() > expiryDate;
   }
 }

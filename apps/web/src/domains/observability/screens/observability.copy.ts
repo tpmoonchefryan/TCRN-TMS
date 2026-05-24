@@ -2,10 +2,7 @@ import type { SupportedUiLocale } from '@tcrn/shared';
 
 import { type ObservabilityTab } from '@/domains/observability/api/observability.api';
 import { useUiLocale } from '@/platform/runtime/locale/locale-provider';
-import {
-  formatLocaleDateTime,
-  resolveLocaleRecord,
-} from '@/platform/runtime/locale/locale-text';
+import { formatLocaleDateTime, resolveLocaleRecord } from '@/platform/runtime/locale/locale-text';
 
 const COPY = {
   en: {
@@ -39,7 +36,8 @@ const COPY = {
     },
     changeFilters: {
       title: 'Change Log Filters',
-      description: 'Filter change history by object family, action, or request ID before drilling into diff summaries.',
+      description:
+        'Filter change history by object family, action, or request ID before drilling into diff summaries.',
       refresh: 'Refresh change logs',
       pending: 'Loading…',
       objectType: 'Object type',
@@ -94,7 +92,8 @@ const COPY = {
     },
     integrationTable: {
       title: 'Integration Logs',
-      description: 'Integration observability keeps direction, endpoint, latency, and trace context in one table.',
+      description:
+        'Integration observability keeps direction, endpoint, latency, and trace context in one table.',
       unavailableTitle: 'Integration logs unavailable',
       emptyTitle: 'No integration logs returned',
       emptyDescription: 'The current filters did not return any integration traffic.',
@@ -123,11 +122,14 @@ const COPY = {
     },
     cards: {
       changeTitle: 'Change History',
-      changeDescription: 'Review who changed what, when it changed, and which request carried the update.',
+      changeDescription:
+        'Review who changed what, when it changed, and which request carried the update.',
       integrationTitle: 'Integration Traffic',
-      integrationDescription: 'Track inbound and outbound requests together with status, latency, and trace context.',
+      integrationDescription:
+        'Track inbound and outbound requests together with status, latency, and trace context.',
       searchTitle: 'Log Search',
-      searchDescription: 'Search logs here. If search is unavailable, show a clear unavailable state instead of an empty table.',
+      searchDescription:
+        'Search logs here. If search is unavailable, show a clear unavailable state instead of an empty table.',
     },
     options: {
       actions: {
@@ -513,7 +515,8 @@ const COPY = {
     },
     changeTable: {
       title: '変更ログ',
-      description: '構造化された変更履歴は、オブジェクト、操作者、リクエスト ID、差分概要を同じ表で保持します。',
+      description:
+        '構造化された変更履歴は、オブジェクト、操作者、リクエスト ID、差分概要を同じ表で保持します。',
       unavailableTitle: '変更ログを利用できません',
       emptyTitle: '変更ログはありません',
       emptyDescription: '現在のフィルターでは変更履歴が返されませんでした。',
@@ -521,7 +524,8 @@ const COPY = {
     },
     techFilters: {
       title: '技術イベントの絞り込み',
-      description: '重大度、スコープ、イベント種別、またはトレース ID で技術イベントを絞り込みます。',
+      description:
+        '重大度、スコープ、イベント種別、またはトレース ID で技術イベントを絞り込みます。',
       refresh: '技術イベントを更新',
       pending: '読み込み中…',
       severity: '重大度',
@@ -542,7 +546,8 @@ const COPY = {
     },
     integrationFilters: {
       title: '連携ログの絞り込み',
-      description: 'コンシューマー、方向、ステータス、またはトレースで入出力トラフィックを絞り込み、失敗のみ表示にも切り替えられます。',
+      description:
+        'コンシューマー、方向、ステータス、またはトレースで入出力トラフィックを絞り込み、失敗のみ表示にも切り替えられます。',
       refresh: '連携ログを更新',
       pending: '読み込み中…',
       consumerCode: 'コンシューマーコード',
@@ -556,11 +561,20 @@ const COPY = {
     },
     integrationTable: {
       title: '連携ログ',
-      description: '連携の可観測性では方向、エンドポイント、レイテンシ、トレース文脈を一つの表で確認できます。',
+      description:
+        '連携の可観測性では方向、エンドポイント、レイテンシ、トレース文脈を一つの表で確認できます。',
       unavailableTitle: '連携ログを利用できません',
       emptyTitle: '連携ログはありません',
       emptyDescription: '現在のフィルターでは連携トラフィックが返されませんでした。',
-      columns: ['コンシューマー', '方向', 'エンドポイント', 'ステータス', 'レイテンシ', 'トレース', '発生時刻'],
+      columns: [
+        'コンシューマー',
+        '方向',
+        'エンドポイント',
+        'ステータス',
+        'レイテンシ',
+        'トレース',
+        '発生時刻',
+      ],
     },
     searchFilters: {
       title: 'ログ検索',
@@ -585,11 +599,13 @@ const COPY = {
     },
     cards: {
       changeTitle: '変更履歴',
-      changeDescription: '誰が何を変更したか、いつ変更したか、どのリクエストで更新したかを確認できます。',
+      changeDescription:
+        '誰が何を変更したか、いつ変更したか、どのリクエストで更新したかを確認できます。',
       integrationTitle: '連携トラフィック',
       integrationDescription: '入出力リクエストの状態、遅延、トレース情報をまとめて確認します。',
       searchTitle: 'ログ検索',
-      searchDescription: 'ここでログを検索します。検索が利用できない場合は、空画面ではなく利用不可状態を明示します。',
+      searchDescription:
+        'ここでログを検索します。検索が利用できない場合は、空画面ではなく利用不可状態を明示します。',
     },
     options: {
       actions: {
@@ -656,7 +672,8 @@ const COPY = {
     },
     changeFilters: {
       title: 'Change Log Filters',
-      description: 'Filter change history by object family, action, or request ID before drilling into diff summaries.',
+      description:
+        'Filter change history by object family, action, or request ID before drilling into diff summaries.',
       refresh: 'Refresh change logs',
       pending: 'Loading…',
       objectType: 'Object type',
@@ -711,7 +728,8 @@ const COPY = {
     },
     integrationTable: {
       title: 'Integration Logs',
-      description: 'Integration observability keeps direction, endpoint, latency, and trace context in one table.',
+      description:
+        'Integration observability keeps direction, endpoint, latency, and trace context in one table.',
       unavailableTitle: 'Integration logs unavailable',
       emptyTitle: 'No integration logs returned',
       emptyDescription: 'The current filters did not return any integration traffic.',
@@ -740,11 +758,14 @@ const COPY = {
     },
     cards: {
       changeTitle: 'Change History',
-      changeDescription: 'Review who changed what, when it changed, and which request carried the update.',
+      changeDescription:
+        'Review who changed what, when it changed, and which request carried the update.',
       integrationTitle: 'Integration Traffic',
-      integrationDescription: 'Track inbound and outbound requests together with status, latency, and trace context.',
+      integrationDescription:
+        'Track inbound and outbound requests together with status, latency, and trace context.',
       searchTitle: 'Log Search',
-      searchDescription: 'Search logs here. If search is unavailable, show a clear unavailable state instead of an empty table.',
+      searchDescription:
+        'Search logs here. If search is unavailable, show a clear unavailable state instead of an empty table.',
     },
     options: {
       actions: {
@@ -811,7 +832,8 @@ const COPY = {
     },
     changeFilters: {
       title: 'Change Log Filters',
-      description: 'Filter change history by object family, action, or request ID before drilling into diff summaries.',
+      description:
+        'Filter change history by object family, action, or request ID before drilling into diff summaries.',
       refresh: 'Refresh change logs',
       pending: 'Loading…',
       objectType: 'Object type',
@@ -866,7 +888,8 @@ const COPY = {
     },
     integrationTable: {
       title: 'Integration Logs',
-      description: 'Integration observability keeps direction, endpoint, latency, and trace context in one table.',
+      description:
+        'Integration observability keeps direction, endpoint, latency, and trace context in one table.',
       unavailableTitle: 'Integration logs unavailable',
       emptyTitle: 'No integration logs returned',
       emptyDescription: 'The current filters did not return any integration traffic.',
@@ -895,11 +918,14 @@ const COPY = {
     },
     cards: {
       changeTitle: 'Change History',
-      changeDescription: 'Review who changed what, when it changed, and which request carried the update.',
+      changeDescription:
+        'Review who changed what, when it changed, and which request carried the update.',
       integrationTitle: 'Integration Traffic',
-      integrationDescription: 'Track inbound and outbound requests together with status, latency, and trace context.',
+      integrationDescription:
+        'Track inbound and outbound requests together with status, latency, and trace context.',
       searchTitle: 'Log Search',
-      searchDescription: 'Search logs here. If search is unavailable, show a clear unavailable state instead of an empty table.',
+      searchDescription:
+        'Search logs here. If search is unavailable, show a clear unavailable state instead of an empty table.',
     },
     options: {
       actions: {
@@ -972,18 +998,20 @@ export function useObservabilityCopy() {
 }
 
 export function formatObservabilityDateTime(
-  locale: SupportedUiLocale ,
+  locale: SupportedUiLocale,
   value: string | null | undefined,
-  fallback: string,
+  fallback: string
 ) {
   return formatLocaleDateTime(locale, value ?? null, fallback);
 }
 
-export function getObservabilityTabLabel(locale: SupportedUiLocale , tab: ObservabilityTab) {
-  return (resolveLocaleRecord(locale, OBSERVABILITY_COPY_RECORD) as ObservabilityCopy).tabs[camelCaseTabKey(tab)];
+export function getObservabilityTabLabel(locale: SupportedUiLocale, tab: ObservabilityTab) {
+  return (resolveLocaleRecord(locale, OBSERVABILITY_COPY_RECORD) as ObservabilityCopy).tabs[
+    camelCaseTabKey(tab)
+  ];
 }
 
-export function getObservabilityActionLabel(locale: SupportedUiLocale , action: string) {
+export function getObservabilityActionLabel(locale: SupportedUiLocale, action: string) {
   const copy = resolveLocaleRecord(locale, OBSERVABILITY_COPY_RECORD) as ObservabilityCopy;
 
   if (action in copy.options.actions) {
@@ -993,7 +1021,7 @@ export function getObservabilityActionLabel(locale: SupportedUiLocale , action: 
   return action;
 }
 
-export function getObservabilitySeverityLabel(locale: SupportedUiLocale , severity: string) {
+export function getObservabilitySeverityLabel(locale: SupportedUiLocale, severity: string) {
   const copy = resolveLocaleRecord(locale, OBSERVABILITY_COPY_RECORD) as ObservabilityCopy;
 
   if (severity in copy.options.severity) {
@@ -1003,7 +1031,7 @@ export function getObservabilitySeverityLabel(locale: SupportedUiLocale , severi
   return severity;
 }
 
-export function getObservabilityDirectionLabel(locale: SupportedUiLocale , direction: string) {
+export function getObservabilityDirectionLabel(locale: SupportedUiLocale, direction: string) {
   const copy = resolveLocaleRecord(locale, OBSERVABILITY_COPY_RECORD) as ObservabilityCopy;
 
   if (direction in copy.options.direction) {
@@ -1014,5 +1042,7 @@ export function getObservabilityDirectionLabel(locale: SupportedUiLocale , direc
 }
 
 function camelCaseTabKey(tab: ObservabilityTab) {
-  return tab.replace(/-([a-z])/g, (_, group: string) => group.toUpperCase()) as keyof ObservabilityCopy['tabs'];
+  return tab.replace(/-([a-z])/g, (_, group: string) =>
+    group.toUpperCase()
+  ) as keyof ObservabilityCopy['tabs'];
 }

@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { IntegrationLogService } from '../integration-log.service';
@@ -50,7 +49,7 @@ describe('IntegrationLogService trace correlation', () => {
         responseStatus: 503,
         latencyMs: 42,
       },
-      { tenantSchema: 'tenant_test', traceId: 'trace_from_context' },
+      { tenantSchema: 'tenant_test', traceId: 'trace_from_context' }
     );
 
     expect(executeRawUnsafe.mock.calls[0]?.[12]).toBe('trace_from_context');
@@ -67,7 +66,7 @@ describe('IntegrationLogService trace correlation', () => {
         latencyMs: 100,
         traceId: 'trace_from_outbound',
       },
-      { tenantSchema: 'tenant_test', traceId: 'trace_from_context' },
+      { tenantSchema: 'tenant_test', traceId: 'trace_from_context' }
     );
 
     expect(executeRawUnsafe.mock.calls[0]?.[12]).toBe('trace_from_outbound');
@@ -83,7 +82,7 @@ describe('IntegrationLogService trace correlation', () => {
         responseStatus: 500,
         latencyMs: 100,
       },
-      { tenantSchema: 'tenant_test', requestId: 'req_legacy' },
+      { tenantSchema: 'tenant_test', requestId: 'req_legacy' }
     );
 
     expect(executeRawUnsafe.mock.calls[0]?.[12]).toBe('req_legacy');

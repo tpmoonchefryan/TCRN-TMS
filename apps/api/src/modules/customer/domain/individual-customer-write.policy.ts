@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import {
   type CreateIndividualCustomerDto,
   ProfileType,
@@ -30,12 +29,12 @@ export interface IndividualCustomerUpdateInput {
 
 export const hasIndividualCustomerVersionMismatch = (
   customer: IndividualCustomerPiiCustomerRecord,
-  version: number,
+  version: number
 ) => customer.version !== version;
 
 export const toIndividualCustomerUpdateInput = (
   dto: UpdateIndividualCustomerDto,
-  statusId: string | undefined,
+  statusId: string | undefined
 ): IndividualCustomerUpdateInput => {
   const input: IndividualCustomerUpdateInput = {};
 
@@ -58,18 +57,14 @@ export const toIndividualCustomerUpdateInput = (
   return input;
 };
 
-export const buildIndividualCustomerCreateResult = (
-  customer: IndividualCustomerCreatedRecord,
-) => ({
+export const buildIndividualCustomerCreateResult = (customer: IndividualCustomerCreatedRecord) => ({
   id: customer.id,
   profileType: ProfileType.INDIVIDUAL,
   nickname: customer.nickname,
   createdAt: customer.createdAt,
 });
 
-export const buildIndividualCustomerUpdateResult = (
-  updated: IndividualCustomerUpdatedRecord,
-) => ({
+export const buildIndividualCustomerUpdateResult = (updated: IndividualCustomerUpdatedRecord) => ({
   id: updated.id,
   nickname: updated.nickname,
   version: updated.version,
@@ -78,7 +73,7 @@ export const buildIndividualCustomerUpdateResult = (
 
 export const buildIndividualCustomerCreateChangeLogNewValue = (
   dto: CreateIndividualCustomerDto,
-  statusId: string | null,
+  statusId: string | null
 ) => ({
   profileType: ProfileType.INDIVIDUAL,
   nickname: dto.nickname,
@@ -89,7 +84,7 @@ export const buildIndividualCustomerCreateChangeLogNewValue = (
 });
 
 export const buildIndividualCustomerUpdateChangeLogOldValue = (
-  customer: IndividualCustomerPiiCustomerRecord,
+  customer: IndividualCustomerPiiCustomerRecord
 ) => ({
   nickname: customer.nickname,
   primaryLanguage: customer.primaryLanguage,
@@ -102,7 +97,7 @@ export const buildIndividualCustomerUpdateChangeLogNewValue = (
   updatedNickname: string,
   customer: IndividualCustomerPiiCustomerRecord,
   dto: UpdateIndividualCustomerDto,
-  statusId: string | undefined,
+  statusId: string | undefined
 ) => ({
   nickname: updatedNickname,
   primaryLanguage: dto.primaryLanguage ?? customer.primaryLanguage,

@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable } from '@nestjs/common';
+
 import type { RequestContext } from '@tcrn/shared';
 
 import { IndividualCustomerPiiApplicationService } from '../application/individual-customer-pii.service';
@@ -19,44 +19,32 @@ import type {
 export class IndividualCustomerService {
   constructor(
     private readonly individualCustomerWriteApplicationService: IndividualCustomerWriteApplicationService,
-    private readonly individualCustomerPiiApplicationService: IndividualCustomerPiiApplicationService,
+    private readonly individualCustomerPiiApplicationService: IndividualCustomerPiiApplicationService
   ) {}
 
-  create(
-    talentId: string,
-    dto: CreateIndividualCustomerDto,
-    context: RequestContext,
-  ) {
-    return this.individualCustomerWriteApplicationService.create(
-      talentId,
-      dto,
-      context,
-    );
+  create(talentId: string, dto: CreateIndividualCustomerDto, context: RequestContext) {
+    return this.individualCustomerWriteApplicationService.create(talentId, dto, context);
   }
 
   update(
     customerId: string,
     talentId: string,
     dto: UpdateIndividualCustomerDto,
-    context: RequestContext,
+    context: RequestContext
   ) {
     return this.individualCustomerWriteApplicationService.update(
       customerId,
       talentId,
       dto,
-      context,
+      context
     );
   }
 
-  createPiiPortalSession(
-    customerId: string,
-    talentId: string,
-    context: RequestContext,
-  ) {
+  createPiiPortalSession(customerId: string, talentId: string, context: RequestContext) {
     return this.individualCustomerPiiApplicationService.createPortalSession(
       customerId,
       talentId,
-      context,
+      context
     );
   }
 
@@ -64,13 +52,13 @@ export class IndividualCustomerService {
     customerId: string,
     talentId: string,
     dto: UpdateIndividualPiiDto,
-    context: RequestContext,
+    context: RequestContext
   ) {
     return this.individualCustomerPiiApplicationService.updatePii(
       customerId,
       talentId,
       dto,
-      context,
+      context
     );
   }
 }

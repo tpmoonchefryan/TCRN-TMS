@@ -1,16 +1,8 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { UnauthorizedException } from '@nestjs/common';
-import { prisma } from '@tcrn/database';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Mock @tcrn/database
-vi.mock('@tcrn/database', () => ({
-  prisma: {
-    $queryRawUnsafe: vi.fn(),
-    $executeRawUnsafe: vi.fn(),
-  },
-}));
+import { prisma } from '@tcrn/database';
 
 import { PermissionSnapshotService } from '../../permission/permission-snapshot.service';
 import { TenantService } from '../../tenant/tenant.service';
@@ -19,6 +11,14 @@ import { PasswordService } from '../password.service';
 import { SessionService } from '../session.service';
 import { TokenService } from '../token.service';
 import { TotpService } from '../totp.service';
+
+// Mock @tcrn/database
+vi.mock('@tcrn/database', () => ({
+  prisma: {
+    $queryRawUnsafe: vi.fn(),
+    $executeRawUnsafe: vi.fn(),
+  },
+}));
 
 const mockPrisma = prisma as unknown as {
   $queryRawUnsafe: ReturnType<typeof vi.fn>;
@@ -67,7 +67,9 @@ describe('AuthService', () => {
       validate: vi.fn().mockReturnValue({ isValid: true, errors: [] }),
       hash: vi.fn().mockResolvedValue('new_hash'),
       isPasswordExpired: vi.fn().mockReturnValue(false),
-      getPasswordExpiryDate: vi.fn().mockReturnValue(new Date(Date.now() + 90 * 24 * 60 * 60 * 1000)),
+      getPasswordExpiryDate: vi
+        .fn()
+        .mockReturnValue(new Date(Date.now() + 90 * 24 * 60 * 60 * 1000)),
     };
 
     mockTotpService = {
@@ -77,9 +79,15 @@ describe('AuthService', () => {
 
     mockTokenService = {
       generateAccessToken: vi.fn().mockReturnValue({ token: 'access_token', expiresIn: 900 }),
-      generateRefreshToken: vi.fn().mockResolvedValue({ token: 'refresh_token', expiresAt: new Date() }),
-      generateTotpSessionToken: vi.fn().mockReturnValue({ token: 'totp_session_token', expiresIn: 300 }),
-      generatePasswordResetSessionToken: vi.fn().mockReturnValue({ token: 'reset_session_token', expiresIn: 300 }),
+      generateRefreshToken: vi
+        .fn()
+        .mockResolvedValue({ token: 'refresh_token', expiresAt: new Date() }),
+      generateTotpSessionToken: vi
+        .fn()
+        .mockReturnValue({ token: 'totp_session_token', expiresIn: 300 }),
+      generatePasswordResetSessionToken: vi
+        .fn()
+        .mockReturnValue({ token: 'reset_session_token', expiresIn: 300 }),
       verifyTotpSessionToken: vi.fn(),
       verifyAccessToken: vi.fn(),
     };
@@ -105,7 +113,7 @@ describe('AuthService', () => {
       mockTokenService as TokenService,
       mockSessionService as SessionService,
       mockTenantService as TenantService,
-      mockPermissionSnapshotService as PermissionSnapshotService,
+      mockPermissionSnapshotService as PermissionSnapshotService
     );
   });
 
@@ -129,16 +137,16 @@ describe('AuthService', () => {
         'user-123',
         'tenant_test123',
         undefined,
-        '127.0.0.1',
+        '127.0.0.1'
       );
     });
 
     it('should throw UnauthorizedException for invalid tenant', async () => {
       (mockTenantService.getTenantByCode as ReturnType<typeof vi.fn>).mockResolvedValue(null);
 
-      await expect(
-        service.login('INVALID', 'testuser', 'password', '127.0.0.1'),
-      ).rejects.toThrow(UnauthorizedException);
+      await expect(service.login('INVALID', 'testuser', 'password', '127.0.0.1')).rejects.toThrow(
+        UnauthorizedException
+      );
     });
 
     it('should throw UnauthorizedException for disabled tenant', async () => {
@@ -147,25 +155,25 @@ describe('AuthService', () => {
         isActive: false,
       });
 
-      await expect(
-        service.login('TEST', 'testuser', 'password', '127.0.0.1'),
-      ).rejects.toThrow(UnauthorizedException);
+      await expect(service.login('TEST', 'testuser', 'password', '127.0.0.1')).rejects.toThrow(
+        UnauthorizedException
+      );
     });
 
     it('should throw UnauthorizedException for non-existent user', async () => {
       mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([]);
 
-      await expect(
-        service.login('TEST', 'nonexistent', 'password', '127.0.0.1'),
-      ).rejects.toThrow(UnauthorizedException);
+      await expect(service.login('TEST', 'nonexistent', 'password', '127.0.0.1')).rejects.toThrow(
+        UnauthorizedException
+      );
     });
 
     it('should throw UnauthorizedException for inactive user', async () => {
       mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([{ ...mockUser, is_active: false }]);
 
-      await expect(
-        service.login('TEST', 'testuser', 'password', '127.0.0.1'),
-      ).rejects.toThrow(UnauthorizedException);
+      await expect(service.login('TEST', 'testuser', 'password', '127.0.0.1')).rejects.toThrow(
+        UnauthorizedException
+      );
     });
 
     it('should throw UnauthorizedException for wrong password', async () => {
@@ -173,7 +181,7 @@ describe('AuthService', () => {
       (mockPasswordService.verify as ReturnType<typeof vi.fn>).mockResolvedValue(false);
 
       await expect(
-        service.login('TEST', 'testuser', 'wrong_password', '127.0.0.1'),
+        service.login('TEST', 'testuser', 'wrong_password', '127.0.0.1')
       ).rejects.toThrow(UnauthorizedException);
     });
 
@@ -200,15 +208,13 @@ describe('AuthService', () => {
       mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([mockUser]);
       (mockPasswordService.verify as ReturnType<typeof vi.fn>).mockResolvedValue(false);
 
-      await expect(
-        service.login('TEST', 'testuser', 'wrong', '127.0.0.1'),
-      ).rejects.toThrow();
+      await expect(service.login('TEST', 'testuser', 'wrong', '127.0.0.1')).rejects.toThrow();
 
       expect(mockSessionService.trackLoginAttempt).toHaveBeenCalledWith(
         'user-123',
         'tenant_test123',
         false,
-        '127.0.0.1',
+        '127.0.0.1'
       );
     });
 
@@ -219,9 +225,9 @@ describe('AuthService', () => {
         lockedUntil: new Date(Date.now() + 300000),
       });
 
-      await expect(
-        service.login('TEST', 'testuser', 'password', '127.0.0.1'),
-      ).rejects.toThrow(UnauthorizedException);
+      await expect(service.login('TEST', 'testuser', 'password', '127.0.0.1')).rejects.toThrow(
+        UnauthorizedException
+      );
     });
   });
 
@@ -244,7 +250,7 @@ describe('AuthService', () => {
       ]);
 
       await expect(
-        service.verifyTotp('session-token', '123456', '127.0.0.1'),
+        service.verifyTotp('session-token', '123456', '127.0.0.1')
       ).resolves.toMatchObject({
         type: 'success',
         accessToken: 'access_token',
@@ -252,7 +258,7 @@ describe('AuthService', () => {
 
       expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalledWith(
         expect.stringContaining('WHERE id = $1::uuid'),
-        userId,
+        userId
       );
     });
   });
@@ -267,7 +273,7 @@ describe('AuthService', () => {
         tsc: mockTenant.schemaName,
       });
       (mockTotpService.verifyRecoveryCode as ReturnType<typeof vi.fn>).mockImplementation(
-        (input: string, hash: string) => input === 'RECOVERY-123' && hash === 'hash-1',
+        (input: string, hash: string) => input === 'RECOVERY-123' && hash === 'hash-1'
       );
       mockPrisma.$queryRawUnsafe
         .mockResolvedValueOnce([
@@ -286,7 +292,7 @@ describe('AuthService', () => {
         ]);
 
       await expect(
-        service.verifyRecoveryCode('session-token', 'RECOVERY-123', '127.0.0.1'),
+        service.verifyRecoveryCode('session-token', 'RECOVERY-123', '127.0.0.1')
       ).resolves.toMatchObject({
         type: 'success',
         recoveryCodesRemaining: 7,
@@ -295,16 +301,16 @@ describe('AuthService', () => {
       expect(mockPrisma.$queryRawUnsafe).toHaveBeenNthCalledWith(
         1,
         expect.stringContaining('WHERE user_id = $1::uuid AND is_used = false'),
-        userId,
+        userId
       );
       expect(mockPrisma.$executeRawUnsafe).toHaveBeenCalledWith(
         expect.stringContaining('WHERE id = $1::uuid'),
-        'recovery-1',
+        'recovery-1'
       );
       expect(mockPrisma.$queryRawUnsafe).toHaveBeenNthCalledWith(
         3,
         expect.stringContaining('WHERE id = $1::uuid'),
-        userId,
+        userId
       );
     });
   });

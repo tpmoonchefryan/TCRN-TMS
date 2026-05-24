@@ -1,17 +1,17 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
-import { ChangeAction, IntegrationDirection, LogSeverity } from '@tcrn/shared';
 import { Type } from 'class-transformer';
 import {
-    IsDateString,
-    IsEnum,
-    IsInt,
-    IsOptional,
-    IsString,
-    IsUUID,
-    Max,
-    Min,
+  IsDateString,
+  IsEnum,
+  IsInt,
+  IsOptional,
+  IsString,
+  IsUUID,
+  Max,
+  Min,
 } from 'class-validator';
+
+import { ChangeAction, IntegrationDirection, LogSeverity } from '@tcrn/shared';
 
 /**
  * Base pagination DTO

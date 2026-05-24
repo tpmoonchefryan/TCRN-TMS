@@ -1,7 +1,8 @@
-import type { SupportedUiLocale } from '@tcrn/shared';
-import { REPORT_CATALOG } from '@tcrn/shared';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import type { SupportedUiLocale } from '@tcrn/shared';
+import { REPORT_CATALOG } from '@tcrn/shared';
 
 import { ReportsManagementScreen } from '@/domains/reports-management/screens/ReportsManagementScreen';
 
@@ -50,7 +51,10 @@ describe('ReportsManagementScreen', () => {
   }
 
   function reportFilterOptionResponse(path: string) {
-    if (path === '/api/v1/configuration-entity/social-platform?scopeType=talent&scopeId=talent-1&includeInherited=true&includeDisabled=false&includeInactive=false&page=1&pageSize=100&sort=sortOrder') {
+    if (
+      path ===
+      '/api/v1/configuration-entity/social-platform?scopeType=talent&scopeId=talent-1&includeInherited=true&includeDisabled=false&includeInactive=false&page=1&pageSize=100&sort=sortOrder'
+    ) {
       return [
         {
           id: 'platform-youtube',
@@ -61,7 +65,10 @@ describe('ReportsManagementScreen', () => {
       ];
     }
 
-    if (path === '/api/v1/configuration-entity/customer-status?scopeType=talent&scopeId=talent-1&includeInherited=true&includeDisabled=false&includeInactive=false&page=1&pageSize=100&sort=sortOrder') {
+    if (
+      path ===
+      '/api/v1/configuration-entity/customer-status?scopeType=talent&scopeId=talent-1&includeInherited=true&includeDisabled=false&includeInactive=false&page=1&pageSize=100&sort=sortOrder'
+    ) {
       return [
         {
           id: 'status-active',
@@ -72,7 +79,10 @@ describe('ReportsManagementScreen', () => {
       ];
     }
 
-    if (path === '/api/v1/configuration-entity/membership-tree?scopeType=talent&scopeId=talent-1&includeInactive=false') {
+    if (
+      path ===
+      '/api/v1/configuration-entity/membership-tree?scopeType=talent&scopeId=talent-1&includeInactive=false'
+    ) {
       return [
         {
           id: 'class-vip',
@@ -256,7 +266,7 @@ describe('ReportsManagementScreen', () => {
 
     await waitFor(() => {
       expect(mockRequest).toHaveBeenCalledWith(
-        '/api/v1/reports/mfr/jobs?talentId=talent-1&page=1&pageSize=20&status=success',
+        '/api/v1/reports/mfr/jobs?talentId=talent-1&page=1&pageSize=20&status=success'
       );
     });
 
@@ -318,7 +328,10 @@ describe('ReportsManagementScreen', () => {
     render(<ReportsManagementScreen tenantId="tenant-1" talentId="talent-1" />);
 
     expect(await screen.findByText('MFR_talent-1_success.xlsx')).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: 'Run History' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('tab', { name: 'Run History' })).toHaveAttribute(
+      'aria-selected',
+      'true'
+    );
     expect(screen.getByLabelText('Job status filter')).toHaveValue('success');
 
     fireEvent.change(screen.getByLabelText('Job status filter'), {
@@ -327,10 +340,10 @@ describe('ReportsManagementScreen', () => {
 
     await waitFor(() => {
       expect(mockRequest).toHaveBeenCalledWith(
-        '/api/v1/reports/mfr/jobs?talentId=talent-1&page=1&pageSize=50&status=failed',
+        '/api/v1/reports/mfr/jobs?talentId=talent-1&page=1&pageSize=50&status=failed'
       );
       expect(replace).toHaveBeenCalledWith(
-        '/tenant/tenant-1/talent/talent-1/reports?view=history&status=failed&pageSize=50',
+        '/tenant/tenant-1/talent/talent-1/reports?view=history&status=failed&pageSize=50'
       );
     });
 
@@ -409,7 +422,7 @@ describe('ReportsManagementScreen', () => {
             },
             previewLimit: 8,
           }),
-        }),
+        })
       );
     });
     expect(screen.getByRole('button', { name: 'Select Platforms' })).toBeDisabled();
@@ -445,7 +458,10 @@ describe('ReportsManagementScreen', () => {
         return reportCatalogResponse();
       }
 
-      if (path === '/api/v1/configuration-entity/social-platform?scopeType=talent&scopeId=talent-1&includeInherited=true&includeDisabled=false&includeInactive=false&page=1&pageSize=100&sort=sortOrder') {
+      if (
+        path ===
+        '/api/v1/configuration-entity/social-platform?scopeType=talent&scopeId=talent-1&includeInherited=true&includeDisabled=false&includeInactive=false&page=1&pageSize=100&sort=sortOrder'
+      ) {
         return platformOptions;
       }
 
@@ -481,13 +497,17 @@ describe('ReportsManagementScreen', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
 
-    expect(await screen.findByRole('checkbox', { name: /^Platform 25platform-25$/i })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('checkbox', { name: /^Platform 25platform-25$/i })
+    ).toBeInTheDocument();
 
     fireEvent.change(screen.getByRole('searchbox', { name: 'Search Platforms' }), {
       target: { value: 'Platform 3' },
     });
 
-    expect(await screen.findByRole('checkbox', { name: /^Platform 3platform-3$/i })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('checkbox', { name: /^Platform 3platform-3$/i })
+    ).toBeInTheDocument();
     expect(screen.queryByRole('checkbox', { name: /Platform 25/i })).not.toBeInTheDocument();
   });
 
@@ -578,7 +598,7 @@ describe('ReportsManagementScreen', () => {
             filters: undefined,
             format: 'xlsx',
           }),
-        }),
+        })
       );
     });
 
@@ -629,7 +649,7 @@ describe('ReportsManagementScreen', () => {
     expect(screen.getByText('3. Track in history')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Open PII platform' })).toHaveAttribute(
       'href',
-      'https://pii.example.com/reports/session-1',
+      'https://pii.example.com/reports/session-1'
     );
   });
 
@@ -684,7 +704,10 @@ describe('ReportsManagementScreen', () => {
         };
       }
 
-      if (path === '/api/v1/reports/mfr/jobs/job-cancel?talent_id=talent-1' && init?.method === 'DELETE') {
+      if (
+        path === '/api/v1/reports/mfr/jobs/job-cancel?talent_id=talent-1' &&
+        init?.method === 'DELETE'
+      ) {
         pendingStatus = 'cancelled';
         return {
           id: 'job-cancel',
@@ -703,10 +726,16 @@ describe('ReportsManagementScreen', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Download MFR_ready.xlsx' }));
 
     await waitFor(() => {
-      expect(mockRequest).toHaveBeenCalledWith('/api/v1/reports/mfr/jobs/job-download/download?talent_id=talent-1');
+      expect(mockRequest).toHaveBeenCalledWith(
+        '/api/v1/reports/mfr/jobs/job-download/download?talent_id=talent-1'
+      );
     });
 
-    expect(openSpy).toHaveBeenCalledWith('https://files.example.com/report.xlsx', '_blank', 'noopener,noreferrer');
+    expect(openSpy).toHaveBeenCalledWith(
+      'https://files.example.com/report.xlsx',
+      '_blank',
+      'noopener,noreferrer'
+    );
 
     fireEvent.click(screen.getByRole('button', { name: 'Cancel job-cancel' }));
 
@@ -719,7 +748,7 @@ describe('ReportsManagementScreen', () => {
         '/api/v1/reports/mfr/jobs/job-cancel?talent_id=talent-1',
         expect.objectContaining({
           method: 'DELETE',
-        }),
+        })
       );
     });
 
@@ -815,7 +844,9 @@ describe('ReportsManagementScreen', () => {
     render(<ReportsManagementScreen tenantId="tenant-1" talentId="talent-1" />);
 
     fireEvent.click(await screen.findByRole('tab', { name: 'Run History' }));
-    fireEvent.click(await screen.findByRole('button', { name: 'View details for MFR_detail.xlsx' }));
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'View details for MFR_detail.xlsx' })
+    );
 
     expect(await screen.findByRole('heading', { name: 'Report Job Detail' })).toBeInTheDocument();
     expect(await screen.findByText('Parameter Snapshot')).toBeInTheDocument();
@@ -875,10 +906,16 @@ describe('ReportsManagementScreen', () => {
     render(<ReportsManagementScreen tenantId="tenant-1" talentId="talent-1" />);
 
     fireEvent.click(await screen.findByRole('tab', { name: 'Run History' }));
-    fireEvent.click(await screen.findByRole('button', { name: 'View details for MFR_loading.xlsx' }));
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'View details for MFR_loading.xlsx' })
+    );
 
-    expect(await screen.findByRole('heading', { name: 'Loading report job detail…' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'View details for MFR_loading.xlsx' })).toBeDisabled();
+    expect(
+      await screen.findByRole('heading', { name: 'Loading report job detail…' })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'View details for MFR_loading.xlsx' })
+    ).toBeDisabled();
 
     resolveDetail({
       id: 'job-pending-detail',
@@ -896,9 +933,7 @@ describe('ReportsManagementScreen', () => {
         requestedAt: '2026-04-17T12:00:00.000Z',
         filters: {},
       },
-      timeline: [
-        { phase: 'queued', at: '2026-04-17T12:00:00.000Z' },
-      ],
+      timeline: [{ phase: 'queued', at: '2026-04-17T12:00:00.000Z' }],
       artifacts: [],
       fileName: 'MFR_loading.xlsx',
       fileSizeBytes: null,

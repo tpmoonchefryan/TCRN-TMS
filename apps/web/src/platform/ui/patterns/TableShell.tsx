@@ -47,10 +47,7 @@ export interface TableShellSelectionCellOptions {
 
 export interface TableShellRenderHelpers {
   isRowSelected: (rowId: string) => boolean;
-  renderSelectionCell: (
-    rowId: string,
-    options?: TableShellSelectionCellOptions,
-  ) => React.ReactNode;
+  renderSelectionCell: (rowId: string, options?: TableShellSelectionCellOptions) => React.ReactNode;
 }
 
 export type TableShellChildren =
@@ -104,7 +101,7 @@ function getNextSortDirection(direction: TableSortDirection | null): TableSortDi
 }
 
 function isRenderChildren(
-  children: TableShellChildren,
+  children: TableShellChildren
 ): children is (helpers: TableShellRenderHelpers) => React.ReactNode {
   return typeof children === 'function';
 }
@@ -112,9 +109,11 @@ function isRenderChildren(
 function IndeterminateCheckbox({
   indeterminate,
   ...props
-}: Readonly<React.InputHTMLAttributes<HTMLInputElement> & {
-  indeterminate?: boolean;
-}>) {
+}: Readonly<
+  React.InputHTMLAttributes<HTMLInputElement> & {
+    indeterminate?: boolean;
+  }
+>) {
   const checkboxRef = React.useRef<HTMLInputElement>(null);
 
   React.useEffect(() => {
@@ -123,13 +122,7 @@ function IndeterminateCheckbox({
     }
   }, [indeterminate]);
 
-  return (
-    <input
-      ref={checkboxRef}
-      type="checkbox"
-      {...props}
-    />
-  );
+  return <input ref={checkboxRef} type="checkbox" {...props} />;
 }
 
 export const TableShell: React.FC<TableShellProps> = ({
@@ -167,14 +160,20 @@ export const TableShell: React.FC<TableShellProps> = ({
   const selectedRowIds = new Set(rowSelection?.selectedRowIds ?? []);
   const visibleRowIds = rowSelection?.visibleRowIds ?? [];
   const selectedVisibleCount = visibleRowIds.filter((rowId) => selectedRowIds.has(rowId)).length;
-  const allVisibleSelected = visibleRowIds.length > 0 && selectedVisibleCount === visibleRowIds.length;
+  const allVisibleSelected =
+    visibleRowIds.length > 0 && selectedVisibleCount === visibleRowIds.length;
   const someVisibleSelected = selectedVisibleCount > 0 && !allVisibleSelected;
   const selectedCount = selectedRowIds.size;
-  const selectionCheckboxClass = 'h-4 w-4 rounded border-slate-300 text-sky-600 focus:ring-2 focus:ring-sky-500 focus:ring-offset-2';
+  const selectionCheckboxClass =
+    'h-4 w-4 rounded border-slate-300 text-sky-600 focus:ring-2 focus:ring-sky-500 focus:ring-offset-2';
 
   // Handle transparent fading for background loading of new data (not first load)
-  const bodyOpacityClass = isLoading && dataLength > 0 ? 'opacity-50 pointer-events-none' : 'opacity-100';
-  const renderSelectionCell: TableShellRenderHelpers['renderSelectionCell'] = (rowId, options = {}) => {
+  const bodyOpacityClass =
+    isLoading && dataLength > 0 ? 'opacity-50 pointer-events-none' : 'opacity-100';
+  const renderSelectionCell: TableShellRenderHelpers['renderSelectionCell'] = (
+    rowId,
+    options = {}
+  ) => {
     if (!rowSelection) {
       return null;
     }
@@ -197,28 +196,31 @@ export const TableShell: React.FC<TableShellProps> = ({
     isRowSelected: (rowId) => selectedRowIds.has(rowId),
     renderSelectionCell,
   };
-  const tableChildren = isRenderChildren(children)
-    ? children(renderHelpers)
-    : children;
+  const tableChildren = isRenderChildren(children) ? children(renderHelpers) : children;
 
   return (
-    <div className={`w-full overflow-hidden rounded-xl border ${tokens.colors.border} ${tokens.colors.surface} ${tokens.effects.glass} ${className}`}>
+    <div
+      className={`w-full overflow-hidden rounded-xl border ${tokens.colors.border} ${tokens.colors.surface} ${tokens.effects.glass} ${className}`}
+    >
       {rowSelection && selectedCount > 0 ? (
         <div
           role="toolbar"
           aria-label={rowSelection.batchToolbarAriaLabel}
           className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200/70 bg-slate-50/70 px-4 py-3 text-sm text-slate-700"
         >
-          <span className="font-medium text-slate-800">{rowSelection.getSelectedCountLabel(selectedCount)}</span>
+          <span className="font-medium text-slate-800">
+            {rowSelection.getSelectedCountLabel(selectedCount)}
+          </span>
           {rowSelection.batchActions ? (
-            <div className="flex flex-wrap items-center gap-2">
-              {rowSelection.batchActions}
-            </div>
+            <div className="flex flex-wrap items-center gap-2">{rowSelection.batchActions}</div>
           ) : null}
         </div>
       ) : null}
       <div className="w-full overflow-x-auto">
-        <table aria-label={ariaLabel} className={`w-full border-collapse text-left ${tableClassName}`}>
+        <table
+          aria-label={ariaLabel}
+          className={`w-full border-collapse text-left ${tableClassName}`}
+        >
           {caption ? <caption className="sr-only">{caption}</caption> : null}
           <thead className={headerStickyClass}>
             <tr className="border-b border-slate-200/60 bg-slate-50/50">
@@ -235,15 +237,14 @@ export const TableShell: React.FC<TableShellProps> = ({
                 </th>
               ) : null}
               {normalizedColumns.map((column) => {
-                const currentSortDirection = sort?.state?.columnId === column.id
-                  ? sort.state.direction
-                  : null;
+                const currentSortDirection =
+                  sort?.state?.columnId === column.id ? sort.state.direction : null;
 
                 return (
                   <th
                     key={column.id}
                     scope="col"
-                    aria-sort={column.sortable ? currentSortDirection ?? 'none' : undefined}
+                    aria-sort={column.sortable ? (currentSortDirection ?? 'none') : undefined}
                     style={column.width ? { width: column.width } : undefined}
                     className={`${cellPaddingClass} text-sm font-semibold text-slate-600 ${getAlignClass(column.align)} ${column.headerClassName ?? ''} ${column.className ?? ''}`}
                   >
@@ -251,15 +252,20 @@ export const TableShell: React.FC<TableShellProps> = ({
                       <button
                         type="button"
                         aria-label={sort.getSortButtonLabel(column, currentSortDirection)}
-                        onClick={() => sort.onChange({
-                          columnId: column.id,
-                          direction: getNextSortDirection(currentSortDirection),
-                        })}
+                        onClick={() =>
+                          sort.onChange({
+                            columnId: column.id,
+                            direction: getNextSortDirection(currentSortDirection),
+                          })
+                        }
                         className="inline-flex max-w-full items-center gap-2 rounded-md text-inherit outline-none transition hover:text-slate-900 focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2"
                       >
                         <span className="truncate">{column.header}</span>
                         {sort.getSortIndicator ? (
-                          <span aria-hidden="true" className="shrink-0 text-xs font-medium text-slate-500">
+                          <span
+                            aria-hidden="true"
+                            className="shrink-0 text-xs font-medium text-slate-500"
+                          >
                             {sort.getSortIndicator(currentSortDirection)}
                           </span>
                         ) : null}
@@ -272,27 +278,30 @@ export const TableShell: React.FC<TableShellProps> = ({
               })}
             </tr>
           </thead>
-          <tbody className={`divide-y divide-slate-100 ${tokens.motion.transitionQuick} ${tokens.motion.reduced} ${bodyOpacityClass}`}>
-            {isLoading && dataLength === 0 ? (
-              // Loading skeleton rows (Pulse is conditionally disabled by motion-reduce in Tailwind output)
-              Array.from({ length: 5 }).map((_, rowIndex) => (
-                <tr key={`skeleton-${rowIndex}`} className="animate-pulse motion-reduce:animate-none">
-                  {rowSelection ? (
-                    <td className={cellPaddingClass}>
-                      <div className="h-4 w-4 rounded bg-slate-200/60"></div>
-                    </td>
-                  ) : null}
-                  {normalizedColumns.map((column) => (
-                    <td key={column.id} className={cellPaddingClass}>
-                      <div className="h-4 w-3/4 rounded bg-slate-200/60"></div>
-                    </td>
-                  ))}
-                </tr>
-              ))
-            ) : (
-              // Actual data rows
-              tableChildren
-            )}
+          <tbody
+            className={`divide-y divide-slate-100 ${tokens.motion.transitionQuick} ${tokens.motion.reduced} ${bodyOpacityClass}`}
+          >
+            {isLoading && dataLength === 0
+              ? // Loading skeleton rows (Pulse is conditionally disabled by motion-reduce in Tailwind output)
+                Array.from({ length: 5 }).map((_, rowIndex) => (
+                  <tr
+                    key={`skeleton-${rowIndex}`}
+                    className="animate-pulse motion-reduce:animate-none"
+                  >
+                    {rowSelection ? (
+                      <td className={cellPaddingClass}>
+                        <div className="h-4 w-4 rounded bg-slate-200/60"></div>
+                      </td>
+                    ) : null}
+                    {normalizedColumns.map((column) => (
+                      <td key={column.id} className={cellPaddingClass}>
+                        <div className="h-4 w-3/4 rounded bg-slate-200/60"></div>
+                      </td>
+                    ))}
+                  </tr>
+                ))
+              : // Actual data rows
+                tableChildren}
           </tbody>
         </table>
       </div>

@@ -8,10 +8,6 @@ export function ApiClientManagementScreen({
   tenantId: string;
 }>) {
   return (
-    <IntegrationManagementScreen
-      tenantId={tenantId}
-      workspaceKind="ac"
-      surface="api-clients"
-    />
+    <IntegrationManagementScreen tenantId={tenantId} workspaceKind="ac" surface="api-clients" />
   );
 }

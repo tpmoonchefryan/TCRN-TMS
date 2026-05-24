@@ -1,8 +1,16 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { NotFoundException } from '@nestjs/common';
-import { createTenantSchema, getTenantSchemaName, prisma, setTenantSchema, withTenantContext } from '@tcrn/database';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import {
+  createTenantSchema,
+  getTenantSchemaName,
+  prisma,
+  setTenantSchema,
+  withTenantContext,
+} from '@tcrn/database';
+
+import { TenantService } from '../tenant.service';
 
 // Mock @tcrn/database before importing service
 vi.mock('@tcrn/database', () => ({
@@ -22,8 +30,6 @@ vi.mock('@tcrn/database', () => ({
   createTenantSchema: vi.fn(),
   withTenantContext: vi.fn(),
 }));
-
-import { TenantService } from '../tenant.service';
 
 const mockPrisma = prisma as unknown as {
   tenant: {
@@ -212,11 +218,11 @@ describe('TenantService', () => {
         service.createTenant({
           code: 'TEST_TENANT',
           name: 'Test Tenant',
-        }),
+        })
       ).rejects.toThrow(schemaFailure);
 
       expect(mockPrisma.$executeRawUnsafe).toHaveBeenCalledWith(
-        'DROP SCHEMA IF EXISTS "tenant_abc123" CASCADE',
+        'DROP SCHEMA IF EXISTS "tenant_abc123" CASCADE'
       );
       expect(mockPrisma.tenant.delete).toHaveBeenCalledWith({
         where: { id: 'tenant-123' },
@@ -255,7 +261,7 @@ describe('TenantService', () => {
       });
 
       const _result = await service.updateTenantSettings('tenant-123', { language: 'ja' });
-      
+
       expect(mockPrisma.tenant.update).toHaveBeenCalledWith({
         where: { id: 'tenant-123' },
         data: { settings: { timezone: 'Asia/Tokyo', language: 'ja' } },
@@ -265,9 +271,9 @@ describe('TenantService', () => {
     it('should throw NotFoundException when tenant not found', async () => {
       mockPrisma.tenant.findUnique.mockResolvedValue(null);
 
-      await expect(
-        service.updateTenantSettings('nonexistent', { language: 'ja' }),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.updateTenantSettings('nonexistent', { language: 'ja' })).rejects.toThrow(
+        NotFoundException
+      );
     });
 
     it('should handle empty existing settings', async () => {
@@ -320,9 +326,7 @@ describe('TenantService', () => {
   describe('withTenant', () => {
     it('should execute function within tenant context', async () => {
       const mockFn = vi.fn().mockResolvedValue('result');
-      (withTenantContext as ReturnType<typeof vi.fn>).mockImplementation(
-        (_schema, fn) => fn(),
-      );
+      (withTenantContext as ReturnType<typeof vi.fn>).mockImplementation((_schema, fn) => fn());
 
       const result = await service.withTenant('tenant_abc123', mockFn);
 

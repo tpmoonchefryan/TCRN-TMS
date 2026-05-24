@@ -1,9 +1,5 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
-import {
-  type HomepageContent,
-  SCHEDULE_COMPONENT_TYPE,
-} from '../dto/homepage.dto';
+import { type HomepageContent, SCHEDULE_COMPONENT_TYPE } from '../dto/homepage.dto';
 
 const SCHEDULE_DAYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const;
 const SCHEDULE_EVENT_TYPES = ['game', 'chat', 'singing', 'collab', 'other'] as const;
@@ -34,9 +30,7 @@ function normalizeScheduleDay(value: unknown): ScheduleDay | null {
   }
 
   const normalized = value.toLowerCase();
-  return SCHEDULE_DAYS.includes(normalized as ScheduleDay)
-    ? (normalized as ScheduleDay)
-    : null;
+  return SCHEDULE_DAYS.includes(normalized as ScheduleDay) ? (normalized as ScheduleDay) : null;
 }
 
 function normalizeScheduleEventType(value: unknown): ScheduleEventType {
@@ -88,7 +82,7 @@ export function parseScheduleComponentProps(value: unknown): ScheduleComponentPr
 }
 
 export function getVisibleScheduleComponentProps(
-  content: HomepageContent,
+  content: HomepageContent
 ): ScheduleComponentProps[] {
   if (!Array.isArray(content.components)) {
     return [];
@@ -96,8 +90,7 @@ export function getVisibleScheduleComponentProps(
 
   return content.components
     .filter(
-      (component) =>
-        component.type === SCHEDULE_COMPONENT_TYPE && component.visible !== false,
+      (component) => component.type === SCHEDULE_COMPONENT_TYPE && component.visible !== false
     )
     .map((component) => parseScheduleComponentProps(component.props))
     .filter((component): component is ScheduleComponentProps => component !== null);

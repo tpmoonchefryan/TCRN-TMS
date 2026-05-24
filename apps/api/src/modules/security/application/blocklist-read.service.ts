@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable, NotFoundException } from '@nestjs/common';
+
 import { ErrorCodes } from '@tcrn/shared';
 
 import {
@@ -13,26 +13,20 @@ import { BlocklistReadRepository } from '../infrastructure/blocklist-read.reposi
 
 @Injectable()
 export class BlocklistReadService {
-  constructor(
-    private readonly blocklistReadRepository: BlocklistReadRepository,
-  ) {}
+  constructor(private readonly blocklistReadRepository: BlocklistReadRepository) {}
 
   async findMany(tenantSchema: string, query: BlocklistListQueryDto) {
     const options = normalizeBlocklistListOptions(query);
     const scopeChain = await this.blocklistReadRepository.getScopeChain(
       tenantSchema,
       options.scopeType,
-      options.scopeId,
+      options.scopeId
     );
 
     const [total, items, disabledIds] = await Promise.all([
       this.blocklistReadRepository.countMany(tenantSchema, options, scopeChain),
       this.blocklistReadRepository.findMany(tenantSchema, options, scopeChain),
-      this.blocklistReadRepository.getDisabledIds(
-        tenantSchema,
-        options.scopeType,
-        options.scopeId,
-      ),
+      this.blocklistReadRepository.getDisabledIds(tenantSchema, options.scopeType, options.scopeId),
     ]);
 
     const enrichedItems = items

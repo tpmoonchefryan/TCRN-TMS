@@ -19,12 +19,18 @@ describe('Generic UI Hardening', () => {
   it('AccountDropdownMenu uses solid white background for menu', async () => {
     const user = userEvent.setup();
     render(
-      <AccountDropdownMenu 
-        user={{ name: 'Test', email: 'test@example.com' }} 
+      <AccountDropdownMenu
+        user={{ name: 'Test', email: 'test@example.com' }}
         onNavigateProfile={vi.fn()}
         onNavigateSecurity={vi.fn()}
         onSignOut={vi.fn()}
-        labels={{ trigger: "Account menu", profile: "My Profile", security: "Security", signOut: "Sign Out", signingOut: "Signing out..." }}
+        labels={{
+          trigger: 'Account menu',
+          profile: 'My Profile',
+          security: 'Security',
+          signOut: 'Sign Out',
+          signingOut: 'Signing out...',
+        }}
       />
     );
     const button = screen.getByRole('button');
@@ -38,7 +44,7 @@ describe('Generic UI Hardening', () => {
   it('LocaleSwitcher uses solid white background for menu', async () => {
     const user = userEvent.setup();
     render(
-      <LocaleSwitcher 
+      <LocaleSwitcher
         locale="en"
         options={[{ code: 'en', label: 'English' }]}
         onChange={vi.fn()}

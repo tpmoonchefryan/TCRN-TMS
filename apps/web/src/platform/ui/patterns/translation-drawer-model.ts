@@ -20,7 +20,9 @@ export interface TranslationLocaleOption {
 
 export type TranslationLocalData = Partial<Record<SupportedUiLocale, Record<string, string>>>;
 export type TranslationFieldPayload = Partial<Record<SupportedUiLocale, string>>;
-export type TranslationSavePayload = Record<string, TranslationFieldPayload> | TranslationFieldPayload;
+export type TranslationSavePayload =
+  | Record<string, TranslationFieldPayload>
+  | TranslationFieldPayload;
 
 const PRIORITY_LOCALES: ReadonlySet<SupportedUiLocale> = new Set(SUPPORTED_UI_LOCALES);
 
@@ -78,11 +80,9 @@ export function createTranslationDraftState(fields: TranslationField[]) {
 
 export function sortActiveLocaleCodes(
   activeLocales: Set<SupportedUiLocale>,
-  availableLocales: TranslationLocaleOption[],
+  availableLocales: TranslationLocaleOption[]
 ) {
-  const availableOrder = new Map(
-    availableLocales.map((locale, index) => [locale.code, index]),
-  );
+  const availableOrder = new Map(availableLocales.map((locale, index) => [locale.code, index]));
 
   return Array.from(activeLocales).sort((left, right) => {
     const leftOrder = availableOrder.get(left);
@@ -106,13 +106,17 @@ export function sortActiveLocaleCodes(
 
 export function splitUnselectedLocaleOptions(
   availableLocales: TranslationLocaleOption[],
-  activeLocales: Set<SupportedUiLocale>,
+  activeLocales: Set<SupportedUiLocale>
 ) {
   const unselectedLocales = availableLocales.filter((locale) => !activeLocales.has(locale.code));
 
   return {
-    longTailUnselectedLocales: unselectedLocales.filter((locale) => !PRIORITY_LOCALES.has(locale.code)),
-    priorityUnselectedLocales: unselectedLocales.filter((locale) => PRIORITY_LOCALES.has(locale.code)),
+    longTailUnselectedLocales: unselectedLocales.filter(
+      (locale) => !PRIORITY_LOCALES.has(locale.code)
+    ),
+    priorityUnselectedLocales: unselectedLocales.filter((locale) =>
+      PRIORITY_LOCALES.has(locale.code)
+    ),
     unselectedLocales,
   };
 }

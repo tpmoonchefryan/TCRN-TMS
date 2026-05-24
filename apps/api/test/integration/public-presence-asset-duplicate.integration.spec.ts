@@ -1,9 +1,11 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
-import 'reflect-metadata';
-
 import type { INestApplication } from '@nestjs/common';
 import { Test, type TestingModule } from '@nestjs/testing';
+import type { PrismaClient } from '@prisma/client';
+import 'reflect-metadata';
+import request from 'supertest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+
 import {
   buildBlankPublicPresenceAssetSourceBundle,
   buildPublicPresenceTemplateAssetManifest,
@@ -13,12 +15,9 @@ import {
   type TenantFixture,
   type TestUser,
 } from '@tcrn/shared';
-import request from 'supertest';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { loadRepoEnvFiles } from '../../src/repo-env';
-import type { PrismaClient } from '@prisma/client';
 import type { PublicPresenceAssetRepository } from '../../src/modules/homepage/infrastructure/public-presence-asset.repository';
+import { loadRepoEnvFiles } from '../../src/repo-env';
 
 loadRepoEnvFiles();
 
@@ -31,12 +30,16 @@ describe('Public Presence asset duplicate integration', () => {
   let accessToken: string;
 
   const withAuth = (req: request.Test) =>
-    req
-      .set('Authorization', `Bearer ${accessToken}`)
-      .set('X-Tenant-ID', tenantFixture.tenant.id);
+    req.set('Authorization', `Bearer ${accessToken}`).set('X-Tenant-ID', tenantFixture.tenant.id);
 
   beforeAll(async () => {
-    const [{ AppModule }, { PrismaClient }, { TokenService }, { PublicPresenceAssetRepository }, { bootstrapTestApp }] = await Promise.all([
+    const [
+      { AppModule },
+      { PrismaClient },
+      { TokenService },
+      { PublicPresenceAssetRepository },
+      { bootstrapTestApp },
+    ] = await Promise.all([
       import('../../src/app.module'),
       import('@prisma/client'),
       import('../../src/modules/auth/token.service'),
@@ -54,12 +57,9 @@ describe('Public Presence asset duplicate integration', () => {
     prisma = new PrismaClient();
     repository = moduleFixture.get(PublicPresenceAssetRepository);
     tenantFixture = await createTestTenantFixture(prisma, 'ppassetdup');
-    testUser = await createTestUserInTenant(
-      prisma,
-      tenantFixture,
-      `pp_asset_dup_${Date.now()}`,
-      ['ADMIN'],
-    );
+    testUser = await createTestUserInTenant(prisma, tenantFixture, `pp_asset_dup_${Date.now()}`, [
+      'ADMIN',
+    ]);
 
     const tokenService = moduleFixture.get(TokenService);
     accessToken = tokenService.generateAccessToken({
@@ -81,17 +81,17 @@ describe('Public Presence asset duplicate integration', () => {
     const listResponse = await withAuth(
       request(app.getHttpServer())
         .get('/api/v1/public-presence/assets')
-        .query({ assetKind: 'template', scopeType: 'tenant' }),
+        .query({ assetKind: 'template', scopeType: 'tenant' })
     ).expect(200);
 
     expect(listResponse.body.success).toBe(true);
 
-    const systemTemplate = listResponse.body.data.find((entry: {
-      asset?: { id?: string; ownerType?: string; templateId?: string };
-      currentRevision?: { id?: string } | null;
-    }) =>
-      entry.asset?.ownerType === 'system'
-      && entry.asset?.templateId === 'activeTalentHub');
+    const systemTemplate = listResponse.body.data.find(
+      (entry: {
+        asset?: { id?: string; ownerType?: string; templateId?: string };
+        currentRevision?: { id?: string } | null;
+      }) => entry.asset?.ownerType === 'system' && entry.asset?.templateId === 'activeTalentHub'
+    );
 
     expect(systemTemplate?.asset?.id).toBeDefined();
     expect(systemTemplate?.currentRevision?.id).toBeDefined();
@@ -101,7 +101,7 @@ describe('Public Presence asset duplicate integration', () => {
       request(app.getHttpServer())
         .post(`/api/v1/public-presence/assets/${systemTemplate.asset.id}/duplicate`)
         .query({ scopeType: 'tenant' })
-        .send({ code: duplicateCode }),
+        .send({ code: duplicateCode })
     ).expect(201);
 
     expect(duplicateResponse.body.success).toBe(true);
@@ -123,17 +123,17 @@ describe('Public Presence asset duplicate integration', () => {
     const listResponse = await withAuth(
       request(app.getHttpServer())
         .get('/api/v1/public-presence/assets')
-        .query({ assetKind: 'component', scopeType: 'tenant' }),
+        .query({ assetKind: 'component', scopeType: 'tenant' })
     ).expect(200);
 
     expect(listResponse.body.success).toBe(true);
 
-    const systemComponent = listResponse.body.data.find((entry: {
-      asset?: { id?: string; ownerType?: string; componentType?: string };
-      currentRevision?: { id?: string } | null;
-    }) =>
-      entry.asset?.ownerType === 'system'
-      && entry.asset?.componentType === 'SocialLinks');
+    const systemComponent = listResponse.body.data.find(
+      (entry: {
+        asset?: { id?: string; ownerType?: string; componentType?: string };
+        currentRevision?: { id?: string } | null;
+      }) => entry.asset?.ownerType === 'system' && entry.asset?.componentType === 'SocialLinks'
+    );
 
     expect(systemComponent?.asset?.id).toBeDefined();
     expect(systemComponent?.currentRevision?.id).toBeDefined();
@@ -143,7 +143,7 @@ describe('Public Presence asset duplicate integration', () => {
       request(app.getHttpServer())
         .post(`/api/v1/public-presence/assets/${systemComponent.asset.id}/duplicate`)
         .query({ scopeType: 'tenant' })
-        .send({ code: duplicateCode }),
+        .send({ code: duplicateCode })
     ).expect(201);
 
     expect(duplicateResponse.body.success).toBe(true);
@@ -201,13 +201,15 @@ describe('Public Presence asset duplicate integration', () => {
           passCount: 0,
           warnCount: 0,
         },
-      }),
+      })
     ).rejects.toThrow();
 
-    const createdAfterFailure = await prisma.$queryRawUnsafe<Array<{
-      id: string;
-      currentRevisionId: string | null;
-    }>>(
+    const createdAfterFailure = await prisma.$queryRawUnsafe<
+      Array<{
+        id: string;
+        currentRevisionId: string | null;
+      }>
+    >(
       `
         SELECT
           id,
@@ -216,7 +218,7 @@ describe('Public Presence asset duplicate integration', () => {
         WHERE code = $1
         LIMIT 1
       `,
-      duplicateCode,
+      duplicateCode
     );
 
     expect(createdAfterFailure).toEqual([]);

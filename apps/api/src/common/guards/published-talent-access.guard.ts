@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import {
   BadRequestException,
   CanActivate,
@@ -8,8 +7,9 @@ import {
   Injectable,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { ErrorCodes } from '@tcrn/shared';
 import { Request } from 'express';
+
+import { ErrorCodes } from '@tcrn/shared';
 
 import { DatabaseService } from '../../modules/database';
 import {
@@ -38,8 +38,7 @@ interface ResolvedTalentCarrier {
   talentId: string;
 }
 
-const UUID_PATTERN =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 const JOB_OWNER_TABLES = {
   export: 'export_job',
@@ -51,14 +50,13 @@ const JOB_OWNER_TABLES = {
 export class PublishedTalentAccessGuard implements CanActivate {
   constructor(
     private readonly reflector: Reflector,
-    private readonly databaseService: DatabaseService,
+    private readonly databaseService: DatabaseService
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const options = this.reflector.getAllAndOverride<RequirePublishedTalentAccessOptions | undefined>(
-      REQUIRE_PUBLISHED_TALENT_ACCESS_KEY,
-      [context.getHandler(), context.getClass()],
-    );
+    const options = this.reflector.getAllAndOverride<
+      RequirePublishedTalentAccessOptions | undefined
+    >(REQUIRE_PUBLISHED_TALENT_ACCESS_KEY, [context.getHandler(), context.getClass()]);
 
     if (!options) {
       return true;
@@ -95,13 +93,11 @@ export class PublishedTalentAccessGuard implements CanActivate {
       });
     }
 
-    const lifecycleStatus = await this.getTalentLifecycleStatus(
-      tenantSchema,
-      uniqueTalentIds[0],
-    );
+    const lifecycleStatus = await this.getTalentLifecycleStatus(tenantSchema, uniqueTalentIds[0]);
 
     const allowsDraft = options.allowDraft === true;
-    const lifecycleAllowed = lifecycleStatus === 'published' || (allowsDraft && lifecycleStatus === 'draft');
+    const lifecycleAllowed =
+      lifecycleStatus === 'published' || (allowsDraft && lifecycleStatus === 'draft');
 
     if (!lifecycleAllowed) {
       throw new ForbiddenException({
@@ -117,7 +113,7 @@ export class PublishedTalentAccessGuard implements CanActivate {
   private async resolveTalentCarriers(
     request: PublishedTalentRequest,
     tenantSchema: string,
-    options: RequirePublishedTalentAccessOptions,
+    options: RequirePublishedTalentAccessOptions
   ): Promise<ResolvedTalentCarrier[]> {
     const carriers: ResolvedTalentCarrier[] = [];
 
@@ -141,7 +137,7 @@ export class PublishedTalentAccessGuard implements CanActivate {
       const talentId = await this.lookupJobOwnerTalentId(
         tenantSchema,
         options.jobOwnerSource,
-        jobId,
+        jobId
       );
 
       if (!talentId) {
@@ -163,7 +159,7 @@ export class PublishedTalentAccessGuard implements CanActivate {
   private appendCarrier(
     carriers: ResolvedTalentCarrier[],
     source: TalentCarrierSource,
-    rawValue: unknown,
+    rawValue: unknown
   ): void {
     const talentId = this.normalizeUuid(rawValue, source);
 
@@ -217,31 +213,37 @@ export class PublishedTalentAccessGuard implements CanActivate {
   private async lookupJobOwnerTalentId(
     tenantSchema: string,
     jobOwnerSource: NonNullable<RequirePublishedTalentAccessOptions['jobOwnerSource']>,
-    jobId: string,
+    jobId: string
   ): Promise<string | null> {
     const prisma = this.databaseService.getPrisma();
     const tableName = JOB_OWNER_TABLES[jobOwnerSource];
-    const results = await prisma.$queryRawUnsafe<Array<{ talentId: string }>>(`
+    const results = await prisma.$queryRawUnsafe<Array<{ talentId: string }>>(
+      `
       SELECT talent_id as "talentId"
       FROM "${tenantSchema}"."${tableName}"
       WHERE id = $1::uuid
       LIMIT 1
-    `, jobId);
+    `,
+      jobId
+    );
 
     return results[0]?.talentId?.toLowerCase() ?? null;
   }
 
   private async getTalentLifecycleStatus(
     tenantSchema: string,
-    talentId: string,
+    talentId: string
   ): Promise<TalentLifecycleStatus | null> {
     const prisma = this.databaseService.getPrisma();
-    const results = await prisma.$queryRawUnsafe<Array<{ lifecycleStatus: TalentLifecycleStatus }>>(`
+    const results = await prisma.$queryRawUnsafe<Array<{ lifecycleStatus: TalentLifecycleStatus }>>(
+      `
       SELECT lifecycle_status as "lifecycleStatus"
       FROM "${tenantSchema}".talent
       WHERE id = $1::uuid
       LIMIT 1
-    `, talentId);
+    `,
+      talentId
+    );
 
     return results[0]?.lifecycleStatus ?? null;
   }

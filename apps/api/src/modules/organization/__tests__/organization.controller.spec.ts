@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import type { Request } from 'express';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -93,22 +92,20 @@ describe('OrganizationController', () => {
 
     controller = new OrganizationController(
       mockOrganizationService as OrganizationService,
-      mockPermissionSnapshotService as never,
+      mockPermissionSnapshotService as never
     );
   });
 
   it('maps the recursive organization tree into the frontend response contract', async () => {
-    (mockOrganizationService.getTree as ReturnType<typeof vi.fn>).mockResolvedValue(organizationTree);
-
-    const result = await controller.getTree(
-      user,
-      {},
-      {
-        headers: {
-          'accept-language': 'zh-CN,zh;q=0.9',
-        },
-      } as Request,
+    (mockOrganizationService.getTree as ReturnType<typeof vi.fn>).mockResolvedValue(
+      organizationTree
     );
+
+    const result = await controller.getTree(user, {}, {
+      headers: {
+        'accept-language': 'zh-CN,zh;q=0.9',
+      },
+    } as Request);
 
     expect(mockOrganizationService.getTree).toHaveBeenCalledWith('tenant-1', 'tenant_test', {
       includeTalents: true,
@@ -188,7 +185,7 @@ describe('OrganizationController', () => {
       'talent',
       'write',
       'tenant',
-      null,
+      null
     );
     expect(mockPermissionSnapshotService.refreshAndCheckPermission).not.toHaveBeenCalled();
   });

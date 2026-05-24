@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { InjectQueue } from '@nestjs/bullmq';
 import {
   BadRequestException,
@@ -7,15 +6,13 @@ import {
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
-import { ErrorCodes, LogSeverity, type RequestContext, TechEventType } from '@tcrn/shared';
 import type { Queue } from 'bullmq';
+
+import { ErrorCodes, LogSeverity, type RequestContext, TechEventType } from '@tcrn/shared';
 
 import { TechEventLogService } from '../../log';
 import { QUEUE_NAMES } from '../../queue';
-import {
-  canCancelReportJob,
-  exceedsReportJobRowLimit,
-} from '../domain/report-job.policy';
+import { canCancelReportJob, exceedsReportJobRowLimit } from '../domain/report-job.policy';
 import {
   MfrFilterCriteriaDto,
   ReportCreateResponse,
@@ -45,7 +42,7 @@ export class ReportJobWriteApplicationService {
     private readonly techEventLog: TechEventLogService,
     @InjectQueue(QUEUE_NAMES.REPORT)
     private readonly reportQueue: Queue,
-    private readonly reportPiiPlatformApplicationService?: ReportPiiPlatformApplicationService,
+    private readonly reportPiiPlatformApplicationService?: ReportPiiPlatformApplicationService
   ) {}
 
   async create(
@@ -54,7 +51,7 @@ export class ReportJobWriteApplicationService {
     filters: MfrFilterCriteriaDto,
     format: ReportFormat,
     estimatedRows: number,
-    context: RequestContext,
+    context: RequestContext
   ): Promise<ReportCreateResponse> {
     if (exceedsReportJobRowLimit(estimatedRows)) {
       throw new BadRequestException({
@@ -63,14 +60,15 @@ export class ReportJobWriteApplicationService {
       });
     }
 
-    const piiPlatformResult = await this.reportPiiPlatformApplicationService?.createMfrReportRequest(
-      reportType,
-      talentId,
-      filters,
-      format,
-      estimatedRows,
-      context,
-    );
+    const piiPlatformResult =
+      await this.reportPiiPlatformApplicationService?.createMfrReportRequest(
+        reportType,
+        talentId,
+        filters,
+        format,
+        estimatedRows,
+        context
+      );
 
     if (piiPlatformResult) {
       return piiPlatformResult;
@@ -78,7 +76,7 @@ export class ReportJobWriteApplicationService {
 
     const talent = await this.reportJobWriteRepository.findTalentForCreation(
       context.tenantSchema,
-      talentId,
+      talentId
     );
 
     if (!talent?.profile_store_id) {
@@ -116,8 +114,7 @@ export class ReportJobWriteApplicationService {
         jobId: job.id,
       });
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Unknown report queue error';
+      const errorMessage = error instanceof Error ? error.message : 'Unknown report queue error';
       await this.reportJobWriteRepository.markJobFailed(context.tenantSchema, job.id, {
         errorCode: 'REPORT_QUEUE_ENQUEUE_FAILED',
         errorMessage,
@@ -128,19 +125,22 @@ export class ReportJobWriteApplicationService {
       });
     }
 
-    await this.techEventLog.log({
-      eventType: TechEventType.SYSTEM_INFO,
-      scope: 'export',
-      severity: LogSeverity.INFO,
-      traceId: job.id,
-      payload: {
-        action: 'report_job_created',
-        jobId: job.id,
-        reportType,
-        estimatedRows,
-        filters,
+    await this.techEventLog.log(
+      {
+        eventType: TechEventType.SYSTEM_INFO,
+        scope: 'export',
+        severity: LogSeverity.INFO,
+        traceId: job.id,
+        payload: {
+          action: 'report_job_created',
+          jobId: job.id,
+          reportType,
+          estimatedRows,
+          filters,
+        },
       },
-    }, context);
+      context
+    );
 
     return {
       deliveryMode: 'tms_job',
@@ -151,15 +151,11 @@ export class ReportJobWriteApplicationService {
     };
   }
 
-  async cancel(
-    jobId: string,
-    talentId: string,
-    context: RequestContext,
-  ) {
+  async cancel(jobId: string, talentId: string, context: RequestContext) {
     const job = await this.reportJobWriteRepository.findCancelableJob(
       context.tenantSchema,
       jobId,
-      talentId,
+      talentId
     );
 
     if (!job) {

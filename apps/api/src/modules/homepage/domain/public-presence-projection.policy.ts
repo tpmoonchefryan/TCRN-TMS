@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) - PolyForm Noncommercial License
-
 import { createHash } from 'node:crypto';
 
 import {
@@ -158,9 +157,7 @@ function canonicalizeValue(value: unknown): unknown {
     return Object.keys(value as Record<string, unknown>)
       .sort((left, right) => left.localeCompare(right))
       .reduce<Record<string, unknown>>((accumulator, key) => {
-        accumulator[key] = canonicalizeValue(
-          (value as Record<string, unknown>)[key],
-        );
+        accumulator[key] = canonicalizeValue((value as Record<string, unknown>)[key]);
         return accumulator;
       }, {});
   }
@@ -194,7 +191,7 @@ function asNumber(value: unknown, fallback: number): number {
 
 function asFieldString(
   section: PublicPresenceDocument['sections'][number] | undefined,
-  fieldKey: string,
+  fieldKey: string
 ): string | null {
   const value = section?.fields?.[fieldKey];
   return value && typeof value === 'object' && 'value' in value
@@ -212,10 +209,7 @@ function sanitizeOrdinaryLabel(value: unknown): string | null {
   return INTERNAL_ORDINARY_LABEL_PATTERN.test(label) ? null : label;
 }
 
-function resolveSafeOrdinaryLabel(
-  candidates: readonly unknown[],
-  fallback: string,
-): string {
+function resolveSafeOrdinaryLabel(candidates: readonly unknown[], fallback: string): string {
   for (const candidate of candidates) {
     const safeLabel = sanitizeOrdinaryLabel(candidate);
 
@@ -238,14 +232,12 @@ function sanitizeOrdinaryTimezone(value: unknown): string | null {
 }
 
 function getDefaultHeroDescription(templateId: PublicPresenceDocument['templateId']) {
-  return templateId === 'debutReveal'
-    ? DEFAULT_DEBUT_DESCRIPTION
-    : DEFAULT_ACTIVE_HUB_DESCRIPTION;
+  return templateId === 'debutReveal' ? DEFAULT_DEBUT_DESCRIPTION : DEFAULT_ACTIVE_HUB_DESCRIPTION;
 }
 
 function asFieldArray<T>(
   section: PublicPresenceDocument['sections'][number] | undefined,
-  fieldKey: string,
+  fieldKey: string
 ): T[] {
   const value = section?.fields?.[fieldKey];
   if (!value || typeof value !== 'object' || !('value' in value)) {
@@ -267,7 +259,7 @@ function resolveRevealPhaseOrder(phase: PublicPresencePhaseVisibility): number {
 
 function isSectionVisibleForPhase(
   requiredPhase: PublicPresencePhaseVisibility | undefined,
-  resolvedPhase: PublicPresencePhaseVisibility,
+  resolvedPhase: PublicPresencePhaseVisibility
 ): boolean {
   const phase = requiredPhase ?? 'always';
 
@@ -297,7 +289,7 @@ function pushFallbackDecision(
   runtime: ProjectionRuntimeState,
   path: string[],
   policy: PublicPresenceFallbackPolicy,
-  reason: string,
+  reason: string
 ) {
   runtime.fallbackDecisions.push({
     path,
@@ -320,12 +312,12 @@ function stripTrackingParams(url: URL) {
 
 function hasUnsafeInternalPathShape(value: string) {
   return (
-    value.startsWith('//')
-    || value.startsWith('/\\')
-    || value.startsWith('/%2f')
-    || value.startsWith('/%2F')
-    || value.startsWith('/%5c')
-    || value.startsWith('/%5C')
+    value.startsWith('//') ||
+    value.startsWith('/\\') ||
+    value.startsWith('/%2f') ||
+    value.startsWith('/%2F') ||
+    value.startsWith('/%5c') ||
+    value.startsWith('/%5C')
   );
 }
 
@@ -333,10 +325,10 @@ function hasEncodedProtocolRelativeBypass(value: string) {
   const lowered = value.toLowerCase();
 
   return (
-    lowered.includes('%2f%2f')
-    || lowered.includes('%2f%5c')
-    || lowered.includes('%5c%2f')
-    || lowered.includes('%5c%5c')
+    lowered.includes('%2f%2f') ||
+    lowered.includes('%2f%5c') ||
+    lowered.includes('%5c%2f') ||
+    lowered.includes('%5c%5c')
   );
 }
 
@@ -350,7 +342,7 @@ function sanitizePublicUrl(
     | 'streamUrl'
     | 'launchUrl'
     | 'mediaAssetUrl'
-    | 'embedUrl',
+    | 'embedUrl'
 ): SanitizedUrlResult {
   if (!value) {
     return { reason: null, value: null };
@@ -367,9 +359,9 @@ function sanitizePublicUrl(
   }
 
   if (
-    trimmed.startsWith('//')
-    || trimmed.startsWith('\\')
-    || hasEncodedProtocolRelativeBypass(trimmed)
+    trimmed.startsWith('//') ||
+    trimmed.startsWith('\\') ||
+    hasEncodedProtocolRelativeBypass(trimmed)
   ) {
     return { reason: 'blocked-protocol-relative', value: null };
   }
@@ -394,11 +386,11 @@ function sanitizePublicUrl(
   }
 
   if (
-    policy.allowListedHosts
-    && !policy.allowListedHosts.some(
+    policy.allowListedHosts &&
+    !policy.allowListedHosts.some(
       (allowedHost) =>
-        parsed.hostname.toLowerCase() === allowedHost
-        || parsed.hostname.toLowerCase().endsWith(`.${allowedHost}`),
+        parsed.hostname.toLowerCase() === allowedHost ||
+        parsed.hostname.toLowerCase().endsWith(`.${allowedHost}`)
     )
   ) {
     return { reason: 'unapproved-host', value: null };
@@ -409,15 +401,11 @@ function sanitizePublicUrl(
   return { reason: null, value: parsed.toString() };
 }
 
-function sanitizeMediaUrl(
-  value: string | null,
-): SanitizedUrlResult {
+function sanitizeMediaUrl(value: string | null): SanitizedUrlResult {
   return sanitizePublicUrl(value, 'mediaAssetUrl');
 }
 
-function sanitizeEmbedUrl(
-  value: string | null,
-): SanitizedUrlResult {
+function sanitizeEmbedUrl(value: string | null): SanitizedUrlResult {
   return sanitizePublicUrl(value, 'embedUrl');
 }
 
@@ -427,7 +415,7 @@ function isSafeCssColor(value: string | null) {
   }
 
   return /^(#[0-9a-fA-F]{3,8}|rgba?\([\d\s.,%]+\)|hsla?\([\d\s.,%]+\)|[a-zA-Z-]{1,32})$/.test(
-    value.trim(),
+    value.trim()
   );
 }
 
@@ -437,10 +425,7 @@ function isSafeGradient(value: string | null) {
   }
 
   const trimmed = value.trim();
-  return (
-    trimmed.startsWith('linear-gradient(')
-    && !/url\(|expression\(|javascript:/i.test(trimmed)
-  );
+  return trimmed.startsWith('linear-gradient(') && !/url\(|expression\(|javascript:/i.test(trimmed);
 }
 
 function sanitizeTheme(rawTheme: unknown, runtime: ProjectionRuntimeState): ThemeConfig {
@@ -457,9 +442,7 @@ function sanitizeTheme(rawTheme: unknown, runtime: ProjectionRuntimeState): Them
       background: isSafeCssColor(theme.colors.background)
         ? theme.colors.background
         : DEFAULT_THEME.colors.background,
-      text: isSafeCssColor(theme.colors.text)
-        ? theme.colors.text
-        : DEFAULT_THEME.colors.text,
+      text: isSafeCssColor(theme.colors.text) ? theme.colors.text : DEFAULT_THEME.colors.text,
       textSecondary: isSafeCssColor(theme.colors.textSecondary)
         ? theme.colors.textSecondary
         : DEFAULT_THEME.colors.textSecondary,
@@ -471,9 +454,9 @@ function sanitizeTheme(rawTheme: unknown, runtime: ProjectionRuntimeState): Them
         ? theme.card.background
         : DEFAULT_THEME.card.background,
       border:
-        typeof theme.card.border === 'string'
-        && /^[\d.\spx]+(solid|dashed|dotted)\s+(#[0-9a-fA-F]{3,8}|rgba?\([\d\s.,%]+\)|hsla?\([\d\s.,%]+\)|[a-zA-Z-]{1,32})$/.test(
-          theme.card.border.trim(),
+        typeof theme.card.border === 'string' &&
+        /^[\d.\spx]+(solid|dashed|dotted)\s+(#[0-9a-fA-F]{3,8}|rgba?\([\d\s.,%]+\)|hsla?\([\d\s.,%]+\)|[a-zA-Z-]{1,32})$/.test(
+          theme.card.border.trim()
         )
           ? theme.card.border
           : DEFAULT_THEME.card.border,
@@ -514,7 +497,7 @@ function sanitizeTheme(rawTheme: unknown, runtime: ProjectionRuntimeState): Them
       runtime,
       ['appearance', 'theme', 'background', 'value'],
       'safePlaceholder',
-      safeImage.reason ?? 'unsafe-background-image',
+      safeImage.reason ?? 'unsafe-background-image'
     );
     safeTheme.background = DEFAULT_THEME.background;
     return safeTheme;
@@ -539,7 +522,7 @@ function sanitizeRichTextHtml(value: string | null): string | null {
 
   if (
     /(?:href|src)\s*=\s*["']?\s*(?:\/\/|\/\\|https?:\/\/[^"'\s]*@|https?:\/\/[^"'\s]*(?:%2f%2f|%5c%5c))/i.test(
-      value,
+      value
     )
   ) {
     return null;
@@ -554,7 +537,10 @@ function sanitizeRichTextHtml(value: string | null): string | null {
     .replace(/\s(src|href)=(?:"javascript:[^"]*"|'javascript:[^']*')/gi, '');
 
   if (/(<script|<style|<iframe|javascript:|\son\w+=|\sstyle=)/i.test(sanitized)) {
-    const plainText = sanitized.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+    const plainText = sanitized
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
     sanitized = plainText ? `<p>${plainText}</p>` : '';
   }
 
@@ -616,7 +602,7 @@ function buildCacheKeys(route: BuildPublicHomepageProjectionRouteInput) {
 
   if (route.tenantCode && route.talentCode) {
     cacheKeys.push(
-      `public-homepage:codes:${route.tenantCode.toLowerCase()}:${route.talentCode.toLowerCase()}`,
+      `public-homepage:codes:${route.tenantCode.toLowerCase()}:${route.talentCode.toLowerCase()}`
     );
   }
 
@@ -627,9 +613,7 @@ function buildCacheKeys(route: BuildPublicHomepageProjectionRouteInput) {
   return cacheKeys;
 }
 
-function calculateProjectionHash(
-  projection: Omit<PublicPresenceProjection, 'projectionHash'>,
-) {
+function calculateProjectionHash(projection: Omit<PublicPresenceProjection, 'projectionHash'>) {
   return stableHash({
     actions: projection.actions,
     appearance: projection.appearance,
@@ -663,7 +647,7 @@ function getVisibleComponents(content: HomepageContent): CompatibilityComponent[
 
 function createAction(
   runtime: ProjectionRuntimeState,
-  input: Omit<PublicPresenceProjectedAction, 'id'>,
+  input: Omit<PublicPresenceProjectedAction, 'id'>
 ): PublicPresenceProjectedAction {
   const action = {
     ...input,
@@ -677,7 +661,7 @@ function createAction(
 
 function createMedia(
   runtime: ProjectionRuntimeState,
-  input: Omit<PublicPresenceProjectedMedia, 'id'>,
+  input: Omit<PublicPresenceProjectedMedia, 'id'>
 ): PublicPresenceProjectedMedia {
   const media = {
     ...input,
@@ -693,18 +677,13 @@ function buildAvatarMedia(
   runtime: ProjectionRuntimeState,
   url: string | null,
   alt: string | null,
-  path: string[],
+  path: string[]
 ): PublicPresenceProjectedMedia | null {
   const safeUrl = sanitizeMediaUrl(url);
 
   if (!safeUrl.value) {
     if (url) {
-      pushFallbackDecision(
-        runtime,
-        path,
-        'safePlaceholder',
-        safeUrl.reason ?? 'unsafe-avatar',
-      );
+      pushFallbackDecision(runtime, path, 'safePlaceholder', safeUrl.reason ?? 'unsafe-avatar');
     }
     return null;
   }
@@ -722,15 +701,13 @@ function buildAvatarMedia(
 
 function buildHeroSection(
   data: PublicHomepageData,
-  runtime: ProjectionRuntimeState,
+  runtime: ProjectionRuntimeState
 ): PublicPresenceProjectedHeroSection {
   const avatar = buildAvatarMedia(
     runtime,
     data.talent.avatarUrl,
-    data.talent.displayName
-      ? `${data.talent.displayName} avatar`
-      : 'Profile avatar',
-    ['talent', 'avatarUrl'],
+    data.talent.displayName ? `${data.talent.displayName} avatar` : 'Profile avatar',
+    ['talent', 'avatarUrl']
   );
 
   return {
@@ -750,7 +727,7 @@ function buildHeroSection(
 
 function buildProfileCardSection(
   component: CompatibilityComponent,
-  runtime: ProjectionRuntimeState,
+  runtime: ProjectionRuntimeState
 ): PublicPresenceProjectedProfileCardSection {
   return {
     id: component.id,
@@ -767,26 +744,21 @@ function buildProfileCardSection(
       asString(component.props.displayName)
         ? `${asString(component.props.displayName)} avatar`
         : 'Profile avatar',
-      ['sections', component.id, 'avatarUrl'],
+      ['sections', component.id, 'avatarUrl']
     ),
   };
 }
 
 function buildSocialLinksSection(
   component: CompatibilityComponent,
-  runtime: ProjectionRuntimeState,
+  runtime: ProjectionRuntimeState
 ): PublicPresenceProjectedSocialLinksSection | PublicPresenceProjectedFallbackCardSection {
-  const platforms = Array.isArray(component.props.platforms)
-    ? component.props.platforms
-    : [];
+  const platforms = Array.isArray(component.props.platforms) ? component.props.platforms : [];
 
   const links = platforms
     .map((entry, index) => {
       const item = asRecord(entry);
-      const safeUrl = sanitizePublicUrl(
-        asString(item.url),
-        'officialChannelUrl',
-      );
+      const safeUrl = sanitizePublicUrl(asString(item.url), 'officialChannelUrl');
 
       if (!safeUrl.value) {
         if (item.url) {
@@ -794,7 +766,7 @@ function buildSocialLinksSection(
             runtime,
             ['sections', component.id, 'platforms', String(index), 'url'],
             'safePlaceholder',
-            safeUrl.reason ?? 'unsafe-official-channel',
+            safeUrl.reason ?? 'unsafe-official-channel'
           );
         }
         return null;
@@ -802,10 +774,7 @@ function buildSocialLinksSection(
 
       return createAction(runtime, {
         slot: 'officialChannel',
-        label:
-          asString(item.label)
-          ?? asString(item.platformCode)
-          ?? '__officialChannel__',
+        label: asString(item.label) ?? asString(item.platformCode) ?? '__officialChannel__',
         href: safeUrl.value,
         providerId: asString(item.platformCode),
         category: 'officialChannelUrl',
@@ -838,13 +807,11 @@ function buildSocialLinksSection(
     title: null,
     links,
     layout:
-      asString(component.props.layout) === 'vertical'
-      || asString(component.props.layout) === 'grid'
+      asString(component.props.layout) === 'vertical' || asString(component.props.layout) === 'grid'
         ? (asString(component.props.layout) as 'vertical' | 'grid')
         : 'horizontal',
     style:
-      asString(component.props.style) === 'icon'
-      || asString(component.props.style) === 'button'
+      asString(component.props.style) === 'icon' || asString(component.props.style) === 'button'
         ? (asString(component.props.style) as 'icon' | 'button')
         : 'pill',
   };
@@ -852,7 +819,7 @@ function buildSocialLinksSection(
 
 function buildImageGallerySection(
   component: CompatibilityComponent,
-  runtime: ProjectionRuntimeState,
+  runtime: ProjectionRuntimeState
 ): PublicPresenceProjectedImageGallerySection | PublicPresenceProjectedFallbackCardSection {
   const images = Array.isArray(component.props.images) ? component.props.images : [];
   const projectedImages = images
@@ -866,7 +833,7 @@ function buildImageGallerySection(
             runtime,
             ['sections', component.id, 'images', String(index), 'url'],
             'safePlaceholder',
-            safeUrl.reason ?? 'unsafe-gallery-image',
+            safeUrl.reason ?? 'unsafe-gallery-image'
           );
         }
         return null;
@@ -913,7 +880,7 @@ function buildImageGallerySection(
 
 function buildVideoEmbedSection(
   component: CompatibilityComponent,
-  runtime: ProjectionRuntimeState,
+  runtime: ProjectionRuntimeState
 ): PublicPresenceProjectedVideoEmbedSection | PublicPresenceProjectedFallbackCardSection {
   const rawVideoUrl = asString(component.props.videoUrl);
   const safeUrl = sanitizeEmbedUrl(rawVideoUrl);
@@ -936,7 +903,7 @@ function buildVideoEmbedSection(
         runtime,
         ['sections', component.id, 'videoUrl'],
         'safePlaceholder',
-        safeUrl.reason ?? 'provider-fallback',
+        safeUrl.reason ?? 'provider-fallback'
       );
 
       return {
@@ -950,8 +917,8 @@ function buildVideoEmbedSection(
         providerId: null,
         iframeSrc: null,
         aspectRatio:
-          asString(component.props.aspectRatio) === '4:3'
-          || asString(component.props.aspectRatio) === '1:1'
+          asString(component.props.aspectRatio) === '4:3' ||
+          asString(component.props.aspectRatio) === '1:1'
             ? (asString(component.props.aspectRatio) as '4:3' | '1:1')
             : '16:9',
         allow: null,
@@ -966,7 +933,7 @@ function buildVideoEmbedSection(
         runtime,
         ['sections', component.id, 'videoUrl'],
         'safePlaceholder',
-        safeUrl.reason ?? 'unsafe-embed-url',
+        safeUrl.reason ?? 'unsafe-embed-url'
       );
     }
     return {
@@ -997,7 +964,7 @@ function buildVideoEmbedSection(
       runtime,
       ['sections', component.id, 'videoUrl'],
       'safePlaceholder',
-      'provider-fallback',
+      'provider-fallback'
     );
 
     return {
@@ -1011,8 +978,8 @@ function buildVideoEmbedSection(
       providerId: null,
       iframeSrc: null,
       aspectRatio:
-        asString(component.props.aspectRatio) === '4:3'
-        || asString(component.props.aspectRatio) === '1:1'
+        asString(component.props.aspectRatio) === '4:3' ||
+        asString(component.props.aspectRatio) === '1:1'
           ? (asString(component.props.aspectRatio) as '4:3' | '1:1')
           : '16:9',
       allow: null,
@@ -1043,11 +1010,12 @@ function buildVideoEmbedSection(
     providerId: 'youtube',
     iframeSrc: youtube.embedUrl,
     aspectRatio:
-      asString(component.props.aspectRatio) === '4:3'
-      || asString(component.props.aspectRatio) === '1:1'
+      asString(component.props.aspectRatio) === '4:3' ||
+      asString(component.props.aspectRatio) === '1:1'
         ? (asString(component.props.aspectRatio) as '4:3' | '1:1')
         : '16:9',
-    allow: 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share',
+    allow:
+      'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share',
     referrerPolicy: 'strict-origin-when-cross-origin',
     sandbox: 'allow-scripts allow-same-origin allow-presentation',
     fallbackAction,
@@ -1056,7 +1024,7 @@ function buildVideoEmbedSection(
 
 function buildRichTextSection(
   component: CompatibilityComponent,
-  runtime: ProjectionRuntimeState,
+  runtime: ProjectionRuntimeState
 ): PublicPresenceProjectedRichTextSection | PublicPresenceProjectedFallbackCardSection | null {
   const html = sanitizeRichTextHtml(asString(component.props.contentHtml));
 
@@ -1065,7 +1033,7 @@ function buildRichTextSection(
       runtime,
       ['sections', component.id, 'contentHtml'],
       'stripField',
-      'empty-or-unsafe-rich-text',
+      'empty-or-unsafe-rich-text'
     );
     return null;
   }
@@ -1079,8 +1047,8 @@ function buildRichTextSection(
     validationIssueIds: [],
     html,
     textAlign:
-      asString(component.props.textAlign) === 'center'
-      || asString(component.props.textAlign) === 'right'
+      asString(component.props.textAlign) === 'center' ||
+      asString(component.props.textAlign) === 'right'
         ? (asString(component.props.textAlign) as 'center' | 'right')
         : 'left',
   };
@@ -1088,7 +1056,7 @@ function buildRichTextSection(
 
 function buildLinkButtonSection(
   component: CompatibilityComponent,
-  runtime: ProjectionRuntimeState,
+  runtime: ProjectionRuntimeState
 ): PublicPresenceProjectedLinkButtonSection | PublicPresenceProjectedFallbackCardSection {
   const safeUrl = sanitizePublicUrl(asString(component.props.url), 'fanActionUrl');
 
@@ -1098,7 +1066,7 @@ function buildLinkButtonSection(
         runtime,
         ['sections', component.id, 'url'],
         'safePlaceholder',
-        safeUrl.reason ?? 'unsafe-link-button',
+        safeUrl.reason ?? 'unsafe-link-button'
       );
     }
 
@@ -1135,13 +1103,13 @@ function buildLinkButtonSection(
 
 function buildMarshmallowSection(
   component: CompatibilityComponent,
-  runtime: ProjectionRuntimeState,
+  runtime: ProjectionRuntimeState
 ): PublicPresenceProjectedMarshmallowSection {
   pushFallbackDecision(
     runtime,
     ['sections', component.id],
     'safePlaceholder',
-    'internal-route-only-marshmallow',
+    'internal-route-only-marshmallow'
   );
 
   return {
@@ -1179,13 +1147,11 @@ function buildScheduleEvents(value: unknown): PublicPresenceProjectedScheduleEve
         title,
       };
     })
-    .filter(
-      (entry): entry is PublicPresenceProjectedScheduleEvent => Boolean(entry),
-    );
+    .filter((entry): entry is PublicPresenceProjectedScheduleEvent => Boolean(entry));
 }
 
 function buildScheduleSection(
-  component: CompatibilityComponent,
+  component: CompatibilityComponent
 ): PublicPresenceProjectedScheduleSection {
   return {
     id: component.id,
@@ -1202,13 +1168,13 @@ function buildScheduleSection(
 
 function buildMusicPlayerSection(
   component: CompatibilityComponent,
-  runtime: ProjectionRuntimeState,
+  runtime: ProjectionRuntimeState
 ): PublicPresenceProjectedMusicPlayerSection {
   pushFallbackDecision(
     runtime,
     ['sections', component.id],
     'lockedSourceOwned',
-    'music-player-deferred',
+    'music-player-deferred'
   );
 
   return {
@@ -1226,19 +1192,19 @@ function buildMusicPlayerSection(
 
 function buildLiveStatusSection(
   component: CompatibilityComponent,
-  runtime: ProjectionRuntimeState,
+  runtime: ProjectionRuntimeState
 ): PublicPresenceProjectedLiveStatusSection {
   const safeUrl = sanitizePublicUrl(asString(component.props.streamUrl), 'streamUrl');
   const streamAction = safeUrl.value
     ? createAction(runtime, {
-      slot: 'stream',
-      label: '__openStream__',
-      href: safeUrl.value,
-      providerId: asString(component.props.platform),
-      category: 'streamUrl',
-      phaseVisibility: 'always',
-      fallbackBehavior: 'safePlaceholder',
-    })
+        slot: 'stream',
+        label: '__openStream__',
+        href: safeUrl.value,
+        providerId: asString(component.props.platform),
+        category: 'streamUrl',
+        phaseVisibility: 'always',
+        fallbackBehavior: 'safePlaceholder',
+      })
     : null;
 
   if (!streamAction && component.props.streamUrl) {
@@ -1246,7 +1212,7 @@ function buildLiveStatusSection(
       runtime,
       ['sections', component.id, 'streamUrl'],
       'safePlaceholder',
-      safeUrl.reason ?? 'unsafe-stream-url',
+      safeUrl.reason ?? 'unsafe-stream-url'
     );
   }
 
@@ -1267,7 +1233,7 @@ function buildLiveStatusSection(
 }
 
 function buildDividerSection(
-  component: CompatibilityComponent,
+  component: CompatibilityComponent
 ): PublicPresenceProjectedDividerSection {
   return {
     id: component.id,
@@ -1277,20 +1243,18 @@ function buildDividerSection(
     fallbackBehavior: 'safePlaceholder',
     validationIssueIds: [],
     style:
-      asString(component.props.style) === 'dashed'
-      || asString(component.props.style) === 'dotted'
+      asString(component.props.style) === 'dashed' || asString(component.props.style) === 'dotted'
         ? (asString(component.props.style) as 'dashed' | 'dotted')
         : 'solid',
     spacing:
-      asString(component.props.spacing) === 'small'
-      || asString(component.props.spacing) === 'large'
+      asString(component.props.spacing) === 'small' || asString(component.props.spacing) === 'large'
         ? (asString(component.props.spacing) as 'small' | 'large')
         : 'medium',
   };
 }
 
 function buildSpacerSection(
-  component: CompatibilityComponent,
+  component: CompatibilityComponent
 ): PublicPresenceProjectedSpacerSection {
   return {
     id: component.id,
@@ -1300,9 +1264,9 @@ function buildSpacerSection(
     fallbackBehavior: 'safePlaceholder',
     validationIssueIds: [],
     height:
-      asString(component.props.height) === 'small'
-      || asString(component.props.height) === 'large'
-      || asString(component.props.height) === 'xlarge'
+      asString(component.props.height) === 'small' ||
+      asString(component.props.height) === 'large' ||
+      asString(component.props.height) === 'xlarge'
         ? (asString(component.props.height) as 'small' | 'large' | 'xlarge')
         : 'medium',
   };
@@ -1310,21 +1274,21 @@ function buildSpacerSection(
 
 function buildBilibiliDynamicSection(
   component: CompatibilityComponent,
-  runtime: ProjectionRuntimeState,
+  runtime: ProjectionRuntimeState
 ): PublicPresenceProjectedBilibiliDynamicSection {
   const uid = asString(component.props.uid);
   const profileHref = uid ? `https://space.bilibili.com/${uid}/dynamic` : null;
   const safeUrl = sanitizePublicUrl(profileHref, 'officialChannelUrl');
   const profileAction = safeUrl.value
     ? createAction(runtime, {
-      slot: 'bilibiliProfile',
-      label: '__viewBilibiliDynamics__',
-      href: safeUrl.value,
-      providerId: 'bilibili',
-      category: 'officialChannelUrl',
-      phaseVisibility: 'always',
-      fallbackBehavior: 'safePlaceholder',
-    })
+        slot: 'bilibiliProfile',
+        label: '__viewBilibiliDynamics__',
+        href: safeUrl.value,
+        providerId: 'bilibili',
+        category: 'officialChannelUrl',
+        phaseVisibility: 'always',
+        fallbackBehavior: 'safePlaceholder',
+      })
     : null;
 
   return {
@@ -1342,13 +1306,13 @@ function buildBilibiliDynamicSection(
 
 function buildFallbackSection(
   component: CompatibilityComponent,
-  runtime: ProjectionRuntimeState,
+  runtime: ProjectionRuntimeState
 ): PublicPresenceProjectedFallbackCardSection {
   pushFallbackDecision(
     runtime,
     ['sections', component.id],
     'lockedSourceOwned',
-    `unsupported-component:${component.type}`,
+    `unsupported-component:${component.type}`
   );
 
   return {
@@ -1365,7 +1329,7 @@ function buildFallbackSection(
 
 function buildComponentSection(
   component: CompatibilityComponent,
-  runtime: ProjectionRuntimeState,
+  runtime: ProjectionRuntimeState
 ): PublicPresenceProjectedSection | null {
   switch (component.type) {
     case 'ProfileCard':
@@ -1401,7 +1365,7 @@ function buildComponentSection(
 
 function assignHeroPrimaryAction(
   hero: PublicPresenceProjectedHeroSection,
-  sections: PublicPresenceProjectedSection[],
+  sections: PublicPresenceProjectedSection[]
 ) {
   for (const section of sections) {
     if (section.sectionType === 'liveStatus' && section.streamAction?.href) {
@@ -1429,7 +1393,7 @@ function assignHeroPrimaryAction(
 function buildMetadata(
   data: PublicHomepageData,
   route: BuildPublicHomepageProjectionRouteInput,
-  runtime: ProjectionRuntimeState,
+  runtime: ProjectionRuntimeState
 ) {
   const safeOgImage = sanitizeMediaUrl(data.seo.ogImageUrl);
 
@@ -1438,28 +1402,28 @@ function buildMetadata(
       runtime,
       ['metadata', 'ogImageUrl'],
       'safePlaceholder',
-      safeOgImage.reason ?? 'unsafe-og-image',
+      safeOgImage.reason ?? 'unsafe-og-image'
     );
   }
 
   const title = data.seo.title?.trim() || data.talent.displayName || 'TCRN TMS';
   const description =
-    data.seo.description?.trim()
-    || (data.talent.displayName
+    data.seo.description?.trim() ||
+    (data.talent.displayName
       ? `${data.talent.displayName} public homepage`
       : 'Public talent homepage');
   const ogImage = safeOgImage.value
     ? createMedia(runtime, {
-      kind: 'ogImage',
-      providerId: null,
-      assetId: null,
-      url: safeOgImage.value,
-      alt: data.talent.displayName
-        ? `${data.talent.displayName} public homepage preview`
-        : 'Public homepage preview',
-      phaseVisibility: 'always',
-      fallbackBehavior: 'safePlaceholder',
-    })
+        kind: 'ogImage',
+        providerId: null,
+        assetId: null,
+        url: safeOgImage.value,
+        alt: data.talent.displayName
+          ? `${data.talent.displayName} public homepage preview`
+          : 'Public homepage preview',
+        phaseVisibility: 'always',
+        fallbackBehavior: 'safePlaceholder',
+      })
     : null;
 
   return {
@@ -1477,7 +1441,7 @@ function collectValidationIssueIds(
   input: {
     componentId?: string;
     sectionId?: string;
-  },
+  }
 ): string[] {
   return snapshot.issues
     .filter((issue) => {
@@ -1492,7 +1456,7 @@ function collectValidationIssueIds(
 
 function mergeFallbackDecisions(
   validationFallbacks: PublicPresenceFallbackDecision[],
-  projectionFallbacks: PublicPresenceFallbackDecision[],
+  projectionFallbacks: PublicPresenceFallbackDecision[]
 ): PublicPresenceFallbackDecision[] {
   const merged = [...validationFallbacks, ...projectionFallbacks];
   const seen = new Set<string>();
@@ -1512,7 +1476,7 @@ function mergeFallbackDecisions(
 function resolveDocumentTheme(
   document: PublicPresenceDocument,
   runtime: ProjectionRuntimeState,
-  themeOverride?: ThemeConfig | Record<string, unknown> | null,
+  themeOverride?: ThemeConfig | Record<string, unknown> | null
 ) {
   if (themeOverride) {
     return sanitizeTheme(themeOverride, runtime);
@@ -1531,29 +1495,26 @@ function resolveDocumentTheme(
         accent: accentTone,
       },
     },
-    runtime,
+    runtime
   );
 }
 
 function resolveDocumentRevealPhase(
   document: PublicPresenceDocument,
-  revealPhaseOverride: PublicPresencePhaseVisibility | 'current' | null | undefined,
+  revealPhaseOverride: PublicPresencePhaseVisibility | 'current' | null | undefined
 ) {
   if (revealPhaseOverride && revealPhaseOverride !== 'current') {
     return revealPhaseOverride;
   }
 
-  const countdownSection = document.sections.find(
-    (section) => section.kind === 'countdownReveal',
-  );
+  const countdownSection = document.sections.find((section) => section.kind === 'countdownReveal');
 
   if (!countdownSection) {
     return 'always' as PublicPresencePhaseVisibility;
   }
 
   const configuredPhase =
-    (asFieldString(countdownSection, 'phase') as PublicPresencePhaseVisibility | null)
-    ?? 'teaser';
+    (asFieldString(countdownSection, 'phase') as PublicPresencePhaseVisibility | null) ?? 'teaser';
   const revealAt = asFieldString(countdownSection, 'revealAtUtc');
 
   if (configuredPhase === 'preRevealHold' || !revealAt) {
@@ -1579,14 +1540,10 @@ function resolveDocumentRevealPhase(
 function resolveHeroTitle(
   document: PublicPresenceDocument,
   resolvedRevealPhase: PublicPresencePhaseVisibility,
-  talentDisplayName: string | null,
+  talentDisplayName: string | null
 ) {
-  const firstEncounter = document.sections.find(
-    (section) => section.kind === 'firstEncounter',
-  );
-  const countdownSection = document.sections.find(
-    (section) => section.kind === 'countdownReveal',
-  );
+  const firstEncounter = document.sections.find((section) => section.kind === 'firstEncounter');
+  const countdownSection = document.sections.find((section) => section.kind === 'countdownReveal');
   const safeMetadataTitle = sanitizeOrdinaryLabel(document.metadata?.title);
 
   if (document.templateId === 'debutReveal' && countdownSection) {
@@ -1599,7 +1556,7 @@ function resolveHeroTitle(
           talentDisplayName,
           safeMetadataTitle,
         ],
-        DEFAULT_DEBUT_PREVIEW_TITLE,
+        DEFAULT_DEBUT_PREVIEW_TITLE
       );
     }
 
@@ -1611,29 +1568,29 @@ function resolveHeroTitle(
         talentDisplayName,
         safeMetadataTitle,
       ],
-      DEFAULT_DEBUT_REVEAL_TITLE,
+      DEFAULT_DEBUT_REVEAL_TITLE
     );
   }
 
   return resolveSafeOrdinaryLabel(
     [asFieldString(firstEncounter, 'displayName'), talentDisplayName, safeMetadataTitle],
-    DEFAULT_PUBLIC_PRESENCE_TITLE,
+    DEFAULT_PUBLIC_PRESENCE_TITLE
   );
 }
 
 function buildDocumentHeroSection(
-  context: PublicPresenceProjectionDraftContext,
+  context: PublicPresenceProjectionDraftContext
 ): PublicPresenceProjectedHeroSection {
   const firstEncounter = context.document.sections.find(
-    (section) => section.kind === 'firstEncounter',
+    (section) => section.kind === 'firstEncounter'
   );
   const countdownSection = context.document.sections.find(
-    (section) => section.kind === 'countdownReveal',
+    (section) => section.kind === 'countdownReveal'
   );
   const title = resolveHeroTitle(
     context.document,
     context.resolvedRevealPhase,
-    context.talentDisplayName,
+    context.talentDisplayName
   );
   const description = resolveSafeOrdinaryLabel(
     [
@@ -1642,14 +1599,14 @@ function buildDocumentHeroSection(
       asString(context.document.metadata?.description),
       asString(context.document.personaKit?.tagline),
     ],
-    getDefaultHeroDescription(context.document.templateId),
+    getDefaultHeroDescription(context.document.templateId)
   );
   const timezone = sanitizeOrdinaryTimezone(asFieldString(countdownSection, 'timezone'));
   const avatar = buildAvatarMedia(
     context.runtime,
     asFieldString(firstEncounter, 'avatarUrl') ?? asFieldString(firstEncounter, 'heroMediaUrl'),
     title ? `${title} avatar` : 'Profile avatar',
-    ['sections', firstEncounter?.id ?? 'firstEncounter', 'fields', 'avatarUrl'],
+    ['sections', firstEncounter?.id ?? 'firstEncounter', 'fields', 'avatarUrl']
   );
 
   return {
@@ -1670,10 +1627,10 @@ function buildDocumentHeroSection(
 }
 
 function buildDocumentPrimaryCtaSection(
-  context: PublicPresenceProjectionDraftContext,
+  context: PublicPresenceProjectionDraftContext
 ): PublicPresenceProjectedLinkButtonSection | PublicPresenceProjectedFallbackCardSection | null {
   const firstEncounter = context.document.sections.find(
-    (section) => section.kind === 'firstEncounter',
+    (section) => section.kind === 'firstEncounter'
   );
   const label = asFieldString(firstEncounter, 'primaryCtaLabel');
   const rawUrl = asFieldString(firstEncounter, 'primaryCtaUrl');
@@ -1689,7 +1646,7 @@ function buildDocumentPrimaryCtaSection(
         context.runtime,
         ['sections', firstEncounter?.id ?? 'firstEncounter', 'fields', 'primaryCtaUrl'],
         'safePlaceholder',
-        safeUrl.reason ?? 'unsafe-primary-cta',
+        safeUrl.reason ?? 'unsafe-primary-cta'
       );
     }
 
@@ -1730,13 +1687,12 @@ function buildDocumentPrimaryCtaSection(
 
 function buildCountdownRevealSummarySection(
   context: PublicPresenceProjectionDraftContext,
-  section: PublicPresenceDocument['sections'][number],
+  section: PublicPresenceDocument['sections'][number]
 ): PublicPresenceProjectedFallbackCardSection {
   const revealAt = asFieldString(section, 'revealAtUtc');
   const timezone = asFieldString(section, 'timezone');
-  const phaseLabel = context.resolvedRevealPhase === 'always'
-    ? 'always'
-    : context.resolvedRevealPhase;
+  const phaseLabel =
+    context.resolvedRevealPhase === 'always' ? 'always' : context.resolvedRevealPhase;
 
   return {
     id: section.id,
@@ -1748,10 +1704,10 @@ function buildCountdownRevealSummarySection(
       sectionId: section.id,
     }),
     title:
-      context.resolvedRevealPhase === 'revealed'
-      || context.resolvedRevealPhase === 'liveLaunch'
-      || context.resolvedRevealPhase === 'postLaunch'
-      || context.resolvedRevealPhase === 'expiredFallback'
+      context.resolvedRevealPhase === 'revealed' ||
+      context.resolvedRevealPhase === 'liveLaunch' ||
+      context.resolvedRevealPhase === 'postLaunch' ||
+      context.resolvedRevealPhase === 'expiredFallback'
         ? '__revealLive__'
         : '__revealCountdown__',
     description: [phaseLabel, revealAt, timezone].filter(Boolean).join(' · ') || null,
@@ -1760,7 +1716,7 @@ function buildCountdownRevealSummarySection(
 
 function buildAgencyNoteSections(
   context: PublicPresenceProjectionDraftContext,
-  section: PublicPresenceDocument['sections'][number],
+  section: PublicPresenceDocument['sections'][number]
 ): PublicPresenceProjectedFallbackCardSection[] {
   const notes = asFieldArray<unknown>(section, 'notes');
   const projected: PublicPresenceProjectedFallbackCardSection[] = [];
@@ -1790,9 +1746,7 @@ function buildAgencyNoteSections(
   return projected;
 }
 
-function mapFanActionCategory(
-  slot: string | null,
-): PublicPresenceProjectedAction['category'] {
+function mapFanActionCategory(slot: string | null): PublicPresenceProjectedAction['category'] {
   switch (slot) {
     case 'stream':
       return 'streamUrl';
@@ -1811,7 +1765,7 @@ function mapFanActionCategory(
 
 function buildFanActionSections(
   context: PublicPresenceProjectionDraftContext,
-  section: PublicPresenceDocument['sections'][number],
+  section: PublicPresenceDocument['sections'][number]
 ): PublicPresenceProjectedSection[] {
   const actions = asFieldArray<unknown>(section, 'actions');
   const projected: PublicPresenceProjectedSection[] = [];
@@ -1843,7 +1797,7 @@ function buildFanActionSections(
                   ? 'goodsUrl'
                   : category === 'supportUrl'
                     ? 'supportUrl'
-                    : 'fanActionUrl',
+                    : 'fanActionUrl'
           );
 
     if (!safeUrl.value) {
@@ -1851,7 +1805,7 @@ function buildFanActionSections(
         context.runtime,
         ['sections', section.id, 'fields', 'actions', String(index), 'url'],
         'safePlaceholder',
-        safeUrl.reason ?? 'unsafe-fan-action',
+        safeUrl.reason ?? 'unsafe-fan-action'
       );
 
       projected.push({
@@ -1894,7 +1848,7 @@ function buildFanActionSections(
 }
 
 function buildDocumentComponentSections(
-  context: PublicPresenceProjectionDraftContext,
+  context: PublicPresenceProjectionDraftContext
 ): PublicPresenceProjectedSection[] {
   const sections: PublicPresenceProjectedSection[] = [];
 
@@ -1928,7 +1882,7 @@ function buildDocumentComponentSections(
           type: component.type,
           visible: component.visible ?? true,
         },
-        context.runtime,
+        context.runtime
       );
 
       if (!projected) {
@@ -1936,27 +1890,20 @@ function buildDocumentComponentSections(
       }
 
       const projectedKind =
-        section.kind === 'currentLaunchAction'
-        && projected.sectionType === 'linkButton'
+        section.kind === 'currentLaunchAction' && projected.sectionType === 'linkButton'
           ? 'currentLaunchAction'
-          : section.kind === 'goodsSupport'
-            && projected.sectionType === 'linkButton'
+          : section.kind === 'goodsSupport' && projected.sectionType === 'linkButton'
             ? 'goodsSupport'
-            : section.kind === 'fanInteraction'
-              && projected.sectionType === 'marshmallow'
+            : section.kind === 'fanInteraction' && projected.sectionType === 'marshmallow'
               ? 'fanInteraction'
-              : section.kind === 'stageSchedule'
-                && projected.sectionType === 'schedule'
+              : section.kind === 'stageSchedule' && projected.sectionType === 'schedule'
                 ? 'stageSchedule'
-                : section.kind === 'officialChannels'
-                  && projected.sectionType === 'socialLinks'
+                : section.kind === 'officialChannels' && projected.sectionType === 'socialLinks'
                   ? 'officialChannels'
-                  : section.kind === 'teaserRevealMedia'
-                    && (
-                      projected.sectionType === 'imageGallery'
-                      || projected.sectionType === 'videoEmbed'
-                      || projected.sectionType === 'fallbackCard'
-                    )
+                  : section.kind === 'teaserRevealMedia' &&
+                      (projected.sectionType === 'imageGallery' ||
+                        projected.sectionType === 'videoEmbed' ||
+                        projected.sectionType === 'fallbackCard')
                     ? 'teaserRevealMedia'
                     : projected.kind;
 
@@ -1975,13 +1922,11 @@ function buildDocumentComponentSections(
 
 function buildDocumentMetadata(
   context: PublicPresenceProjectionDraftContext,
-  hero: PublicPresenceProjectedHeroSection,
+  hero: PublicPresenceProjectedHeroSection
 ) {
-  const revealSafeMetadata = context.document.templateId === 'debutReveal'
-    && isPreRevealPhase(context.resolvedRevealPhase);
-  const rawOgImage = revealSafeMetadata
-    ? null
-    : asString(context.document.metadata?.ogImageUrl);
+  const revealSafeMetadata =
+    context.document.templateId === 'debutReveal' && isPreRevealPhase(context.resolvedRevealPhase);
+  const rawOgImage = revealSafeMetadata ? null : asString(context.document.metadata?.ogImageUrl);
   const safeOgImage = sanitizeMediaUrl(rawOgImage);
 
   if (!safeOgImage.value && rawOgImage) {
@@ -1989,22 +1934,20 @@ function buildDocumentMetadata(
       context.runtime,
       ['metadata', 'ogImageUrl'],
       'safePlaceholder',
-      safeOgImage.reason ?? 'unsafe-og-image',
+      safeOgImage.reason ?? 'unsafe-og-image'
     );
   }
 
   const safeMetadataTitle = sanitizeOrdinaryLabel(context.document.metadata?.title);
-  const title = revealSafeMetadata
-    ? hero.title
-    : safeMetadataTitle ?? hero.title ?? 'TCRN TMS';
+  const title = revealSafeMetadata ? hero.title : (safeMetadataTitle ?? hero.title ?? 'TCRN TMS');
   const safeMetadataDescription = sanitizeOrdinaryLabel(context.document.metadata?.description);
   const safePersonaTagline = sanitizeOrdinaryLabel(context.document.personaKit?.tagline);
   const description = revealSafeMetadata
-    ? hero.description ?? safePersonaTagline ?? DEFAULT_PUBLIC_HOMEPAGE_DESCRIPTION
-    : safeMetadataDescription
-      ?? hero.description
-      ?? safePersonaTagline
-      ?? DEFAULT_PUBLIC_HOMEPAGE_DESCRIPTION;
+    ? (hero.description ?? safePersonaTagline ?? DEFAULT_PUBLIC_HOMEPAGE_DESCRIPTION)
+    : (safeMetadataDescription ??
+      hero.description ??
+      safePersonaTagline ??
+      DEFAULT_PUBLIC_HOMEPAGE_DESCRIPTION);
   const ogImage = safeOgImage.value
     ? createMedia(context.runtime, {
         kind: 'ogImage',
@@ -2028,7 +1971,7 @@ function buildDocumentMetadata(
 }
 
 export function buildPublicPresenceProjectionFromDocument(
-  input: BuildPublicPresenceProjectionFromDocumentInput,
+  input: BuildPublicPresenceProjectionFromDocumentInput
 ): PublicPresenceProjection {
   const runtime: ProjectionRuntimeState = {
     actionCounter: 0,
@@ -2039,12 +1982,10 @@ export function buildPublicPresenceProjectionFromDocument(
   };
   const document = input.document;
   const contentHash = input.contentHash ?? calculatePublicPresenceContentHash(document);
-  const resolvedRevealPhase = resolveDocumentRevealPhase(
-    document,
-    input.revealPhaseOverride,
-  );
-  const snapshot = input.validationSnapshot
-    ?? createPublicPresenceValidationArtifact(document, {
+  const resolvedRevealPhase = resolveDocumentRevealPhase(document, input.revealPhaseOverride);
+  const snapshot =
+    input.validationSnapshot ??
+    createPublicPresenceValidationArtifact(document, {
       mode: input.mode ?? 'projection',
       runtimeAuthority: input.runtimeAuthority ?? null,
     }).snapshot;
@@ -2061,11 +2002,7 @@ export function buildPublicPresenceProjectionFromDocument(
   const hero = buildDocumentHeroSection(context);
   const primaryCta = buildDocumentPrimaryCtaSection(context);
   const documentSections = buildDocumentComponentSections(context);
-  const sections = [
-    hero,
-    ...(primaryCta ? [primaryCta] : []),
-    ...documentSections,
-  ];
+  const sections = [hero, ...(primaryCta ? [primaryCta] : []), ...documentSections];
 
   assignHeroPrimaryAction(hero, sections.slice(1));
 
@@ -2100,7 +2037,7 @@ export function buildPublicPresenceProjectionFromDocument(
     media: runtime.media,
     fallbackDecisions: mergeFallbackDecisions(
       snapshot.fallbackDecisions,
-      runtime.fallbackDecisions,
+      runtime.fallbackDecisions
     ),
     createdAt: input.createdAt,
     rebuiltAt: input.rebuiltAt ?? input.createdAt,
@@ -2117,9 +2054,7 @@ export function buildPublicPresenceProjectionFromDocument(
   };
 }
 
-export function calculateLegacyHomepageSourceHash(
-  data: PublicHomepageData,
-): string {
+export function calculateLegacyHomepageSourceHash(data: PublicHomepageData): string {
   return stableHash({
     content: data.content,
     seo: data.seo,
@@ -2131,7 +2066,7 @@ export function calculateLegacyHomepageSourceHash(
 
 export function buildPublicHomepageProjection(
   data: PublicHomepageData,
-  route: BuildPublicHomepageProjectionRouteInput,
+  route: BuildPublicHomepageProjectionRouteInput
 ): PublicPresenceProjection {
   const runtime: ProjectionRuntimeState = {
     actionCounter: 0,
@@ -2187,15 +2122,14 @@ export function buildPublicHomepageProjection(
 }
 
 export function buildPublicHomepageProjectionEvent(
-  projection: PublicPresenceProjection,
+  projection: PublicPresenceProjection
 ): PublicPresenceProjectionEvent {
   return {
     eventType: 'built',
     projectionHash: projection.projectionHash,
     cacheKeys: projection.route.cacheKeys,
     source: projection.portalId ? 'publicPresenceDocument' : 'legacyHomepageCompatibility',
-    validationState:
-      projection.fallbackDecisions.length > 0 ? 'fallback' : 'clean',
+    validationState: projection.fallbackDecisions.length > 0 ? 'fallback' : 'clean',
     createdAt: projection.rebuiltAt,
   };
 }

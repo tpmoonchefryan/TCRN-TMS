@@ -1,12 +1,13 @@
 'use client';
 
+import { Languages } from 'lucide-react';
+import { useMemo } from 'react';
+
 import {
   normalizeSupportedUiLocale,
   type PartialLocalizedText,
   type SupportedUiLocale,
 } from '@tcrn/shared';
-import { Languages } from 'lucide-react';
-import { useMemo } from 'react';
 
 import { useUiLocale } from '@/platform/runtime/locale/locale-provider';
 import {
@@ -146,7 +147,7 @@ const COPY: Record<SupportedUiLocale, TranslationDrawerCopy> = {
     addOtherLanguageLabel: 'Ajouter une autre langue…',
     baseValueSuffix: '(Valeur de base / anglais)',
     cancelLabel: 'Annuler',
-    emptyHint: "Laissez une langue vide pour revenir à la valeur anglaise de base.",
+    emptyHint: 'Laissez une langue vide pour revenir à la valeur anglaise de base.',
     emptyTranslationsText: 'Aucune traduction n’a encore été ajoutée.',
     helper: 'Gérez ici les variantes facultatives par langue.',
     loadingLanguages: 'Chargement des langues…',
@@ -162,7 +163,6 @@ const COPY: Record<SupportedUiLocale, TranslationDrawerCopy> = {
 function getCurrentCopy(locale: SupportedUiLocale) {
   return COPY[locale];
 }
-
 
 export {
   buildLocalizedTextPayload,
@@ -212,7 +212,7 @@ export function TranslationManagementDrawer({
 
   const languageOptions = useMemo(
     () => getTranslationLanguageOptions(effectiveSelectedLocale),
-    [effectiveSelectedLocale],
+    [effectiveSelectedLocale]
   );
 
   const translationFields = useMemo(
@@ -229,23 +229,24 @@ export function TranslationManagementDrawer({
           placeholder: section.placeholder,
         };
       }),
-    [sections],
+    [sections]
   );
 
-  const emptyTranslationsText = languageOptions.length === 0
-    ? copy.noLanguages
-    : copy.emptyTranslationsText;
+  const emptyTranslationsText =
+    languageOptions.length === 0 ? copy.noLanguages : copy.emptyTranslationsText;
 
-  const handleSave = async (payload: Record<string, PartialLocalizedText> | PartialLocalizedText) => {
+  const handleSave = async (
+    payload: Record<string, PartialLocalizedText> | PartialLocalizedText
+  ) => {
     const nestedPayload = payload as Record<string, PartialLocalizedText>;
 
     sections.forEach((section) => {
       const nextValues = nestedPayload[section.id] ?? {};
-      const localeCodes = new Set([
-        ...Object.keys(section.values),
-        ...Object.keys(nextValues),
-      ].map((localeCode) => normalizeSupportedUiLocale(localeCode))
-        .filter((localeCode): localeCode is SupportedUiLocale => Boolean(localeCode)));
+      const localeCodes = new Set(
+        [...Object.keys(section.values), ...Object.keys(nextValues)]
+          .map((localeCode) => normalizeSupportedUiLocale(localeCode))
+          .filter((localeCode): localeCode is SupportedUiLocale => Boolean(localeCode))
+      );
 
       localeCodes.forEach((localeCode) => {
         onChange(section.id, localeCode, nextValues[localeCode] ?? '');

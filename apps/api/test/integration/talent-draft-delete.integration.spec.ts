@@ -1,7 +1,9 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import request from 'supertest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+
 import { PrismaClient } from '@tcrn/database';
 import {
   createLocalizedText,
@@ -11,8 +13,6 @@ import {
   type TenantFixture,
   type TestUser,
 } from '@tcrn/shared';
-import request from 'supertest';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { AppModule } from '../../src/app.module';
 import { TokenService } from '../../src/modules/auth/token.service';
@@ -26,9 +26,7 @@ describe('Talent Draft Delete Integration', () => {
   let accessToken: string;
 
   const withAuth = (req: request.Test) =>
-    req
-      .set('Authorization', `Bearer ${accessToken}`)
-      .set('X-Tenant-ID', tenantFixture.tenant.id);
+    req.set('Authorization', `Bearer ${accessToken}`).set('X-Tenant-ID', tenantFixture.tenant.id);
 
   const uniqueSuffix = () =>
     `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`.toUpperCase();
@@ -44,7 +42,7 @@ describe('Talent Draft Delete Integration', () => {
 
   const setTalentLifecycle = async (
     talentId: string,
-    lifecycleStatus: 'published' | 'disabled',
+    lifecycleStatus: 'published' | 'disabled'
   ) => {
     await prisma.$executeRawUnsafe(
       `
@@ -63,7 +61,7 @@ describe('Talent Draft Delete Integration', () => {
       `,
       talentId,
       lifecycleStatus,
-      testUser.id,
+      testUser.id
     );
   };
 
@@ -85,7 +83,7 @@ describe('Talent Draft Delete Integration', () => {
         FROM "${tenantFixture.schemaName}".talent
         WHERE id = $1::uuid
       `,
-      talentId,
+      talentId
     );
 
     return rows[0] ?? null;
@@ -105,7 +103,7 @@ describe('Talent Draft Delete Integration', () => {
           ($1::uuid, $2::uuid, false, '{}'::jsonb, NOW(), NOW(), 1)
       `,
       homepageId,
-      talentId,
+      talentId
     );
 
     await prisma.$executeRawUnsafe(
@@ -121,7 +119,7 @@ describe('Talent Draft Delete Integration', () => {
         version: '1.0.0',
         components: [],
       }),
-      testUser.id,
+      testUser.id
     );
 
     await prisma.$executeRawUnsafe(
@@ -132,7 +130,7 @@ describe('Talent Draft Delete Integration', () => {
           ($1::uuid, $2::uuid, false, 'auto', true, false, NOW(), NOW(), 1)
       `,
       marshmallowConfigId,
-      talentId,
+      talentId
     );
 
     await prisma.$executeRawUnsafe(
@@ -144,7 +142,7 @@ describe('Talent Draft Delete Integration', () => {
       `,
       configOverrideEntityId,
       talentId,
-      testUser.id,
+      testUser.id
     );
 
     return {
@@ -184,7 +182,7 @@ describe('Talent Draft Delete Integration', () => {
            WHERE owner_type = 'talent'
              AND owner_id = $1::uuid) as "configOverrideCount"
       `,
-      talentId,
+      talentId
     );
 
     return rows[0]!;
@@ -228,7 +226,7 @@ describe('Talent Draft Delete Integration', () => {
       `,
       talentId,
       profileStoreId,
-      testUser.id,
+      testUser.id
     );
   };
 
@@ -246,7 +244,7 @@ describe('Talent Draft Delete Integration', () => {
       prisma,
       tenantFixture,
       `talent_delete_admin_${Date.now()}`,
-      ['ADMIN'],
+      ['ADMIN']
     );
 
     const tokenService = moduleFixture.get(TokenService);
@@ -282,7 +280,7 @@ describe('Talent Draft Delete Integration', () => {
     }
 
     const response = await withAuth(
-      request(app.getHttpServer()).delete(`/api/v1/talents/${talent.id}`),
+      request(app.getHttpServer()).delete(`/api/v1/talents/${talent.id}`)
     )
       .query({ version: beforeTalentRow.version })
       .expect(200);
@@ -309,11 +307,13 @@ describe('Talent Draft Delete Integration', () => {
       await setTalentLifecycle(talent.id, lifecycleStatus);
       const beforeTalentRow = await getTalentRow(talent.id);
       if (!beforeTalentRow) {
-        throw new Error(`No talent row found for ${lifecycleStatus} delete test talent ${talent.id}`);
+        throw new Error(
+          `No talent row found for ${lifecycleStatus} delete test talent ${talent.id}`
+        );
       }
 
       const response = await withAuth(
-        request(app.getHttpServer()).delete(`/api/v1/talents/${talent.id}`),
+        request(app.getHttpServer()).delete(`/api/v1/talents/${talent.id}`)
       )
         .query({ version: beforeTalentRow.version })
         .expect(409);
@@ -329,7 +329,7 @@ describe('Talent Draft Delete Integration', () => {
       const talentRow = await getTalentRow(talent.id);
       expect(talentRow).not.toBeNull();
       expect(talentRow?.lifecycleStatus).toBe(lifecycleStatus);
-    },
+    }
   );
 
   it('returns TALENT_LIFECYCLE_CONFLICT when protected customer data already exists', async () => {
@@ -343,7 +343,7 @@ describe('Talent Draft Delete Integration', () => {
     await seedProtectedCustomerProfile(talent.id, talentRow.profileStoreId);
 
     const response = await withAuth(
-      request(app.getHttpServer()).delete(`/api/v1/talents/${talent.id}`),
+      request(app.getHttpServer()).delete(`/api/v1/talents/${talent.id}`)
     )
       .query({ version: talentRow.version })
       .expect(409);
@@ -358,7 +358,7 @@ describe('Talent Draft Delete Integration', () => {
           code: 'CUSTOMER_PROFILE_EXISTS',
           count: 1,
         }),
-      ]),
+      ])
     );
 
     expect(await getTalentRow(talent.id)).not.toBeNull();

@@ -22,10 +22,10 @@ function buildCustomerCopy(overrides: Partial<Record<string, string>> = {}) {
     deactivateLoadFallback: 'Failed to load customer details for deactivation.',
     deactivatePending: 'Preparing…',
     deactivateRequestFallback: 'Failed to deactivate customer.',
-    description:
-      'Review customers, membership visibility, and lifecycle status for this talent.',
+    description: 'Review customers, membership visibility, and lifecycle status for this talent.',
     directCustomerRecord: 'Direct customer record',
-    emptyDescription: 'Change the current search or membership filters to widen the visible customer set.',
+    emptyDescription:
+      'Change the current search or membership filters to widen the visible customer set.',
     emptyTitle: 'No customers match this filter',
     languageUnset: 'language unset',
     loadLedgerFallback: 'Failed to load customer records.',
@@ -54,7 +54,8 @@ function buildCustomerCopy(overrides: Partial<Record<string, string>> = {}) {
     tenantLabel: 'Tenant',
     title: 'Customer Management',
     updatedColumn: 'Updated',
-    visibleCustomersHint: 'This reflects the currently loaded page under the active search and filter state.',
+    visibleCustomersHint:
+      'This reflects the currently loaded page under the active search and filter state.',
     visibleCustomersLabel: 'Visible Customers',
     workspaceSettingsLink: 'Settings',
     ...overrides,
@@ -212,7 +213,9 @@ describe('CustomerManagementScreen', () => {
     expect(screen.getByRole('columnheader', { name: '客户' })).toBeInTheDocument();
     expect(screen.getByText('查看该艺人的客户列表。')).toBeInTheDocument();
     expect(screen.getByText('客户档案统一在这里管理。')).toBeInTheDocument();
-    expect(screen.getByText('这里反映的是当前搜索与筛选条件下已加载的页面结果。')).toBeInTheDocument();
+    expect(
+      screen.getByText('这里反映的是当前搜索与筛选条件下已加载的页面结果。')
+    ).toBeInTheDocument();
 
     const expectedUpdatedAt = new Intl.DateTimeFormat('zh', {
       dateStyle: 'medium',
@@ -230,7 +233,10 @@ describe('CustomerManagementScreen', () => {
         return buildCreatePermissionResponse();
       }
 
-      if (path === '/api/v1/talents/talent-1/customers?page=2&pageSize=50&search=vip&hasMembership=true') {
+      if (
+        path ===
+        '/api/v1/talents/talent-1/customers?page=2&pageSize=50&search=vip&hasMembership=true'
+      ) {
         return {
           success: true,
           data: [
@@ -277,7 +283,10 @@ describe('CustomerManagementScreen', () => {
         };
       }
 
-      if (path === '/api/v1/talents/talent-1/customers?page=1&pageSize=50&search=vip&isActive=false&hasMembership=true') {
+      if (
+        path ===
+        '/api/v1/talents/talent-1/customers?page=1&pageSize=50&search=vip&isActive=false&hasMembership=true'
+      ) {
         return {
           success: true,
           data: [
@@ -330,10 +339,10 @@ describe('CustomerManagementScreen', () => {
 
     await waitFor(() => {
       expect(mockRequest).toHaveBeenCalledWith(
-        '/api/v1/talents/talent-1/customers?page=1&pageSize=50&search=vip&isActive=false&hasMembership=true',
+        '/api/v1/talents/talent-1/customers?page=1&pageSize=50&search=vip&isActive=false&hasMembership=true'
       );
       expect(replace).toHaveBeenCalledWith(
-        '/tenant/tenant-1/talent/talent-1/customers?search=vip&activity=inactive&membership=members&pageSize=50',
+        '/tenant/tenant-1/talent/talent-1/customers?search=vip&activity=inactive&membership=members&pageSize=50'
       );
     });
 
@@ -396,7 +405,10 @@ describe('CustomerManagementScreen', () => {
         };
       }
 
-      if (path === '/api/v1/talents/talent-1/customers/customer-1/deactivate' && init?.method === 'POST') {
+      if (
+        path === '/api/v1/talents/talent-1/customers/customer-1/deactivate' &&
+        init?.method === 'POST'
+      ) {
         isActive = false;
         return {
           id: 'customer-1',
@@ -425,7 +437,7 @@ describe('CustomerManagementScreen', () => {
           body: JSON.stringify({
             version: 7,
           }),
-        }),
+        })
       );
     });
 

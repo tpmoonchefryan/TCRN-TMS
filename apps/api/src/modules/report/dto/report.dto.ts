@@ -1,17 +1,16 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
-    IsArray,
-    IsBoolean,
-    IsEnum,
-    IsInt,
-    IsOptional,
-    IsString,
-    IsUUID,
-    Max,
-    Min
+  IsArray,
+  IsBoolean,
+  IsEnum,
+  IsInt,
+  IsOptional,
+  IsString,
+  IsUUID,
+  Max,
+  Min,
 } from 'class-validator';
 
 // =============================================================================
@@ -38,31 +37,51 @@ export enum ReportType {
 // =============================================================================
 
 export class MfrFilterCriteriaDto {
-  @ApiPropertyOptional({ description: 'Filter by platform codes', example: ['youtube', 'bilibili'], type: [String] })
+  @ApiPropertyOptional({
+    description: 'Filter by platform codes',
+    example: ['youtube', 'bilibili'],
+    type: [String],
+  })
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
   platformCodes?: string[];
 
-  @ApiPropertyOptional({ description: 'Filter by membership class codes', example: ['premium'], type: [String] })
+  @ApiPropertyOptional({
+    description: 'Filter by membership class codes',
+    example: ['premium'],
+    type: [String],
+  })
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
   membershipClassCodes?: string[];
 
-  @ApiPropertyOptional({ description: 'Filter by membership type codes', example: ['monthly'], type: [String] })
+  @ApiPropertyOptional({
+    description: 'Filter by membership type codes',
+    example: ['monthly'],
+    type: [String],
+  })
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
   membershipTypeCodes?: string[];
 
-  @ApiPropertyOptional({ description: 'Filter by membership level codes', example: ['gold'], type: [String] })
+  @ApiPropertyOptional({
+    description: 'Filter by membership level codes',
+    example: ['gold'],
+    type: [String],
+  })
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
   membershipLevelCodes?: string[];
 
-  @ApiPropertyOptional({ description: 'Filter by customer status codes', example: ['active'], type: [String] })
+  @ApiPropertyOptional({
+    description: 'Filter by customer status codes',
+    example: ['active'],
+    type: [String],
+  })
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
@@ -88,12 +107,20 @@ export class MfrFilterCriteriaDto {
   @IsString()
   validToEnd?: string;
 
-  @ApiPropertyOptional({ description: 'Include expired memberships', example: false, default: false })
+  @ApiPropertyOptional({
+    description: 'Include expired memberships',
+    example: false,
+    default: false,
+  })
   @IsOptional()
   @IsBoolean()
   includeExpired?: boolean;
 
-  @ApiPropertyOptional({ description: 'Include inactive memberships', example: false, default: false })
+  @ApiPropertyOptional({
+    description: 'Include inactive memberships',
+    example: false,
+    default: false,
+  })
   @IsOptional()
   @IsBoolean()
   includeInactive?: boolean;
@@ -104,7 +131,11 @@ export class MfrFilterCriteriaDto {
 // =============================================================================
 
 export class MfrSearchRequestDto {
-  @ApiProperty({ description: 'Talent identifier', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440010' })
+  @ApiProperty({
+    description: 'Talent identifier',
+    format: 'uuid',
+    example: '550e8400-e29b-41d4-a716-446655440010',
+  })
   @IsUUID()
   talentId!: string;
 
@@ -113,7 +144,13 @@ export class MfrSearchRequestDto {
   @Type(() => MfrFilterCriteriaDto)
   filters?: MfrFilterCriteriaDto;
 
-  @ApiPropertyOptional({ description: 'Preview row limit', example: 20, minimum: 1, maximum: 100, default: 20 })
+  @ApiPropertyOptional({
+    description: 'Preview row limit',
+    example: 20,
+    minimum: 1,
+    maximum: 100,
+    default: 20,
+  })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
@@ -132,7 +169,11 @@ export enum ReportFormat {
 }
 
 export class CreateMfrJobDto {
-  @ApiProperty({ description: 'Talent identifier', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440010' })
+  @ApiProperty({
+    description: 'Talent identifier',
+    format: 'uuid',
+    example: '550e8400-e29b-41d4-a716-446655440010',
+  })
   @IsUUID()
   talentId!: string;
 
@@ -141,7 +182,12 @@ export class CreateMfrJobDto {
   @Type(() => MfrFilterCriteriaDto)
   filters?: MfrFilterCriteriaDto;
 
-  @ApiPropertyOptional({ description: 'Export format', enum: ReportFormat, example: ReportFormat.XLSX, default: ReportFormat.XLSX })
+  @ApiPropertyOptional({
+    description: 'Export format',
+    enum: ReportFormat,
+    example: ReportFormat.XLSX,
+    default: ReportFormat.XLSX,
+  })
   @IsOptional()
   @IsEnum(ReportFormat)
   format?: ReportFormat = ReportFormat.XLSX;
@@ -152,7 +198,11 @@ export class CreateMfrJobDto {
 // =============================================================================
 
 export class ReportJobListQueryDto {
-  @ApiProperty({ description: 'Talent identifier', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440010' })
+  @ApiProperty({
+    description: 'Talent identifier',
+    format: 'uuid',
+    example: '550e8400-e29b-41d4-a716-446655440010',
+  })
   @IsUUID()
   talentId!: string;
 
@@ -164,12 +214,18 @@ export class ReportJobListQueryDto {
   @IsString()
   status?: string;
 
-  @ApiPropertyOptional({ description: 'Created-at lower bound', example: '2026-04-01T00:00:00.000Z' })
+  @ApiPropertyOptional({
+    description: 'Created-at lower bound',
+    example: '2026-04-01T00:00:00.000Z',
+  })
   @IsOptional()
   @IsString()
   createdFrom?: string;
 
-  @ApiPropertyOptional({ description: 'Created-at upper bound', example: '2026-04-30T23:59:59.999Z' })
+  @ApiPropertyOptional({
+    description: 'Created-at upper bound',
+    example: '2026-04-30T23:59:59.999Z',
+  })
   @IsOptional()
   @IsString()
   createdTo?: string;
@@ -181,7 +237,13 @@ export class ReportJobListQueryDto {
   @Min(1)
   page?: number = 1;
 
-  @ApiPropertyOptional({ description: 'Items per page', example: 20, minimum: 1, maximum: 100, default: 20 })
+  @ApiPropertyOptional({
+    description: 'Items per page',
+    example: 20,
+    minimum: 1,
+    maximum: 100,
+    default: 20,
+  })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
@@ -230,9 +292,7 @@ export interface PiiPlatformReportCreateResponse {
   customerCount: number;
 }
 
-export type ReportCreateResponse =
-  | LocalReportJobCreateResponse
-  | PiiPlatformReportCreateResponse;
+export type ReportCreateResponse = LocalReportJobCreateResponse | PiiPlatformReportCreateResponse;
 
 export interface ReportJobResponse {
   id: string;

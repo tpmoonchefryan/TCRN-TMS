@@ -1,7 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { BadRequestException, Injectable, NotFoundException, Optional } from '@nestjs/common';
 import { ConfigService as NestConfigService } from '@nestjs/config';
+
 import {
   createArtistLifecycleFlowSchema,
   ErrorCodes,
@@ -35,8 +35,8 @@ import {
   type TenantTurnstileSettingsResponse,
   type UpdateTenantTurnstileSettingsInput,
 } from '../domain/settings.policy';
-import { SettingsRepository } from '../infrastructure/settings.repository';
 import { SettingsSecretCryptoService } from '../infrastructure/settings-secret-crypto.service';
+import { SettingsRepository } from '../infrastructure/settings.repository';
 
 const GENERAL_SETTINGS_HIDDEN_KEYS = [
   EMAIL_SENDING_DOMAINS_SETTINGS_KEY,
@@ -45,22 +45,20 @@ const GENERAL_SETTINGS_HIDDEN_KEYS = [
   TENANT_TURNSTILE_SETTINGS_KEY,
 ] as const;
 
-const GENERAL_SETTINGS_RETIRED_KEYS = [
-  'allowCustomHomepage',
-] as const;
+const GENERAL_SETTINGS_RETIRED_KEYS = ['allowCustomHomepage'] as const;
 
 @Injectable()
 export class SettingsApplicationService {
   constructor(
     private readonly settingsRepository: SettingsRepository,
     @Optional() private readonly secretCrypto?: SettingsSecretCryptoService,
-    @Optional() private readonly configService?: NestConfigService,
+    @Optional() private readonly configService?: NestConfigService
   ) {}
 
   async getEffectiveSettings(
     tenantSchema: string,
     scopeType: SettingsScopeType,
-    scopeId: string | null,
+    scopeId: string | null
   ): Promise<ScopeSettings> {
     const chain = await this.buildInheritanceChain(tenantSchema, scopeType, scopeId);
     const mergedSettings: Record<string, unknown> = { ...DEFAULT_SETTINGS };
@@ -134,7 +132,7 @@ export class SettingsApplicationService {
     scopeId: string | null,
     updates: Record<string, unknown>,
     version: number,
-    userId: string,
+    userId: string
   ): Promise<ScopeSettings> {
     await this.validateScopeExists(tenantSchema, scopeType, scopeId);
 
@@ -160,7 +158,7 @@ export class SettingsApplicationService {
   async getArtistLifecycleFlow(
     tenantSchema: string,
     scopeType: SettingsScopeType,
-    scopeId: string | null,
+    scopeId: string | null
   ): Promise<ArtistLifecycleFlowSettingsResponse> {
     await this.validateScopeExists(tenantSchema, scopeType, scopeId);
 
@@ -172,11 +170,9 @@ export class SettingsApplicationService {
       });
     }
 
-    const stageCatalog = await this.settingsRepository.listArtistStageCatalog(
-      tenantSchema,
-    );
+    const stageCatalog = await this.settingsRepository.listArtistStageCatalog(tenantSchema);
     const storedFlow = normalizeStoredArtistLifecycleFlow(
-      tenant.settings?.[ARTIST_LIFECYCLE_FLOW_SETTINGS_KEY],
+      tenant.settings?.[ARTIST_LIFECYCLE_FLOW_SETTINGS_KEY]
     );
     const parsed = createArtistLifecycleFlowSchema({
       stageCatalog,
@@ -200,7 +196,7 @@ export class SettingsApplicationService {
 
   async updateArtistLifecycleFlow(
     tenantSchema: string,
-    flow: ArtistLifecycleFlow,
+    flow: ArtistLifecycleFlow
   ): Promise<ArtistLifecycleFlowSettingsResponse> {
     const tenant = await this.settingsRepository.findTenantBySchema(tenantSchema);
     if (!tenant) {
@@ -210,9 +206,7 @@ export class SettingsApplicationService {
       });
     }
 
-    const stageCatalog = await this.settingsRepository.listArtistStageCatalog(
-      tenantSchema,
-    );
+    const stageCatalog = await this.settingsRepository.listArtistStageCatalog(tenantSchema);
     let normalizedFlow: ArtistLifecycleFlow;
 
     try {
@@ -244,9 +238,7 @@ export class SettingsApplicationService {
     };
   }
 
-  async getTenantTurnstileSettings(
-    tenantSchema: string,
-  ): Promise<TenantTurnstileSettingsResponse> {
+  async getTenantTurnstileSettings(tenantSchema: string): Promise<TenantTurnstileSettingsResponse> {
     const resolved = await this.resolveTenantTurnstileRuntimeConfig(tenantSchema);
 
     return buildTenantTurnstileSettingsResponse({
@@ -261,7 +253,7 @@ export class SettingsApplicationService {
 
   async updateTenantTurnstileSettings(
     tenantSchema: string,
-    input: UpdateTenantTurnstileSettingsInput,
+    input: UpdateTenantTurnstileSettingsInput
   ): Promise<TenantTurnstileSettingsResponse> {
     const tenant = await this.settingsRepository.findTenantBySchema(tenantSchema);
 
@@ -317,11 +309,15 @@ export class SettingsApplicationService {
   }
 
   async resolveTenantTurnstileRuntimeConfig(
-    tenantSchema: string,
+    tenantSchema: string
   ): Promise<TenantTurnstileRuntimeConfig> {
     const tenant = await this.settingsRepository.findTenantBySchema(tenantSchema);
-    const envSiteKey = normalizeNullableSettingString(this.configService?.get<string>('TURNSTILE_SITE_KEY'));
-    const envSecretKey = normalizeNullableSettingString(this.configService?.get<string>('TURNSTILE_SECRET_KEY'));
+    const envSiteKey = normalizeNullableSettingString(
+      this.configService?.get<string>('TURNSTILE_SITE_KEY')
+    );
+    const envSecretKey = normalizeNullableSettingString(
+      this.configService?.get<string>('TURNSTILE_SECRET_KEY')
+    );
 
     if (!tenant) {
       return {
@@ -337,7 +333,7 @@ export class SettingsApplicationService {
 
     if (hasStoredTenantTurnstileSettings(stored)) {
       const tenantSecretKey = stored.secretKeyEncrypted
-        ? this.secretCrypto?.decryptStoredSecret(stored.secretKeyEncrypted) ?? null
+        ? (this.secretCrypto?.decryptStoredSecret(stored.secretKeyEncrypted) ?? null)
         : null;
 
       return {
@@ -362,9 +358,10 @@ export class SettingsApplicationService {
     const normalizedUpdates = { ...updates };
 
     if (Object.prototype.hasOwnProperty.call(normalizedUpdates, 'defaultLanguage')) {
-      const normalizedDefaultLanguage = typeof normalizedUpdates.defaultLanguage === 'string'
-        ? normalizeSupportedUiLocale(normalizedUpdates.defaultLanguage)
-        : null;
+      const normalizedDefaultLanguage =
+        typeof normalizedUpdates.defaultLanguage === 'string'
+          ? normalizeSupportedUiLocale(normalizedUpdates.defaultLanguage)
+          : null;
 
       if (!normalizedDefaultLanguage) {
         throw new BadRequestException({
@@ -381,7 +378,7 @@ export class SettingsApplicationService {
 
   private assertGeneralSettingsUpdateAllowed(
     scopeType: SettingsScopeType,
-    updates: Record<string, unknown>,
+    updates: Record<string, unknown>
   ): void {
     for (const key of Object.keys(updates)) {
       if (!canUpdateSettingsKeyThroughGeneralSettings(key)) {
@@ -416,7 +413,7 @@ export class SettingsApplicationService {
     scopeType: SettingsScopeType,
     scopeId: string | null,
     field: string,
-    userId: string,
+    userId: string
   ): Promise<ScopeSettings> {
     if (scopeType === 'tenant') {
       throw new BadRequestException({
@@ -440,7 +437,7 @@ export class SettingsApplicationService {
       scopeId,
       newSettings,
       current.version + 1,
-      userId,
+      userId
     );
 
     return this.getEffectiveSettings(tenantSchema, scopeType, scopeId);
@@ -449,7 +446,7 @@ export class SettingsApplicationService {
   private async buildInheritanceChain(
     tenantSchema: string,
     scopeType: SettingsScopeType,
-    scopeId: string | null,
+    scopeId: string | null
   ): Promise<SettingsScopeRef[]> {
     const chain: SettingsScopeRef[] = [{ type: 'tenant', id: null }];
 
@@ -487,10 +484,7 @@ export class SettingsApplicationService {
     return chain;
   }
 
-  private async getSubsidiaryChain(
-    tenantSchema: string,
-    subsidiaryId: string,
-  ): Promise<string[]> {
+  private async getSubsidiaryChain(tenantSchema: string, subsidiaryId: string): Promise<string[]> {
     const subsidiary = await this.settingsRepository.findSubsidiaryById(tenantSchema, subsidiaryId);
 
     if (!subsidiary) {
@@ -513,7 +507,7 @@ export class SettingsApplicationService {
   private async getScopeOwnSettings(
     tenantSchema: string,
     scopeType: SettingsScopeType,
-    scopeId: string | null,
+    scopeId: string | null
   ): Promise<ScopeOwnSettingsRecord | null> {
     if (scopeType === 'tenant') {
       const tenant = await this.settingsRepository.findTenantBySchema(tenantSchema);
@@ -558,7 +552,7 @@ export class SettingsApplicationService {
     scopeId: string | null,
     settings: Record<string, unknown>,
     version: number,
-    userId: string,
+    userId: string
   ): Promise<void> {
     if (scopeType === 'tenant') {
       await this.settingsRepository.updateTenantSettings(tenantSchema, settings);
@@ -590,7 +584,7 @@ export class SettingsApplicationService {
   private async validateScopeExists(
     tenantSchema: string,
     scopeType: SettingsScopeType,
-    scopeId: string | null,
+    scopeId: string | null
   ): Promise<void> {
     if (scopeType === 'tenant') {
       const tenant = await this.settingsRepository.findTenantBySchema(tenantSchema);
@@ -632,7 +626,7 @@ export class SettingsApplicationService {
 
   private requireScopeId(
     scopeType: Exclude<SettingsScopeType, 'tenant'>,
-    scopeId: string | null,
+    scopeId: string | null
   ): string {
     if (scopeId) {
       return scopeId;

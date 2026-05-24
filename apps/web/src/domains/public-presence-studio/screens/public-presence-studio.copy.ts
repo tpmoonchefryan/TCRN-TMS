@@ -6,15 +6,13 @@ import type {
   PublicPresenceWorkflowEventType,
   SupportedUiLocale,
 } from '@tcrn/shared';
+
 import type {
   PublicPresenceStudioStageSectionSummary,
   PublicPresenceStudioTemplateSummary,
 } from '@/domains/public-presence-studio/api/public-presence-studio.api';
 import { useUiLocale } from '@/platform/runtime/locale/locale-provider';
-import {
-  formatLocaleDateTime,
-  resolveLocaleRecord,
-} from '@/platform/runtime/locale/locale-text';
+import { formatLocaleDateTime, resolveLocaleRecord } from '@/platform/runtime/locale/locale-text';
 
 function buildSupportedLocaleText(
   en: string,
@@ -22,7 +20,7 @@ function buildSupportedLocaleText(
   zh_HANT: string,
   ja: string,
   ko: string,
-  fr: string,
+  fr: string
 ): LocalizedText {
   return {
     en,
@@ -42,9 +40,7 @@ export type PublicPresenceStudioTabId =
   | 'reviewPublish'
   | 'advanced';
 
-export const PUBLIC_PRESENCE_PREVIEW_PHASES: Array<
-  PublicPresencePhaseVisibility | 'current'
-> = [
+export const PUBLIC_PRESENCE_PREVIEW_PHASES: Array<PublicPresencePhaseVisibility | 'current'> = [
   'current',
   'teaser',
   'countdown',
@@ -62,7 +58,7 @@ const HOMEPAGE_SURFACE_LABELS = {
     '主頁管理',
     'ホームページ管理',
     '홈페이지 관리',
-    'Gestion de la page d’accueil',
+    'Gestion de la page d’accueil'
   ),
   templates: buildSupportedLocaleText(
     'Template Center',
@@ -70,7 +66,7 @@ const HOMEPAGE_SURFACE_LABELS = {
     '模板中心',
     'テンプレートセンター',
     '템플릿 센터',
-    'Centre des templates',
+    'Centre des templates'
   ),
   components: buildSupportedLocaleText(
     'Component Store',
@@ -78,7 +74,7 @@ const HOMEPAGE_SURFACE_LABELS = {
     '元件商店',
     'コンポーネントストア',
     '컴포넌트 스토어',
-    'Store des composants',
+    'Store des composants'
   ),
 } as const;
 
@@ -89,7 +85,7 @@ const HOMEPAGE_SURFACE_ACTION_LABELS = {
     '主頁選單',
     'ホームページメニュー',
     '홈페이지 메뉴',
-    'Menu Homepage',
+    'Menu Homepage'
   ),
   addTemplate: buildSupportedLocaleText(
     'Add new template',
@@ -97,7 +93,7 @@ const HOMEPAGE_SURFACE_ACTION_LABELS = {
     '新增模板',
     '新しいテンプレートを追加',
     '새 템플릿 추가',
-    'Ajouter un nouveau template',
+    'Ajouter un nouveau template'
   ),
   addComponent: buildSupportedLocaleText(
     'Add new component',
@@ -105,7 +101,7 @@ const HOMEPAGE_SURFACE_ACTION_LABELS = {
     '新增元件',
     '新しいコンポーネントを追加',
     '새 컴포넌트 추가',
-    'Ajouter un nouveau composant',
+    'Ajouter un nouveau composant'
   ),
   viewPreview: buildSupportedLocaleText(
     'View Preview',
@@ -113,23 +109,16 @@ const HOMEPAGE_SURFACE_ACTION_LABELS = {
     '查看預覽',
     'プレビューを見る',
     '미리보기 보기',
-    'Voir l’aperçu',
+    'Voir l’aperçu'
   ),
-  inspect: buildSupportedLocaleText(
-    'Inspect',
-    '检查',
-    '檢查',
-    '確認',
-    '검토',
-    'Inspecter',
-  ),
+  inspect: buildSupportedLocaleText('Inspect', '检查', '檢查', '確認', '검토', 'Inspecter'),
   inspectTemplate: buildSupportedLocaleText(
     'Inspect template',
     '检查模板',
     '檢查模板',
     'テンプレートを確認',
     '템플릿 검토',
-    'Inspecter le template',
+    'Inspecter le template'
   ),
   inspectComponent: buildSupportedLocaleText(
     'Inspect component',
@@ -137,7 +126,7 @@ const HOMEPAGE_SURFACE_ACTION_LABELS = {
     '檢查元件',
     'コンポーネントを確認',
     '컴포넌트 검토',
-    'Inspecter le composant',
+    'Inspecter le composant'
   ),
   createTemplate: buildSupportedLocaleText(
     'Create new template',
@@ -145,7 +134,7 @@ const HOMEPAGE_SURFACE_ACTION_LABELS = {
     '建立新模板',
     '新しいテンプレートを作成',
     '새 템플릿 만들기',
-    'Créer un nouveau template',
+    'Créer un nouveau template'
   ),
   createComponent: buildSupportedLocaleText(
     'Create new component',
@@ -153,7 +142,7 @@ const HOMEPAGE_SURFACE_ACTION_LABELS = {
     '建立新元件',
     '新しいコンポーネントを作成',
     '새 컴포넌트 만들기',
-    'Créer un nouveau composant',
+    'Créer un nouveau composant'
   ),
   openTemplateIde: buildSupportedLocaleText(
     'Use as starting point',
@@ -161,7 +150,7 @@ const HOMEPAGE_SURFACE_ACTION_LABELS = {
     '作為起始模板',
     '開始テンプレートとして使う',
     '시작 템플릿으로 사용',
-    'Utiliser comme point de départ',
+    'Utiliser comme point de départ'
   ),
   openComponentIde: buildSupportedLocaleText(
     'Use as starting point',
@@ -169,7 +158,7 @@ const HOMEPAGE_SURFACE_ACTION_LABELS = {
     '作為起始元件',
     '開始コンポーネントとして使う',
     '시작 컴포넌트로 사용',
-    'Utiliser comme point de départ',
+    'Utiliser comme point de départ'
   ),
   reviewPublish: buildSupportedLocaleText(
     'Review & Publish',
@@ -177,7 +166,7 @@ const HOMEPAGE_SURFACE_ACTION_LABELS = {
     '審核與發佈',
     'Review & Publish',
     '검토 및 공개',
-    'Review & Publish',
+    'Review & Publish'
   ),
   routeSettings: buildSupportedLocaleText(
     'Route settings',
@@ -185,7 +174,7 @@ const HOMEPAGE_SURFACE_ACTION_LABELS = {
     '路由設定',
     'ルート設定',
     '라우트 설정',
-    'Réglages de route',
+    'Réglages de route'
   ),
   seoBasics: buildSupportedLocaleText(
     'SEO basics',
@@ -193,7 +182,7 @@ const HOMEPAGE_SURFACE_ACTION_LABELS = {
     'SEO 基礎',
     'SEO 基本設定',
     'SEO 기본값',
-    'Bases SEO',
+    'Bases SEO'
   ),
 } as const;
 
@@ -239,13 +228,11 @@ const COPY = {
       loadWorkspaceError: 'Unable to load the current public page workspace.',
       unavailableTitle: 'Public page workspace unavailable',
       previewLoadingTitle: 'Refreshing fan preview',
-      previewLoadingDescription:
-        'Building the current fan-facing output for the saved draft.',
+      previewLoadingDescription: 'Building the current fan-facing output for the saved draft.',
       previewBuildError: 'Unable to refresh the current fan preview.',
       previewUnavailableTitle: 'Fan preview unavailable',
       previewWaitingTitle: 'Fan preview is waiting for a saved draft',
-      previewWaitingDescription:
-        'Save or start a draft to generate the current fan-facing output.',
+      previewWaitingDescription: 'Save or start a draft to generate the current fan-facing output.',
       initializeTitle: 'Choose a starting layout',
       initializeDescription:
         'No operator draft exists yet. Start from a vetted layout to open the workbench.',
@@ -258,8 +245,7 @@ const COPY = {
       draftSourceLabel: 'Draft mode',
       draftSourceHint: 'You are editing the current operator draft for this talent.',
       specialistToolsLabel: 'Advanced tools',
-      specialistToolsHint:
-        'Specialist tools stay tucked into Advanced when you need them.',
+      specialistToolsHint: 'Specialist tools stay tucked into Advanced when you need them.',
     },
     emptyWorkspace: {
       startPrefix: 'Start',
@@ -336,8 +322,7 @@ const COPY = {
       noActionsYet: 'No actions yet.',
       addAction: 'Add action',
       agencyNotesLabel: 'Agency notes',
-      agencyNotesHint:
-        'Keep notes structured so preview, publish, and audit all stay predictable.',
+      agencyNotesHint: 'Keep notes structured so preview, publish, and audit all stay predictable.',
       noNotesYet: 'No notes yet.',
       addNote: 'Add note',
       slotPlaceholder: 'Slot',
@@ -381,17 +366,14 @@ const COPY = {
       selectedSectionLabel: 'Selected section',
       sharedPathBadge: 'Saved fan view',
       phasePrefix: 'Phase',
-      description:
-        'Switch between desktop and mobile to review the fan page before publishing.',
+      description: 'Switch between desktop and mobile to review the fan page before publishing.',
       simulatePhase: 'Preview moment',
       unsavedWarning:
         'Preview is showing the last saved draft. Save your edits to refresh the fan-facing frame.',
       fallbacksLabel: 'Preview protection',
-      fallbacksHint:
-        'Shows where safety rules simplified or removed risky public output.',
+      fallbacksHint: 'Shows where safety rules simplified or removed risky public output.',
       resolvedPhaseLabel: 'Preview moment',
-      resolvedPhaseHint:
-        'This preview shows the timing fans would experience right now.',
+      resolvedPhaseHint: 'This preview shows the timing fans would experience right now.',
       validationMarkersPrefix: 'Readiness markers',
     },
     reviewPublish: {
@@ -650,8 +632,7 @@ const COPY = {
       selectedSectionLabel: '已选分区',
       sharedPathBadge: '已保存粉丝视图',
       phasePrefix: '阶段',
-      description:
-        '切换桌面或移动视口，检查发布前的粉丝页效果。',
+      description: '切换桌面或移动视口，检查发布前的粉丝页效果。',
       simulatePhase: '预览时刻',
       unsavedWarning: '当前预览展示的是最近一次保存的草稿。请先保存修改再刷新粉丝视图。',
       fallbacksLabel: '预览保护',
@@ -681,8 +662,7 @@ const COPY = {
       infoLabel: '信息',
       infoHint: '安全的信息提示仍会保留在审核轨迹中。',
       actionsTitle: '发布动作',
-      actionsDescription:
-        '先处理就绪度，再根据当前状态提交审核、批准、排程、发布或创建回滚草稿。',
+      actionsDescription: '先处理就绪度，再根据当前状态提交审核、批准、排程、发布或创建回滚草稿。',
       submit: '提交审核',
       submitPending: '提交中...',
       approve: '批准',
@@ -912,8 +892,7 @@ const COPY = {
       selectedSectionLabel: '已选分区',
       sharedPathBadge: '已儲存粉絲視圖',
       phasePrefix: '阶段',
-      description:
-        '切換桌面或行動視口，檢查發佈前的粉絲頁效果。',
+      description: '切換桌面或行動視口，檢查發佈前的粉絲頁效果。',
       simulatePhase: '預覽時刻',
       unsavedWarning: '当前预览展示的是最近一次保存的草稿。请先保存修改再刷新粉丝视图。',
       fallbacksLabel: '预览保护',
@@ -943,8 +922,7 @@ const COPY = {
       infoLabel: '信息',
       infoHint: '安全的信息提示仍会保留在审核轨迹中。',
       actionsTitle: '发布动作',
-      actionsDescription:
-        '先处理就绪度，再根据当前状态提交审核、批准、排程、发布或创建回滚草稿。',
+      actionsDescription: '先处理就绪度，再根据当前状态提交审核、批准、排程、发布或创建回滚草稿。',
       submit: '提交审核',
       submitPending: '提交中...',
       approve: '批准',
@@ -1037,7 +1015,8 @@ const COPY = {
     },
     state: {
       loadingTitle: '公開ページのワークスペースを読み込み中',
-      loadingDescription: '現在の運用ドラフト、テンプレート指針、公開準備シグナルを読み込んでいます。',
+      loadingDescription:
+        '現在の運用ドラフト、テンプレート指針、公開準備シグナルを読み込んでいます。',
       loadWorkspaceError: '現在の公開ページワークスペースを読み込めませんでした。',
       unavailableTitle: '公開ページワークスペースを利用できません',
       previewLoadingTitle: 'ファンプレビューを更新中',
@@ -1045,9 +1024,11 @@ const COPY = {
       previewBuildError: '現在のファンプレビューを更新できませんでした。',
       previewUnavailableTitle: 'ファンプレビューを利用できません',
       previewWaitingTitle: 'ファンプレビューは保存済みドラフトを待機しています',
-      previewWaitingDescription: 'ドラフトを保存または開始して、現在のファン向け出力を生成してください。',
+      previewWaitingDescription:
+        'ドラフトを保存または開始して、現在のファン向け出力を生成してください。',
       initializeTitle: '開始レイアウトを選択',
-      initializeDescription: 'まだ運用ドラフトがありません。制約付きのレイアウトから始めて、作業台を開いてください。',
+      initializeDescription:
+        'まだ運用ドラフトがありません。制約付きのレイアウトから始めて、作業台を開いてください。',
     },
     header: {
       badge: '公開ページ作業台',
@@ -1081,7 +1062,8 @@ const COPY = {
       configureAction: '設定',
       configureTitle: 'セクション設定',
       dayPlaceholder: '日付',
-      description: 'まず順序付きセクション一覧を見て、編集・設定・確認パネルは一度に一つだけ開きます。',
+      description:
+        'まず順序付きセクション一覧を見て、編集・設定・確認パネルは一度に一つだけ開きます。',
       editAction: '編集',
       entryLabelPrefix: '項目',
       editorTitle: 'セクション編集',
@@ -1128,8 +1110,7 @@ const COPY = {
       sourceDetailsPrefix: 'ソース情報',
       sourceOwned: 'ソースでロック',
       fanActionsLabel: 'ファンアクション',
-      fanActionsHint:
-        '各アクションは型付きスロット、ファン向けラベル、検証済み URL を維持します。',
+      fanActionsHint: '各アクションは型付きスロット、ファン向けラベル、検証済み URL を維持します。',
       noActionsYet: 'まだアクションはありません。',
       addAction: 'アクションを追加',
       agencyNotesLabel: '運営メモ',
@@ -1172,14 +1153,16 @@ const COPY = {
       previewSectionsTitle: 'プレビューセクション',
       previewInspectorTitle: 'プレビュー確認',
       savedState: '現在のプレビューには保存済みドラフトが表示されています。',
-      selectedSectionEmpty: 'プレビュー内のセクションを選ぶと、現在のファン向け状態を確認できます。',
+      selectedSectionEmpty:
+        'プレビュー内のセクションを選ぶと、現在のファン向け状態を確認できます。',
       selectedSectionLabel: '選択中セクション',
       sharedPathBadge: '保存済みファンビュー',
       phasePrefix: 'フェーズ',
       description:
         'デスクトップまたはモバイル表示で、同じファン向け出力経路を確認できます。未保存の変更はプレビューフレームに入りません。',
       simulatePhase: 'プレビュー時点',
-      unsavedWarning: 'プレビューには最後に保存したドラフトが表示されています。変更を保存してからファン向け表示を更新してください。',
+      unsavedWarning:
+        'プレビューには最後に保存したドラフトが表示されています。変更を保存してからファン向け表示を更新してください。',
       fallbacksLabel: 'プレビュー保護',
       fallbacksHint: '安全ルールにより簡略化または非表示になった高リスクの公開出力を示します。',
       resolvedPhaseLabel: 'プレビュー時点',
@@ -1225,7 +1208,8 @@ const COPY = {
       reviewNote: 'レビューメモ',
       scheduleField: '公開時刻',
       rollbackTitle: 'ロールバック',
-      rollbackDescription: '安全に戻したい場合は、公開中ページからロールバック用ドラフトを作成できます。',
+      rollbackDescription:
+        '安全に戻したい場合は、公開中ページからロールバック用ドラフトを作成できます。',
       rollback: 'ロールバックドラフトを作成',
       rollbackPending: '作成中...',
       workflowEventsTitle: 'レビュー履歴',
@@ -1306,13 +1290,11 @@ const COPY = {
       loadWorkspaceError: 'Unable to load the current public page workspace.',
       unavailableTitle: 'Public page workspace unavailable',
       previewLoadingTitle: 'Refreshing fan preview',
-      previewLoadingDescription:
-        'Building the current fan-facing output for the saved draft.',
+      previewLoadingDescription: 'Building the current fan-facing output for the saved draft.',
       previewBuildError: 'Unable to refresh the current fan preview.',
       previewUnavailableTitle: 'Fan preview unavailable',
       previewWaitingTitle: 'Fan preview is waiting for a saved draft',
-      previewWaitingDescription:
-        'Save or start a draft to generate the current fan-facing output.',
+      previewWaitingDescription: 'Save or start a draft to generate the current fan-facing output.',
       initializeTitle: 'Choose a starting layout',
       initializeDescription:
         'No operator draft exists yet. Start from a vetted layout to open the workbench.',
@@ -1325,8 +1307,7 @@ const COPY = {
       draftSourceLabel: 'Draft mode',
       draftSourceHint: 'You are editing the current operator draft for this talent.',
       specialistToolsLabel: 'Advanced tools',
-      specialistToolsHint:
-        'Specialist tools stay tucked into Advanced when you need them.',
+      specialistToolsHint: 'Specialist tools stay tucked into Advanced when you need them.',
     },
     emptyWorkspace: {
       startPrefix: 'Start',
@@ -1403,8 +1384,7 @@ const COPY = {
       noActionsYet: 'No actions yet.',
       addAction: 'Add action',
       agencyNotesLabel: 'Agency notes',
-      agencyNotesHint:
-        'Keep notes structured so preview, publish, and audit all stay predictable.',
+      agencyNotesHint: 'Keep notes structured so preview, publish, and audit all stay predictable.',
       noNotesYet: 'No notes yet.',
       addNote: 'Add note',
       slotPlaceholder: 'Slot',
@@ -1448,17 +1428,14 @@ const COPY = {
       selectedSectionLabel: 'Selected section',
       sharedPathBadge: '저장된 팬 보기',
       phasePrefix: 'Phase',
-      description:
-        '데스크톱과 모바일을 전환하며 공개 전 팬 페이지를 확인합니다.',
+      description: '데스크톱과 모바일을 전환하며 공개 전 팬 페이지를 확인합니다.',
       simulatePhase: '미리보기 시점',
       unsavedWarning:
         'Preview is showing the last saved draft. Save your edits to refresh the fan-facing frame.',
       fallbacksLabel: 'Preview protection',
-      fallbacksHint:
-        'Shows where safety rules simplified or removed risky public output.',
+      fallbacksHint: 'Shows where safety rules simplified or removed risky public output.',
       resolvedPhaseLabel: '미리보기 시점',
-      resolvedPhaseHint:
-        '이 미리보기는 팬이 지금 경험하게 될 타이밍을 보여 줍니다.',
+      resolvedPhaseHint: '이 미리보기는 팬이 지금 경험하게 될 타이밍을 보여 줍니다.',
       validationMarkersPrefix: 'Readiness markers',
     },
     reviewPublish: {
@@ -1585,13 +1562,11 @@ const COPY = {
       loadWorkspaceError: 'Unable to load the current public page workspace.',
       unavailableTitle: 'Public page workspace unavailable',
       previewLoadingTitle: 'Refreshing fan preview',
-      previewLoadingDescription:
-        'Building the current fan-facing output for the saved draft.',
+      previewLoadingDescription: 'Building the current fan-facing output for the saved draft.',
       previewBuildError: 'Unable to refresh the current fan preview.',
       previewUnavailableTitle: 'Fan preview unavailable',
       previewWaitingTitle: 'Fan preview is waiting for a saved draft',
-      previewWaitingDescription:
-        'Save or start a draft to generate the current fan-facing output.',
+      previewWaitingDescription: 'Save or start a draft to generate the current fan-facing output.',
       initializeTitle: 'Choose a starting layout',
       initializeDescription:
         'No operator draft exists yet. Start from a vetted layout to open the workbench.',
@@ -1604,8 +1579,7 @@ const COPY = {
       draftSourceLabel: 'Draft mode',
       draftSourceHint: 'You are editing the current operator draft for this talent.',
       specialistToolsLabel: 'Advanced tools',
-      specialistToolsHint:
-        'Specialist tools stay tucked into Advanced when you need them.',
+      specialistToolsHint: 'Specialist tools stay tucked into Advanced when you need them.',
     },
     emptyWorkspace: {
       startPrefix: 'Start',
@@ -1682,8 +1656,7 @@ const COPY = {
       noActionsYet: 'No actions yet.',
       addAction: 'Add action',
       agencyNotesLabel: 'Agency notes',
-      agencyNotesHint:
-        'Keep notes structured so preview, publish, and audit all stay predictable.',
+      agencyNotesHint: 'Keep notes structured so preview, publish, and audit all stay predictable.',
       noNotesYet: 'No notes yet.',
       addNote: 'Add note',
       slotPlaceholder: 'Slot',
@@ -1727,17 +1700,14 @@ const COPY = {
       selectedSectionLabel: 'Selected section',
       sharedPathBadge: 'Vue fan enregistree',
       phasePrefix: 'Phase',
-      description:
-        'Passez du bureau au mobile pour verifier la page fan avant publication.',
+      description: 'Passez du bureau au mobile pour verifier la page fan avant publication.',
       simulatePhase: 'Moment d’aperçu',
       unsavedWarning:
         'Preview is showing the last saved draft. Save your edits to refresh the fan-facing frame.',
       fallbacksLabel: 'Preview protection',
-      fallbacksHint:
-        'Shows where safety rules simplified or removed risky public output.',
+      fallbacksHint: 'Shows where safety rules simplified or removed risky public output.',
       resolvedPhaseLabel: 'Moment d’aperçu',
-      resolvedPhaseHint:
-        'Cet aperçu montre le moment que les fans vivraient maintenant.',
+      resolvedPhaseHint: 'Cet aperçu montre le moment que les fans vivraient maintenant.',
       validationMarkersPrefix: 'Readiness markers',
     },
     reviewPublish: {
@@ -1827,7 +1797,7 @@ const COPY = {
 
 export type PublicPresenceStudioCopy = (typeof COPY)['en'];
 
-type CopyLocale = SupportedUiLocale  | string;
+type CopyLocale = SupportedUiLocale | string;
 type LocaleCopyRecord<T> = Record<SupportedUiLocale, T>;
 
 const SUPPORTED_COPY = COPY as unknown as LocaleCopyRecord<PublicPresenceStudioCopy>;
@@ -2461,9 +2431,7 @@ const PROVENANCE_LABELS: LocaleCopyRecord<Record<string, string>> = {
   },
 };
 
-const VALUE_TYPE_LABELS: LocaleCopyRecord<
-  Record<PublicPresenceFieldValueType, string>
-> = {
+const VALUE_TYPE_LABELS: LocaleCopyRecord<Record<PublicPresenceFieldValueType, string>> = {
   en: {
     string: 'Text',
     richText: 'Rich text',
@@ -2577,9 +2545,7 @@ const SOURCE_POLICY_LABELS: LocaleCopyRecord<Record<string, string>> = {
   },
 };
 
-const DOCUMENT_STATE_LABELS: LocaleCopyRecord<
-  Record<PublicPresenceDocumentState, string>
-> = {
+const DOCUMENT_STATE_LABELS: LocaleCopyRecord<Record<PublicPresenceDocumentState, string>> = {
   en: {
     draft: 'Draft',
     inReview: 'In review',
@@ -2648,9 +2614,7 @@ const DOCUMENT_STATE_LABELS: LocaleCopyRecord<
   },
 };
 
-const WORKFLOW_EVENT_LABELS: LocaleCopyRecord<
-  Record<PublicPresenceWorkflowEventType, string>
-> = {
+const WORKFLOW_EVENT_LABELS: LocaleCopyRecord<Record<PublicPresenceWorkflowEventType, string>> = {
   en: {
     draftSaved: 'Draft saved',
     submittedForReview: 'Submitted for review',
@@ -2947,22 +2911,16 @@ const SUPPORTED_EDITABILITY_STATE_LABELS = EDITABILITY_STATE_LABELS;
 const SUPPORTED_ISSUE_MESSAGE_LABELS = ISSUE_MESSAGE_LABELS;
 
 function resolveCopy(locale: CopyLocale) {
-  return resolveLocaleRecord(
-    locale,
-    SUPPORTED_COPY,
-  ) as PublicPresenceStudioCopy;
+  return resolveLocaleRecord(locale, SUPPORTED_COPY) as PublicPresenceStudioCopy;
 }
 
 function resolveKeyedLabel(
   locale: CopyLocale,
   record: Record<SupportedUiLocale, Record<string, string>>,
   key: string,
-  fallback: string,
+  fallback: string
 ) {
-  return (
-    resolveLocaleRecord(locale, record)[key]
-    ?? fallback
-  );
+  return resolveLocaleRecord(locale, record)[key] ?? fallback;
 }
 
 export function usePublicPresenceStudioCopy() {
@@ -2970,78 +2928,72 @@ export function usePublicPresenceStudioCopy() {
 
   return {
     locale,
-    copy: resolveLocaleRecord(
-      locale,
-      SUPPORTED_COPY,
-    ) as PublicPresenceStudioCopy,
+    copy: resolveLocaleRecord(locale, SUPPORTED_COPY) as PublicPresenceStudioCopy,
   };
 }
 
 export function getPublicPresenceStudioTabLabel(
   locale: CopyLocale,
-  tabId: PublicPresenceStudioTabId,
+  tabId: PublicPresenceStudioTabId
 ) {
   return resolveLocaleRecord(locale, SUPPORTED_TAB_LABELS)[tabId];
 }
 
 export function getHomepageSurfaceLabel(
   locale: CopyLocale,
-  surface: keyof typeof HOMEPAGE_SURFACE_LABELS,
+  surface: keyof typeof HOMEPAGE_SURFACE_LABELS
 ) {
   return resolveLocaleRecord(locale, HOMEPAGE_SURFACE_LABELS[surface]);
 }
 
 export function getHomepageSurfaceActionLabel(
   locale: CopyLocale,
-  action: keyof typeof HOMEPAGE_SURFACE_ACTION_LABELS,
+  action: keyof typeof HOMEPAGE_SURFACE_ACTION_LABELS
 ) {
   return resolveLocaleRecord(locale, HOMEPAGE_SURFACE_ACTION_LABELS[action]);
 }
 
 export function getPublicPresencePreviewPhaseLabel(
   locale: CopyLocale,
-  value: PublicPresencePhaseVisibility | 'current',
+  value: PublicPresencePhaseVisibility | 'current'
 ) {
   return resolveLocaleRecord(locale, SUPPORTED_PREVIEW_PHASE_LABELS)[value];
 }
 
 export function getPublicPresenceTemplateLabel(
   locale: CopyLocale,
-  template: Pick<PublicPresenceStudioTemplateSummary, 'templateId' | 'label'>,
+  template: Pick<PublicPresenceStudioTemplateSummary, 'templateId' | 'label'>
 ) {
   return resolveKeyedLabel(locale, SUPPORTED_TEMPLATE_LABELS, template.templateId, template.label);
 }
 
 export function getPublicPresenceTemplateUseCase(
   locale: CopyLocale,
-  template: Pick<PublicPresenceStudioTemplateSummary, 'templateId' | 'useCase'>,
+  template: Pick<PublicPresenceStudioTemplateSummary, 'templateId' | 'useCase'>
 ) {
   return resolveKeyedLabel(
     locale,
     SUPPORTED_TEMPLATE_USE_CASES,
     template.templateId,
-    template.useCase,
+    template.useCase
   );
 }
 
 export function getPublicPresenceStageSectionLabel(
   locale: CopyLocale,
-  section: Pick<PublicPresenceStudioStageSectionSummary, 'kind'>,
+  section: Pick<PublicPresenceStudioStageSectionSummary, 'kind'>
 ) {
   return resolveKeyedLabel(locale, SUPPORTED_SECTION_LABELS, section.kind, section.kind);
 }
 
 export function getPublicPresenceStageSectionPurpose(
   locale: CopyLocale,
-  section: Pick<PublicPresenceStudioStageSectionSummary, 'kind' | 'purpose'>,
+  section: Pick<PublicPresenceStudioStageSectionSummary, 'kind' | 'purpose'>
 ) {
   return resolveKeyedLabel(locale, SUPPORTED_SECTION_PURPOSES, section.kind, section.purpose);
 }
 
-export function getPublicPresenceSourcePolicyLabel(
-  locale: CopyLocale,
-  sourcePolicy: string,
-) {
+export function getPublicPresenceSourcePolicyLabel(locale: CopyLocale, sourcePolicy: string) {
   return resolveKeyedLabel(locale, SUPPORTED_SOURCE_POLICY_LABELS, sourcePolicy, sourcePolicy);
 }
 
@@ -3049,23 +3001,17 @@ export function getPublicPresenceFieldLabel(locale: CopyLocale, fieldKey: string
   return resolveKeyedLabel(locale, SUPPORTED_FIELD_LABELS, fieldKey, fieldKey);
 }
 
-export function getPublicPresenceFieldPlaceholder(
-  locale: CopyLocale,
-  fieldKey: string,
-) {
+export function getPublicPresenceFieldPlaceholder(locale: CopyLocale, fieldKey: string) {
   return getPublicPresenceFieldLabel(locale, fieldKey);
 }
 
-export function getPublicPresenceProvenanceLabel(
-  locale: CopyLocale,
-  provenance: string,
-) {
+export function getPublicPresenceProvenanceLabel(locale: CopyLocale, provenance: string) {
   return resolveKeyedLabel(locale, SUPPORTED_PROVENANCE_LABELS, provenance, provenance);
 }
 
 export function getPublicPresenceValueTypeLabel(
   locale: CopyLocale,
-  valueType: PublicPresenceFieldValueType | string,
+  valueType: PublicPresenceFieldValueType | string
 ) {
   if (!VALUE_TYPE_LABELS.en[valueType as PublicPresenceFieldValueType]) {
     return valueType;
@@ -3078,7 +3024,7 @@ export function getPublicPresenceValueTypeLabel(
 
 export function getPublicPresenceDocumentStateLabel(
   locale: CopyLocale,
-  state: PublicPresenceDocumentState | string,
+  state: PublicPresenceDocumentState | string
 ) {
   if (!DOCUMENT_STATE_LABELS.en[state as PublicPresenceDocumentState]) {
     return state;
@@ -3091,7 +3037,7 @@ export function getPublicPresenceDocumentStateLabel(
 
 export function getPublicPresenceWorkflowEventLabel(
   locale: CopyLocale,
-  eventType: PublicPresenceWorkflowEventType | string,
+  eventType: PublicPresenceWorkflowEventType | string
 ) {
   if (!WORKFLOW_EVENT_LABELS.en[eventType as PublicPresenceWorkflowEventType]) {
     return eventType;
@@ -3110,25 +3056,19 @@ export function getPublicPresenceNoteKindLabel(locale: CopyLocale, kind: string)
   return resolveKeyedLabel(locale, SUPPORTED_NOTE_KIND_LABELS, kind, kind);
 }
 
-export function getPublicPresenceEditabilityStateLabel(
-  locale: CopyLocale,
-  state: string,
-) {
+export function getPublicPresenceEditabilityStateLabel(locale: CopyLocale, state: string) {
   return resolveKeyedLabel(locale, SUPPORTED_EDITABILITY_STATE_LABELS, state, state);
 }
 
 export function getPublicPresenceIssueMessageLabel(
   locale: CopyLocale,
   messageKey: string,
-  fallback: string,
+  fallback: string
 ) {
   return resolveKeyedLabel(locale, SUPPORTED_ISSUE_MESSAGE_LABELS, messageKey, fallback);
 }
 
-export function formatPublicPresenceStudioDateTime(
-  locale: CopyLocale,
-  value: string | null,
-) {
+export function formatPublicPresenceStudioDateTime(locale: CopyLocale, value: string | null) {
   return formatLocaleDateTime(locale, value, resolveCopy(locale).common.notSet);
 }
 
@@ -3139,7 +3079,7 @@ export function formatPublicPresenceStudioValidationSummary(
     fatal: number;
     info: number;
     warning: number;
-  } | null,
+  } | null
 ) {
   const copy = resolveCopy(locale);
 

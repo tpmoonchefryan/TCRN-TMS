@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable } from '@nestjs/common';
+
 import { prisma } from '@tcrn/database';
 
 import {
@@ -29,7 +29,7 @@ export class OrganizationReadRepository {
       `SELECT id, code, name
        FROM "${tenantSchema}".subsidiary
        WHERE path = $1`,
-      path,
+      path
     );
   }
 
@@ -44,14 +44,14 @@ export class OrganizationReadRepository {
       `SELECT id, code, display_name
        FROM "${tenantSchema}".talent
        WHERE path = $1`,
-      path,
+      path
     );
   }
 
   findChildSubsidiaries(
     tenantSchema: string,
     parentId: string | null,
-    includeInactive: boolean,
+    includeInactive: boolean
   ): Promise<RawSubsidiary[]> {
     let whereClause = parentId ? `parent_id = $1::uuid` : `parent_id IS NULL`;
 
@@ -66,14 +66,14 @@ export class OrganizationReadRepository {
        FROM "${tenantSchema}".subsidiary
        WHERE ${whereClause}
        ORDER BY sort_order, NULLIF(name->>'en', ''), code`,
-      ...params,
+      ...params
     );
   }
 
   async countChildSubsidiaries(
     tenantSchema: string,
     subsidiaryIds: string[],
-    includeInactive: boolean,
+    includeInactive: boolean
   ): Promise<Map<string, number>> {
     if (subsidiaryIds.length === 0) {
       return new Map();
@@ -84,7 +84,7 @@ export class OrganizationReadRepository {
        FROM "${tenantSchema}".subsidiary
        WHERE parent_id = ANY($1::uuid[]) ${includeInactive ? '' : 'AND is_active = true'}
        GROUP BY parent_id`,
-      subsidiaryIds,
+      subsidiaryIds
     );
 
     return new Map(childCounts.map((countRow) => [countRow.parent_id, Number(countRow.count)]));
@@ -93,27 +93,31 @@ export class OrganizationReadRepository {
   async countTalentsBySubsidiary(
     tenantSchema: string,
     subsidiaryIds: string[],
-    includeInactive: boolean,
+    includeInactive: boolean
   ): Promise<Map<string, number>> {
     if (subsidiaryIds.length === 0) {
       return new Map();
     }
 
-    const talentCounts = await prisma.$queryRawUnsafe<Array<{ subsidiary_id: string; count: bigint }>>(
+    const talentCounts = await prisma.$queryRawUnsafe<
+      Array<{ subsidiary_id: string; count: bigint }>
+    >(
       `SELECT subsidiary_id, COUNT(*) as count
        FROM "${tenantSchema}".talent
        WHERE subsidiary_id = ANY($1::uuid[]) ${includeInactive ? '' : `AND ${getTalentVisibilityClause(false)}`}
        GROUP BY subsidiary_id`,
-      subsidiaryIds,
+      subsidiaryIds
     );
 
-    return new Map(talentCounts.map((countRow) => [countRow.subsidiary_id, Number(countRow.count)]));
+    return new Map(
+      talentCounts.map((countRow) => [countRow.subsidiary_id, Number(countRow.count)])
+    );
   }
 
   findTalentsByParent(
     tenantSchema: string,
     parentId: string | null,
-    includeInactive: boolean,
+    includeInactive: boolean
   ): Promise<RawTalent[]> {
     let whereClause = parentId ? `subsidiary_id = $1::uuid` : `subsidiary_id IS NULL`;
 
@@ -129,7 +133,7 @@ export class OrganizationReadRepository {
        FROM "${tenantSchema}".talent
        WHERE ${whereClause}
        ORDER BY display_name`,
-      ...params,
+      ...params
     );
   }
 }

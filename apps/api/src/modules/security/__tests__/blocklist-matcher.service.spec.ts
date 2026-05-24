@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { DatabaseService } from '../../database/database.service';
@@ -79,7 +78,7 @@ describe('BlocklistMatcherService', () => {
 
     service = new BlocklistMatcherService(
       databaseService as DatabaseService,
-      redisService as RedisService,
+      redisService as RedisService
     );
     await service.onModuleInit();
   });
@@ -144,7 +143,7 @@ describe('BlocklistMatcherService', () => {
       const result = service.testPattern(
         'Email: test@example.com',
         '[a-z]+@[a-z]+\\.[a-z]+',
-        'regex',
+        'regex'
       );
 
       expect(result.matched).toBe(true);
@@ -231,7 +230,10 @@ describe('BlocklistMatcherService', () => {
         getPrisma: vi.fn().mockReturnValue(mockPrisma),
       } as unknown as DatabaseService;
 
-      const localService = new BlocklistMatcherService(localDbService, redisService as RedisService);
+      const localService = new BlocklistMatcherService(
+        localDbService,
+        redisService as RedisService
+      );
       await localService.onModuleInit();
 
       const result = await localService.match('SPAM', 'marshmallow');

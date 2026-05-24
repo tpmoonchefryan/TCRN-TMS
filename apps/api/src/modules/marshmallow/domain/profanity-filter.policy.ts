@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import type { ProfanityEntry, ProfanitySeverity } from '../data/profanity-wordlist';
 
 export interface FilterResult {
@@ -68,7 +67,7 @@ const SCORE_THRESHOLDS = {
 
 export function checkProfanityWordlist(
   profanityWords: ProfanityEntry[],
-  normalizedContent: string,
+  normalizedContent: string
 ): {
   matched: boolean;
   flags: string[];
@@ -115,7 +114,7 @@ export function checkProfanityWordlist(
 
 export function checkThreatKeywords(
   threatKeywords: ProfanityEntry[],
-  normalizedContent: string,
+  normalizedContent: string
 ): {
   matched: boolean;
   flags: string[];
@@ -172,7 +171,7 @@ export function calculateContentScore(factors: ScoreFactor[]): ContentScore {
 
 export function matchExternalPatterns(
   content: string,
-  externalPatterns: ExternalPattern[],
+  externalPatterns: ExternalPattern[]
 ): {
   matched: boolean;
   flags: string[];
@@ -195,7 +194,7 @@ export function matchExternalPatterns(
       case 'domain': {
         const domainRegex = new RegExp(
           `https?://([a-z0-9-]+\\.)*${escapeFilterRegex(pattern.pattern)}(/|$|\\s|\\?|#)`,
-          'gi',
+          'gi'
         );
         isMatch = domainRegex.test(content);
         break;
@@ -230,8 +229,8 @@ export function matchExternalPatterns(
   const finalAction = actions.includes('reject')
     ? 'reject'
     : actions.includes('flag')
-    ? 'flag'
-    : 'flag';
+      ? 'flag'
+      : 'flag';
 
   const scoreFactors: ScoreFactor[] = matched.map((item) => {
     const severityKey =
@@ -250,7 +249,7 @@ export function matchExternalPatterns(
       if (item.action === 'replace' && item.replacement) {
         filteredContent = filteredContent.replace(
           new RegExp(escapeFilterRegex(item.pattern), 'gi'),
-          item.replacement,
+          item.replacement
         );
       }
     }
@@ -268,7 +267,7 @@ export function matchExternalPatterns(
 
 export function matchCustomBlocklist(
   content: string,
-  entries: CustomBlocklistPattern[],
+  entries: CustomBlocklistPattern[]
 ): {
   matched: boolean;
   flags: string[];
@@ -293,10 +292,9 @@ export function matchCustomBlocklist(
         }
         break;
       case 'wildcard':
-        isMatch = new RegExp(
-          entry.pattern.replace(/\*/g, '.*').replace(/\?/g, '.'),
-          'gi',
-        ).test(content);
+        isMatch = new RegExp(entry.pattern.replace(/\*/g, '.*').replace(/\?/g, '.'), 'gi').test(
+          content
+        );
         break;
     }
 
@@ -317,8 +315,8 @@ export function matchCustomBlocklist(
   const finalAction = actions.includes('reject')
     ? 'reject'
     : actions.includes('flag')
-    ? 'flag'
-    : 'flag';
+      ? 'flag'
+      : 'flag';
 
   return {
     matched: true,
@@ -406,7 +404,8 @@ export function checkBehaviorPatterns(content: string): {
     });
   }
 
-  const emojiPattern = /[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu;
+  const emojiPattern =
+    /[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu;
   const emojiMatches = content.match(emojiPattern) || [];
   const textWithoutEmoji = content.replace(emojiPattern, '').replace(/\s/g, '');
   if (emojiMatches.length > 10 && textWithoutEmoji.length < 10) {
@@ -431,7 +430,7 @@ export function escapeFilterRegex(str: string): string {
 
 export function escalateFilterAction(
   current: 'allow' | 'reject' | 'flag',
-  incoming: 'allow' | 'reject' | 'flag',
+  incoming: 'allow' | 'reject' | 'flag'
 ): 'allow' | 'reject' | 'flag' {
   const priority = { allow: 0, flag: 1, reject: 2 };
   return priority[incoming] > priority[current] ? incoming : current;

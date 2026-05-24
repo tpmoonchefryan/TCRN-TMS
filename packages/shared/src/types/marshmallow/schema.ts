@@ -4,13 +4,13 @@ export type CaptchaMode = 'always' | 'never' | 'auto';
 
 export type MessageStatus = 'pending' | 'approved' | 'rejected' | 'spam';
 
-export type RejectionReason = 
-  | 'profanity' 
-  | 'spam' 
-  | 'harassment' 
-  | 'off_topic' 
-  | 'duplicate' 
-  | 'external_link' 
+export type RejectionReason =
+  | 'profanity'
+  | 'spam'
+  | 'harassment'
+  | 'off_topic'
+  | 'duplicate'
+  | 'external_link'
   | 'other';
 
 export interface ThemeConfig {
@@ -40,7 +40,7 @@ export interface MarshmallowConfig {
   reactions_enabled: boolean;
   allowed_reactions: string[];
   theme: ThemeConfig;
-  
+
   // Computed / Metadata
   path?: string; // Virtual path derived from talent
 }
@@ -84,5 +84,5 @@ export const DEFAULT_CONFIG: Partial<MarshmallowConfig> = {
   rate_limit_window_hours: 1,
   reactions_enabled: true,
   allowed_reactions: ['❤️', '👍', '😊', '🎉', '💯'],
-  theme: { card_style: 'default' }
+  theme: { card_style: 'default' },
 };

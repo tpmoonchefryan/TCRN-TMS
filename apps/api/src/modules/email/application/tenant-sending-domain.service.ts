@@ -1,8 +1,8 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { randomBytes, randomUUID } from 'node:crypto';
 
 import { BadRequestException, Injectable, NotFoundException, Optional } from '@nestjs/common';
+
 import { ErrorCodes } from '@tcrn/shared';
 
 import {
@@ -57,10 +57,12 @@ const DEFAULT_HELPERS: TenantSendingDomainServiceHelpers = {
 export class TenantSendingDomainService {
   constructor(
     private readonly repository: TenantSendingDomainRepository,
-    @Optional() private readonly helpers: TenantSendingDomainServiceHelpers = DEFAULT_HELPERS,
+    @Optional() private readonly helpers: TenantSendingDomainServiceHelpers = DEFAULT_HELPERS
   ) {}
 
-  async getManagedTenantSendingDomains(tenantId: string): Promise<ManagedTenantSendingDomainResponse> {
+  async getManagedTenantSendingDomains(
+    tenantId: string
+  ): Promise<ManagedTenantSendingDomainResponse> {
     const tenant = await this.repository.findTenantById(tenantId);
 
     if (!tenant) {
@@ -75,7 +77,7 @@ export class TenantSendingDomainService {
 
   async saveManagedTenantSendingDomains(
     tenantId: string,
-    input: SaveManagedTenantSendingDomainsDto,
+    input: SaveManagedTenantSendingDomainsDto
   ): Promise<ManagedTenantSendingDomainResponse> {
     const tenant = await this.repository.findTenantById(tenantId);
 
@@ -89,7 +91,11 @@ export class TenantSendingDomainService {
     const existing = readStoredSendingDomains(tenant.settings);
     const nextDomains = this.normalizeManagedDomains(input.domains, existing);
     const existingPreferences = readTenantSenderPreferences(tenant.settings);
-    const nextDefaultDomainId = this.resolveDefaultDomainId(input.defaultDomainId, existingPreferences.defaultDomainId, nextDomains);
+    const nextDefaultDomainId = this.resolveDefaultDomainId(
+      input.defaultDomainId,
+      existingPreferences.defaultDomainId,
+      nextDomains
+    );
     const nextSettings = {
       ...(tenant.settings ?? {}),
       [EMAIL_SENDING_DOMAINS_SETTINGS_KEY]: nextDomains,
@@ -119,7 +125,7 @@ export class TenantSendingDomainService {
 
   async saveTenantSenderSelection(
     tenantSchema: string,
-    input: SaveTenantSenderDomainsDto,
+    input: SaveTenantSenderDomainsDto
   ): Promise<TenantSenderDomainsResponse> {
     const tenant = await this.repository.findTenantBySchema(tenantSchema);
 
@@ -133,7 +139,9 @@ export class TenantSendingDomainService {
     const settings = tenant.settings ?? {};
     const domains = readStoredSendingDomains(settings);
     const existingPreferences = readTenantSenderPreferences(settings);
-    const defaultDomainId = this.normalizeNullableString(input.defaultDomainId ?? existingPreferences.defaultDomainId);
+    const defaultDomainId = this.normalizeNullableString(
+      input.defaultDomainId ?? existingPreferences.defaultDomainId
+    );
 
     if (defaultDomainId) {
       const selected = domains.find((domain) => domain.id === defaultDomainId);
@@ -163,7 +171,7 @@ export class TenantSendingDomainService {
 
   private normalizeManagedDomains(
     inputDomains: ManagedTenantSendingDomainDto[],
-    existingDomains: StoredTenantSendingDomain[],
+    existingDomains: StoredTenantSendingDomain[]
   ): StoredTenantSendingDomain[] {
     const existingById = new Map(existingDomains.map((domain) => [domain.id, domain]));
     const existingByDomain = new Map(existingDomains.map((domain) => [domain.domain, domain]));
@@ -203,11 +211,12 @@ export class TenantSendingDomainService {
   private resolveDefaultDomainId(
     inputDefaultDomainId: string | null | undefined,
     existingDefaultDomainId: string | null,
-    domains: StoredTenantSendingDomain[],
+    domains: StoredTenantSendingDomain[]
   ): string | null {
-    const requestedDefaultDomainId = inputDefaultDomainId === undefined
-      ? existingDefaultDomainId
-      : this.normalizeNullableString(inputDefaultDomainId);
+    const requestedDefaultDomainId =
+      inputDefaultDomainId === undefined
+        ? existingDefaultDomainId
+        : this.normalizeNullableString(inputDefaultDomainId);
 
     if (!requestedDefaultDomainId) {
       return null;
@@ -219,9 +228,11 @@ export class TenantSendingDomainService {
 
   private buildManagedResponse(
     tenantId: string,
-    settings: Record<string, unknown>,
+    settings: Record<string, unknown>
   ): ManagedTenantSendingDomainResponse {
-    const domains = readStoredSendingDomains(settings).map(({ verificationToken: _verificationToken, ...domain }) => domain);
+    const domains = readStoredSendingDomains(settings).map(
+      ({ verificationToken: _verificationToken, ...domain }) => domain
+    );
     const preferences = readTenantSenderPreferences(settings);
     const defaultDomain = domains.find((domain) => domain.id === preferences.defaultDomainId);
 

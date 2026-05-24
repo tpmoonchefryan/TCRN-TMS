@@ -1,6 +1,7 @@
-import type { SupportedUiLocale } from '@tcrn/shared';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import type { SupportedUiLocale } from '@tcrn/shared';
 
 import { HierarchyBusinessOverviewScreen } from '@/domains/hierarchy-business/screens/HierarchyBusinessOverviewScreen';
 

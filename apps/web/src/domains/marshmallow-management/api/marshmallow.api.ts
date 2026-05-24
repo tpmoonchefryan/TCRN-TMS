@@ -185,7 +185,7 @@ export function readMarshmallowConfig(request: RequestFn, talentId: string) {
 export function updateMarshmallowConfig(
   request: RequestFn,
   talentId: string,
-  input: UpdateMarshmallowConfigInput,
+  input: UpdateMarshmallowConfigInput
 ) {
   return request<MarshmallowConfigResponse>(`/api/v1/talents/${talentId}/marshmallow/config`, {
     method: 'PATCH',
@@ -199,7 +199,7 @@ export function updateMarshmallowConfig(
 export function listMarshmallowMessages(
   request: RequestFn,
   talentId: string,
-  options: ListMessagesOptions = {},
+  options: ListMessagesOptions = {}
 ) {
   const query = buildQueryString({
     page: options.page ?? 1,
@@ -209,7 +209,9 @@ export function listMarshmallowMessages(
     hasReply: options.hasReply,
   });
 
-  return request<MarshmallowMessageListResponse>(`/api/v1/talents/${talentId}/marshmallow/messages${query}`);
+  return request<MarshmallowMessageListResponse>(
+    `/api/v1/talents/${talentId}/marshmallow/messages${query}`
+  );
 }
 
 export function approveMarshmallowMessage(request: RequestFn, talentId: string, messageId: string) {
@@ -217,7 +219,7 @@ export function approveMarshmallowMessage(request: RequestFn, talentId: string, 
     `/api/v1/talents/${talentId}/marshmallow/messages/${messageId}/approve`,
     {
       method: 'POST',
-    },
+    }
   );
 }
 
@@ -232,16 +234,20 @@ export function rejectMarshmallowMessage(request: RequestFn, talentId: string, m
       body: JSON.stringify({
         reason: 'manual',
       }),
-    },
+    }
   );
 }
 
-export function unrejectMarshmallowMessage(request: RequestFn, talentId: string, messageId: string) {
+export function unrejectMarshmallowMessage(
+  request: RequestFn,
+  talentId: string,
+  messageId: string
+) {
   return request<MarshmallowModerationResponse>(
     `/api/v1/talents/${talentId}/marshmallow/messages/${messageId}/unreject`,
     {
       method: 'POST',
-    },
+    }
   );
 }
 
@@ -253,7 +259,7 @@ export function updateMarshmallowMessage(
     isRead?: boolean;
     isStarred?: boolean;
     isPinned?: boolean;
-  },
+  }
 ) {
   return request<MarshmallowMessageUpdateResponse>(
     `/api/v1/talents/${talentId}/marshmallow/messages/${messageId}`,
@@ -263,34 +269,39 @@ export function updateMarshmallowMessage(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(input),
-    },
+    }
   );
 }
 
 export function createMarshmallowExport(
   request: RequestFn,
   talentId: string,
-  options: CreateExportOptions,
+  options: CreateExportOptions
 ) {
-  return request<MarshmallowExportCreateResponse>(`/api/v1/talents/${talentId}/marshmallow/export`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      format: options.format,
-      status: options.status,
-      includeRejected: options.includeRejected,
-    }),
-  });
+  return request<MarshmallowExportCreateResponse>(
+    `/api/v1/talents/${talentId}/marshmallow/export`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        format: options.format,
+        status: options.status,
+        includeRejected: options.includeRejected,
+      }),
+    }
+  );
 }
 
 export function readMarshmallowExportJob(request: RequestFn, talentId: string, jobId: string) {
-  return request<MarshmallowExportJobResponse>(`/api/v1/talents/${talentId}/marshmallow/export/${jobId}`);
+  return request<MarshmallowExportJobResponse>(
+    `/api/v1/talents/${talentId}/marshmallow/export/${jobId}`
+  );
 }
 
 export function downloadMarshmallowExport(request: RequestFn, talentId: string, jobId: string) {
   return request<MarshmallowExportDownloadResponse>(
-    `/api/v1/talents/${talentId}/marshmallow/export/${jobId}/download`,
+    `/api/v1/talents/${talentId}/marshmallow/export/${jobId}/download`
   );
 }

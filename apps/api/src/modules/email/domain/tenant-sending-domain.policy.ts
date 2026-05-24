@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { BadRequestException } from '@nestjs/common';
+
 import { ErrorCodes } from '@tcrn/shared';
 
 export const EMAIL_SENDING_DOMAINS_SETTINGS_KEY = 'emailSendingDomains';
@@ -8,7 +8,7 @@ export const EMAIL_SENDER_PREFERENCES_SETTINGS_KEY = 'emailSenderPreferences';
 
 export const TENANT_SENDING_DOMAIN_STATUSES = ['pending_dns', 'verified', 'disabled'] as const;
 
-export type TenantSendingDomainStatus = typeof TENANT_SENDING_DOMAIN_STATUSES[number];
+export type TenantSendingDomainStatus = (typeof TENANT_SENDING_DOMAIN_STATUSES)[number];
 
 export interface TenantSendingDomainDnsRecord {
   type: 'TXT';
@@ -41,7 +41,12 @@ export interface TenantRecordWithEmailSettings {
 export function normalizeSendingDomainDomain(domain: string): string {
   const normalized = domain.trim().toLowerCase();
 
-  if (!normalized || normalized.includes('://') || /\s/.test(normalized) || !normalized.includes('.')) {
+  if (
+    !normalized ||
+    normalized.includes('://') ||
+    /\s/.test(normalized) ||
+    !normalized.includes('.')
+  ) {
     throw new BadRequestException({
       code: ErrorCodes.VALIDATION_FAILED,
       message: 'Sending domain must be a hostname.',
@@ -51,7 +56,9 @@ export function normalizeSendingDomainDomain(domain: string): string {
   return normalized;
 }
 
-export function assertTenantSendingDomainStatus(status: string): asserts status is TenantSendingDomainStatus {
+export function assertTenantSendingDomainStatus(
+  status: string
+): asserts status is TenantSendingDomainStatus {
   if (!TENANT_SENDING_DOMAIN_STATUSES.includes(status as TenantSendingDomainStatus)) {
     throw new BadRequestException({
       code: ErrorCodes.VALIDATION_FAILED,
@@ -62,7 +69,7 @@ export function assertTenantSendingDomainStatus(status: string): asserts status 
 
 export function buildSendingDomainDnsRecords(
   domain: string,
-  verificationToken: string,
+  verificationToken: string
 ): TenantSendingDomainDnsRecord[] {
   return [
     {
@@ -73,7 +80,9 @@ export function buildSendingDomainDnsRecords(
   ];
 }
 
-export function readStoredSendingDomains(settings: Record<string, unknown> | null): StoredTenantSendingDomain[] {
+export function readStoredSendingDomains(
+  settings: Record<string, unknown> | null
+): StoredTenantSendingDomain[] {
   const raw = settings?.[EMAIL_SENDING_DOMAINS_SETTINGS_KEY];
 
   if (!Array.isArray(raw)) {
@@ -87,12 +96,12 @@ export function readStoredSendingDomains(settings: Record<string, unknown> | nul
 
     const record = item as Partial<StoredTenantSendingDomain>;
     if (
-      typeof record.id !== 'string'
-      || typeof record.domain !== 'string'
-      || typeof record.status !== 'string'
-      || typeof record.verificationToken !== 'string'
-      || typeof record.createdAt !== 'string'
-      || typeof record.updatedAt !== 'string'
+      typeof record.id !== 'string' ||
+      typeof record.domain !== 'string' ||
+      typeof record.status !== 'string' ||
+      typeof record.verificationToken !== 'string' ||
+      typeof record.createdAt !== 'string' ||
+      typeof record.updatedAt !== 'string'
     ) {
       return [];
     }
@@ -121,7 +130,9 @@ export function readStoredSendingDomains(settings: Record<string, unknown> | nul
   });
 }
 
-export function readTenantSenderPreferences(settings: Record<string, unknown> | null): TenantSenderPreferences {
+export function readTenantSenderPreferences(
+  settings: Record<string, unknown> | null
+): TenantSenderPreferences {
   const raw = settings?.[EMAIL_SENDER_PREFERENCES_SETTINGS_KEY];
 
   if (!raw || typeof raw !== 'object') {

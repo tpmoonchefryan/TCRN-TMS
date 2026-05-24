@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { NotFoundException } from '@nestjs/common';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -67,7 +66,7 @@ describe('ApiKeyService', () => {
     service = new ApiKeyService(
       mockDatabaseService as DatabaseService,
       mockChangeLogService as ChangeLogService,
-      mockTechEventLogService as TechEventLogService,
+      mockTechEventLogService as TechEventLogService
     );
   });
 
@@ -163,9 +162,9 @@ describe('ApiKeyService', () => {
     it('should throw NotFoundException for non-existent tenant consumer', async () => {
       mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([]);
 
-      await expect(
-        service.regenerateKey('invalid-consumer', mockContext),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.regenerateKey('invalid-consumer', mockContext)).rejects.toThrow(
+        NotFoundException
+      );
     });
 
     it('should log key regeneration', async () => {

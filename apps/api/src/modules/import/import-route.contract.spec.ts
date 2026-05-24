@@ -1,7 +1,6 @@
-import 'reflect-metadata';
-
 import { RequestMethod } from '@nestjs/common';
 import { METHOD_METADATA, PATH_METADATA } from '@nestjs/common/constants';
+import 'reflect-metadata';
 import { describe, expect, it } from 'vitest';
 
 import { ImportController } from './controllers/import.controller';
@@ -28,12 +27,14 @@ const getControllerRoutes = (controller: object): ControllerRoute[] => {
   const controllerClass = controller as { prototype: Record<string, unknown> };
   const methodNames = Object.getOwnPropertyNames(controllerClass.prototype).filter(
     (methodName) =>
-      methodName !== 'constructor' && typeof controllerClass.prototype[methodName] === 'function',
+      methodName !== 'constructor' && typeof controllerClass.prototype[methodName] === 'function'
   );
 
   return methodNames.flatMap((methodName) => {
     const handler = controllerClass.prototype[methodName];
-    const requestMethod = Reflect.getMetadata(METHOD_METADATA, handler) as RequestMethod | undefined;
+    const requestMethod = Reflect.getMetadata(METHOD_METADATA, handler) as
+      | RequestMethod
+      | undefined;
 
     if (requestMethod === undefined) {
       return [];
@@ -75,7 +76,7 @@ describe('ImportController private route contract', () => {
           path: ':type/:jobId/errors',
         },
         { methodName: 'cancelJob', requestMethod: RequestMethod.DELETE, path: ':type/:jobId' },
-      ]),
+      ])
     );
   });
 

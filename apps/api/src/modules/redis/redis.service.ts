@@ -1,9 +1,9 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import type { RbacRolePolicyEffect } from '@tcrn/shared';
 import Redis from 'ioredis';
+
+import type { RbacRolePolicyEffect } from '@tcrn/shared';
 
 /**
  * Redis Service
@@ -89,15 +89,15 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     permissions: Record<string, RbacRolePolicyEffect>
   ): Promise<void> {
     const key = this.getPermissionKey(tenantSchema, userId, scopeType, scopeId);
-    
+
     // Use HSET to store permissions as hash
     const pipeline = this.client.pipeline();
     pipeline.del(key); // Clear existing
-    
+
     for (const [resourceAction, effect] of Object.entries(permissions)) {
       pipeline.hset(key, resourceAction, effect);
     }
-    
+
     await pipeline.exec();
   }
 
@@ -112,11 +112,11 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
   ): Promise<Record<string, RbacRolePolicyEffect> | null> {
     const key = this.getPermissionKey(tenantSchema, userId, scopeType, scopeId);
     const result = await this.client.hgetall(key);
-    
+
     if (Object.keys(result).length === 0) {
       return null;
     }
-    
+
     return result as Record<string, RbacRolePolicyEffect>;
   }
 
@@ -173,11 +173,11 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
   async getSession(sessionId: string): Promise<Record<string, string> | null> {
     const key = `session:${sessionId}`;
     const result = await this.client.hgetall(key);
-    
+
     if (Object.keys(result).length === 0) {
       return null;
     }
-    
+
     return result;
   }
 
@@ -211,16 +211,13 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
    * Increment rate limit counter
    * Returns current count after increment
    */
-  async incrementRateLimit(
-    key: string,
-    windowSeconds: number
-  ): Promise<number> {
+  async incrementRateLimit(key: string, windowSeconds: number): Promise<number> {
     const fullKey = `ratelimit:${key}`;
     const pipeline = this.client.pipeline();
     pipeline.incr(fullKey);
     pipeline.expire(fullKey, windowSeconds);
     const results = await pipeline.exec();
-    return results?.[0]?.[1] as number || 0;
+    return (results?.[0]?.[1] as number) || 0;
   }
 
   /**

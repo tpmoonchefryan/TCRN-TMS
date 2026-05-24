@@ -1,7 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Controller, Get, Param } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+
 import { ErrorCodes, SUPPORTED_UI_LOCALES } from '@tcrn/shared';
 
 import { RequirePermissions } from '../../../common/decorators';
@@ -156,33 +156,43 @@ const REPORT_CATALOG_LIST_SCHEMA = {
 
 const REPORT_UNAUTHORIZED_SCHEMA = createErrorEnvelopeSchema(
   'AUTH_UNAUTHORIZED',
-  'Authentication required',
+  'Authentication required'
 );
 
 const REPORT_FORBIDDEN_SCHEMA = createErrorEnvelopeSchema(
   ErrorCodes.PERM_ACCESS_DENIED,
-  'Access denied',
+  'Access denied'
 );
 
 const REPORT_NOT_FOUND_SCHEMA = createErrorEnvelopeSchema(
   ErrorCodes.RES_NOT_FOUND,
-  'Report catalog item not found',
+  'Report catalog item not found'
 );
 
 @ApiTags('Ops - Reports')
 @ApiBearerAuth()
 @Controller('reports')
 export class ReportCatalogController {
-  constructor(
-    private readonly reportCatalogApplicationService: ReportCatalogApplicationService,
-  ) {}
+  constructor(private readonly reportCatalogApplicationService: ReportCatalogApplicationService) {}
 
   @Get('catalog')
   @RequirePermissions({ resource: 'report.mfr', action: 'read' })
   @ApiOperation({ summary: 'List available report catalog items' })
-  @ApiResponse({ status: 200, description: 'Returns available report catalog items', schema: REPORT_CATALOG_LIST_SCHEMA })
-  @ApiResponse({ status: 401, description: 'Authentication is required to list report catalog items', schema: REPORT_UNAUTHORIZED_SCHEMA })
-  @ApiResponse({ status: 403, description: 'Insufficient permissions to list report catalog items', schema: REPORT_FORBIDDEN_SCHEMA })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns available report catalog items',
+    schema: REPORT_CATALOG_LIST_SCHEMA,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Authentication is required to list report catalog items',
+    schema: REPORT_UNAUTHORIZED_SCHEMA,
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Insufficient permissions to list report catalog items',
+    schema: REPORT_FORBIDDEN_SCHEMA,
+  })
   listCatalog() {
     return this.reportCatalogApplicationService.list();
   }
@@ -195,10 +205,26 @@ export class ReportCatalogController {
     description: 'Report catalog identifier',
     schema: { type: 'string', example: 'mfr' },
   })
-  @ApiResponse({ status: 200, description: 'Returns report catalog metadata', schema: REPORT_CATALOG_ITEM_SCHEMA })
-  @ApiResponse({ status: 401, description: 'Authentication is required to read report catalog metadata', schema: REPORT_UNAUTHORIZED_SCHEMA })
-  @ApiResponse({ status: 403, description: 'Insufficient permissions to read report catalog metadata', schema: REPORT_FORBIDDEN_SCHEMA })
-  @ApiResponse({ status: 404, description: 'Report catalog item was not found', schema: REPORT_NOT_FOUND_SCHEMA })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns report catalog metadata',
+    schema: REPORT_CATALOG_ITEM_SCHEMA,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Authentication is required to read report catalog metadata',
+    schema: REPORT_UNAUTHORIZED_SCHEMA,
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Insufficient permissions to read report catalog metadata',
+    schema: REPORT_FORBIDDEN_SCHEMA,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Report catalog item was not found',
+    schema: REPORT_NOT_FOUND_SCHEMA,
+  })
   getCatalogItem(@Param('reportId') reportId: string) {
     return this.reportCatalogApplicationService.get(reportId);
   }

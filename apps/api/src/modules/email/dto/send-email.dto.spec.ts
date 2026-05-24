@@ -1,6 +1,7 @@
-import { SUPPORTED_UI_LOCALES } from '@tcrn/shared';
 import { validate } from 'class-validator';
 import { describe, expect, it } from 'vitest';
+
+import { SUPPORTED_UI_LOCALES } from '@tcrn/shared';
 
 import { SendEmailDto } from './send-email.dto';
 

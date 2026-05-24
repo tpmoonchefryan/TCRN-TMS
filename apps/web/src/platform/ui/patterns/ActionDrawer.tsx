@@ -19,7 +19,6 @@ export interface ActionDrawerProps {
   closeOnEscape?: boolean;
 }
 
-
 export interface ActionDrawerFooterProps {
   secondary?: React.ReactNode;
   primary?: React.ReactNode;
@@ -36,11 +35,19 @@ export const ActionDrawerFooter: React.FC<ActionDrawerFooterProps> = ({
   className = '',
 }) => {
   if (children) {
-    return <div className={`flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-end ${className}`}>{children}</div>;
+    return (
+      <div
+        className={`flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-end ${className}`}
+      >
+        {children}
+      </div>
+    );
   }
 
   return (
-    <div className={`flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-end ${className}`}>
+    <div
+      className={`flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-end ${className}`}
+    >
       {secondary}
       {destructive || primary}
     </div>
@@ -72,7 +79,7 @@ export const ActionDrawer: React.FC<ActionDrawerProps> = ({
   const titleId = useId();
   const descId = useId();
   const drawerRef = useRef<HTMLDivElement>(null);
-  
+
   // Presence helper logic
   const [isMounted, setIsMounted] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
@@ -90,12 +97,12 @@ export const ActionDrawer: React.FC<ActionDrawerProps> = ({
       setIsExiting(true);
       const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       const timeout = reducedMotion ? 0 : motionConstants.durationHeroMs; // Must match duration-300
-      
+
       const timer = setTimeout(() => {
         setIsExiting(false);
         setIsMounted(false);
       }, timeout);
-      
+
       return () => clearTimeout(timer);
     }
   }, [open, isMounted]);
@@ -177,8 +184,19 @@ export const ActionDrawer: React.FC<ActionDrawerProps> = ({
               className="rounded-full p-1 text-slate-400 transition hover:text-slate-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
               aria-label={closeButtonAriaLabel}
             >
-              <svg className="h-5 w-5" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              <svg
+                className="h-5 w-5"
+                aria-hidden="true"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </button>
           </header>
@@ -195,6 +213,6 @@ export const ActionDrawer: React.FC<ActionDrawerProps> = ({
         </div>
       </div>
     </div>,
-    document.body,
+    document.body
   );
 };

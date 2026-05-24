@@ -1,18 +1,17 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
-    IsBoolean,
-    IsEmail,
-    IsIn,
-    IsNumber,
-    IsObject,
-    IsOptional,
-    IsString,
-    Max,
-    Min,
-    ValidateNested,
+  IsBoolean,
+  IsEmail,
+  IsIn,
+  IsNumber,
+  IsObject,
+  IsOptional,
+  IsString,
+  Max,
+  Min,
+  ValidateNested,
 } from 'class-validator';
 
 /**
@@ -82,17 +81,26 @@ export class SmtpConfigDto {
 }
 
 export class TenantEmailSenderOverrideDto {
-  @ApiPropertyOptional({ description: 'Tenant-specific sender email address', example: 'tenant-a@example.com' })
+  @ApiPropertyOptional({
+    description: 'Tenant-specific sender email address',
+    example: 'tenant-a@example.com',
+  })
   @IsEmail()
   @IsOptional()
   fromAddress?: string;
 
-  @ApiPropertyOptional({ description: 'Tenant-specific sender display name', example: 'Tenant A Support' })
+  @ApiPropertyOptional({
+    description: 'Tenant-specific sender display name',
+    example: 'Tenant A Support',
+  })
   @IsString()
   @IsOptional()
   fromName?: string;
 
-  @ApiPropertyOptional({ description: 'Tenant-specific reply-to address', example: 'tenant-a-support@example.com' })
+  @ApiPropertyOptional({
+    description: 'Tenant-specific reply-to address',
+    example: 'tenant-a-support@example.com',
+  })
   @IsEmail()
   @IsOptional()
   replyTo?: string;
@@ -150,7 +158,10 @@ export class SaveEmailConfigDto {
  * Test email DTO
  */
 export class TestEmailDto {
-  @ApiProperty({ description: 'Destination email address for the test message', example: 'operator@tcrn.app' })
+  @ApiProperty({
+    description: 'Destination email address for the test message',
+    example: 'operator@tcrn.app',
+  })
   @IsEmail()
   testEmail!: string;
 }
@@ -179,11 +190,14 @@ export interface EmailConfigResponse {
   };
   isConfigured: boolean;
   lastUpdated?: string;
-  tenantSenderOverrides?: Record<string, {
-    fromAddress?: string;
-    fromName?: string;
-    replyTo?: string;
-  }>;
+  tenantSenderOverrides?: Record<
+    string,
+    {
+      fromAddress?: string;
+      fromName?: string;
+      replyTo?: string;
+    }
+  >;
 }
 
 /**
@@ -208,11 +222,14 @@ export interface DecryptedEmailConfig {
     fromAddress: string;
     fromName: string;
   };
-  tenantSenderOverrides?: Record<string, {
-    fromAddress?: string;
-    fromName?: string;
-    replyTo?: string;
-  }>;
+  tenantSenderOverrides?: Record<
+    string,
+    {
+      fromAddress?: string;
+      fromName?: string;
+      replyTo?: string;
+    }
+  >;
 }
 
 /**

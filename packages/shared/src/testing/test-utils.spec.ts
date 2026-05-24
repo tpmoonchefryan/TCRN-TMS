@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { describe, expect, it, vi } from 'vitest';
 
 import { createTestTenantFixture, generateSchemaName } from './test-utils';
@@ -40,8 +39,8 @@ describe('createTestTenantFixture', () => {
           $executeRawUnsafe: execute,
           $queryRawUnsafe: query,
         },
-        'fixture',
-      ),
+        'fixture'
+      )
     ).rejects.toThrow('copy failed');
 
     expect(create).toHaveBeenCalledTimes(1);
@@ -49,7 +48,7 @@ describe('createTestTenantFixture', () => {
       ([sql]) =>
         typeof sql === 'string' &&
         sql.startsWith('DROP SCHEMA IF EXISTS "tenant_test_fixture') &&
-        sql.endsWith('" CASCADE'),
+        sql.endsWith('" CASCADE')
     );
     expect(dropSchemaCall).toBeDefined();
     expect(update).toHaveBeenCalledWith({
@@ -91,7 +90,7 @@ describe('createTestTenantFixture', () => {
         $executeRawUnsafe: execute,
         $queryRawUnsafe: query,
       },
-      'fixture',
+      'fixture'
     );
 
     await fixture.cleanup();
@@ -105,15 +104,15 @@ describe('createTestTenantFixture', () => {
       ([sql]) =>
         typeof sql === 'string' &&
         sql.startsWith('DROP SCHEMA IF EXISTS "tenant_test_fixture') &&
-        sql.endsWith('" CASCADE'),
+        sql.endsWith('" CASCADE')
     );
 
     expect(dropSchemaCallIndex).toBeGreaterThanOrEqual(0);
     expect(update.mock.invocationCallOrder[0]).toBeLessThan(
-      execute.mock.invocationCallOrder[dropSchemaCallIndex],
+      execute.mock.invocationCallOrder[dropSchemaCallIndex]
     );
     expect(deleteFn.mock.invocationCallOrder[0]).toBeGreaterThan(
-      execute.mock.invocationCallOrder[dropSchemaCallIndex],
+      execute.mock.invocationCallOrder[dropSchemaCallIndex]
     );
   });
 
@@ -176,7 +175,7 @@ describe('createTestTenantFixture', () => {
         $executeRawUnsafe: execute,
         $queryRawUnsafe: query,
       },
-      'fixture',
+      'fixture'
     );
 
     expect(scanActiveTenantSchemas()).toEqual(['tenant_test_fixture']);
@@ -217,7 +216,7 @@ describe('createTestTenantFixture', () => {
         $executeRawUnsafe: execute,
         $queryRawUnsafe: query,
       },
-      'fixture',
+      'fixture'
     );
 
     const profileStoreSeedCall = execute.mock.calls.find(
@@ -226,7 +225,7 @@ describe('createTestTenantFixture', () => {
         sql.includes('.profile_store') &&
         sql.includes("'DEFAULT_STORE'") &&
         sql.includes('is_default = true') &&
-        sql.includes('is_active = true'),
+        sql.includes('is_active = true')
     );
 
     expect(profileStoreSeedCall).toBeDefined();

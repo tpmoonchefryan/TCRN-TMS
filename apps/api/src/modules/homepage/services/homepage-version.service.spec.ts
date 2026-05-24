@@ -1,7 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { RequestContext } from '@tcrn/shared';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { HomepageVersionApplicationService } from '../application/homepage-version.service';
 import { HomepageVersionService } from './homepage-version.service';
@@ -28,7 +28,7 @@ describe('HomepageVersionService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     service = new HomepageVersionService(
-      mockApplicationService as unknown as HomepageVersionApplicationService,
+      mockApplicationService as unknown as HomepageVersionApplicationService
     );
   });
 
@@ -39,7 +39,7 @@ describe('HomepageVersionService', () => {
     });
 
     await expect(
-      service.listVersions('talent-1', { page: 1, pageSize: 20 }, mockContext),
+      service.listVersions('talent-1', { page: 1, pageSize: 20 }, mockContext)
     ).resolves.toEqual({
       items: [],
       total: 0,
@@ -59,9 +59,7 @@ describe('HomepageVersionService', () => {
       createdBy: null,
     });
 
-    await expect(
-      service.getVersion('talent-1', 'version-2', mockContext),
-    ).resolves.toEqual({
+    await expect(service.getVersion('talent-1', 'version-2', mockContext)).resolves.toEqual({
       id: 'version-2',
       versionNumber: 2,
       status: 'published',
@@ -80,9 +78,7 @@ describe('HomepageVersionService', () => {
       restoredFrom: { id: 'version-2', versionNumber: 2 },
     });
 
-    await expect(
-      service.restoreVersion('talent-1', 'version-2', mockContext),
-    ).resolves.toEqual({
+    await expect(service.restoreVersion('talent-1', 'version-2', mockContext)).resolves.toEqual({
       newDraftVersion: { id: 'version-5', versionNumber: 5 },
       restoredFrom: { id: 'version-2', versionNumber: 2 },
     });

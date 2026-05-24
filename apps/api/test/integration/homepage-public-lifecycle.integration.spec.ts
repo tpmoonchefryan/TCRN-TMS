@@ -1,7 +1,9 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import request from 'supertest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+
 import { PrismaClient } from '@tcrn/database';
 import {
   createLocalizedText,
@@ -11,8 +13,6 @@ import {
   type TenantFixture,
   type TestUser,
 } from '@tcrn/shared';
-import request from 'supertest';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { AppModule } from '../../src/app.module';
 import { TokenService } from '../../src/modules/auth/token.service';
@@ -28,9 +28,7 @@ describe('Homepage Public Lifecycle Integration', () => {
   let homepagePath: string;
 
   const withAuth = (req: request.Test) =>
-    req
-      .set('Authorization', `Bearer ${accessToken}`)
-      .set('X-Tenant-ID', tenantFixture.tenant.id);
+    req.set('Authorization', `Bearer ${accessToken}`).set('X-Tenant-ID', tenantFixture.tenant.id);
 
   const setTalentLifecycle = async (lifecycleStatus: 'published' | 'disabled') => {
     await prisma.$executeRawUnsafe(
@@ -50,7 +48,7 @@ describe('Homepage Public Lifecycle Integration', () => {
       `,
       talentId,
       lifecycleStatus,
-      testUser.id,
+      testUser.id
     );
   };
 
@@ -68,7 +66,7 @@ describe('Homepage Public Lifecycle Integration', () => {
       prisma,
       tenantFixture,
       `homepage_public_${Date.now()}`,
-      ['ADMIN'],
+      ['ADMIN']
     );
 
     const talent = await createTestTalentInTenant(prisma, tenantFixture, null, {
@@ -101,13 +99,11 @@ describe('Homepage Public Lifecycle Integration', () => {
   });
 
   it('serves the published homepage for a published talent', async () => {
-    await withAuth(
-      request(app.getHttpServer()).get(`/api/v1/talents/${talentId}/homepage`),
-    ).expect(200);
+    await withAuth(request(app.getHttpServer()).get(`/api/v1/talents/${talentId}/homepage`)).expect(
+      200
+    );
 
-    await withAuth(
-      request(app.getHttpServer()).patch(`/api/v1/talents/${talentId}/homepage/draft`),
-    )
+    await withAuth(request(app.getHttpServer()).patch(`/api/v1/talents/${talentId}/homepage/draft`))
       .send({
         content: {
           version: '1.0.0',
@@ -117,7 +113,7 @@ describe('Homepage Public Lifecycle Integration', () => {
       .expect(200);
 
     await withAuth(
-      request(app.getHttpServer()).post(`/api/v1/talents/${talentId}/homepage/publish`),
+      request(app.getHttpServer()).post(`/api/v1/talents/${talentId}/homepage/publish`)
     )
       .send({})
       .expect(201);

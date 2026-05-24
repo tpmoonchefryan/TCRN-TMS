@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import type { Job } from 'bullmq';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -76,21 +75,19 @@ describe('marshmallowExportJobProcessor', () => {
       },
     } as Job<MarshmallowExportJobData, MarshmallowExportJobResult>;
 
-    mockPrisma.$queryRawUnsafe
-      .mockResolvedValueOnce([{ count: 1 }])
-      .mockResolvedValueOnce([
-        {
-          id: 'message-1',
-          content: 'Hello "world"',
-          senderName: 'Test Sender',
-          isAnonymous: false,
-          status: 'approved',
-          replyContent: 'Reply content',
-          createdAt: new Date('2026-03-26T00:00:00.000Z'),
-          moderatedAt: new Date('2026-03-26T01:00:00.000Z'),
-          reactionCounts: { heart: 3 },
-        },
-      ]);
+    mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([{ count: 1 }]).mockResolvedValueOnce([
+      {
+        id: 'message-1',
+        content: 'Hello "world"',
+        senderName: 'Test Sender',
+        isAnonymous: false,
+        status: 'approved',
+        replyContent: 'Reply content',
+        createdAt: new Date('2026-03-26T00:00:00.000Z'),
+        moderatedAt: new Date('2026-03-26T01:00:00.000Z'),
+        reactionCounts: { heart: 3 },
+      },
+    ]);
     mockPrisma.$executeRawUnsafe.mockResolvedValue(1);
     mockPrisma.$disconnect.mockResolvedValue(undefined);
     mockMinioClient.bucketExists.mockResolvedValue(true);
@@ -115,18 +112,20 @@ describe('marshmallowExportJobProcessor', () => {
       expect.stringMatching(/^tenant_test\/export-job-1\/marshmallow_export_.+\.csv$/),
       { stream: true },
       128,
-      { 'Content-Type': 'text/csv' },
+      { 'Content-Type': 'text/csv' }
     );
 
     expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalledTimes(2);
     expect(mockPrisma.$executeRawUnsafe).toHaveBeenCalledTimes(2);
-    expect(mockPrisma.$executeRawUnsafe.mock.calls.every((call) => {
-      const sql = call[0];
-      return typeof sql === 'string' && sql.includes('marshmallow_export_job');
-    })).toBe(true);
-    expect(mockPrisma.$executeRawUnsafe.mock.calls[1]?.[0]).toContain("file_path = $1");
+    expect(
+      mockPrisma.$executeRawUnsafe.mock.calls.every((call) => {
+        const sql = call[0];
+        return typeof sql === 'string' && sql.includes('marshmallow_export_job');
+      })
+    ).toBe(true);
+    expect(mockPrisma.$executeRawUnsafe.mock.calls[1]?.[0]).toContain('file_path = $1');
     expect(mockPrisma.$executeRawUnsafe.mock.calls[1]?.[1]).toMatch(
-      /^tenant_test\/export-job-1\/marshmallow_export_.+\.csv$/,
+      /^tenant_test\/export-job-1\/marshmallow_export_.+\.csv$/
     );
     expect(mockPrisma.$executeRawUnsafe.mock.calls[1]?.[1]).not.toContain('temp-reports/');
     expect(mockFs.unlinkSync).toHaveBeenCalledTimes(1);

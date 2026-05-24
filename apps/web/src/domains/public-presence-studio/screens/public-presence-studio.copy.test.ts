@@ -1,5 +1,6 @@
-import { SUPPORTED_UI_LOCALES } from '@tcrn/shared';
 import { describe, expect, it } from 'vitest';
+
+import { SUPPORTED_UI_LOCALES } from '@tcrn/shared';
 
 import {
   getPublicPresenceStageSectionLabel,
@@ -15,12 +16,12 @@ describe('public-presence-studio.copy', () => {
       getPublicPresenceTemplateLabel(locale, {
         label: 'fallback',
         templateId: 'activeTalentHub',
-      }),
+      })
     ).toBeTruthy();
     expect(
       getPublicPresenceStageSectionLabel(locale, {
         kind: 'fanActions',
-      }),
+      })
     ).toBeTruthy();
     expect(getPublicPresenceWorkflowEventLabel(locale, 'revealAutoSwitched')).toBeTruthy();
   });

@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable, NotFoundException } from '@nestjs/common';
+
 import { LogSeverity } from '@tcrn/shared';
 import { ErrorCodes, type RequestContext, TechEventType } from '@tcrn/shared';
 
@@ -20,7 +20,7 @@ export class ApiKeyApplicationService {
   constructor(
     private readonly apiKeyRepository: ApiKeyRepository,
     private readonly changeLogService: ChangeLogService,
-    private readonly techEventLog: TechEventLogService,
+    private readonly techEventLog: TechEventLogService
   ) {}
 
   async validateApiKey(key: string, tenantSchema?: string) {
@@ -35,7 +35,7 @@ export class ApiKeyApplicationService {
       const schemas = tenantSchema
         ? [validateApiKeyTenantSchema(tenantSchema)]
         : (await this.apiKeyRepository.getActiveTenantSchemas(prisma)).map((schema) =>
-            validateApiKeyTenantSchema(schema),
+            validateApiKeyTenantSchema(schema)
           );
 
       for (const schema of schemas) {
@@ -43,7 +43,7 @@ export class ApiKeyApplicationService {
           prisma,
           schema,
           prefix,
-          hash,
+          hash
         );
 
         if (consumer) {
@@ -63,7 +63,7 @@ export class ApiKeyApplicationService {
       const consumerRecord = await this.apiKeyRepository.findConsumerForRegeneration(
         prisma,
         consumerId,
-        tenantSchema,
+        tenantSchema
       );
 
       if (!consumerRecord) {
@@ -79,7 +79,7 @@ export class ApiKeyApplicationService {
         tenantSchema,
         hash,
         prefix,
-        context.userId ?? null,
+        context.userId ?? null
       );
 
       await this.changeLogService.create(
@@ -91,7 +91,7 @@ export class ApiKeyApplicationService {
           objectName: consumerRecord.code,
           newValue: { apiKeyPrefix: prefix },
         },
-        context,
+        context
       );
 
       return consumerRecord;
@@ -110,7 +110,7 @@ export class ApiKeyApplicationService {
           userId: context.userId,
         },
       },
-      context,
+      context
     );
 
     return {

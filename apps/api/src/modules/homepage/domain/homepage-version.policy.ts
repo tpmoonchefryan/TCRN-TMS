@@ -1,10 +1,5 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
-import type {
-  HomepageContent,
-  ThemeConfig,
-  VersionListItem,
-} from '../dto/homepage.dto';
+import type { HomepageContent, ThemeConfig, VersionListItem } from '../dto/homepage.dto';
 
 export interface HomepageVersionActorRecord {
   id: string;
@@ -61,10 +56,11 @@ export interface HomepageVersionDetail {
 
 export const collectHomepageVersionActorIds = (
   ...actorIds: Array<string | null | undefined>
-): string[] => Array.from(new Set(actorIds.filter((actorId): actorId is string => Boolean(actorId))));
+): string[] =>
+  Array.from(new Set(actorIds.filter((actorId): actorId is string => Boolean(actorId))));
 
 export const buildHomepageVersionActorMap = (
-  actors: HomepageVersionActorRecord[],
+  actors: HomepageVersionActorRecord[]
 ): Map<string, HomepageVersionActorRecord> => new Map(actors.map((actor) => [actor.id, actor]));
 
 export const generateHomepageContentPreview = (content: HomepageContent): string => {
@@ -96,9 +92,9 @@ export const buildHomepageVersionListItem = (params: {
     contentPreview: generateHomepageContentPreview(content),
     componentCount: content?.components?.length ?? 0,
     publishedAt: version.publishedAt?.toISOString() ?? null,
-    publishedBy: version.publishedBy ? actorMap.get(version.publishedBy) ?? null : null,
+    publishedBy: version.publishedBy ? (actorMap.get(version.publishedBy) ?? null) : null,
     createdAt: version.createdAt.toISOString(),
-    createdBy: version.createdBy ? actorMap.get(version.createdBy) ?? null : null,
+    createdBy: version.createdBy ? (actorMap.get(version.createdBy) ?? null) : null,
   };
 };
 
@@ -115,15 +111,13 @@ export const buildHomepageVersionDetail = (params: {
     content: version.content as HomepageContent,
     theme: version.theme as ThemeConfig,
     publishedAt: version.publishedAt?.toISOString() ?? null,
-    publishedBy: version.publishedBy ? actorMap.get(version.publishedBy) ?? null : null,
+    publishedBy: version.publishedBy ? (actorMap.get(version.publishedBy) ?? null) : null,
     createdAt: version.createdAt.toISOString(),
-    createdBy: version.createdBy ? actorMap.get(version.createdBy) ?? null : null,
+    createdBy: version.createdBy ? (actorMap.get(version.createdBy) ?? null) : null,
   };
 };
 
-export const buildHomepageVersionRestoreDiff = (
-  restoredFromVersion: number,
-): string =>
+export const buildHomepageVersionRestoreDiff = (restoredFromVersion: number): string =>
   JSON.stringify({
     new: { restoredFromVersion },
   });

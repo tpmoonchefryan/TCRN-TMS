@@ -1,3 +1,5 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import {
   buildBlankPublicPresenceAssetSourceBundle,
   buildPublicPresenceTemplateAssetManifest,
@@ -8,7 +10,6 @@ import {
   type PublicPresenceAssetListEntry,
   type RequestContext,
 } from '@tcrn/shared';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type {
   PublicPresenceDocumentVersionRecord,
@@ -116,7 +117,7 @@ function createVersionRecord(): PublicPresenceDocumentVersionRecord {
 }
 
 function createDebutRevealVersionRecord(
-  documentState: string = 'draft',
+  documentState: string = 'draft'
 ): PublicPresenceDocumentVersionRecord {
   const debutDocument: PublicPresenceDocument = {
     metadata: {
@@ -195,7 +196,7 @@ function createSnapshotRecord(): PublicPresenceValidationSnapshotRecord {
 }
 
 function createTemplateAssetEntry(
-  templateId: 'activeTalentHub' | 'debutReveal',
+  templateId: 'activeTalentHub' | 'debutReveal'
 ): PublicPresenceAssetListEntry {
   const label = templateId === 'debutReveal' ? 'Debut Reveal' : 'Active Talent Hub';
   const assetId = TEMPLATE_FIXTURES[templateId].assetId;
@@ -327,17 +328,19 @@ describe('PublicPresenceStudioService', () => {
     } as unknown as PublicPresenceFoundationService;
 
     publicPresenceAssetService = {
-      listAssets: vi.fn().mockResolvedValue([
-        createTemplateAssetEntry('activeTalentHub'),
-        createTemplateAssetEntry('debutReveal'),
-      ]),
+      listAssets: vi
+        .fn()
+        .mockResolvedValue([
+          createTemplateAssetEntry('activeTalentHub'),
+          createTemplateAssetEntry('debutReveal'),
+        ]),
     } as unknown as PublicPresenceAssetService;
 
     service = new PublicPresenceStudioService(
       homepageAdminRepository,
       publicPresenceFoundationRepository,
       publicPresenceAssetService,
-      publicPresenceFoundationService,
+      publicPresenceFoundationService
     );
   });
 
@@ -353,18 +356,16 @@ describe('PublicPresenceStudioService', () => {
       lifecycleStatus: 'published',
       timezone: 'Asia/Tokyo',
     } as never);
-    vi.mocked(
-      publicPresenceFoundationRepository.findPortalByTalentId,
-    ).mockResolvedValue(createPortalRecord());
-    vi.mocked(
-      publicPresenceFoundationRepository.findDraftVersion,
-    ).mockResolvedValue(createVersionRecord());
-    vi.mocked(
-      publicPresenceFoundationRepository.findDocumentVersionById,
-    ).mockResolvedValue(null);
-    vi.mocked(
-      publicPresenceFoundationRepository.findValidationSnapshotById,
-    ).mockResolvedValue(createSnapshotRecord());
+    vi.mocked(publicPresenceFoundationRepository.findPortalByTalentId).mockResolvedValue(
+      createPortalRecord()
+    );
+    vi.mocked(publicPresenceFoundationRepository.findDraftVersion).mockResolvedValue(
+      createVersionRecord()
+    );
+    vi.mocked(publicPresenceFoundationRepository.findDocumentVersionById).mockResolvedValue(null);
+    vi.mocked(publicPresenceFoundationRepository.findValidationSnapshotById).mockResolvedValue(
+      createSnapshotRecord()
+    );
 
     const result = await service.getWorkspace('talent-1', 'tenant_test');
 
@@ -382,10 +383,10 @@ describe('PublicPresenceStudioService', () => {
       dependencies: [],
     });
     expect(result.templates.map((template) => template.templateId)).toEqual(
-      expect.arrayContaining(['activeTalentHub', 'debutReveal']),
+      expect.arrayContaining(['activeTalentHub', 'debutReveal'])
     );
     expect(result.stageSections.map((section) => section.kind)).toEqual(
-      expect.arrayContaining(['firstEncounter', 'fanActions', 'agencyNotes']),
+      expect.arrayContaining(['firstEncounter', 'fanActions', 'agencyNotes'])
     );
     expect(result.workflowEvents).toEqual([]);
   });
@@ -402,26 +403,18 @@ describe('PublicPresenceStudioService', () => {
       lifecycleStatus: 'published',
       timezone: 'Asia/Tokyo',
     } as never);
-    vi.mocked(
-      publicPresenceFoundationRepository.findPortalByTalentId,
-    )
+    vi.mocked(publicPresenceFoundationRepository.findPortalByTalentId)
       .mockResolvedValueOnce(null)
       .mockResolvedValueOnce(createPortalRecord());
-    vi.mocked(
-      publicPresenceFoundationRepository.findDraftVersion,
-    ).mockResolvedValue(createVersionRecord());
-    vi.mocked(
-      publicPresenceFoundationRepository.findDocumentVersionById,
-    ).mockResolvedValue(null);
-    vi.mocked(
-      publicPresenceFoundationRepository.findValidationSnapshotById,
-    ).mockResolvedValue(createSnapshotRecord());
-
-    const result = await service.bootstrapDraft(
-      'talent-1',
-      'activeTalentHub',
-      context,
+    vi.mocked(publicPresenceFoundationRepository.findDraftVersion).mockResolvedValue(
+      createVersionRecord()
     );
+    vi.mocked(publicPresenceFoundationRepository.findDocumentVersionById).mockResolvedValue(null);
+    vi.mocked(publicPresenceFoundationRepository.findValidationSnapshotById).mockResolvedValue(
+      createSnapshotRecord()
+    );
+
+    const result = await service.bootstrapDraft('talent-1', 'activeTalentHub', context);
 
     expect(publicPresenceFoundationService.saveDraft).toHaveBeenCalledWith(
       'talent-1',
@@ -435,7 +428,7 @@ describe('PublicPresenceStudioService', () => {
         templateAssetPin: expect.objectContaining({
           assetId: TEMPLATE_FIXTURES.activeTalentHub.assetId,
         }),
-      }),
+      })
     );
     expect(result.publicRoute).toMatchObject({
       canonicalPath: '/tenant_test/aki-rosenthal/homepage',
@@ -458,20 +451,16 @@ describe('PublicPresenceStudioService', () => {
       lifecycleStatus: 'published',
       timezone: 'Asia/Tokyo',
     } as never);
-    vi.mocked(
-      publicPresenceFoundationRepository.findPortalByTalentId,
-    )
+    vi.mocked(publicPresenceFoundationRepository.findPortalByTalentId)
       .mockResolvedValueOnce(null)
       .mockResolvedValueOnce(createPortalRecord());
-    vi.mocked(
-      publicPresenceFoundationRepository.findDraftVersion,
-    ).mockResolvedValue(createVersionRecord());
-    vi.mocked(
-      publicPresenceFoundationRepository.findDocumentVersionById,
-    ).mockResolvedValue(null);
-    vi.mocked(
-      publicPresenceFoundationRepository.findValidationSnapshotById,
-    ).mockResolvedValue(createSnapshotRecord());
+    vi.mocked(publicPresenceFoundationRepository.findDraftVersion).mockResolvedValue(
+      createVersionRecord()
+    );
+    vi.mocked(publicPresenceFoundationRepository.findDocumentVersionById).mockResolvedValue(null);
+    vi.mocked(publicPresenceFoundationRepository.findValidationSnapshotById).mockResolvedValue(
+      createSnapshotRecord()
+    );
 
     await service.bootstrapDraft('talent-1', 'debutReveal', context);
 
@@ -512,7 +501,7 @@ describe('PublicPresenceStudioService', () => {
         templateAssetPin: expect.objectContaining({
           assetId: TEMPLATE_FIXTURES.debutReveal.assetId,
         }),
-      }),
+      })
     );
   });
 
@@ -528,31 +517,29 @@ describe('PublicPresenceStudioService', () => {
       lifecycleStatus: 'published',
       timezone: 'Asia/Tokyo',
     } as never);
-    vi.mocked(
-      publicPresenceFoundationRepository.findPortalByTalentId,
-    ).mockResolvedValue(createPortalRecord());
-    vi.mocked(
-      publicPresenceFoundationRepository.findLatestVersionsByPortal,
-    ).mockResolvedValue([
+    vi.mocked(publicPresenceFoundationRepository.findPortalByTalentId).mockResolvedValue(
+      createPortalRecord()
+    );
+    vi.mocked(publicPresenceFoundationRepository.findLatestVersionsByPortal).mockResolvedValue([
       createDebutRevealVersionRecord(),
       createVersionRecord(),
     ]);
-    vi.mocked(
-      publicPresenceFoundationRepository.findValidationSnapshotById,
-    ).mockResolvedValue(null);
-    vi.mocked(
-      publicPresenceFoundationRepository.findLatestVersionByTemplate,
-    ).mockImplementation(async (_tenantSchema, _portalId, templateId, states) => {
-      if (templateId !== 'activeTalentHub') {
-        return null;
-      }
+    vi.mocked(publicPresenceFoundationRepository.findValidationSnapshotById).mockResolvedValue(
+      null
+    );
+    vi.mocked(publicPresenceFoundationRepository.findLatestVersionByTemplate).mockImplementation(
+      async (_tenantSchema, _portalId, templateId, states) => {
+        if (templateId !== 'activeTalentHub') {
+          return null;
+        }
 
-      if (states?.includes('approved')) {
-        return null;
-      }
+        if (states?.includes('approved')) {
+          return null;
+        }
 
-      return createVersionRecord();
-    });
+        return createVersionRecord();
+      }
+    );
 
     const result = await service.getWorkspace('talent-1', 'tenant_test', 'debutReveal');
 

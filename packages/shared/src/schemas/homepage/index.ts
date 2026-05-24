@@ -1,6 +1,5 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 // Homepage Module Zod Schemas - Validation for personal homepage editor
-
 import { z } from 'zod';
 
 import { HOMEPAGE_COMPONENT_TYPES } from '../../types/homepage/schema';
@@ -67,10 +66,7 @@ export const ThemeDecorationSchema = z.object({
   // Text decoration props
   text: z.string().optional(),
   fontSize: z.number().optional(),
-  fontWeight: z.union([
-    z.enum(['normal', 'bold', 'bolder', 'lighter']),
-    z.number()
-  ]).optional(),
+  fontWeight: z.union([z.enum(['normal', 'bold', 'bolder', 'lighter']), z.number()]).optional(),
   fontFamily: z.string().optional(),
   textDecoration: z.enum(['none', 'underline', 'line-through']).optional(),
   rotation: z.number().optional(),

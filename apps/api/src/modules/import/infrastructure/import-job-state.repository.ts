@@ -1,14 +1,11 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable } from '@nestjs/common';
 
 import { DatabaseService } from '../../database';
 
 @Injectable()
 export class ImportJobStateRepository {
-  constructor(
-    private readonly databaseService: DatabaseService,
-  ) {}
+  constructor(private readonly databaseService: DatabaseService) {}
 
   private get prisma() {
     return this.databaseService.getPrisma();
@@ -23,9 +20,10 @@ export class ImportJobStateRepository {
       failedRows: number;
       warningRows: number;
       status: string;
-    },
+    }
   ) {
-    return this.prisma.$executeRawUnsafe(`
+    return this.prisma.$executeRawUnsafe(
+      `
       UPDATE "${tenantSchema}".import_job
       SET processed_rows = $1, success_rows = $2, failed_rows = $3, warning_rows = $4,
           status = $5, started_at = COALESCE(started_at, NOW())
@@ -36,7 +34,7 @@ export class ImportJobStateRepository {
       params.failedRows,
       params.warningRows,
       params.status,
-      params.jobId,
+      params.jobId
     );
   }
 
@@ -49,9 +47,10 @@ export class ImportJobStateRepository {
       successRows: number;
       failedRows: number;
       warningRows: number;
-    },
+    }
   ) {
-    return this.prisma.$executeRawUnsafe(`
+    return this.prisma.$executeRawUnsafe(
+      `
       UPDATE "${tenantSchema}".import_job
       SET status = $1, processed_rows = $2, success_rows = $3, failed_rows = $4, warning_rows = $5,
           completed_at = NOW()
@@ -62,7 +61,7 @@ export class ImportJobStateRepository {
       params.successRows,
       params.failedRows,
       params.warningRows,
-      params.jobId,
+      params.jobId
     );
   }
 
@@ -74,9 +73,10 @@ export class ImportJobStateRepository {
       errorCode: string;
       errorMessage: string;
       originalData: string;
-    },
+    }
   ) {
-    return this.prisma.$executeRawUnsafe(`
+    return this.prisma.$executeRawUnsafe(
+      `
       INSERT INTO "${tenantSchema}".import_job_error (
         id, import_job_id, row_number, error_code, error_message, original_data, created_at
       ) VALUES (
@@ -87,7 +87,7 @@ export class ImportJobStateRepository {
       params.rowNumber,
       params.errorCode,
       params.errorMessage,
-      params.originalData,
+      params.originalData
     );
   }
 }

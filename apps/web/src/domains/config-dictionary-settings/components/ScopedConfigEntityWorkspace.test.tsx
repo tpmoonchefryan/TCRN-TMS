@@ -1,11 +1,12 @@
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import type { SupportedUiLocale } from '@tcrn/shared';
+
 import type { ConfigEntityRecord } from '@/domains/config-dictionary-settings/api/settings.api';
 import { ScopedConfigEntityWorkspace } from '@/domains/config-dictionary-settings/components/ScopedConfigEntityWorkspace';
 import { localizedFixture } from '@/domains/config-dictionary-settings/testing/localized-fixtures';
 import { ApiRequestError } from '@/platform/http/api';
-import type { SupportedUiLocale } from '@tcrn/shared';
 
 const mockRequest = vi.fn();
 const mockRequestEnvelope = vi.fn();
@@ -79,9 +80,9 @@ describe('ScopedConfigEntityWorkspace', () => {
     currentSearch = '';
   });
 
-
   it('hydrates config entity list state from URL and preserves unrelated query params', async () => {
-    currentSearch = 'configEntitySearch=music&configEntityScopeOnly=true&configEntityInactive=true&configEntityPage=2&configEntityPageSize=50&foo=1';
+    currentSearch =
+      'configEntitySearch=music&configEntityScopeOnly=true&configEntityInactive=true&configEntityPage=2&configEntityPageSize=50&foo=1';
 
     mockRequestEnvelope.mockImplementation(async (path: string) => {
       if (
@@ -90,7 +91,13 @@ describe('ScopedConfigEntityWorkspace', () => {
       ) {
         return {
           success: true,
-          data: [buildConfigEntityRecord({ code: 'MUSIC_VIP', name: localizedFixture('VIP Music'), localizedName: 'VIP Music' })],
+          data: [
+            buildConfigEntityRecord({
+              code: 'MUSIC_VIP',
+              name: localizedFixture('VIP Music'),
+              localizedName: 'VIP Music',
+            }),
+          ],
           meta: {
             pagination: {
               page: 2,
@@ -112,7 +119,7 @@ describe('ScopedConfigEntityWorkspace', () => {
         request={mockRequest}
         requestEnvelope={mockRequestEnvelope}
         scopeType="tenant"
-      />,
+      />
     );
 
     expect(await screen.findByText('VIP Music')).toBeInTheDocument();
@@ -126,7 +133,7 @@ describe('ScopedConfigEntityWorkspace', () => {
     });
 
     expect(mockRouterReplace).toHaveBeenCalledWith(
-      '/tenant/tenant-1/settings?foo=1&configEntitySearch=music&configEntityScopeOnly=true&configEntityInactive=true',
+      '/tenant/tenant-1/settings?foo=1&configEntitySearch=music&configEntityScopeOnly=true&configEntityInactive=true'
     );
   });
 
@@ -160,7 +167,7 @@ describe('ScopedConfigEntityWorkspace', () => {
         request={mockRequest}
         requestEnvelope={mockRequestEnvelope}
         scopeType="tenant"
-      />,
+      />
     );
 
     expect(await screen.findByText('Music')).toBeInTheDocument();
@@ -170,7 +177,7 @@ describe('ScopedConfigEntityWorkspace', () => {
     await waitFor(() => {
       expect(mockRequestEnvelope).toHaveBeenCalledWith(
         '/api/v1/configuration-entity/membership-class?scopeType=tenant&includeInherited=true&includeDisabled=true&includeInactive=false&ownerOnly=false&page=1&pageSize=20&sort=sortOrder',
-        expect.anything(),
+        expect.anything()
       );
     });
     await waitFor(() => {
@@ -216,7 +223,7 @@ describe('ScopedConfigEntityWorkspace', () => {
         request={mockRequest}
         requestEnvelope={mockRequestEnvelope}
         scopeType="tenant"
-      />,
+      />
     );
 
     fireEvent.click(await screen.findByRole('button', { name: 'Deactivate MUSIC' }));
@@ -231,12 +238,12 @@ describe('ScopedConfigEntityWorkspace', () => {
         expect.objectContaining({
           method: 'POST',
           body: JSON.stringify({ version: 1 }),
-        }),
+        })
       );
     });
     expect(mockRequest).not.toHaveBeenCalledWith(
       expect.stringContaining('/api/v1/configuration-entity/membership-class/segment-1/deactivate'),
-      expect.anything(),
+      expect.anything()
     );
     expect(await screen.findByText('Business Segment MUSIC deactivated.')).toBeInTheDocument();
   });
@@ -288,16 +295,20 @@ describe('ScopedConfigEntityWorkspace', () => {
         requestEnvelope={mockRequestEnvelope}
         scopeType="subsidiary"
         scopeId="sub-1"
-      />,
+      />
     );
 
     fireEvent.click(
       await screen.findByRole('button', {
         name: /^Membership Category membership-class Top-level membership categories available to this tenant\.$/i,
-      }),
+      })
     );
 
-    expect(await screen.findByText('Membership Category is managed at the tenant scope and can only be reviewed here.')).toBeInTheDocument();
+    expect(
+      await screen.findByText(
+        'Membership Category is managed at the tenant scope and can only be reviewed here.'
+      )
+    ).toBeInTheDocument();
     expect(screen.queryByLabelText('Current scope only')).not.toBeInTheDocument();
     expect(await screen.findByText('FANCLUB')).toBeInTheDocument();
     expect(screen.getByText('Inherited review only')).toBeInTheDocument();
@@ -341,27 +352,32 @@ describe('ScopedConfigEntityWorkspace', () => {
         requestEnvelope={mockRequestEnvelope}
         scopeType="subsidiary"
         scopeId="sub-1"
-      />,
+      />
     );
 
     fireEvent.click(
       await screen.findByRole('button', {
         name: /Profile Store profile-store Tenant-level customer archive boundaries/i,
-      }),
+      })
     );
 
-    expect(await screen.findByText('Profile Store is managed at the tenant scope and can only be reviewed here.')).toBeInTheDocument();
+    expect(
+      await screen.findByText(
+        'Profile Store is managed at the tenant scope and can only be reviewed here.'
+      )
+    ).toBeInTheDocument();
     expect(screen.queryByLabelText('Current scope only')).not.toBeInTheDocument();
     expect(await screen.findByText('DEFAULT_STORE')).toBeInTheDocument();
     expect(screen.getByText('Inherited review only')).toBeInTheDocument();
     expect(mockRequestEnvelope).toHaveBeenCalledWith(
       '/api/v1/configuration-entity/profile-store?scopeType=subsidiary&scopeId=sub-1&includeInherited=true&includeDisabled=true&includeInactive=false&ownerOnly=false&page=1&pageSize=20&sort=sortOrder',
-      expect.anything(),
+      expect.anything()
     );
   });
 
   it('routes custom-domain entity family to the scoped custom-domain binding API with URL-backed filters', async () => {
-    currentSearch = 'configEntityType=custom-domain&configEntitySearch=brand&configEntityScopeOnly=true&configEntityInactive=true&foo=1';
+    currentSearch =
+      'configEntityType=custom-domain&configEntitySearch=brand&configEntityScopeOnly=true&configEntityInactive=true&foo=1';
 
     mockRequest.mockImplementation(async (path: string) => {
       if (
@@ -404,7 +420,7 @@ describe('ScopedConfigEntityWorkspace', () => {
         requestEnvelope={mockRequestEnvelope}
         scopeType="subsidiary"
         scopeId="sub-1"
-      />,
+      />
     );
 
     expect(await screen.findByText('brand.example.com')).toBeInTheDocument();
@@ -416,7 +432,7 @@ describe('ScopedConfigEntityWorkspace', () => {
     expect(screen.getByText('Page 1 of 1')).toBeInTheDocument();
     expect(mockRequestEnvelope).not.toHaveBeenCalledWith(
       expect.stringContaining('/api/v1/configuration-entity/custom-domain'),
-      expect.anything(),
+      expect.anything()
     );
 
     await act(async () => {
@@ -426,7 +442,7 @@ describe('ScopedConfigEntityWorkspace', () => {
     });
 
     expect(mockRouterReplace).toHaveBeenCalledWith(
-      '/tenant/tenant-1/settings?foo=1&configEntityType=custom-domain&configEntitySearch=fans&configEntityScopeOnly=true&configEntityInactive=true',
+      '/tenant/tenant-1/settings?foo=1&configEntityType=custom-domain&configEntitySearch=fans&configEntityScopeOnly=true&configEntityInactive=true'
     );
 
     await act(async () => {
@@ -434,7 +450,7 @@ describe('ScopedConfigEntityWorkspace', () => {
     });
 
     expect(mockRouterReplace).toHaveBeenCalledWith(
-      '/tenant/tenant-1/settings?foo=1&configEntityType=custom-domain&configEntitySearch=fans&configEntityScopeOnly=true&configEntityInactive=true&configEntityPageSize=50',
+      '/tenant/tenant-1/settings?foo=1&configEntityType=custom-domain&configEntitySearch=fans&configEntityScopeOnly=true&configEntityInactive=true&configEntityPageSize=50'
     );
   });
 
@@ -454,7 +470,7 @@ describe('ScopedConfigEntityWorkspace', () => {
           503,
           undefined,
           'req_registry_123',
-          'trace_registry_123',
+          'trace_registry_123'
         );
       }
 
@@ -466,12 +482,14 @@ describe('ScopedConfigEntityWorkspace', () => {
         request={mockRequest}
         requestEnvelope={mockRequestEnvelope}
         scopeType="tenant"
-      />,
+      />
     );
 
     expect(await screen.findByText('Custom domains unavailable')).toBeInTheDocument();
     expect(
-      screen.getByText('Custom-domain routing is temporarily unavailable. Try again later or contact an administrator.'),
+      screen.getByText(
+        'Custom-domain routing is temporarily unavailable. Try again later or contact an administrator.'
+      )
     ).toBeInTheDocument();
     expect(screen.getByText('Trace ID: trace_registry_123')).toBeInTheDocument();
     expect(screen.queryByText(/Prisma/i)).not.toBeInTheDocument();
@@ -496,7 +514,7 @@ describe('ScopedConfigEntityWorkspace', () => {
         request={mockRequest}
         requestEnvelope={mockRequestEnvelope}
         scopeType="tenant"
-      />,
+      />
     );
 
     fireEvent.click(await screen.findByRole('button', { name: 'New record' }));

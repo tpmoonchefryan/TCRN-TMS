@@ -1,10 +1,10 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
-import type { Job } from 'bullmq';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import { Readable } from 'stream';
+
+import type { Job } from 'bullmq';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { type ImportJobData, importJobProcessor, type ImportJobResult } from '../import.job';
@@ -129,7 +129,7 @@ describe('importJobProcessor', () => {
       Readable.from([
         'nickname,primary_language,status_code,tags,notes\n',
         'Imported User,en,,vip,created from template\n',
-      ]),
+      ])
     );
   });
 
@@ -150,12 +150,14 @@ describe('importJobProcessor', () => {
     });
     expect(mockMinioClient.getObject).toHaveBeenCalledWith(
       'imports',
-      'tenant_test/import-job-1.csv',
+      'tenant_test/import-job-1.csv'
     );
     expect(fs.existsSync(tempFilePath)).toBe(false);
 
     expect(mockPrisma.$executeRawUnsafe).toHaveBeenCalledTimes(2);
-    expect(mockPrisma.$executeRawUnsafe.mock.calls[0]?.[0]).toContain("SET status = $1, started_at = $2");
+    expect(mockPrisma.$executeRawUnsafe.mock.calls[0]?.[0]).toContain(
+      'SET status = $1, started_at = $2'
+    );
     expect(mockPrisma.$executeRawUnsafe.mock.calls[1]?.[0]).toContain('success_rows = $5');
     expect(mockPrisma.$executeRawUnsafe.mock.calls[1]?.[0]).toContain('failed_rows = $6');
     expect(mockPrisma.$executeRawUnsafe.mock.calls[1]?.[0]).toContain('warning_rows = $7');
@@ -172,7 +174,7 @@ describe('importJobProcessor', () => {
       Readable.from([
         'nickname,company_legal_name,business_segment_code\n',
         'ACME,ACME Corporation,SEG_A\n',
-      ]),
+      ])
     );
     businessSegmentRows = [{ id: 'segment-1', code: 'SEG_A' }];
 
@@ -185,13 +187,11 @@ describe('importJobProcessor', () => {
     });
     const customerProfileInsert = mockPrisma.$executeRawUnsafe.mock.calls.find(
       ([sql]) =>
-        typeof sql === 'string' &&
-        sql.includes('INSERT INTO "tenant_test"."customer_profile"'),
+        typeof sql === 'string' && sql.includes('INSERT INTO "tenant_test"."customer_profile"')
     );
     const companyInfoInsert = mockPrisma.$executeRawUnsafe.mock.calls.find(
       ([sql]) =>
-        typeof sql === 'string' &&
-        sql.includes('INSERT INTO "tenant_test"."customer_company_info"'),
+        typeof sql === 'string' && sql.includes('INSERT INTO "tenant_test"."customer_company_info"')
     );
 
     expect(customerProfileInsert?.[5]).toBe('company');
@@ -209,7 +209,7 @@ describe('importJobProcessor', () => {
       Readable.from([
         'external_id,nickname,primary_language,status_code,tags,notes\n',
         'EXT001,Template User,zh_HANS,ACTIVE,tag-a,notes here\n',
-      ]),
+      ])
     );
     customerStatusRows = [{ id: 'status-1', code: 'ACTIVE' }];
     consumerRows = [{ id: 'consumer-1', code: 'CRM_SYSTEM' }];
@@ -223,13 +223,11 @@ describe('importJobProcessor', () => {
     });
     const customerProfileInsert = mockPrisma.$executeRawUnsafe.mock.calls.find(
       ([sql]) =>
-        typeof sql === 'string' &&
-        sql.includes('INSERT INTO "tenant_test"."customer_profile"'),
+        typeof sql === 'string' && sql.includes('INSERT INTO "tenant_test"."customer_profile"')
     );
     const externalIdInsert = mockPrisma.$executeRawUnsafe.mock.calls.find(
       ([sql]) =>
-        typeof sql === 'string' &&
-        sql.includes('INSERT INTO "tenant_test"."customer_external_id"'),
+        typeof sql === 'string' && sql.includes('INSERT INTO "tenant_test"."customer_external_id"')
     );
 
     expect(customerProfileInsert?.[5]).toBe('individual');
@@ -252,7 +250,7 @@ describe('importJobProcessor', () => {
       Readable.from([
         'nickname,primary_language,status_code,tags,notes\n',
         'Legacy Locale User,zh,,vip,legacy locale\n',
-      ]),
+      ])
     );
 
     const result = await importJobProcessor(mockJob);
@@ -265,8 +263,7 @@ describe('importJobProcessor', () => {
     expect(result.errors[0]?.message).toContain('Invalid primary_language: zh');
     const customerProfileInsert = mockPrisma.$executeRawUnsafe.mock.calls.find(
       ([sql]) =>
-        typeof sql === 'string' &&
-        sql.includes('INSERT INTO "tenant_test"."customer_profile"'),
+        typeof sql === 'string' && sql.includes('INSERT INTO "tenant_test"."customer_profile"')
     );
     expect(customerProfileInsert).toBeUndefined();
   });
@@ -276,7 +273,7 @@ describe('importJobProcessor', () => {
       Readable.from([
         'nickname,given_name,email_address\n',
         'Template User,Taro,taro@example.com\n',
-      ]),
+      ])
     );
 
     const result = await importJobProcessor(mockJob);
@@ -287,7 +284,7 @@ describe('importJobProcessor', () => {
       failedRows: 1,
     });
     expect(result.errors[0]?.message).toContain(
-      'PII import columns are retired from TMS and must be handled by TCRN PII Platform',
+      'PII import columns are retired from TMS and must be handled by TCRN PII Platform'
     );
     expect(result.errors[0]?.message).toContain('given_name');
     expect(result.errors[0]?.message).toContain('email_address');
@@ -299,7 +296,7 @@ describe('importJobProcessor', () => {
       Readable.from([
         'nickname,company_legal_name,contact_email\n',
         'ACME,ACME Corporation,ops@acme.example.com\n',
-      ]),
+      ])
     );
 
     const result = await importJobProcessor(mockJob);
@@ -321,14 +318,16 @@ describe('importJobProcessor', () => {
       Readable.from([
         'platform_code,platform_uid,nickname,tags,notes\n',
         'BILIBILI,uid-123,Updated User,vip,updated from sync\n',
-      ]),
+      ])
     );
-    customerIdentityRows = [{
-      customerId: 'customer-1',
-      nickname: 'Old User',
-      tags: ['old'],
-      notes: 'old notes',
-    }];
+    customerIdentityRows = [
+      {
+        customerId: 'customer-1',
+        nickname: 'Old User',
+        tags: ['old'],
+        notes: 'old notes',
+      },
+    ];
 
     const result = await importJobProcessor(mockJob);
 
@@ -339,9 +338,7 @@ describe('importJobProcessor', () => {
       failedRows: 0,
     });
     const customerProfileUpdate = mockPrisma.$executeRawUnsafe.mock.calls.find(
-      ([sql]) =>
-        typeof sql === 'string' &&
-        sql.includes('UPDATE "tenant_test"."customer_profile"'),
+      ([sql]) => typeof sql === 'string' && sql.includes('UPDATE "tenant_test"."customer_profile"')
     );
 
     expect(customerProfileUpdate).toEqual(
@@ -352,7 +349,7 @@ describe('importJobProcessor', () => {
         'updated from sync',
         'user-1',
         'customer-1',
-      ]),
+      ])
     );
   });
 
@@ -365,7 +362,7 @@ describe('importJobProcessor', () => {
       Readable.from([
         'platform_code,platform_uid,nickname\n',
         'BILIBILI,missing-user,Updated User\n',
-      ]),
+      ])
     );
     customerIdentityRows = [];
 
@@ -384,9 +381,8 @@ describe('importJobProcessor', () => {
     expect(
       mockPrisma.$executeRawUnsafe.mock.calls.some(
         ([sql]) =>
-          typeof sql === 'string' &&
-          sql.includes('UPDATE "tenant_test"."customer_profile"'),
-      ),
+          typeof sql === 'string' && sql.includes('UPDATE "tenant_test"."customer_profile"')
+      )
     ).toBe(false);
   });
 
@@ -399,21 +395,21 @@ describe('importJobProcessor', () => {
       Readable.from([
         'platform_code,platform_uid,nickname,membership_class_code,membership_type_code,membership_level_code,valid_to\n',
         'BILIBILI,uid-123,Member User,FAN,MONTHLY,GOLD,2026-12-31\n',
-      ]),
+      ])
     );
     membershipClassRows = [{ id: 'class-1', code: 'FAN' }];
-    membershipTypeRows = [
-      { id: 'type-1', code: 'MONTHLY', membershipClassId: 'class-1' },
+    membershipTypeRows = [{ id: 'type-1', code: 'MONTHLY', membershipClassId: 'class-1' }];
+    membershipLevelRows = [{ id: 'level-1', code: 'GOLD', membershipTypeId: 'type-1' }];
+    customerIdentityRows = [
+      {
+        customerId: 'customer-1',
+      },
     ];
-    membershipLevelRows = [
-      { id: 'level-1', code: 'GOLD', membershipTypeId: 'type-1' },
+    membershipRecordRows = [
+      {
+        id: 'membership-1',
+      },
     ];
-    customerIdentityRows = [{
-      customerId: 'customer-1',
-    }];
-    membershipRecordRows = [{
-      id: 'membership-1',
-    }];
 
     const result = await importJobProcessor(mockJob);
 
@@ -423,9 +419,7 @@ describe('importJobProcessor', () => {
       failedRows: 0,
     });
     const membershipRecordUpdate = mockPrisma.$executeRawUnsafe.mock.calls.find(
-      ([sql]) =>
-        typeof sql === 'string' &&
-        sql.includes('UPDATE "tenant_test"."membership_record"'),
+      ([sql]) => typeof sql === 'string' && sql.includes('UPDATE "tenant_test"."membership_record"')
     );
 
     expect(membershipRecordUpdate?.[1]).toBe('level-1');
@@ -435,9 +429,8 @@ describe('importJobProcessor', () => {
     expect(
       mockPrisma.$executeRawUnsafe.mock.calls.some(
         ([sql]) =>
-          typeof sql === 'string' &&
-          sql.includes('INSERT INTO "tenant_test"."membership_record"'),
-      ),
+          typeof sql === 'string' && sql.includes('INSERT INTO "tenant_test"."membership_record"')
+      )
     ).toBe(false);
   });
 });

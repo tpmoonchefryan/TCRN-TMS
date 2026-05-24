@@ -1,6 +1,5 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 // Common Zod Schemas - Shared validation rules for frontend and backend
-
 import { z } from 'zod';
 
 import { SUPPORTED_UI_LOCALES } from '../constants/locale';
@@ -9,11 +8,11 @@ import { SUPPORTED_UI_LOCALES } from '../constants/locale';
 // Localized Text Schema
 // ============================================================================
 const localizedTextShape = Object.fromEntries(
-  SUPPORTED_UI_LOCALES.map((locale) => [locale, z.string()]),
+  SUPPORTED_UI_LOCALES.map((locale) => [locale, z.string()])
 ) as Record<(typeof SUPPORTED_UI_LOCALES)[number], z.ZodString>;
 
 const partialLocalizedTextShape = Object.fromEntries(
-  SUPPORTED_UI_LOCALES.map((locale) => [locale, z.string().optional()]),
+  SUPPORTED_UI_LOCALES.map((locale) => [locale, z.string().optional()])
 ) as Record<(typeof SUPPORTED_UI_LOCALES)[number], z.ZodOptional<z.ZodString>>;
 
 export const LocalizedTextSchema = z.object(localizedTextShape).strict();

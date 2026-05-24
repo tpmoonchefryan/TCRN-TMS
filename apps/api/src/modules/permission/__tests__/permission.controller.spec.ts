@@ -1,13 +1,13 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { BadRequestException } from '@nestjs/common';
-import { createLocalizedText } from '@tcrn/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { createLocalizedText } from '@tcrn/shared';
+
 import type { AuthenticatedUser } from '../../../common/decorators/current-user.decorator';
+import { PermissionSnapshotService } from '../permission-snapshot.service';
 import { PermissionController } from '../permission.controller';
 import { PermissionService } from '../permission.service';
-import { PermissionSnapshotService } from '../permission-snapshot.service';
 
 describe('PermissionController', () => {
   let controller: PermissionController;
@@ -35,7 +35,7 @@ describe('PermissionController', () => {
 
     controller = new PermissionController(
       mockPermissionService as PermissionService,
-      mockSnapshotService as PermissionSnapshotService,
+      mockSnapshotService as PermissionSnapshotService
     );
   });
 
@@ -58,11 +58,9 @@ describe('PermissionController', () => {
         },
       ]);
 
-      const result = await controller.list(
-        user,
-        {},
-        { headers: { 'accept-language': 'zh-Hant-TW,zh;q=0.9' } } as never,
-      );
+      const result = await controller.list(user, {}, {
+        headers: { 'accept-language': 'zh-Hant-TW,zh;q=0.9' },
+      } as never);
 
       expect(result.data[0].name).toBe('客戶檔案');
     });
@@ -70,8 +68,12 @@ describe('PermissionController', () => {
 
   describe('checkPermissions', () => {
     it('normalizes alias actions before refreshing stale denied snapshot checks', async () => {
-      (mockSnapshotService.checkPermission as ReturnType<typeof vi.fn>).mockResolvedValueOnce(false);
-      (mockSnapshotService.refreshAndCheckPermission as ReturnType<typeof vi.fn>).mockResolvedValueOnce(true);
+      (mockSnapshotService.checkPermission as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
+        false
+      );
+      (
+        mockSnapshotService.refreshAndCheckPermission as ReturnType<typeof vi.fn>
+      ).mockResolvedValueOnce(true);
 
       const result = await controller.checkPermissions(user, {
         checks: [{ resource: 'report.mfr', action: 'export' }],
@@ -83,7 +85,7 @@ describe('PermissionController', () => {
         'report.mfr',
         'execute',
         undefined,
-        undefined,
+        undefined
       );
       expect(mockSnapshotService.refreshAndCheckPermission).toHaveBeenCalledWith(
         'tenant_test',
@@ -91,7 +93,7 @@ describe('PermissionController', () => {
         'report.mfr',
         'execute',
         undefined,
-        undefined,
+        undefined
       );
 
       expect(result).toEqual({
@@ -126,18 +128,22 @@ describe('PermissionController', () => {
     });
 
     it('rejects unsupported resource/action combinations with bad request', async () => {
-      await expect(controller.checkPermissions(user, {
-        checks: [{ resource: 'log.search', action: 'delete' as const }],
-      })).rejects.toThrow(BadRequestException);
+      await expect(
+        controller.checkPermissions(user, {
+          checks: [{ resource: 'log.search', action: 'delete' as const }],
+        })
+      ).rejects.toThrow(BadRequestException);
 
       expect(mockSnapshotService.checkPermission).not.toHaveBeenCalled();
       expect(mockSnapshotService.refreshAndCheckPermission).not.toHaveBeenCalled();
     });
 
     it('rejects unknown resource codes even if DTO validation is bypassed', async () => {
-      await expect(controller.checkPermissions(user, {
-        checks: [{ resource: 'config.unknown' as never, action: 'read' }],
-      })).rejects.toThrow(BadRequestException);
+      await expect(
+        controller.checkPermissions(user, {
+          checks: [{ resource: 'config.unknown' as never, action: 'read' }],
+        })
+      ).rejects.toThrow(BadRequestException);
 
       expect(mockSnapshotService.checkPermission).not.toHaveBeenCalled();
       expect(mockSnapshotService.refreshAndCheckPermission).not.toHaveBeenCalled();

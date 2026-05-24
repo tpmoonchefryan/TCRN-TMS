@@ -1,10 +1,11 @@
 'use client';
 
-import { SUPPORTED_UI_LOCALES, type SupportedUiLocale } from '@tcrn/shared';
 import { ArrowLeft, KeyRound, ShieldCheck, Trash2, UserRoundPlus, Users } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
+
+import { SUPPORTED_UI_LOCALES, type SupportedUiLocale } from '@tcrn/shared';
 
 import { readOrganizationTree } from '@/domains/organization-access/api/organization.api';
 import {
@@ -108,7 +109,7 @@ function buildUserEditorDraft(detail?: SystemUserDetailResponse | null): UserEdi
 function validateUserEditorDraft(
   mode: 'create' | 'edit',
   draft: UserEditorDraft,
-  editorCopy: ReturnType<typeof useUserManagementCopy>['copy']['editor'],
+  editorCopy: ReturnType<typeof useUserManagementCopy>['copy']['editor']
 ) {
   if (mode === 'create') {
     if (draft.username.trim().length < 3) {
@@ -165,7 +166,7 @@ function buildAssignmentDrafts(detail: SystemUserDetailResponse | null) {
         inherit: assignment.inherit,
         expiresAt: toDateTimeLocal(assignment.expiresAt),
       },
-    ]),
+    ])
   ) as Record<string, AssignmentDraft>;
 }
 
@@ -197,7 +198,10 @@ export function UserEditorScreen({
   const [loading, setLoading] = useState(mode === 'edit');
   const [submitting, setSubmitting] = useState(false);
   const [notice, setNotice] = useState<{ tone: 'success' | 'error'; message: string } | null>(null);
-  const [assignmentNotice, setAssignmentNotice] = useState<{ tone: 'success' | 'error'; message: string } | null>(null);
+  const [assignmentNotice, setAssignmentNotice] = useState<{
+    tone: 'success' | 'error';
+    message: string;
+  } | null>(null);
   const [canAssignTenantRoles, setCanAssignTenantRoles] = useState<boolean | null>(null);
   const [blockedAssignmentScopeKey, setBlockedAssignmentScopeKey] = useState<string | null>(null);
   const [roles, setRoles] = useState<SystemRoleListItem[]>([]);
@@ -220,9 +224,13 @@ export function UserEditorScreen({
   const [assignmentDrafts, setAssignmentDrafts] = useState<Record<string, AssignmentDraft>>({});
   const [assignmentSubmittingId, setAssignmentSubmittingId] = useState<string | null>(null);
   const [assignmentPage, setAssignmentPage] = useState(1);
-  const [assignmentPageSize, setAssignmentPageSize] = useState<PageSizeOption>(PAGE_SIZE_OPTIONS[0]);
+  const [assignmentPageSize, setAssignmentPageSize] = useState<PageSizeOption>(
+    PAGE_SIZE_OPTIONS[0]
+  );
   const [scopeAccessPage, setScopeAccessPage] = useState(1);
-  const [scopeAccessPageSize, setScopeAccessPageSize] = useState<PageSizeOption>(PAGE_SIZE_OPTIONS[0]);
+  const [scopeAccessPageSize, setScopeAccessPageSize] = useState<PageSizeOption>(
+    PAGE_SIZE_OPTIONS[0]
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -249,8 +257,8 @@ export function UserEditorScreen({
         setScopeOptions(
           buildOrganizationScopeOptions(
             organizationTree,
-            session?.tenantName || sharedCopy.tenantRoot,
-          ),
+            session?.tenantName || sharedCopy.tenantRoot
+          )
         );
       } catch (reason) {
         if (!cancelled) {
@@ -308,7 +316,8 @@ export function UserEditorScreen({
 
   const roleAssignments = detail?.roleAssignments ?? [];
   const availableRoles = useMemo(() => {
-    const normalizedScopeId = assignmentComposer.scopeType === 'tenant' ? null : assignmentComposer.scopeId;
+    const normalizedScopeId =
+      assignmentComposer.scopeType === 'tenant' ? null : assignmentComposer.scopeId;
     const assignedRoleCodes = new Set(
       roleAssignments
         .filter((assignment) => {
@@ -322,27 +331,42 @@ export function UserEditorScreen({
 
           return assignment.scopeId === normalizedScopeId;
         })
-        .map((assignment) => assignment.roleCode),
+        .map((assignment) => assignment.roleCode)
     );
 
     return filterAssignableRoles(roles, session?.tenantTier, assignmentComposer.scopeType).filter(
-      (role) => !assignedRoleCodes.has(role.code),
+      (role) => !assignedRoleCodes.has(role.code)
     );
-  }, [assignmentComposer.scopeId, assignmentComposer.scopeType, roleAssignments, roles, session?.tenantTier]);
+  }, [
+    assignmentComposer.scopeId,
+    assignmentComposer.scopeType,
+    roleAssignments,
+    roles,
+    session?.tenantTier,
+  ]);
   const assignmentScopeKey = `${assignmentComposer.scopeType}:${assignmentComposer.scopeId}`;
   const isTenantAssignmentBlocked =
     assignmentComposer.scopeType === 'tenant' && canAssignTenantRoles === false;
-  const isAssignmentComposerBlocked = isTenantAssignmentBlocked || blockedAssignmentScopeKey === assignmentScopeKey;
+  const isAssignmentComposerBlocked =
+    isTenantAssignmentBlocked || blockedAssignmentScopeKey === assignmentScopeKey;
   const scopeAccess = detail?.scopeAccess ?? [];
-  const assignmentPagination = buildPaginationMeta(roleAssignments.length, assignmentPage, assignmentPageSize);
+  const assignmentPagination = buildPaginationMeta(
+    roleAssignments.length,
+    assignmentPage,
+    assignmentPageSize
+  );
   const paginatedRoleAssignments = roleAssignments.slice(
     (assignmentPagination.page - 1) * assignmentPagination.pageSize,
-    assignmentPagination.page * assignmentPagination.pageSize,
+    assignmentPagination.page * assignmentPagination.pageSize
   );
-  const scopeAccessPagination = buildPaginationMeta(scopeAccess.length, scopeAccessPage, scopeAccessPageSize);
+  const scopeAccessPagination = buildPaginationMeta(
+    scopeAccess.length,
+    scopeAccessPage,
+    scopeAccessPageSize
+  );
   const paginatedScopeAccess = scopeAccess.slice(
     (scopeAccessPagination.page - 1) * scopeAccessPagination.pageSize,
-    scopeAccessPagination.page * scopeAccessPagination.pageSize,
+    scopeAccessPagination.page * scopeAccessPagination.pageSize
   );
 
   useEffect(() => {
@@ -350,15 +374,19 @@ export function UserEditorScreen({
       const matchingScope = scopeOptions.find(
         (option) =>
           option.type === current.scopeType &&
-          (current.scopeType === 'tenant' ? option.id === 'tenant-root' : option.id === current.scopeId),
+          (current.scopeType === 'tenant'
+            ? option.id === 'tenant-root'
+            : option.id === current.scopeId)
       );
       const nextScopeId =
         current.scopeType === 'tenant'
           ? 'tenant-root'
-          : matchingScope?.id || scopeOptions.find((option) => option.type === current.scopeType)?.id || '';
+          : matchingScope?.id ||
+            scopeOptions.find((option) => option.type === current.scopeType)?.id ||
+            '';
       const nextRoleId = availableRoles.some((role) => role.id === current.roleId)
         ? current.roleId
-        : (availableRoles[0]?.id || '');
+        : availableRoles[0]?.id || '';
 
       if (nextScopeId === current.scopeId && nextRoleId === current.roleId) {
         return current;
@@ -424,7 +452,7 @@ export function UserEditorScreen({
         router.replace(
           isAcWorkspace
             ? buildAcUserEditorPath(tenantId, created.id)
-            : buildTenantUserEditorPath(tenantId, created.id),
+            : buildTenantUserEditorPath(tenantId, created.id)
         );
         return;
       }
@@ -450,7 +478,7 @@ export function UserEditorScreen({
         tone: 'error',
         message: getErrorMessage(
           reason,
-          mode === 'create' ? editorCopy.createError : editorCopy.updateError,
+          mode === 'create' ? editorCopy.createError : editorCopy.updateError
         ),
       });
     } finally {
@@ -510,7 +538,10 @@ export function UserEditorScreen({
       setAssignmentNotice({
         tone: 'success',
         message: editorCopy.assignmentCreated(
-          selectedRole?.localizedName || selectedRole?.name.en || selectedRole?.code || editorCopy.roleField,
+          selectedRole?.localizedName ||
+            selectedRole?.name.en ||
+            selectedRole?.code ||
+            editorCopy.roleField
         ),
       });
     } catch (reason) {
@@ -595,7 +626,13 @@ export function UserEditorScreen({
   }
 
   if (mode === 'edit' && (loadError || !detail)) {
-    return <StateView status="error" title={editorCopy.unavailableTitle} description={loadError || undefined} />;
+    return (
+      <StateView
+        status="error"
+        title={editorCopy.unavailableTitle}
+        description={loadError || undefined}
+      />
+    );
   }
 
   return (
@@ -638,7 +675,11 @@ export function UserEditorScreen({
                 value={detail.lastLoginAt ? sharedCopy.seen : sharedCopy.never}
                 hint={
                   detail.lastLoginAt
-                    ? formatUserManagementDateTime(detail.lastLoginAt, locale, sharedCopy.unavailable)
+                    ? formatUserManagementDateTime(
+                        detail.lastLoginAt,
+                        locale,
+                        sharedCopy.unavailable
+                      )
                     : editorCopy.lastLoginNeverHint
                 }
               />
@@ -653,25 +694,33 @@ export function UserEditorScreen({
         <div className="space-y-6">
           <div className="flex items-center gap-2">
             <Users className="h-4 w-4 text-slate-500" />
-            <h2 className="text-lg font-semibold text-slate-900">{editorCopy.accountProfileTitle}</h2>
+            <h2 className="text-lg font-semibold text-slate-900">
+              {editorCopy.accountProfileTitle}
+            </h2>
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
             <label className="space-y-2">
-              <span className="text-sm font-semibold text-slate-900">{editorCopy.fields.username}</span>
+              <span className="text-sm font-semibold text-slate-900">
+                {editorCopy.fields.username}
+              </span>
               <input
                 aria-label={editorCopy.fields.username}
                 name="username"
                 autoComplete="username"
                 spellCheck={false}
                 value={draft.username}
-                onChange={(event) => setDraft((current) => ({ ...current, username: event.target.value }))}
+                onChange={(event) =>
+                  setDraft((current) => ({ ...current, username: event.target.value }))
+                }
                 disabled={mode === 'edit'}
                 className={inputClassName}
               />
             </label>
             <label className="space-y-2">
-              <span className="text-sm font-semibold text-slate-900">{editorCopy.fields.email}</span>
+              <span className="text-sm font-semibold text-slate-900">
+                {editorCopy.fields.email}
+              </span>
               <input
                 aria-label={editorCopy.fields.email}
                 name="email"
@@ -679,7 +728,9 @@ export function UserEditorScreen({
                 autoComplete="email"
                 spellCheck={false}
                 value={draft.email}
-                onChange={(event) => setDraft((current) => ({ ...current, email: event.target.value }))}
+                onChange={(event) =>
+                  setDraft((current) => ({ ...current, email: event.target.value }))
+                }
                 disabled={mode === 'edit'}
                 className={inputClassName}
               />
@@ -689,7 +740,9 @@ export function UserEditorScreen({
           {mode === 'create' ? (
             <div className="grid gap-4 md:grid-cols-2">
               <label className="space-y-2">
-                <span className="text-sm font-semibold text-slate-900">{editorCopy.fields.initialPassword}</span>
+                <span className="text-sm font-semibold text-slate-900">
+                  {editorCopy.fields.initialPassword}
+                </span>
                 <input
                   aria-label={editorCopy.fields.initialPassword}
                   name="initialPassword"
@@ -697,7 +750,9 @@ export function UserEditorScreen({
                   autoComplete="new-password"
                   spellCheck={false}
                   value={draft.password}
-                  onChange={(event) => setDraft((current) => ({ ...current, password: event.target.value }))}
+                  onChange={(event) =>
+                    setDraft((current) => ({ ...current, password: event.target.value }))
+                  }
                   className={inputClassName}
                 />
               </label>
@@ -707,12 +762,18 @@ export function UserEditorScreen({
                   name="forceReset"
                   type="checkbox"
                   checked={draft.forceReset}
-                  onChange={(event) => setDraft((current) => ({ ...current, forceReset: event.target.checked }))}
+                  onChange={(event) =>
+                    setDraft((current) => ({ ...current, forceReset: event.target.checked }))
+                  }
                   className="mt-1 h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-500"
                 />
                 <div className="space-y-1">
-                  <p className="text-sm font-semibold text-slate-950">{editorCopy.fields.forceReset}</p>
-                  <p className="text-sm leading-6 text-slate-600">{editorCopy.forceResetDescription}</p>
+                  <p className="text-sm font-semibold text-slate-950">
+                    {editorCopy.fields.forceReset}
+                  </p>
+                  <p className="text-sm leading-6 text-slate-600">
+                    {editorCopy.forceResetDescription}
+                  </p>
                 </div>
               </label>
             </div>
@@ -724,19 +785,25 @@ export function UserEditorScreen({
 
           <div className="grid gap-4 md:grid-cols-2">
             <label className="space-y-2">
-              <span className="text-sm font-semibold text-slate-900">{editorCopy.fields.displayName}</span>
+              <span className="text-sm font-semibold text-slate-900">
+                {editorCopy.fields.displayName}
+              </span>
               <input
                 aria-label={editorCopy.fields.displayName}
                 name="displayName"
                 autoComplete="name"
                 spellCheck={false}
                 value={draft.displayName}
-                onChange={(event) => setDraft((current) => ({ ...current, displayName: event.target.value }))}
+                onChange={(event) =>
+                  setDraft((current) => ({ ...current, displayName: event.target.value }))
+                }
                 className={inputClassName}
               />
             </label>
             <label className="space-y-2">
-              <span className="text-sm font-semibold text-slate-900">{editorCopy.fields.phone}</span>
+              <span className="text-sm font-semibold text-slate-900">
+                {editorCopy.fields.phone}
+              </span>
               <input
                 aria-label={editorCopy.fields.phone}
                 name="phone"
@@ -744,14 +811,18 @@ export function UserEditorScreen({
                 autoComplete="tel"
                 spellCheck={false}
                 value={draft.phone}
-                onChange={(event) => setDraft((current) => ({ ...current, phone: event.target.value }))}
+                onChange={(event) =>
+                  setDraft((current) => ({ ...current, phone: event.target.value }))
+                }
                 className={inputClassName}
               />
             </label>
           </div>
 
           <label className="space-y-2">
-            <span className="text-sm font-semibold text-slate-900">{editorCopy.fields.preferredLanguage}</span>
+            <span className="text-sm font-semibold text-slate-900">
+              {editorCopy.fields.preferredLanguage}
+            </span>
             <select
               aria-label={editorCopy.fields.preferredLanguage}
               name="preferredLanguage"
@@ -795,19 +866,30 @@ export function UserEditorScreen({
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
                     <ShieldCheck className="h-4 w-4 text-slate-500" />
-                    <h2 className="text-lg font-semibold text-slate-900">{editorCopy.scopedAssignmentsTitle}</h2>
+                    <h2 className="text-lg font-semibold text-slate-900">
+                      {editorCopy.scopedAssignmentsTitle}
+                    </h2>
                   </div>
-                  <p className="max-w-3xl text-sm leading-6 text-slate-600">{editorCopy.scopedAssignmentsDescription}</p>
+                  <p className="max-w-3xl text-sm leading-6 text-slate-600">
+                    {editorCopy.scopedAssignmentsDescription}
+                  </p>
                 </div>
-                <ToneBadge tone="info" label={sharedCopy.assignLinks(detail.roleAssignments.length)} />
+                <ToneBadge
+                  tone="info"
+                  label={sharedCopy.assignLinks(detail.roleAssignments.length)}
+                />
               </div>
 
               {roleLoadError ? <NoticeBanner tone="error" message={roleLoadError} /> : null}
-              {assignmentNotice ? <NoticeBanner tone={assignmentNotice.tone} message={assignmentNotice.message} /> : null}
+              {assignmentNotice ? (
+                <NoticeBanner tone={assignmentNotice.tone} message={assignmentNotice.message} />
+              ) : null}
 
               {isAssignmentComposerBlocked ? (
                 <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
-                  <p className="text-sm font-semibold text-amber-900">{editorCopy.assignmentPermissionTitle}</p>
+                  <p className="text-sm font-semibold text-amber-900">
+                    {editorCopy.assignmentPermissionTitle}
+                  </p>
                   <p className="mt-1 text-sm leading-6 text-amber-800">
                     {editorCopy.assignmentPermissionDescription}
                   </p>
@@ -816,7 +898,9 @@ export function UserEditorScreen({
 
               <div className="grid gap-4 xl:grid-cols-[1.2fr,1fr,1fr]">
                 <label className="space-y-2">
-                  <span className="text-sm font-semibold text-slate-900">{editorCopy.scopeField}</span>
+                  <span className="text-sm font-semibold text-slate-900">
+                    {editorCopy.scopeField}
+                  </span>
                   <select
                     aria-label={editorCopy.scopeField}
                     value={`${assignmentComposer.scopeType}:${assignmentComposer.scopeId}`}
@@ -831,7 +915,10 @@ export function UserEditorScreen({
                     className={inputClassName}
                   >
                     {scopeOptions.map((option) => (
-                      <option key={`${option.type}:${option.id}`} value={`${option.type}:${option.id}`}>
+                      <option
+                        key={`${option.type}:${option.id}`}
+                        value={`${option.type}:${option.id}`}
+                      >
                         {option.hint}
                       </option>
                     ))}
@@ -841,7 +928,9 @@ export function UserEditorScreen({
                 {!isAssignmentComposerBlocked ? (
                   <>
                     <label className="space-y-2">
-                      <span className="text-sm font-semibold text-slate-900">{editorCopy.roleField}</span>
+                      <span className="text-sm font-semibold text-slate-900">
+                        {editorCopy.roleField}
+                      </span>
                       <select
                         aria-label={editorCopy.roleField}
                         value={assignmentComposer.roleId}
@@ -853,7 +942,9 @@ export function UserEditorScreen({
                         }
                         className={inputClassName}
                       >
-                        {availableRoles.length === 0 ? <option value="">{sharedCopy.noCompatibleRoles}</option> : null}
+                        {availableRoles.length === 0 ? (
+                          <option value="">{sharedCopy.noCompatibleRoles}</option>
+                        ) : null}
                         {availableRoles.map((role) => (
                           <option key={role.id} value={role.id}>
                             {role.localizedName || role.name.en || role.code}
@@ -863,7 +954,9 @@ export function UserEditorScreen({
                     </label>
 
                     <label className="space-y-2">
-                      <span className="text-sm font-semibold text-slate-900">{editorCopy.expiresAtField}</span>
+                      <span className="text-sm font-semibold text-slate-900">
+                        {editorCopy.expiresAtField}
+                      </span>
                       <input
                         aria-label={editorCopy.expiresAtField}
                         type="datetime-local"
@@ -999,7 +1092,9 @@ export function UserEditorScreen({
                     }}
                     onPrevious={() => setAssignmentPage((current) => Math.max(1, current - 1))}
                     onNext={() =>
-                      setAssignmentPage((current) => Math.min(assignmentPagination.totalPages, current + 1))
+                      setAssignmentPage((current) =>
+                        Math.min(assignmentPagination.totalPages, current + 1)
+                      )
                     }
                   />
                 </div>
@@ -1011,9 +1106,13 @@ export function UserEditorScreen({
             <div className="space-y-4">
               <div className="flex items-center gap-2">
                 <KeyRound className="h-4 w-4 text-slate-500" />
-                <h2 className="text-lg font-semibold text-slate-900">{editorCopy.directScopeAccessTitle}</h2>
+                <h2 className="text-lg font-semibold text-slate-900">
+                  {editorCopy.directScopeAccessTitle}
+                </h2>
               </div>
-              <p className="max-w-3xl text-sm leading-6 text-slate-600">{editorCopy.directScopeAccessDescription}</p>
+              <p className="max-w-3xl text-sm leading-6 text-slate-600">
+                {editorCopy.directScopeAccessDescription}
+              </p>
               {scopeAccess.length === 0 ? (
                 <StateView
                   status="unavailable"
@@ -1024,7 +1123,10 @@ export function UserEditorScreen({
                 <div className="space-y-3">
                   <div className="grid gap-3 lg:grid-cols-2">
                     {paginatedScopeAccess.map((access) => (
-                      <div key={access.id} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                      <div
+                        key={access.id}
+                        className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3"
+                      >
                         <div className="flex flex-wrap items-start justify-between gap-3">
                           <div className="space-y-1">
                             <p className="text-sm font-semibold text-slate-900">
@@ -1034,12 +1136,20 @@ export function UserEditorScreen({
                               {getLocalizedScopeTypeLabel(access.scopeType, locale)}
                             </p>
                           </div>
-                          {access.includeSubunits ? <ToneBadge tone="info" label={sharedCopy.includesSubunits} /> : null}
+                          {access.includeSubunits ? (
+                            <ToneBadge tone="info" label={sharedCopy.includesSubunits} />
+                          ) : null}
                         </div>
-                        <p className="mt-2 text-xs text-slate-500">{access.scopePath || sharedCopy.tenantWideVisibility}</p>
+                        <p className="mt-2 text-xs text-slate-500">
+                          {access.scopePath || sharedCopy.tenantWideVisibility}
+                        </p>
                         <p className="mt-2 text-xs text-slate-500">
                           {sharedCopy.grantedLabel}{' '}
-                          {formatUserManagementDateTime(access.grantedAt, locale, sharedCopy.unavailable)}
+                          {formatUserManagementDateTime(
+                            access.grantedAt,
+                            locale,
+                            sharedCopy.unavailable
+                          )}
                         </p>
                       </div>
                     ))}
@@ -1055,7 +1165,9 @@ export function UserEditorScreen({
                     }}
                     onPrevious={() => setScopeAccessPage((current) => Math.max(1, current - 1))}
                     onNext={() =>
-                      setScopeAccessPage((current) => Math.min(scopeAccessPagination.totalPages, current + 1))
+                      setScopeAccessPage((current) =>
+                        Math.min(scopeAccessPagination.totalPages, current + 1)
+                      )
                     }
                   />
                 </div>

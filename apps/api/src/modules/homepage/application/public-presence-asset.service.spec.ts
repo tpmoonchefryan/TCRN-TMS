@@ -1,4 +1,6 @@
 import { BadRequestException, ForbiddenException } from '@nestjs/common';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import {
   buildBlankPublicPresenceAssetSourceBundle,
   buildPublicPresenceComponentAssetManifest,
@@ -9,7 +11,6 @@ import {
   type PublicPresenceAssetManifest,
   type RequestContext,
 } from '@tcrn/shared';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { PublicPresenceAssetService } from './public-presence-asset.service';
 
@@ -62,10 +63,8 @@ describe('PublicPresenceAssetService', () => {
   }
 
   function createRevisionRow(overrides: Record<string, unknown> = {}) {
-    const assetId =
-      typeof overrides.assetId === 'string' ? overrides.assetId : TEMPLATE_ASSET_ID;
-    const revisionId =
-      typeof overrides.id === 'string' ? overrides.id : TEMPLATE_REVISION_ID;
+    const assetId = typeof overrides.assetId === 'string' ? overrides.assetId : TEMPLATE_ASSET_ID;
+    const revisionId = typeof overrides.id === 'string' ? overrides.id : TEMPLATE_REVISION_ID;
     const baseTemplateText = getPublicPresenceTemplateSeedText('activeTalentHub');
     const baseManifest = buildPublicPresenceTemplateAssetManifest('activeTalentHub', {
       assetCode: 'activetalenthub',
@@ -80,61 +79,60 @@ describe('PublicPresenceAssetService', () => {
       ...baseManifest,
       ...(overrides.manifest as Record<string, unknown> | undefined),
     } as PublicPresenceAssetManifest;
-    const sourceBundle = overrides.sourceBundle as ReturnType<
-      typeof buildBlankPublicPresenceAssetSourceBundle
-    > | undefined;
-    const resolvedSourceBundle = sourceBundle
-      ?? (
-        manifest.assetKind === 'component'
-          ? (() => {
-              const componentType = manifest.componentType;
-              const text = getPublicPresenceComponentSeedText(componentType);
-              const componentManifest = {
-                ...buildPublicPresenceComponentAssetManifest(componentType, {
-                  assetCode: `${componentType.toLowerCase()}-code`,
-                  assetId,
-                  assetRevisionId: revisionId,
-                  description: text.description,
-                  name: text.name,
-                  ownerId: null,
-                  ownerType: 'tenant',
-                }),
-                ...manifest,
-              };
+    const sourceBundle = overrides.sourceBundle as
+      | ReturnType<typeof buildBlankPublicPresenceAssetSourceBundle>
+      | undefined;
+    const resolvedSourceBundle =
+      sourceBundle ??
+      (manifest.assetKind === 'component'
+        ? (() => {
+            const componentType = manifest.componentType;
+            const text = getPublicPresenceComponentSeedText(componentType);
+            const componentManifest = {
+              ...buildPublicPresenceComponentAssetManifest(componentType, {
+                assetCode: `${componentType.toLowerCase()}-code`,
+                assetId,
+                assetRevisionId: revisionId,
+                description: text.description,
+                name: text.name,
+                ownerId: null,
+                ownerType: 'tenant',
+              }),
+              ...manifest,
+            };
 
-              return buildBlankPublicPresenceAssetSourceBundle({
-                assetCode: componentManifest.assetCode ?? `${componentType.toLowerCase()}-code`,
-                assetKind: 'component',
-                componentType,
-                manifest: componentManifest,
-                name: componentManifest.name ?? text.name,
-              });
-            })()
-          : (() => {
-              const templateId = manifest.templateId;
-              const text = getPublicPresenceTemplateSeedText(templateId);
-              const templateManifest = {
-                ...buildPublicPresenceTemplateAssetManifest(templateId, {
-                  assetCode: `${templateId}-code`,
-                  assetId,
-                  assetRevisionId: revisionId,
-                  description: text.description,
-                  name: text.name,
-                  ownerId: null,
-                  ownerType: 'tenant',
-                }),
-                ...manifest,
-              };
+            return buildBlankPublicPresenceAssetSourceBundle({
+              assetCode: componentManifest.assetCode ?? `${componentType.toLowerCase()}-code`,
+              assetKind: 'component',
+              componentType,
+              manifest: componentManifest,
+              name: componentManifest.name ?? text.name,
+            });
+          })()
+        : (() => {
+            const templateId = manifest.templateId;
+            const text = getPublicPresenceTemplateSeedText(templateId);
+            const templateManifest = {
+              ...buildPublicPresenceTemplateAssetManifest(templateId, {
+                assetCode: `${templateId}-code`,
+                assetId,
+                assetRevisionId: revisionId,
+                description: text.description,
+                name: text.name,
+                ownerId: null,
+                ownerType: 'tenant',
+              }),
+              ...manifest,
+            };
 
-              return buildBlankPublicPresenceAssetSourceBundle({
-                assetCode: templateManifest.assetCode ?? `${templateId}-code`,
-                assetKind: 'template',
-                manifest: templateManifest,
-                name: templateManifest.name ?? text.name,
-                templateId,
-              });
-            })()
-      );
+            return buildBlankPublicPresenceAssetSourceBundle({
+              assetCode: templateManifest.assetCode ?? `${templateId}-code`,
+              assetKind: 'template',
+              manifest: templateManifest,
+              name: templateManifest.name ?? text.name,
+              templateId,
+            });
+          })());
 
     return {
       artifactStatus: 'draft',
@@ -161,7 +159,7 @@ describe('PublicPresenceAssetService', () => {
 
   function buildSystemSeedAssetRow(
     seed: ReturnType<typeof getPublicPresenceSystemAssetSeeds>[number],
-    overrides: Record<string, unknown> = {},
+    overrides: Record<string, unknown> = {}
   ) {
     return createAssetRow({
       assetKind: seed.assetKind,
@@ -230,7 +228,7 @@ describe('PublicPresenceAssetService', () => {
           expect.objectContaining({ path: 'manifest.json' }),
           expect.objectContaining({ path: 'src/index.tsx' }),
         ]),
-      }),
+      })
     );
     expect(result.currentRevision?.sourceBundle.length).toBeGreaterThan(0);
   });
@@ -243,7 +241,7 @@ describe('PublicPresenceAssetService', () => {
         assetKind: 'unsupported' as never,
         componentType: 'SocialLinks',
         scopeType: 'tenant',
-      }),
+      })
     ).rejects.toBeInstanceOf(BadRequestException);
 
     expect(repository.createAssetWithCurrentRevision).not.toHaveBeenCalled();
@@ -272,7 +270,7 @@ describe('PublicPresenceAssetService', () => {
           validationRules: [],
           policyReferences: [],
         },
-      }),
+      })
     ).rejects.toBeInstanceOf(BadRequestException);
 
     expect(repository.createAssetWithCurrentRevision).not.toHaveBeenCalled();
@@ -304,7 +302,7 @@ describe('PublicPresenceAssetService', () => {
         },
         ownerType: 'system',
         templateId: null,
-      }),
+      })
     );
     repository.findCurrentRevision.mockResolvedValueOnce(
       createRevisionRow({
@@ -325,7 +323,7 @@ describe('PublicPresenceAssetService', () => {
           safetyPolicyReferences: [],
           aiPatchAllowlist: [],
         },
-      }),
+      })
     );
 
     const service = new PublicPresenceAssetService(repository as never);
@@ -340,14 +338,14 @@ describe('PublicPresenceAssetService', () => {
         ownerType: 'talent',
         ownerId: 'talent-1',
         code: 'system-social-links-copy',
-      }),
+      })
     );
   });
 
   it('repairs a legacy system template missing currentRevisionId before listing assets', async () => {
     const systemSeeds = getPublicPresenceSystemAssetSeeds();
     const legacySeed = systemSeeds.find(
-      (seed) => seed.assetKind === 'template' && seed.templateId === 'activeTalentHub',
+      (seed) => seed.assetKind === 'template' && seed.templateId === 'activeTalentHub'
     );
 
     expect(legacySeed).toBeDefined();
@@ -388,11 +386,12 @@ describe('PublicPresenceAssetService', () => {
 
         return buildSystemSeedAssetRow(matchedSeed, {
           id: matchedSeed.code === legacySeed!.code ? legacyAsset.id : `seed-${matchedSeed.code}`,
-          currentRevisionId: matchedSeed.code === legacySeed!.code
-            ? repairedRevision.id
-            : `revision-${matchedSeed.code}`,
+          currentRevisionId:
+            matchedSeed.code === legacySeed!.code
+              ? repairedRevision.id
+              : `revision-${matchedSeed.code}`,
         });
-      },
+      }
     );
     repository.createRevisionAndAssignCurrent.mockImplementationOnce(async () => {
       repaired = true;
@@ -410,10 +409,14 @@ describe('PublicPresenceAssetService', () => {
     repository.listCurrentRevisionsByAssetIds.mockResolvedValueOnce([repairedRevision]);
 
     const service = new PublicPresenceAssetService(repository as never);
-    const result = await service.listAssets(context.tenantSchema ?? '', {
-      assetKind: 'template',
-      scopeType: 'tenant',
-    }, context.userId);
+    const result = await service.listAssets(
+      context.tenantSchema ?? '',
+      {
+        assetKind: 'template',
+        scopeType: 'tenant',
+      },
+      context.userId
+    );
 
     expect(repository.createRevisionAndAssignCurrent).toHaveBeenCalledWith(
       context.tenantSchema,
@@ -424,7 +427,7 @@ describe('PublicPresenceAssetService', () => {
         manifest: legacySeed!.manifest,
         sourceBundle: legacySeed!.sourceBundle,
         status: 'active',
-      }),
+      })
     );
     expect(result[0]?.asset.currentRevisionId).toBe(repairedRevision.id);
     expect(result[0]?.currentRevision?.id).toBe(repairedRevision.id);
@@ -435,7 +438,7 @@ describe('PublicPresenceAssetService', () => {
       createAssetRow({
         ownerType: 'tenant',
         ownerId: null,
-      }),
+      })
     );
     repository.resolveScopeChain.mockResolvedValueOnce([
       { ownerType: 'system', ownerId: null },
@@ -450,7 +453,7 @@ describe('PublicPresenceAssetService', () => {
         scopeType: 'talent',
         scopeId: 'talent-1',
         sourceBundle: createRevisionRow().sourceBundle,
-      }),
+      })
     ).rejects.toBeInstanceOf(ForbiddenException);
   });
 
@@ -476,7 +479,7 @@ describe('PublicPresenceAssetService', () => {
           policyReferences: [],
         },
         sourceBundle: createRevisionRow().sourceBundle,
-      }),
+      })
     ).rejects.toBeInstanceOf(BadRequestException);
 
     expect(repository.createRevisionAndAssignCurrent).not.toHaveBeenCalled();

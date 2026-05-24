@@ -1,14 +1,10 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable } from '@nestjs/common';
 
 import { OrganizationReadService } from './application/organization-read.service';
 import { OrganizationTreeService } from './application/organization-tree.service';
 import type { TalentSummary } from './domain/organization-read.policy';
-import type {
-  OrganizationAccessScopes,
-  OrganizationTree,
-} from './domain/organization-tree.policy';
+import type { OrganizationAccessScopes, OrganizationTree } from './domain/organization-tree.policy';
 import { OrganizationReadRepository } from './infrastructure/organization-read.repository';
 import { OrganizationTreeRepository } from './infrastructure/organization-tree.repository';
 
@@ -23,11 +19,11 @@ export type { OrganizationTree, TreeNode } from './domain/organization-tree.poli
 export class OrganizationService {
   constructor(
     private readonly organizationReadService: OrganizationReadService = new OrganizationReadService(
-      new OrganizationReadRepository(),
+      new OrganizationReadRepository()
     ),
     private readonly organizationTreeService: OrganizationTreeService = new OrganizationTreeService(
-      new OrganizationTreeRepository(),
-    ),
+      new OrganizationTreeRepository()
+    )
   ) {}
 
   /**
@@ -35,12 +31,9 @@ export class OrganizationService {
    */
   async getUserAccessibleScopes(
     tenantSchema: string,
-    userId: string,
+    userId: string
   ): Promise<OrganizationAccessScopes> {
-    return this.organizationTreeService.getUserAccessibleScopes(
-      tenantSchema,
-      userId,
-    );
+    return this.organizationTreeService.getUserAccessibleScopes(tenantSchema, userId);
   }
 
   /**
@@ -55,13 +48,9 @@ export class OrganizationService {
       search?: string;
       language?: string;
       userId?: string; // For filtering by user access
-    } = {},
+    } = {}
   ): Promise<OrganizationTree> {
-    return this.organizationTreeService.getTree(
-      tenantId,
-      tenantSchema,
-      options,
-    );
+    return this.organizationTreeService.getTree(tenantId, tenantSchema, options);
   }
 
   /**
@@ -71,14 +60,9 @@ export class OrganizationService {
     tenantId: string,
     tenantSchema: string,
     path: string,
-    language: string = 'en',
+    language: string = 'en'
   ): Promise<Array<{ id: string; type: string; code: string; name: string }>> {
-    return this.organizationReadService.getBreadcrumb(
-      tenantId,
-      tenantSchema,
-      path,
-      language,
-    );
+    return this.organizationReadService.getBreadcrumb(tenantId, tenantSchema, path, language);
   }
 
   /**
@@ -92,7 +76,7 @@ export class OrganizationService {
       includeTalents?: boolean;
       includeInactive?: boolean;
       language?: string;
-    } = {},
+    } = {}
   ): Promise<{
     subsidiaries: Array<{
       id: string;
@@ -119,7 +103,7 @@ export class OrganizationService {
       includeTalents?: boolean;
       includeInactive?: boolean;
       language?: string;
-    } = {},
+    } = {}
   ): Promise<{
     tenant: { id: string; code: string; name: string };
     subsidiaries: Array<{

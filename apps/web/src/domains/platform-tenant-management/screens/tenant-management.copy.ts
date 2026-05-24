@@ -188,7 +188,8 @@ const COPY: Record<SupportedUiLocale, TenantManagementCopy> = {
       createSubmit: 'Create tenant',
       createdLabel: 'Created',
       currentSelection: 'Current tenant',
-      deactivateDescription: 'The tenant record stays available, but tenant access is disabled until it is reactivated.',
+      deactivateDescription:
+        'The tenant record stays available, but tenant access is disabled until it is reactivated.',
       deactivateError: 'Failed to deactivate tenant.',
       deactivateSubmit: 'Deactivate tenant',
       editDescription: 'Review tenant identity, limits, and status.',
@@ -235,7 +236,8 @@ const COPY: Record<SupportedUiLocale, TenantManagementCopy> = {
       standardTierLabel: 'Standard',
       sendingDomains: {
         title: 'Email sending domains',
-        description: 'Manage customer-owned sender domains for this tenant and provide DNS records for customer setup.',
+        description:
+          'Manage customer-owned sender domains for this tenant and provide DNS records for customer setup.',
         newDomainLabel: 'New sending domain',
         newDomainPlaceholder: 'mail.example.com',
         addDomain: 'Add sending domain',
@@ -566,7 +568,8 @@ const COPY: Record<SupportedUiLocale, TenantManagementCopy> = {
       createSubmit: 'テナントを作成',
       createdLabel: '作成日時',
       currentSelection: '現在のテナント',
-      deactivateDescription: 'テナント記録は残りますが、再有効化されるまでテナントアクセスは停止されます。',
+      deactivateDescription:
+        'テナント記録は残りますが、再有効化されるまでテナントアクセスは停止されます。',
       deactivateError: 'テナントの無効化に失敗しました。',
       deactivateSubmit: 'テナントを無効化',
       editDescription: 'テナント識別情報、上限、状態を一箇所で確認・編集します。',
@@ -613,7 +616,8 @@ const COPY: Record<SupportedUiLocale, TenantManagementCopy> = {
       standardTierLabel: '標準',
       sendingDomains: {
         title: '送信ドメイン',
-        description: 'このテナント向けに顧客所有の送信ドメインを管理し、顧客設定用の DNS レコードを案内します。',
+        description:
+          'このテナント向けに顧客所有の送信ドメインを管理し、顧客設定用の DNS レコードを案内します。',
         newDomainLabel: '送信ドメインを追加',
         newDomainPlaceholder: 'mail.example.com',
         addDomain: '送信ドメインを追加',
@@ -692,7 +696,8 @@ const COPY: Record<SupportedUiLocale, TenantManagementCopy> = {
       createSubmit: 'Create tenant',
       createdLabel: 'Created',
       currentSelection: 'Current tenant',
-      deactivateDescription: 'The tenant record stays available, but tenant access is disabled until it is reactivated.',
+      deactivateDescription:
+        'The tenant record stays available, but tenant access is disabled until it is reactivated.',
       deactivateError: 'Failed to deactivate tenant.',
       deactivateSubmit: 'Deactivate tenant',
       editDescription: 'Review tenant identity, limits, and status.',
@@ -739,7 +744,8 @@ const COPY: Record<SupportedUiLocale, TenantManagementCopy> = {
       standardTierLabel: 'Standard',
       sendingDomains: {
         title: 'Email sending domains',
-        description: 'Manage customer-owned sender domains for this tenant and provide DNS records for customer setup.',
+        description:
+          'Manage customer-owned sender domains for this tenant and provide DNS records for customer setup.',
         newDomainLabel: 'New sending domain',
         newDomainPlaceholder: 'mail.example.com',
         addDomain: 'Add sending domain',
@@ -818,7 +824,8 @@ const COPY: Record<SupportedUiLocale, TenantManagementCopy> = {
       createSubmit: 'Create tenant',
       createdLabel: 'Created',
       currentSelection: 'Current tenant',
-      deactivateDescription: 'The tenant record stays available, but tenant access is disabled until it is reactivated.',
+      deactivateDescription:
+        'The tenant record stays available, but tenant access is disabled until it is reactivated.',
       deactivateError: 'Failed to deactivate tenant.',
       deactivateSubmit: 'Deactivate tenant',
       editDescription: 'Review tenant identity, limits, and status.',
@@ -865,7 +872,8 @@ const COPY: Record<SupportedUiLocale, TenantManagementCopy> = {
       standardTierLabel: 'Standard',
       sendingDomains: {
         title: 'Email sending domains',
-        description: 'Manage customer-owned sender domains for this tenant and provide DNS records for customer setup.',
+        description:
+          'Manage customer-owned sender domains for this tenant and provide DNS records for customer setup.',
         newDomainLabel: 'New sending domain',
         newDomainPlaceholder: 'mail.example.com',
         addDomain: 'Add sending domain',
@@ -898,14 +906,17 @@ export function useTenantManagementCopy() {
   const { locale } = useUiLocale();
   return {
     locale,
-    copy: resolveLocaleRecord(locale, COPY as Record<SupportedUiLocale, TenantManagementCopy>) as TenantManagementCopy,
+    copy: resolveLocaleRecord(
+      locale,
+      COPY as Record<SupportedUiLocale, TenantManagementCopy>
+    ) as TenantManagementCopy,
   };
 }
 
 export function formatTenantDateTime(
   value: string | null | undefined,
-  locale: SupportedUiLocale ,
-  fallback: string,
+  locale: SupportedUiLocale,
+  fallback: string
 ) {
   return formatLocaleDateTime(locale, value ?? null, fallback);
 }
@@ -913,7 +924,7 @@ export function formatTenantDateTime(
 export function formatTenantMetric(
   value: number,
   kind: 'subsidiaries' | 'talents' | 'users',
-  locale: SupportedUiLocale ,
+  locale: SupportedUiLocale
 ) {
   const count = formatLocaleNumber(locale, value);
 
@@ -949,11 +960,7 @@ export function formatTenantMetric(
   });
 }
 
-export function formatTenantCreatedAt(
-  value: string,
-  locale: SupportedUiLocale ,
-  fallback: string,
-) {
+export function formatTenantCreatedAt(value: string, locale: SupportedUiLocale, fallback: string) {
   const formatted = formatTenantDateTime(value, locale, fallback);
 
   return pickLocaleText(locale, {

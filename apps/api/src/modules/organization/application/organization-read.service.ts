@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable, NotFoundException } from '@nestjs/common';
+
 import { ErrorCodes } from '@tcrn/shared';
 
 import {
@@ -16,15 +16,13 @@ import { OrganizationReadRepository } from '../infrastructure/organization-read.
 
 @Injectable()
 export class OrganizationReadService {
-  constructor(
-    private readonly organizationReadRepository: OrganizationReadRepository,
-  ) {}
+  constructor(private readonly organizationReadRepository: OrganizationReadRepository) {}
 
   async getBreadcrumb(
     tenantId: string,
     tenantSchema: string,
     path: string,
-    language: string = 'en',
+    language: string = 'en'
   ): Promise<OrganizationBreadcrumbItem[]> {
     const tenant = await this.organizationReadRepository.findTenant(tenantId);
 
@@ -45,7 +43,7 @@ export class OrganizationReadService {
       const currentPath = `/${pathSegments.slice(0, index + 1).join('/')}/`;
       const subsidiaries = await this.organizationReadRepository.findSubsidiaryByPath(
         tenantSchema,
-        currentPath,
+        currentPath
       );
 
       if (subsidiaries.length > 0) {
@@ -61,7 +59,7 @@ export class OrganizationReadService {
 
       const talents = await this.organizationReadRepository.findTalentByPath(
         tenantSchema,
-        currentPath,
+        currentPath
       );
 
       if (talents.length > 0) {
@@ -85,30 +83,26 @@ export class OrganizationReadService {
       includeTalents?: boolean;
       includeInactive?: boolean;
       language?: string;
-    } = {},
+    } = {}
   ): Promise<OrganizationChildrenResult> {
-    const {
-      includeTalents = true,
-      includeInactive = false,
-      language = 'en',
-    } = options;
+    const { includeTalents = true, includeInactive = false, language = 'en' } = options;
 
     const subsidiaries = await this.organizationReadRepository.findChildSubsidiaries(
       tenantSchema,
       parentId,
-      includeInactive,
+      includeInactive
     );
     const subsidiaryIds = subsidiaries.map((subsidiary) => subsidiary.id);
     const [childCountMap, talentCountMap] = await Promise.all([
       this.organizationReadRepository.countChildSubsidiaries(
         tenantSchema,
         subsidiaryIds,
-        includeInactive,
+        includeInactive
       ),
       this.organizationReadRepository.countTalentsBySubsidiary(
         tenantSchema,
         subsidiaryIds,
-        includeInactive,
+        includeInactive
       ),
     ]);
 
@@ -117,8 +111,8 @@ export class OrganizationReadService {
         subsidiary,
         language,
         childCountMap.get(subsidiary.id) ?? 0,
-        talentCountMap.get(subsidiary.id) ?? 0,
-      ),
+        talentCountMap.get(subsidiary.id) ?? 0
+      )
     );
 
     let talents: TalentSummary[] = [];
@@ -127,7 +121,7 @@ export class OrganizationReadService {
       const talentResults = await this.organizationReadRepository.findTalentsByParent(
         tenantSchema,
         parentId,
-        includeInactive,
+        includeInactive
       );
       talents = talentResults.map((talent) => mapTalentSummary(talent, language));
     }
@@ -145,7 +139,7 @@ export class OrganizationReadService {
       includeTalents?: boolean;
       includeInactive?: boolean;
       language?: string;
-    } = {},
+    } = {}
   ): Promise<OrganizationRootNodesResult> {
     const tenant = await this.organizationReadRepository.findTenant(tenantId);
 

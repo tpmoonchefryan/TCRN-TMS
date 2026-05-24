@@ -105,8 +105,7 @@ export class SlowRequestProcessor implements SpanProcessor {
     if (durationMs > this.slowThresholdMs) {
       mutableSpan.attributes['slow_request'] = true;
       mutableSpan.attributes['slow_request.threshold_ms'] = this.slowThresholdMs;
-      mutableSpan.attributes['slow_request.exceeded_by_ms'] =
-        durationMs - this.slowThresholdMs;
+      mutableSpan.attributes['slow_request.exceeded_by_ms'] = durationMs - this.slowThresholdMs;
 
       // Log slow request (in production, this would go to a proper logger)
       if (process.env.NODE_ENV !== 'test') {

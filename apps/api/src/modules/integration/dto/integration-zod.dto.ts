@@ -1,16 +1,16 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 // Integration Module Zod DTOs - Using createZodDto for Swagger integration
+import { createZodDto } from 'nestjs-zod';
 
 import {
-    AdapterListQuerySchema,
-    CreateAdapterSchema,
-    CreateWebhookSchema,
-    IntegrationLogQuerySchema,
-    UpdateAdapterConfigsSchema,
-    UpdateAdapterSchema,
-    UpdateWebhookSchema,
+  AdapterListQuerySchema,
+  CreateAdapterSchema,
+  CreateWebhookSchema,
+  IntegrationLogQuerySchema,
+  UpdateAdapterConfigsSchema,
+  UpdateAdapterSchema,
+  UpdateWebhookSchema,
 } from '@tcrn/shared';
-import { createZodDto } from 'nestjs-zod';
 
 // Adapter DTOs
 export class AdapterListQueryZodDto extends createZodDto(AdapterListQuerySchema) {}

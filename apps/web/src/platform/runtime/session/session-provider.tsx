@@ -1,7 +1,17 @@
 'use client';
 
+import {
+  createContext,
+  startTransition,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+
 import { normalizeSupportedUiLocale, type SupportedUiLocale } from '@tcrn/shared';
-import { createContext, startTransition, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 
 import {
   type AuthenticatedSessionResult,
@@ -173,59 +183,68 @@ export function SessionProvider({
     });
   }, []);
 
-  const authenticate = useCallback((result: AuthenticatedSessionResult, tenantCode: string) => {
-    applySession(buildSession(result, tenantCode));
-  }, [applySession]);
+  const authenticate = useCallback(
+    (result: AuthenticatedSessionResult, tenantCode: string) => {
+      applySession(buildSession(result, tenantCode));
+    },
+    [applySession]
+  );
 
   const clearSession = useCallback(() => {
     applySession(null);
   }, [applySession]);
 
-  const updateSessionUser = useCallback((patch: Partial<BrowserSessionUser>) => {
-    if (!sessionRef.current) {
-      return;
-    }
-
-    applySession({
-      ...sessionRef.current,
-      user: {
-        ...sessionRef.current.user,
-        ...patch,
-      },
-    });
-  }, [applySession]);
-
-  const recoverSession = useCallback(async (hint?: SessionRecoveryHint) => {
-    const previous = sessionRef.current;
-    const recoveryTenantId = resolveRecoveryTenantId(previous?.tenantId, hint?.tenantId);
-
-    if (!recoveryTenantId) {
-      clearSession();
-      return false;
-    }
-
-    try {
-      const refreshed = await refreshAccessToken();
-      const profile = await getCurrentUser(refreshed.accessToken);
+  const updateSessionUser = useCallback(
+    (patch: Partial<BrowserSessionUser>) => {
+      if (!sessionRef.current) {
+        return;
+      }
 
       applySession({
-        accessToken: refreshed.accessToken,
-        tokenType: refreshed.tokenType,
-        expiresIn: refreshed.expiresIn,
-        authenticatedAt: new Date().toISOString(),
-        tenantId: recoveryTenantId,
-        tenantName: previous?.tenantName || hint?.tenantName || '',
-        tenantTier: previous?.tenantTier || hint?.tenantTier || 'unknown',
-        tenantCode: previous?.tenantCode || hint?.tenantCode || '',
-        user: buildSessionUserFromProfile(profile),
+        ...sessionRef.current,
+        user: {
+          ...sessionRef.current.user,
+          ...patch,
+        },
       });
+    },
+    [applySession]
+  );
 
-      return true;
-    } catch {
-      clearSession();
-      return false;
-    }
-  }, [applySession, clearSession]);
+  const recoverSession = useCallback(
+    async (hint?: SessionRecoveryHint) => {
+      const previous = sessionRef.current;
+      const recoveryTenantId = resolveRecoveryTenantId(previous?.tenantId, hint?.tenantId);
+
+      if (!recoveryTenantId) {
+        clearSession();
+        return false;
+      }
+
+      try {
+        const refreshed = await refreshAccessToken();
+        const profile = await getCurrentUser(refreshed.accessToken);
+
+        applySession({
+          accessToken: refreshed.accessToken,
+          tokenType: refreshed.tokenType,
+          expiresIn: refreshed.expiresIn,
+          authenticatedAt: new Date().toISOString(),
+          tenantId: recoveryTenantId,
+          tenantName: previous?.tenantName || hint?.tenantName || '',
+          tenantTier: previous?.tenantTier || hint?.tenantTier || 'unknown',
+          tenantCode: previous?.tenantCode || hint?.tenantCode || '',
+          user: buildSessionUserFromProfile(profile),
+        });
+
+        return true;
+      } catch {
+        clearSession();
+        return false;
+      }
+    },
+    [applySession, clearSession]
+  );
 
   const logoutCurrentSession = useCallback(async () => {
     const current = sessionRef.current;
@@ -239,53 +258,59 @@ export function SessionProvider({
     }
   }, [clearSession]);
 
-  const requestEnvelope = useCallback(async <T,>(path: string, init?: RequestInit) => {
-    const perform = async (token: string | null) => {
-      const headers = withBrowserPublicConsumerHeaders(init?.headers);
+  const requestEnvelope = useCallback(
+    async <T,>(path: string, init?: RequestInit) => {
+      const perform = async (token: string | null) => {
+        const headers = withBrowserPublicConsumerHeaders(init?.headers);
 
-      if (token) {
-        headers.set('Authorization', `Bearer ${token}`);
-      }
-
-      return fetch(path, {
-        ...init,
-        headers,
-        credentials: 'include',
-      });
-    };
-
-    let response = await perform(sessionRef.current?.accessToken || null);
-
-    if (response.status === 401 && sessionRef.current) {
-      try {
-        const refreshed = await refreshAccessToken();
-        const nextSession = sessionRef.current
-          ? {
-              ...sessionRef.current,
-              accessToken: refreshed.accessToken,
-              tokenType: refreshed.tokenType,
-              expiresIn: refreshed.expiresIn,
-              authenticatedAt: new Date().toISOString(),
-            }
-          : null;
-
-        if (nextSession) {
-          applySession(nextSession);
-          response = await perform(nextSession.accessToken);
+        if (token) {
+          headers.set('Authorization', `Bearer ${token}`);
         }
-      } catch {
-        clearSession();
-        throw new ApiRequestError('Session expired', 'AUTH_REFRESH_TOKEN_INVALID', 401);
+
+        return fetch(path, {
+          ...init,
+          headers,
+          credentials: 'include',
+        });
+      };
+
+      let response = await perform(sessionRef.current?.accessToken || null);
+
+      if (response.status === 401 && sessionRef.current) {
+        try {
+          const refreshed = await refreshAccessToken();
+          const nextSession = sessionRef.current
+            ? {
+                ...sessionRef.current,
+                accessToken: refreshed.accessToken,
+                tokenType: refreshed.tokenType,
+                expiresIn: refreshed.expiresIn,
+                authenticatedAt: new Date().toISOString(),
+              }
+            : null;
+
+          if (nextSession) {
+            applySession(nextSession);
+            response = await perform(nextSession.accessToken);
+          }
+        } catch {
+          clearSession();
+          throw new ApiRequestError('Session expired', 'AUTH_REFRESH_TOKEN_INVALID', 401);
+        }
       }
-    }
 
-    return readApiEnvelope<T>(response);
-  }, [applySession, clearSession]);
+      return readApiEnvelope<T>(response);
+    },
+    [applySession, clearSession]
+  );
 
-  const request = useCallback(async <T,>(path: string, init?: RequestInit) => {
-    const payload = await requestEnvelope<T>(path, init);
-    return payload.data;
-  }, [requestEnvelope]);
+  const request = useCallback(
+    async <T,>(path: string, init?: RequestInit) => {
+      const payload = await requestEnvelope<T>(path, init);
+      return payload.data;
+    },
+    [requestEnvelope]
+  );
 
   const value = useMemo<SessionContextValue>(
     () => ({
@@ -309,7 +334,7 @@ export function SessionProvider({
       session,
       status,
       updateSessionUser,
-    ],
+    ]
   );
 
   return <sessionContext.Provider value={value}>{children}</sessionContext.Provider>;

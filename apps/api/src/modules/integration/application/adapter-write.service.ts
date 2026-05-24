@@ -1,11 +1,11 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import {
   BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+
 import { Prisma } from '@tcrn/database';
 import {
   ErrorCodes,
@@ -56,13 +56,13 @@ export class AdapterWriteApplicationService {
     private readonly adapterReadApplicationService: AdapterReadApplicationService,
     private readonly cryptoService: AdapterCryptoService,
     private readonly changeLogService: ChangeLogService,
-    private readonly techEventLog: TechEventLogService,
+    private readonly techEventLog: TechEventLogService
   ) {}
 
   async create(
     dto: CreateAdapterDto,
     context: RequestContext,
-    scope: IntegrationAdapterOwnerScope = { ownerType: OwnerType.TENANT, ownerId: null },
+    scope: IntegrationAdapterOwnerScope = { ownerType: OwnerType.TENANT, ownerId: null }
   ) {
     const tenantSchema = getAdapterTenantSchema(context);
     const definition = this.resolveCreateDefinition(dto.definitionKey);
@@ -78,15 +78,15 @@ export class AdapterWriteApplicationService {
     const adapterId = await this.adapterWriteRepository.withTransaction(async (prisma) => {
       const platform = definition
         ? await this.adapterWriteRepository.ensurePlatformForDefinition(
-          prisma,
-          tenantSchema,
-          definition.platform,
-        )
+            prisma,
+            tenantSchema,
+            definition.platform
+          )
         : await this.adapterWriteRepository.findPlatformById(
-          prisma,
-          tenantSchema,
-          createInput.platformId,
-        );
+            prisma,
+            tenantSchema,
+            createInput.platformId
+          );
 
       if (!platform) {
         throw new NotFoundException({
@@ -99,7 +99,7 @@ export class AdapterWriteApplicationService {
         prisma,
         tenantSchema,
         scope,
-        createInput.code,
+        createInput.code
       );
 
       if (existing) {
@@ -114,7 +114,7 @@ export class AdapterWriteApplicationService {
         tenantSchema,
         scope,
         platform.id,
-        createInput.adapterType,
+        createInput.adapterType
       );
 
       if (existingPlatform) {
@@ -130,11 +130,7 @@ export class AdapterWriteApplicationService {
         platformId: platform.id,
         code: createInput.code,
         name: createInput.name,
-        extraData: this.mergeDefinitionExtraData(
-          null,
-          definition,
-          createInput.configs,
-        ),
+        extraData: this.mergeDefinitionExtraData(null, definition, createInput.configs),
         adapterType: createInput.adapterType,
         inherit: createInput.inherit,
         userId: context.userId ?? null,
@@ -152,7 +148,7 @@ export class AdapterWriteApplicationService {
           prisma,
           tenantSchema,
           createdId,
-          this.toPersistenceConfigs(createInput.configs),
+          this.toPersistenceConfigs(createInput.configs)
         );
       }
 
@@ -171,7 +167,7 @@ export class AdapterWriteApplicationService {
             ownerId: scope.ownerId,
           },
         },
-        context,
+        context
       );
 
       return createdId;
@@ -198,7 +194,7 @@ export class AdapterWriteApplicationService {
 
   private buildCreateInput(
     dto: CreateAdapterDto,
-    definition: IntegrationAdapterDefinition | null,
+    definition: IntegrationAdapterDefinition | null
   ): {
     platformId: string;
     code: string;
@@ -211,7 +207,8 @@ export class AdapterWriteApplicationService {
       if (!dto.platformId || !dto.adapterType || !dto.code || !dto.name) {
         throw new BadRequestException({
           code: ErrorCodes.VALIDATION_FAILED,
-          message: 'Platform, adapter type, code, and localized name are required without a definition key',
+          message:
+            'Platform, adapter type, code, and localized name are required without a definition key',
         });
       }
 
@@ -239,14 +236,9 @@ export class AdapterWriteApplicationService {
 
   private assertDefinitionIdentityLocked(
     dto: CreateAdapterDto,
-    definition: IntegrationAdapterDefinition,
+    definition: IntegrationAdapterDefinition
   ) {
-    const hasLockedField = Boolean(
-      dto.platformId
-      || dto.adapterType
-      || dto.code
-      || dto.name,
-    );
+    const hasLockedField = Boolean(dto.platformId || dto.adapterType || dto.code || dto.name);
 
     if (hasLockedField) {
       throw new BadRequestException({
@@ -258,10 +250,10 @@ export class AdapterWriteApplicationService {
 
   private buildDefinitionConfigs(
     definition: IntegrationAdapterDefinition,
-    configs: Array<{ configKey: string; configValue: string }>,
+    configs: Array<{ configKey: string; configValue: string }>
   ): Array<{ configKey: string; configValue: string }> {
     const provided = new Map(
-      configs.map((config) => [config.configKey.trim(), config.configValue] as const),
+      configs.map((config) => [config.configKey.trim(), config.configValue] as const)
     );
     const allowedKeys = new Set(definition.configFields.map((field) => field.key));
     const unknownKey = [...provided.keys()].find((configKey) => !allowedKeys.has(configKey));
@@ -285,9 +277,9 @@ export class AdapterWriteApplicationService {
       }
 
       if (
-        normalizedValue
-        && field.options?.length
-        && !field.options.some((option) => option.value === normalizedValue)
+        normalizedValue &&
+        field.options?.length &&
+        !field.options.some((option) => option.value === normalizedValue)
       ) {
         throw new BadRequestException({
           code: ErrorCodes.VALIDATION_FAILED,
@@ -295,16 +287,14 @@ export class AdapterWriteApplicationService {
         });
       }
 
-      return normalizedValue
-        ? [{ configKey: field.key, configValue: normalizedValue }]
-        : [];
+      return normalizedValue ? [{ configKey: field.key, configValue: normalizedValue }] : [];
     });
   }
 
   private mergeDefinitionExtraData(
     extraData: Record<string, unknown> | null,
     definition: IntegrationAdapterDefinition | null,
-    configs: Array<{ configKey: string; configValue: string }>,
+    configs: Array<{ configKey: string; configValue: string }>
   ) {
     if (!definition) {
       return extraData;
@@ -322,7 +312,7 @@ export class AdapterWriteApplicationService {
 
   private resolveDefinitionAiProvider(
     configs: Array<{ configKey: string; configValue: string }>,
-    definition: IntegrationAdapterDefinition,
+    definition: IntegrationAdapterDefinition
   ) {
     if (!definition.aiProviders?.length) {
       return null;
@@ -355,11 +345,7 @@ export class AdapterWriteApplicationService {
         });
       }
 
-      const updatePlan = buildAdapterUpdateMutationPlan(
-        adapter,
-        dto,
-        nextName,
-      );
+      const updatePlan = buildAdapterUpdateMutationPlan(adapter, dto, nextName);
       await this.adapterWriteRepository.update(prisma, tenantSchema, id, {
         name: updatePlan.name,
         extraData: updatePlan.extraData,
@@ -377,17 +363,14 @@ export class AdapterWriteApplicationService {
           oldValue: updatePlan.oldValue,
           newValue: updatePlan.newValue,
         },
-        context,
+        context
       );
     });
 
     return this.adapterReadApplicationService.findById(id, context);
   }
 
-  private normalizeAdapterName(
-    name: PartialLocalizedText,
-    fallback = '',
-  ): LocalizedText {
+  private normalizeAdapterName(name: PartialLocalizedText, fallback = ''): LocalizedText {
     return normalizeLocalizedText(name, fallback);
   }
 
@@ -403,9 +386,7 @@ export class AdapterWriteApplicationService {
         });
       }
 
-      const plans = dto.configs.map((config) =>
-        buildAdapterConfigMutationPlan(adapter, config),
-      );
+      const plans = dto.configs.map((config) => buildAdapterConfigMutationPlan(adapter, config));
       const replacePlans = plans.filter((plan) => plan.mutation === 'replace');
       const clearPlans = plans.filter((plan) => plan.mutation === 'clear');
       const mutationSummary = plans
@@ -459,8 +440,8 @@ export class AdapterWriteApplicationService {
             replacePlans.map((plan) => ({
               configKey: plan.configKey,
               configValue: plan.configValue ?? '',
-            })),
-          ),
+            }))
+          )
         );
       }
 
@@ -469,7 +450,7 @@ export class AdapterWriteApplicationService {
           prisma,
           tenantSchema,
           adapterId,
-          plan.configKey,
+          plan.configKey
         );
       }
 
@@ -477,7 +458,7 @@ export class AdapterWriteApplicationService {
         prisma,
         tenantSchema,
         adapterId,
-        context.userId ?? null,
+        context.userId ?? null
       );
 
       await this.changeLogService.create(
@@ -489,7 +470,7 @@ export class AdapterWriteApplicationService {
           objectName: adapter.code,
           newValue: { configMutations: mutationSummary },
         },
-        context,
+        context
       );
 
       await this.logSecretConfigMutations(adapterId, plans, context);
@@ -499,7 +480,7 @@ export class AdapterWriteApplicationService {
 
     return buildAdapterConfigUpdateResult(
       dto.configs.filter((config) => config.mutation !== 'keep').length,
-      nextVersion,
+      nextVersion
     );
   }
 
@@ -507,7 +488,7 @@ export class AdapterWriteApplicationService {
     const config = await this.adapterWriteRepository.findConfig(
       getAdapterTenantSchema(context),
       adapterId,
-      configKey,
+      configKey
     );
 
     if (!config) {
@@ -558,7 +539,7 @@ export class AdapterWriteApplicationService {
   async disableInherited(
     adapterId: string,
     scope: IntegrationAdapterOwnerScope,
-    context: RequestContext,
+    context: RequestContext
   ) {
     const tenantSchema = getAdapterTenantSchema(context);
 
@@ -583,7 +564,7 @@ export class AdapterWriteApplicationService {
         prisma,
         tenantSchema,
         adapterId,
-        scope,
+        scope
       );
 
       if (existing?.isDisabled) {
@@ -598,7 +579,7 @@ export class AdapterWriteApplicationService {
         tenantSchema,
         adapterId,
         scope,
-        context.userId ?? null,
+        context.userId ?? null
       );
 
       await this.changeLogService.create(
@@ -614,7 +595,7 @@ export class AdapterWriteApplicationService {
             isDisabled: true,
           },
         },
-        context,
+        context
       );
 
       return buildInheritedAdapterScopeStateResult(adapterId, adapter.code, scope, true);
@@ -624,7 +605,7 @@ export class AdapterWriteApplicationService {
   async enableInherited(
     adapterId: string,
     scope: IntegrationAdapterOwnerScope,
-    context: RequestContext,
+    context: RequestContext
   ) {
     const tenantSchema = getAdapterTenantSchema(context);
 
@@ -649,7 +630,7 @@ export class AdapterWriteApplicationService {
         prisma,
         tenantSchema,
         adapterId,
-        scope,
+        scope
       );
 
       if (!existing?.isDisabled) {
@@ -663,7 +644,7 @@ export class AdapterWriteApplicationService {
         prisma,
         tenantSchema,
         adapterId,
-        scope,
+        scope
       );
 
       await this.changeLogService.create(
@@ -679,18 +660,14 @@ export class AdapterWriteApplicationService {
             isDisabled: false,
           },
         },
-        context,
+        context
       );
 
       return buildInheritedAdapterScopeStateResult(adapterId, adapter.code, scope, false);
     });
   }
 
-  private async setActiveStatus(
-    id: string,
-    isActive: boolean,
-    context: RequestContext,
-  ) {
+  private async setActiveStatus(id: string, isActive: boolean, context: RequestContext) {
     const tenantSchema = getAdapterTenantSchema(context);
 
     return this.adapterWriteRepository.withTransaction(async (prisma) => {
@@ -701,7 +678,7 @@ export class AdapterWriteApplicationService {
         tenantSchema,
         id,
         isActive,
-        context.userId ?? null,
+        context.userId ?? null
       );
 
       await this.changeLogService.create(
@@ -714,7 +691,7 @@ export class AdapterWriteApplicationService {
           oldValue: { isActive: adapter.isActive },
           newValue: { isActive },
         },
-        context,
+        context
       );
 
       return buildAdapterActiveStateResult(id, isActive);
@@ -724,7 +701,7 @@ export class AdapterWriteApplicationService {
   private async getAdapterOrThrow(
     prisma: Prisma.TransactionClient,
     tenantSchema: string,
-    adapterId: string,
+    adapterId: string
   ): Promise<IntegrationAdapterMutationRecord> {
     const adapter = await this.adapterWriteRepository.findById(prisma, tenantSchema, adapterId);
 
@@ -739,16 +716,14 @@ export class AdapterWriteApplicationService {
   }
 
   private toPersistenceConfigs(
-    configs: Array<{ configKey: string; configValue: string }>,
+    configs: Array<{ configKey: string; configValue: string }>
   ): AdapterConfigPersistenceInput[] {
     return configs.map((config) => {
       const isSecret = isSecretAdapterConfigKey(config.configKey);
 
       return {
         configKey: config.configKey,
-        configValue: isSecret
-          ? this.cryptoService.encrypt(config.configValue)
-          : config.configValue,
+        configValue: isSecret ? this.cryptoService.encrypt(config.configValue) : config.configValue,
         isSecret,
       };
     });
@@ -761,7 +736,7 @@ export class AdapterWriteApplicationService {
       mutation: 'keep' | 'replace' | 'clear';
       isSecret: boolean;
     }>,
-    context: RequestContext,
+    context: RequestContext
   ) {
     for (const plan of plans) {
       if (!plan.isSecret || (plan.mutation !== 'replace' && plan.mutation !== 'clear')) {

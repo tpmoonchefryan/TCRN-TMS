@@ -1,10 +1,6 @@
 'use client';
 
 import {
-  buildSharedHomepagePath,
-  type SupportedUiLocale,
-} from '@tcrn/shared';
-import {
   ChevronRight,
   FolderTree,
   Languages,
@@ -16,6 +12,8 @@ import {
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { type FormEvent, startTransition, useDeferredValue, useEffect, useState } from 'react';
+
+import { buildSharedHomepagePath, type SupportedUiLocale } from '@tcrn/shared';
 
 import {
   listConfigEntities,
@@ -179,7 +177,7 @@ const HEADER_ACTION_PRIMARY_BUTTON_CLASS = `${HEADER_ACTION_BUTTON_BASE_CLASS} b
 function flattenNodes(
   nodes: OrganizationNode[],
   depth = 0,
-  labels: string[] = [],
+  labels: string[] = []
 ): FlattenedNode[] {
   return nodes.flatMap((node) => {
     const nextLabels = [...labels, node.displayName];
@@ -213,7 +211,6 @@ function findNodeById(nodes: OrganizationNode[], id: string): OrganizationNode |
 function collectTalents(nodes: OrganizationNode[]): OrganizationTalent[] {
   return nodes.flatMap((node) => [...node.talents, ...collectTalents(node.children)]);
 }
-
 
 function buildOrganizationStructureQueryState({
   scopeId,
@@ -271,22 +268,20 @@ function pickFirstNonEmptyString(values: Array<string | null | undefined>) {
 }
 
 function getInventoryPaginationCopy(
-  locale: SupportedUiLocale ,
+  locale: SupportedUiLocale,
   page: number,
   totalPages: number,
   start: number,
   end: number,
-  totalCount: number,
+  totalCount: number
 ) {
   const localeCode = locale;
 
-  if ((localeCode === 'zh_HANS' || localeCode === 'zh_HANT')) {
+  if (localeCode === 'zh_HANS' || localeCode === 'zh_HANT') {
     return {
       page: `第 ${page} / ${totalPages} 页`,
       range:
-        totalCount === 0
-          ? '当前范围没有艺人。'
-          : `显示第 ${start}-${end} 条，共 ${totalCount} 条`,
+        totalCount === 0 ? '当前范围没有艺人。' : `显示第 ${start}-${end} 条，共 ${totalCount} 条`,
       pageSize: '每页条目',
       previous: '上一页',
       next: '下一页',
@@ -319,7 +314,9 @@ function getInventoryPaginationCopy(
 }
 
 function resolveDefaultProfileStoreId(profileStores: ProfileStoreListResponse | null) {
-  return profileStores?.items.find((item) => item.isDefault)?.id ?? profileStores?.items[0]?.id ?? '';
+  return (
+    profileStores?.items.find((item) => item.isDefault)?.id ?? profileStores?.items[0]?.id ?? ''
+  );
 }
 
 function resolveDefaultArtistStageId(artistStages: ConfigEntityRecord[] | null) {
@@ -328,7 +325,7 @@ function resolveDefaultArtistStageId(artistStages: ConfigEntityRecord[] | null) 
 
 function buildCreateDraft(
   profileStores: ProfileStoreListResponse | null,
-  artistStages: ConfigEntityRecord[] | null = null,
+  artistStages: ConfigEntityRecord[] | null = null
 ): CreateTalentDraft {
   return {
     ...EMPTY_CREATE_TALENT_DRAFT,
@@ -365,7 +362,9 @@ function validateCreateTalentDraft(draft: CreateTalentDraft): OrganizationValida
   return null;
 }
 
-function validateCreateSubsidiaryDraft(draft: CreateSubsidiaryDraft): OrganizationValidationKey | null {
+function validateCreateSubsidiaryDraft(
+  draft: CreateSubsidiaryDraft
+): OrganizationValidationKey | null {
   const code = draft.code.trim().toUpperCase();
   const nameBase = draft.nameBase.trim();
 
@@ -410,7 +409,10 @@ function NoticeBanner({
       : 'border-rose-200 bg-rose-50 text-rose-800';
 
   return (
-    <div aria-live="polite" className={`rounded-2xl border px-4 py-3 text-sm font-medium ${toneClasses}`}>
+    <div
+      aria-live="polite"
+      className={`rounded-2xl border px-4 py-3 text-sm font-medium ${toneClasses}`}
+    >
       {message}
     </div>
   );
@@ -436,13 +438,17 @@ function ScopeTreeRow({
   return (
     <div
       className={`flex items-center gap-2 rounded-2xl border px-3 py-2 ${
-        isActive ? 'border-slate-950 bg-slate-950/95 text-white' : 'border-slate-200 bg-white/90 text-slate-900'
+        isActive
+          ? 'border-slate-950 bg-slate-950/95 text-white'
+          : 'border-slate-200 bg-white/90 text-slate-900'
       }`}
       style={{ paddingLeft: `${depth * 1.25 + 0.75}rem` }}
     >
       <button type="button" onClick={onSelect} className="min-w-0 flex-1 text-left">
         <p className="truncate text-sm font-semibold">{label}</p>
-        <p className={`truncate text-xs ${isActive ? 'text-slate-300' : 'text-slate-500'}`}>{hint}</p>
+        <p className={`truncate text-xs ${isActive ? 'text-slate-300' : 'text-slate-500'}`}>
+          {hint}
+        </p>
       </button>
       <Link
         href={settingsHref}
@@ -469,7 +475,7 @@ function TalentListRow({
   isLifecyclePending,
   onLifecycleAction,
 }: Readonly<{
-  locale: SupportedUiLocale ;
+  locale: SupportedUiLocale;
   editTalentSettingsLabel: string;
   openWorkspaceLabel: string;
   tenantId: string;
@@ -481,7 +487,9 @@ function TalentListRow({
   const { copy } = useOrganizationStructureCopy();
   const canManageLifecycleMaintenance = talent.lifecycleMaintenance.canManage;
   const lifecycleActionLabel =
-    talent.lifecycleStatus === 'disabled' ? copy.actions.reEnableWorkspace : copy.actions.disableWorkspace;
+    talent.lifecycleStatus === 'disabled'
+      ? copy.actions.reEnableWorkspace
+      : copy.actions.disableWorkspace;
   const lifecycleToneClasses =
     talent.lifecycleStatus === 'disabled'
       ? 'border-emerald-200 text-emerald-700 hover:border-emerald-300 hover:bg-emerald-50'
@@ -560,31 +568,41 @@ export function OrganizationStructureScreen({
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [reloadVersion, setReloadVersion] = useState(0);
-  const [selectedSubsidiaryId, setSelectedSubsidiaryId] = useState<string | null>(urlSelectedSubsidiaryId);
+  const [selectedSubsidiaryId, setSelectedSubsidiaryId] = useState<string | null>(
+    urlSelectedSubsidiaryId
+  );
   const [search, setSearch] = useState(urlSearch);
   const deferredSearch = useDeferredValue(search);
   const [showInactive, setShowInactive] = useState(urlShowInactive);
-  const [profileStoresPanel, setProfileStoresPanel] = useState<AsyncPanelState<ProfileStoreListResponse>>({
+  const [profileStoresPanel, setProfileStoresPanel] = useState<
+    AsyncPanelState<ProfileStoreListResponse>
+  >({
     data: null,
     error: null,
     loading: true,
   });
-  const [artistStagesPanel, setArtistStagesPanel] = useState<AsyncPanelState<ConfigEntityRecord[]>>({
-    data: null,
-    error: null,
-    loading: false,
-  });
+  const [artistStagesPanel, setArtistStagesPanel] = useState<AsyncPanelState<ConfigEntityRecord[]>>(
+    {
+      data: null,
+      error: null,
+      loading: false,
+    }
+  );
   const [isCreateDrawerOpen, setIsCreateDrawerOpen] = useState(false);
-  const [createDraft, setCreateDraft] = useState<CreateTalentDraft>(() => buildCreateDraft(null, null));
+  const [createDraft, setCreateDraft] = useState<CreateTalentDraft>(() =>
+    buildCreateDraft(null, null)
+  );
   const [createPending, setCreatePending] = useState(false);
   const [isCreateSubsidiaryDrawerOpen, setIsCreateSubsidiaryDrawerOpen] = useState(false);
   const [createSubsidiaryDraft, setCreateSubsidiaryDraft] = useState<CreateSubsidiaryDraft>(
-    EMPTY_CREATE_SUBSIDIARY_DRAFT,
+    EMPTY_CREATE_SUBSIDIARY_DRAFT
   );
   const [createSubsidiaryPending, setCreateSubsidiaryPending] = useState(false);
   const [createdTalentResult, setCreatedTalentResult] = useState<CreatedTalentResult | null>(null);
   const [notice, setNotice] = useState<NoticeState | null>(null);
-  const [lifecycleDialogState, setLifecycleDialogState] = useState<LifecycleDialogState | null>(null);
+  const [lifecycleDialogState, setLifecycleDialogState] = useState<LifecycleDialogState | null>(
+    null
+  );
   const [lifecycleDialogPending, setLifecycleDialogPending] = useState(false);
   const [preparingTalentId, setPreparingTalentId] = useState<string | null>(null);
   const [inventoryPage, setInventoryPage] = useState(urlInventoryPage);
@@ -594,25 +612,20 @@ export function OrganizationStructureScreen({
     error: null,
     loading: false,
   });
-  const [translationDrawerTarget, setTranslationDrawerTarget] = useState<TranslationDrawerTarget>(null);
+  const [translationDrawerTarget, setTranslationDrawerTarget] =
+    useState<TranslationDrawerTarget>(null);
 
   useEffect(() => {
-    setSelectedSubsidiaryId((current) => (
+    setSelectedSubsidiaryId((current) =>
       current === urlSelectedSubsidiaryId ? current : urlSelectedSubsidiaryId
-    ));
+    );
     setSearch((current) => (current === urlSearch ? current : urlSearch));
     setShowInactive((current) => (current === urlShowInactive ? current : urlShowInactive));
     setInventoryPage((current) => (current === urlInventoryPage ? current : urlInventoryPage));
-    setInventoryPageSize((current) => (
+    setInventoryPageSize((current) =>
       current === urlInventoryPageSize ? current : urlInventoryPageSize
-    ));
-  }, [
-    urlInventoryPage,
-    urlInventoryPageSize,
-    urlSearch,
-    urlSelectedSubsidiaryId,
-    urlShowInactive,
-  ]);
+    );
+  }, [urlInventoryPage, urlInventoryPageSize, urlSearch, urlSelectedSubsidiaryId, urlShowInactive]);
 
   function applyQueryState(
     nextState: Partial<{
@@ -621,7 +634,7 @@ export function OrganizationStructureScreen({
       showInactive: boolean;
       page: number;
       pageSize: PageSizeOption;
-    }>,
+    }>
   ) {
     const nextSelectedSubsidiaryId = nextState.selectedSubsidiaryId ?? selectedSubsidiaryId;
     const nextSearch = nextState.search ?? search;
@@ -692,7 +705,7 @@ export function OrganizationStructureScreen({
         request,
         requestEnvelope,
         locale,
-        copy.translationManagement.languageLoadError,
+        copy.translationManagement.languageLoadError
       );
 
       if (cancelled) {
@@ -819,7 +832,7 @@ export function OrganizationStructureScreen({
             pageSize: 100,
             sort: 'sortOrder',
           },
-          locale,
+          locale
         );
 
         if (!cancelled) {
@@ -845,12 +858,7 @@ export function OrganizationStructureScreen({
     return () => {
       cancelled = true;
     };
-  }, [
-    copy.state.loadArtistStagesError,
-    isCreateDrawerOpen,
-    locale,
-    request,
-  ]);
+  }, [copy.state.loadArtistStagesError, isCreateDrawerOpen, locale, request]);
 
   useEffect(() => {
     if (!data || !selectedSubsidiaryId) {
@@ -1022,7 +1030,10 @@ export function OrganizationStructureScreen({
       const created = await createOrganizationSubsidiary(request, {
         parentId: selectedSubsidiaryId,
         code: createSubsidiaryDraft.code.trim().toUpperCase(),
-        name: buildLocalizedTextPayload(createSubsidiaryDraft.nameBase, createSubsidiaryDraft.nameLocaleValues),
+        name: buildLocalizedTextPayload(
+          createSubsidiaryDraft.nameBase,
+          createSubsidiaryDraft.nameLocaleValues
+        ),
         description: buildLocalizedTextPayload(createSubsidiaryDraft.descriptionBase, {}),
       });
 
@@ -1126,26 +1137,34 @@ export function OrganizationStructureScreen({
   }
 
   const flattenedNodes = data ? flattenNodes(data.subsidiaries) : [];
-  const selectedNode = data && selectedSubsidiaryId ? findNodeById(data.subsidiaries, selectedSubsidiaryId) : null;
+  const selectedNode =
+    data && selectedSubsidiaryId ? findNodeById(data.subsidiaries, selectedSubsidiaryId) : null;
   const selectedNodeMeta = selectedSubsidiaryId
-    ? flattenedNodes.find((entry) => entry.node.id === selectedSubsidiaryId) ?? null
+    ? (flattenedNodes.find((entry) => entry.node.id === selectedSubsidiaryId) ?? null)
     : null;
   const scopeLabels = selectedNodeMeta
     ? [copy.header.tenantBadge, ...selectedNodeMeta.labels]
     : [copy.header.tenantBadge];
-  const allTenantTalents = data ? [...data.directTalents, ...collectTalents(data.subsidiaries)] : [];
+  const allTenantTalents = data
+    ? [...data.directTalents, ...collectTalents(data.subsidiaries)]
+    : [];
   const scopedTalents = selectedNode ? collectTalents([selectedNode]) : allTenantTalents;
   const orderedScopedTalents =
-    createdTalentResult && scopedTalents.some((talent) => talent.id === createdTalentResult.talentId)
+    createdTalentResult &&
+    scopedTalents.some((talent) => talent.id === createdTalentResult.talentId)
       ? [
           scopedTalents.find((talent) => talent.id === createdTalentResult.talentId)!,
           ...scopedTalents.filter((talent) => talent.id !== createdTalentResult.talentId),
         ]
       : scopedTalents;
-  const inventoryPagination = buildPaginationMeta(orderedScopedTalents.length, inventoryPage, inventoryPageSize);
+  const inventoryPagination = buildPaginationMeta(
+    orderedScopedTalents.length,
+    inventoryPage,
+    inventoryPageSize
+  );
   const paginatedScopedTalents = orderedScopedTalents.slice(
     (inventoryPagination.page - 1) * inventoryPagination.pageSize,
-    inventoryPagination.page * inventoryPagination.pageSize,
+    inventoryPagination.page * inventoryPagination.pageSize
   );
   const inventoryPageRange = getPaginationRange(inventoryPagination, paginatedScopedTalents.length);
   const inventoryPaginationCopy = getInventoryPaginationCopy(
@@ -1154,7 +1173,7 @@ export function OrganizationStructureScreen({
     inventoryPagination.totalPages,
     inventoryPageRange.start,
     inventoryPageRange.end,
-    inventoryPagination.totalCount,
+    inventoryPagination.totalCount
   );
   const createdTalentHomepageHref = createdTalentResult
     ? buildTalentWorkspaceSectionPath(tenantId, createdTalentResult.talentId, 'homepage')
@@ -1247,7 +1266,9 @@ export function OrganizationStructureScreen({
     );
   }
 
-  const scopeTitle = selectedNode ? selectedNode.displayName : session?.tenantName || copy.tree.tenantRootLabel;
+  const scopeTitle = selectedNode
+    ? selectedNode.displayName
+    : session?.tenantName || copy.tree.tenantRootLabel;
   const scopePath = selectedNode?.path || copy.tree.tenantRootLabel;
   const hierarchyBusinessHref = selectedNode
     ? buildSubsidiaryBusinessPath(tenantId, selectedNode.id)
@@ -1259,13 +1280,15 @@ export function OrganizationStructureScreen({
   const structureSummary = selectedNode
     ? `${formatOrganizationDirectSubsidiaryCount(locale, selectedNode.children.length)} · ${formatOrganizationTalentCount(locale, scopedTalents.length)}`
     : `${formatOrganizationSubsidiaryCount(locale, flattenedNodes.length)} · ${formatOrganizationTalentCount(locale, scopedTalents.length)}`;
-  const inventoryDescription = selectedNode ? copy.inventory.scopedDescription : copy.inventory.tenantDescription;
+  const inventoryDescription = selectedNode
+    ? copy.inventory.scopedDescription
+    : copy.inventory.tenantDescription;
   const configuredTalentTranslationCount = Object.values(createDraft.nameLocaleValues).filter(
-    (value) => value.trim().length > 0,
+    (value) => value.trim().length > 0
   ).length;
-  const configuredSubsidiaryTranslationCount = Object.values(createSubsidiaryDraft.nameLocaleValues).filter(
-    (value) => value.trim().length > 0,
-  ).length;
+  const configuredSubsidiaryTranslationCount = Object.values(
+    createSubsidiaryDraft.nameLocaleValues
+  ).filter((value) => value.trim().length > 0).length;
   const translationDrawerLabels = {
     addLanguageLabel: pickLocaleText(locale, {
       en: 'Add language',
@@ -1316,7 +1339,7 @@ export function OrganizationStructureScreen({
           translations: createDraft.nameLocaleValues,
           fieldLabel: copy.form.legalNameLabel,
           onSave: async (
-            payload: Record<string, Record<string, string>> | Record<string, string>,
+            payload: Record<string, Record<string, string>> | Record<string, string>
           ) => {
             const translations = extractSingleFieldTranslationPayload(payload);
 
@@ -1333,7 +1356,7 @@ export function OrganizationStructureScreen({
             translations: createSubsidiaryDraft.nameLocaleValues,
             fieldLabel: copy.form.subsidiaryNameLabel,
             onSave: async (
-              payload: Record<string, Record<string, string>> | Record<string, string>,
+              payload: Record<string, Record<string, string>> | Record<string, string>
             ) => {
               const translations = extractSingleFieldTranslationPayload(payload);
 
@@ -1356,7 +1379,9 @@ export function OrganizationStructureScreen({
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <FolderTree className="h-4 w-4 text-slate-500" />
-                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">{copy.tree.title}</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
+                  {copy.tree.title}
+                </p>
               </div>
               <label className="relative block">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -1379,7 +1404,7 @@ export function OrganizationStructureScreen({
                 label={session?.tenantName || copy.tree.tenantRootLabel}
                 hint={`${session?.tenantCode || copy.tree.tenantRootLabel} · ${formatOrganizationTalentCount(
                   locale,
-                  allTenantTalents.length,
+                  allTenantTalents.length
                 )}`}
                 depth={0}
                 isActive={!selectedNode}
@@ -1435,7 +1460,9 @@ export function OrganizationStructureScreen({
                   </span>
                   <span className="text-xs text-slate-500">{scopePath}</span>
                 </div>
-                <h1 className="text-3xl font-semibold tracking-tight text-slate-950">{scopeTitle}</h1>
+                <h1 className="text-3xl font-semibold tracking-tight text-slate-950">
+                  {scopeTitle}
+                </h1>
                 <p className="text-sm leading-6 text-slate-600">{structureSummary}</p>
               </div>
               <div className="flex flex-wrap justify-end gap-3">
@@ -1467,10 +1494,7 @@ export function OrganizationStructureScreen({
                     <span>{copy.actions.refresh}</span>
                   </span>
                 </AsyncSubmitButton>
-                <Link
-                  href={hierarchyBusinessHref}
-                  className={HEADER_ACTION_SECONDARY_BUTTON_CLASS}
-                >
+                <Link href={hierarchyBusinessHref} className={HEADER_ACTION_SECONDARY_BUTTON_CLASS}>
                   <ChevronRight className="h-4 w-4" />
                   {copy.actions.openWorkspace}
                 </Link>
@@ -1489,7 +1513,9 @@ export function OrganizationStructureScreen({
                 <button
                   type="button"
                   onClick={() => {
-                    setCreateDraft(buildCreateDraft(profileStoresPanel.data, artistStagesPanel.data));
+                    setCreateDraft(
+                      buildCreateDraft(profileStoresPanel.data, artistStagesPanel.data)
+                    );
                     setIsCreateDrawerOpen(true);
                     setNotice(null);
                   }}
@@ -1531,7 +1557,9 @@ export function OrganizationStructureScreen({
                         {copy.notices.createdTalentReadyTitle}
                       </p>
                       <div className="flex flex-wrap items-center gap-2">
-                        <p className="text-base font-semibold text-slate-950">{createdTalentResult.label}</p>
+                        <p className="text-base font-semibold text-slate-950">
+                          {createdTalentResult.label}
+                        </p>
                         <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-600">
                           {createdTalentResult.code}
                         </span>
@@ -1542,7 +1570,9 @@ export function OrganizationStructureScreen({
                         </span>
                       </div>
                       <p className="text-sm text-slate-700">{createdTalentResult.scopeLabel}</p>
-                      <p className="text-sm text-slate-600">{copy.notices.createdTalentWorkflowHint}</p>
+                      <p className="text-sm text-slate-600">
+                        {copy.notices.createdTalentWorkflowHint}
+                      </p>
                     </div>
 
                     <div className="flex flex-wrap items-center justify-end gap-2">
@@ -1663,7 +1693,9 @@ export function OrganizationStructureScreen({
           >
             <div className="grid gap-4 md:grid-cols-2">
               <label className="space-y-2">
-                <span className="text-sm font-medium text-slate-700">{copy.form.subsidiaryCodeLabel}</span>
+                <span className="text-sm font-medium text-slate-700">
+                  {copy.form.subsidiaryCodeLabel}
+                </span>
                 <input
                   aria-label={copy.form.subsidiaryCodeLabel}
                   value={createSubsidiaryDraft.code}
@@ -1680,7 +1712,9 @@ export function OrganizationStructureScreen({
               <div className="space-y-3 md:col-span-2">
                 <div className="flex flex-wrap items-end gap-3">
                   <label className="min-w-0 flex-1 space-y-2">
-                    <span className="text-sm font-medium text-slate-700">{copy.form.subsidiaryNameLabel}</span>
+                    <span className="text-sm font-medium text-slate-700">
+                      {copy.form.subsidiaryNameLabel}
+                    </span>
                     <input
                       aria-label={copy.form.subsidiaryNameLabel}
                       value={createSubsidiaryDraft.nameBase}
@@ -1711,7 +1745,9 @@ export function OrganizationStructureScreen({
                 </div>
                 <p className="text-xs text-slate-500">
                   {configuredSubsidiaryTranslationCount > 0
-                    ? copy.translationManagement.subsidiaryNameSummary(configuredSubsidiaryTranslationCount)
+                    ? copy.translationManagement.subsidiaryNameSummary(
+                        configuredSubsidiaryTranslationCount
+                      )
                     : copy.translationManagement.subsidiaryNameEmpty}
                 </p>
                 {translationOptionsState.error && translationDrawerTarget === 'subsidiary-name' ? (
@@ -1719,7 +1755,9 @@ export function OrganizationStructureScreen({
                 ) : null}
               </div>
               <label className="space-y-2 md:col-span-2">
-                <span className="text-sm font-medium text-slate-700">{copy.form.subsidiaryDescriptionLabel}</span>
+                <span className="text-sm font-medium text-slate-700">
+                  {copy.form.subsidiaryDescriptionLabel}
+                </span>
                 <textarea
                   aria-label={copy.form.subsidiaryDescriptionLabel}
                   value={createSubsidiaryDraft.descriptionBase}
@@ -1746,7 +1784,11 @@ export function OrganizationStructureScreen({
             setIsCreateDrawerOpen(nextOpen);
           }
         }}
-        title={selectedNode ? `${copy.form.scopeTitlePrefix} ${selectedNode.displayName}` : copy.form.rootTitle}
+        title={
+          selectedNode
+            ? `${copy.form.scopeTitlePrefix} ${selectedNode.displayName}`
+            : copy.form.rootTitle
+        }
         description={
           selectedNode
             ? `${copy.form.scopeDescriptionPrefix} ${selectedNode.displayName}.`
@@ -1793,7 +1835,9 @@ export function OrganizationStructureScreen({
           >
             <div className="grid gap-4 md:grid-cols-2">
               <label className="space-y-2">
-                <span className="text-sm font-medium text-slate-700">{copy.form.talentCodeLabel}</span>
+                <span className="text-sm font-medium text-slate-700">
+                  {copy.form.talentCodeLabel}
+                </span>
                 <input
                   aria-label={copy.form.talentCodeLabel}
                   value={createDraft.code}
@@ -1808,7 +1852,9 @@ export function OrganizationStructureScreen({
                 />
               </label>
               <label className="space-y-2">
-                <span className="text-sm font-medium text-slate-700">{copy.form.displayNameLabel}</span>
+                <span className="text-sm font-medium text-slate-700">
+                  {copy.form.displayNameLabel}
+                </span>
                 <input
                   aria-label={copy.form.displayNameLabel}
                   value={createDraft.displayName}
@@ -1823,7 +1869,9 @@ export function OrganizationStructureScreen({
                 />
               </label>
               <label className="space-y-2">
-                <span className="text-sm font-medium text-slate-700">{copy.form.legalNameLabel}</span>
+                <span className="text-sm font-medium text-slate-700">
+                  {copy.form.legalNameLabel}
+                </span>
                 <input
                   aria-label={copy.form.legalNameLabel}
                   value={createDraft.nameBase}
@@ -1876,20 +1924,22 @@ export function OrganizationStructureScreen({
                 </span>
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
                   {createTalentSharedRoute ||
-                    (pickLocaleText(locale, {
+                    pickLocaleText(locale, {
                       en: 'Generated automatically after you enter the talent code.',
                       zh_HANS: '填写艺人代码后会自动生成。',
                       zh_HANT: '填寫藝人代碼後會自動產生。',
                       ja: 'タレントコードを入力すると自動生成されます。',
                       ko: '탤런트 코드를 입력하면 자동으로 생성됩니다.',
                       fr: 'Généré automatiquement après la saisie du code talent.',
-                    }))}
+                    })}
                 </div>
                 <p className="text-xs leading-6 text-slate-500">
                   {pickLocaleText(locale, {
                     en: 'The shared-domain homepage route is fixed to {tenantCode}/{talentCode}/homepage. Use a custom domain later if you need a custom path.',
-                    zh_HANS: '共享域名下的公开主页路径固定为 {tenantCode}/{talentCode}/homepage；如需自定义，请后续配置自定义域名。',
-                    zh_HANT: '共享網域下的公開主頁路徑固定為 {tenantCode}/{talentCode}/homepage；如需自訂，請後續設定自訂網域。',
+                    zh_HANS:
+                      '共享域名下的公开主页路径固定为 {tenantCode}/{talentCode}/homepage；如需自定义，请后续配置自定义域名。',
+                    zh_HANT:
+                      '共享網域下的公開主頁路徑固定為 {tenantCode}/{talentCode}/homepage；如需自訂，請後續設定自訂網域。',
                     ja: '共有ドメインの公開ホームページは {tenantCode}/{talentCode}/homepage で固定されます。独自パスが必要な場合は後でカスタムドメインを設定してください。',
                     ko: '공유 도메인의 공개 홈페이지 경로는 {tenantCode}/{talentCode}/homepage 로 고정됩니다. 사용자 지정 경로가 필요하면 나중에 커스텀 도메인을 설정하세요.',
                     fr: "La route de la page publique sur domaine partagé est fixée à {tenantCode}/{talentCode}/homepage. Configurez un domaine personnalisé plus tard si vous avez besoin d'un chemin personnalisé.",
@@ -1897,7 +1947,9 @@ export function OrganizationStructureScreen({
                 </p>
               </div>
               <label className="space-y-2">
-                <span className="text-sm font-medium text-slate-700">{copy.form.profileStoreLabel}</span>
+                <span className="text-sm font-medium text-slate-700">
+                  {copy.form.profileStoreLabel}
+                </span>
                 <select
                   aria-label={copy.form.profileStoreLabel}
                   value={createDraft.profileStoreId}
@@ -1911,13 +1963,15 @@ export function OrganizationStructureScreen({
                 >
                   {profileStoresPanel.data?.items.map((profileStore) => (
                     <option key={profileStore.id} value={profileStore.id}>
-                  {pickLocalizedProfileStoreName(profileStore, locale)}
+                      {pickLocalizedProfileStoreName(profileStore, locale)}
                     </option>
                   ))}
                 </select>
               </label>
               <label className="space-y-2">
-                <span className="text-sm font-medium text-slate-700">{copy.form.artistStageLabel}</span>
+                <span className="text-sm font-medium text-slate-700">
+                  {copy.form.artistStageLabel}
+                </span>
                 <select
                   aria-label={copy.form.artistStageLabel}
                   value={createDraft.artistStageId}
@@ -1932,10 +1986,11 @@ export function OrganizationStructureScreen({
                   <option value="">{copy.form.artistStageLabel}</option>
                   {(artistStagesPanel.data ?? []).map((artistStage) => {
                     const artistStageName =
-                      pickFirstNonEmptyString([artistStage.localizedName, artistStage.code]) ?? artistStage.code;
+                      pickFirstNonEmptyString([artistStage.localizedName, artistStage.code]) ??
+                      artistStage.code;
                     const lifecycleLabel = getOrganizationLifecycleLabel(
                       artistStage.lifecycleStatusMapping ?? 'draft',
-                      locale,
+                      locale
                     );
 
                     return (
@@ -1947,7 +2002,9 @@ export function OrganizationStructureScreen({
                 </select>
               </label>
               <label className="space-y-2">
-                <span className="text-sm font-medium text-slate-700">{copy.form.timezoneLabel}</span>
+                <span className="text-sm font-medium text-slate-700">
+                  {copy.form.timezoneLabel}
+                </span>
                 <input
                   aria-label={copy.form.timezoneLabel}
                   value={createDraft.timezone}

@@ -1,10 +1,10 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 // Worker Performance Baseline Tests (PRD P-29)
 // Measures and validates CPU/memory usage for worker jobs
-
 import { performance } from 'perf_hooks';
 import * as v8 from 'v8';
-import { afterAll,beforeAll, describe, expect, it } from 'vitest';
+
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 /**
  * Performance baseline thresholds
@@ -34,7 +34,12 @@ const THRESHOLDS = {
 /**
  * Get current memory usage in MB
  */
-function getMemoryUsageMB(): { heapUsed: number; heapTotal: number; rss: number; external: number } {
+function getMemoryUsageMB(): {
+  heapUsed: number;
+  heapTotal: number;
+  rss: number;
+  external: number;
+} {
   const usage = process.memoryUsage();
   return {
     heapUsed: usage.heapUsed / 1024 / 1024,
@@ -72,7 +77,9 @@ function forceGC(): void {
 /**
  * Simulate report generation workload
  */
-async function simulateReportGeneration(rowCount: number): Promise<{ duration: number; peakMemory: number }> {
+async function simulateReportGeneration(
+  rowCount: number
+): Promise<{ duration: number; peakMemory: number }> {
   forceGC();
   const startMemory = getMemoryUsageMB().heapUsed;
   const startTime = performance.now();
@@ -114,7 +121,9 @@ async function simulateReportGeneration(rowCount: number): Promise<{ duration: n
 /**
  * Simulate import processing workload
  */
-async function simulateImportProcessing(rowCount: number): Promise<{ duration: number; peakMemory: number }> {
+async function simulateImportProcessing(
+  rowCount: number
+): Promise<{ duration: number; peakMemory: number }> {
   forceGC();
   const startMemory = getMemoryUsageMB().heapUsed;
   const startTime = performance.now();

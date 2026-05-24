@@ -37,14 +37,18 @@ describe('StateView', () => {
         title="No adapters"
         description="Create one to start receiving events."
         secondaryText="You can also switch scope if this is unexpected."
-        actions={<>
-          <button type="button">Create adapter</button>
-          <button type="button">Switch scope</button>
-        </>}
-      />,
+        actions={
+          <>
+            <button type="button">Create adapter</button>
+            <button type="button">Switch scope</button>
+          </>
+        }
+      />
     );
 
-    expect(screen.getByText('You can also switch scope if this is unexpected.')).toBeInTheDocument();
+    expect(
+      screen.getByText('You can also switch scope if this is unexpected.')
+    ).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Create adapter' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Switch scope' })).toBeInTheDocument();
   });

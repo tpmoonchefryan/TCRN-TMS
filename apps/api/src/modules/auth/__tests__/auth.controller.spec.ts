@@ -79,7 +79,7 @@ describe('AuthController refresh-token handling', () => {
       mockTotpService as never,
       mockTokenService as never,
       mockSessionService as never,
-      mockEmailService as never,
+      mockEmailService as never
     );
   });
 
@@ -103,7 +103,7 @@ describe('AuthController refresh-token handling', () => {
         password: 'password',
       } as never,
       req as never,
-      res as never,
+      res as never
     );
 
     expect(mockTokenService.generateRefreshToken).not.toHaveBeenCalled();
@@ -115,7 +115,7 @@ describe('AuthController refresh-token handling', () => {
         sameSite: 'strict',
         path: '/api/v1',
         expires: result.refreshTokenExpiresAt,
-      }),
+      })
     );
     expect(response).toEqual({
       success: true,
@@ -147,7 +147,7 @@ describe('AuthController refresh-token handling', () => {
         code: '123456',
       } as never,
       req as never,
-      res as never,
+      res as never
     );
 
     expect(mockTokenService.generateRefreshToken).not.toHaveBeenCalled();
@@ -157,7 +157,7 @@ describe('AuthController refresh-token handling', () => {
       expect.objectContaining({
         path: '/api/v1',
         expires: result.refreshTokenExpiresAt,
-      }),
+      })
     );
     expect(response).toEqual({
       success: true,
@@ -215,7 +215,7 @@ describe('UserController auth/session queries', () => {
         deleteObject: vi.fn(),
         buildObjectUrl: vi.fn(),
       } as never,
-      mockEmailService as never,
+      mockEmailService as never
     );
   });
 
@@ -247,12 +247,12 @@ describe('UserController auth/session queries', () => {
 
     expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalledWith(
       expect.stringContaining('WHERE id = $1::uuid'),
-      currentUser.id,
+      currentUser.id
     );
     expect(mockPrisma.$executeRawUnsafe).toHaveBeenCalledWith(
       expect.stringContaining('WHERE id = $1::uuid'),
       currentUser.id,
-      'SECRET',
+      'SECRET'
     );
   });
 
@@ -276,23 +276,23 @@ describe('UserController auth/session queries', () => {
         ip: '127.0.0.1',
         socket: { remoteAddress: '127.0.0.1' },
         get: vi.fn().mockReturnValue('Vitest'),
-      } as never,
+      } as never
     );
 
     expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalledWith(
       expect.stringContaining('WHERE id = $1::uuid'),
-      currentUser.id,
+      currentUser.id
     );
     expect(mockPrisma.$executeRawUnsafe).toHaveBeenNthCalledWith(
       1,
       expect.stringContaining('WHERE id = $1::uuid'),
-      currentUser.id,
+      currentUser.id
     );
     expect(mockPrisma.$executeRawUnsafe).toHaveBeenNthCalledWith(
       2,
       expect.stringContaining('VALUES (gen_random_uuid(), $1::uuid, $2, false, now())'),
       currentUser.id,
-      'hashed-code',
+      'hashed-code'
     );
   });
 
@@ -312,17 +312,17 @@ describe('UserController auth/session queries', () => {
         cookies: {
           refresh_token: 'rt_token',
         },
-      } as never,
+      } as never
     );
 
     expect(mockTokenService.verifyRefreshToken).toHaveBeenCalledWith(
       'rt_token',
-      currentUser.tenantSchema,
+      currentUser.tenantSchema
     );
     expect(mockSessionService.getUserSessions).toHaveBeenCalledWith(
       currentUser.id,
       currentUser.tenantSchema,
-      'refresh-token-id',
+      'refresh-token-id'
     );
     expect(result).toEqual({
       success: true,
@@ -344,13 +344,13 @@ describe('UserController auth/session queries', () => {
         cookies: {
           refresh_token: 'rt_token',
         },
-      } as never,
+      } as never
     );
 
     expect(mockSessionService.getUserSessions).toHaveBeenCalledWith(
       currentUser.id,
       currentUser.tenantSchema,
-      undefined,
+      undefined
     );
   });
 });

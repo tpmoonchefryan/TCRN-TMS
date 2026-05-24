@@ -73,7 +73,9 @@ const HEIGHT_PRESET_PX: Record<Exclude<HomepageLayoutHeightPreset, 'custom'>, nu
 };
 
 function asRecord(value: unknown): Record<string, unknown> {
-  return value && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
 }
 
 function asString(value: unknown, fallback: string) {
@@ -102,57 +104,62 @@ function normalizeCustomDimension(value: unknown, min: number, max: number) {
 
 export function normalizeHomepageLayoutProps(value: unknown): HomepageLayoutProps {
   const record = asRecord(value);
-  const widthPreset = normalizeEnum(
-    record.widthPreset,
-    DEFAULT_HOMEPAGE_LAYOUT_PROPS.widthPreset,
-    ['full', 'wide', 'content', 'narrow', 'custom'] as const,
-  );
+  const widthPreset = normalizeEnum(record.widthPreset, DEFAULT_HOMEPAGE_LAYOUT_PROPS.widthPreset, [
+    'full',
+    'wide',
+    'content',
+    'narrow',
+    'custom',
+  ] as const);
   const heightPreset = normalizeEnum(
     record.heightPreset,
     DEFAULT_HOMEPAGE_LAYOUT_PROPS.heightPreset,
-    ['auto', 'small', 'medium', 'large', 'custom'] as const,
+    ['auto', 'small', 'medium', 'large', 'custom'] as const
   );
 
   return {
-    layoutMode: normalizeEnum(
-      record.layoutMode,
-      DEFAULT_HOMEPAGE_LAYOUT_PROPS.layoutMode,
-      ['default', 'stack', 'row', 'grid'] as const,
-    ),
-    gapToken: normalizeEnum(
-      record.gapToken,
-      DEFAULT_HOMEPAGE_LAYOUT_PROPS.gapToken,
-      ['none', 'xs', 'sm', 'md', 'lg'] as const,
-    ),
-    paddingToken: normalizeEnum(
-      record.paddingToken,
-      DEFAULT_HOMEPAGE_LAYOUT_PROPS.paddingToken,
-      ['none', 'xs', 'sm', 'md', 'lg'] as const,
-    ),
-    radiusToken: normalizeEnum(
-      record.radiusToken,
-      DEFAULT_HOMEPAGE_LAYOUT_PROPS.radiusToken,
-      ['none', 'sm', 'md', 'lg', 'full'] as const,
-    ),
+    layoutMode: normalizeEnum(record.layoutMode, DEFAULT_HOMEPAGE_LAYOUT_PROPS.layoutMode, [
+      'default',
+      'stack',
+      'row',
+      'grid',
+    ] as const),
+    gapToken: normalizeEnum(record.gapToken, DEFAULT_HOMEPAGE_LAYOUT_PROPS.gapToken, [
+      'none',
+      'xs',
+      'sm',
+      'md',
+      'lg',
+    ] as const),
+    paddingToken: normalizeEnum(record.paddingToken, DEFAULT_HOMEPAGE_LAYOUT_PROPS.paddingToken, [
+      'none',
+      'xs',
+      'sm',
+      'md',
+      'lg',
+    ] as const),
+    radiusToken: normalizeEnum(record.radiusToken, DEFAULT_HOMEPAGE_LAYOUT_PROPS.radiusToken, [
+      'none',
+      'sm',
+      'md',
+      'lg',
+      'full',
+    ] as const),
     widthPreset,
     customWidthPx:
-      widthPreset === 'custom'
-        ? normalizeCustomDimension(record.customWidthPx, 240, 1440)
-        : null,
-    align: normalizeEnum(
-      record.align,
-      DEFAULT_HOMEPAGE_LAYOUT_PROPS.align,
-      ['left', 'center', 'right'] as const,
-    ),
+      widthPreset === 'custom' ? normalizeCustomDimension(record.customWidthPx, 240, 1440) : null,
+    align: normalizeEnum(record.align, DEFAULT_HOMEPAGE_LAYOUT_PROPS.align, [
+      'left',
+      'center',
+      'right',
+    ] as const),
     heightPreset,
     customHeightPx:
-      heightPreset === 'custom'
-        ? normalizeCustomDimension(record.customHeightPx, 80, 1200)
-        : null,
+      heightPreset === 'custom' ? normalizeCustomDimension(record.customHeightPx, 80, 1200) : null,
     paddingPreset: normalizeEnum(
       record.paddingPreset,
       DEFAULT_HOMEPAGE_LAYOUT_PROPS.paddingPreset,
-      ['none', 'small', 'medium', 'large'] as const,
+      ['none', 'small', 'medium', 'large'] as const
     ),
   };
 }
@@ -205,11 +212,13 @@ export function resolveHomepageLayoutWrapperStyle(layout: HomepageLayoutProps): 
           : layout.layoutMode === 'stack'
             ? 'flex'
             : 'block',
-    flexDirection: layout.layoutMode === 'stack' ? 'column' : layout.layoutMode === 'row' ? 'row' : undefined,
+    flexDirection:
+      layout.layoutMode === 'stack' ? 'column' : layout.layoutMode === 'row' ? 'row' : undefined,
     flexWrap: layout.layoutMode === 'row' ? 'wrap' : undefined,
     gap: layout.layoutMode === 'default' ? undefined : gap,
     justifyItems: layout.layoutMode === 'grid' ? 'stretch' : undefined,
-    gridTemplateColumns: layout.layoutMode === 'grid' ? 'repeat(auto-fit, minmax(220px, 1fr))' : undefined,
+    gridTemplateColumns:
+      layout.layoutMode === 'grid' ? 'repeat(auto-fit, minmax(220px, 1fr))' : undefined,
     width: '100%',
     maxWidth: width || '100%',
     minHeight: height || undefined,

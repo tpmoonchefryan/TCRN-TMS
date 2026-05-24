@@ -1,10 +1,11 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import type { SupportedUiLocale } from '@tcrn/shared';
+
 import type { ConfigEntityRecord } from '@/domains/config-dictionary-settings/api/settings.api';
 import { TenantSettingsScreen } from '@/domains/config-dictionary-settings/screens/TenantSettingsScreen';
 import { localizedFixture } from '@/domains/config-dictionary-settings/testing/localized-fixtures';
-import type { SupportedUiLocale } from '@tcrn/shared';
 
 const mockRequest = vi.fn();
 const replace = vi.fn();
@@ -13,7 +14,6 @@ let currentSearch = '';
 const localeState = {
   locale: 'en' as SupportedUiLocale,
 };
-
 
 vi.mock('next/navigation', () => ({
   usePathname: () => pathname,
@@ -221,7 +221,10 @@ describe('TenantSettingsScreen', () => {
         ];
       }
 
-      if (path === '/api/v1/system-dictionary/CUSTOMER_STATUS?includeInactive=false&page=1&pageSize=20') {
+      if (
+        path ===
+        '/api/v1/system-dictionary/CUSTOMER_STATUS?includeInactive=false&page=1&pageSize=20'
+      ) {
         return {
           success: true,
           data: dictionaryItemsResponse,
@@ -259,7 +262,10 @@ describe('TenantSettingsScreen', () => {
         ]);
       }
 
-      if (path === '/api/v1/talents/custom-domain-bindings?scopeType=tenant&includeInherited=true&includeInactive=false') {
+      if (
+        path ===
+        '/api/v1/talents/custom-domain-bindings?scopeType=tenant&includeInherited=true&includeInactive=false'
+      ) {
         return {
           domains: [
             {
@@ -314,16 +320,22 @@ describe('TenantSettingsScreen', () => {
 
     expect(await screen.findByRole('heading', { name: 'Tenant Settings' })).toBeInTheDocument();
     expect(
-      screen.getByText('Open the tenant-level business workspace for cross-talent operations, reporting, and workspace handoff.'),
+      screen.getByText(
+        'Open the tenant-level business workspace for cross-talent operations, reporting, and workspace handoff.'
+      )
     ).toBeInTheDocument();
-    expect(screen.queryByText(/future reporting modules|page-sprawl|configuration inventory/i)).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/future reporting modules|page-sprawl|configuration inventory/i)
+    ).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Configuration Entity Management' }));
-    expect(await screen.findByRole('button', { name: /Profile Store profile-store/i })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('button', { name: /Profile Store profile-store/i })
+    ).toBeInTheDocument();
     expect(
       screen.getByText(
-        'Maintain tenant-owned configuration families here, then manage homepage template and component assets in the dedicated inventory below.',
-      ),
+        'Maintain tenant-owned configuration families here, then manage homepage template and component assets in the dedicated inventory below.'
+      )
     ).toBeInTheDocument();
     expect(await screen.findByText('Homepage Assets')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /New profile store/i })).not.toBeInTheDocument();
@@ -333,14 +345,16 @@ describe('TenantSettingsScreen', () => {
     expect(await screen.findByText('Default Store')).toBeInTheDocument();
     expect(mockRequest).toHaveBeenCalledWith(
       '/api/v1/configuration-entity/profile-store?scopeType=tenant&includeInherited=true&includeDisabled=true&includeInactive=false&ownerOnly=false&page=1&pageSize=20&sort=sortOrder',
-      expect.anything(),
+      expect.anything()
     );
-    expect(screen.queryByText(/future reporting modules|page-sprawl|configuration inventory/i)).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/future reporting modules|page-sprawl|configuration inventory/i)
+    ).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: /Custom Domain custom-domain/i }));
     expect(await screen.findByText('tenant.example.com')).toBeInTheDocument();
     expect(mockRequest).toHaveBeenCalledWith(
-      '/api/v1/talents/custom-domain-bindings?scopeType=tenant&includeInherited=true&includeInactive=false',
+      '/api/v1/talents/custom-domain-bindings?scopeType=tenant&includeInherited=true&includeInactive=false'
     );
 
     fireEvent.click(screen.getByRole('button', { name: 'System Dictionary' }));
@@ -349,7 +363,10 @@ describe('TenantSettingsScreen', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Settings' }));
     expect(screen.getByRole('navigation', { name: 'Settings categories' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Defaults' })).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByRole('button', { name: 'Defaults' })).toHaveAttribute(
+      'aria-current',
+      'page'
+    );
     expect(screen.getAllByText('Date format').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Currency').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Customer import').length).toBeGreaterThan(0);
@@ -358,7 +375,9 @@ describe('TenantSettingsScreen', () => {
     expect(await screen.findByText('mail.alpha.example.com')).toBeInTheDocument();
     expect(screen.getByText('pending.alpha.example.com')).toBeInTheDocument();
     expect(screen.getByLabelText('Default sending domain')).toHaveValue('domain-verified');
-    expect(screen.queryByText(/Tencent Cloud Secret|Secret ID|Secret Key|provider credentials/i)).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/Tencent Cloud Secret|Secret ID|Secret Key|provider credentials/i)
+    ).not.toBeInTheDocument();
     fireEvent.change(screen.getByLabelText('Reply-to address'), {
       target: { value: 'help@alpha.example.com' },
     });
@@ -369,14 +388,18 @@ describe('TenantSettingsScreen', () => {
         expect.objectContaining({
           method: 'PATCH',
           body: expect.stringContaining('help@alpha.example.com'),
-        }),
+        })
       );
     });
     expect(screen.queryByLabelText('Default language')).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Defaults' }));
     fireEvent.click(screen.getByRole('button', { name: 'Edit defaults' }));
-    expect(screen.getByText('Review and adjust the defaults applied across this tenant.')).toBeInTheDocument();
-    expect(screen.queryByText(/backend defaults contract|settings payload/i)).not.toBeInTheDocument();
+    expect(
+      screen.getByText('Review and adjust the defaults applied across this tenant.')
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText(/backend defaults contract|settings payload/i)
+    ).not.toBeInTheDocument();
     expect(screen.getByText('Localization')).toBeInTheDocument();
     expect(screen.getByText('Public surfaces')).toBeInTheDocument();
     expect(screen.getAllByText('Customer import').length).toBeGreaterThan(0);
@@ -415,7 +438,7 @@ describe('TenantSettingsScreen', () => {
             },
             version: 3,
           }),
-        }),
+        })
       );
     });
 
@@ -482,13 +505,17 @@ describe('TenantSettingsScreen', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Settings' }));
     fireEvent.click(screen.getByRole('button', { name: 'CAPTCHA' }));
 
-    expect(await screen.findByLabelText('Cloudflare Turnstile Site Key')).toHaveValue('tenant-site-key');
+    expect(await screen.findByLabelText('Cloudflare Turnstile Site Key')).toHaveValue(
+      'tenant-site-key'
+    );
     expect(screen.getByLabelText('Cloudflare Turnstile Secret Key')).toHaveValue('');
     expect(screen.queryByDisplayValue('tenant-secret-key')).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Clear secret' }));
     expect(screen.getByRole('button', { name: 'Save Turnstile settings' })).toBeDisabled();
-    fireEvent.click(screen.getByLabelText(/I understand that staging and production will be unavailable/i));
+    fireEvent.click(
+      screen.getByLabelText(/I understand that staging and production will be unavailable/i)
+    );
     expect(screen.getByRole('button', { name: 'Save Turnstile settings' })).not.toBeDisabled();
 
     fireEvent.click(screen.getByRole('button', { name: 'Replace secret' }));
@@ -510,13 +537,12 @@ describe('TenantSettingsScreen', () => {
             secretKeyMutation: 'replace',
             secretKey: 'tenant-secret-key-rotated',
           }),
-        }),
+        })
       );
     });
     expect(await screen.findByText('Turnstile settings saved.')).toBeInTheDocument();
     expect(screen.queryByDisplayValue('tenant-secret-key-rotated')).not.toBeInTheDocument();
   });
-
 
   it('renders zh copy when runtime locale is zh', async () => {
     localeState.locale = 'zh_HANS';
@@ -557,7 +583,6 @@ describe('TenantSettingsScreen', () => {
     expect(await screen.findByRole('button', { name: '保存租户默认值' })).toBeInTheDocument();
   });
 
-
   it('includes a tenant business workspace shortcut in the details section', async () => {
     mockRequest.mockImplementation(async (path: string) => {
       if (path === '/api/v1/organization/settings') {
@@ -591,7 +616,7 @@ describe('TenantSettingsScreen', () => {
     expect(await screen.findByRole('heading', { name: 'Tenant Settings' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Open business workspace' })).toHaveAttribute(
       'href',
-      '/tenant/tenant-1/business',
+      '/tenant/tenant-1/business'
     );
   });
 
@@ -649,7 +674,10 @@ describe('TenantSettingsScreen', () => {
         return [];
       }
 
-      if (path.startsWith('/api/v1/config-entity/') || path.startsWith('/api/v1/system-dictionary/')) {
+      if (
+        path.startsWith('/api/v1/config-entity/') ||
+        path.startsWith('/api/v1/system-dictionary/')
+      ) {
         return emptyConfigEntityEnvelope;
       }
 

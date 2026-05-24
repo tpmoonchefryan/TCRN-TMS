@@ -8,9 +8,6 @@ export default async function PublicMarshmallowPage({
   const { path } = await params;
 
   return (
-    <PublicMarshmallowScreen
-      path={path}
-      turnstileSiteKey={process.env.TURNSTILE_SITE_KEY || ''}
-    />
+    <PublicMarshmallowScreen path={path} turnstileSiteKey={process.env.TURNSTILE_SITE_KEY || ''} />
   );
 }

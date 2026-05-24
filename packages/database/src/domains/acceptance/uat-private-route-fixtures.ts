@@ -36,10 +36,7 @@ export function buildUatPrivateFixtureRoutes(ids: UatPrivateRouteFixtureIds) {
     talentOverview: talentBase,
     customerList: `${talentBase}/customers`,
     customerCreate: `${talentBase}/customers/new`,
-    firstCustomer:
-      ids.firstCustomerId
-        ? `${talentBase}/customers/${ids.firstCustomerId}`
-        : null,
+    firstCustomer: ids.firstCustomerId ? `${talentBase}/customers/${ids.firstCustomerId}` : null,
     homepageManagement: `${talentBase}/homepage`,
     publicHomepage: `/${UAT_PRIVATE_ROUTE_FIXTURE.tenantCode.toLowerCase()}/${UAT_PRIVATE_ROUTE_FIXTURE.talentCode.toLowerCase()}/homepage`,
   };

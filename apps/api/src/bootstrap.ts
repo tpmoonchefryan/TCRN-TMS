@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
@@ -63,7 +62,7 @@ export async function bootstrap(): Promise<void> {
           imgSrc: ["'self'", 'data:', 'https:'],
         },
       },
-    }),
+    })
   );
 
   // Cookie parser middleware
@@ -111,7 +110,7 @@ export async function bootstrap(): Promise<void> {
       transformOptions: {
         enableImplicitConversion: true,
       },
-    }),
+    })
   );
 
   // Global exception filter
@@ -136,20 +135,15 @@ export async function bootstrap(): Promise<void> {
       logger.log('Swagger documentation protected with HTTP Basic Auth');
     }
 
-    const {
-      buildSwaggerConfig,
-      SWAGGER_OPTIONS,
-      OPERATIONS_TAGS,
-      CONFIG_TAGS,
-      PUBLIC_TAGS,
-    } = await import('./config/swagger.config');
+    const { buildSwaggerConfig, SWAGGER_OPTIONS, OPERATIONS_TAGS, CONFIG_TAGS, PUBLIC_TAGS } =
+      await import('./config/swagger.config');
 
     // 1. Operations API Definition
     const operationsConfig = buildSwaggerConfig(
       'TCRN TMS - Operations API',
       'Core business operations API for Frontend Applications',
       '1.0.0',
-      OPERATIONS_TAGS,
+      OPERATIONS_TAGS
     );
     const operationsDoc = SwaggerModule.createDocument(app, operationsConfig, {
       include: [
@@ -177,7 +171,7 @@ export async function bootstrap(): Promise<void> {
       'TCRN TMS - System & Config API',
       'System administration, configuration and authentication API',
       '1.0.0',
-      CONFIG_TAGS,
+      CONFIG_TAGS
     );
     const configDoc = SwaggerModule.createDocument(app, configConfig, {
       include: [
@@ -203,7 +197,7 @@ export async function bootstrap(): Promise<void> {
       'TCRN TMS - Public API',
       'Publicly accessible endpoints',
       '1.0.0',
-      PUBLIC_TAGS,
+      PUBLIC_TAGS
     );
     const publicDoc = SwaggerModule.createDocument(app, publicConfig, {
       include: [PublicModule, HealthModule],

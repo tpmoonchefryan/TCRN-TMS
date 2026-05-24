@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { LogSeverity, TechEventType } from '@tcrn/shared';
 
 export interface MembershipBatchStats {
@@ -28,7 +27,7 @@ export const createEmptyMembershipBatchStats = (): MembershipBatchStats => ({
 
 export const accumulateMembershipBatchStats = (
   current: MembershipBatchStats,
-  next: MembershipBatchStats,
+  next: MembershipBatchStats
 ): MembershipBatchStats => ({
   renewed: current.renewed + next.renewed,
   failed: current.failed + next.failed,
@@ -37,17 +36,14 @@ export const accumulateMembershipBatchStats = (
 
 export const calculateRenewedMembershipValidTo = (
   validTo: Date,
-  defaultRenewalDays: number | null,
+  defaultRenewalDays: number | null
 ): Date => {
   const newValidTo = new Date(validTo);
   newValidTo.setDate(newValidTo.getDate() + (defaultRenewalDays || 30));
   return newValidTo;
 };
 
-export const buildMembershipAutoRenewChangeLogDiff = (
-  oldValidTo: Date,
-  newValidTo: Date,
-): string =>
+export const buildMembershipAutoRenewChangeLogDiff = (oldValidTo: Date, newValidTo: Date): string =>
   JSON.stringify({
     old: { validTo: oldValidTo.toISOString() },
     new: { validTo: newValidTo.toISOString(), autoRenewed: true },
@@ -62,7 +58,7 @@ export const buildMembershipExpiredChangeLogDiff = (expiredAt: Date): string =>
 export const buildMembershipBatchCompletedEvent = (
   stats: MembershipBatchStats,
   durationMs: number,
-  tenantsProcessed: number,
+  tenantsProcessed: number
 ) => ({
   eventType: TechEventType.SCHEDULED_TASK_COMPLETED,
   scope: 'scheduled' as const,

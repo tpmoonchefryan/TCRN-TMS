@@ -1,8 +1,8 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 // Membership Auto-Renewal Job Processor (PRD §11.6)
+import type { Job, Processor, Queue } from 'bullmq';
 
 import { PrismaClient } from '@tcrn/database';
-import type { Job, Processor, Queue } from 'bullmq';
 
 import { membershipRenewalLogger as logger } from '../logger';
 
@@ -36,9 +36,10 @@ export interface MembershipRenewalJobResult {
  * Membership renewal job processor
  * Handles auto-renewal of memberships based on configuration
  */
-export const membershipRenewalJobProcessor: Processor<MembershipRenewalJobData, MembershipRenewalJobResult> = async (
-  job: Job<MembershipRenewalJobData, MembershipRenewalJobResult>
-) => {
+export const membershipRenewalJobProcessor: Processor<
+  MembershipRenewalJobData,
+  MembershipRenewalJobResult
+> = async (job: Job<MembershipRenewalJobData, MembershipRenewalJobResult>) => {
   const { jobId, tenantId, tenantSchemaName: _tenantSchemaName, triggerType, options } = job.data;
   const startTime = Date.now();
   const dryRun = options?.dryRun ?? false;
@@ -98,7 +99,9 @@ export const membershipRenewalJobProcessor: Processor<MembershipRenewalJobData, 
       },
     });
 
-    logger.info(`Found ${expiringMemberships.length} memberships expiring within ${daysBeforeExpiry} days`);
+    logger.info(
+      `Found ${expiringMemberships.length} memberships expiring within ${daysBeforeExpiry} days`
+    );
 
     // 2. Process each membership
     for (const membership of expiringMemberships) {
@@ -107,7 +110,9 @@ export const membershipRenewalJobProcessor: Processor<MembershipRenewalJobData, 
       try {
         // Skip if customer is inactive
         if (!membership.customer.isActive) {
-          logger.info(`Skipping ${membership.id}: customer ${membership.customer.nickname} is inactive`);
+          logger.info(
+            `Skipping ${membership.id}: customer ${membership.customer.nickname} is inactive`
+          );
           continue;
         }
 
@@ -155,8 +160,12 @@ export const membershipRenewalJobProcessor: Processor<MembershipRenewalJobData, 
         }
 
         result.renewedCount++;
-        logger.info(`${dryRun ? '[DRY RUN] Would renew' : 'Renewed'} membership ${membership.id} for customer ${membership.customer.nickname}`);
-        logger.info(`Old expiry: ${currentExpiry.toISOString().split('T')[0]}, New expiry: ${newExpiry.toISOString().split('T')[0]}`);
+        logger.info(
+          `${dryRun ? '[DRY RUN] Would renew' : 'Renewed'} membership ${membership.id} for customer ${membership.customer.nickname}`
+        );
+        logger.info(
+          `Old expiry: ${currentExpiry.toISOString().split('T')[0]}, New expiry: ${newExpiry.toISOString().split('T')[0]}`
+        );
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         result.errors.push({
@@ -168,7 +177,9 @@ export const membershipRenewalJobProcessor: Processor<MembershipRenewalJobData, 
 
       // Update progress
       if (result.processedCount % 50 === 0) {
-        await job.updateProgress(Math.round((result.processedCount / expiringMemberships.length) * 100));
+        await job.updateProgress(
+          Math.round((result.processedCount / expiringMemberships.length) * 100)
+        );
       }
     }
 
@@ -188,7 +199,7 @@ export const membershipRenewalJobProcessor: Processor<MembershipRenewalJobData, 
       await prisma.membershipRecord.updateMany({
         where: {
           id: {
-            in: expiredMemberships.map(m => m.id),
+            in: expiredMemberships.map((m) => m.id),
           },
         },
         data: {
@@ -202,7 +213,9 @@ export const membershipRenewalJobProcessor: Processor<MembershipRenewalJobData, 
 
     const duration = Date.now() - startTime;
     logger.info(`Membership renewal job ${jobId} completed in ${duration}ms`);
-    logger.info(`Processed: ${result.processedCount}, Renewed: ${result.renewedCount}, Expired: ${result.expiredCount}`);
+    logger.info(
+      `Processed: ${result.processedCount}, Renewed: ${result.renewedCount}, Expired: ${result.expiredCount}`
+    );
 
     return result;
   } catch (error) {
@@ -214,16 +227,17 @@ export const membershipRenewalJobProcessor: Processor<MembershipRenewalJobData, 
   }
 };
 
-
 /**
  * Create scheduled membership renewal job
  * Should be called by a cron job (e.g., daily at 2:00 AM)
  */
 export async function scheduleMembershipRenewalJob(
-  queue: Queue | { add: (name: string, data: MembershipRenewalJobData, opts?: unknown) => Promise<unknown> },
+  queue:
+    | Queue
+    | { add: (name: string, data: MembershipRenewalJobData, opts?: unknown) => Promise<unknown> },
   tenantId: string,
   tenantSchemaName: string,
-  scheduleWindowKey: string = new Date().toISOString().slice(0, 10),
+  scheduleWindowKey: string = new Date().toISOString().slice(0, 10)
 ) {
   const jobId = `renewal_${tenantId}_${scheduleWindowKey}`;
 

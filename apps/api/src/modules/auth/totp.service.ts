@@ -1,10 +1,11 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+import { createHash, randomBytes } from 'crypto';
 
 import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { ErrorCodes } from '@tcrn/shared';
-import { createHash, randomBytes } from 'crypto';
 import { authenticator } from 'otplib';
 import * as QRCode from 'qrcode';
+
+import { ErrorCodes } from '@tcrn/shared';
 
 /**
  * TOTP Setup Response
@@ -47,7 +48,7 @@ export class TotpService {
   async generateSetupInfo(email: string, secret?: string): Promise<TotpSetupInfo> {
     const totpSecret = secret || this.generateSecret();
     const otpauthUrl = authenticator.keyuri(email, this.issuer, totpSecret);
-    
+
     // Generate QR code as data URL
     const qrCode = await QRCode.toDataURL(otpauthUrl, {
       width: 256,
@@ -83,7 +84,7 @@ export class TotpService {
    */
   generateRecoveryCodes(count: number = 10): string[] {
     const codes: string[] = [];
-    
+
     for (let i = 0; i < count; i++) {
       // Generate 12 random characters in format XXXX-XXXX-XXXX
       const bytes = randomBytes(9);

@@ -1,6 +1,5 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 // PII Config Module Zod Schemas
-
 import { z } from 'zod';
 
 import { LocalizedTextSchema, PartialLocalizedTextSchema } from '../common.schema';
@@ -16,7 +15,9 @@ export type PiiServiceAuthType = z.infer<typeof PiiAuthTypeSchema>;
 // PII Service Config Schemas
 // ============================================================================
 export const CreatePiiServiceConfigSchema = z.object({
-  code: z.string().regex(/^[A-Z0-9_]{3,32}$/, 'Code must be 3-32 uppercase alphanumeric with underscores'),
+  code: z
+    .string()
+    .regex(/^[A-Z0-9_]{3,32}$/, 'Code must be 3-32 uppercase alphanumeric with underscores'),
   name: LocalizedTextSchema,
   description: LocalizedTextSchema.optional(),
   apiUrl: z.string().url().max(512),

@@ -1,9 +1,8 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable } from '@nestjs/common';
 
-import { DatabaseService } from '../../database';
 import { readLocalizedText } from '../../../platform/persistence/localized-text.persistence';
+import { DatabaseService } from '../../database';
 import type {
   IntegrationAdapterConfigRow,
   IntegrationAdapterDetailRow,
@@ -14,14 +13,12 @@ import { type AdapterListQueryDto, OwnerType } from '../dto/integration.dto';
 
 @Injectable()
 export class AdapterReadRepository {
-  constructor(
-    private readonly databaseService: DatabaseService,
-  ) {}
+  constructor(private readonly databaseService: DatabaseService) {}
 
   async findMany(
     tenantSchema: string,
     scope: IntegrationAdapterOwnerScope,
-    query: AdapterListQueryDto,
+    query: AdapterListQueryDto
   ): Promise<IntegrationAdapterListRow[]> {
     const conditions: string[] = [];
     const params: unknown[] = [];
@@ -64,8 +61,10 @@ export class AdapterReadRepository {
         ? `WHERE ${conditions.map((condition) => condition.trim()).join(' AND ')}`
         : '';
 
-    const rows = await this.databaseService.getPrisma().$queryRawUnsafe<IntegrationAdapterListRow[]>(
-      `
+    const rows = await this.databaseService
+      .getPrisma()
+      .$queryRawUnsafe<IntegrationAdapterListRow[]>(
+        `
         SELECT
           ia.id,
           ia.owner_type as "ownerType",
@@ -94,8 +93,8 @@ export class AdapterReadRepository {
         ${whereClause}
         ORDER BY ia.created_at DESC
       `,
-      ...params,
-    );
+        ...params
+      );
 
     return rows.map((row) => ({
       ...row,
@@ -105,12 +104,12 @@ export class AdapterReadRepository {
 
   async findById(
     tenantSchema: string,
-    adapterId: string,
+    adapterId: string
   ): Promise<IntegrationAdapterDetailRow | null> {
-    const rows = await this.databaseService.getPrisma().$queryRawUnsafe<
-      IntegrationAdapterDetailRow[]
-    >(
-      `
+    const rows = await this.databaseService
+      .getPrisma()
+      .$queryRawUnsafe<IntegrationAdapterDetailRow[]>(
+        `
         SELECT
           ia.id,
           ia.owner_type as "ownerType",
@@ -135,8 +134,8 @@ export class AdapterReadRepository {
         WHERE ia.id = $1::uuid
         LIMIT 1
       `,
-      adapterId,
-    );
+        adapterId
+      );
 
     const row = rows[0];
     return row
@@ -147,10 +146,7 @@ export class AdapterReadRepository {
       : null;
   }
 
-  findConfigs(
-    tenantSchema: string,
-    adapterId: string,
-  ): Promise<IntegrationAdapterConfigRow[]> {
+  findConfigs(tenantSchema: string, adapterId: string): Promise<IntegrationAdapterConfigRow[]> {
     return this.databaseService.getPrisma().$queryRawUnsafe<IntegrationAdapterConfigRow[]>(
       `
         SELECT
@@ -162,7 +158,7 @@ export class AdapterReadRepository {
         WHERE adapter_id = $1::uuid
         ORDER BY created_at ASC, id ASC
       `,
-      adapterId,
+      adapterId
     );
   }
 }

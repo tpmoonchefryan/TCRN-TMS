@@ -1,7 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { RequestContext } from '@tcrn/shared';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { MembershipRecordApplicationService } from '../../application/membership-record.service';
 import { MembershipRecordService } from '../membership-record.service';
@@ -66,7 +66,7 @@ describe('MembershipRecordService', () => {
     });
 
     await expect(
-      service.findByCustomer('customer-1', 'talent-1', {}, context),
+      service.findByCustomer('customer-1', 'talent-1', {}, context)
     ).resolves.toMatchObject({ items: [] });
     await expect(
       service.create(
@@ -77,8 +77,8 @@ describe('MembershipRecordService', () => {
           membershipLevelCode: 'GOLD',
           validFrom: '2026-04-14T00:00:00.000Z',
         },
-        context,
-      ),
+        context
+      )
     ).resolves.toMatchObject({ id: 'membership-1' });
   });
 
@@ -111,12 +111,10 @@ describe('MembershipRecordService', () => {
           autoRenew: true,
           note: 'VIP',
         },
-        context,
-      ),
+        context
+      )
     ).resolves.toMatchObject({ id: 'membership-1' });
-    await expect(
-      service.getSummary('customer-1', context),
-    ).resolves.toMatchObject({
+    await expect(service.getSummary('customer-1', context)).resolves.toMatchObject({
       highestLevel: { levelCode: 'GOLD' },
       activeCount: 1,
       totalCount: 2,

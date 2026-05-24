@@ -43,14 +43,7 @@ module.exports = {
     'import/order': [
       'error',
       {
-        groups: [
-          'builtin',
-          'external',
-          'internal',
-          ['parent', 'sibling'],
-          'index',
-          'type',
-        ],
+        groups: ['builtin', 'external', 'internal', ['parent', 'sibling'], 'index', 'type'],
         'newlines-between': 'always',
         alphabetize: {
           order: 'asc',
@@ -67,11 +60,5 @@ module.exports = {
     'no-var': 'error',
     eqeqeq: ['error', 'always'],
   },
-  ignorePatterns: [
-    'node_modules',
-    'dist',
-    '.next',
-    'coverage',
-    '*.js',
-  ],
+  ignorePatterns: ['node_modules', 'dist', '.next', 'coverage', '*.js'],
 };

@@ -1,13 +1,14 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 // Marshmallow Export Job Processor
-
-import { PrismaClient } from '@tcrn/database';
-import type { Job, Processor } from 'bullmq';
-import ExcelJS from 'exceljs';
 import * as fs from 'fs';
-import * as Minio from 'minio';
 import * as os from 'os';
 import * as path from 'path';
+
+import type { Job, Processor } from 'bullmq';
+import ExcelJS from 'exceljs';
+import * as Minio from 'minio';
+
+import { PrismaClient } from '@tcrn/database';
 
 import { reportLogger as logger } from '../logger';
 
@@ -123,7 +124,7 @@ export const marshmallowExportJobProcessor: Processor<
     // 3. Count total records
     const countResult = await prisma.$queryRawUnsafe<{ count: number }[]>(
       `SELECT COUNT(*)::int as count FROM "${tenantSchema}".marshmallow_message m WHERE ${whereClause}`,
-      ...params,
+      ...params
     );
     const totalCount = countResult[0]?.count ?? 0;
 
@@ -156,7 +157,7 @@ export const marshmallowExportJobProcessor: Processor<
       FROM "${tenantSchema}".marshmallow_message m
       WHERE ${whereClause}
       ORDER BY m.created_at DESC`,
-      ...params,
+      ...params
     );
 
     // 5. Create output file based on format
@@ -186,23 +187,26 @@ export const marshmallowExportJobProcessor: Processor<
       filePath = path.join(os.tmpdir(), `marshmallow_${jobId}.csv`);
       fileName = `marshmallow_export_${new Date().toISOString().split('T')[0]}.csv`;
 
-      const csvHeaders = 'ID,Content,Sender Name,Anonymous,Status,Reply,Created At,Moderated At,Reactions\n';
-      const csvRows = messages.map((msg) => {
-        const escapedContent = `"${msg.content.replace(/"/g, '""')}"`;
-        const escapedReply = msg.replyContent ? `"${msg.replyContent.replace(/"/g, '""')}"` : '';
-        const reactions = msg.reactionCounts ? JSON.stringify(msg.reactionCounts) : '';
-        return [
-          msg.id,
-          escapedContent,
-          msg.isAnonymous ? '' : (msg.senderName || ''),
-          msg.isAnonymous ? 'Yes' : 'No',
-          msg.status,
-          escapedReply,
-          msg.createdAt.toISOString(),
-          msg.moderatedAt?.toISOString() ?? '',
-          `"${reactions}"`,
-        ].join(',');
-      }).join('\n');
+      const csvHeaders =
+        'ID,Content,Sender Name,Anonymous,Status,Reply,Created At,Moderated At,Reactions\n';
+      const csvRows = messages
+        .map((msg) => {
+          const escapedContent = `"${msg.content.replace(/"/g, '""')}"`;
+          const escapedReply = msg.replyContent ? `"${msg.replyContent.replace(/"/g, '""')}"` : '';
+          const reactions = msg.reactionCounts ? JSON.stringify(msg.reactionCounts) : '';
+          return [
+            msg.id,
+            escapedContent,
+            msg.isAnonymous ? '' : msg.senderName || '',
+            msg.isAnonymous ? 'Yes' : 'No',
+            msg.status,
+            escapedReply,
+            msg.createdAt.toISOString(),
+            msg.moderatedAt?.toISOString() ?? '',
+            `"${reactions}"`,
+          ].join(',');
+        })
+        .join('\n');
 
       fs.writeFileSync(filePath, csvHeaders + csvRows, 'utf8');
     } else {
@@ -274,7 +278,7 @@ export const marshmallowExportJobProcessor: Processor<
       objectPath,
       fs.createReadStream(filePath),
       stats.size,
-      { 'Content-Type': getContentType(format) },
+      { 'Content-Type': getContentType(format) }
     );
 
     // 8. Update job record with result
@@ -313,7 +317,7 @@ async function updateJobStatus(
   prisma: PrismaClient,
   schemaName: string,
   jobId: string,
-  status: string,
+  status: string
 ): Promise<void> {
   await executeMarshmallowJobUpdate(
     prisma,
@@ -325,7 +329,7 @@ async function updateJobStatus(
      SET status = $1, started_at = NOW(), updated_at = NOW()
      WHERE id = $2::uuid
        AND job_type = $3`,
-    [status, jobId, LEGACY_MARSHMALLOW_EXPORT_JOB_TYPE],
+    [status, jobId, LEGACY_MARSHMALLOW_EXPORT_JOB_TYPE]
   );
 }
 
@@ -338,7 +342,7 @@ async function updateJobCompleted(
   jobId: string,
   filePath: string,
   fileName: string,
-  totalRecords: number,
+  totalRecords: number
 ): Promise<void> {
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + 7);
@@ -369,7 +373,14 @@ async function updateJobCompleted(
        updated_at = NOW()
      WHERE id = $5::uuid
        AND job_type = $6`,
-    [filePath, fileName, totalRecords, expiresAt.toISOString(), jobId, LEGACY_MARSHMALLOW_EXPORT_JOB_TYPE],
+    [
+      filePath,
+      fileName,
+      totalRecords,
+      expiresAt.toISOString(),
+      jobId,
+      LEGACY_MARSHMALLOW_EXPORT_JOB_TYPE,
+    ]
   );
 }
 
@@ -380,7 +391,7 @@ async function updateJobFailed(
   prisma: PrismaClient,
   schemaName: string,
   jobId: string,
-  errorMessage: string,
+  errorMessage: string
 ): Promise<void> {
   await executeMarshmallowJobUpdate(
     prisma,
@@ -400,7 +411,7 @@ async function updateJobFailed(
        updated_at = NOW()
      WHERE id = $2::uuid
        AND job_type = $3`,
-    [errorMessage, jobId, LEGACY_MARSHMALLOW_EXPORT_JOB_TYPE],
+    [errorMessage, jobId, LEGACY_MARSHMALLOW_EXPORT_JOB_TYPE]
   );
 }
 
@@ -409,7 +420,7 @@ async function executeMarshmallowJobUpdate(
   currentSql: string,
   currentParams: unknown[],
   legacySql: string,
-  legacyParams: unknown[],
+  legacyParams: unknown[]
 ): Promise<void> {
   const currentUpdated = await prisma.$executeRawUnsafe(currentSql, ...currentParams);
   if (currentUpdated > 0) {

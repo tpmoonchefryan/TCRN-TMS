@@ -1,10 +1,11 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 // Security Module Integration Tests
-
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+
+import { PrismaClient } from '@tcrn/database';
 import {
   createLocalizedText,
   createTestTenantFixture,
@@ -16,7 +17,6 @@ import {
 import { AppModule } from '../../src/app.module';
 import { TokenService } from '../../src/modules/auth/token.service';
 import { bootstrapTestApp } from '../../src/testing/bootstrap-test-app';
-import { PrismaClient } from '@tcrn/database';
 
 describe('Security Integration Tests', () => {
   let app: INestApplication;
@@ -28,9 +28,7 @@ describe('Security Integration Tests', () => {
   let viewerUser: TestUser;
 
   const withAuth = (req: request.Test) =>
-    req
-      .set('Authorization', `Bearer ${accessToken}`)
-      .set('X-Tenant-ID', tenantFixture.tenant.id);
+    req.set('Authorization', `Bearer ${accessToken}`).set('X-Tenant-ID', tenantFixture.tenant.id);
 
   const withViewerAuth = (req: request.Test) =>
     req
@@ -46,17 +44,14 @@ describe('Security Integration Tests', () => {
     await bootstrapTestApp(app);
     prisma = new PrismaClient();
     tenantFixture = await createTestTenantFixture(prisma, 'security');
-    testUser = await createTestUserInTenant(
-      prisma,
-      tenantFixture,
-      `security_user_${Date.now()}`,
-      ['ADMIN'],
-    );
+    testUser = await createTestUserInTenant(prisma, tenantFixture, `security_user_${Date.now()}`, [
+      'ADMIN',
+    ]);
     viewerUser = await createTestUserInTenant(
       prisma,
       tenantFixture,
       `security_viewer_${Date.now()}`,
-      ['VIEWER'],
+      ['VIEWER']
     );
 
     const tokenService = moduleFixture.get(TokenService);
@@ -84,9 +79,7 @@ describe('Security Integration Tests', () => {
 
   describe('Rate Limiting', () => {
     it('should include rate limit headers', async () => {
-      const response = await request(app.getHttpServer())
-        .get('/api/v1/health')
-        .expect(200);
+      const response = await request(app.getHttpServer()).get('/api/v1/health').expect(200);
 
       expect(response.body.success).toBe(true);
     });
@@ -101,8 +94,8 @@ describe('Security Integration Tests', () => {
           .set('X-Forwarded-For', `203.0.113.${i + 10}`);
         responses.push(response);
       }
-      
-      responses.forEach(response => {
+
+      responses.forEach((response) => {
         expect(response.status).toBe(200);
       });
     });
@@ -112,8 +105,7 @@ describe('Security Integration Tests', () => {
     it('should generate fingerprint for authenticated user', async () => {
       const response = await withAuth(
         request(app.getHttpServer()).post('/api/v1/security/fingerprint')
-      )
-        .expect(200);
+      ).expect(200);
 
       expect(response.body.success).toBe(true);
       expect(response.body.data.fingerprint).toBeDefined();
@@ -122,9 +114,7 @@ describe('Security Integration Tests', () => {
     });
 
     it('should require authentication', async () => {
-      await request(app.getHttpServer())
-        .post('/api/v1/security/fingerprint')
-        .expect(401);
+      await request(app.getHttpServer()).post('/api/v1/security/fingerprint').expect(401);
     });
   });
 
@@ -139,13 +129,13 @@ describe('Security Integration Tests', () => {
     });
 
     it('rejects a viewer on RBAC-protected security management endpoints', async () => {
-      await withViewerAuth(
-        request(app.getHttpServer()).get('/api/v1/rate-limit/stats')
-      ).expect(403);
+      await withViewerAuth(request(app.getHttpServer()).get('/api/v1/rate-limit/stats')).expect(
+        403
+      );
 
-      await withViewerAuth(
-        request(app.getHttpServer()).get('/api/v1/blocklist-entries')
-      ).expect(403);
+      await withViewerAuth(request(app.getHttpServer()).get('/api/v1/blocklist-entries')).expect(
+        403
+      );
     });
   });
 
@@ -154,9 +144,7 @@ describe('Security Integration Tests', () => {
       const startDate = '2026-05-01T00:00:00.000Z';
       const endDate = '2026-05-02T00:00:00.000Z';
 
-      const response = await withAuth(
-        request(app.getHttpServer()).get('/api/v1/compliance/report')
-      )
+      const response = await withAuth(request(app.getHttpServer()).get('/api/v1/compliance/report'))
         .query({ startDate, endDate })
         .expect(200);
 
@@ -168,9 +156,7 @@ describe('Security Integration Tests', () => {
       expect(response.body.data.auditMetrics).toBeDefined();
       expect(response.body.data.integrationMetrics).toBeDefined();
 
-      await withAuth(
-        request(app.getHttpServer()).get('/api/v1/api/v1/compliance/report')
-      )
+      await withAuth(request(app.getHttpServer()).get('/api/v1/api/v1/compliance/report'))
         .query({ startDate, endDate })
         .expect(404);
     });
@@ -182,8 +168,7 @@ describe('Security Integration Tests', () => {
     it('should list blocklist entries', async () => {
       const response = await withAuth(
         request(app.getHttpServer()).get('/api/v1/blocklist-entries')
-      )
-        .expect(200);
+      ).expect(200);
 
       expect(response.body.success).toBe(true);
       expect(Array.isArray(response.body.data.items)).toBe(true);
@@ -228,8 +213,7 @@ describe('Security Integration Tests', () => {
       if (createdEntryId) {
         const response = await withAuth(
           request(app.getHttpServer()).delete(`/api/v1/blocklist-entries/${createdEntryId}`)
-        )
-          .expect(200);
+        ).expect(200);
 
         expect(response.body.success).toBe(true);
         expect(response.body.data.deleted).toBe(true);
@@ -243,17 +227,14 @@ describe('Security Integration Tests', () => {
     it('should list IP access rules', async () => {
       const response = await withAuth(
         request(app.getHttpServer()).get('/api/v1/ip-access-rules')
-      )
-        .expect(200);
+      ).expect(200);
 
       expect(response.body.success).toBe(true);
       expect(Array.isArray(response.body.data.items)).toBe(true);
     });
 
     it('should create IP whitelist rule', async () => {
-      const response = await withAuth(
-        request(app.getHttpServer()).post('/api/v1/ip-access-rules')
-      )
+      const response = await withAuth(request(app.getHttpServer()).post('/api/v1/ip-access-rules'))
         .send({
           ruleType: 'whitelist',
           ipPattern: '192.168.1.100',
@@ -285,8 +266,7 @@ describe('Security Integration Tests', () => {
       if (createdRuleId) {
         const response = await withAuth(
           request(app.getHttpServer()).delete(`/api/v1/ip-access-rules/${createdRuleId}`)
-        )
-          .expect(200);
+        ).expect(200);
 
         expect(response.body.success).toBe(true);
         expect(response.body.data.deleted).toBe(true);
@@ -317,9 +297,7 @@ describe('Security Integration Tests', () => {
 
   describe('Security Headers', () => {
     it('should return security headers', async () => {
-      const response = await request(app.getHttpServer())
-        .get('/api/v1/health')
-        .expect(200);
+      const response = await request(app.getHttpServer()).get('/api/v1/health').expect(200);
 
       // Check for common security headers
       // Note: These depend on middleware configuration
@@ -329,10 +307,9 @@ describe('Security Integration Tests', () => {
 
   describe('Fingerprint Header Injection', () => {
     it('should inject fingerprint headers for authenticated requests', async () => {
-      const response = await withAuth(
-        request(app.getHttpServer()).get('/api/v1/users/me')
-      )
-        .expect(200);
+      const response = await withAuth(request(app.getHttpServer()).get('/api/v1/users/me')).expect(
+        200
+      );
 
       // Fingerprint headers should be injected
       expect(response.headers['x-tcrn-fp']).toBeDefined();

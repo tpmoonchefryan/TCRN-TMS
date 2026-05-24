@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import type { LocalizedText } from '@tcrn/shared';
 
 import {
@@ -116,7 +115,7 @@ export const TALENT_SELECT_FIELDS = `
 `;
 
 export const getReadinessAction = (
-  lifecycleStatus: TalentLifecycleStatus,
+  lifecycleStatus: TalentLifecycleStatus
 ): TalentPublishReadiness['recommendedAction'] => {
   if (lifecycleStatus === 'draft') {
     return 'publish';
@@ -130,14 +129,7 @@ export const getReadinessAction = (
 };
 
 export const buildTalentListQuery = (options: TalentListOptions = {}) => {
-  const {
-    page = 1,
-    pageSize = 20,
-    subsidiaryId,
-    search,
-    isActive,
-    sort,
-  } = options;
+  const { page = 1, pageSize = 20, subsidiaryId, search, isActive, sort } = options;
   const offset = (page - 1) * pageSize;
   let whereClause = `lifecycle_status <> 'disabled'`;
   const params: unknown[] = [];

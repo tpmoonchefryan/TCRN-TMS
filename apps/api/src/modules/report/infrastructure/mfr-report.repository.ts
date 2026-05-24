@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable } from '@nestjs/common';
 
 import { DatabaseService } from '../../database';
@@ -13,23 +12,21 @@ interface MfrTalentRecord {
 
 @Injectable()
 export class MfrReportRepository {
-  constructor(
-    private readonly databaseService: DatabaseService,
-  ) {}
+  constructor(private readonly databaseService: DatabaseService) {}
 
   private get prisma() {
     return this.databaseService.getPrisma();
   }
 
-  async findTalent(
-    tenantSchema: string,
-    talentId: string,
-  ): Promise<MfrTalentRecord | null> {
-    const talents = await this.prisma.$queryRawUnsafe<MfrTalentRecord[]>(`
+  async findTalent(tenantSchema: string, talentId: string): Promise<MfrTalentRecord | null> {
+    const talents = await this.prisma.$queryRawUnsafe<MfrTalentRecord[]>(
+      `
       SELECT id, profile_store_id
       FROM "${tenantSchema}".talent
       WHERE id = $1::uuid
-    `, talentId);
+    `,
+      talentId
+    );
 
     return talents[0] ?? null;
   }
@@ -37,10 +34,11 @@ export class MfrReportRepository {
   async countMembershipRows(
     tenantSchema: string,
     talentId: string,
-    filters: MfrFilterCriteriaDto,
+    filters: MfrFilterCriteriaDto
   ): Promise<number> {
     const { whereClause, params } = this.buildMembershipWhereQuery(talentId, filters);
-    const countResult = await this.prisma.$queryRawUnsafe<Array<{ count: bigint }>>(`
+    const countResult = await this.prisma.$queryRawUnsafe<Array<{ count: bigint }>>(
+      `
       SELECT COUNT(*) AS count
       FROM "${tenantSchema}".membership_record mr
       JOIN "${tenantSchema}".customer_profile cp ON cp.id = mr.customer_id
@@ -50,7 +48,9 @@ export class MfrReportRepository {
       JOIN "${tenantSchema}".membership_class mc ON mc.id = mt.membership_class_id
       LEFT JOIN "${tenantSchema}".customer_status cs ON cs.id = cp.status_id
       WHERE ${whereClause}
-    `, ...params);
+    `,
+      ...params
+    );
 
     return Number(countResult[0]?.count || 0);
   }
@@ -59,11 +59,12 @@ export class MfrReportRepository {
     tenantSchema: string,
     talentId: string,
     filters: MfrFilterCriteriaDto,
-    previewLimit: number,
+    previewLimit: number
   ): Promise<RawMfrPreviewRecord[]> {
     const { whereClause, params } = this.buildMembershipWhereQuery(talentId, filters);
 
-    return this.prisma.$queryRawUnsafe<RawMfrPreviewRecord[]>(`
+    return this.prisma.$queryRawUnsafe<RawMfrPreviewRecord[]>(
+      `
       SELECT
         cp.nickname,
         sp.display_name AS platform_display_name,
@@ -81,16 +82,19 @@ export class MfrReportRepository {
       WHERE ${whereClause}
       ORDER BY mr.created_at DESC
       LIMIT ${previewLimit}
-    `, ...params);
+    `,
+      ...params
+    );
   }
 
   async findMatchingCustomerIds(
     tenantSchema: string,
     talentId: string,
-    filters: MfrFilterCriteriaDto,
+    filters: MfrFilterCriteriaDto
   ): Promise<string[]> {
     const { whereClause, params } = this.buildMembershipWhereQuery(talentId, filters);
-    const records = await this.prisma.$queryRawUnsafe<Array<{ customer_id: string }>>(`
+    const records = await this.prisma.$queryRawUnsafe<Array<{ customer_id: string }>>(
+      `
       SELECT DISTINCT cp.id AS customer_id
       FROM "${tenantSchema}".membership_record mr
       JOIN "${tenantSchema}".customer_profile cp ON cp.id = mr.customer_id
@@ -101,14 +105,16 @@ export class MfrReportRepository {
       LEFT JOIN "${tenantSchema}".customer_status cs ON cs.id = cp.status_id
       WHERE ${whereClause}
       ORDER BY cp.id ASC
-    `, ...params);
+    `,
+      ...params
+    );
 
     return records.map((record) => record.customer_id);
   }
 
   private buildMembershipWhereQuery(
     talentId: string,
-    filters: MfrFilterCriteriaDto,
+    filters: MfrFilterCriteriaDto
   ): { whereClause: string; params: unknown[] } {
     const conditions: string[] = ['cp.talent_id = $1::uuid'];
     const params: unknown[] = [talentId];

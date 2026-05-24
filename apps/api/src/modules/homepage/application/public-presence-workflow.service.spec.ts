@@ -1,3 +1,5 @@
+import { describe, expect, it, vi } from 'vitest';
+
 import {
   buildBlankPublicPresenceAssetSourceBundle,
   buildPublicPresenceComponentAssetManifest,
@@ -9,8 +11,8 @@ import {
   type PublicPresenceDocument,
   type RequestContext,
 } from '@tcrn/shared';
-import { describe, expect, it, vi } from 'vitest';
 
+import { TalentService } from '../../talent/talent.service';
 import type {
   PublicPresenceDocumentVersionRecord,
   PublicPresencePortalRecord,
@@ -18,7 +20,6 @@ import type {
 import { HomepageAdminRepository } from '../infrastructure/homepage-admin.repository';
 import { PublicPresenceFoundationRepository } from '../infrastructure/public-presence-foundation.repository';
 import { CdnPurgeService } from '../services/cdn-purge.service';
-import { TalentService } from '../../talent/talent.service';
 import { PublicPresenceAssetService } from './public-presence-asset.service';
 import { PublicPresenceStudioService } from './public-presence-studio.service';
 import { PublicPresenceWorkflowService } from './public-presence-workflow.service';
@@ -155,7 +156,7 @@ function createPortalRecord(): PublicPresencePortalRecord {
 
 function createVersionRecord(
   state: string = 'draft',
-  templateId: 'activeTalentHub' | 'debutReveal' = 'activeTalentHub',
+  templateId: 'activeTalentHub' | 'debutReveal' = 'activeTalentHub'
 ): PublicPresenceDocumentVersionRecord {
   const templateText = getPublicPresenceTemplateSeedText(templateId);
   const templateManifest = buildPublicPresenceTemplateAssetManifest(templateId, {
@@ -194,9 +195,9 @@ function createVersionRecord(
     documentSchemaVersion: '1.0',
     templateId,
     templateAssetPin,
-    document: (
-      templateId === 'debutReveal' ? debutRevealDocument : activeHubDocument
-    ) as unknown as Record<string, unknown>,
+    document: (templateId === 'debutReveal'
+      ? debutRevealDocument
+      : activeHubDocument) as unknown as Record<string, unknown>,
     documentState: state,
     contentHashAlgorithm: 'sha256',
     contentHash: 'hash-1',
@@ -210,9 +211,7 @@ function createVersionRecord(
   };
 }
 
-function createComponentAssetEntry(
-  componentType: 'SocialLinks',
-): PublicPresenceAssetListEntry {
+function createComponentAssetEntry(componentType: 'SocialLinks'): PublicPresenceAssetListEntry {
   const text = getPublicPresenceComponentSeedText(componentType);
   const manifest = buildPublicPresenceComponentAssetManifest(componentType, {
     assetCode: `${componentType.toLowerCase()}-code`,
@@ -314,32 +313,34 @@ describe('PublicPresenceWorkflowService', () => {
     } as unknown as PublicPresenceFoundationRepository;
 
     const publicPresenceStudioService = {
-      getWorkspace: vi.fn().mockImplementation(
-        async (
-          _talentId: string,
-          _tenantSchema: string,
-          templateId: string | null | undefined,
-        ) => ({
-          homepagePolicy: {
-            allowedTemplateIds: ['activeTalentHub', 'debutReveal'],
-            blockedReasons: [],
-            status: 'ready',
-          },
-          templateAssets: [
-            {
-              assetId: TEMPLATE_FIXTURES.activeTalentHub.assetId,
-              isSelectable: true,
-              templateId: 'activeTalentHub',
+      getWorkspace: vi
+        .fn()
+        .mockImplementation(
+          async (
+            _talentId: string,
+            _tenantSchema: string,
+            templateId: string | null | undefined
+          ) => ({
+            homepagePolicy: {
+              allowedTemplateIds: ['activeTalentHub', 'debutReveal'],
+              blockedReasons: [],
+              status: 'ready',
             },
-            {
-              assetId: TEMPLATE_FIXTURES.debutReveal.assetId,
-              isSelectable: true,
-              templateId: 'debutReveal',
-            },
-          ],
-          selectedTemplateId: templateId ?? 'activeTalentHub',
-        }),
-      ),
+            templateAssets: [
+              {
+                assetId: TEMPLATE_FIXTURES.activeTalentHub.assetId,
+                isSelectable: true,
+                templateId: 'activeTalentHub',
+              },
+              {
+                assetId: TEMPLATE_FIXTURES.debutReveal.assetId,
+                isSelectable: true,
+                templateId: 'debutReveal',
+              },
+            ],
+            selectedTemplateId: templateId ?? 'activeTalentHub',
+          })
+        ),
     } as unknown as PublicPresenceStudioService;
 
     const publicPresenceAssetService = {
@@ -366,7 +367,7 @@ describe('PublicPresenceWorkflowService', () => {
         publicPresenceStudioService,
         publicPresenceAssetService,
         cdnPurgeService,
-        talentService,
+        talentService
       ),
       homepageAdminRepository,
       publicPresenceFoundationRepository,
@@ -382,15 +383,13 @@ describe('PublicPresenceWorkflowService', () => {
 
     await service.submitForReview('talent-1', context, 'hash-1');
 
-    expect(
-      publicPresenceFoundationRepository.updateDocumentWorkflowState,
-    ).toHaveBeenCalledWith(
+    expect(publicPresenceFoundationRepository.updateDocumentWorkflowState).toHaveBeenCalledWith(
       'tenant_test',
       expect.objectContaining({
         eventType: 'submittedForReview',
         toDocumentState: 'inReview',
         versionId: 'draft-version-1',
-      }),
+      })
     );
   });
 
@@ -398,7 +397,7 @@ describe('PublicPresenceWorkflowService', () => {
     const { service, publicPresenceFoundationRepository } = createService();
 
     vi.mocked(
-      publicPresenceFoundationRepository.findLatestWorkflowEventByVersionAndType,
+      publicPresenceFoundationRepository.findLatestWorkflowEventByVersionAndType
     ).mockResolvedValue({
       id: 'event-1',
       actorId: 'reviewer-1',
@@ -413,61 +412,50 @@ describe('PublicPresenceWorkflowService', () => {
       versionId: 'draft-version-1',
     });
     vi.mocked(publicPresenceFoundationRepository.findDocumentVersionById).mockResolvedValue(
-      createVersionRecord('inReview'),
+      createVersionRecord('inReview')
     );
 
     await service.approve('talent-1', context, 'hash-1');
 
-    expect(
-      publicPresenceFoundationRepository.updateDocumentWorkflowState,
-    ).toHaveBeenCalledWith(
+    expect(publicPresenceFoundationRepository.updateDocumentWorkflowState).toHaveBeenCalledWith(
       'tenant_test',
       expect.objectContaining({
         actorId: 'reviewer-1',
         eventType: 'approved',
         toDocumentState: 'approved',
         versionId: 'draft-version-1',
-      }),
+      })
     );
   });
 
   it('publishes an approved version and purges the public route', async () => {
-    const {
-      service,
-      publicPresenceFoundationRepository,
-      cdnPurgeService,
-    } = createService();
+    const { service, publicPresenceFoundationRepository, cdnPurgeService } = createService();
 
     vi.mocked(publicPresenceFoundationRepository.findDocumentVersionById).mockResolvedValue(
-      createVersionRecord('approved'),
+      createVersionRecord('approved')
     );
 
     await service.publishNow('talent-1', context, 'hash-1');
 
-    expect(
-      publicPresenceFoundationRepository.publishVersionAndAssignLive,
-    ).toHaveBeenCalledWith(
+    expect(publicPresenceFoundationRepository.publishVersionAndAssignLive).toHaveBeenCalledWith(
       'tenant_test',
       expect.objectContaining({
         eventType: 'published',
         versionId: 'draft-version-1',
-      }),
+      })
     );
     expect(cdnPurgeService.purgeHomepage).toHaveBeenCalledWith('aki-home', undefined);
   });
 
   it('runs submit, approve, and publish atomically after direct-publish preflight passes', async () => {
-    const {
-      service,
-      publicPresenceFoundationRepository,
-    } = createService();
+    const { service, publicPresenceFoundationRepository } = createService();
 
     vi.mocked(publicPresenceFoundationRepository.findDocumentVersionById)
       .mockResolvedValueOnce(createVersionRecord('draft', 'debutReveal'))
       .mockResolvedValueOnce(createVersionRecord('inReview', 'debutReveal'))
       .mockResolvedValueOnce(createVersionRecord('approved', 'debutReveal'));
-    vi.mocked(publicPresenceFoundationRepository.findLatestVersionByTemplate)
-      .mockImplementation(async (_tenantSchema, _portalId, templateId, states) => {
+    vi.mocked(publicPresenceFoundationRepository.findLatestVersionByTemplate).mockImplementation(
+      async (_tenantSchema, _portalId, templateId, states) => {
         if (templateId !== 'activeTalentHub') {
           return null;
         }
@@ -477,81 +465,64 @@ describe('PublicPresenceWorkflowService', () => {
         }
 
         return createVersionRecord('approved', 'activeTalentHub');
-      });
+      }
+    );
 
     await service.publishNow('talent-1', context, 'hash-1');
 
-    expect(
-      publicPresenceFoundationRepository.updateDocumentWorkflowState,
-    ).toHaveBeenNthCalledWith(
+    expect(publicPresenceFoundationRepository.updateDocumentWorkflowState).toHaveBeenNthCalledWith(
       1,
       'tenant_test',
       expect.objectContaining({
         eventType: 'submittedForReview',
         toDocumentState: 'inReview',
         versionId: 'debut-version-1',
-      }),
+      })
     );
-    expect(
-      publicPresenceFoundationRepository.updateDocumentWorkflowState,
-    ).toHaveBeenNthCalledWith(
+    expect(publicPresenceFoundationRepository.updateDocumentWorkflowState).toHaveBeenNthCalledWith(
       2,
       'tenant_test',
       expect.objectContaining({
         eventType: 'approved',
         toDocumentState: 'approved',
         versionId: 'debut-version-1',
-      }),
+      })
     );
-    expect(
-      publicPresenceFoundationRepository.publishVersionAndAssignLive,
-    ).toHaveBeenCalledWith(
+    expect(publicPresenceFoundationRepository.publishVersionAndAssignLive).toHaveBeenCalledWith(
       'tenant_test',
       expect.objectContaining({
         eventType: 'published',
         versionId: 'debut-version-1',
-      }),
+      })
     );
   });
 
   it('rejects Debut direct publish before any workflow mutation when the Active Hub dependency is missing', async () => {
-    const {
-      service,
-      publicPresenceFoundationRepository,
-      talentService,
-    } = createService();
+    const { service, publicPresenceFoundationRepository, talentService } = createService();
 
     vi.mocked(publicPresenceFoundationRepository.findDocumentVersionById).mockResolvedValue(
-      createVersionRecord('draft', 'debutReveal'),
+      createVersionRecord('draft', 'debutReveal')
     );
-    vi.mocked(publicPresenceFoundationRepository.findLatestVersionByTemplate).mockResolvedValue(null);
+    vi.mocked(publicPresenceFoundationRepository.findLatestVersionByTemplate).mockResolvedValue(
+      null
+    );
 
-    await expect(
-      service.publishNow('talent-1', context, 'hash-1'),
-    ).rejects.toMatchObject({
+    await expect(service.publishNow('talent-1', context, 'hash-1')).rejects.toMatchObject({
       response: expect.objectContaining({
         message: 'Approve the always-on hub before scheduling the debut switch.',
       }),
     });
 
-    expect(
-      publicPresenceFoundationRepository.updateDocumentWorkflowState,
-    ).not.toHaveBeenCalled();
-    expect(
-      publicPresenceFoundationRepository.publishVersionAndAssignLive,
-    ).not.toHaveBeenCalled();
+    expect(publicPresenceFoundationRepository.updateDocumentWorkflowState).not.toHaveBeenCalled();
+    expect(publicPresenceFoundationRepository.publishVersionAndAssignLive).not.toHaveBeenCalled();
     expect(talentService.publish).not.toHaveBeenCalled();
   });
 
   it('auto-publishes a draft talent lifecycle before releasing the homepage', async () => {
-    const {
-      service,
-      publicPresenceFoundationRepository,
-      talentService,
-    } = createService();
+    const { service, publicPresenceFoundationRepository, talentService } = createService();
 
     vi.mocked(publicPresenceFoundationRepository.findDocumentVersionById).mockResolvedValue(
-      createVersionRecord('approved'),
+      createVersionRecord('approved')
     );
     vi.mocked(talentService.findById).mockResolvedValue({
       id: 'talent-1',
@@ -561,11 +532,6 @@ describe('PublicPresenceWorkflowService', () => {
 
     await service.publishNow('talent-1', context, 'hash-1');
 
-    expect(talentService.publish).toHaveBeenCalledWith(
-      'talent-1',
-      'tenant_test',
-      7,
-      'reviewer-1',
-    );
+    expect(talentService.publish).toHaveBeenCalledWith('talent-1', 'tenant_test', 7, 'reviewer-1');
   });
 });

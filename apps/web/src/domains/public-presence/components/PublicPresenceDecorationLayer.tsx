@@ -15,7 +15,7 @@ export interface PublicPresenceDecorationLayerProps extends HTMLAttributes<HTMLD
 
 function shouldShowDecoration(
   density: PublicPresenceDecorationDensity,
-  minimum: PublicPresenceDecorationDensity,
+  minimum: PublicPresenceDecorationDensity
 ) {
   const order: Record<PublicPresenceDecorationDensity, number> = {
     none: 0,
@@ -45,7 +45,7 @@ export function PublicPresenceDecorationLayer({
       className={publicPresenceClassNames(
         'pointer-events-none absolute inset-0 overflow-hidden',
         getPublicPresenceDecorationDensityClasses(density),
-        className,
+        className
       )}
       {...props}
       aria-hidden={ariaHidden}
@@ -53,13 +53,15 @@ export function PublicPresenceDecorationLayer({
       <span
         className={publicPresenceClassNames(
           'absolute left-6 top-12 hidden h-28 w-40 -rotate-6 rounded-lg border border-rose-100 bg-white/50 shadow-sm md:block',
-          animated && 'motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-left-4 motion-safe:duration-500 motion-reduce:animate-none',
+          animated &&
+            'motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-left-4 motion-safe:duration-500 motion-reduce:animate-none'
         )}
       />
       <span
         className={publicPresenceClassNames(
           'absolute right-8 top-24 hidden h-16 w-32 rotate-6 rounded-lg border border-dashed border-sky-200 bg-sky-50/40 lg:block',
-          animated && 'motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-right-4 motion-safe:duration-500 motion-reduce:animate-none',
+          animated &&
+            'motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-right-4 motion-safe:duration-500 motion-reduce:animate-none'
         )}
       />
       {shouldShowDecoration(density, 'standard') ? (
@@ -71,7 +73,7 @@ export function PublicPresenceDecorationLayer({
       {shouldShowDecoration(density, 'festive') ? (
         <>
           <span className="absolute left-[46%] top-10 hidden h-3 w-3 rotate-45 rounded-sm bg-rose-300/50 md:block" />
-          <span className="absolute right-[28%] bottom-16 hidden h-3 w-3 rotate-45 rounded-sm bg-sky-300/50 md:block" />
+          <span className="absolute bottom-16 right-[28%] hidden h-3 w-3 rotate-45 rounded-sm bg-sky-300/50 md:block" />
         </>
       ) : null}
     </div>

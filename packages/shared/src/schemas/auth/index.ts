@@ -1,6 +1,5 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 // Auth Module Zod Schemas - Validation rules for authentication endpoints
-
 import { z } from 'zod';
 
 import { SUPPORTED_UI_LOCALES } from '../../constants/locale';
@@ -37,7 +36,10 @@ export type ForgotPasswordInput = z.infer<typeof ForgotPasswordSchema>;
 // ============================================================================
 export const TotpVerifySchema = z.object({
   sessionToken: z.string().min(1, 'Session token is required'),
-  code: z.string().length(6, 'TOTP code must be 6 digits').regex(/^\d{6}$/, 'TOTP code must be 6 digits'),
+  code: z
+    .string()
+    .length(6, 'TOTP code must be 6 digits')
+    .regex(/^\d{6}$/, 'TOTP code must be 6 digits'),
 });
 
 export type TotpVerifyInput = z.infer<typeof TotpVerifySchema>;
@@ -126,7 +128,10 @@ export type UpdateUserProfileInput = z.infer<typeof UpdateUserProfileSchema>;
 // TOTP Enable Schema
 // ============================================================================
 export const TotpEnableSchema = z.object({
-  code: z.string().length(6, 'TOTP code must be 6 digits').regex(/^\d{6}$/, 'TOTP code must be 6 digits'),
+  code: z
+    .string()
+    .length(6, 'TOTP code must be 6 digits')
+    .regex(/^\d{6}$/, 'TOTP code must be 6 digits'),
 });
 
 export type TotpEnableInput = z.infer<typeof TotpEnableSchema>;

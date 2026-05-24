@@ -1,8 +1,8 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+import * as crypto from 'crypto';
 
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import * as crypto from 'crypto';
 
 @Injectable()
 export class FingerprintService {
@@ -14,7 +14,7 @@ export class FingerprintService {
   constructor(private readonly configService: ConfigService) {
     this.secretKey = this.configService.get<string>(
       'FINGERPRINT_SECRET_KEY',
-      'dev-fingerprint-key-min-32-chars',
+      'dev-fingerprint-key-min-32-chars'
     );
     this.previousKey = this.configService.get<string>('FINGERPRINT_PREVIOUS_KEY') || null;
     this.keyVersion = this.configService.get<string>('FINGERPRINT_KEY_VERSION', 'v1');
@@ -39,7 +39,7 @@ export class FingerprintService {
    */
   generateVersionedFingerprint(
     tenantId: string,
-    userId: string,
+    userId: string
   ): { fingerprint: string; version: string } {
     return {
       fingerprint: this.generateFingerprint(tenantId, userId),
@@ -61,10 +61,7 @@ export class FingerprintService {
     const expected = this.generateFingerprint(tenantId, userId);
 
     try {
-      return crypto.timingSafeEqual(
-        Buffer.from(fingerprint, 'hex'),
-        Buffer.from(expected, 'hex'),
-      );
+      return crypto.timingSafeEqual(Buffer.from(fingerprint, 'hex'), Buffer.from(expected, 'hex'));
     } catch {
       return false;
     }
@@ -76,7 +73,7 @@ export class FingerprintService {
   verifyWithRotation(
     fingerprint: string,
     tenantId: string,
-    userId: string,
+    userId: string
   ): { valid: boolean; keyVersion: string } {
     // Try current key first
     if (this.verifyFingerprint(fingerprint, tenantId, userId)) {
@@ -101,7 +98,7 @@ export class FingerprintService {
     fingerprint: string,
     tenantId: string,
     userId: string,
-    key: string,
+    key: string
   ): boolean {
     const payload = `${tenantId}|${userId}`;
     const hmac = crypto.createHmac('sha256', key);
@@ -109,10 +106,7 @@ export class FingerprintService {
     const expected = hmac.digest('hex');
 
     try {
-      return crypto.timingSafeEqual(
-        Buffer.from(fingerprint, 'hex'),
-        Buffer.from(expected, 'hex'),
-      );
+      return crypto.timingSafeEqual(Buffer.from(fingerprint, 'hex'), Buffer.from(expected, 'hex'));
     } catch {
       return false;
     }

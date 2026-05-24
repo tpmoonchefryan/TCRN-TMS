@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import type { PublicPresenceDocument } from '@tcrn/shared';
 
 import type { PublicPresenceDocumentVersionRecord } from '../domain/public-presence-foundation.policy';
@@ -79,7 +80,7 @@ function createDocument(templateId: 'activeTalentHub' | 'debutReveal'): PublicPr
 
 function createVersionRecord(
   templateId: 'activeTalentHub' | 'debutReveal',
-  documentState: string,
+  documentState: string
 ): PublicPresenceDocumentVersionRecord {
   return {
     contentHash: `${templateId}-${documentState}-hash`,
@@ -105,7 +106,7 @@ function createVersionRecord(
 describe('public-presence-release-readiness', () => {
   it('extracts the reveal auto-switch timestamp from debut versions', () => {
     expect(extractRevealAutoSwitchAt(createVersionRecord('debutReveal', 'draft'))).toBe(
-      '2030-05-15T10:00:00.000Z',
+      '2030-05-15T10:00:00.000Z'
     );
     expect(extractRevealAutoSwitchAt(createVersionRecord('activeTalentHub', 'draft'))).toBeNull();
   });

@@ -101,9 +101,7 @@ describe('LokiQueryService', () => {
                 app: 'tcrn-tms',
                 stream: 'technical_event_log',
               },
-              values: [
-                ['1713085200000000000', '{"message":"timeout","requestId":"req_123"}'],
-              ],
+              values: [['1713085200000000000', '{"message":"timeout","requestId":"req_123"}']],
             },
           ],
           stats: { inspectedStreams: 1 },
@@ -122,7 +120,7 @@ describe('LokiQueryService', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(String(fetchMock.mock.calls[0]?.[0])).toContain('/loki/api/v1/query_range?');
     expect(requestUrl.searchParams.get('query')).toBe(
-      '{app="tcrn-tms", stream="technical_event_log"} |= "timeout"',
+      '{app="tcrn-tms", stream="technical_event_log"} |= "timeout"'
     );
     expect(result).toEqual({
       entries: [
@@ -158,9 +156,7 @@ describe('LokiQueryService', () => {
 
     const service = new LokiQueryService(disabledConfigService as never);
 
-    await expect(
-      service.query({ keyword: 'timeout' }),
-    ).resolves.toEqual({ entries: [] });
+    await expect(service.query({ keyword: 'timeout' })).resolves.toEqual({ entries: [] });
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
@@ -185,7 +181,7 @@ describe('LokiQueryService', () => {
     const requestUrl = new URL(String(fetchMock.mock.calls[0]?.[0]));
 
     expect(requestUrl.searchParams.get('query')).toBe(
-      '{app="tcrn-tms", stream="integration_log"} |= "retry"',
+      '{app="tcrn-tms", stream="integration_log"} |= "retry"'
     );
   });
 
@@ -198,8 +194,8 @@ describe('LokiQueryService', () => {
 
     const service = new LokiQueryService(enabledConfigService as never);
 
-    await expect(
-      service.queryChangeLogs({ objectType: 'customer', limit: 10 }),
-    ).resolves.toEqual({ entries: [] });
+    await expect(service.queryChangeLogs({ objectType: 'customer', limit: 10 })).resolves.toEqual({
+      entries: [],
+    });
   });
 });

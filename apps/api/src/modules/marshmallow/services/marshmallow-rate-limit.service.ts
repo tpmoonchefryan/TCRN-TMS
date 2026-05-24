@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable } from '@nestjs/common';
 
 import { RedisService } from '../../redis';
@@ -26,7 +25,7 @@ export class MarshmallowRateLimitService {
     configId: string,
     ip: string,
     fingerprint: string,
-    config: RateLimitConfig,
+    config: RateLimitConfig
   ): Promise<RateLimitResult> {
     const windowSeconds = config.rateLimitWindowHours * 3600;
 
@@ -92,7 +91,11 @@ export class MarshmallowRateLimitService {
   /**
    * Get current rate limit status
    */
-  async getStatus(configId: string, ip: string, fingerprint: string): Promise<{
+  async getStatus(
+    configId: string,
+    ip: string,
+    fingerprint: string
+  ): Promise<{
     ipCount: number;
     fpCount: number;
     globalCount: number;

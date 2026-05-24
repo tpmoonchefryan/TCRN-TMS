@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import type { LocalizedText } from '@tcrn/shared';
 
 import { type OwnerType } from '../dto/integration.dto';
@@ -64,12 +63,12 @@ function getDefinitionKey(extraData: Record<string, unknown> | null) {
 export const isSameAdapterOwner = (
   ownerType: string | null,
   ownerId: string | null,
-  scope: IntegrationAdapterOwnerScope,
+  scope: IntegrationAdapterOwnerScope
 ) => ownerType === scope.ownerType && ownerId === scope.ownerId;
 
 export const mapIntegrationAdapterListItem = (
   adapter: IntegrationAdapterListRow,
-  scope: IntegrationAdapterOwnerScope,
+  scope: IntegrationAdapterOwnerScope
 ) => ({
   id: adapter.id,
   ownerType: adapter.ownerType,
@@ -95,7 +94,7 @@ export const mapIntegrationAdapterListItem = (
 
 export const mapIntegrationAdapterDetail = (
   adapter: IntegrationAdapterDetailRow,
-  configs: IntegrationAdapterConfigRow[],
+  configs: IntegrationAdapterConfigRow[]
 ) => ({
   id: adapter.id,
   ownerType: adapter.ownerType,

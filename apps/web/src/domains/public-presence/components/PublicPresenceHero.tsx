@@ -1,9 +1,4 @@
-import {
-  createElement,
-  type CSSProperties,
-  type HTMLAttributes,
-  type ReactNode,
-} from 'react';
+import { createElement, type CSSProperties, type HTMLAttributes, type ReactNode } from 'react';
 
 import {
   getPublicPresenceMotionClasses,
@@ -61,14 +56,14 @@ export function PublicPresenceHero({
             : 'grid gap-8 lg:grid-cols-[minmax(0,1.08fr)_minmax(18rem,0.72fr)] lg:items-center'
           : 'max-w-3xl',
         getPublicPresenceMotionClasses(motion),
-        className,
+        className
       )}
       {...props}
     >
       <div
         className={publicPresenceClassNames(
           'space-y-5',
-          hasMedia && mediaPlacement === 'left' && !useMobileLayout && 'lg:order-2',
+          hasMedia && mediaPlacement === 'left' && !useMobileLayout && 'lg:order-2'
         )}
       >
         {badge ? <div className="flex flex-wrap items-center gap-2">{badge}</div> : null}
@@ -82,13 +77,18 @@ export function PublicPresenceHero({
                 useMobileLayout
                   ? 'text-4xl font-semibold leading-tight'
                   : 'text-4xl font-semibold leading-tight sm:text-5xl',
-                publicPresenceTokens.text.primary,
+                publicPresenceTokens.text.primary
               ),
             },
-            title,
+            title
           )}
           {description ? (
-            <div className={publicPresenceClassNames('max-w-3xl text-base leading-8', publicPresenceTokens.text.secondary)}>
+            <div
+              className={publicPresenceClassNames(
+                'max-w-3xl text-base leading-8',
+                publicPresenceTokens.text.secondary
+              )}
+            >
               {description}
             </div>
           ) : null}
@@ -100,7 +100,7 @@ export function PublicPresenceHero({
         <div
           className={publicPresenceClassNames(
             useMobileLayout ? 'flex justify-start' : 'flex justify-start lg:justify-end',
-            mediaPlacement === 'left' && !useMobileLayout && 'lg:order-1 lg:justify-start',
+            mediaPlacement === 'left' && !useMobileLayout && 'lg:order-1 lg:justify-start'
           )}
         >
           <div className="relative aspect-square w-full max-w-72 overflow-hidden rounded-lg border border-white/80 bg-white/60 shadow-[0_18px_40px_rgba(15,23,42,0.10)]">

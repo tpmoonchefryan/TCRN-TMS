@@ -1,5 +1,4 @@
 import 'reflect-metadata';
-
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -44,20 +43,18 @@ type ControllerClass = { prototype: object };
 
 const getResponseStatuses = (controllerClass: ControllerClass, methodName: string): string[] => {
   const prototype = controllerClass.prototype as Record<string, unknown>;
-  const metadata = Reflect.getMetadata(
-    API_RESPONSE_METADATA_KEY,
-    prototype[methodName],
-  ) as Record<string, unknown> | undefined;
+  const metadata = Reflect.getMetadata(API_RESPONSE_METADATA_KEY, prototype[methodName]) as
+    | Record<string, unknown>
+    | undefined;
 
   return Object.keys(metadata ?? {}).sort();
 };
 
 const getPathParamNames = (controllerClass: ControllerClass, methodName: string): string[] => {
   const prototype = controllerClass.prototype as Record<string, unknown>;
-  const metadata = Reflect.getMetadata(
-    API_PARAMETERS_METADATA_KEY,
-    prototype[methodName],
-  ) as Array<{ in?: string; name?: string }> | undefined;
+  const metadata = Reflect.getMetadata(API_PARAMETERS_METADATA_KEY, prototype[methodName]) as
+    | Array<{ in?: string; name?: string }>
+    | undefined;
 
   return (metadata ?? [])
     .filter((parameter) => parameter.in === 'path' && typeof parameter.name === 'string')
@@ -68,7 +65,7 @@ const getPathParamNames = (controllerClass: ControllerClass, methodName: string)
 const getDocumentedDtoProperties = (dtoClass: { prototype: object }): string[] => {
   const metadata = Reflect.getMetadata(
     API_MODEL_PROPERTIES_ARRAY_METADATA_KEY,
-    dtoClass.prototype,
+    dtoClass.prototype
   ) as string[] | undefined;
 
   return (metadata ?? []).map((property) => property.replace(/^:/, '')).sort();
@@ -77,21 +74,66 @@ const getDocumentedDtoProperties = (dtoClass: { prototype: object }): string[] =
 describe('Swagger organization resource family contract', () => {
   it('documents response status coverage for tenant routes', () => {
     expect(getResponseStatuses(TenantController, 'listTenants')).toEqual(['200', '401', '403']);
-    expect(getResponseStatuses(TenantController, 'createTenant')).toEqual(['201', '400', '401', '403']);
-    expect(getResponseStatuses(TenantController, 'getTenant')).toEqual(['200', '401', '403', '404']);
-    expect(getResponseStatuses(TenantController, 'updateTenant')).toEqual(['200', '401', '403', '404']);
-    expect(getResponseStatuses(TenantController, 'activateTenant')).toEqual(['200', '401', '403', '404']);
-    expect(getResponseStatuses(TenantController, 'deactivateTenant')).toEqual(['200', '401', '403', '404']);
+    expect(getResponseStatuses(TenantController, 'createTenant')).toEqual([
+      '201',
+      '400',
+      '401',
+      '403',
+    ]);
+    expect(getResponseStatuses(TenantController, 'getTenant')).toEqual([
+      '200',
+      '401',
+      '403',
+      '404',
+    ]);
+    expect(getResponseStatuses(TenantController, 'updateTenant')).toEqual([
+      '200',
+      '401',
+      '403',
+      '404',
+    ]);
+    expect(getResponseStatuses(TenantController, 'activateTenant')).toEqual([
+      '200',
+      '401',
+      '403',
+      '404',
+    ]);
+    expect(getResponseStatuses(TenantController, 'deactivateTenant')).toEqual([
+      '200',
+      '401',
+      '403',
+      '404',
+    ]);
   });
 
   it('documents response status coverage for subsidiary routes', () => {
     expect(getResponseStatuses(SubsidiaryController, 'list')).toEqual(['200', '401']);
-    expect(getResponseStatuses(SubsidiaryController, 'create')).toEqual(['201', '400', '401', '404']);
+    expect(getResponseStatuses(SubsidiaryController, 'create')).toEqual([
+      '201',
+      '400',
+      '401',
+      '404',
+    ]);
     expect(getResponseStatuses(SubsidiaryController, 'getById')).toEqual(['200', '401', '404']);
-    expect(getResponseStatuses(SubsidiaryController, 'update')).toEqual(['200', '400', '401', '404']);
+    expect(getResponseStatuses(SubsidiaryController, 'update')).toEqual([
+      '200',
+      '400',
+      '401',
+      '404',
+    ]);
     expect(getResponseStatuses(SubsidiaryController, 'move')).toEqual(['401', '409']);
-    expect(getResponseStatuses(SubsidiaryController, 'deactivate')).toEqual(['200', '400', '401', '404']);
-    expect(getResponseStatuses(SubsidiaryController, 'reactivate')).toEqual(['200', '400', '401', '404']);
+    expect(getResponseStatuses(SubsidiaryController, 'deactivate')).toEqual([
+      '200',
+      '400',
+      '401',
+      '404',
+    ]);
+    expect(getResponseStatuses(SubsidiaryController, 'reactivate')).toEqual([
+      '200',
+      '400',
+      '401',
+      '404',
+    ]);
   });
 
   it('documents response status coverage for talent routes', () => {
@@ -100,14 +142,54 @@ describe('Swagger organization resource family contract', () => {
     expect(getResponseStatuses(TalentController, 'getById')).toEqual(['200', '401', '404']);
     expect(getResponseStatuses(TalentController, 'update')).toEqual(['200', '400', '401', '404']);
     expect(getResponseStatuses(TalentController, 'move')).toEqual(['401', '409']);
-    expect(getResponseStatuses(TalentController, 'getPublishReadiness')).toEqual(['200', '401', '404']);
-    expect(getResponseStatuses(TalentController, 'publish')).toEqual(['200', '400', '401', '404', '409']);
-    expect(getResponseStatuses(TalentController, 'disable')).toEqual(['200', '400', '401', '404', '409']);
-    expect(getResponseStatuses(TalentController, 'reEnable')).toEqual(['200', '400', '401', '404', '409']);
-    expect(getResponseStatuses(TalentController, 'getCustomDomainConfig')).toEqual(['200', '401', '404']);
-    expect(getResponseStatuses(TalentController, 'setCustomDomain')).toEqual(['200', '400', '401', '404']);
-    expect(getResponseStatuses(TalentController, 'verifyCustomDomain')).toEqual(['200', '400', '401', '404']);
-    expect(getResponseStatuses(TalentController, 'updateServicePaths')).toEqual(['200', '401', '404']);
+    expect(getResponseStatuses(TalentController, 'getPublishReadiness')).toEqual([
+      '200',
+      '401',
+      '404',
+    ]);
+    expect(getResponseStatuses(TalentController, 'publish')).toEqual([
+      '200',
+      '400',
+      '401',
+      '404',
+      '409',
+    ]);
+    expect(getResponseStatuses(TalentController, 'disable')).toEqual([
+      '200',
+      '400',
+      '401',
+      '404',
+      '409',
+    ]);
+    expect(getResponseStatuses(TalentController, 'reEnable')).toEqual([
+      '200',
+      '400',
+      '401',
+      '404',
+      '409',
+    ]);
+    expect(getResponseStatuses(TalentController, 'getCustomDomainConfig')).toEqual([
+      '200',
+      '401',
+      '404',
+    ]);
+    expect(getResponseStatuses(TalentController, 'setCustomDomain')).toEqual([
+      '200',
+      '400',
+      '401',
+      '404',
+    ]);
+    expect(getResponseStatuses(TalentController, 'verifyCustomDomain')).toEqual([
+      '200',
+      '400',
+      '401',
+      '404',
+    ]);
+    expect(getResponseStatuses(TalentController, 'updateServicePaths')).toEqual([
+      '200',
+      '401',
+      '404',
+    ]);
     expect(getResponseStatuses(TalentController, 'updateSslMode')).toEqual(['200', '401', '404']);
   });
 
@@ -115,15 +197,54 @@ describe('Swagger organization resource family contract', () => {
     expect(getResponseStatuses(DictionaryController, 'listTypes')).toEqual(['200', '401']);
     expect(getResponseStatuses(DictionaryController, 'getByType')).toEqual(['200', '401', '404']);
     expect(getResponseStatuses(DictionaryController, 'getItem')).toEqual(['200', '401', '404']);
-    expect(getResponseStatuses(DictionaryController, 'createType')).toEqual(['201', '400', '401', '403']);
-    expect(getResponseStatuses(DictionaryController, 'updateType')).toEqual(['200', '400', '401', '403', '404']);
-    expect(getResponseStatuses(DictionaryController, 'createItem')).toEqual(['201', '400', '401', '403', '404']);
-    expect(getResponseStatuses(DictionaryController, 'updateItem')).toEqual(['200', '400', '401', '403', '404']);
-    expect(getResponseStatuses(DictionaryController, 'deactivateItem')).toEqual(['200', '400', '401', '403', '404']);
-    expect(getResponseStatuses(DictionaryController, 'reactivateItem')).toEqual(['200', '400', '401', '403', '404']);
+    expect(getResponseStatuses(DictionaryController, 'createType')).toEqual([
+      '201',
+      '400',
+      '401',
+      '403',
+    ]);
+    expect(getResponseStatuses(DictionaryController, 'updateType')).toEqual([
+      '200',
+      '400',
+      '401',
+      '403',
+      '404',
+    ]);
+    expect(getResponseStatuses(DictionaryController, 'createItem')).toEqual([
+      '201',
+      '400',
+      '401',
+      '403',
+      '404',
+    ]);
+    expect(getResponseStatuses(DictionaryController, 'updateItem')).toEqual([
+      '200',
+      '400',
+      '401',
+      '403',
+      '404',
+    ]);
+    expect(getResponseStatuses(DictionaryController, 'deactivateItem')).toEqual([
+      '200',
+      '400',
+      '401',
+      '403',
+      '404',
+    ]);
+    expect(getResponseStatuses(DictionaryController, 'reactivateItem')).toEqual([
+      '200',
+      '400',
+      '401',
+      '403',
+      '404',
+    ]);
 
     expect(getResponseStatuses(OrganizationController, 'getTree')).toEqual(['200', '401', '404']);
-    expect(getResponseStatuses(OrganizationController, 'getRootNodes')).toEqual(['200', '401', '404']);
+    expect(getResponseStatuses(OrganizationController, 'getRootNodes')).toEqual([
+      '200',
+      '401',
+      '404',
+    ]);
     expect(getResponseStatuses(OrganizationController, 'getChildren')).toEqual(['200', '401']);
     expect(getResponseStatuses(OrganizationController, 'getByPath')).toEqual(['200', '401', '404']);
   });
@@ -165,7 +286,12 @@ describe('Swagger organization resource family contract', () => {
   });
 
   it('documents request-body DTO properties for tenant and subsidiary mutations', () => {
-    expect(getDocumentedDtoProperties(CreateTenantDto)).toEqual(['adminUser', 'code', 'name', 'settings']);
+    expect(getDocumentedDtoProperties(CreateTenantDto)).toEqual([
+      'adminUser',
+      'code',
+      'name',
+      'settings',
+    ]);
     expect(getDocumentedDtoProperties(UpdateTenantDto)).toEqual(['name', 'settings', 'version']);
     expect(getDocumentedDtoProperties(DeactivateTenantDto)).toEqual(['reason']);
 

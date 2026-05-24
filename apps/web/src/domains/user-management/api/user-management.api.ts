@@ -1,7 +1,4 @@
-import type {
-  LocalizedText,
-  SupportedUiLocale,
-} from '@tcrn/shared';
+import type { LocalizedText, SupportedUiLocale } from '@tcrn/shared';
 
 import {
   type ApiSuccessEnvelope,
@@ -197,9 +194,7 @@ export interface UpdateSystemRoleInput {
 
 type RequestEnvelopeFn = <T>(path: string, init?: RequestInit) => Promise<ApiSuccessEnvelope<T>>;
 
-function buildQueryString(
-  input: Record<string, string | number | boolean | null | undefined>,
-) {
+function buildQueryString(input: Record<string, string | number | boolean | null | undefined>) {
   const params = new URLSearchParams();
 
   for (const [key, value] of Object.entries(input)) {
@@ -226,8 +221,8 @@ function buildJsonRequestInit(method: 'POST' | 'PATCH', body?: unknown): Request
 
 export async function listSystemUsers(
   requestEnvelope: RequestEnvelopeFn,
-  options: ListSystemUsersOptions = {},
-) : Promise<PaginatedResult<SystemUserListItem>> {
+  options: ListSystemUsersOptions = {}
+): Promise<PaginatedResult<SystemUserListItem>> {
   const page = options.page ?? 1;
   const pageSize = options.pageSize ?? 20;
   const query = buildQueryString({
@@ -247,7 +242,7 @@ export async function listSystemUsers(
 
 export async function createSystemUser(
   request: <T>(path: string, init?: RequestInit) => Promise<T>,
-  input: CreateSystemUserInput,
+  input: CreateSystemUserInput
 ) {
   return request<{
     id: string;
@@ -262,7 +257,7 @@ export async function createSystemUser(
 
 export async function readSystemUserDetail(
   request: <T>(path: string, init?: RequestInit) => Promise<T>,
-  systemUserId: string,
+  systemUserId: string
 ) {
   return request<SystemUserDetailResponse>(`/api/v1/system-users/${systemUserId}`);
 }
@@ -270,7 +265,7 @@ export async function readSystemUserDetail(
 export async function updateSystemUser(
   request: <T>(path: string, init?: RequestInit) => Promise<T>,
   systemUserId: string,
-  input: UpdateSystemUserInput,
+  input: UpdateSystemUserInput
 ) {
   return request<{
     id: string;
@@ -283,44 +278,41 @@ export async function updateSystemUser(
 
 export async function deactivateSystemUser(
   request: <T>(path: string, init?: RequestInit) => Promise<T>,
-  systemUserId: string,
+  systemUserId: string
 ) {
   return request<{ id: string; isActive: boolean }>(
     `/api/v1/system-users/${systemUserId}/deactivate`,
     {
       method: 'POST',
-    },
+    }
   );
 }
 
 export async function forceSystemUserTotp(
   request: <T>(path: string, init?: RequestInit) => Promise<T>,
-  systemUserId: string,
+  systemUserId: string
 ) {
-  return request<{ message: string }>(
-    `/api/v1/system-users/${systemUserId}/force-totp`,
-    {
-      method: 'POST',
-    },
-  );
+  return request<{ message: string }>(`/api/v1/system-users/${systemUserId}/force-totp`, {
+    method: 'POST',
+  });
 }
 
 export async function reactivateSystemUser(
   request: <T>(path: string, init?: RequestInit) => Promise<T>,
-  systemUserId: string,
+  systemUserId: string
 ) {
   return request<{ id: string; isActive: boolean }>(
     `/api/v1/system-users/${systemUserId}/reactivate`,
     {
       method: 'POST',
-    },
+    }
   );
 }
 
 export async function createUserRoleAssignment(
   request: <T>(path: string, init?: RequestInit) => Promise<T>,
   systemUserId: string,
-  input: CreateUserRoleAssignmentInput,
+  input: CreateUserRoleAssignmentInput
 ) {
   return request<{
     id: string;
@@ -338,35 +330,32 @@ export async function updateUserRoleAssignment(
   request: <T>(path: string, init?: RequestInit) => Promise<T>,
   systemUserId: string,
   assignmentId: string,
-  input: UpdateUserRoleAssignmentInput,
+  input: UpdateUserRoleAssignmentInput
 ) {
   return request<{
     id: string;
     inherit: boolean;
     expiresAt: string | null;
     snapshotUpdateQueued: boolean;
-  }>(
-    `/api/v1/users/${systemUserId}/roles/${assignmentId}`,
-    buildJsonRequestInit('PATCH', input),
-  );
+  }>(`/api/v1/users/${systemUserId}/roles/${assignmentId}`, buildJsonRequestInit('PATCH', input));
 }
 
 export async function removeUserRoleAssignment(
   request: <T>(path: string, init?: RequestInit) => Promise<T>,
   systemUserId: string,
-  assignmentId: string,
+  assignmentId: string
 ) {
   return request<{ message: string; snapshotUpdateQueued: boolean }>(
     `/api/v1/users/${systemUserId}/roles/${assignmentId}`,
     {
       method: 'DELETE',
-    },
+    }
   );
 }
 
 export async function checkCurrentUserPermission(
   request: <T>(path: string, init?: RequestInit) => Promise<T>,
-  input: CheckCurrentUserPermissionInput,
+  input: CheckCurrentUserPermissionInput
 ) {
   const result = await request<{
     results: Array<{
@@ -382,7 +371,7 @@ export async function checkCurrentUserPermission(
 
 export async function listSystemRoles(
   request: <T>(path: string, init?: RequestInit) => Promise<T>,
-  options: ListSystemRolesOptions = {},
+  options: ListSystemRolesOptions = {}
 ) {
   const query = buildQueryString({
     isActive: options.isActive,
@@ -393,14 +382,14 @@ export async function listSystemRoles(
 
 export async function readSystemRoleDetail(
   request: <T>(path: string, init?: RequestInit) => Promise<T>,
-  systemRoleId: string,
+  systemRoleId: string
 ) {
   return request<SystemRoleDetailResponse>(`/api/v1/system-roles/${systemRoleId}`);
 }
 
 export async function createSystemRole(
   request: <T>(path: string, init?: RequestInit) => Promise<T>,
-  input: CreateSystemRoleInput,
+  input: CreateSystemRoleInput
 ) {
   return request<SystemRoleListItem>('/api/v1/system-roles', buildJsonRequestInit('POST', input));
 }
@@ -408,17 +397,17 @@ export async function createSystemRole(
 export async function updateSystemRole(
   request: <T>(path: string, init?: RequestInit) => Promise<T>,
   systemRoleId: string,
-  input: UpdateSystemRoleInput,
+  input: UpdateSystemRoleInput
 ) {
   return request<SystemRoleListItem>(
     `/api/v1/system-roles/${systemRoleId}`,
-    buildJsonRequestInit('PATCH', input),
+    buildJsonRequestInit('PATCH', input)
   );
 }
 
 export async function removeSystemRole(
   request: <T>(path: string, init?: RequestInit) => Promise<T>,
-  systemRoleId: string,
+  systemRoleId: string
 ) {
   return request<{ deleted: boolean }>(`/api/v1/system-roles/${systemRoleId}`, {
     method: 'DELETE',
@@ -426,14 +415,14 @@ export async function removeSystemRole(
 }
 
 export async function listDelegatedAdmins(
-  request: <T>(path: string, init?: RequestInit) => Promise<T>,
+  request: <T>(path: string, init?: RequestInit) => Promise<T>
 ) {
   return request<DelegatedAdminListItem[]>('/api/v1/delegated-admins');
 }
 
 export async function createDelegatedAdmin(
   request: <T>(path: string, init?: RequestInit) => Promise<T>,
-  input: CreateDelegatedAdminInput,
+  input: CreateDelegatedAdminInput
 ) {
   return request<{
     id: string;
@@ -449,7 +438,7 @@ export async function createDelegatedAdmin(
 
 export async function removeDelegatedAdmin(
   request: <T>(path: string, init?: RequestInit) => Promise<T>,
-  delegationId: string,
+  delegationId: string
 ) {
   return request<{ message: string }>(`/api/v1/delegated-admins/${delegationId}`, {
     method: 'DELETE',

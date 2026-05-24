@@ -13,74 +13,182 @@
  * Cyrillic characters that look like Latin letters
  */
 const CYRILLIC_HOMOGLYPHS: Record<string, string> = {
-  'а': 'a', 'А': 'A',
-  'с': 'c', 'С': 'C',
-  'е': 'e', 'Е': 'E',
-  'һ': 'h', 'Һ': 'H',
-  'і': 'i', 'І': 'I',
-  'ј': 'j', 'Ј': 'J',
-  'к': 'k', 'К': 'K',
-  'м': 'm', 'М': 'M',
-  'о': 'o', 'О': 'O',
-  'р': 'p', 'Р': 'P',
-  'ѕ': 's', 'Ѕ': 'S',
-  'т': 't', 'Т': 'T',
-  'ү': 'y', 'Ү': 'Y',
-  'х': 'x', 'Х': 'X',
+  а: 'a',
+  А: 'A',
+  с: 'c',
+  С: 'C',
+  е: 'e',
+  Е: 'E',
+  һ: 'h',
+  Һ: 'H',
+  і: 'i',
+  І: 'I',
+  ј: 'j',
+  Ј: 'J',
+  к: 'k',
+  К: 'K',
+  м: 'm',
+  М: 'M',
+  о: 'o',
+  О: 'O',
+  р: 'p',
+  Р: 'P',
+  ѕ: 's',
+  Ѕ: 'S',
+  т: 't',
+  Т: 'T',
+  ү: 'y',
+  Ү: 'Y',
+  х: 'x',
+  Х: 'X',
 };
 
 /**
  * Greek characters that look like Latin letters
  */
 const GREEK_HOMOGLYPHS: Record<string, string> = {
-  'Α': 'A', 'α': 'a',
-  'Β': 'B', 'β': 'b',
-  'Ε': 'E', 'ε': 'e',
-  'Η': 'H', 'η': 'n',
-  'Ι': 'I', 'ι': 'i',
-  'Κ': 'K', 'κ': 'k',
-  'Μ': 'M', 'μ': 'u',
-  'Ν': 'N', 'ν': 'v',
-  'Ο': 'O', 'ο': 'o',
-  'Ρ': 'P', 'ρ': 'p',
-  'Τ': 'T', 'τ': 't',
-  'Υ': 'Y', 'υ': 'u',
-  'Χ': 'X', 'χ': 'x',
+  Α: 'A',
+  α: 'a',
+  Β: 'B',
+  β: 'b',
+  Ε: 'E',
+  ε: 'e',
+  Η: 'H',
+  η: 'n',
+  Ι: 'I',
+  ι: 'i',
+  Κ: 'K',
+  κ: 'k',
+  Μ: 'M',
+  μ: 'u',
+  Ν: 'N',
+  ν: 'v',
+  Ο: 'O',
+  ο: 'o',
+  Ρ: 'P',
+  ρ: 'p',
+  Τ: 'T',
+  τ: 't',
+  Υ: 'Y',
+  υ: 'u',
+  Χ: 'X',
+  χ: 'x',
 };
 
 /**
  * Fullwidth characters (commonly used in CJK text)
  */
 const FULLWIDTH_HOMOGLYPHS: Record<string, string> = {
-  '０': '0', '１': '1', '２': '2', '３': '3', '４': '4',
-  '５': '5', '６': '6', '７': '7', '８': '8', '９': '9',
-  'Ａ': 'A', 'Ｂ': 'B', 'Ｃ': 'C', 'Ｄ': 'D', 'Ｅ': 'E',
-  'Ｆ': 'F', 'Ｇ': 'G', 'Ｈ': 'H', 'Ｉ': 'I', 'Ｊ': 'J',
-  'Ｋ': 'K', 'Ｌ': 'L', 'Ｍ': 'M', 'Ｎ': 'N', 'Ｏ': 'O',
-  'Ｐ': 'P', 'Ｑ': 'Q', 'Ｒ': 'R', 'Ｓ': 'S', 'Ｔ': 'T',
-  'Ｕ': 'U', 'Ｖ': 'V', 'Ｗ': 'W', 'Ｘ': 'X', 'Ｙ': 'Y', 'Ｚ': 'Z',
-  'ａ': 'a', 'ｂ': 'b', 'ｃ': 'c', 'ｄ': 'd', 'ｅ': 'e',
-  'ｆ': 'f', 'ｇ': 'g', 'ｈ': 'h', 'ｉ': 'i', 'ｊ': 'j',
-  'ｋ': 'k', 'ｌ': 'l', 'ｍ': 'm', 'ｎ': 'n', 'ｏ': 'o',
-  'ｐ': 'p', 'ｑ': 'q', 'ｒ': 'r', 'ｓ': 's', 'ｔ': 't',
-  'ｕ': 'u', 'ｖ': 'v', 'ｗ': 'w', 'ｘ': 'x', 'ｙ': 'y', 'ｚ': 'z',
+  '０': '0',
+  '１': '1',
+  '２': '2',
+  '３': '3',
+  '４': '4',
+  '５': '5',
+  '６': '6',
+  '７': '7',
+  '８': '8',
+  '９': '9',
+  Ａ: 'A',
+  Ｂ: 'B',
+  Ｃ: 'C',
+  Ｄ: 'D',
+  Ｅ: 'E',
+  Ｆ: 'F',
+  Ｇ: 'G',
+  Ｈ: 'H',
+  Ｉ: 'I',
+  Ｊ: 'J',
+  Ｋ: 'K',
+  Ｌ: 'L',
+  Ｍ: 'M',
+  Ｎ: 'N',
+  Ｏ: 'O',
+  Ｐ: 'P',
+  Ｑ: 'Q',
+  Ｒ: 'R',
+  Ｓ: 'S',
+  Ｔ: 'T',
+  Ｕ: 'U',
+  Ｖ: 'V',
+  Ｗ: 'W',
+  Ｘ: 'X',
+  Ｙ: 'Y',
+  Ｚ: 'Z',
+  ａ: 'a',
+  ｂ: 'b',
+  ｃ: 'c',
+  ｄ: 'd',
+  ｅ: 'e',
+  ｆ: 'f',
+  ｇ: 'g',
+  ｈ: 'h',
+  ｉ: 'i',
+  ｊ: 'j',
+  ｋ: 'k',
+  ｌ: 'l',
+  ｍ: 'm',
+  ｎ: 'n',
+  ｏ: 'o',
+  ｐ: 'p',
+  ｑ: 'q',
+  ｒ: 'r',
+  ｓ: 's',
+  ｔ: 't',
+  ｕ: 'u',
+  ｖ: 'v',
+  ｗ: 'w',
+  ｘ: 'x',
+  ｙ: 'y',
+  ｚ: 'z',
 };
 
 /**
  * Other common lookalikes
  */
 const OTHER_HOMOGLYPHS: Record<string, string> = {
-  'ℂ': 'C', 'ℍ': 'H', 'ℕ': 'N', 'ℙ': 'P', 'ℚ': 'Q',
-  'ℝ': 'R', 'ℤ': 'Z', 'ℯ': 'e', 'ℊ': 'g', 'ℎ': 'h',
-  'ℹ': 'i', 'ℓ': 'l', 'ℬ': 'B', 'ℰ': 'E', 'ℱ': 'F',
-  'ℳ': 'M', 'ⅰ': 'i', 'ⅱ': 'ii', 'ⅲ': 'iii', 'ⅳ': 'iv',
-  'ⅴ': 'v', 'ⅵ': 'vi', 'ⅶ': 'vii', 'ⅷ': 'viii', 'ⅸ': 'ix',
-  'ⅹ': 'x', 'ⅺ': 'xi', 'ⅻ': 'xii',
-  '①': '1', '②': '2', '③': '3', '④': '4', '⑤': '5',
-  '⑥': '6', '⑦': '7', '⑧': '8', '⑨': '9', '⑩': '10',
+  ℂ: 'C',
+  ℍ: 'H',
+  ℕ: 'N',
+  ℙ: 'P',
+  ℚ: 'Q',
+  ℝ: 'R',
+  ℤ: 'Z',
+  ℯ: 'e',
+  ℊ: 'g',
+  ℎ: 'h',
+  ℹ: 'i',
+  ℓ: 'l',
+  ℬ: 'B',
+  ℰ: 'E',
+  ℱ: 'F',
+  ℳ: 'M',
+  ⅰ: 'i',
+  ⅱ: 'ii',
+  ⅲ: 'iii',
+  ⅳ: 'iv',
+  ⅴ: 'v',
+  ⅵ: 'vi',
+  ⅶ: 'vii',
+  ⅷ: 'viii',
+  ⅸ: 'ix',
+  ⅹ: 'x',
+  ⅺ: 'xi',
+  ⅻ: 'xii',
+  '①': '1',
+  '②': '2',
+  '③': '3',
+  '④': '4',
+  '⑤': '5',
+  '⑥': '6',
+  '⑦': '7',
+  '⑧': '8',
+  '⑨': '9',
+  '⑩': '10',
   '⓪': '0',
   '℮': 'e',
-  '∅': 'O', '∞': '8',
+  '∅': 'O',
+  '∞': '8',
 };
 
 // Combined homoglyph map
@@ -110,7 +218,7 @@ const LEETSPEAK: Record<string, string> = {
   '8': 'b',
   '9': 'g',
   '@': 'a',
-  '$': 's',
+  $: 's',
   '!': 'i',
   '|': 'i',
   '+': 't',
@@ -259,14 +367,20 @@ export class TextNormalizer {
    * Normalize homoglyphs to ASCII equivalents
    */
   static normalizeHomoglyphs(text: string): string {
-    return text.split('').map(char => HOMOGLYPHS[char] || char).join('');
+    return text
+      .split('')
+      .map((char) => HOMOGLYPHS[char] || char)
+      .join('');
   }
 
   /**
    * Normalize leetspeak to letters
    */
   static normalizeLeetspeak(text: string): string {
-    return text.split('').map(char => LEETSPEAK[char] || char).join('');
+    return text
+      .split('')
+      .map((char) => LEETSPEAK[char] || char)
+      .join('');
   }
 
   /**
@@ -292,8 +406,8 @@ export class TextNormalizer {
    */
   static normalizeWhitespace(text: string): string {
     return text
-      .replace(/[\t\r\n]+/g, ' ')  // Convert tabs/newlines to spaces
-      .replace(/\s+/g, ' ')         // Multiple spaces to single
+      .replace(/[\t\r\n]+/g, ' ') // Convert tabs/newlines to spaces
+      .replace(/\s+/g, ' ') // Multiple spaces to single
       .trim();
   }
 
@@ -301,7 +415,7 @@ export class TextNormalizer {
    * Check if text contains homoglyphs
    */
   static containsHomoglyphs(text: string): boolean {
-    return text.split('').some(char => char in HOMOGLYPHS);
+    return text.split('').some((char) => char in HOMOGLYPHS);
   }
 
   /**
@@ -317,7 +431,7 @@ export class TextNormalizer {
    * Check if text contains zero-width characters
    */
   static containsZeroWidthChars(text: string): boolean {
-    return ZERO_WIDTH_CHARS.some(char => text.includes(char));
+    return ZERO_WIDTH_CHARS.some((char) => text.includes(char));
   }
 
   /**

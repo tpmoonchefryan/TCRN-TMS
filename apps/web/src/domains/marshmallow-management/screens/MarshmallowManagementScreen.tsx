@@ -1,14 +1,6 @@
 'use client';
 
-import {
-  Download,
-  Mailbox,
-  RefreshCcw,
-  Search,
-  ShieldAlert,
-  Sparkles,
-  Star,
-} from 'lucide-react';
+import { Download, Mailbox, RefreshCcw, Search, ShieldAlert, Sparkles, Star } from 'lucide-react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { type ReactNode, startTransition, useEffect, useState } from 'react';
 
@@ -123,7 +115,9 @@ function getErrorMessage(reason: unknown, fallback: string) {
 }
 
 function parseMessageStatusFilter(value: string | null): MessageStatusFilter {
-  return value === 'pending' || value === 'approved' || value === 'rejected' || value === 'spam' ? value : 'all';
+  return value === 'pending' || value === 'approved' || value === 'rejected' || value === 'spam'
+    ? value
+    : 'all';
 }
 
 function parseReplyFilter(value: string | null): ReplyFilter {
@@ -247,7 +241,9 @@ function SummaryCard({
     <div className="min-w-0 rounded-2xl border border-slate-200 bg-white/80 px-4 py-4 shadow-sm">
       <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">{label}</p>
       <p className="mt-2 break-words text-2xl font-semibold text-slate-950">{value}</p>
-      <p className="mt-2 break-words text-xs leading-5 text-slate-500 [overflow-wrap:anywhere]">{hint}</p>
+      <p className="mt-2 break-words text-xs leading-5 text-slate-500 [overflow-wrap:anywhere]">
+        {hint}
+      </p>
     </div>
   );
 }
@@ -267,7 +263,9 @@ function StatusBadge({
         : 'bg-rose-100 text-rose-800';
 
   return (
-    <span className={`inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.14em] ${toneClasses}`}>
+    <span
+      className={`inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.14em] ${toneClasses}`}
+    >
       {label}
     </span>
   );
@@ -286,7 +284,10 @@ function NoticeBanner({
       : 'border-rose-200 bg-rose-50 text-rose-800';
 
   return (
-    <div role="status" className={`rounded-2xl border px-4 py-3 text-sm font-medium ${toneClasses}`}>
+    <div
+      role="status"
+      className={`rounded-2xl border px-4 py-3 text-sm font-medium ${toneClasses}`}
+    >
       {message}
     </div>
   );
@@ -473,7 +474,8 @@ export function MarshmallowManagementScreen({
     loading: true,
     error: null,
   });
-  const [messageStatusFilter, setMessageStatusFilter] = useState<MessageStatusFilter>(urlMessageStatusFilter);
+  const [messageStatusFilter, setMessageStatusFilter] =
+    useState<MessageStatusFilter>(urlMessageStatusFilter);
   const [replyFilter, setReplyFilter] = useState<ReplyFilter>(urlReplyFilter);
   const [keyword, setKeyword] = useState(urlKeyword);
   const [activeView, setActiveView] = useState<MarshmallowManagementView>(urlView);
@@ -493,7 +495,9 @@ export function MarshmallowManagementScreen({
 
   useEffect(() => {
     setKeyword((current) => (current === urlKeyword ? current : urlKeyword));
-    setMessageStatusFilter((current) => (current === urlMessageStatusFilter ? current : urlMessageStatusFilter));
+    setMessageStatusFilter((current) =>
+      current === urlMessageStatusFilter ? current : urlMessageStatusFilter
+    );
     setReplyFilter((current) => (current === urlReplyFilter ? current : urlReplyFilter));
     setActiveView((current) => (current === urlView ? current : urlView));
     setPage((current) => (current === urlPage ? current : urlPage));
@@ -541,7 +545,7 @@ export function MarshmallowManagementScreen({
       replyFilter: ReplyFilter;
       page: number;
       pageSize: PageSizeOption;
-    }>,
+    }>
   ) {
     const nextKeyword = nextState.keyword ?? keyword;
     const nextMessageStatusFilter = nextState.messageStatusFilter ?? messageStatusFilter;
@@ -646,10 +650,7 @@ export function MarshmallowManagementScreen({
           pageSize,
           status: messageStatusFilter === 'all' ? undefined : messageStatusFilter,
           keyword: keyword.trim() || undefined,
-          hasReply:
-            replyFilter === 'all'
-              ? undefined
-              : replyFilter === 'replied',
+          hasReply: replyFilter === 'all' ? undefined : replyFilter === 'replied',
         });
 
         if (!cancelled) {
@@ -681,7 +682,16 @@ export function MarshmallowManagementScreen({
     return () => {
       cancelled = true;
     };
-  }, [copy.state.loadMessagesError, keyword, messageStatusFilter, page, pageSize, replyFilter, request, talentId]);
+  }, [
+    copy.state.loadMessagesError,
+    keyword,
+    messageStatusFilter,
+    page,
+    pageSize,
+    replyFilter,
+    request,
+    talentId,
+  ]);
 
   async function refreshConfig() {
     const nextConfig = await readMarshmallowConfig(request, talentId);
@@ -695,10 +705,7 @@ export function MarshmallowManagementScreen({
       pageSize,
       status: messageStatusFilter === 'all' ? undefined : messageStatusFilter,
       keyword: keyword.trim() || undefined,
-      hasReply:
-        replyFilter === 'all'
-          ? undefined
-          : replyFilter === 'replied',
+      hasReply: replyFilter === 'all' ? undefined : replyFilter === 'replied',
     });
 
     setMessagesPanel({
@@ -808,7 +815,10 @@ export function MarshmallowManagementScreen({
     }
   }
 
-  async function handleToggleFlags(message: MarshmallowMessageListItem, input: { isRead?: boolean; isStarred?: boolean }) {
+  async function handleToggleFlags(
+    message: MarshmallowMessageListItem,
+    input: { isRead?: boolean; isStarred?: boolean }
+  ) {
     setNotice(null);
 
     try {
@@ -903,7 +913,13 @@ export function MarshmallowManagementScreen({
   }
 
   if (loadError || !config || !draft) {
-    return <StateView status="error" title={copy.state.unavailableTitle} description={loadError || undefined} />;
+    return (
+      <StateView
+        status="error"
+        title={copy.state.unavailableTitle}
+        description={loadError || undefined}
+      />
+    );
   }
 
   const pageRange = getPaginationRange(messagesPanel.pagination, messagesPanel.data.length);
@@ -972,12 +988,17 @@ export function MarshmallowManagementScreen({
             </div>
             <div className="space-y-3">
               <h1 className="text-3xl font-semibold text-slate-950">{copy.header.title}</h1>
-              <p className="max-w-3xl text-sm leading-6 text-slate-600">{copy.header.description}</p>
+              <p className="max-w-3xl text-sm leading-6 text-slate-600">
+                {copy.header.description}
+              </p>
             </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            <SecondaryButton onClick={() => void handleRefreshWorkspace()} disabled={messagesPanel.loading}>
+            <SecondaryButton
+              onClick={() => void handleRefreshWorkspace()}
+              disabled={messagesPanel.loading}
+            >
               <RefreshCcw className="h-3.5 w-3.5" />
               {copy.actions.refreshWorkspace}
             </SecondaryButton>
@@ -1014,8 +1035,16 @@ export function MarshmallowManagementScreen({
       <GlassSurface className="p-2">
         <SectionTabs
           items={[
-            { id: 'moderation', label: copy.moderation.title, panelId: 'marshmallow-panel-moderation' },
-            { id: 'configuration', label: copy.config.title, panelId: 'marshmallow-panel-configuration' },
+            {
+              id: 'moderation',
+              label: copy.moderation.title,
+              panelId: 'marshmallow-panel-moderation',
+            },
+            {
+              id: 'configuration',
+              label: copy.config.title,
+              panelId: 'marshmallow-panel-configuration',
+            },
             { id: 'export', label: copy.export.title, panelId: 'marshmallow-panel-export' },
           ]}
           activeId={activeView}
@@ -1025,468 +1054,601 @@ export function MarshmallowManagementScreen({
       </GlassSurface>
 
       {activeView === 'configuration' ? (
-      <GlassSurface id="marshmallow-panel-configuration" role="tabpanel" className="p-6">
-        <FormSection
-          title={copy.config.title}
-          description={copy.config.description}
-          actions={
-            <AsyncSubmitButton
-              onClick={() => void handleSaveConfig()}
-              isPending={savePending}
-              pendingText={copy.actions.savePending}
-            >
-              {copy.actions.saveConfig}
-            </AsyncSubmitButton>
-          }
-        >
-          <div className="rounded-2xl border border-indigo-200 bg-indigo-50/80 px-4 py-4">
-            <p className="text-sm font-semibold text-indigo-950">{copy.config.publicRouteTitle}</p>
-            <p className="mt-2 text-sm leading-6 text-indigo-900">{copy.config.publicRouteDescription}</p>
-          </div>
-
-          <div className="grid gap-4 xl:grid-cols-4">
-            <SummaryCard label={copy.config.stats.versionLabel} value={String(config.version)} hint={copy.config.stats.versionHint} />
-            <SummaryCard
-              label={copy.config.stats.updatedAtLabel}
-              value={formatMarshmallowDateTime(locale, config.updatedAt, copy.common.never)}
-              hint={copy.config.stats.updatedAtHint}
-            />
-            <SummaryCard
-              label={copy.config.stats.mailboxUrlLabel}
-              value={config.isEnabled ? copy.config.stats.mailboxUrlLive : copy.config.stats.mailboxUrlDisabled}
-              hint={config.marshmallowUrl}
-            />
-            <SummaryCard
-              label={copy.config.turnstile.summaryLabel}
-              value={turnstileStatusLabel}
-              hint={turnstileStatusHint}
-            />
-          </div>
-
-          <div className="rounded-2xl border border-slate-200 bg-white/80 px-4 py-4">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div className="space-y-2">
-                <p className="text-sm font-semibold text-slate-950">{copy.config.turnstile.title}</p>
-                <p className="max-w-3xl text-sm leading-6 text-slate-600">{copy.config.turnstile.description}</p>
-              </div>
-              <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-slate-700">
-                {turnstileStatusLabel}
-              </span>
+        <GlassSurface id="marshmallow-panel-configuration" role="tabpanel" className="p-6">
+          <FormSection
+            title={copy.config.title}
+            description={copy.config.description}
+            actions={
+              <AsyncSubmitButton
+                onClick={() => void handleSaveConfig()}
+                isPending={savePending}
+                pendingText={copy.actions.savePending}
+              >
+                {copy.actions.saveConfig}
+              </AsyncSubmitButton>
+            }
+          >
+            <div className="rounded-2xl border border-indigo-200 bg-indigo-50/80 px-4 py-4">
+              <p className="text-sm font-semibold text-indigo-950">
+                {copy.config.publicRouteTitle}
+              </p>
+              <p className="mt-2 text-sm leading-6 text-indigo-900">
+                {copy.config.publicRouteDescription}
+              </p>
             </div>
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              <div className="rounded-xl border border-slate-200 bg-slate-50/80 px-3 py-3">
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">{copy.config.turnstile.siteKeyLabel}</p>
-                <p className="mt-1 text-sm font-semibold text-slate-900">
-                  {config.turnstile.siteKeyConfigured ? copy.config.turnstile.configured : copy.config.turnstile.missing}
-                </p>
-              </div>
-              <div className="rounded-xl border border-slate-200 bg-slate-50/80 px-3 py-3">
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">{copy.config.turnstile.secretKeyLabel}</p>
-                <p className="mt-1 text-sm font-semibold text-slate-900">
-                  {config.turnstile.secretKeyConfigured ? copy.config.turnstile.configured : copy.config.turnstile.missing}
-                </p>
-              </div>
+
+            <div className="grid gap-4 xl:grid-cols-4">
+              <SummaryCard
+                label={copy.config.stats.versionLabel}
+                value={String(config.version)}
+                hint={copy.config.stats.versionHint}
+              />
+              <SummaryCard
+                label={copy.config.stats.updatedAtLabel}
+                value={formatMarshmallowDateTime(locale, config.updatedAt, copy.common.never)}
+                hint={copy.config.stats.updatedAtHint}
+              />
+              <SummaryCard
+                label={copy.config.stats.mailboxUrlLabel}
+                value={
+                  config.isEnabled
+                    ? copy.config.stats.mailboxUrlLive
+                    : copy.config.stats.mailboxUrlDisabled
+                }
+                hint={config.marshmallowUrl}
+              />
+              <SummaryCard
+                label={copy.config.turnstile.summaryLabel}
+                value={turnstileStatusLabel}
+                hint={turnstileStatusHint}
+              />
             </div>
-            <p className="mt-4 text-sm leading-6 text-slate-600">{turnstileStatusHint}</p>
-          </div>
 
-          <div className="grid gap-4 xl:grid-cols-2">
-            <TextField
-              label={copy.config.fields.title}
-              value={draft.title}
-              onChange={(value) => setDraft((current) => (current ? { ...current, title: value } : current))}
-            />
-            <TextField
-              label={copy.config.fields.allowedReactions}
-              value={draft.allowedReactions}
-              onChange={(value) => setDraft((current) => (current ? { ...current, allowedReactions: value } : current))}
-            />
-            <TextareaField
-              label={copy.config.fields.welcomeText}
-              value={draft.welcomeText}
-              onChange={(value) => setDraft((current) => (current ? { ...current, welcomeText: value } : current))}
-            />
-            <TextareaField
-              label={copy.config.fields.thankYouText}
-              value={draft.thankYouText}
-              onChange={(value) => setDraft((current) => (current ? { ...current, thankYouText: value } : current))}
-            />
-            <TextField
-              label={copy.config.fields.placeholderText}
-              value={draft.placeholderText}
-              onChange={(value) => setDraft((current) => (current ? { ...current, placeholderText: value } : current))}
-            />
-            <SelectField
-              label={copy.config.fields.captchaMode}
-              value={draft.captchaMode}
-              options={captchaOptions}
-              onChange={(value) => setDraft((current) => (current ? { ...current, captchaMode: value as MarshmallowConfigDraft['captchaMode'] } : current))}
-            />
-            <NumberField
-              label={copy.config.fields.minMessageLength}
-              value={draft.minMessageLength}
-              min={1}
-              onChange={(value) => setDraft((current) => (current ? { ...current, minMessageLength: value } : current))}
-            />
-            <NumberField
-              label={copy.config.fields.maxMessageLength}
-              value={draft.maxMessageLength}
-              min={1}
-              onChange={(value) => setDraft((current) => (current ? { ...current, maxMessageLength: value } : current))}
-            />
-            <NumberField
-              label={copy.config.fields.rateLimitPerIp}
-              value={draft.rateLimitPerIp}
-              min={1}
-              onChange={(value) => setDraft((current) => (current ? { ...current, rateLimitPerIp: value } : current))}
-            />
-            <NumberField
-              label={copy.config.fields.rateLimitWindowHours}
-              value={draft.rateLimitWindowHours}
-              min={1}
-              onChange={(value) => setDraft((current) => (current ? { ...current, rateLimitWindowHours: value } : current))}
-            />
-          </div>
+            <div className="rounded-2xl border border-slate-200 bg-white/80 px-4 py-4">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="space-y-2">
+                  <p className="text-sm font-semibold text-slate-950">
+                    {copy.config.turnstile.title}
+                  </p>
+                  <p className="max-w-3xl text-sm leading-6 text-slate-600">
+                    {copy.config.turnstile.description}
+                  </p>
+                </div>
+                <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-slate-700">
+                  {turnstileStatusLabel}
+                </span>
+              </div>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <div className="rounded-xl border border-slate-200 bg-slate-50/80 px-3 py-3">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                    {copy.config.turnstile.siteKeyLabel}
+                  </p>
+                  <p className="mt-1 text-sm font-semibold text-slate-900">
+                    {config.turnstile.siteKeyConfigured
+                      ? copy.config.turnstile.configured
+                      : copy.config.turnstile.missing}
+                  </p>
+                </div>
+                <div className="rounded-xl border border-slate-200 bg-slate-50/80 px-3 py-3">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                    {copy.config.turnstile.secretKeyLabel}
+                  </p>
+                  <p className="mt-1 text-sm font-semibold text-slate-900">
+                    {config.turnstile.secretKeyConfigured
+                      ? copy.config.turnstile.configured
+                      : copy.config.turnstile.missing}
+                  </p>
+                </div>
+              </div>
+              <p className="mt-4 text-sm leading-6 text-slate-600">{turnstileStatusHint}</p>
+            </div>
 
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-            <CheckboxField
-              label={copy.config.fields.allowAnonymous}
-              checked={draft.allowAnonymous}
-              onChange={(next) => setDraft((current) => (current ? { ...current, allowAnonymous: next } : current))}
-            />
-            <CheckboxField
-              label={copy.config.fields.requireModeration}
-              checked={draft.moderationEnabled}
-              onChange={(next) => setDraft((current) => (current ? { ...current, moderationEnabled: next } : current))}
-            />
-            <CheckboxField
-              label={copy.config.fields.autoApprove}
-              checked={draft.autoApprove}
-              onChange={(next) => setDraft((current) => (current ? { ...current, autoApprove: next } : current))}
-            />
-            <CheckboxField
-              label={copy.config.fields.profanityFilter}
-              checked={draft.profanityFilterEnabled}
-              onChange={(next) => setDraft((current) => (current ? { ...current, profanityFilterEnabled: next } : current))}
-            />
-            <CheckboxField
-              label={copy.config.fields.externalBlocklist}
-              checked={draft.externalBlocklistEnabled}
-              onChange={(next) => setDraft((current) => (current ? { ...current, externalBlocklistEnabled: next } : current))}
-            />
-            <CheckboxField
-              label={copy.config.fields.enablePublicReactions}
-              checked={draft.reactionsEnabled}
-              onChange={(next) => setDraft((current) => (current ? { ...current, reactionsEnabled: next } : current))}
-            />
-          </div>
-        </FormSection>
-      </GlassSurface>
+            <div className="grid gap-4 xl:grid-cols-2">
+              <TextField
+                label={copy.config.fields.title}
+                value={draft.title}
+                onChange={(value) =>
+                  setDraft((current) => (current ? { ...current, title: value } : current))
+                }
+              />
+              <TextField
+                label={copy.config.fields.allowedReactions}
+                value={draft.allowedReactions}
+                onChange={(value) =>
+                  setDraft((current) =>
+                    current ? { ...current, allowedReactions: value } : current
+                  )
+                }
+              />
+              <TextareaField
+                label={copy.config.fields.welcomeText}
+                value={draft.welcomeText}
+                onChange={(value) =>
+                  setDraft((current) => (current ? { ...current, welcomeText: value } : current))
+                }
+              />
+              <TextareaField
+                label={copy.config.fields.thankYouText}
+                value={draft.thankYouText}
+                onChange={(value) =>
+                  setDraft((current) => (current ? { ...current, thankYouText: value } : current))
+                }
+              />
+              <TextField
+                label={copy.config.fields.placeholderText}
+                value={draft.placeholderText}
+                onChange={(value) =>
+                  setDraft((current) =>
+                    current ? { ...current, placeholderText: value } : current
+                  )
+                }
+              />
+              <SelectField
+                label={copy.config.fields.captchaMode}
+                value={draft.captchaMode}
+                options={captchaOptions}
+                onChange={(value) =>
+                  setDraft((current) =>
+                    current
+                      ? { ...current, captchaMode: value as MarshmallowConfigDraft['captchaMode'] }
+                      : current
+                  )
+                }
+              />
+              <NumberField
+                label={copy.config.fields.minMessageLength}
+                value={draft.minMessageLength}
+                min={1}
+                onChange={(value) =>
+                  setDraft((current) =>
+                    current ? { ...current, minMessageLength: value } : current
+                  )
+                }
+              />
+              <NumberField
+                label={copy.config.fields.maxMessageLength}
+                value={draft.maxMessageLength}
+                min={1}
+                onChange={(value) =>
+                  setDraft((current) =>
+                    current ? { ...current, maxMessageLength: value } : current
+                  )
+                }
+              />
+              <NumberField
+                label={copy.config.fields.rateLimitPerIp}
+                value={draft.rateLimitPerIp}
+                min={1}
+                onChange={(value) =>
+                  setDraft((current) => (current ? { ...current, rateLimitPerIp: value } : current))
+                }
+              />
+              <NumberField
+                label={copy.config.fields.rateLimitWindowHours}
+                value={draft.rateLimitWindowHours}
+                min={1}
+                onChange={(value) =>
+                  setDraft((current) =>
+                    current ? { ...current, rateLimitWindowHours: value } : current
+                  )
+                }
+              />
+            </div>
+
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+              <CheckboxField
+                label={copy.config.fields.allowAnonymous}
+                checked={draft.allowAnonymous}
+                onChange={(next) =>
+                  setDraft((current) => (current ? { ...current, allowAnonymous: next } : current))
+                }
+              />
+              <CheckboxField
+                label={copy.config.fields.requireModeration}
+                checked={draft.moderationEnabled}
+                onChange={(next) =>
+                  setDraft((current) =>
+                    current ? { ...current, moderationEnabled: next } : current
+                  )
+                }
+              />
+              <CheckboxField
+                label={copy.config.fields.autoApprove}
+                checked={draft.autoApprove}
+                onChange={(next) =>
+                  setDraft((current) => (current ? { ...current, autoApprove: next } : current))
+                }
+              />
+              <CheckboxField
+                label={copy.config.fields.profanityFilter}
+                checked={draft.profanityFilterEnabled}
+                onChange={(next) =>
+                  setDraft((current) =>
+                    current ? { ...current, profanityFilterEnabled: next } : current
+                  )
+                }
+              />
+              <CheckboxField
+                label={copy.config.fields.externalBlocklist}
+                checked={draft.externalBlocklistEnabled}
+                onChange={(next) =>
+                  setDraft((current) =>
+                    current ? { ...current, externalBlocklistEnabled: next } : current
+                  )
+                }
+              />
+              <CheckboxField
+                label={copy.config.fields.enablePublicReactions}
+                checked={draft.reactionsEnabled}
+                onChange={(next) =>
+                  setDraft((current) =>
+                    current ? { ...current, reactionsEnabled: next } : current
+                  )
+                }
+              />
+            </div>
+          </FormSection>
+        </GlassSurface>
       ) : null}
 
       {activeView === 'moderation' ? (
-      <GlassSurface id="marshmallow-panel-moderation" role="tabpanel" className="p-6">
-        <FormSection
-          title={copy.moderation.title}
-          description={copy.moderation.description}
-        >
-          <div className="space-y-4">
-            <div className="grid gap-4 xl:grid-cols-3">
-              <TextField
-                label={copy.moderation.filters.keywordSearch}
-                value={keyword}
-                onChange={(value) => {
-                  applyMessageQueryState({
-                    keyword: value,
-                    page: 1,
-                  });
-                }}
-              />
-              <SelectField
-                label={copy.moderation.filters.messageStatus}
-                value={messageStatusFilter}
-                options={messageStatusOptions}
-                onChange={(value) => {
-                  applyMessageQueryState({
-                    messageStatusFilter: value as MessageStatusFilter,
-                    page: 1,
-                  });
-                }}
-              />
-              <SelectField
-                label={copy.moderation.filters.replyState}
-                value={replyFilter}
-                options={replyFilterOptions}
-                onChange={(value) => {
-                  applyMessageQueryState({
-                    replyFilter: value as ReplyFilter,
-                    page: 1,
-                  });
-                }}
-              />
-            </div>
+        <GlassSurface id="marshmallow-panel-moderation" role="tabpanel" className="p-6">
+          <FormSection title={copy.moderation.title} description={copy.moderation.description}>
+            <div className="space-y-4">
+              <div className="grid gap-4 xl:grid-cols-3">
+                <TextField
+                  label={copy.moderation.filters.keywordSearch}
+                  value={keyword}
+                  onChange={(value) => {
+                    applyMessageQueryState({
+                      keyword: value,
+                      page: 1,
+                    });
+                  }}
+                />
+                <SelectField
+                  label={copy.moderation.filters.messageStatus}
+                  value={messageStatusFilter}
+                  options={messageStatusOptions}
+                  onChange={(value) => {
+                    applyMessageQueryState({
+                      messageStatusFilter: value as MessageStatusFilter,
+                      page: 1,
+                    });
+                  }}
+                />
+                <SelectField
+                  label={copy.moderation.filters.replyState}
+                  value={replyFilter}
+                  options={replyFilterOptions}
+                  onChange={(value) => {
+                    applyMessageQueryState({
+                      replyFilter: value as ReplyFilter,
+                      page: 1,
+                    });
+                  }}
+                />
+              </div>
 
-            {messagesPanel.error && messagesPanel.data.length === 0 ? (
-              <StateView status="error" title={copy.moderation.table.errorTitle} description={messagesPanel.error} />
-            ) : (
-              <TableShell
-                ariaLabel={copy.moderation.title}
-                columns={[...copy.moderation.table.columns]}
-                dataLength={messagesPanel.data.length}
-                isLoading={messagesPanel.loading}
-                isEmpty={!messagesPanel.loading && messagesPanel.data.length === 0}
-                emptyTitle={copy.moderation.table.emptyTitle}
-                emptyDescription={copy.moderation.table.emptyDescription}
-              >
-                {messagesPanel.data.map((message) => (
-                  <tr key={message.id} className="align-top">
-                    <td className="px-6 py-4">
-                      <div className="space-y-2">
-                        <p className="text-sm font-semibold text-slate-900">{message.senderName || copy.moderation.table.anonymousSender}</p>
-                        <p className="max-w-md text-sm leading-6 text-slate-700">{message.content}</p>
-                        {message.replyContent ? (
-                          <p className="rounded-xl bg-slate-50 px-3 py-2 text-xs text-slate-600">
-                            {copy.moderation.table.replyPrefix} {message.replyContent}
+              {messagesPanel.error && messagesPanel.data.length === 0 ? (
+                <StateView
+                  status="error"
+                  title={copy.moderation.table.errorTitle}
+                  description={messagesPanel.error}
+                />
+              ) : (
+                <TableShell
+                  ariaLabel={copy.moderation.title}
+                  columns={[...copy.moderation.table.columns]}
+                  dataLength={messagesPanel.data.length}
+                  isLoading={messagesPanel.loading}
+                  isEmpty={!messagesPanel.loading && messagesPanel.data.length === 0}
+                  emptyTitle={copy.moderation.table.emptyTitle}
+                  emptyDescription={copy.moderation.table.emptyDescription}
+                >
+                  {messagesPanel.data.map((message) => (
+                    <tr key={message.id} className="align-top">
+                      <td className="px-6 py-4">
+                        <div className="space-y-2">
+                          <p className="text-sm font-semibold text-slate-900">
+                            {message.senderName || copy.moderation.table.anonymousSender}
                           </p>
-                        ) : null}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="space-y-2">
-                        <StatusBadge status={message.status} label={getMarshmallowMessageStatusLabel(locale, message.status)} />
-                        {message.rejectionReason ? (
-                          <p className="text-xs uppercase tracking-[0.14em] text-slate-500">{message.rejectionReason}</p>
-                        ) : null}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="space-y-1 text-sm text-slate-700">
-                        <p>{message.isRead ? copy.moderation.table.read : copy.moderation.table.unread}</p>
-                        <p>{message.isStarred ? copy.moderation.table.starred : copy.moderation.table.notStarred}</p>
-                        <p>{message.replyContent ? copy.moderation.table.hasReply : copy.moderation.table.awaitingReply}</p>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-slate-700">
-                      {Object.entries(message.reactionCounts).length > 0
-                        ? Object.entries(message.reactionCounts)
-                            .map(([reaction, count]) => `${reaction} ${count}`)
-                            .join(', ')
-                        : copy.moderation.table.noReactions}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-slate-700">
-                      {formatMarshmallowDateTime(locale, message.createdAt, copy.common.never)}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex flex-wrap gap-2">
-                        <SecondaryButton
-                          onClick={() =>
-                            setDialogState({
-                              messageId: message.id,
-                              title: copy.moderation.dialogs.approveTitle,
-                              description: copy.moderation.dialogs.approveDescription,
-                              confirmText: copy.moderation.dialogs.approveConfirm,
-                              intent: 'primary',
-                              successMessage: copy.moderation.dialogs.approveSuccess,
-                              errorFallback: copy.moderation.dialogs.approveError,
-                              kind: 'approve',
-                            })
-                          }
-                          disabled={message.status === 'approved'}
-                          ariaLabel={getMarshmallowActionAriaLabel(locale, 'approve', message.id)}
-                        >
-                          <Sparkles className="h-3.5 w-3.5" />
-                          {copy.actions.approve}
-                        </SecondaryButton>
-                        <SecondaryButton
-                          onClick={() =>
-                            setDialogState(
+                          <p className="max-w-md text-sm leading-6 text-slate-700">
+                            {message.content}
+                          </p>
+                          {message.replyContent ? (
+                            <p className="rounded-xl bg-slate-50 px-3 py-2 text-xs text-slate-600">
+                              {copy.moderation.table.replyPrefix} {message.replyContent}
+                            </p>
+                          ) : null}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="space-y-2">
+                          <StatusBadge
+                            status={message.status}
+                            label={getMarshmallowMessageStatusLabel(locale, message.status)}
+                          />
+                          {message.rejectionReason ? (
+                            <p className="text-xs uppercase tracking-[0.14em] text-slate-500">
+                              {message.rejectionReason}
+                            </p>
+                          ) : null}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="space-y-1 text-sm text-slate-700">
+                          <p>
+                            {message.isRead
+                              ? copy.moderation.table.read
+                              : copy.moderation.table.unread}
+                          </p>
+                          <p>
+                            {message.isStarred
+                              ? copy.moderation.table.starred
+                              : copy.moderation.table.notStarred}
+                          </p>
+                          <p>
+                            {message.replyContent
+                              ? copy.moderation.table.hasReply
+                              : copy.moderation.table.awaitingReply}
+                          </p>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-slate-700">
+                        {Object.entries(message.reactionCounts).length > 0
+                          ? Object.entries(message.reactionCounts)
+                              .map(([reaction, count]) => `${reaction} ${count}`)
+                              .join(', ')
+                          : copy.moderation.table.noReactions}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-slate-700">
+                        {formatMarshmallowDateTime(locale, message.createdAt, copy.common.never)}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex flex-wrap gap-2">
+                          <SecondaryButton
+                            onClick={() =>
+                              setDialogState({
+                                messageId: message.id,
+                                title: copy.moderation.dialogs.approveTitle,
+                                description: copy.moderation.dialogs.approveDescription,
+                                confirmText: copy.moderation.dialogs.approveConfirm,
+                                intent: 'primary',
+                                successMessage: copy.moderation.dialogs.approveSuccess,
+                                errorFallback: copy.moderation.dialogs.approveError,
+                                kind: 'approve',
+                              })
+                            }
+                            disabled={message.status === 'approved'}
+                            ariaLabel={getMarshmallowActionAriaLabel(locale, 'approve', message.id)}
+                          >
+                            <Sparkles className="h-3.5 w-3.5" />
+                            {copy.actions.approve}
+                          </SecondaryButton>
+                          <SecondaryButton
+                            onClick={() =>
+                              setDialogState(
+                                message.status === 'rejected'
+                                  ? {
+                                      messageId: message.id,
+                                      title: copy.moderation.dialogs.restoreTitle,
+                                      description: copy.moderation.dialogs.restoreDescription,
+                                      confirmText: copy.moderation.dialogs.restoreConfirm,
+                                      intent: 'primary',
+                                      successMessage: copy.moderation.dialogs.restoreSuccess,
+                                      errorFallback: copy.moderation.dialogs.restoreError,
+                                      kind: 'unreject',
+                                    }
+                                  : {
+                                      messageId: message.id,
+                                      title: copy.moderation.dialogs.rejectTitle,
+                                      description: copy.moderation.dialogs.rejectDescription,
+                                      confirmText: copy.moderation.dialogs.rejectConfirm,
+                                      intent: 'danger',
+                                      successMessage: copy.moderation.dialogs.rejectSuccess,
+                                      errorFallback: copy.moderation.dialogs.rejectError,
+                                      kind: 'reject',
+                                    }
+                              )
+                            }
+                            ariaLabel={
                               message.status === 'rejected'
-                                ? {
-                                    messageId: message.id,
-                                    title: copy.moderation.dialogs.restoreTitle,
-                                    description: copy.moderation.dialogs.restoreDescription,
-                                    confirmText: copy.moderation.dialogs.restoreConfirm,
-                                    intent: 'primary',
-                                    successMessage: copy.moderation.dialogs.restoreSuccess,
-                                    errorFallback: copy.moderation.dialogs.restoreError,
-                                    kind: 'unreject',
-                                  }
-                                : {
-                                    messageId: message.id,
-                                    title: copy.moderation.dialogs.rejectTitle,
-                                    description: copy.moderation.dialogs.rejectDescription,
-                                    confirmText: copy.moderation.dialogs.rejectConfirm,
-                                    intent: 'danger',
-                                    successMessage: copy.moderation.dialogs.rejectSuccess,
-                                    errorFallback: copy.moderation.dialogs.rejectError,
-                                    kind: 'reject',
-                                  },
-                            )
-                          }
-                          ariaLabel={
-                            message.status === 'rejected'
-                              ? getMarshmallowActionAriaLabel(locale, 'restore', message.id)
-                              : getMarshmallowActionAriaLabel(locale, 'reject', message.id)
-                          }
-                        >
-                          <ShieldAlert className="h-3.5 w-3.5" />
-                          {message.status === 'rejected' ? copy.actions.restore : copy.actions.reject}
-                        </SecondaryButton>
-                        <SecondaryButton
-                          onClick={() => void handleToggleFlags(message, { isRead: !message.isRead })}
-                          ariaLabel={
-                            message.isRead
-                              ? getMarshmallowActionAriaLabel(locale, 'markUnread', message.id)
-                              : getMarshmallowActionAriaLabel(locale, 'markRead', message.id)
-                          }
-                        >
-                          <Search className="h-3.5 w-3.5" />
-                          {message.isRead ? copy.actions.markUnread : copy.actions.markRead}
-                        </SecondaryButton>
-                        <SecondaryButton
-                          onClick={() => void handleToggleFlags(message, { isStarred: !message.isStarred })}
-                          ariaLabel={
-                            message.isStarred
-                              ? getMarshmallowActionAriaLabel(locale, 'unstar', message.id)
-                              : getMarshmallowActionAriaLabel(locale, 'star', message.id)
-                          }
-                        >
-                          <Star className="h-3.5 w-3.5" />
-                          {message.isStarred ? copy.actions.unstar : copy.actions.star}
-                        </SecondaryButton>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </TableShell>
-            )}
+                                ? getMarshmallowActionAriaLabel(locale, 'restore', message.id)
+                                : getMarshmallowActionAriaLabel(locale, 'reject', message.id)
+                            }
+                          >
+                            <ShieldAlert className="h-3.5 w-3.5" />
+                            {message.status === 'rejected'
+                              ? copy.actions.restore
+                              : copy.actions.reject}
+                          </SecondaryButton>
+                          <SecondaryButton
+                            onClick={() =>
+                              void handleToggleFlags(message, { isRead: !message.isRead })
+                            }
+                            ariaLabel={
+                              message.isRead
+                                ? getMarshmallowActionAriaLabel(locale, 'markUnread', message.id)
+                                : getMarshmallowActionAriaLabel(locale, 'markRead', message.id)
+                            }
+                          >
+                            <Search className="h-3.5 w-3.5" />
+                            {message.isRead ? copy.actions.markUnread : copy.actions.markRead}
+                          </SecondaryButton>
+                          <SecondaryButton
+                            onClick={() =>
+                              void handleToggleFlags(message, { isStarred: !message.isStarred })
+                            }
+                            ariaLabel={
+                              message.isStarred
+                                ? getMarshmallowActionAriaLabel(locale, 'unstar', message.id)
+                                : getMarshmallowActionAriaLabel(locale, 'star', message.id)
+                            }
+                          >
+                            <Star className="h-3.5 w-3.5" />
+                            {message.isStarred ? copy.actions.unstar : copy.actions.star}
+                          </SecondaryButton>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </TableShell>
+              )}
 
-            {!messagesPanel.error ? (
-              <PaginationFooter
-                pagination={messagesPanel.pagination}
-                itemCount={messagesPanel.data.length}
-                labels={{
-                  pageLabel: paginationLabel,
-                  rangeLabel: paginationRangeLabel,
-                  rowsPerPageLabel: pageSizeLabel,
-                  pageSizeAriaLabel: pageSizeLabel,
-                  previousLabel: previousPageLabel,
-                  nextLabel: nextPageLabel,
-                }}
-                onPageChange={(nextPage) => {
-                  applyMessageQueryState({ page: nextPage });
-                }}
-                onPageSizeChange={(nextPageSize) => {
-                  applyMessageQueryState({
-                    page: 1,
-                    pageSize: nextPageSize as PageSizeOption,
-                  });
-                }}
-                isLoading={messagesPanel.loading}
-                className="mt-4 rounded-2xl border border-slate-200 bg-slate-50/70"
-              />
-            ) : null}
-          </div>
-        </FormSection>
-      </GlassSurface>
+              {!messagesPanel.error ? (
+                <PaginationFooter
+                  pagination={messagesPanel.pagination}
+                  itemCount={messagesPanel.data.length}
+                  labels={{
+                    pageLabel: paginationLabel,
+                    rangeLabel: paginationRangeLabel,
+                    rowsPerPageLabel: pageSizeLabel,
+                    pageSizeAriaLabel: pageSizeLabel,
+                    previousLabel: previousPageLabel,
+                    nextLabel: nextPageLabel,
+                  }}
+                  onPageChange={(nextPage) => {
+                    applyMessageQueryState({ page: nextPage });
+                  }}
+                  onPageSizeChange={(nextPageSize) => {
+                    applyMessageQueryState({
+                      page: 1,
+                      pageSize: nextPageSize as PageSizeOption,
+                    });
+                  }}
+                  isLoading={messagesPanel.loading}
+                  className="mt-4 rounded-2xl border border-slate-200 bg-slate-50/70"
+                />
+              ) : null}
+            </div>
+          </FormSection>
+        </GlassSurface>
       ) : null}
 
       {activeView === 'export' ? (
-      <GlassSurface id="marshmallow-panel-export" role="tabpanel" className="p-6">
-        <FormSection
-          title={copy.export.title}
-          description={copy.export.description}
-          actions={
-            <AsyncSubmitButton
-              onClick={() => void handleCreateExport()}
-              isPending={exportPending}
-              pendingText={copy.actions.queueExportPending}
-            >
-              {copy.actions.createExportJob}
-            </AsyncSubmitButton>
-          }
-        >
-          <div className="grid gap-4 xl:grid-cols-3">
-            <SelectField
-              label={copy.export.formatLabel}
-              value={exportFormat}
-              options={exportFormatOptions}
-              onChange={(value) => setExportFormat(value as typeof exportFormat)}
-            />
-            <CheckboxField
-              label={copy.export.includeRejected}
-              checked={includeRejected}
-              onChange={setIncludeRejected}
-            />
-            <div className="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-4">
-              <p className="text-sm font-semibold text-slate-900">{copy.export.currentScopeTitle}</p>
-              <p className="mt-2 text-sm leading-6 text-slate-600">
-                {copy.export.currentScopeStatusPrefix}{' '}
-                {messageStatusFilter === 'all' ? copy.export.allVisibleStatuses : getMarshmallowMessageStatusLabel(locale, messageStatusFilter)}
-              </p>
-            </div>
-          </div>
-
-          {exportJob ? (
-            <div className="rounded-2xl border border-slate-200 bg-white/80 p-4">
-              <div className="flex flex-wrap items-start justify-between gap-4">
-                <div className="space-y-2">
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{copy.export.latestJobTitle}</p>
-                  <p className="text-base font-semibold text-slate-950">{exportJob.fileName || exportJob.id}</p>
-                  <div className="grid gap-2 text-sm text-slate-600 sm:grid-cols-2">
-                    <p>{copy.export.fields.status}: {getMarshmallowExportStatusLabel(locale, exportJob.status)}</p>
-                    <p>{copy.export.fields.format}: {exportJob.format.toUpperCase()}</p>
-                    <p>
-                      {copy.export.fields.processed}: {formatMarshmallowNumber(locale, exportJob.processedRecords)} /{' '}
-                      {formatMarshmallowNumber(locale, exportJob.totalRecords)}
-                    </p>
-                    <p>{copy.export.fields.created}: {formatMarshmallowDateTime(locale, exportJob.createdAt, copy.common.never)}</p>
-                    <p>{copy.export.fields.completed}: {formatMarshmallowDateTime(locale, exportJob.completedAt, copy.common.never)}</p>
-                    <p>{copy.export.fields.expires}: {formatMarshmallowDateTime(locale, exportJob.expiresAt, copy.common.never)}</p>
-                  </div>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <SecondaryButton onClick={() => void handleRefreshExport()}>
-                    <RefreshCcw className="h-3.5 w-3.5" />
-                    {copy.actions.refreshExport}
-                  </SecondaryButton>
-                  <SecondaryButton
-                    onClick={() => void handleDownloadExport()}
-                    disabled={!exportJob.downloadUrl || downloadPending}
-                    ariaLabel={copy.actions.downloadExportAria}
-                  >
-                    <Download className="h-3.5 w-3.5" />
-                    {copy.actions.downloadExport}
-                  </SecondaryButton>
-                </div>
+        <GlassSurface id="marshmallow-panel-export" role="tabpanel" className="p-6">
+          <FormSection
+            title={copy.export.title}
+            description={copy.export.description}
+            actions={
+              <AsyncSubmitButton
+                onClick={() => void handleCreateExport()}
+                isPending={exportPending}
+                pendingText={copy.actions.queueExportPending}
+              >
+                {copy.actions.createExportJob}
+              </AsyncSubmitButton>
+            }
+          >
+            <div className="grid gap-4 xl:grid-cols-3">
+              <SelectField
+                label={copy.export.formatLabel}
+                value={exportFormat}
+                options={exportFormatOptions}
+                onChange={(value) => setExportFormat(value as typeof exportFormat)}
+              />
+              <CheckboxField
+                label={copy.export.includeRejected}
+                checked={includeRejected}
+                onChange={setIncludeRejected}
+              />
+              <div className="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-4">
+                <p className="text-sm font-semibold text-slate-900">
+                  {copy.export.currentScopeTitle}
+                </p>
+                <p className="mt-2 text-sm leading-6 text-slate-600">
+                  {copy.export.currentScopeStatusPrefix}{' '}
+                  {messageStatusFilter === 'all'
+                    ? copy.export.allVisibleStatuses
+                    : getMarshmallowMessageStatusLabel(locale, messageStatusFilter)}
+                </p>
               </div>
             </div>
-          ) : (
-            <StateView
-              status="empty"
-              title={copy.export.noJobTitle}
-              description={copy.export.noJobDescription}
-              actions={
-                <AsyncSubmitButton
-                  onClick={() => void handleCreateExport()}
-                  isPending={exportPending}
-                  pendingText={copy.actions.queueExportPending}
-                  aria-label={pickLocaleText(locale, {
-                    en: 'Create export job from empty state',
-                    zh_HANS: '从空状态创建导出任务',
-                    zh_HANT: '從空狀態建立匯出任務',
-                    ja: '空の状態からエクスポートジョブを作成',
-                    ko: '빈 상태에서 내보내기 작업 만들기',
-                    fr: 'Creer une tache d export depuis l etat vide',
-                  })}
-                >
-                  {copy.actions.createExportJob}
-                </AsyncSubmitButton>
-              }
-            />
-          )}
-        </FormSection>
-      </GlassSurface>
+
+            {exportJob ? (
+              <div className="rounded-2xl border border-slate-200 bg-white/80 p-4">
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                  <div className="space-y-2">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                      {copy.export.latestJobTitle}
+                    </p>
+                    <p className="text-base font-semibold text-slate-950">
+                      {exportJob.fileName || exportJob.id}
+                    </p>
+                    <div className="grid gap-2 text-sm text-slate-600 sm:grid-cols-2">
+                      <p>
+                        {copy.export.fields.status}:{' '}
+                        {getMarshmallowExportStatusLabel(locale, exportJob.status)}
+                      </p>
+                      <p>
+                        {copy.export.fields.format}: {exportJob.format.toUpperCase()}
+                      </p>
+                      <p>
+                        {copy.export.fields.processed}:{' '}
+                        {formatMarshmallowNumber(locale, exportJob.processedRecords)} /{' '}
+                        {formatMarshmallowNumber(locale, exportJob.totalRecords)}
+                      </p>
+                      <p>
+                        {copy.export.fields.created}:{' '}
+                        {formatMarshmallowDateTime(locale, exportJob.createdAt, copy.common.never)}
+                      </p>
+                      <p>
+                        {copy.export.fields.completed}:{' '}
+                        {formatMarshmallowDateTime(
+                          locale,
+                          exportJob.completedAt,
+                          copy.common.never
+                        )}
+                      </p>
+                      <p>
+                        {copy.export.fields.expires}:{' '}
+                        {formatMarshmallowDateTime(locale, exportJob.expiresAt, copy.common.never)}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <SecondaryButton onClick={() => void handleRefreshExport()}>
+                      <RefreshCcw className="h-3.5 w-3.5" />
+                      {copy.actions.refreshExport}
+                    </SecondaryButton>
+                    <SecondaryButton
+                      onClick={() => void handleDownloadExport()}
+                      disabled={!exportJob.downloadUrl || downloadPending}
+                      ariaLabel={copy.actions.downloadExportAria}
+                    >
+                      <Download className="h-3.5 w-3.5" />
+                      {copy.actions.downloadExport}
+                    </SecondaryButton>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <StateView
+                status="empty"
+                title={copy.export.noJobTitle}
+                description={copy.export.noJobDescription}
+                actions={
+                  <AsyncSubmitButton
+                    onClick={() => void handleCreateExport()}
+                    isPending={exportPending}
+                    pendingText={copy.actions.queueExportPending}
+                    aria-label={pickLocaleText(locale, {
+                      en: 'Create export job from empty state',
+                      zh_HANS: '从空状态创建导出任务',
+                      zh_HANT: '從空狀態建立匯出任務',
+                      ja: '空の状態からエクスポートジョブを作成',
+                      ko: '빈 상태에서 내보내기 작업 만들기',
+                      fr: 'Creer une tache d export depuis l etat vide',
+                    })}
+                  >
+                    {copy.actions.createExportJob}
+                  </AsyncSubmitButton>
+                }
+              />
+            )}
+          </FormSection>
+        </GlassSurface>
       ) : null}
 
       <ConfirmActionDialog
@@ -1494,7 +1656,14 @@ export function MarshmallowManagementScreen({
         title={dialogState?.title || ''}
         description={dialogState?.description || ''}
         confirmText={dialogState?.confirmText ?? copy.actions.approve}
-        cancelText={pickLocaleText(locale, { en: 'Cancel', zh_HANS: '取消', zh_HANT: '取消', ja: 'キャンセル', ko: '취소', fr: 'Annuler' })}
+        cancelText={pickLocaleText(locale, {
+          en: 'Cancel',
+          zh_HANS: '取消',
+          zh_HANT: '取消',
+          ja: 'キャンセル',
+          ko: '취소',
+          fr: 'Annuler',
+        })}
         intent={dialogState?.intent}
         isPending={dialogPending}
         onCancel={() => {

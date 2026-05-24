@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -27,7 +26,7 @@ describe('TenantSendingDomainService', () => {
         now: () => '2026-05-08T10:00:00.000Z',
         id: () => 'domain-generated',
         token: () => 'token-generated',
-      },
+      }
     );
   });
 
@@ -65,7 +64,7 @@ describe('TenantSendingDomainService', () => {
             ],
           }),
         ],
-      }),
+      })
     );
     expect(result.domains[0].dnsRecords[0].host).toBe('_tcrn-email.mail.alpha.example.com');
   });
@@ -91,7 +90,7 @@ describe('TenantSendingDomainService', () => {
     await expect(
       service.saveTenantSenderSelection('tenant_alpha', {
         defaultDomainId: 'domain-1',
-      }),
+      })
     ).rejects.toThrow(BadRequestException);
   });
 
@@ -138,6 +137,8 @@ describe('TenantSendingDomainService', () => {
   it('returns not found when AC manages an unknown tenant', async () => {
     repository.findTenantById.mockResolvedValue(null);
 
-    await expect(service.getManagedTenantSendingDomains('missing-tenant')).rejects.toThrow(NotFoundException);
+    await expect(service.getManagedTenantSendingDomains('missing-tenant')).rejects.toThrow(
+      NotFoundException
+    );
   });
 });

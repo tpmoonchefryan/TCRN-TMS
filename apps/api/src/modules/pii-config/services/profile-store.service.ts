@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable } from '@nestjs/common';
+
 import { type RequestContext } from '@tcrn/shared';
 
 import { ProfileStoreApplicationService } from '../application/profile-store.service';
@@ -12,9 +12,7 @@ import {
 
 @Injectable()
 export class ProfileStoreService {
-  constructor(
-    private readonly profileStoreApplicationService: ProfileStoreApplicationService,
-  ) {}
+  constructor(private readonly profileStoreApplicationService: ProfileStoreApplicationService) {}
 
   /**
    * Get all profile stores (multi-tenant aware - using raw SQL for proper schema support)

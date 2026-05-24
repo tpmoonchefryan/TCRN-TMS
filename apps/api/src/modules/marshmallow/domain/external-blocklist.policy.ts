@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import type { LocalizedText } from '@tcrn/shared';
 
 import { readLocalizedText } from '../../../platform/persistence/localized-text.persistence';
@@ -56,15 +55,12 @@ export interface ExternalBlocklistItemWithMeta extends ExternalBlocklistItem {
 
 export function getExternalBlocklistScope(
   type: OwnerType,
-  id: string | null,
+  id: string | null
 ): ExternalBlocklistScope {
   return { type, id };
 }
 
-export function assertValidExternalBlocklistPattern(
-  patternType: string,
-  pattern: string,
-): void {
+export function assertValidExternalBlocklistPattern(patternType: string, pattern: string): void {
   if (patternType !== PatternType.URL_REGEX) {
     return;
   }
@@ -75,13 +71,13 @@ export function assertValidExternalBlocklistPattern(
 export function isExternalBlocklistInherited(
   item: Pick<RawExternalBlocklistPatternRecord, 'ownerType' | 'ownerId'>,
   scopeType: OwnerType,
-  scopeId: string | null,
+  scopeId: string | null
 ): boolean {
   return item.ownerType !== scopeType || item.ownerId !== scopeId;
 }
 
 export function normalizeExternalBlocklistItem(
-  item: RawExternalBlocklistPatternRecord,
+  item: RawExternalBlocklistPatternRecord
 ): ExternalBlocklistItem {
   return {
     ...item,
@@ -96,7 +92,7 @@ export function mapExternalBlocklistItemWithMeta(
   item: RawExternalBlocklistPatternRecord,
   scopeType: OwnerType,
   scopeId: string | null,
-  disabledIds: ReadonlySet<string>,
+  disabledIds: ReadonlySet<string>
 ): ExternalBlocklistItemWithMeta {
   const normalized = normalizeExternalBlocklistItem(item);
   const isInherited = isExternalBlocklistInherited(item, scopeType, scopeId);

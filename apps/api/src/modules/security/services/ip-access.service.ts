@@ -1,13 +1,13 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import {
-    BadRequestException,
-    Injectable,
-    Logger,
-    NotFoundException,
-    OnModuleInit,
+  BadRequestException,
+  Injectable,
+  Logger,
+  NotFoundException,
+  OnModuleInit,
 } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
+
 import { Prisma } from '@tcrn/database';
 import { ErrorCodes, type RequestContext } from '@tcrn/shared';
 
@@ -33,7 +33,7 @@ export class IpAccessService implements OnModuleInit {
   constructor(
     private readonly databaseService: DatabaseService,
     private readonly redisService: RedisService,
-    private readonly changeLogService: ChangeLogService,
+    private readonly changeLogService: ChangeLogService
   ) {}
 
   async onModuleInit() {
@@ -45,7 +45,7 @@ export class IpAccessService implements OnModuleInit {
    */
   async checkAccess(
     ip: string,
-    scope: 'global' | 'admin' | 'public' | 'api',
+    scope: 'global' | 'admin' | 'public' | 'api'
   ): Promise<{ allowed: boolean; reason?: string; matchedRule?: IpRule }> {
     // Check Redis cache first
     const cacheKey = `ip_access:${scope}:${ip}`;
@@ -151,13 +151,17 @@ export class IpAccessService implements OnModuleInit {
         },
       });
 
-      await this.changeLogService.create(tx, {
-        action: 'create',
-        objectType: 'ip_access_rule',
-        objectId: newRule.id,
-        objectName: dto.ipPattern,
-        newValue: { ruleType: dto.ruleType, ipPattern: dto.ipPattern },
-      }, context);
+      await this.changeLogService.create(
+        tx,
+        {
+          action: 'create',
+          objectType: 'ip_access_rule',
+          objectId: newRule.id,
+          objectName: dto.ipPattern,
+          newValue: { ruleType: dto.ruleType, ipPattern: dto.ipPattern },
+        },
+        context
+      );
 
       return newRule;
     });
@@ -199,12 +203,16 @@ export class IpAccessService implements OnModuleInit {
         data: { isActive: false },
       });
 
-      await this.changeLogService.create(tx, {
-        action: 'delete',
-        objectType: 'ip_access_rule',
-        objectId: id,
-        objectName: rule.ipPattern,
-      }, context);
+      await this.changeLogService.create(
+        tx,
+        {
+          action: 'delete',
+          objectType: 'ip_access_rule',
+          objectId: id,
+          objectName: rule.ipPattern,
+        },
+        context
+      );
     });
 
     await this.loadRules();
@@ -245,10 +253,7 @@ export class IpAccessService implements OnModuleInit {
     const rules = await prisma.ipAccessRule.findMany({
       where: {
         isActive: true,
-        OR: [
-          { expiresAt: null },
-          { expiresAt: { gt: new Date() } },
-        ],
+        OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
       },
     });
 
@@ -314,7 +319,8 @@ export class IpAccessService implements OnModuleInit {
     }
 
     const ipNum = (ipParts[0] << 24) + (ipParts[1] << 16) + (ipParts[2] << 8) + ipParts[3];
-    const networkNum = (networkParts[0] << 24) + (networkParts[1] << 16) + (networkParts[2] << 8) + networkParts[3];
+    const networkNum =
+      (networkParts[0] << 24) + (networkParts[1] << 16) + (networkParts[2] << 8) + networkParts[3];
     const mask = ~((1 << (32 - prefix)) - 1);
 
     return (ipNum & mask) === (networkNum & mask);
@@ -371,12 +377,14 @@ export class IpAccessService implements OnModuleInit {
 
   private async updateHitCount(ruleId: string): Promise<void> {
     const prisma = this.databaseService.getPrisma();
-    prisma.ipAccessRule.update({
-      where: { id: ruleId },
-      data: {
-        hitCount: { increment: 1 },
-        lastHitAt: new Date(),
-      },
-    }).catch(() => {});
+    prisma.ipAccessRule
+      .update({
+        where: { id: ruleId },
+        data: {
+          hitCount: { increment: 1 },
+          lastHitAt: new Date(),
+        },
+      })
+      .catch(() => {});
   }
 }

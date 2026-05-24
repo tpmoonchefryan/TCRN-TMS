@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import type { RequestContext } from '@tcrn/shared';
 
 import type { EffectiveAdapterResolutionResult } from '../../integration/domain/adapter-resolution.policy';
@@ -49,7 +48,7 @@ export interface ReportPiiPlatformRequestPayload {
 }
 
 export const resolveReportPiiPlatformRuntime = (
-  adapter: EffectiveAdapterResolutionResult | null,
+  adapter: EffectiveAdapterResolutionResult | null
 ): ReportPiiPlatformRuntime | null => {
   if (!adapter) {
     return null;
@@ -80,7 +79,7 @@ export const buildReportPiiPlatformRequestPayload = (
   format: ReportFormat,
   estimatedRows: number,
   context: RequestContext,
-  runtime: ReportPiiPlatformRuntime,
+  runtime: ReportPiiPlatformRuntime
 ): ReportPiiPlatformRequestPayload => ({
   reportType,
   reportFormat: format,
@@ -107,7 +106,7 @@ export const buildPiiPlatformReportCreateResponse = (
   redirectUrl: string,
   expiresAt: string,
   estimatedRows: number,
-  customerCount: number,
+  customerCount: number
 ): PiiPlatformReportCreateResponse => ({
   deliveryMode: 'pii_platform_portal',
   requestId,
@@ -119,7 +118,7 @@ export const buildPiiPlatformReportCreateResponse = (
 
 const pickConfigValue = (
   adapter: EffectiveAdapterResolutionResult,
-  configKeys: string[],
+  configKeys: string[]
 ): string | null => {
   for (const configKey of configKeys) {
     const config = adapter.configs.find((item) => item.configKey === configKey);

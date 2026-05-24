@@ -8,7 +8,7 @@ import {
 } from '@tcrn/shared';
 
 export function buildPublicPresenceSeedRuntimeAuthorityForTests(
-  templateId: PublicPresenceTemplateId,
+  templateId: PublicPresenceTemplateId
 ): PublicPresenceAssetRuntimeAuthority {
   const template = structuredClone(PUBLIC_PRESENCE_TEMPLATE_SEED_BLUEPRINTS[templateId]);
   const allowedSectionKinds = Array.from(
@@ -18,7 +18,7 @@ export function buildPublicPresenceSeedRuntimeAuthorityForTests(
       ...template.optionalSections,
       ...template.lockedSections,
       ...template.defaultSectionOrder,
-    ]),
+    ])
   );
 
   return {
@@ -29,7 +29,7 @@ export function buildPublicPresenceSeedRuntimeAuthorityForTests(
       allowedSectionKinds.map((sectionKind) => [
         sectionKind,
         structuredClone(PUBLIC_PRESENCE_STAGE_SECTION_SEED_BLUEPRINTS[sectionKind]),
-      ]),
+      ])
     ),
     template,
   };

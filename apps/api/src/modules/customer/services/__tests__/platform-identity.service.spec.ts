@@ -1,7 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { RequestContext } from '@tcrn/shared';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { PlatformIdentityApplicationService } from '../../application/platform-identity.service';
 import { PlatformIdentityService } from '../platform-identity.service';
@@ -51,15 +51,13 @@ describe('PlatformIdentityService', () => {
     };
     vi.mocked(mockApplicationService.create).mockResolvedValue(expected);
 
-    await expect(
-      service.create('customer-1', 'talent-1', dto, context),
-    ).resolves.toEqual(expected);
+    await expect(service.create('customer-1', 'talent-1', dto, context)).resolves.toEqual(expected);
 
     expect(mockApplicationService.create).toHaveBeenCalledWith(
       'customer-1',
       'talent-1',
       dto,
-      context,
+      context
     );
   });
 
@@ -93,11 +91,11 @@ describe('PlatformIdentityService', () => {
         'identity-1',
         'talent-1',
         { platformNickname: 'Channel' },
-        context,
-      ),
+        context
+      )
     ).resolves.toMatchObject({ id: 'identity-1' });
     await expect(
-      service.getHistory('customer-1', 'talent-1', { page: 1 }, context),
+      service.getHistory('customer-1', 'talent-1', { page: 1 }, context)
     ).resolves.toEqual({
       items: [],
       meta: {

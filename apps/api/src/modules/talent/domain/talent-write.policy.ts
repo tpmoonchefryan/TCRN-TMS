@@ -1,9 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
-import {
-  stringifyLocalizedText,
-} from '../../../platform/persistence/localized-text.persistence';
 import type { LocalizedText, PartialLocalizedText } from '@tcrn/shared';
+
+import { stringifyLocalizedText } from '../../../platform/persistence/localized-text.persistence';
 import type { TalentLifecycleStatus } from './talent-read.policy';
 
 export interface TalentCreateInput {
@@ -131,19 +129,15 @@ export const EMPTY_TALENT_DELETE_DEPENDENCIES: TalentDeleteProtectedDependencyCo
   marshmallowMessages: 0,
 };
 
-export const canHardDeleteTalent = (
-  lifecycleStatus: TalentLifecycleStatus,
-): boolean => lifecycleStatus === 'draft';
+export const canHardDeleteTalent = (lifecycleStatus: TalentLifecycleStatus): boolean =>
+  lifecycleStatus === 'draft';
 
 export const hasProtectedTalentDeleteDependencies = (
-  dependencies: TalentDeleteProtectedDependencyCounts,
-): boolean =>
-  TALENT_DELETE_DEPENDENCY_DEFINITIONS.some(
-    ({ key }) => dependencies[key] > 0,
-  );
+  dependencies: TalentDeleteProtectedDependencyCounts
+): boolean => TALENT_DELETE_DEPENDENCY_DEFINITIONS.some(({ key }) => dependencies[key] > 0);
 
 export const buildTalentDeleteBlockedDependencies = (
-  dependencies: TalentDeleteProtectedDependencyCounts,
+  dependencies: TalentDeleteProtectedDependencyCounts
 ): TalentDeleteBlockedDependency[] =>
   TALENT_DELETE_DEPENDENCY_DEFINITIONS.flatMap(({ key, code, message }) =>
     dependencies[key] > 0
@@ -154,26 +148,21 @@ export const buildTalentDeleteBlockedDependencies = (
             message,
           },
         ]
-      : [],
+      : []
   );
 
-export const buildTalentPath = (
-  code: string,
-  subsidiaryPath?: string | null,
-): string => (subsidiaryPath ? `${subsidiaryPath}${code}/` : `/${code}/`);
+export const buildTalentPath = (code: string, subsidiaryPath?: string | null): string =>
+  subsidiaryPath ? `${subsidiaryPath}${code}/` : `/${code}/`;
 
 export const buildTalentDefaultSettings = (
-  settings?: Record<string, unknown>,
+  settings?: Record<string, unknown>
 ): Record<string, unknown> => ({
   marshmallowEnabled: true,
   inheritTimezone: true,
   ...(settings || {}),
 });
 
-export const buildTalentUpdateMutation = (
-  data: TalentUpdateInput,
-  userId: string,
-) => {
+export const buildTalentUpdateMutation = (data: TalentUpdateInput, userId: string) => {
   const updates: string[] = [];
   const params: unknown[] = [];
   let paramIndex = 3;

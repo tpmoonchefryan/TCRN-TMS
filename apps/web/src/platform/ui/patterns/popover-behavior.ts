@@ -1,4 +1,11 @@
-import { type FocusEvent, type KeyboardEvent, useCallback, useEffect, useRef, useState } from 'react';
+import {
+  type FocusEvent,
+  type KeyboardEvent,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 
 import { motionConstants } from '../foundations/tokens';
 
@@ -77,7 +84,9 @@ export function usePopoverListBehavior({
   useEffect(() => {
     if (isOpen && popoverRef.current) {
       focusTimerRef.current = window.setTimeout(() => {
-        const initialItem = popoverRef.current?.querySelector(initialFocusSelector) as HTMLElement | null;
+        const initialItem = popoverRef.current?.querySelector(
+          initialFocusSelector
+        ) as HTMLElement | null;
         const firstItem = popoverRef.current?.querySelector(itemSelector) as HTMLElement | null;
         (initialItem ?? firstItem)?.focus();
       }, 0);
@@ -91,46 +100,59 @@ export function usePopoverListBehavior({
     };
   }, [initialFocusSelector, isOpen, itemSelector]);
 
-  const handleKeyDown = useCallback((event: KeyboardEvent) => {
-    if (!isOpen) {
-      return;
-    }
-
-    const items = Array.from(popoverRef.current?.querySelectorAll(itemSelector) ?? []) as HTMLElement[];
-    const index = items.indexOf(document.activeElement as HTMLElement);
-
-    if (event.key === 'ArrowDown' || event.key === 'ArrowUp' || event.key === 'Home' || event.key === 'End') {
-      event.preventDefault();
-
-      if (items.length === 0) {
+  const handleKeyDown = useCallback(
+    (event: KeyboardEvent) => {
+      if (!isOpen) {
         return;
       }
 
-      if (event.key === 'ArrowDown') {
-        const nextIndex = (index + 1) % items.length;
-        items[nextIndex]?.focus();
-      } else if (event.key === 'ArrowUp') {
-        const previousIndex = (index - 1 + items.length) % items.length;
-        items[previousIndex]?.focus();
-      } else if (event.key === 'Home') {
-        items[0]?.focus();
-      } else {
-        items[items.length - 1]?.focus();
-      }
-    } else if (event.key === 'Escape') {
-      event.preventDefault();
-      closePopover();
-      triggerRef.current?.focus();
-    } else if (event.key === 'Tab') {
-      closePopover();
-    }
-  }, [closePopover, isOpen, itemSelector]);
+      const items = Array.from(
+        popoverRef.current?.querySelectorAll(itemSelector) ?? []
+      ) as HTMLElement[];
+      const index = items.indexOf(document.activeElement as HTMLElement);
 
-  const handleBlur = useCallback((event: FocusEvent) => {
-    if (containerRef.current && !containerRef.current.contains(event.relatedTarget as Node)) {
-      closePopover();
-    }
-  }, [closePopover]);
+      if (
+        event.key === 'ArrowDown' ||
+        event.key === 'ArrowUp' ||
+        event.key === 'Home' ||
+        event.key === 'End'
+      ) {
+        event.preventDefault();
+
+        if (items.length === 0) {
+          return;
+        }
+
+        if (event.key === 'ArrowDown') {
+          const nextIndex = (index + 1) % items.length;
+          items[nextIndex]?.focus();
+        } else if (event.key === 'ArrowUp') {
+          const previousIndex = (index - 1 + items.length) % items.length;
+          items[previousIndex]?.focus();
+        } else if (event.key === 'Home') {
+          items[0]?.focus();
+        } else {
+          items[items.length - 1]?.focus();
+        }
+      } else if (event.key === 'Escape') {
+        event.preventDefault();
+        closePopover();
+        triggerRef.current?.focus();
+      } else if (event.key === 'Tab') {
+        closePopover();
+      }
+    },
+    [closePopover, isOpen, itemSelector]
+  );
+
+  const handleBlur = useCallback(
+    (event: FocusEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.relatedTarget as Node)) {
+        closePopover();
+      }
+    },
+    [closePopover]
+  );
 
   return {
     closePopover,

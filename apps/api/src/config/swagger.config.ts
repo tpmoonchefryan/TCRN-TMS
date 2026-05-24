@@ -1,10 +1,8 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 /**
  * Swagger Configuration
  * Centralized configuration for OpenAPI documentation
  */
-
 import { DocumentBuilder } from '@nestjs/swagger';
 
 /**
@@ -16,7 +14,7 @@ export const OPERATIONS_TAGS = [
   { name: 'Org - Subsidiaries', description: '子公司管理' },
   { name: 'Org - Talents', description: '艺人管理' },
   { name: 'Org - Tenants', description: '租户管理' },
-  
+
   // 👥 Customer - 客户管理
   { name: 'Customer - Profiles', description: '客户档案' },
   { name: 'Customer - Platform IDs', description: '平台身份' },
@@ -24,7 +22,7 @@ export const OPERATIONS_TAGS = [
   { name: 'Customer - External IDs', description: '外部ID' },
   { name: 'Customer - Import', description: '数据导入' },
   { name: 'Customer - Export', description: '数据导出' },
-  
+
   // 🛠️ Ops - 运营工具
   { name: 'Ops - Marshmallow', description: '棉花糖匿名消息' },
   { name: 'Ops - Blocklist', description: '外链黑名单' },
@@ -32,7 +30,7 @@ export const OPERATIONS_TAGS = [
   { name: 'Ops - Reports', description: '报表生成' },
   { name: 'Ops - Email', description: '邮件配置与模板' },
   { name: 'Ops - Integration', description: '第三方集成' },
-  
+
   // ⚙️ System - Roles/Permissions
   { name: 'System - Roles', description: '角色管理' },
   { name: 'System - Permissions', description: '权限管理' },
@@ -45,10 +43,10 @@ export const CONFIG_TAGS = [
   // 🔐 Auth
   { name: 'Auth', description: '认证与登录' },
   { name: 'Auth - User Profile', description: '用户资料管理' },
-  
+
   // 📊 Org
   { name: 'Org - Tenants', description: '租户管理' },
-  
+
   // 🛠️ Ops
   { name: 'Ops - Email', description: '邮件配置与模板' },
 
@@ -89,14 +87,19 @@ export function buildSwaggerConfig(
   title = 'TCRN TMS API',
   description = 'Talent Creator Relationship Network - Talent Management System API',
   version = '1.0.0',
-  tags: { name: string; description: string }[] | readonly { name: string; description: string }[] = API_TAGS,
+  tags:
+    | { name: string; description: string }[]
+    | readonly { name: string; description: string }[] = API_TAGS
 ) {
   const builder = new DocumentBuilder()
     .setTitle(title)
     .setDescription(description)
     .setVersion(version)
     .setContact('TCRN Team', 'https://github.com/tpmoonchefryan/TCRN-TMS', 'support@tcrn.dev')
-    .setLicense('PolyForm Noncommercial', 'https://polyformproject.org/licenses/noncommercial/1.0.0/')
+    .setLicense(
+      'PolyForm Noncommercial',
+      'https://polyformproject.org/licenses/noncommercial/1.0.0/'
+    )
     .addBearerAuth(
       {
         type: 'http',
@@ -104,7 +107,7 @@ export function buildSwaggerConfig(
         bearerFormat: 'JWT',
         description: 'Enter your JWT token',
       },
-      'JWT-auth',
+      'JWT-auth'
     )
     .addOAuth2(
       {
@@ -116,7 +119,7 @@ export function buildSwaggerConfig(
           },
         },
       },
-      'OAuth2',
+      'OAuth2'
     )
     .addServer('http://localhost:4000', 'Development Server')
     .addServer('https://api.staging.tcrn.dev', 'Staging Server')
@@ -127,7 +130,7 @@ export function buildSwaggerConfig(
   for (const tag of tags) {
     uniqueTags.set(tag.name, tag.description);
   }
-  
+
   for (const [name, desc] of uniqueTags.entries()) {
     builder.addTag(name, desc);
   }

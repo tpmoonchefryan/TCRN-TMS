@@ -1,9 +1,12 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 // Marshmallow Module Zod Schemas - Validation for anonymous message box
-
 import { z } from 'zod';
 
-import { LocalizedTextSchema, PaginationSchema, PartialLocalizedTextSchema } from '../common.schema';
+import {
+  LocalizedTextSchema,
+  PaginationSchema,
+  PartialLocalizedTextSchema,
+} from '../common.schema';
 
 // ============================================================================
 // Enums
@@ -11,11 +14,23 @@ import { LocalizedTextSchema, PaginationSchema, PartialLocalizedTextSchema } fro
 export const CaptchaModeSchema = z.enum(['always', 'never', 'auto']);
 export const MessageStatusSchema = z.enum(['pending', 'approved', 'rejected', 'spam']);
 export const RejectionReasonSchema = z.enum([
-  'profanity', 'spam', 'harassment', 'off_topic', 
-  'duplicate', 'external_link', 'manual', 'other'
+  'profanity',
+  'spam',
+  'harassment',
+  'off_topic',
+  'duplicate',
+  'external_link',
+  'manual',
+  'other',
 ]);
 export const MarshmallowBatchActionSchema = z.enum([
-  'approve', 'reject', 'markRead', 'markUnread', 'star', 'unstar', 'delete'
+  'approve',
+  'reject',
+  'markRead',
+  'markUnread',
+  'star',
+  'unstar',
+  'delete',
 ]);
 export const ExportFormatSchema = z.enum(['csv', 'json', 'xlsx']);
 

@@ -1,13 +1,8 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import type { RequestContext } from '@tcrn/shared';
 
 import type { EffectiveAdapterResolutionResult } from '../../integration/domain/adapter-resolution.policy';
-import type {
-  CompanyPiiDataDto,
-  PiiDataDto,
-  ProfileType,
-} from '../dto/customer.dto';
+import type { CompanyPiiDataDto, PiiDataDto, ProfileType } from '../dto/customer.dto';
 
 export const PII_PLATFORM_CODE = 'TCRN_PII_PLATFORM';
 
@@ -86,7 +81,7 @@ export interface CustomerPiiPlatformLifecyclePayload {
 }
 
 export const resolveCustomerPiiPlatformRuntime = (
-  adapter: EffectiveAdapterResolutionResult | null,
+  adapter: EffectiveAdapterResolutionResult | null
 ): CustomerPiiPlatformRuntime | null => {
   if (!adapter) {
     return null;
@@ -115,7 +110,7 @@ export const buildCustomerPiiPlatformWritePayload = (
   profileType: ProfileType,
   pii: PiiDataDto | CompanyPiiDataDto,
   context: RequestContext,
-  runtime: CustomerPiiPlatformRuntime,
+  runtime: CustomerPiiPlatformRuntime
 ): CustomerPiiPlatformWritePayload => ({
   customerId,
   talentId,
@@ -137,7 +132,7 @@ export const buildCustomerPiiPlatformPortalSessionPayload = (
   talentId: string,
   profileType: ProfileType,
   context: RequestContext,
-  runtime: CustomerPiiPlatformRuntime,
+  runtime: CustomerPiiPlatformRuntime
 ): CustomerPiiPlatformPortalSessionPayload => ({
   customerId,
   talentId,
@@ -165,7 +160,7 @@ export const buildCustomerPiiPlatformLifecyclePayload = (
     occurredAt: Date;
   },
   context: RequestContext,
-  runtime: CustomerPiiPlatformRuntime,
+  runtime: CustomerPiiPlatformRuntime
 ): CustomerPiiPlatformLifecyclePayload => ({
   customerId,
   talentId,
@@ -202,7 +197,7 @@ export const buildCustomerPiiPlatformSyncResult = (customerId: string) => ({
 
 const pickConfigValue = (
   adapter: EffectiveAdapterResolutionResult,
-  configKeys: string[],
+  configKeys: string[]
 ): string | null => {
   for (const configKey of configKeys) {
     const config = adapter.configs.find((item) => item.configKey === configKey);

@@ -1,11 +1,10 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import {
-    CanActivate,
-    ExecutionContext,
-    ForbiddenException,
-    Injectable,
-    SetMetadata,
+  CanActivate,
+  ExecutionContext,
+  ForbiddenException,
+  Injectable,
+  SetMetadata,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Request } from 'express';
@@ -13,8 +12,7 @@ import { Request } from 'express';
 import { UaDetectionService } from '../services/ua-detection.service';
 
 export const UA_CHECK_MODE = 'ua_check_mode';
-export const UaCheckMode = (mode: 'normal' | 'strict' | 'skip') =>
-  SetMetadata(UA_CHECK_MODE, mode);
+export const UaCheckMode = (mode: 'normal' | 'strict' | 'skip') => SetMetadata(UA_CHECK_MODE, mode);
 
 interface UaDetectionRequest extends Request {
   isSuspiciousUa?: boolean;
@@ -25,7 +23,7 @@ interface UaDetectionRequest extends Request {
 export class UaDetectionGuard implements CanActivate {
   constructor(
     private readonly reflector: Reflector,
-    private readonly uaDetectionService: UaDetectionService,
+    private readonly uaDetectionService: UaDetectionService
   ) {}
 
   canActivate(context: ExecutionContext): boolean {

@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable, NotFoundException } from '@nestjs/common';
+
 import { ErrorCodes, type RequestContext } from '@tcrn/shared';
 
 import {
@@ -14,19 +14,17 @@ import { getAdapterTenantSchema } from './adapter-context.util';
 
 @Injectable()
 export class AdapterReadApplicationService {
-  constructor(
-    private readonly adapterReadRepository: AdapterReadRepository,
-  ) {}
+  constructor(private readonly adapterReadRepository: AdapterReadRepository) {}
 
   async findMany(
     scope: IntegrationAdapterOwnerScope,
     query: AdapterListQueryDto,
-    context: RequestContext,
+    context: RequestContext
   ) {
     const rows = await this.adapterReadRepository.findMany(
       getAdapterTenantSchema(context),
       scope,
-      query,
+      query
     );
 
     return rows.map((row) => mapIntegrationAdapterListItem(row, scope));

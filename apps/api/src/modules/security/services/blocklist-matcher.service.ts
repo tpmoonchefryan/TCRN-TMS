@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 
 import { DatabaseService } from '../../database';
@@ -37,7 +36,7 @@ export class BlocklistMatcherService implements OnModuleInit {
 
   constructor(
     private readonly databaseService: DatabaseService,
-    private readonly redisService: RedisService,
+    private readonly redisService: RedisService
   ) {}
 
   async onModuleInit() {
@@ -81,7 +80,9 @@ export class BlocklistMatcherService implements OnModuleInit {
       }
     }
 
-    this.logger.log(`Loaded ${this.keywordPatterns.size} keywords and ${this.regexPatterns.length} regex patterns`);
+    this.logger.log(
+      `Loaded ${this.keywordPatterns.size} keywords and ${this.regexPatterns.length} regex patterns`
+    );
   }
 
   /**
@@ -114,7 +115,7 @@ export class BlocklistMatcherService implements OnModuleInit {
             filteredContent,
             pos,
             keyword.length,
-            pattern.replacement,
+            pattern.replacement
           );
         }
 
@@ -163,7 +164,7 @@ export class BlocklistMatcherService implements OnModuleInit {
   testPattern(
     testContent: string,
     pattern: string,
-    patternType: 'keyword' | 'regex' | 'wildcard',
+    patternType: 'keyword' | 'regex' | 'wildcard'
   ): { matched: boolean; positions: number[]; highlightedContent: string } {
     const positions: number[] = [];
     let highlightedContent = testContent;
@@ -178,7 +179,7 @@ export class BlocklistMatcherService implements OnModuleInit {
       }
       highlightedContent = testContent.replace(
         new RegExp(this.escapeRegex(pattern), 'gi'),
-        '<mark>$&</mark>',
+        '<mark>$&</mark>'
       );
     } else {
       let regex: RegExp;
@@ -246,18 +247,13 @@ export class BlocklistMatcherService implements OnModuleInit {
 
   private escalateAction(
     current: 'allow' | 'reject' | 'flag' | 'replace',
-    incoming: 'reject' | 'flag' | 'replace',
+    incoming: 'reject' | 'flag' | 'replace'
   ): 'allow' | 'reject' | 'flag' | 'replace' {
     const priority = { allow: 0, replace: 1, flag: 2, reject: 3 };
     return priority[incoming] > priority[current] ? incoming : current;
   }
 
-  private replaceAtPosition(
-    str: string,
-    pos: number,
-    length: number,
-    replacement: string,
-  ): string {
+  private replaceAtPosition(str: string, pos: number, length: number, replacement: string): string {
     return str.substring(0, pos) + replacement + str.substring(pos + length);
   }
 

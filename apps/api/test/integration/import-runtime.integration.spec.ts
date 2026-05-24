@@ -1,11 +1,11 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 // Real runtime smoke for customer import jobs
+import { Readable } from 'stream';
 
 import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Queue, Worker } from 'bullmq';
 import request from 'supertest';
-import { Readable } from 'stream';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { PrismaClient } from '@tcrn/database';
@@ -20,12 +20,12 @@ import {
   type TestUser,
 } from '@tcrn/shared';
 
+import { importJobProcessor } from '../../../worker/src/jobs/import.job';
 import { AppModule } from '../../src/app.module';
 import { TokenService } from '../../src/modules/auth/token.service';
-import { BUCKETS, MinioService } from '../../src/modules/minio';
 import { ImportJobStatus } from '../../src/modules/import/dto/import.dto';
+import { BUCKETS, MinioService } from '../../src/modules/minio';
 import { bootstrapTestApp } from '../../src/testing/bootstrap-test-app';
-import { importJobProcessor } from '../../../worker/src/jobs/import.job';
 import {
   createBullMqConnectionFromEnv,
   purgeWaitingImportJobsForTenantTestSchemas,
@@ -59,14 +59,12 @@ describe('Import Runtime Smoke Integration', () => {
         WHERE id = $1::uuid
       `,
       targetTalentId,
-      testUser.id,
+      testUser.id
     );
   };
 
   const withAuth = (req: request.Test, includeTalentHeader = true) => {
-    req
-      .set('Authorization', `Bearer ${accessToken}`)
-      .set('X-Tenant-ID', tenantFixture.tenant.id);
+    req.set('Authorization', `Bearer ${accessToken}`).set('X-Tenant-ID', tenantFixture.tenant.id);
 
     if (includeTalentHeader) {
       req.set('X-Talent-Id', talentId);
@@ -87,7 +85,7 @@ describe('Import Runtime Smoke Integration', () => {
         request(app.getHttpServer()).get(
           `/api/v1/talents/${talentId}/imports/customers/individual_import/${jobId}`
         ),
-        false,
+        false
       ).expect(200);
 
       const job = response.body.data as {
@@ -105,7 +103,9 @@ describe('Import Runtime Smoke Integration', () => {
       }
 
       if (job.status === ImportJobStatus.FAILED || job.status === ImportJobStatus.PARTIAL) {
-        const errors = await prisma.$queryRawUnsafe<Array<{ rowNumber: number; errorMessage: string }>>(
+        const errors = await prisma.$queryRawUnsafe<
+          Array<{ rowNumber: number; errorMessage: string }>
+        >(
           `
             SELECT
               row_number as "rowNumber",
@@ -114,10 +114,10 @@ describe('Import Runtime Smoke Integration', () => {
             WHERE import_job_id = $1::uuid
             ORDER BY row_number ASC, created_at ASC
           `,
-          jobId,
+          jobId
         );
         throw new Error(
-          `Import job ${jobId} ended as ${job.status}: ${errors.map((error) => `${error.rowNumber}:${error.errorMessage}`).join('; ') || 'unknown worker failure'}`,
+          `Import job ${jobId} ended as ${job.status}: ${errors.map((error) => `${error.rowNumber}:${error.errorMessage}`).join('; ') || 'unknown worker failure'}`
         );
       }
 
@@ -136,7 +136,7 @@ describe('Import Runtime Smoke Integration', () => {
       objectName,
       Readable.from(contentBuffer),
       contentBuffer.byteLength,
-      'text/csv',
+      'text/csv'
     );
 
     createdImportObjectNames.add(objectName);
@@ -184,7 +184,7 @@ describe('Import Runtime Smoke Integration', () => {
       fileName,
       fileSize,
       totalRows,
-      testUser.id,
+      testUser.id
     );
 
     return rows[0]!.id;
@@ -193,7 +193,7 @@ describe('Import Runtime Smoke Integration', () => {
   const enqueueInternalImportJob = async (
     jobId: string,
     objectName: string,
-    jobType: 'customer_update' | 'membership_sync',
+    jobType: 'customer_update' | 'membership_sync'
   ) => {
     if (!importQueue) {
       throw new Error('Import queue is not ready');
@@ -240,7 +240,7 @@ describe('Import Runtime Smoke Integration', () => {
       `,
       code,
       JSON.stringify(createLocalizedText({ en: `${code} Platform` })),
-      `${code} Platform`,
+      `${code} Platform`
     );
 
     return { id: rows[0]!.id, code };
@@ -276,7 +276,7 @@ describe('Import Runtime Smoke Integration', () => {
         RETURNING id
       `,
       classCode,
-      JSON.stringify(createLocalizedText({ en: `${classCode} Name` })),
+      JSON.stringify(createLocalizedText({ en: `${classCode} Name` }))
     );
     const membershipClassId = classRows[0]!.id;
 
@@ -305,7 +305,7 @@ describe('Import Runtime Smoke Integration', () => {
       `,
       membershipClassId,
       typeCode,
-      JSON.stringify(createLocalizedText({ en: `${typeCode} Name` })),
+      JSON.stringify(createLocalizedText({ en: `${typeCode} Name` }))
     );
     const membershipTypeId = typeRows[0]!.id;
 
@@ -336,7 +336,7 @@ describe('Import Runtime Smoke Integration', () => {
       `,
       membershipTypeId,
       oldLevelCode,
-      JSON.stringify(createLocalizedText({ en: `${oldLevelCode} Name` })),
+      JSON.stringify(createLocalizedText({ en: `${oldLevelCode} Name` }))
     );
 
     const newLevelRows = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
@@ -366,7 +366,7 @@ describe('Import Runtime Smoke Integration', () => {
       `,
       membershipTypeId,
       newLevelCode,
-      JSON.stringify(createLocalizedText({ en: `${newLevelCode} Name` })),
+      JSON.stringify(createLocalizedText({ en: `${newLevelCode} Name` }))
     );
 
     return {
@@ -380,7 +380,11 @@ describe('Import Runtime Smoke Integration', () => {
     };
   };
 
-  const insertPlatformIdentity = async (customerId: string, platformId: string, platformUid: string) => {
+  const insertPlatformIdentity = async (
+    customerId: string,
+    platformId: string,
+    platformUid: string
+  ) => {
     await prisma.$executeRawUnsafe(
       `
         INSERT INTO "${tenantFixture.schemaName}".platform_identity (
@@ -405,7 +409,7 @@ describe('Import Runtime Smoke Integration', () => {
       `,
       customerId,
       platformId,
-      platformUid,
+      platformUid
     );
   };
 
@@ -414,7 +418,7 @@ describe('Import Runtime Smoke Integration', () => {
     platformId: string,
     membershipClassId: string,
     membershipTypeId: string,
-    membershipLevelId: string,
+    membershipLevelId: string
   ) => {
     const rows = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
       `
@@ -454,7 +458,7 @@ describe('Import Runtime Smoke Integration', () => {
       membershipClassId,
       membershipTypeId,
       membershipLevelId,
-      testUser.id,
+      testUser.id
     );
 
     return rows[0]!.id;
@@ -488,7 +492,7 @@ describe('Import Runtime Smoke Integration', () => {
       prisma,
       tenantFixture,
       `import_runtime_user_${Date.now()}`,
-      ['ADMIN'],
+      ['ADMIN']
     );
 
     const subsidiary = await createTestSubsidiaryInTenant(prisma, tenantFixture, {
@@ -513,7 +517,7 @@ describe('Import Runtime Smoke Integration', () => {
         FROM "${tenantFixture.schemaName}".talent
         WHERE id = $1::uuid
       `,
-      talentId,
+      talentId
     );
     talentProfileStoreId = talentRows[0]!.profileStoreId;
 
@@ -558,7 +562,7 @@ describe('Import Runtime Smoke Integration', () => {
       request(app.getHttpServer()).post(
         `/api/v1/talents/${talentId}/imports/customers/individuals`
       ),
-      false,
+      false
     )
       .attach('file', Buffer.from(csvContent, 'utf8'), 'runtime_individual_import.csv')
       .expect(201);
@@ -597,7 +601,7 @@ describe('Import Runtime Smoke Integration', () => {
         WHERE talent_id = $1::uuid
           AND nickname = 'Runtime Import Customer'
       `,
-      talentId,
+      talentId
     );
 
     expect(rows).toHaveLength(1);
@@ -626,7 +630,11 @@ describe('Import Runtime Smoke Integration', () => {
       'platform_code,platform_uid,nickname,tags,notes',
       `${platform.code},${platformUid},Customer Update After,vip,updated through runtime smoke`,
     ].join('\n');
-    const jobId = await createInternalImportJob('customer_update_runtime.csv', Buffer.byteLength(csvContent, 'utf8'), 1);
+    const jobId = await createInternalImportJob(
+      'customer_update_runtime.csv',
+      Buffer.byteLength(csvContent, 'utf8'),
+      1
+    );
     const { objectName } = await uploadImportObject(jobId, csvContent);
 
     await enqueueInternalImportJob(jobId, objectName, 'customer_update');
@@ -636,13 +644,15 @@ describe('Import Runtime Smoke Integration', () => {
     expect(completedJob.status).toBe(ImportJobStatus.SUCCESS);
     expect(completedJob.progress.successRows).toBe(1);
 
-    const rows = await prisma.$queryRawUnsafe<Array<{ nickname: string; tags: string[]; notes: string | null }>>(
+    const rows = await prisma.$queryRawUnsafe<
+      Array<{ nickname: string; tags: string[]; notes: string | null }>
+    >(
       `
         SELECT nickname, tags, notes
         FROM "${tenantFixture.schemaName}".customer_profile
         WHERE id = $1::uuid
       `,
-      customer.id,
+      customer.id
     );
 
     expect(rows).toHaveLength(1);
@@ -670,14 +680,18 @@ describe('Import Runtime Smoke Integration', () => {
       platform.id,
       catalog.classId,
       catalog.typeId,
-      catalog.oldLevelId,
+      catalog.oldLevelId
     );
 
     const csvContent = [
       'platform_code,platform_uid,nickname,membership_class_code,membership_type_code,membership_level_code,valid_to',
       `${platform.code},${platformUid},Membership Sync Customer,${catalog.classCode},${catalog.typeCode},${catalog.newLevelCode},2026-12-31`,
     ].join('\n');
-    const jobId = await createInternalImportJob('membership_sync_runtime.csv', Buffer.byteLength(csvContent, 'utf8'), 1);
+    const jobId = await createInternalImportJob(
+      'membership_sync_runtime.csv',
+      Buffer.byteLength(csvContent, 'utf8'),
+      1
+    );
     const { objectName } = await uploadImportObject(jobId, csvContent);
 
     await enqueueInternalImportJob(jobId, objectName, 'membership_sync');
@@ -702,7 +716,7 @@ describe('Import Runtime Smoke Integration', () => {
         FROM "${tenantFixture.schemaName}".membership_record
         WHERE id = $1::uuid
       `,
-      membershipRecordId,
+      membershipRecordId
     );
 
     expect(rows).toHaveLength(1);

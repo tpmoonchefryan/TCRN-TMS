@@ -1,17 +1,13 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+import { Injectable } from '@nestjs/common';
 
-import {
-    Injectable,
-} from '@nestjs/common';
 import type { RequestContext } from '@tcrn/shared';
 
 import { DatabaseService } from '../../database';
 import { ChangeLogService, TechEventLogService } from '../../log';
 import { CustomerProfileReadService } from '../application/customer-profile-read.service';
 import { CustomerProfileWriteService } from '../application/customer-profile-write.service';
-import {
-    CustomerListQueryDto,
-} from '../dto/customer.dto';
+import { CustomerListQueryDto } from '../dto/customer.dto';
 
 /**
  * Customer Profile Service
@@ -24,7 +20,7 @@ export class CustomerProfileService {
     private readonly changeLogService: ChangeLogService,
     private readonly techEventLogService: TechEventLogService,
     private readonly customerProfileReadService: CustomerProfileReadService,
-    private readonly customerProfileWriteService: CustomerProfileWriteService,
+    private readonly customerProfileWriteService: CustomerProfileWriteService
   ) {}
 
   /**
@@ -49,15 +45,9 @@ export class CustomerProfileService {
     talentId: string,
     reasonCode: string | undefined,
     version: number,
-    context: RequestContext,
+    context: RequestContext
   ) {
-    return this.customerProfileWriteService.deactivate(
-      id,
-      talentId,
-      reasonCode,
-      version,
-      context,
-    );
+    return this.customerProfileWriteService.deactivate(id, talentId, reasonCode, version, context);
   }
 
   /**
@@ -66,5 +56,4 @@ export class CustomerProfileService {
   async reactivate(id: string, talentId: string, context: RequestContext) {
     return this.customerProfileWriteService.reactivate(id, talentId, context);
   }
-
 }

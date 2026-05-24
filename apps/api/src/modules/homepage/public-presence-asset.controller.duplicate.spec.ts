@@ -1,7 +1,9 @@
-import 'reflect-metadata';
-
 import type { INestApplication } from '@nestjs/common';
 import { Test, type TestingModule } from '@nestjs/testing';
+import 'reflect-metadata';
+import request from 'supertest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import {
   buildPublicPresenceComponentAssetManifest,
   buildPublicPresenceTemplateAssetManifest,
@@ -10,8 +12,6 @@ import {
   getPublicPresenceTemplateSeedText,
   type PublicPresenceAssetManifest,
 } from '@tcrn/shared';
-import request from 'supertest';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { bootstrapTestApp } from '../../testing/bootstrap-test-app';
 import { PublicPresenceAssetService } from './application/public-presence-asset.service';
@@ -41,7 +41,7 @@ describe('PublicPresenceAssetController duplicate path', () => {
 
   const createAssetRow = (
     seed: ReturnType<typeof getPublicPresenceSystemAssetSeeds>[number],
-    overrides: Record<string, unknown> = {},
+    overrides: Record<string, unknown> = {}
   ) => ({
     assetKind: seed.assetKind,
     code: seed.code,
@@ -63,12 +63,11 @@ describe('PublicPresenceAssetController duplicate path', () => {
 
   const createRevisionRow = (
     seed: ReturnType<typeof getPublicPresenceSystemAssetSeeds>[number],
-    overrides: Record<string, unknown> = {},
+    overrides: Record<string, unknown> = {}
   ) => {
     const assetId =
       typeof overrides.assetId === 'string' ? overrides.assetId : `asset-${seed.code}`;
-    const revisionId =
-      typeof overrides.id === 'string' ? overrides.id : `revision-${seed.code}`;
+    const revisionId = typeof overrides.id === 'string' ? overrides.id : `revision-${seed.code}`;
 
     let manifest: PublicPresenceAssetManifest;
     if (seed.assetKind === 'template') {
@@ -168,14 +167,18 @@ describe('PublicPresenceAssetController duplicate path', () => {
     }).compile();
 
     const service = moduleFixture.get(PublicPresenceAssetService);
-    (service as unknown as {
-      publicPresenceAssetRepository: typeof repository;
-    }).publicPresenceAssetRepository = repository;
+    (
+      service as unknown as {
+        publicPresenceAssetRepository: typeof repository;
+      }
+    ).publicPresenceAssetRepository = repository;
 
     const controller = moduleFixture.get(PublicPresenceAssetController);
-    (controller as unknown as {
-      publicPresenceAssetService: PublicPresenceAssetService;
-    }).publicPresenceAssetService = service;
+    (
+      controller as unknown as {
+        publicPresenceAssetService: PublicPresenceAssetService;
+      }
+    ).publicPresenceAssetService = service;
 
     app = moduleFixture.createNestApplication();
     app.use((req, _res, next) => {
@@ -194,14 +197,14 @@ describe('PublicPresenceAssetController duplicate path', () => {
       assetKind: 'template',
       ids: TEST_IDS.template,
       seed: getPublicPresenceSystemAssetSeeds().find(
-        (item) => item.assetKind === 'template' && item.templateId === 'activeTalentHub',
+        (item) => item.assetKind === 'template' && item.templateId === 'activeTalentHub'
       )!,
     },
     {
       assetKind: 'component',
       ids: TEST_IDS.component,
       seed: getPublicPresenceSystemAssetSeeds().find(
-        (item) => item.assetKind === 'component' && item.componentType === 'SocialLinks',
+        (item) => item.assetKind === 'component' && item.componentType === 'SocialLinks'
       )!,
     },
   ])(
@@ -234,25 +237,26 @@ describe('PublicPresenceAssetController duplicate path', () => {
       const duplicatedRevision = createRevisionRow(seed, {
         assetId: duplicatedAssetId,
         id: duplicatedRevisionId,
-        manifest: seed.assetKind === 'template'
-          ? buildPublicPresenceTemplateAssetManifest(seed.templateId!, {
-              assetCode: `${seed.code}-copy`,
-              assetId: duplicatedAssetId,
-              assetRevisionId: duplicatedRevisionId,
-              description: seed.description,
-              name: seed.name,
-              ownerId: null,
-              ownerType: 'tenant',
-            })
-          : buildPublicPresenceComponentAssetManifest(seed.componentType!, {
-              assetCode: `${seed.code}-copy`,
-              assetId: duplicatedAssetId,
-              assetRevisionId: duplicatedRevisionId,
-              description: seed.description,
-              name: seed.name,
-              ownerId: null,
-              ownerType: 'tenant',
-            }),
+        manifest:
+          seed.assetKind === 'template'
+            ? buildPublicPresenceTemplateAssetManifest(seed.templateId!, {
+                assetCode: `${seed.code}-copy`,
+                assetId: duplicatedAssetId,
+                assetRevisionId: duplicatedRevisionId,
+                description: seed.description,
+                name: seed.name,
+                ownerId: null,
+                ownerType: 'tenant',
+              })
+            : buildPublicPresenceComponentAssetManifest(seed.componentType!, {
+                assetCode: `${seed.code}-copy`,
+                assetId: duplicatedAssetId,
+                assetRevisionId: duplicatedRevisionId,
+                description: seed.description,
+                name: seed.name,
+                ownerId: null,
+                ownerType: 'tenant',
+              }),
       });
 
       repository.findAssetByCodeAtScope.mockImplementation(
@@ -261,7 +265,9 @@ describe('PublicPresenceAssetController duplicate path', () => {
             return null;
           }
 
-          const matchedSeed = getPublicPresenceSystemAssetSeeds().find((item) => item.code === code);
+          const matchedSeed = getPublicPresenceSystemAssetSeeds().find(
+            (item) => item.code === code
+          );
           if (!matchedSeed) {
             return null;
           }
@@ -271,12 +277,11 @@ describe('PublicPresenceAssetController duplicate path', () => {
           }
 
           return createAssetRow(matchedSeed, {
-            currentRevisionId: matchedSeed.code === seed.code
-              ? repairedRevisionId
-              : `revision-${matchedSeed.code}`,
+            currentRevisionId:
+              matchedSeed.code === seed.code ? repairedRevisionId : `revision-${matchedSeed.code}`,
             id: matchedSeed.code === seed.code ? legacyAssetId : `asset-${matchedSeed.code}`,
           });
-        },
+        }
       );
       repository.createRevisionAndAssignCurrent.mockImplementationOnce(async () => {
         repaired = true;
@@ -326,7 +331,7 @@ describe('PublicPresenceAssetController duplicate path', () => {
           assetId: legacyAssetId,
           artifactStatus: 'active',
           status: 'active',
-        }),
+        })
       );
       expect(response.body).toEqual(
         expect.objectContaining({
@@ -338,8 +343,8 @@ describe('PublicPresenceAssetController duplicate path', () => {
             id: duplicatedRevisionId,
             assetId: duplicatedAssetId,
           }),
-        }),
+        })
       );
-    },
+    }
   );
 });

@@ -1,10 +1,10 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
- 
-
-import { prisma } from '@tcrn/database';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { prisma } from '@tcrn/database';
+
 import { RedisService } from '../../redis/redis.service';
+import { PermissionSnapshotService } from '../permission-snapshot.service';
 
 // Mock prisma before imports
 vi.mock('@tcrn/database', () => ({
@@ -13,8 +13,6 @@ vi.mock('@tcrn/database', () => ({
     $executeRawUnsafe: vi.fn(),
   },
 }));
-
-import { PermissionSnapshotService } from '../permission-snapshot.service';
 
 const mockPrisma = prisma as unknown as {
   $queryRawUnsafe: ReturnType<typeof vi.fn>;
@@ -63,7 +61,7 @@ describe('PermissionSnapshotService', () => {
       }),
       keys: vi.fn().mockImplementation(async (pattern: string) => {
         const prefix = pattern.replace('*', '');
-        return Array.from(redisHashes.keys()).filter(k => k.startsWith(prefix));
+        return Array.from(redisHashes.keys()).filter((k) => k.startsWith(prefix));
       }),
       expire: vi.fn().mockResolvedValue(1),
       exists: vi.fn().mockImplementation(async (key: string) => {
@@ -81,7 +79,7 @@ describe('PermissionSnapshotService', () => {
   describe('checkPermission', () => {
     // When no scope is specified, service defaults to 'tenant' scope with null scopeId
     // The key format is: perm:{schema}:{userId}:tenant:null
-    
+
     it('should return true when permission is granted', async () => {
       // Set permission at tenant:null scope (default when no scope specified)
       redisHashes.set(getKey(testUserId, 'tenant'), {
@@ -183,7 +181,9 @@ describe('PermissionSnapshotService', () => {
     it('recalculates a stale tenant snapshot before checking permission', async () => {
       redisHashes.set(getKey(testUserId, 'tenant'), {});
       mockPrisma.$queryRawUnsafe
-        .mockResolvedValueOnce([{ roleId: testRoleId, scopeType: 'tenant', scopeId: null, inherit: true }])
+        .mockResolvedValueOnce([
+          { roleId: testRoleId, scopeType: 'tenant', scopeId: null, inherit: true },
+        ])
         .mockResolvedValueOnce([{ resourceCode: 'system_user', action: 'admin', effect: 'grant' }]);
 
       const result = await service.refreshAndCheckPermission(
@@ -192,18 +192,18 @@ describe('PermissionSnapshotService', () => {
         'system_user',
         'admin',
         'tenant',
-        null,
+        null
       );
 
       expect(result).toBe(true);
       expect(mockRedisService.del).toHaveBeenCalledWith(
-        `perm:${testTenantSchema}:${testUserId}:tenant:null`,
+        `perm:${testTenantSchema}:${testUserId}:tenant:null`
       );
       expect(mockRedisService.hmset).toHaveBeenCalledWith(
         `perm:${testTenantSchema}:${testUserId}:tenant:null`,
         {
           'system_user:admin': 'grant',
-        },
+        }
       );
     });
   });
@@ -288,17 +288,16 @@ describe('PermissionSnapshotService', () => {
   describe('calculateAndStoreSnapshot', () => {
     it('should delete existing snapshot and store new one', async () => {
       mockPrisma.$queryRawUnsafe
-        .mockResolvedValueOnce([{ roleId: testRoleId, scopeType: 'tenant', scopeId: null, inherit: true }]) // getUserRoleAssignments
+        .mockResolvedValueOnce([
+          { roleId: testRoleId, scopeType: 'tenant', scopeId: null, inherit: true },
+        ]) // getUserRoleAssignments
         .mockResolvedValueOnce([{ resourceCode: 'customer', action: 'read', effect: 'grant' }]); // getRolePermissions
 
       await service.calculateAndStoreSnapshot(testTenantSchema, testUserId, 'tenant', null);
 
       expect(mockRedisService.del).toHaveBeenCalled();
       expect(mockRedisService.hmset).toHaveBeenCalled();
-      expect(mockRedisService.expire).toHaveBeenCalledWith(
-        expect.any(String),
-        86400
-      );
+      expect(mockRedisService.expire).toHaveBeenCalledWith(expect.any(String), 86400);
     });
 
     it('should not store empty permissions', async () => {
@@ -312,7 +311,9 @@ describe('PermissionSnapshotService', () => {
 
     it('stores legacy resource keys but drops unsupported actions for catalog-backed resources', async () => {
       mockPrisma.$queryRawUnsafe
-        .mockResolvedValueOnce([{ roleId: testRoleId, scopeType: 'tenant', scopeId: null, inherit: true }])
+        .mockResolvedValueOnce([
+          { roleId: testRoleId, scopeType: 'tenant', scopeId: null, inherit: true },
+        ])
         .mockResolvedValueOnce([
           { resourceCode: 'customer.profile', action: 'read', effect: 'grant' },
           { resourceCode: 'customer.pii', action: 'delete', effect: 'grant' },
@@ -377,14 +378,16 @@ describe('PermissionSnapshotService', () => {
   describe('deleteUserSnapshots', () => {
     it('should delete all snapshots for a user', async () => {
       // Set up some keys to be found
-      redisHashes.set(`perm:${testTenantSchema}:${testUserId}:tenant:null`, { 'test:read': 'grant' });
-      redisHashes.set(`perm:${testTenantSchema}:${testUserId}:subsidiary:${testScopeId}`, { 'test:write': 'grant' });
+      redisHashes.set(`perm:${testTenantSchema}:${testUserId}:tenant:null`, {
+        'test:read': 'grant',
+      });
+      redisHashes.set(`perm:${testTenantSchema}:${testUserId}:subsidiary:${testScopeId}`, {
+        'test:write': 'grant',
+      });
 
       await service.deleteUserSnapshots(testTenantSchema, testUserId);
 
-      expect(mockRedisService.keys).toHaveBeenCalledWith(
-        expect.stringContaining(testUserId)
-      );
+      expect(mockRedisService.keys).toHaveBeenCalledWith(expect.stringContaining(testUserId));
       // Should call del for the 2 pattern keys + 1 base key
       expect(mockRedisService.del).toHaveBeenCalled();
     });
@@ -392,9 +395,7 @@ describe('PermissionSnapshotService', () => {
     it('should delete base key even when no pattern keys found', async () => {
       await service.deleteUserSnapshots(testTenantSchema, testUserId);
 
-      expect(mockRedisService.del).toHaveBeenCalledWith(
-        `perm:${testTenantSchema}:${testUserId}`
-      );
+      expect(mockRedisService.del).toHaveBeenCalledWith(`perm:${testTenantSchema}:${testUserId}`);
     });
   });
 
@@ -402,7 +403,7 @@ describe('PermissionSnapshotService', () => {
     it('should generate correct key for tenant scope', async () => {
       // Set permission so exists returns true
       redisHashes.set(getKey(testUserId, 'tenant'), {});
-      
+
       await service.checkPermission(
         testTenantSchema,
         testUserId,
@@ -420,7 +421,7 @@ describe('PermissionSnapshotService', () => {
 
     it('should generate correct key for subsidiary scope', async () => {
       redisHashes.set(getKey(testUserId, 'subsidiary', testScopeId), {});
-      
+
       await service.checkPermission(
         testTenantSchema,
         testUserId,
@@ -438,7 +439,7 @@ describe('PermissionSnapshotService', () => {
 
     it('should generate correct key for talent scope', async () => {
       redisHashes.set(getKey(testUserId, 'talent', testScopeId), {});
-      
+
       await service.checkPermission(
         testTenantSchema,
         testUserId,

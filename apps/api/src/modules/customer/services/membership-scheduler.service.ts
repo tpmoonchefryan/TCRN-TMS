@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 
@@ -14,7 +13,7 @@ import type { UpcomingExpirationRecord } from '../domain/membership-scheduler.po
 @Injectable()
 export class MembershipSchedulerService {
   constructor(
-    private readonly membershipSchedulerApplicationService: MembershipSchedulerApplicationService,
+    private readonly membershipSchedulerApplicationService: MembershipSchedulerApplicationService
   ) {}
 
   /**
@@ -29,13 +28,10 @@ export class MembershipSchedulerService {
   /**
    * Get upcoming expirations for notifications (multi-tenant aware)
    */
-  getUpcomingExpirations(
-    daysAhead = 7,
-    tenantSchema: string,
-  ): Promise<UpcomingExpirationRecord[]> {
+  getUpcomingExpirations(daysAhead = 7, tenantSchema: string): Promise<UpcomingExpirationRecord[]> {
     return this.membershipSchedulerApplicationService.getUpcomingExpirations(
       daysAhead,
-      tenantSchema,
+      tenantSchema
     );
   }
 }

@@ -1,6 +1,5 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 // Real runtime smoke for generic customer export
-
 import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Worker } from 'bullmq';
@@ -20,6 +19,7 @@ import {
   type TestUser,
 } from '@tcrn/shared';
 
+import { exportJobProcessor } from '../../../worker/src/jobs/export.job';
 import { AppModule } from '../../src/app.module';
 import { TokenService } from '../../src/modules/auth/token.service';
 import {
@@ -28,7 +28,6 @@ import {
   ExportJobType,
 } from '../../src/modules/export/dto/export.dto';
 import { bootstrapTestApp } from '../../src/testing/bootstrap-test-app';
-import { exportJobProcessor } from '../../../worker/src/jobs/export.job';
 import {
   createBullMqConnectionFromEnv,
   purgeWaitingExportJobsForTenantTestSchemas,
@@ -48,9 +47,7 @@ describe('Export Runtime Smoke Integration', () => {
   const createdExportQueueJobIds = new Set<string>();
 
   const withAuth = (req: request.Test, includeTalentHeader = true) => {
-    req
-      .set('Authorization', `Bearer ${accessToken}`)
-      .set('X-Tenant-ID', tenantFixture.tenant.id);
+    req.set('Authorization', `Bearer ${accessToken}`).set('X-Tenant-ID', tenantFixture.tenant.id);
 
     if (includeTalentHeader) {
       req.set('X-Talent-Id', talentId);
@@ -73,7 +70,7 @@ describe('Export Runtime Smoke Integration', () => {
         WHERE id = $1::uuid
       `,
       targetTalentId,
-      testUser.id,
+      testUser.id
     );
   };
 
@@ -83,7 +80,7 @@ describe('Export Runtime Smoke Integration', () => {
     while (Date.now() < deadline) {
       const response = await withAuth(
         request(app.getHttpServer()).get(`/api/v1/exports/${jobId}`),
-        false,
+        false
       ).expect(200);
 
       const job = response.body.data as {
@@ -103,10 +100,10 @@ describe('Export Runtime Smoke Integration', () => {
             FROM "${tenantFixture.schemaName}".export_job
             WHERE id = $1::uuid
           `,
-          jobId,
+          jobId
         );
         throw new Error(
-          `Export job ${jobId} failed: ${rows[0]?.errorMessage ?? 'unknown worker failure'}`,
+          `Export job ${jobId} failed: ${rows[0]?.errorMessage ?? 'unknown worker failure'}`
         );
       }
 
@@ -151,7 +148,7 @@ describe('Export Runtime Smoke Integration', () => {
       prisma,
       tenantFixture,
       `export_runtime_user_${Date.now()}`,
-      ['ADMIN'],
+      ['ADMIN']
     );
 
     const subsidiary = await createTestSubsidiaryInTenant(prisma, tenantFixture, {
@@ -176,7 +173,7 @@ describe('Export Runtime Smoke Integration', () => {
         FROM "${tenantFixture.schemaName}".talent
         WHERE id = $1::uuid
       `,
-      talentId,
+      talentId
     );
     const talentProfileStoreId = talentRows[0]?.profileStoreId;
 
@@ -213,9 +210,7 @@ describe('Export Runtime Smoke Integration', () => {
   });
 
   it('processes customer_export through Redis worker and MinIO end-to-end', async () => {
-    const createResponse = await withAuth(
-      request(app.getHttpServer()).post('/api/v1/exports'),
-    )
+    const createResponse = await withAuth(request(app.getHttpServer()).post('/api/v1/exports'))
       .send({
         jobType: ExportJobType.CUSTOMER_EXPORT,
         format: ExportFormat.CSV,
@@ -254,7 +249,7 @@ describe('Export Runtime Smoke Integration', () => {
         FROM "${tenantFixture.schemaName}".export_job
         WHERE id = $1::uuid
       `,
-      exportJobId,
+      exportJobId
     );
 
     expect(rows).toHaveLength(1);
@@ -264,7 +259,9 @@ describe('Export Runtime Smoke Integration', () => {
       totalRecords: 1,
       processedRecords: 1,
     });
-    expect(rows[0].filePath).toContain(`${tenantFixture.schemaName}/${exportJobId}/customer_export_`);
+    expect(rows[0].filePath).toContain(
+      `${tenantFixture.schemaName}/${exportJobId}/customer_export_`
+    );
 
     const minioClient = createMinioClient();
     const objectStats = await minioClient.statObject('temp-reports', rows[0].filePath!);
@@ -273,7 +270,7 @@ describe('Export Runtime Smoke Integration', () => {
 
     const downloadResponse = await withAuth(
       request(app.getHttpServer()).get(`/api/v1/exports/${exportJobId}/download`),
-      false,
+      false
     )
       .redirects(0)
       .expect(302);

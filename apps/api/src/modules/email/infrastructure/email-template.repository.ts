@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable } from '@nestjs/common';
+
 import { prisma, type Prisma } from '@tcrn/database';
 import type { LocalizedText } from '@tcrn/shared';
 
@@ -70,10 +70,12 @@ export class EmailTemplateRepository {
       where.isActive = filters.isActive;
     }
 
-    return prisma.emailTemplate.findMany({
-      where,
-      orderBy: [{ category: 'asc' }, { code: 'asc' }],
-    }).then((records) => records.map(mapEmailTemplateRecord));
+    return prisma.emailTemplate
+      .findMany({
+        where,
+        orderBy: [{ category: 'asc' }, { code: 'asc' }],
+      })
+      .then((records) => records.map(mapEmailTemplateRecord));
   }
 
   async findByCode(code: string): Promise<EmailTemplateStoredRecord | null> {
@@ -102,15 +104,21 @@ export class EmailTemplateRepository {
 
   async update(
     code: string,
-    input: UpdateEmailTemplatePersistenceInput,
+    input: UpdateEmailTemplatePersistenceInput
   ): Promise<EmailTemplateStoredRecord> {
     const record = await prisma.emailTemplate.update({
       where: { code },
       data: {
         ...(input.name !== undefined ? { name: toLocalizedTextJsonInput(input.name) } : {}),
-        ...(input.subject !== undefined ? { subject: toLocalizedTextJsonInput(input.subject) } : {}),
-        ...(input.bodyHtml !== undefined ? { bodyHtml: toLocalizedTextJsonInput(input.bodyHtml) } : {}),
-        ...(input.bodyText !== undefined ? { bodyText: toLocalizedTextJsonInput(input.bodyText) } : {}),
+        ...(input.subject !== undefined
+          ? { subject: toLocalizedTextJsonInput(input.subject) }
+          : {}),
+        ...(input.bodyHtml !== undefined
+          ? { bodyHtml: toLocalizedTextJsonInput(input.bodyHtml) }
+          : {}),
+        ...(input.bodyText !== undefined
+          ? { bodyText: toLocalizedTextJsonInput(input.bodyText) }
+          : {}),
         ...(input.variables !== undefined ? { variables: input.variables } : {}),
         ...(input.category !== undefined ? { category: input.category } : {}),
         ...(input.isActive !== undefined ? { isActive: input.isActive } : {}),

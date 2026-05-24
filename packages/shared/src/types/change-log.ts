@@ -14,11 +14,11 @@ export interface ChangeLogDiff {
 /**
  * Change action types
  */
-export type ChangeAction = 
-  | 'create' 
-  | 'update' 
-  | 'deactivate' 
-  | 'reactivate' 
+export type ChangeAction =
+  | 'create'
+  | 'update'
+  | 'deactivate'
+  | 'reactivate'
   | 'delete'
   | 'publish'
   | 'unpublish'

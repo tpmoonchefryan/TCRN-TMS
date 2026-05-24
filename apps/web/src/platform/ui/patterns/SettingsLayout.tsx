@@ -48,7 +48,7 @@ export const SettingsLayout: React.FC<SettingsLayoutProps> = ({
 
     const activeIndex = Math.max(
       sections.findIndex((section) => section.id === focusableSectionId),
-      0,
+      0
     );
     const lastIndex = sections.length - 1;
     let nextIndex: number | null = null;
@@ -76,7 +76,11 @@ export const SettingsLayout: React.FC<SettingsLayoutProps> = ({
       <header className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0 space-y-3">
           <h1 className={`text-3xl font-bold ${tokens.colors.text}`}>{title}</h1>
-          {description ? <p className={`max-w-4xl text-sm leading-6 ${tokens.colors.textMuted}`}>{description}</p> : null}
+          {description ? (
+            <p className={`max-w-4xl text-sm leading-6 ${tokens.colors.textMuted}`}>
+              {description}
+            </p>
+          ) : null}
         </div>
         {help ? <div className="flex flex-none justify-start lg:justify-end">{help}</div> : null}
       </header>
@@ -84,7 +88,7 @@ export const SettingsLayout: React.FC<SettingsLayoutProps> = ({
       <nav
         id={sectionNavId}
         tabIndex={-1}
-        className="min-w-0 rounded-lg border border-slate-200 bg-white/78 p-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+        className="bg-white/78 min-w-0 rounded-lg border border-slate-200 p-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
         aria-label={ariaLabel}
       >
         <div
@@ -104,16 +108,17 @@ export const SettingsLayout: React.FC<SettingsLayoutProps> = ({
                 onClick={() => onSectionChange(section.id)}
                 aria-current={isActive ? 'page' : undefined}
                 tabIndex={section.id === focusableSectionId ? 0 : -1}
-                className={`
-                  inline-flex min-h-11 flex-none items-center gap-3 rounded-md px-3 py-2 text-left text-sm font-medium transition-colors
-                  focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500
-                  ${isActive
+                className={`inline-flex min-h-11 flex-none items-center gap-3 rounded-md px-3 py-2 text-left text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+                  isActive
                     ? 'bg-slate-950 text-white shadow-sm'
-                    : `text-slate-600 hover:bg-slate-100 hover:text-slate-900 ${tokens.motion.transitionStandard} motion-reduce:transition-none`}
-                `}
+                    : `text-slate-600 hover:bg-slate-100 hover:text-slate-900 ${tokens.motion.transitionStandard} motion-reduce:transition-none`
+                } `}
               >
                 {section.icon ? (
-                  <span className="flex h-5 w-5 flex-none items-center justify-center" aria-hidden="true">
+                  <span
+                    className="flex h-5 w-5 flex-none items-center justify-center"
+                    aria-hidden="true"
+                  >
                     {section.icon}
                   </span>
                 ) : null}

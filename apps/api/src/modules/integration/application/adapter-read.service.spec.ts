@@ -1,8 +1,8 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { NotFoundException } from '@nestjs/common';
-import { createLocalizedText, type RequestContext } from '@tcrn/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { createLocalizedText, type RequestContext } from '@tcrn/shared';
 
 import { type IntegrationAdapterOwnerScope } from '../domain/adapter-read.policy';
 import { OwnerType } from '../dto/integration.dto';
@@ -62,9 +62,7 @@ describe('AdapterReadApplicationService', () => {
       },
     ]);
 
-    await expect(
-      service.findMany(scope, { includeInherited: true }, context),
-    ).resolves.toEqual([
+    await expect(service.findMany(scope, { includeInherited: true }, context)).resolves.toEqual([
       {
         id: 'adapter-tenant',
         ownerType: OwnerType.TENANT,
@@ -92,9 +90,7 @@ describe('AdapterReadApplicationService', () => {
   it('throws NotFoundException when adapter detail lookup misses', async () => {
     vi.mocked(mockRepository.findById).mockResolvedValue(null);
 
-    await expect(
-      service.findById('missing-adapter', context),
-    ).rejects.toThrow(NotFoundException);
+    await expect(service.findById('missing-adapter', context)).rejects.toThrow(NotFoundException);
   });
 
   it('masks secret configs on adapter detail responses', async () => {
@@ -133,9 +129,7 @@ describe('AdapterReadApplicationService', () => {
       },
     ]);
 
-    await expect(
-      service.findById('adapter-1', context),
-    ).resolves.toEqual({
+    await expect(service.findById('adapter-1', context)).resolves.toEqual({
       id: 'adapter-1',
       ownerType: OwnerType.TENANT,
       ownerId: null,

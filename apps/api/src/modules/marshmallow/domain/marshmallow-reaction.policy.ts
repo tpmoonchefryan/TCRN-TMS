@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { BadRequestException } from '@nestjs/common';
+
 import { ErrorCodes } from '@tcrn/shared';
 
 export interface MarshmallowReactionLookupRecord {
@@ -41,7 +41,7 @@ export interface MarshmallowReactionContext {
 
 export const buildMarshmallowReactionLookupResult = (
   tenantSchema: string,
-  record: MarshmallowReactionLookupRecord,
+  record: MarshmallowReactionLookupRecord
 ): MarshmallowReactionLookupResult => ({
   tenantSchema,
   message: {
@@ -60,7 +60,7 @@ export const assertMarshmallowReactionAllowed = (
     reactionsEnabled: boolean;
     allowedReactions: string[];
   },
-  reaction: string,
+  reaction: string
 ): void => {
   if (!config.reactionsEnabled) {
     throw new BadRequestException({
@@ -69,10 +69,7 @@ export const assertMarshmallowReactionAllowed = (
     });
   }
 
-  if (
-    config.allowedReactions.length > 0 &&
-    !config.allowedReactions.includes(reaction)
-  ) {
+  if (config.allowedReactions.length > 0 && !config.allowedReactions.includes(reaction)) {
     throw new BadRequestException({
       code: ErrorCodes.VALIDATION_FAILED,
       message: 'Invalid reaction',
@@ -81,7 +78,7 @@ export const assertMarshmallowReactionAllowed = (
 };
 
 export const buildMarshmallowReactionCounts = (
-  rows: MarshmallowReactionCountRow[],
+  rows: MarshmallowReactionCountRow[]
 ): Record<string, number> => {
   const counts: Record<string, number> = {};
 
@@ -94,7 +91,7 @@ export const buildMarshmallowReactionCounts = (
 
 export const appendMarshmallowUserReactions = (
   target: Record<string, string[]>,
-  rows: MarshmallowUserReactionRow[],
+  rows: MarshmallowUserReactionRow[]
 ): Record<string, string[]> => {
   for (const row of rows) {
     if (!target[row.messageId]) {

@@ -1,9 +1,13 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { prisma } from '@tcrn/database';
 import { createLocalizedText } from '@tcrn/shared';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { PasswordService } from '../../auth/password.service';
+import { PermissionSnapshotService } from '../../permission/permission-snapshot.service';
+import { SystemUserData, SystemUserService } from '../system-user.service';
 
 // Mock @tcrn/database before importing service
 vi.mock('@tcrn/database', () => ({
@@ -12,10 +16,6 @@ vi.mock('@tcrn/database', () => ({
     $executeRawUnsafe: vi.fn(),
   },
 }));
-
-import { PasswordService } from '../../auth/password.service';
-import { PermissionSnapshotService } from '../../permission/permission-snapshot.service';
-import { SystemUserData, SystemUserService } from '../system-user.service';
 
 const mockPrisma = prisma as unknown as {
   $queryRawUnsafe: ReturnType<typeof vi.fn>;
@@ -60,7 +60,7 @@ describe('SystemUserService', () => {
 
     service = new SystemUserService(
       mockPasswordService as PasswordService,
-      mockSnapshotService as PermissionSnapshotService,
+      mockSnapshotService as PermissionSnapshotService
     );
   });
 
@@ -90,7 +90,7 @@ describe('SystemUserService', () => {
 
       expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalledWith(
         expect.stringContaining('ILIKE'),
-        '%test%',
+        '%test%'
       );
     });
 
@@ -103,7 +103,7 @@ describe('SystemUserService', () => {
 
       expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalledWith(
         expect.stringContaining('is_active'),
-        true,
+        true
       );
     });
 
@@ -116,7 +116,7 @@ describe('SystemUserService', () => {
 
       expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalledWith(
         expect.stringContaining('user_role'),
-        'role-123',
+        'role-123'
       );
     });
 
@@ -128,7 +128,7 @@ describe('SystemUserService', () => {
       await service.list(testSchema, { sort: '-username' });
 
       expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalledWith(
-        expect.stringContaining('username DESC'),
+        expect.stringContaining('username DESC')
       );
     });
 
@@ -139,9 +139,7 @@ describe('SystemUserService', () => {
 
       await service.list(testSchema, { page: 2, pageSize: 10 });
 
-      expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalledWith(
-        expect.stringContaining('OFFSET 10'),
-      );
+      expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalledWith(expect.stringContaining('OFFSET 10'));
     });
   });
 
@@ -237,7 +235,7 @@ describe('SystemUserService', () => {
           username: 'existinguser',
           email: 'new@example.com',
           password: 'SecurePassword123!',
-        }),
+        })
       ).rejects.toThrow(BadRequestException);
     });
 
@@ -251,7 +249,7 @@ describe('SystemUserService', () => {
           username: 'newuser',
           email: 'existing@example.com',
           password: 'SecurePassword123!',
-        }),
+        })
       ).rejects.toThrow(BadRequestException);
     });
 
@@ -259,7 +257,7 @@ describe('SystemUserService', () => {
       mockPrisma.$queryRawUnsafe
         .mockResolvedValueOnce([]) // Username not taken
         .mockResolvedValueOnce([]); // Email not taken
-      
+
       (mockPasswordService.validate as ReturnType<typeof vi.fn>).mockReturnValue({
         isValid: false,
         errors: ['Password too short'],
@@ -270,7 +268,7 @@ describe('SystemUserService', () => {
           username: 'newuser',
           email: 'new@example.com',
           password: 'weak',
-        }),
+        })
       ).rejects.toThrow(BadRequestException);
     });
 
@@ -289,8 +287,13 @@ describe('SystemUserService', () => {
       // Verify forceReset is true in the query
       expect(mockPrisma.$queryRawUnsafe).toHaveBeenLastCalledWith(
         expect.any(String),
-        'newuser', 'new@example.com', 'hashed_password',
-        null, null, 'en', true,
+        'newuser',
+        'new@example.com',
+        'hashed_password',
+        null,
+        null,
+        'en',
+        true
       );
     });
   });
@@ -312,7 +315,7 @@ describe('SystemUserService', () => {
       mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([]); // User not found
 
       await expect(
-        service.update('nonexistent', testSchema, { displayName: 'Test' }),
+        service.update('nonexistent', testSchema, { displayName: 'Test' })
       ).rejects.toThrow(NotFoundException);
     });
 
@@ -353,9 +356,9 @@ describe('SystemUserService', () => {
     it('should throw NotFoundException for non-existent user', async () => {
       mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([]);
 
-      await expect(
-        service.resetPassword('nonexistent', testSchema, {}),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.resetPassword('nonexistent', testSchema, {})).rejects.toThrow(
+        NotFoundException
+      );
     });
   });
 
@@ -375,9 +378,9 @@ describe('SystemUserService', () => {
     it('should throw NotFoundException for non-existent user', async () => {
       mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([]);
 
-      await expect(
-        service.deactivate('nonexistent', testSchema),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.deactivate('nonexistent', testSchema)).rejects.toThrow(
+        NotFoundException
+      );
     });
   });
 
@@ -397,9 +400,9 @@ describe('SystemUserService', () => {
     it('should throw NotFoundException for non-existent user', async () => {
       mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([]);
 
-      await expect(
-        service.reactivate('nonexistent', testSchema),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.reactivate('nonexistent', testSchema)).rejects.toThrow(
+        NotFoundException
+      );
     });
   });
 
@@ -415,16 +418,14 @@ describe('SystemUserService', () => {
       expect(result).toBeDefined();
       expect(mockPrisma.$executeRawUnsafe).toHaveBeenCalledWith(
         expect.stringContaining('force_totp = true'),
-        'user-123',
+        'user-123'
       );
     });
 
     it('should throw NotFoundException for non-existent user', async () => {
       mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([]);
 
-      await expect(
-        service.forceTotp('nonexistent', testSchema),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.forceTotp('nonexistent', testSchema)).rejects.toThrow(NotFoundException);
     });
   });
 });

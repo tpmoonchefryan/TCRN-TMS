@@ -1,6 +1,7 @@
-import { BROWSER_PUBLIC_CONSUMER_CODE, BROWSER_PUBLIC_CONSUMER_HEADER } from '@tcrn/shared';
 import { act, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { BROWSER_PUBLIC_CONSUMER_CODE, BROWSER_PUBLIC_CONSUMER_HEADER } from '@tcrn/shared';
 
 import type {
   AuthenticatedSessionResult,
@@ -25,7 +26,7 @@ vi.mock('@/domains/auth-identity/api/auth.api', () => ({
 let sessionApi: ReturnType<typeof useSession> | null = null;
 
 function buildAuthenticatedResult(
-  overrides: Partial<AuthenticatedSessionResult> = {},
+  overrides: Partial<AuthenticatedSessionResult> = {}
 ): AuthenticatedSessionResult {
   return {
     accessToken: 'access-token',
@@ -126,13 +127,13 @@ describe('SessionProvider', () => {
     mocks.getCurrentUser.mockResolvedValueOnce(
       buildCurrentUserProfile({
         displayName: 'Recovered Operator',
-      }),
+      })
     );
 
     render(
       <SessionProvider>
         <SessionProbe />
-      </SessionProvider>,
+      </SessionProvider>
     );
 
     await waitFor(() => {
@@ -142,10 +143,11 @@ describe('SessionProvider', () => {
     let recovered = false;
 
     await act(async () => {
-      recovered = (await sessionApi?.recoverSession({
-        tenantId: 'tenant-ac',
-        tenantTier: 'ac',
-      })) ?? false;
+      recovered =
+        (await sessionApi?.recoverSession({
+          tenantId: 'tenant-ac',
+          tenantTier: 'ac',
+        })) ?? false;
     });
 
     expect(recovered).toBe(true);
@@ -172,7 +174,7 @@ describe('SessionProvider', () => {
             code: 'AUTH_ACCESS_TOKEN_INVALID',
             message: 'Expired access token',
           },
-        }),
+        })
       )
       .mockResolvedValueOnce(
         buildApiResponse(200, {
@@ -180,13 +182,13 @@ describe('SessionProvider', () => {
           data: {
             ok: true,
           },
-        }),
+        })
       );
 
     render(
       <SessionProvider>
         <SessionProbe />
-      </SessionProvider>,
+      </SessionProvider>
     );
 
     await authenticateIntoSession();
@@ -199,10 +201,18 @@ describe('SessionProvider', () => {
 
     expect(payload).toEqual({ ok: true });
     expect(mocks.refreshAccessToken).toHaveBeenCalledTimes(1);
-    expect(new Headers(mocks.fetch.mock.calls[0]?.[1]?.headers).get('Authorization')).toBe('Bearer access-token');
-    expect(new Headers(mocks.fetch.mock.calls[1]?.[1]?.headers).get('Authorization')).toBe('Bearer refreshed-token');
-    expect(new Headers(mocks.fetch.mock.calls[0]?.[1]?.headers).get(BROWSER_PUBLIC_CONSUMER_HEADER)).toBe(BROWSER_PUBLIC_CONSUMER_CODE);
-    expect(new Headers(mocks.fetch.mock.calls[1]?.[1]?.headers).get(BROWSER_PUBLIC_CONSUMER_HEADER)).toBe(BROWSER_PUBLIC_CONSUMER_CODE);
+    expect(new Headers(mocks.fetch.mock.calls[0]?.[1]?.headers).get('Authorization')).toBe(
+      'Bearer access-token'
+    );
+    expect(new Headers(mocks.fetch.mock.calls[1]?.[1]?.headers).get('Authorization')).toBe(
+      'Bearer refreshed-token'
+    );
+    expect(
+      new Headers(mocks.fetch.mock.calls[0]?.[1]?.headers).get(BROWSER_PUBLIC_CONSUMER_HEADER)
+    ).toBe(BROWSER_PUBLIC_CONSUMER_CODE);
+    expect(
+      new Headers(mocks.fetch.mock.calls[1]?.[1]?.headers).get(BROWSER_PUBLIC_CONSUMER_HEADER)
+    ).toBe(BROWSER_PUBLIC_CONSUMER_CODE);
 
     await waitFor(() => {
       expect(screen.getByTestId('token')).toHaveTextContent('refreshed-token');
@@ -218,13 +228,13 @@ describe('SessionProvider', () => {
           code: 'AUTH_ACCESS_TOKEN_INVALID',
           message: 'Expired access token',
         },
-      }),
+      })
     );
 
     render(
       <SessionProvider>
         <SessionProbe />
-      </SessionProvider>,
+      </SessionProvider>
     );
 
     await authenticateIntoSession();
@@ -249,7 +259,7 @@ describe('SessionProvider', () => {
     render(
       <SessionProvider>
         <SessionProbe />
-      </SessionProvider>,
+      </SessionProvider>
     );
 
     await authenticateIntoSession();

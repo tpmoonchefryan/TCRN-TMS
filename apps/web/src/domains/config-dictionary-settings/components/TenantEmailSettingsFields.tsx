@@ -6,7 +6,11 @@ import type {
 } from '@/domains/config-dictionary-settings/api/settings.api';
 import type { SettingsFamilyLocalizedText } from '@/domains/config-dictionary-settings/screens/settings-family.copy';
 
-type SettingsText = (valueOrEn: string | SettingsFamilyLocalizedText, zh?: string, ja?: string) => string;
+type SettingsText = (
+  valueOrEn: string | SettingsFamilyLocalizedText,
+  zh?: string,
+  ja?: string
+) => string;
 
 export interface TenantEmailSenderDraft {
   defaultDomainId: string | null;
@@ -26,7 +30,7 @@ export interface TenantEmailSettingsFieldsProps {
 }
 
 export function buildTenantEmailSenderDraft(
-  response: TenantSenderDomainsResponse | null,
+  response: TenantSenderDomainsResponse | null
 ): TenantEmailSenderDraft {
   return {
     defaultDomainId: response?.defaultDomainId ?? '',
@@ -69,10 +73,14 @@ export function TenantEmailSettingsFields({
           <select
             aria-label={text('Default sending domain', '默认发信域名', '既定送信ドメイン')}
             value={draft.defaultDomainId ?? ''}
-            onChange={(event) => onDraftChange({ ...draft, defaultDomainId: event.target.value || null })}
+            onChange={(event) =>
+              onDraftChange({ ...draft, defaultDomainId: event.target.value || null })
+            }
             className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm transition focus:border-indigo-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/40"
           >
-            <option value="">{text('No default sender domain', '不设置默认发信域名', '既定送信ドメインなし')}</option>
+            <option value="">
+              {text('No default sender domain', '不设置默认发信域名', '既定送信ドメインなし')}
+            </option>
             {selectableDomains.map((domain) => (
               <option key={domain.id} value={domain.id}>
                 {`${domain.domain} (${formatStatus(domain.status, text)})`}
@@ -115,7 +123,10 @@ export function TenantEmailSettingsFields({
         {domains.length > 0 ? (
           <div className="grid gap-3">
             {domains.map((domain) => (
-              <div key={domain.id} className="rounded-xl border border-slate-200 bg-white/80 px-4 py-3">
+              <div
+                key={domain.id}
+                className="rounded-xl border border-slate-200 bg-white/80 px-4 py-3"
+              >
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <p className="break-all text-sm font-semibold text-slate-950">{domain.domain}</p>
                   <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700">
@@ -127,7 +138,7 @@ export function TenantEmailSettingsFields({
                     {text(
                       'This domain is visible for readiness tracking but cannot be selected until AC verifies it.',
                       '该域名可用于查看就绪状态，但需要 AC 验证后才能选择。',
-                      'このドメインは準備状況の確認用に表示されますが、AC が確認するまで選択できません。',
+                      'このドメインは準備状況の確認用に表示されますが、AC が確認するまで選択できません。'
                     )}
                   </p>
                 ) : null}
@@ -139,7 +150,7 @@ export function TenantEmailSettingsFields({
             {text(
               'No sender domain has been assigned by AC yet.',
               'AC 尚未分配发信域名。',
-              'AC によって割り当てられた送信ドメインはまだありません。',
+              'AC によって割り当てられた送信ドメインはまだありません。'
             )}
           </p>
         )}

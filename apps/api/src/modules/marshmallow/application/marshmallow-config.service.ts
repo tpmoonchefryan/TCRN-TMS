@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import {
   BadRequestException,
   ConflictException,
@@ -8,6 +7,7 @@ import {
   Optional,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+
 import { type ChangeAction, ErrorCodes, type RequestContext } from '@tcrn/shared';
 
 import { ChangeLogService } from '../../log';
@@ -29,7 +29,7 @@ export class MarshmallowConfigApplicationService {
     private readonly marshmallowConfigRepository: MarshmallowConfigRepository,
     private readonly changeLogService: ChangeLogService,
     private readonly configService: ConfigService,
-    @Optional() private readonly settingsService?: SettingsService,
+    @Optional() private readonly settingsService?: SettingsService
   ) {}
 
   async getOrCreate(talentId: string, tenantSchema: string) {
@@ -40,7 +40,7 @@ export class MarshmallowConfigApplicationService {
     if (!config) {
       const talent = await this.marshmallowConfigRepository.findActiveTalent(
         tenantSchema,
-        talentId,
+        talentId
       );
 
       if (!talent) {
@@ -54,7 +54,7 @@ export class MarshmallowConfigApplicationService {
         tenantSchema,
         talentId,
         defaultConfig: buildDefaultMarshmallowConfig(
-          isMarshmallowEnabledByTalentSettings(talent.settings),
+          isMarshmallowEnabledByTalentSettings(talent.settings)
         ),
       });
     }
@@ -90,13 +90,13 @@ export class MarshmallowConfigApplicationService {
     talentId: string,
     tenantSchema: string,
     dto: UpdateConfigDto,
-    context: RequestContext,
+    context: RequestContext
   ) {
     this.assertTenantSchema(tenantSchema);
 
     const config = await this.marshmallowConfigRepository.findConfigByTalentId(
       tenantSchema,
-      talentId,
+      talentId
     );
 
     if (!config) {
@@ -113,16 +113,13 @@ export class MarshmallowConfigApplicationService {
       });
     }
 
-    const { changedFields, newValue, oldValue } = buildMarshmallowConfigChanges(
-      config,
-      dto,
-    );
+    const { changedFields, newValue, oldValue } = buildMarshmallowConfigChanges(config, dto);
 
     if (changedFields.length > 0) {
       await this.marshmallowConfigRepository.updateConfigFields(
         tenantSchema,
         config.id,
-        changedFields,
+        changedFields
       );
 
       await this.changeLogService.createDirect(
@@ -134,22 +131,16 @@ export class MarshmallowConfigApplicationService {
           oldValue,
           newValue,
         },
-        context,
+        context
       );
     }
 
     return this.getOrCreate(talentId, tenantSchema);
   }
 
-  findExistingConfig(
-    talentId: string,
-    tenantSchema: string,
-  ) {
+  findExistingConfig(talentId: string, tenantSchema: string) {
     this.assertTenantSchema(tenantSchema);
-    return this.marshmallowConfigRepository.findConfigByTalentId(
-      tenantSchema,
-      talentId,
-    );
+    return this.marshmallowConfigRepository.findConfigByTalentId(tenantSchema, talentId);
   }
 
   private assertTenantSchema(tenantSchema: string): void {

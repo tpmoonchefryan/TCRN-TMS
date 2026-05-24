@@ -1,8 +1,9 @@
 'use client';
 
-import { DEFAULT_THEME, normalizeTheme, type ThemeConfig } from '@tcrn/shared';
 import { ExternalLink, Sparkles } from 'lucide-react';
 import { type CSSProperties, type ReactNode, useMemo } from 'react';
+
+import { DEFAULT_THEME, normalizeTheme, type ThemeConfig } from '@tcrn/shared';
 
 import {
   type PublicHomepageComponentRecord,
@@ -120,7 +121,7 @@ export function getHomepageCanvasStyle(theme: ThemeConfig): CSSProperties {
 
 function getHeroPrimaryAction(
   components: PublicHomepageComponentRecord[],
-  publicCopy: ReturnType<typeof useUiLocale>['copy']['publicHomepage'],
+  publicCopy: ReturnType<typeof useUiLocale>['copy']['publicHomepage']
 ) {
   for (const component of components) {
     const props = component.props || {};
@@ -138,9 +139,10 @@ function getHeroPrimaryAction(
 
     if (component.type === 'LinkButton') {
       const url = typeof props.url === 'string' ? props.url.trim() : '';
-      const label = typeof props.label === 'string' && props.label.trim()
-        ? props.label.trim()
-        : publicCopy.openLink;
+      const label =
+        typeof props.label === 'string' && props.label.trim()
+          ? props.label.trim()
+          : publicCopy.openLink;
 
       if (url) {
         return {
@@ -152,12 +154,13 @@ function getHeroPrimaryAction(
 
     if (component.type === 'SocialLinks' && Array.isArray(props.platforms)) {
       const firstLink = props.platforms.find(
-        (item): item is Record<string, unknown> => Boolean(item) && typeof item === 'object',
+        (item): item is Record<string, unknown> => Boolean(item) && typeof item === 'object'
       );
       const url = typeof firstLink?.url === 'string' ? firstLink.url.trim() : '';
-      const label = typeof firstLink?.label === 'string' && firstLink.label.trim()
-        ? firstLink.label.trim()
-        : publicCopy.socialLinks;
+      const label =
+        typeof firstLink?.label === 'string' && firstLink.label.trim()
+          ? firstLink.label.trim()
+          : publicCopy.socialLinks;
 
       if (url) {
         return {
@@ -208,50 +211,56 @@ export function PublicHomepageRenderer({
   const textStyles = getThemeTextStyles(theme);
   const heroPrimaryAction = useMemo(
     () => getHeroPrimaryAction(components, publicCopy),
-    [components, publicCopy],
+    [components, publicCopy]
   );
 
   return (
     <div className="space-y-8">
       <SectionSurface theme={theme} className="p-8 md:p-10">
         <PublicPresenceHero
-          badge={(
+          badge={
             <PublicPresenceBadge icon={<Sparkles />} tone="rose">
               {publicCopy.badge}
             </PublicPresenceBadge>
-          )}
+          }
           title={hero.displayName}
           titleStyle={textStyles.primary}
-          description={hero.description ? (
-            <p style={textStyles.secondary}>{hero.description}</p>
-          ) : null}
-          meta={hero.timezone ? (
-            <PublicPresenceBadge tone="slate" variant="outline">
-              {publicCopy.timezoneLabel}: {hero.timezone}
-            </PublicPresenceBadge>
-          ) : null}
-          actions={heroPrimaryAction ? (
-            <a
-              href={heroPrimaryAction.href}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center justify-center gap-2 rounded-md bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-200 motion-reduce:transition-none motion-reduce:hover:translate-y-0"
-            >
-              {heroPrimaryAction.label}
-              <ExternalLink className="h-4 w-4" />
-            </a>
-          ) : null}
-          media={hero.avatarUrl ? (
-            <img
-              src={hero.avatarUrl}
-              alt={heroAvatarAlt}
-              className="h-full w-full object-cover"
-            />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center bg-slate-100 text-6xl font-semibold text-slate-500">
-              {hero.displayName.charAt(0).toUpperCase()}
-            </div>
-          )}
+          description={
+            hero.description ? <p style={textStyles.secondary}>{hero.description}</p> : null
+          }
+          meta={
+            hero.timezone ? (
+              <PublicPresenceBadge tone="slate" variant="outline">
+                {publicCopy.timezoneLabel}: {hero.timezone}
+              </PublicPresenceBadge>
+            ) : null
+          }
+          actions={
+            heroPrimaryAction ? (
+              <a
+                href={heroPrimaryAction.href}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center justify-center gap-2 rounded-md bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-200 motion-reduce:transition-none motion-reduce:hover:translate-y-0"
+              >
+                {heroPrimaryAction.label}
+                <ExternalLink className="h-4 w-4" />
+              </a>
+            ) : null
+          }
+          media={
+            hero.avatarUrl ? (
+              <img
+                src={hero.avatarUrl}
+                alt={heroAvatarAlt}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center bg-slate-100 text-6xl font-semibold text-slate-500">
+                {hero.displayName.charAt(0).toUpperCase()}
+              </div>
+            )
+          }
         />
       </SectionSurface>
 

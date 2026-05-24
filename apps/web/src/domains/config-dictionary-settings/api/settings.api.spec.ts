@@ -1,9 +1,14 @@
 import { describe, expect, it, vi } from 'vitest';
 
+import { localizedFixture } from '@/domains/config-dictionary-settings/testing/localized-fixtures';
 import type { ApiSuccessEnvelope } from '@/platform/http/api';
 
-import { localizedFixture } from '@/domains/config-dictionary-settings/testing/localized-fixtures';
-import { type ConfigEntityRecord, listAllConfigEntities, listProfileStores, type RequestEnvelopeFn } from './settings.api';
+import {
+  type ConfigEntityRecord,
+  listAllConfigEntities,
+  listProfileStores,
+  type RequestEnvelopeFn,
+} from './settings.api';
 
 function buildConfigEntity(id: string): ConfigEntityRecord {
   return {
@@ -32,7 +37,7 @@ function buildConfigEntity(id: string): ConfigEntityRecord {
 function buildEnvelope(
   data: ConfigEntityRecord[],
   page: number,
-  totalPages: number,
+  totalPages: number
 ): ApiSuccessEnvelope<ConfigEntityRecord[]> {
   return {
     success: true,
@@ -52,7 +57,9 @@ function buildEnvelope(
 
 describe('settings.api listAllConfigEntities', () => {
   it('follows pagination metadata until all config entities are loaded', async () => {
-    const firstPage = Array.from({ length: 100 }, (_, index) => buildConfigEntity(`entity-${index + 1}`));
+    const firstPage = Array.from({ length: 100 }, (_, index) =>
+      buildConfigEntity(`entity-${index + 1}`)
+    );
     const secondPage = [buildConfigEntity('entity-101')];
     const requestEnvelope = vi.fn(async (path: string) => {
       if (
@@ -72,14 +79,18 @@ describe('settings.api listAllConfigEntities', () => {
       throw new Error(`Unexpected request path: ${path}`);
     });
 
-    const result = await listAllConfigEntities(requestEnvelope as RequestEnvelopeFn, 'business-segment', {
-      scopeType: 'talent',
-      scopeId: 'talent-1',
-      includeInherited: true,
-      includeDisabled: true,
-      includeInactive: true,
-      sort: 'sortOrder',
-    });
+    const result = await listAllConfigEntities(
+      requestEnvelope as RequestEnvelopeFn,
+      'business-segment',
+      {
+        scopeType: 'talent',
+        scopeId: 'talent-1',
+        includeInherited: true,
+        includeDisabled: true,
+        includeInactive: true,
+        sort: 'sortOrder',
+      }
+    );
 
     expect(requestEnvelope).toHaveBeenCalledTimes(2);
     expect(result).toHaveLength(101);
@@ -121,7 +132,7 @@ describe('settings.api listProfileStores', () => {
     });
 
     expect(request).toHaveBeenCalledWith(
-      '/api/v1/profile-stores?page=2&pageSize=50&includeInactive=true&search=Default',
+      '/api/v1/profile-stores?page=2&pageSize=50&includeInactive=true&search=Default'
     );
     expect(result.meta.pagination).toEqual({
       page: 2,

@@ -1,10 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import {
-  ImportParserService,
-} from '../import-parser.service';
+import { ImportParserService } from '../import-parser.service';
 
 describe('ImportParserService', () => {
   let service: ImportParserService;
@@ -21,7 +18,7 @@ describe('ImportParserService', () => {
         status_code: 'ACTIVE',
         tags: 'vip,new',
       },
-      1,
+      1
     );
 
     expect(result.success).toBe(true);
@@ -49,7 +46,7 @@ describe('ImportParserService', () => {
         company_legal_name: 'ACME Corporation',
         registration_number: '12345678',
       },
-      1,
+      1
     );
     const csv = service.generateErrorsCsv([
       {

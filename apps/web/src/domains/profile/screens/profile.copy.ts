@@ -1,10 +1,7 @@
 import type { SupportedUiLocale } from '@tcrn/shared';
 
 import { useUiLocale } from '@/platform/runtime/locale/locale-provider';
-import {
-  formatLocaleDateTime,
-  resolveLocaleRecord,
-} from '@/platform/runtime/locale/locale-text';
+import { formatLocaleDateTime, resolveLocaleRecord } from '@/platform/runtime/locale/locale-text';
 
 interface ProfileCopy {
   header: {
@@ -22,7 +19,7 @@ interface ProfileCopy {
     summaryTotpDisabled: string;
     summaryTotpHint: string;
     summarySessionsLabel: string;
-      summarySessionsHint: string;
+    summarySessionsHint: string;
   };
   state: {
     loading: string;
@@ -167,8 +164,7 @@ const COPY: Record<SupportedUiLocale, ProfileCopy> = {
     header: {
       chipPrefix: 'Access',
       title: 'Profile',
-      description:
-        'Manage your identity, password, TOTP, sessions, avatar, and email here.',
+      description: 'Manage your identity, password, TOTP, sessions, avatar, and email here.',
       securityTitle: 'Account Security',
       securityDescription:
         'Change your password, manage TOTP, and review current sign-in sessions.',
@@ -226,20 +222,23 @@ const COPY: Record<SupportedUiLocale, ProfileCopy> = {
       manageAction: 'Manage TOTP',
       closeDrawerLabel: 'Close TOTP drawer',
       disabledTitle: 'TOTP is currently disabled',
-      disabledDescription: 'Generate a setup secret first, then verify one authenticator code to enable it.',
+      disabledDescription:
+        'Generate a setup secret first, then verify one authenticator code to enable it.',
       prepareAction: 'Prepare TOTP setup',
       preparePending: 'Preparing…',
       prepared: 'TOTP setup prepared. Enter the code from your authenticator app to enable it.',
       prepareError: 'Failed to prepare TOTP setup.',
       setupMaterialTitle: 'Setup material',
       qrCodeLabel: 'QR code',
-      qrCodeHint: 'Scan this QR code with your authenticator app, or use the secret and OTPAuth URL below.',
+      qrCodeHint:
+        'Scan this QR code with your authenticator app, or use the secret and OTPAuth URL below.',
       qrCodeAlt: 'TOTP setup QR code',
       accountLabel: 'Account',
       secretLabel: 'Secret',
       otpAuthUrlLabel: 'OTPAuth URL',
       enableTitle: 'Enable TOTP',
-      enableDescription: 'Enter the current code from your authenticator app to complete enablement and issue recovery codes.',
+      enableDescription:
+        'Enter the current code from your authenticator app to complete enablement and issue recovery codes.',
       codeLabel: 'TOTP verification code',
       codePlaceholder: '123456',
       enableAction: 'Enable TOTP',
@@ -247,14 +246,16 @@ const COPY: Record<SupportedUiLocale, ProfileCopy> = {
       enabled: 'TOTP enabled. Save the new recovery codes now.',
       enableError: 'Failed to enable TOTP.',
       disableTitle: 'Disable TOTP',
-      disableDescription: 'Enter the current password to turn off the second factor and invalidate recovery codes.',
+      disableDescription:
+        'Enter the current password to turn off the second factor and invalidate recovery codes.',
       disablePasswordLabel: 'Disable TOTP password',
       disableAction: 'Disable TOTP',
       disablePending: 'Disabling…',
       disabled: 'TOTP disabled.',
       disableError: 'Failed to disable TOTP.',
       regenerateTitle: 'Regenerate recovery codes',
-      regenerateDescription: 'Use the current password to invalidate the old set and mint a new recovery pack.',
+      regenerateDescription:
+        'Use the current password to invalidate the old set and mint a new recovery pack.',
       regeneratePasswordLabel: 'Recovery codes password',
       regenerateAction: 'Regenerate recovery codes',
       regeneratePending: 'Regenerating…',
@@ -279,7 +280,8 @@ const COPY: Record<SupportedUiLocale, ProfileCopy> = {
       deleteSuccess: 'Avatar deleted successfully.',
       deleteError: 'Failed to delete avatar.',
       emailTitle: 'Email change',
-      emailDescription: 'Request a verification email to a new address, then confirm it with the returned token.',
+      emailDescription:
+        'Request a verification email to a new address, then confirm it with the returned token.',
       newEmailLabel: 'New email',
       newEmailPlaceholder: 'new-email@example.com',
       requestAction: 'Request email change',
@@ -634,7 +636,8 @@ const COPY: Record<SupportedUiLocale, ProfileCopy> = {
     header: {
       chipPrefix: 'アクセス',
       title: 'プロフィール',
-      description: 'ユーザー情報、パスワード、TOTP、セッション、アバター、メール変更をここで管理します。',
+      description:
+        'ユーザー情報、パスワード、TOTP、セッション、アバター、メール変更をここで管理します。',
       securityTitle: 'アカウントセキュリティ',
       securityDescription:
         'パスワード変更、TOTP 管理、現在のログインセッション確認をここで行います。',
@@ -692,14 +695,16 @@ const COPY: Record<SupportedUiLocale, ProfileCopy> = {
       manageAction: 'TOTP を管理',
       closeDrawerLabel: 'TOTP ドロワーを閉じる',
       disabledTitle: '現在 TOTP は無効です',
-      disabledDescription: 'まず設定シークレットを生成し、その後認証アプリのコードで有効化してください。',
+      disabledDescription:
+        'まず設定シークレットを生成し、その後認証アプリのコードで有効化してください。',
       prepareAction: 'TOTP 設定を準備',
       preparePending: '準備中…',
       prepared: 'TOTP 設定を準備しました。認証アプリのコードを入力して有効化してください。',
       prepareError: 'TOTP 設定の準備に失敗しました。',
       setupMaterialTitle: '設定情報',
       qrCodeLabel: 'QR コード',
-      qrCodeHint: '認証アプリでこの QR コードを読み取るか、下のシークレットと OTPAuth URL を利用してください。',
+      qrCodeHint:
+        '認証アプリでこの QR コードを読み取るか、下のシークレットと OTPAuth URL を利用してください。',
       qrCodeAlt: 'TOTP 設定用 QR コード',
       accountLabel: 'アカウント',
       secretLabel: 'シークレット',
@@ -713,14 +718,16 @@ const COPY: Record<SupportedUiLocale, ProfileCopy> = {
       enabled: 'TOTP を有効化しました。新しい回復コードを必ず保存してください。',
       enableError: 'TOTP の有効化に失敗しました。',
       disableTitle: 'TOTP を無効化',
-      disableDescription: '現在のパスワードを入力すると二要素認証を停止し、回復コードを無効化できます。',
+      disableDescription:
+        '現在のパスワードを入力すると二要素認証を停止し、回復コードを無効化できます。',
       disablePasswordLabel: 'TOTP 無効化用パスワード',
       disableAction: 'TOTP を無効化',
       disablePending: '無効化中…',
       disabled: 'TOTP を無効化しました。',
       disableError: 'TOTP の無効化に失敗しました。',
       regenerateTitle: '回復コードを再生成',
-      regenerateDescription: '現在のパスワードで古い回復コードを無効化し、新しいセットを発行します。',
+      regenerateDescription:
+        '現在のパスワードで古い回復コードを無効化し、新しいセットを発行します。',
       regeneratePasswordLabel: '回復コード用パスワード',
       regenerateAction: '回復コードを再生成',
       regeneratePending: '再生成中…',
@@ -790,8 +797,7 @@ const COPY: Record<SupportedUiLocale, ProfileCopy> = {
     header: {
       chipPrefix: 'Access',
       title: 'Profile',
-      description:
-        'Manage your identity, password, TOTP, sessions, avatar, and email here.',
+      description: 'Manage your identity, password, TOTP, sessions, avatar, and email here.',
       securityTitle: 'Account Security',
       securityDescription:
         'Change your password, manage TOTP, and review current sign-in sessions.',
@@ -849,20 +855,23 @@ const COPY: Record<SupportedUiLocale, ProfileCopy> = {
       manageAction: 'Manage TOTP',
       closeDrawerLabel: 'Close TOTP drawer',
       disabledTitle: 'TOTP is currently disabled',
-      disabledDescription: 'Generate a setup secret first, then verify one authenticator code to enable it.',
+      disabledDescription:
+        'Generate a setup secret first, then verify one authenticator code to enable it.',
       prepareAction: 'Prepare TOTP setup',
       preparePending: 'Preparing…',
       prepared: 'TOTP setup prepared. Enter the code from your authenticator app to enable it.',
       prepareError: 'Failed to prepare TOTP setup.',
       setupMaterialTitle: 'Setup material',
       qrCodeLabel: 'QR code',
-      qrCodeHint: 'Scan this QR code with your authenticator app, or use the secret and OTPAuth URL below.',
+      qrCodeHint:
+        'Scan this QR code with your authenticator app, or use the secret and OTPAuth URL below.',
       qrCodeAlt: 'TOTP setup QR code',
       accountLabel: 'Account',
       secretLabel: 'Secret',
       otpAuthUrlLabel: 'OTPAuth URL',
       enableTitle: 'Enable TOTP',
-      enableDescription: 'Enter the current code from your authenticator app to complete enablement and issue recovery codes.',
+      enableDescription:
+        'Enter the current code from your authenticator app to complete enablement and issue recovery codes.',
       codeLabel: 'TOTP verification code',
       codePlaceholder: '123456',
       enableAction: 'Enable TOTP',
@@ -870,14 +879,16 @@ const COPY: Record<SupportedUiLocale, ProfileCopy> = {
       enabled: 'TOTP enabled. Save the new recovery codes now.',
       enableError: 'Failed to enable TOTP.',
       disableTitle: 'Disable TOTP',
-      disableDescription: 'Enter the current password to turn off the second factor and invalidate recovery codes.',
+      disableDescription:
+        'Enter the current password to turn off the second factor and invalidate recovery codes.',
       disablePasswordLabel: 'Disable TOTP password',
       disableAction: 'Disable TOTP',
       disablePending: 'Disabling…',
       disabled: 'TOTP disabled.',
       disableError: 'Failed to disable TOTP.',
       regenerateTitle: 'Regenerate recovery codes',
-      regenerateDescription: 'Use the current password to invalidate the old set and mint a new recovery pack.',
+      regenerateDescription:
+        'Use the current password to invalidate the old set and mint a new recovery pack.',
       regeneratePasswordLabel: 'Recovery codes password',
       regenerateAction: 'Regenerate recovery codes',
       regeneratePending: 'Regenerating…',
@@ -902,7 +913,8 @@ const COPY: Record<SupportedUiLocale, ProfileCopy> = {
       deleteSuccess: 'Avatar deleted successfully.',
       deleteError: 'Failed to delete avatar.',
       emailTitle: 'Email change',
-      emailDescription: 'Request a verification email to a new address, then confirm it with the returned token.',
+      emailDescription:
+        'Request a verification email to a new address, then confirm it with the returned token.',
       newEmailLabel: 'New email',
       newEmailPlaceholder: 'new-email@example.com',
       requestAction: 'Request email change',
@@ -947,8 +959,7 @@ const COPY: Record<SupportedUiLocale, ProfileCopy> = {
     header: {
       chipPrefix: 'Access',
       title: 'Profile',
-      description:
-        'Manage your identity, password, TOTP, sessions, avatar, and email here.',
+      description: 'Manage your identity, password, TOTP, sessions, avatar, and email here.',
       securityTitle: 'Account Security',
       securityDescription:
         'Change your password, manage TOTP, and review current sign-in sessions.',
@@ -1006,20 +1017,23 @@ const COPY: Record<SupportedUiLocale, ProfileCopy> = {
       manageAction: 'Manage TOTP',
       closeDrawerLabel: 'Close TOTP drawer',
       disabledTitle: 'TOTP is currently disabled',
-      disabledDescription: 'Generate a setup secret first, then verify one authenticator code to enable it.',
+      disabledDescription:
+        'Generate a setup secret first, then verify one authenticator code to enable it.',
       prepareAction: 'Prepare TOTP setup',
       preparePending: 'Preparing…',
       prepared: 'TOTP setup prepared. Enter the code from your authenticator app to enable it.',
       prepareError: 'Failed to prepare TOTP setup.',
       setupMaterialTitle: 'Setup material',
       qrCodeLabel: 'QR code',
-      qrCodeHint: 'Scan this QR code with your authenticator app, or use the secret and OTPAuth URL below.',
+      qrCodeHint:
+        'Scan this QR code with your authenticator app, or use the secret and OTPAuth URL below.',
       qrCodeAlt: 'TOTP setup QR code',
       accountLabel: 'Account',
       secretLabel: 'Secret',
       otpAuthUrlLabel: 'OTPAuth URL',
       enableTitle: 'Enable TOTP',
-      enableDescription: 'Enter the current code from your authenticator app to complete enablement and issue recovery codes.',
+      enableDescription:
+        'Enter the current code from your authenticator app to complete enablement and issue recovery codes.',
       codeLabel: 'TOTP verification code',
       codePlaceholder: '123456',
       enableAction: 'Enable TOTP',
@@ -1027,14 +1041,16 @@ const COPY: Record<SupportedUiLocale, ProfileCopy> = {
       enabled: 'TOTP enabled. Save the new recovery codes now.',
       enableError: 'Failed to enable TOTP.',
       disableTitle: 'Disable TOTP',
-      disableDescription: 'Enter the current password to turn off the second factor and invalidate recovery codes.',
+      disableDescription:
+        'Enter the current password to turn off the second factor and invalidate recovery codes.',
       disablePasswordLabel: 'Disable TOTP password',
       disableAction: 'Disable TOTP',
       disablePending: 'Disabling…',
       disabled: 'TOTP disabled.',
       disableError: 'Failed to disable TOTP.',
       regenerateTitle: 'Regenerate recovery codes',
-      regenerateDescription: 'Use the current password to invalidate the old set and mint a new recovery pack.',
+      regenerateDescription:
+        'Use the current password to invalidate the old set and mint a new recovery pack.',
       regeneratePasswordLabel: 'Recovery codes password',
       regenerateAction: 'Regenerate recovery codes',
       regeneratePending: 'Regenerating…',
@@ -1059,7 +1075,8 @@ const COPY: Record<SupportedUiLocale, ProfileCopy> = {
       deleteSuccess: 'Avatar deleted successfully.',
       deleteError: 'Failed to delete avatar.',
       emailTitle: 'Email change',
-      emailDescription: 'Request a verification email to a new address, then confirm it with the returned token.',
+      emailDescription:
+        'Request a verification email to a new address, then confirm it with the returned token.',
       newEmailLabel: 'New email',
       newEmailPlaceholder: 'new-email@example.com',
       requestAction: 'Request email change',
@@ -1107,14 +1124,17 @@ export function useProfileCopy() {
 
   return {
     locale,
-    copy: resolveLocaleRecord(locale, COPY as Record<SupportedUiLocale, ProfileCopy>) as ProfileCopy,
+    copy: resolveLocaleRecord(
+      locale,
+      COPY as Record<SupportedUiLocale, ProfileCopy>
+    ) as ProfileCopy,
   };
 }
 
 export function formatProfileDateTime(
   value: string | null | undefined,
-  locale: SupportedUiLocale ,
-  fallback: string,
+  locale: SupportedUiLocale,
+  fallback: string
 ) {
   return formatLocaleDateTime(locale, value ?? null, fallback);
 }

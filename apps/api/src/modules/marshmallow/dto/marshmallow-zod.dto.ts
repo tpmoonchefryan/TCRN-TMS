@@ -1,27 +1,27 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 // Marshmallow Module Zod DTOs - Using createZodDto for Swagger integration
+import { createZodDto } from 'nestjs-zod';
 
 import {
-    BlocklistBatchToggleSchema,
-    CreateExternalBlocklistSchema,
-    DisableExternalBlocklistSchema,
-    ExportMessagesSchema,
-    ExternalBlocklistQuerySchema,
-    MarkReadSchema,
-    MarshmallowBatchSchema,
-    MessageListQuerySchema,
-    PublicMessagesQuerySchema,
-    ReactSchema,
-    RejectMessageSchema,
-    ReplyMessageSchema,
-    SsoMarkReadSchema,
-    SsoReplySchema,
-    SubmitMessageSchema,
-    UpdateExternalBlocklistSchema,
-    UpdateMarshmallowConfigSchema,
-    UpdateMessageSchema,
+  BlocklistBatchToggleSchema,
+  CreateExternalBlocklistSchema,
+  DisableExternalBlocklistSchema,
+  ExportMessagesSchema,
+  ExternalBlocklistQuerySchema,
+  MarkReadSchema,
+  MarshmallowBatchSchema,
+  MessageListQuerySchema,
+  PublicMessagesQuerySchema,
+  ReactSchema,
+  RejectMessageSchema,
+  ReplyMessageSchema,
+  SsoMarkReadSchema,
+  SsoReplySchema,
+  SubmitMessageSchema,
+  UpdateExternalBlocklistSchema,
+  UpdateMarshmallowConfigSchema,
+  UpdateMessageSchema,
 } from '@tcrn/shared';
-import { createZodDto } from 'nestjs-zod';
 
 // Config DTOs
 export class UpdateMarshmallowConfigZodDto extends createZodDto(UpdateMarshmallowConfigSchema) {}

@@ -1,9 +1,10 @@
 'use client';
 
-import { buildSharedHomepagePath } from '@tcrn/shared';
 import { FileSpreadsheet, Globe2, LayoutPanelTop, Mailbox, Sparkles, Users2 } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+
+import { buildSharedHomepagePath } from '@tcrn/shared';
 
 import { readTalentDetail } from '@/domains/config-dictionary-settings/api/settings.api';
 import { ApiRequestError } from '@/platform/http/api';
@@ -72,24 +73,30 @@ export function TalentWorkspaceOverviewScreen({
     };
   }, [request, talentId]);
 
-  const resolvedTalentName = talentName || pickLocaleText(locale, {
-    en: 'Talent workspace',
-    zh_HANS: '艺人工作区',
-    zh_HANT: '藝人工作區',
-    ja: 'タレントワークスペース',
-    ko: '탤런트 워크스페이스',
-    fr: 'Espace de travail talent',
-  });
-  const resolvedTenantName = session?.tenantName || pickLocaleText(locale, {
-    en: 'Current tenant',
-    zh_HANS: '当前租户',
-    zh_HANT: '目前租戶',
-    ja: '現在のテナント',
-    ko: '현재 테넌트',
-    fr: 'Tenant actuel',
-  });
+  const resolvedTalentName =
+    talentName ||
+    pickLocaleText(locale, {
+      en: 'Talent workspace',
+      zh_HANS: '艺人工作区',
+      zh_HANT: '藝人工作區',
+      ja: 'タレントワークスペース',
+      ko: '탤런트 워크스페이스',
+      fr: 'Espace de travail talent',
+    });
+  const resolvedTenantName =
+    session?.tenantName ||
+    pickLocaleText(locale, {
+      en: 'Current tenant',
+      zh_HANS: '当前租户',
+      zh_HANT: '目前租戶',
+      ja: '現在のテナント',
+      ko: '현재 테넌트',
+      fr: 'Tenant actuel',
+    });
   const sharedHomepagePath =
-    session?.tenantCode && talentCode ? buildSharedHomepagePath(session.tenantCode, talentCode) : null;
+    session?.tenantCode && talentCode
+      ? buildSharedHomepagePath(session.tenantCode, talentCode)
+      : null;
 
   return (
     <div className="space-y-6">
@@ -108,9 +115,7 @@ export function TalentWorkspaceOverviewScreen({
               })}
             </div>
             <div className="space-y-3">
-              <h1 className="text-3xl font-semibold text-slate-950">
-                {resolvedTalentName}
-              </h1>
+              <h1 className="text-3xl font-semibold text-slate-950">{resolvedTalentName}</h1>
               <p className="max-w-3xl text-sm leading-6 text-slate-600">
                 {pickLocaleText(locale, {
                   en: 'Choose the business area you want to open.',
@@ -209,14 +214,14 @@ export function TalentWorkspaceOverviewScreen({
                 </h2>
                 <p className="text-sm leading-6 text-slate-600">
                   {key === 'customers'
-                      ? pickLocaleText(locale, {
-                          en: 'Customers, memberships, and lifecycle status.',
-                          zh_HANS: '客户、会员与生命周期状态。',
-                          zh_HANT: '客戶、會員與生命週期狀態。',
-                          ja: '顧客、会員、ライフサイクル状態。',
-                          ko: '고객, 멤버십, 라이프사이클 상태를 관리합니다.',
-                          fr: 'Clients, adhésions et état du cycle de vie.',
-                        })
+                    ? pickLocaleText(locale, {
+                        en: 'Customers, memberships, and lifecycle status.',
+                        zh_HANS: '客户、会员与生命周期状态。',
+                        zh_HANT: '客戶、會員與生命週期狀態。',
+                        ja: '顧客、会員、ライフサイクル状態。',
+                        ko: '고객, 멤버십, 라이프사이클 상태를 관리합니다.',
+                        fr: 'Clients, adhésions et état du cycle de vie.',
+                      })
                     : key === 'homepage'
                       ? pickLocaleText(locale, {
                           en: 'Publishing status and public pages.',

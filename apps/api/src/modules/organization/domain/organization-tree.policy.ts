@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import {
   localizeOrganizationName,
   mapTalentSummary,
@@ -51,7 +50,7 @@ export interface RawTalentCount {
 }
 
 export const buildOrganizationAccessScopes = (
-  accesses: RawOrganizationScopeAccess[],
+  accesses: RawOrganizationScopeAccess[]
 ): OrganizationAccessScopes => {
   const result: OrganizationAccessScopes = {
     tenantAccess: false,
@@ -64,8 +63,7 @@ export const buildOrganizationAccessScopes = (
   for (const access of accesses) {
     if (access.scope_type === 'tenant') {
       result.tenantAccess = true;
-      result.tenantIncludeSubunits =
-        result.tenantIncludeSubunits || access.include_subunits;
+      result.tenantIncludeSubunits = result.tenantIncludeSubunits || access.include_subunits;
       continue;
     }
 
@@ -109,10 +107,7 @@ export const buildOrganizationTree = (params: {
   language: string;
 }): OrganizationTree => {
   const countMap = new Map(
-    params.talentCounts.map((countRow) => [
-      countRow.subsidiary_id,
-      Number(countRow.count),
-    ]),
+    params.talentCounts.map((countRow) => [countRow.subsidiary_id, Number(countRow.count)])
   );
   const nodeMap = new Map<string, TreeNode>();
   const rootNodes: TreeNode[] = [];
@@ -174,7 +169,7 @@ export const buildOrganizationTree = (params: {
 export const filterOrganizationTree = (
   tree: OrganizationTree,
   accessibleSubsidiaryIds: Set<string>,
-  accessibleTalentIds: Set<string>,
+  accessibleTalentIds: Set<string>
 ): OrganizationTree => {
   const filterNode = (node: TreeNode): TreeNode | null => {
     if (!accessibleSubsidiaryIds.has(node.id)) {
@@ -185,9 +180,7 @@ export const filterOrganizationTree = (
       .map(filterNode)
       .filter((child): child is TreeNode => child !== null);
 
-    const talents = node.talents?.filter((talent) =>
-      accessibleTalentIds.has(talent.id),
-    );
+    const talents = node.talents?.filter((talent) => accessibleTalentIds.has(talent.id));
 
     return {
       ...node,
@@ -198,11 +191,9 @@ export const filterOrganizationTree = (
 
   return {
     tenant: tree.tenant,
-    tree: tree.tree
-      .map(filterNode)
-      .filter((node): node is TreeNode => node !== null),
+    tree: tree.tree.map(filterNode).filter((node): node is TreeNode => node !== null),
     talentsWithoutSubsidiary: tree.talentsWithoutSubsidiary.filter((talent) =>
-      accessibleTalentIds.has(talent.id),
+      accessibleTalentIds.has(talent.id)
     ),
   };
 };

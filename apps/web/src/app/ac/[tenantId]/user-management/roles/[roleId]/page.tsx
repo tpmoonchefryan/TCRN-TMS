@@ -8,11 +8,6 @@ export default async function AcRoleEditorPage({
   const { tenantId, roleId } = await params;
 
   return (
-    <RoleEditorScreen
-      tenantId={tenantId}
-      systemRoleId={roleId}
-      mode="edit"
-      workspaceKind="ac"
-    />
+    <RoleEditorScreen tenantId={tenantId} systemRoleId={roleId} mode="edit" workspaceKind="ac" />
   );
 }

@@ -1,9 +1,16 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+import * as crypto from 'crypto';
 
-import { BadRequestException, forwardRef,Inject, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  forwardRef,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+
 import { prisma } from '@tcrn/database';
 import { ErrorCodes, type LocalizedText } from '@tcrn/shared';
-import * as crypto from 'crypto';
 
 import { PasswordService } from '../auth/password.service';
 import { PermissionSnapshotService } from '../permission/permission-snapshot.service';
@@ -63,7 +70,7 @@ export class SystemUserService {
   constructor(
     @Inject(forwardRef(() => PasswordService))
     private readonly passwordService: PasswordService,
-    private readonly snapshotService: PermissionSnapshotService,
+    private readonly snapshotService: PermissionSnapshotService
   ) {}
 
   /**
@@ -122,13 +129,17 @@ export class SystemUserService {
     }
 
     // Get total count
-    const countResult = await prisma.$queryRawUnsafe<Array<{ count: bigint }>>(`
+    const countResult = await prisma.$queryRawUnsafe<Array<{ count: bigint }>>(
+      `
       SELECT COUNT(*) as count FROM "${tenantSchema}".system_user WHERE ${whereClause}
-    `, ...params);
+    `,
+      ...params
+    );
     const total = Number(countResult[0]?.count || 0);
 
     // Get data
-    const data = await prisma.$queryRawUnsafe<SystemUserData[]>(`
+    const data = await prisma.$queryRawUnsafe<SystemUserData[]>(
+      `
       SELECT 
         id, username, email, display_name as "displayName",
         phone, avatar_url as "avatarUrl", preferred_language as "preferredLanguage",
@@ -139,7 +150,9 @@ export class SystemUserService {
       WHERE ${whereClause}
       ORDER BY ${orderBy}
       LIMIT ${pageSize} OFFSET ${offset}
-    `, ...params);
+    `,
+      ...params
+    );
 
     return { data, total };
   }
@@ -148,7 +161,8 @@ export class SystemUserService {
    * Find user by ID
    */
   private async findBaseUserById(id: string, tenantSchema: string): Promise<SystemUserData | null> {
-    const results = await prisma.$queryRawUnsafe<SystemUserData[]>(`
+    const results = await prisma.$queryRawUnsafe<SystemUserData[]>(
+      `
       SELECT 
         id, username, email, display_name as "displayName",
         phone, avatar_url as "avatarUrl", preferred_language as "preferredLanguage",
@@ -157,7 +171,9 @@ export class SystemUserService {
         created_at as "createdAt", updated_at as "updatedAt"
       FROM "${tenantSchema}".system_user
       WHERE id = $1::uuid
-    `, id);
+    `,
+      id
+    );
 
     return results[0] || null;
   }
@@ -169,7 +185,8 @@ export class SystemUserService {
       return null;
     }
 
-    const roleAssignments = await prisma.$queryRawUnsafe<SystemUserRoleAssignmentData[]>(`
+    const roleAssignments = await prisma.$queryRawUnsafe<SystemUserRoleAssignmentData[]>(
+      `
       SELECT
         ur.id,
         r.id as "roleId",
@@ -219,9 +236,12 @@ export class SystemUserService {
           ELSE 3
         END,
         ur.granted_at DESC
-    `, id);
+    `,
+      id
+    );
 
-    const scopeAccess = await prisma.$queryRawUnsafe<SystemUserScopeAccessDetailData[]>(`
+    const scopeAccess = await prisma.$queryRawUnsafe<SystemUserScopeAccessDetailData[]>(
+      `
       SELECT
         usa.id,
         usa.scope_type as "scopeType",
@@ -265,7 +285,9 @@ export class SystemUserService {
           ELSE 3
         END,
         usa.granted_at DESC
-    `, id);
+    `,
+      id
+    );
 
     return {
       ...user,
@@ -290,9 +312,12 @@ export class SystemUserService {
     }
   ): Promise<SystemUserData> {
     // Check username uniqueness
-    const existingUsername = await prisma.$queryRawUnsafe<Array<{ id: string }>>(`
+    const existingUsername = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
+      `
       SELECT id FROM "${tenantSchema}".system_user WHERE username = $1
-    `, data.username);
+    `,
+      data.username
+    );
     if (existingUsername.length > 0) {
       throw new BadRequestException({
         code: ErrorCodes.USER_USERNAME_TAKEN,
@@ -301,9 +326,12 @@ export class SystemUserService {
     }
 
     // Check email uniqueness
-    const existingEmail = await prisma.$queryRawUnsafe<Array<{ id: string }>>(`
+    const existingEmail = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
+      `
       SELECT id FROM "${tenantSchema}".system_user WHERE email = $1
-    `, data.email);
+    `,
+      data.email
+    );
     if (existingEmail.length > 0) {
       throw new BadRequestException({
         code: ErrorCodes.USER_EMAIL_TAKEN,
@@ -324,7 +352,8 @@ export class SystemUserService {
     const passwordHash = await this.passwordService.hash(data.password);
 
     // Create user
-    const results = await prisma.$queryRawUnsafe<SystemUserData[]>(`
+    const results = await prisma.$queryRawUnsafe<SystemUserData[]>(
+      `
       INSERT INTO "${tenantSchema}".system_user 
         (id, username, email, password_hash, display_name, phone,
          preferred_language, is_active, force_reset, created_at, updated_at)
@@ -336,10 +365,14 @@ export class SystemUserService {
         is_active as "isActive", is_totp_enabled as "isTotpEnabled",
         force_reset as "forceReset", last_login_at as "lastLoginAt",
         created_at as "createdAt", updated_at as "updatedAt"
-    `, 
-      data.username, data.email, passwordHash, 
-      data.displayName || null, data.phone || null,
-      data.preferredLanguage || 'en', data.forceReset ?? true
+    `,
+      data.username,
+      data.email,
+      passwordHash,
+      data.displayName || null,
+      data.phone || null,
+      data.preferredLanguage || 'en',
+      data.forceReset ?? true
     );
 
     return results[0];
@@ -393,7 +426,8 @@ export class SystemUserService {
 
     updates.push('updated_at = now()');
 
-    const results = await prisma.$queryRawUnsafe<SystemUserData[]>(`
+    const results = await prisma.$queryRawUnsafe<SystemUserData[]>(
+      `
       UPDATE "${tenantSchema}".system_user
       SET ${updates.join(', ')}
       WHERE id = $1::uuid
@@ -403,7 +437,9 @@ export class SystemUserService {
         is_active as "isActive", is_totp_enabled as "isTotpEnabled",
         force_reset as "forceReset", last_login_at as "lastLoginAt",
         created_at as "createdAt", updated_at as "updatedAt"
-    `, ...params);
+    `,
+      ...params
+    );
 
     return results[0];
   }
@@ -431,11 +467,16 @@ export class SystemUserService {
     const password = options.newPassword || this.generateTempPassword();
     const passwordHash = await this.passwordService.hash(password);
 
-    await prisma.$executeRawUnsafe(`
+    await prisma.$executeRawUnsafe(
+      `
       UPDATE "${tenantSchema}".system_user
       SET password_hash = $2, force_reset = $3, password_changed_at = now(), updated_at = now()
       WHERE id = $1::uuid
-    `, id, passwordHash, options.forceReset ?? true);
+    `,
+      id,
+      passwordHash,
+      options.forceReset ?? true
+    );
 
     return options.newPassword ? {} : { tempPassword: password };
   }
@@ -452,11 +493,14 @@ export class SystemUserService {
       });
     }
 
-    await prisma.$executeRawUnsafe(`
+    await prisma.$executeRawUnsafe(
+      `
       UPDATE "${tenantSchema}".system_user
       SET is_active = false, updated_at = now()
       WHERE id = $1::uuid
-    `, id);
+    `,
+      id
+    );
 
     // Delete permission snapshots
     await this.snapshotService.deleteUserSnapshots(tenantSchema, id);
@@ -483,11 +527,14 @@ export class SystemUserService {
       });
     }
 
-    await prisma.$executeRawUnsafe(`
+    await prisma.$executeRawUnsafe(
+      `
       UPDATE "${tenantSchema}".system_user
       SET is_active = true, updated_at = now()
       WHERE id = $1::uuid
-    `, id);
+    `,
+      id
+    );
 
     // Refresh permission snapshots
     await this.snapshotService.refreshUserSnapshots(tenantSchema, id);
@@ -515,11 +562,14 @@ export class SystemUserService {
     }
 
     // Set force_totp flag (user will be required to enable TOTP on next login)
-    await prisma.$executeRawUnsafe(`
+    await prisma.$executeRawUnsafe(
+      `
       UPDATE "${tenantSchema}".system_user
       SET force_totp = true, updated_at = now()
       WHERE id = $1::uuid
-    `, id);
+    `,
+      id
+    );
 
     const updated = await this.findBaseUserById(id, tenantSchema);
     if (!updated) {
@@ -549,24 +599,31 @@ export class SystemUserService {
   async getScopeAccess(
     userId: string,
     tenantSchema: string
-  ): Promise<Array<{
-    id: string;
-    scopeType: string;
-    scopeId: string | null;
-    includeSubunits: boolean;
-  }>> {
-    const accesses = await prisma.$queryRawUnsafe<Array<{
+  ): Promise<
+    Array<{
       id: string;
-      scope_type: string;
-      scope_id: string | null;
-      include_subunits: boolean;
-    }>>(`
+      scopeType: string;
+      scopeId: string | null;
+      includeSubunits: boolean;
+    }>
+  > {
+    const accesses = await prisma.$queryRawUnsafe<
+      Array<{
+        id: string;
+        scope_type: string;
+        scope_id: string | null;
+        include_subunits: boolean;
+      }>
+    >(
+      `
       SELECT id, scope_type, scope_id, include_subunits
       FROM "${tenantSchema}".user_scope_access
       WHERE user_id = $1::uuid
-    `, userId);
+    `,
+      userId
+    );
 
-    return accesses.map(a => ({
+    return accesses.map((a) => ({
       id: a.id,
       scopeType: a.scope_type,
       scopeId: a.scope_id,
@@ -587,20 +644,30 @@ export class SystemUserService {
     // Use a transaction to ensure atomicity
     await prisma.$transaction(async (tx) => {
       // Delete existing accesses
-      await tx.$executeRawUnsafe(`
+      await tx.$executeRawUnsafe(
+        `
         DELETE FROM "${tenantSchema}".user_scope_access
         WHERE user_id = $1::uuid
-      `, userId);
+      `,
+        userId
+      );
 
       // Insert new accesses with ON CONFLICT to handle race conditions
       for (const access of accesses) {
-        await tx.$executeRawUnsafe(`
+        await tx.$executeRawUnsafe(
+          `
           INSERT INTO "${tenantSchema}".user_scope_access 
           (id, user_id, scope_type, scope_id, include_subunits, granted_at, granted_by)
           VALUES (gen_random_uuid(), $1::uuid, $2, $3::uuid, $4, now(), $5::uuid)
           ON CONFLICT (user_id, scope_type, scope_id) 
           DO UPDATE SET include_subunits = EXCLUDED.include_subunits, granted_at = now(), granted_by = EXCLUDED.granted_by
-        `, userId, access.scopeType, access.scopeId || null, access.includeSubunits ?? false, grantedBy);
+        `,
+          userId,
+          access.scopeType,
+          access.scopeId || null,
+          access.includeSubunits ?? false,
+          grantedBy
+        );
       }
     });
   }

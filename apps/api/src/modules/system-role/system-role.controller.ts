@@ -1,6 +1,18 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-import { Body, Controller, Delete, Get, NotFoundException, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  NotFoundException,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+  Query,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+
 import { ErrorCodes } from '@tcrn/shared';
 
 import { AuthenticatedUser, CurrentUser, RequirePermissions } from '../../common/decorators';
@@ -18,7 +30,10 @@ const SYSTEM_ROLE_NAME_EXAMPLE = {
   fr: "Refus d'exportation",
 };
 
-const createSuccessEnvelopeSchema = (dataSchema: Record<string, unknown>, exampleData: unknown) => ({
+const createSuccessEnvelopeSchema = (
+  dataSchema: Record<string, unknown>,
+  exampleData: unknown
+) => ({
   type: 'object',
   properties: {
     success: { type: 'boolean', example: true },
@@ -98,7 +113,12 @@ const SYSTEM_ROLE_DETAIL_SCHEMA = {
         type: 'object',
         properties: {
           scopeType: { type: 'string', example: 'talent' },
-          scopeId: { type: 'string', format: 'uuid', nullable: true, example: '550e8400-e29b-41d4-a716-446655440030' },
+          scopeId: {
+            type: 'string',
+            format: 'uuid',
+            nullable: true,
+            example: '550e8400-e29b-41d4-a716-446655440030',
+          },
           scopeName: { type: 'string', nullable: true, example: 'Tokino Sora' },
           scopePath: { type: 'string', nullable: true, example: '/TOKYO/SORA' },
           assignmentCount: { type: 'integer', example: 2 },
@@ -113,22 +133,44 @@ const SYSTEM_ROLE_DETAIL_SCHEMA = {
       items: {
         type: 'object',
         properties: {
-          assignmentId: { type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440010' },
-          userId: { type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440000' },
+          assignmentId: {
+            type: 'string',
+            format: 'uuid',
+            example: '550e8400-e29b-41d4-a716-446655440010',
+          },
+          userId: {
+            type: 'string',
+            format: 'uuid',
+            example: '550e8400-e29b-41d4-a716-446655440000',
+          },
           username: { type: 'string', example: 'john.doe' },
           email: { type: 'string', example: 'john.doe@example.com' },
           displayName: { type: 'string', nullable: true, example: 'John Doe' },
           avatarUrl: { type: 'string', nullable: true, example: 'https://cdn.tcrn.app/avatar.jpg' },
           isActive: { type: 'boolean', example: true },
           scopeType: { type: 'string', example: 'subsidiary' },
-          scopeId: { type: 'string', format: 'uuid', nullable: true, example: '550e8400-e29b-41d4-a716-446655440040' },
+          scopeId: {
+            type: 'string',
+            format: 'uuid',
+            nullable: true,
+            example: '550e8400-e29b-41d4-a716-446655440040',
+          },
           scopeName: { type: 'string', nullable: true, example: 'Tokyo Branch' },
           scopePath: { type: 'string', nullable: true, example: '/TOKYO' },
           inherit: { type: 'boolean', example: false },
           grantedAt: { type: 'string', format: 'date-time', example: '2026-04-13T09:10:00.000Z' },
           expiresAt: { type: 'string', format: 'date-time', nullable: true, example: null },
         },
-        required: ['assignmentId', 'userId', 'username', 'email', 'isActive', 'scopeType', 'inherit', 'grantedAt'],
+        required: [
+          'assignmentId',
+          'userId',
+          'username',
+          'email',
+          'isActive',
+          'scopeType',
+          'inherit',
+          'grantedAt',
+        ],
       },
     },
   },
@@ -180,7 +222,7 @@ const SYSTEM_ROLE_LIST_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
       permissionCount: 1,
       userCount: 0,
     },
-  ],
+  ]
 );
 
 const SYSTEM_ROLE_DETAIL_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(SYSTEM_ROLE_DETAIL_SCHEMA, {
@@ -235,22 +277,22 @@ const SYSTEM_ROLE_DELETE_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
     },
     required: ['deleted'],
   },
-  { deleted: true },
+  { deleted: true }
 );
 
 const SYSTEM_ROLE_BAD_REQUEST_SCHEMA = createErrorEnvelopeSchema(
   'RES_CONFLICT',
-  'System role change is invalid for the current state',
+  'System role change is invalid for the current state'
 );
 
 const SYSTEM_ROLE_UNAUTHORIZED_SCHEMA = createErrorEnvelopeSchema(
   'AUTH_UNAUTHORIZED',
-  'Authentication required',
+  'Authentication required'
 );
 
 const SYSTEM_ROLE_NOT_FOUND_SCHEMA = createErrorEnvelopeSchema(
   'RES_NOT_FOUND',
-  'System role not found',
+  'System role not found'
 );
 
 @ApiTags('System - System Roles')
@@ -259,7 +301,7 @@ const SYSTEM_ROLE_NOT_FOUND_SCHEMA = createErrorEnvelopeSchema(
 export class SystemRoleController {
   constructor(
     private readonly systemRoleService: SystemRoleService,
-    private readonly tenantService: TenantService,
+    private readonly tenantService: TenantService
   ) {}
 
   @Post()
@@ -302,7 +344,7 @@ export class SystemRoleController {
     @CurrentUser() user: AuthenticatedUser,
     @Query('isActive') isActive?: string,
     @Query('isSystem') isSystem?: string,
-    @Query('search') search?: string,
+    @Query('search') search?: string
   ) {
     const tenant = await this.tenantService.getTenantById(user.tenantId);
     const filters = {
@@ -313,7 +355,7 @@ export class SystemRoleController {
     const roles = await this.systemRoleService.findAll(
       filters,
       user.tenantSchema,
-      tenant?.tier === 'ac' ? 'ac' : 'standard',
+      tenant?.tier === 'ac' ? 'ac' : 'standard'
     );
     return success(roles);
   }
@@ -343,13 +385,13 @@ export class SystemRoleController {
   })
   async findOne(
     @CurrentUser() user: AuthenticatedUser,
-    @Param('systemRoleId', ParseUUIDPipe) systemRoleId: string,
+    @Param('systemRoleId', ParseUUIDPipe) systemRoleId: string
   ) {
     const tenant = await this.tenantService.getTenantById(user.tenantId);
     const role = await this.systemRoleService.findOne(
       systemRoleId,
       user.tenantSchema,
-      tenant?.tier === 'ac' ? 'ac' : 'standard',
+      tenant?.tier === 'ac' ? 'ac' : 'standard'
     );
     if (!role) {
       throw new NotFoundException({
@@ -390,7 +432,7 @@ export class SystemRoleController {
   })
   async update(
     @Param('systemRoleId', ParseUUIDPipe) systemRoleId: string,
-    @Body() updateSystemRoleDto: UpdateSystemRoleZodDto,
+    @Body() updateSystemRoleDto: UpdateSystemRoleZodDto
   ) {
     const role = await this.systemRoleService.update(systemRoleId, updateSystemRoleDto);
     return success(role);

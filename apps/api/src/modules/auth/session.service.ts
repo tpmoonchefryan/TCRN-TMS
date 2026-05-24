@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable } from '@nestjs/common';
+
 import { prisma } from '@tcrn/database';
 
 import { RedisService } from '../redis';
@@ -31,19 +31,24 @@ export class SessionService {
   async getUserSessions(
     userId: string,
     tenantSchema: string,
-    currentTokenId?: string,
+    currentTokenId?: string
   ): Promise<SessionInfo[]> {
-    const sessions = await prisma.$queryRawUnsafe<Array<{
-      id: string;
-      device_info: string | null;
-      ip_address: string | null;
-      created_at: Date;
-    }>>(`
+    const sessions = await prisma.$queryRawUnsafe<
+      Array<{
+        id: string;
+        device_info: string | null;
+        ip_address: string | null;
+        created_at: Date;
+      }>
+    >(
+      `
       SELECT id, device_info, ip_address, created_at
       FROM "${tenantSchema}".refresh_token
       WHERE user_id = $1::uuid AND revoked_at IS NULL AND expires_at > now()
       ORDER BY created_at DESC
-    `, userId);
+    `,
+      userId
+    );
 
     return sessions.map((session) => ({
       id: session.id,
@@ -58,16 +63,16 @@ export class SessionService {
   /**
    * Revoke a specific session
    */
-  async revokeSession(
-    sessionId: string,
-    userId: string,
-    tenantSchema: string,
-  ): Promise<boolean> {
-    const result = await prisma.$executeRawUnsafe(`
+  async revokeSession(sessionId: string, userId: string, tenantSchema: string): Promise<boolean> {
+    const result = (await prisma.$executeRawUnsafe(
+      `
       UPDATE "${tenantSchema}".refresh_token
       SET revoked_at = now()
       WHERE id = $1::uuid AND user_id = $2::uuid AND revoked_at IS NULL
-    `, sessionId, userId) as number;
+    `,
+      sessionId,
+      userId
+    )) as number;
 
     return result > 0;
   }
@@ -79,7 +84,7 @@ export class SessionService {
     userId: string,
     tenantSchema: string,
     success: boolean,
-    ipAddress: string,
+    ipAddress: string
   ): Promise<{
     failedCount: number;
     isLocked: boolean;
@@ -87,7 +92,8 @@ export class SessionService {
   }> {
     if (success) {
       // Reset failed count on successful login
-      await prisma.$executeRawUnsafe(`
+      await prisma.$executeRawUnsafe(
+        `
         UPDATE "${tenantSchema}".system_user
         SET 
           failed_login_count = 0,
@@ -95,16 +101,22 @@ export class SessionService {
           last_login_at = now(),
           last_login_ip = $2::inet
         WHERE id = $1::uuid
-      `, userId, ipAddress);
+      `,
+        userId,
+        ipAddress
+      );
 
       return { failedCount: 0, isLocked: false, lockedUntil: null };
     }
 
     // Increment failed count
-    const result = await prisma.$queryRawUnsafe<Array<{
-      failed_login_count: number;
-      locked_until: Date | null;
-    }>>(`
+    const result = await prisma.$queryRawUnsafe<
+      Array<{
+        failed_login_count: number;
+        locked_until: Date | null;
+      }>
+    >(
+      `
       UPDATE "${tenantSchema}".system_user
       SET 
         failed_login_count = failed_login_count + 1,
@@ -115,7 +127,9 @@ export class SessionService {
         END
       WHERE id = $1::uuid
       RETURNING failed_login_count, locked_until
-    `, userId);
+    `,
+      userId
+    );
 
     if (result.length === 0) {
       return { failedCount: 0, isLocked: false, lockedUntil: null };
@@ -136,31 +150,36 @@ export class SessionService {
    */
   async isUserLocked(
     userId: string,
-    tenantSchema: string,
+    tenantSchema: string
   ): Promise<{
     isLocked: boolean;
     lockedUntil: Date | null;
   }> {
-    const result = await prisma.$queryRawUnsafe<Array<{
-      locked_until: Date | null;
-    }>>(`
+    const result = await prisma.$queryRawUnsafe<
+      Array<{
+        locked_until: Date | null;
+      }>
+    >(
+      `
       SELECT locked_until
       FROM "${tenantSchema}".system_user
       WHERE id = $1::uuid
-    `, userId);
+    `,
+      userId
+    );
 
     if (result.length === 0) {
       return { isLocked: false, lockedUntil: null };
     }
 
     const { locked_until } = result[0];
-    
+
     if (!locked_until) {
       return { isLocked: false, lockedUntil: null };
     }
 
     const isLocked = new Date(locked_until) > new Date();
-    
+
     return {
       isLocked,
       lockedUntil: isLocked ? locked_until : null,
@@ -177,15 +196,16 @@ export class SessionService {
     details: Record<string, unknown>,
     ipAddress?: string,
     userAgent?: string,
-    requestId?: string,
+    requestId?: string
   ): Promise<void> {
     try {
-      await prisma.$executeRawUnsafe(`
+      await prisma.$executeRawUnsafe(
+        `
         INSERT INTO "${tenantSchema}".technical_event_log 
           (id, event_type, severity, scope, message, payload_json, trace_id)
         VALUES 
           (gen_random_uuid(), $1, 'info', 'security', $2, $3::jsonb, $4)
-      `, 
+      `,
         eventType,
         `Security event: ${eventType}`,
         JSON.stringify({
@@ -194,7 +214,7 @@ export class SessionService {
           ipAddress,
           userAgent: userAgent?.substring(0, 255),
         }),
-        requestId || null,
+        requestId || null
       );
     } catch {
       // Silently fail - security logging should not block main operation

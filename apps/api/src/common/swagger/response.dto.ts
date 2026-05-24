@@ -1,10 +1,8 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 /**
  * Common Swagger Response DTOs
  * Used for documenting API responses in OpenAPI specification
  */
-
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 // =============================================================================
@@ -70,10 +68,13 @@ export class ErrorBodyDto {
   @ApiProperty({ description: 'Error code', example: 'AUTH_INVALID_CREDENTIALS' })
   code: string;
 
-  @ApiProperty({ description: 'Human-readable error message', example: 'Invalid username or password' })
+  @ApiProperty({
+    description: 'Human-readable error message',
+    example: 'Invalid username or password',
+  })
   message: string;
 
-  @ApiPropertyOptional({ 
+  @ApiPropertyOptional({
     description: 'Additional error details',
     type: [ErrorDetailDto],
   })
@@ -143,9 +144,7 @@ export const COMMON_RESPONSES = {
         error: {
           code: 'VALIDATION_FAILED',
           message: 'Request validation failed',
-          details: [
-            { field: 'email', code: 'INVALID_EMAIL', message: 'Invalid email format' },
-          ],
+          details: [{ field: 'email', code: 'INVALID_EMAIL', message: 'Invalid email format' }],
         },
       },
     },

@@ -5,7 +5,13 @@ export type PublicPresenceDecorationDensity = 'none' | 'calm' | 'standard' | 'fe
 export type PublicPresenceMotionMode = 'standard' | 'quiet' | 'none';
 export type PublicPresenceShellWidth = 'sm' | 'md' | 'lg' | 'xl' | 'full';
 export type PublicPresenceSurfaceVariant = 'panel' | 'note' | 'ticket' | 'inset';
-export type PublicPresenceStateTone = 'neutral' | 'info' | 'success' | 'warning' | 'error' | 'unavailable';
+export type PublicPresenceStateTone =
+  | 'neutral'
+  | 'info'
+  | 'success'
+  | 'warning'
+  | 'error'
+  | 'unavailable';
 
 export interface PublicPresenceAccentClassSet {
   solid: string;
@@ -26,18 +32,18 @@ export type PublicPresenceAccentStyle = CSSProperties & {
   '--public-presence-accent-text'?: string;
 };
 
-export function publicPresenceClassNames(
-  ...values: Array<string | false | null | undefined>
-) {
+export function publicPresenceClassNames(...values: Array<string | false | null | undefined>) {
   return values.filter(Boolean).join(' ');
 }
 
 export const publicPresenceTokens = {
   surface: {
     canvas: 'bg-[linear-gradient(180deg,#fff7ed_0%,#fdf2f8_48%,#eff6ff_100%)]',
-    panel: 'border border-white/80 bg-white/90 shadow-[0_18px_40px_rgba(15,23,42,0.10)] backdrop-blur-xl',
+    panel:
+      'border border-white/80 bg-white/90 shadow-[0_18px_40px_rgba(15,23,42,0.10)] backdrop-blur-xl',
     note: 'border border-rose-100 bg-[#fffdf8] shadow-[0_14px_30px_rgba(190,18,60,0.08)]',
-    ticket: 'border border-dashed border-sky-200 bg-white/90 shadow-[0_14px_30px_rgba(2,132,199,0.08)]',
+    ticket:
+      'border border-dashed border-sky-200 bg-white/90 shadow-[0_14px_30px_rgba(2,132,199,0.08)]',
     inset: 'border border-slate-200/80 bg-white/70 shadow-inner',
   },
   accent: {
@@ -174,7 +180,7 @@ export function getPublicPresenceShellWidthClasses(width: PublicPresenceShellWid
 }
 
 export function getPublicPresenceDecorationDensityClasses(
-  density: PublicPresenceDecorationDensity = 'standard',
+  density: PublicPresenceDecorationDensity = 'standard'
 ) {
   return decorationDensityClasses[density];
 }
@@ -197,7 +203,7 @@ function normalizeCssColor(value: string | null | undefined) {
 }
 
 export function createPublicPresenceAccentStyle(
-  input: PublicPresenceAccentStyleInput = {},
+  input: PublicPresenceAccentStyleInput = {}
 ): PublicPresenceAccentStyle {
   const primary = normalizeCssColor(input.primary);
   const secondary = normalizeCssColor(input.secondary);

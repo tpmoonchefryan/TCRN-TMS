@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import {
   FIXED_CUSTOM_DOMAIN_HOMEPAGE_PATH,
   FIXED_CUSTOM_DOMAIN_MARSHMALLOW_PATH,
@@ -15,11 +14,7 @@ export const CUSTOM_DOMAIN_OWNER_TYPES: CustomDomainOwnerType[] = [
   'talent',
 ];
 
-export const CUSTOM_DOMAIN_SSL_MODES: CustomDomainSslMode[] = [
-  'auto',
-  'self_hosted',
-  'cloudflare',
-];
+export const CUSTOM_DOMAIN_SSL_MODES: CustomDomainSslMode[] = ['auto', 'self_hosted', 'cloudflare'];
 
 export interface TalentLegacyCustomDomainConfig {
   talentId: string;
@@ -92,7 +87,6 @@ export interface TalentEffectiveCustomDomain {
   marshmallowPath: string;
 }
 
-
 export interface TalentCustomDomainBindingMutationInput {
   ownerType: CustomDomainOwnerType;
   ownerId: string | null;
@@ -158,15 +152,13 @@ export function isValidCustomDomainHostname(hostname: string): boolean {
     return false;
   }
 
-  return labels.every((label) => (
-    label.length >= 1 &&
-    label.length <= 63 &&
-    /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/.test(label)
-  ));
+  return labels.every(
+    (label) =>
+      label.length >= 1 && label.length <= 63 && /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/.test(label)
+  );
 }
 
-export const buildVerificationTxtRecord = (token: string): string =>
-  `tcrn-verify=${token}`;
+export const buildVerificationTxtRecord = (token: string): string => `tcrn-verify=${token}`;
 
 export const buildFixedCustomDomainPaths = (): TalentCustomDomainPaths => ({
   homepageCustomPath: FIXED_CUSTOM_DOMAIN_HOMEPAGE_PATH,
@@ -204,9 +196,7 @@ export function buildTalentEffectiveCustomDomains(params: {
   const selectedSet = new Set(params.selectedInheritedDomainIds);
   const domains = params.bindingRecords.map((record) => {
     const inherited = record.ownerType !== 'talent';
-    const routeMode: CustomDomainRouteMode = inherited
-      ? 'scoped_talent_path'
-      : 'dedicated_talent';
+    const routeMode: CustomDomainRouteMode = inherited ? 'scoped_talent_path' : 'dedicated_talent';
     const routes = buildTalentDomainRoutes(routeMode, params.legacyConfig.talentCode);
 
     return {
@@ -231,7 +221,7 @@ export function buildTalentEffectiveCustomDomains(params: {
     (domain) =>
       domain.ownerType === 'talent' &&
       params.legacyConfig.customDomain !== null &&
-      domain.hostname === params.legacyConfig.customDomain,
+      domain.hostname === params.legacyConfig.customDomain
   );
 
   if (params.legacyConfig.customDomain && !hasTalentBindingForLegacyDomain) {

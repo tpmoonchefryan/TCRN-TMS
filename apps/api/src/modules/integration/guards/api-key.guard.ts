@@ -1,14 +1,14 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+import type { IncomingHttpHeaders } from 'http';
 
 import {
-    CanActivate,
-    ExecutionContext,
-    ForbiddenException,
-    Injectable,
-    UnauthorizedException,
+  CanActivate,
+  ExecutionContext,
+  ForbiddenException,
+  Injectable,
+  UnauthorizedException,
 } from '@nestjs/common';
 import type { Request } from 'express';
-import type { IncomingHttpHeaders } from 'http';
 
 import { IntegrationLogService } from '../../log';
 import { ApiKeyService } from '../services/api-key.service';
@@ -29,7 +29,7 @@ interface ApiKeyRequest extends Request {
 export class ApiKeyGuard implements CanActivate {
   constructor(
     private readonly apiKeyService: ApiKeyService,
-    private readonly integrationLogService: IntegrationLogService,
+    private readonly integrationLogService: IntegrationLogService
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -89,7 +89,7 @@ export class ApiKeyGuard implements CanActivate {
     consumer: ValidatedConsumer | null,
     status: number,
     errorMessage: string | null,
-    startTime: number,
+    startTime: number
   ): Promise<void> {
     try {
       await this.integrationLogService.logInbound({

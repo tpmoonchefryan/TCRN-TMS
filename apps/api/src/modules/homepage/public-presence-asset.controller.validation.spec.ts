@@ -1,9 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
-import 'reflect-metadata';
-
 import type { INestApplication } from '@nestjs/common';
 import { Test, type TestingModule } from '@nestjs/testing';
+import 'reflect-metadata';
 import request from 'supertest';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -54,9 +52,11 @@ describe('PublicPresenceAssetController validation', () => {
     }).compile();
 
     const controller = moduleFixture.get(PublicPresenceAssetController);
-    (controller as unknown as {
-      publicPresenceAssetService: typeof assetService;
-    }).publicPresenceAssetService = assetService;
+    (
+      controller as unknown as {
+        publicPresenceAssetService: typeof assetService;
+      }
+    ).publicPresenceAssetService = assetService;
 
     app = moduleFixture.createNestApplication();
     app.use((req, _res, next) => {

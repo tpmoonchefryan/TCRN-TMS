@@ -1,7 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { LogSeverity, TechEventScope, TechEventType } from '@tcrn/shared';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ReportJobStateService } from '../services/report-job-state.service';
 
@@ -27,10 +27,7 @@ describe('ReportJobStateService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    service = new ReportJobStateService(
-      mockDatabaseService as never,
-      mockTechEventLog as never,
-    );
+    service = new ReportJobStateService(mockDatabaseService as never, mockTechEventLog as never);
   });
 
   describe('checkAndExpireJobs', () => {

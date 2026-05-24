@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import {
   Body,
   Controller,
@@ -12,18 +11,22 @@ import {
   Req,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { ErrorCodes, createLocalizedText, type RequestContext } from '@tcrn/shared';
 import { Request } from 'express';
+
+import { ErrorCodes, createLocalizedText, type RequestContext } from '@tcrn/shared';
 
 import { CurrentUser, RequirePermissions } from '../../../common/decorators';
 import {
-    CreateProfileStoreDto,
-    PaginationQueryDto,
-    UpdateProfileStoreDto,
+  CreateProfileStoreDto,
+  PaginationQueryDto,
+  UpdateProfileStoreDto,
 } from '../dto/pii-config.dto';
 import { ProfileStoreService } from '../services/profile-store.service';
 
-const createSuccessEnvelopeSchema = (dataSchema: Record<string, unknown>, exampleData: unknown) => ({
+const createSuccessEnvelopeSchema = (
+  dataSchema: Record<string, unknown>,
+  exampleData: unknown
+) => ({
   type: 'object',
   properties: {
     success: { type: 'boolean', example: true },
@@ -89,7 +92,17 @@ const PROFILE_STORE_ITEM_SCHEMA = {
     createdAt: { type: 'string', format: 'date-time', example: '2026-04-13T08:00:00.000Z' },
     version: { type: 'integer', example: 1 },
   },
-  required: ['id', 'code', 'name', 'talentCount', 'customerCount', 'isDefault', 'isActive', 'createdAt', 'version'],
+  required: [
+    'id',
+    'code',
+    'name',
+    'talentCount',
+    'customerCount',
+    'isDefault',
+    'isActive',
+    'createdAt',
+    'version',
+  ],
 };
 
 const PROFILE_STORE_LIST_SCHEMA = createSuccessEnvelopeSchema(
@@ -142,7 +155,7 @@ const PROFILE_STORE_LIST_SCHEMA = createSuccessEnvelopeSchema(
         hasPrev: false,
       },
     },
-  },
+  }
 );
 
 const PROFILE_STORE_DETAIL_SCHEMA = createSuccessEnvelopeSchema(
@@ -171,7 +184,7 @@ const PROFILE_STORE_DETAIL_SCHEMA = createSuccessEnvelopeSchema(
     createdAt: '2026-04-13T08:00:00.000Z',
     updatedAt: '2026-04-13T09:00:00.000Z',
     version: 1,
-  },
+  }
 );
 
 const PROFILE_STORE_CREATE_SCHEMA = createSuccessEnvelopeSchema(
@@ -196,7 +209,7 @@ const PROFILE_STORE_CREATE_SCHEMA = createSuccessEnvelopeSchema(
     name: PROFILE_STORE_NAME_EXAMPLE,
     isDefault: true,
     createdAt: '2026-04-13T08:00:00.000Z',
-  },
+  }
 );
 
 const PROFILE_STORE_UPDATE_SCHEMA = createSuccessEnvelopeSchema(
@@ -215,41 +228,39 @@ const PROFILE_STORE_UPDATE_SCHEMA = createSuccessEnvelopeSchema(
     code: 'DEFAULT_STORE',
     version: 2,
     updatedAt: '2026-04-13T09:15:00.000Z',
-  },
+  }
 );
 
 const PROFILE_STORE_BAD_REQUEST_SCHEMA = createErrorEnvelopeSchema(
   ErrorCodes.VALIDATION_FAILED,
-  'Profile store request is invalid',
+  'Profile store request is invalid'
 );
 
 const PROFILE_STORE_UNAUTHORIZED_SCHEMA = createErrorEnvelopeSchema(
   'AUTH_UNAUTHORIZED',
-  'Authentication required',
+  'Authentication required'
 );
 
 const PROFILE_STORE_FORBIDDEN_SCHEMA = createErrorEnvelopeSchema(
   ErrorCodes.PERM_ACCESS_DENIED,
-  'Access denied',
+  'Access denied'
 );
 
 const PROFILE_STORE_NOT_FOUND_SCHEMA = createErrorEnvelopeSchema(
   ErrorCodes.RES_NOT_FOUND,
-  'Profile store not found',
+  'Profile store not found'
 );
 
 const PROFILE_STORE_CONFLICT_SCHEMA = createErrorEnvelopeSchema(
   ErrorCodes.RES_VERSION_MISMATCH,
-  'Data has been modified by another user',
+  'Data has been modified by another user'
 );
 
 @ApiTags('System - PII')
 @ApiBearerAuth()
 @Controller('profile-stores')
 export class ProfileStoreController {
-  constructor(
-    private readonly profileStoreService: ProfileStoreService,
-  ) {}
+  constructor(private readonly profileStoreService: ProfileStoreService) {}
 
   /**
    * List profile stores
@@ -257,13 +268,25 @@ export class ProfileStoreController {
   @Get()
   @RequirePermissions({ resource: 'config.profile_store', action: 'read' })
   @ApiOperation({ summary: 'List profile stores' })
-  @ApiResponse({ status: 200, description: 'Returns profile store list', schema: PROFILE_STORE_LIST_SCHEMA })
-  @ApiResponse({ status: 401, description: 'Authentication is required to list profile stores', schema: PROFILE_STORE_UNAUTHORIZED_SCHEMA })
-  @ApiResponse({ status: 403, description: 'Insufficient permissions to list profile stores', schema: PROFILE_STORE_FORBIDDEN_SCHEMA })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns profile store list',
+    schema: PROFILE_STORE_LIST_SCHEMA,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Authentication is required to list profile stores',
+    schema: PROFILE_STORE_UNAUTHORIZED_SCHEMA,
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Insufficient permissions to list profile stores',
+    schema: PROFILE_STORE_FORBIDDEN_SCHEMA,
+  })
   async list(
     @Query() query: PaginationQueryDto,
     @CurrentUser() user: { id: string; username: string; tenantSchema?: string },
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     const context = this.buildContext(user, req);
     return this.profileStoreService.findMany(query, context);
@@ -280,14 +303,30 @@ export class ProfileStoreController {
     description: 'Profile-store identifier',
     schema: { type: 'string', format: 'uuid' },
   })
-  @ApiResponse({ status: 200, description: 'Returns profile store detail', schema: PROFILE_STORE_DETAIL_SCHEMA })
-  @ApiResponse({ status: 401, description: 'Authentication is required to read profile stores', schema: PROFILE_STORE_UNAUTHORIZED_SCHEMA })
-  @ApiResponse({ status: 403, description: 'Insufficient permissions to read profile stores', schema: PROFILE_STORE_FORBIDDEN_SCHEMA })
-  @ApiResponse({ status: 404, description: 'Profile store was not found', schema: PROFILE_STORE_NOT_FOUND_SCHEMA })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns profile store detail',
+    schema: PROFILE_STORE_DETAIL_SCHEMA,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Authentication is required to read profile stores',
+    schema: PROFILE_STORE_UNAUTHORIZED_SCHEMA,
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Insufficient permissions to read profile stores',
+    schema: PROFILE_STORE_FORBIDDEN_SCHEMA,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Profile store was not found',
+    schema: PROFILE_STORE_NOT_FOUND_SCHEMA,
+  })
   async getById(
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() user: { id: string; username: string; tenantSchema?: string },
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     const context = this.buildContext(user, req);
     return this.profileStoreService.findById(id, context);
@@ -299,16 +338,43 @@ export class ProfileStoreController {
   @Post()
   @RequirePermissions({ resource: 'config.profile_store', action: 'create' })
   @ApiOperation({ summary: 'Create profile store' })
-  @ApiResponse({ status: 201, description: 'Profile store created', schema: PROFILE_STORE_CREATE_SCHEMA })
-  @ApiResponse({ status: 400, description: 'Profile-store payload is invalid', schema: PROFILE_STORE_BAD_REQUEST_SCHEMA })
-  @ApiResponse({ status: 401, description: 'Authentication is required to create profile stores', schema: PROFILE_STORE_UNAUTHORIZED_SCHEMA })
-  @ApiResponse({ status: 403, description: 'Insufficient permissions to create profile stores', schema: PROFILE_STORE_FORBIDDEN_SCHEMA })
-  @ApiResponse({ status: 404, description: 'Referenced PII service config was not found', schema: PROFILE_STORE_NOT_FOUND_SCHEMA })
-  @ApiResponse({ status: 409, description: 'Profile store code already exists', schema: createErrorEnvelopeSchema(ErrorCodes.RES_ALREADY_EXISTS, 'Profile store with this code already exists') })
+  @ApiResponse({
+    status: 201,
+    description: 'Profile store created',
+    schema: PROFILE_STORE_CREATE_SCHEMA,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Profile-store payload is invalid',
+    schema: PROFILE_STORE_BAD_REQUEST_SCHEMA,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Authentication is required to create profile stores',
+    schema: PROFILE_STORE_UNAUTHORIZED_SCHEMA,
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Insufficient permissions to create profile stores',
+    schema: PROFILE_STORE_FORBIDDEN_SCHEMA,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Referenced PII service config was not found',
+    schema: PROFILE_STORE_NOT_FOUND_SCHEMA,
+  })
+  @ApiResponse({
+    status: 409,
+    description: 'Profile store code already exists',
+    schema: createErrorEnvelopeSchema(
+      ErrorCodes.RES_ALREADY_EXISTS,
+      'Profile store with this code already exists'
+    ),
+  })
   async create(
     @Body() dto: CreateProfileStoreDto,
     @CurrentUser() user: { id: string; username: string },
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     const context = this.buildContext(user, req);
     return this.profileStoreService.create(dto, context);
@@ -325,17 +391,41 @@ export class ProfileStoreController {
     description: 'Profile-store identifier',
     schema: { type: 'string', format: 'uuid' },
   })
-  @ApiResponse({ status: 200, description: 'Profile store updated', schema: PROFILE_STORE_UPDATE_SCHEMA })
-  @ApiResponse({ status: 400, description: 'Profile-store update is invalid', schema: PROFILE_STORE_BAD_REQUEST_SCHEMA })
-  @ApiResponse({ status: 401, description: 'Authentication is required to update profile stores', schema: PROFILE_STORE_UNAUTHORIZED_SCHEMA })
-  @ApiResponse({ status: 403, description: 'Insufficient permissions to update profile stores', schema: PROFILE_STORE_FORBIDDEN_SCHEMA })
-  @ApiResponse({ status: 404, description: 'Profile store or referenced PII service config was not found', schema: PROFILE_STORE_NOT_FOUND_SCHEMA })
-  @ApiResponse({ status: 409, description: 'Profile-store update conflicted with current stored version', schema: PROFILE_STORE_CONFLICT_SCHEMA })
+  @ApiResponse({
+    status: 200,
+    description: 'Profile store updated',
+    schema: PROFILE_STORE_UPDATE_SCHEMA,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Profile-store update is invalid',
+    schema: PROFILE_STORE_BAD_REQUEST_SCHEMA,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Authentication is required to update profile stores',
+    schema: PROFILE_STORE_UNAUTHORIZED_SCHEMA,
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Insufficient permissions to update profile stores',
+    schema: PROFILE_STORE_FORBIDDEN_SCHEMA,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Profile store or referenced PII service config was not found',
+    schema: PROFILE_STORE_NOT_FOUND_SCHEMA,
+  })
+  @ApiResponse({
+    status: 409,
+    description: 'Profile-store update conflicted with current stored version',
+    schema: PROFILE_STORE_CONFLICT_SCHEMA,
+  })
   async update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateProfileStoreDto,
     @CurrentUser() user: { id: string; username: string },
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     const context = this.buildContext(user, req);
     return this.profileStoreService.update(id, dto, context);
@@ -346,7 +436,7 @@ export class ProfileStoreController {
    */
   private buildContext(
     user: { id: string; username: string; tenantSchema?: string },
-    req: Request,
+    req: Request
   ): RequestContext {
     return {
       userId: user.id,

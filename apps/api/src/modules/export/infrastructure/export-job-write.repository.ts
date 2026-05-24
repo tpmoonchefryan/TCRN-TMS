@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable } from '@nestjs/common';
 
 import { DatabaseService } from '../../database';
@@ -18,9 +17,7 @@ interface CancelableExportJobRecord {
 
 @Injectable()
 export class ExportJobWriteRepository {
-  constructor(
-    private readonly databaseService: DatabaseService,
-  ) {}
+  constructor(private readonly databaseService: DatabaseService) {}
 
   private get prisma() {
     return this.databaseService.getPrisma();
@@ -28,13 +25,16 @@ export class ExportJobWriteRepository {
 
   async findTalentForCreation(
     tenantSchema: string,
-    talentId: string,
+    talentId: string
   ): Promise<ExportJobCreationTalentRecord | null> {
-    const talents = await this.prisma.$queryRawUnsafe<ExportJobCreationTalentRecord[]>(`
+    const talents = await this.prisma.$queryRawUnsafe<ExportJobCreationTalentRecord[]>(
+      `
       SELECT id, profile_store_id
       FROM "${tenantSchema}".talent
       WHERE id = $1::uuid
-    `, talentId);
+    `,
+      talentId
+    );
 
     return talents[0] ?? null;
   }
@@ -49,9 +49,10 @@ export class ExportJobWriteRepository {
       status: string;
       filtersJson: string;
       userId: string;
-    },
+    }
   ): Promise<RawExportJobRecord> {
-    const jobs = await this.prisma.$queryRawUnsafe<RawExportJobRecord[]>(`
+    const jobs = await this.prisma.$queryRawUnsafe<RawExportJobRecord[]>(
+      `
       INSERT INTO "${tenantSchema}".export_job (
         id, talent_id, profile_store_id, job_type, format, status, filters,
         total_records, processed_records, created_by, created_at, updated_at
@@ -67,7 +68,7 @@ export class ExportJobWriteRepository {
       params.format,
       params.status,
       params.filtersJson,
-      params.userId,
+      params.userId
     );
 
     return jobs[0];
@@ -75,24 +76,33 @@ export class ExportJobWriteRepository {
 
   async findCancelableJob(
     tenantSchema: string,
-    jobId: string,
+    jobId: string
   ): Promise<CancelableExportJobRecord | null> {
-    const jobs = await this.prisma.$queryRawUnsafe<CancelableExportJobRecord[]>(`
+    const jobs = await this.prisma.$queryRawUnsafe<CancelableExportJobRecord[]>(
+      `
       SELECT id, status
       FROM "${tenantSchema}".export_job
       WHERE id = $1::uuid
         AND job_type = $2
-    `, jobId, GENERIC_EXPORT_JOB_TYPE);
+    `,
+      jobId,
+      GENERIC_EXPORT_JOB_TYPE
+    );
 
     return jobs[0] ?? null;
   }
 
   cancelJob(tenantSchema: string, jobId: string) {
-    return this.prisma.$executeRawUnsafe(`
+    return this.prisma.$executeRawUnsafe(
+      `
       UPDATE "${tenantSchema}".export_job
       SET status = $1, completed_at = NOW(), updated_at = NOW()
       WHERE id = $2::uuid
         AND job_type = $3
-    `, ExportJobStatus.CANCELLED, jobId, GENERIC_EXPORT_JOB_TYPE);
+    `,
+      ExportJobStatus.CANCELLED,
+      jobId,
+      GENERIC_EXPORT_JOB_TYPE
+    );
   }
 }

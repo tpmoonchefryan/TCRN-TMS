@@ -1,10 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
 import { ErrorCodes, type RequestContext } from '@tcrn/shared';
 
 import {
@@ -25,13 +21,10 @@ import { getAdapterTenantSchema } from './adapter-context.util';
 export class AdapterResolutionApplicationService {
   constructor(
     private readonly adapterResolutionRepository: AdapterResolutionRepository,
-    private readonly adapterCryptoService: AdapterCryptoService,
+    private readonly adapterCryptoService: AdapterCryptoService
   ) {}
 
-  async resolveEffectiveAdapter(
-    target: EffectiveAdapterResolutionTarget,
-    context: RequestContext,
-  ) {
+  async resolveEffectiveAdapter(target: EffectiveAdapterResolutionTarget, context: RequestContext) {
     const tenantSchema = getAdapterTenantSchema(context);
     const normalizedTarget = this.validateTarget(target);
     const lineage = await this.buildLineage(normalizedTarget, tenantSchema);
@@ -39,7 +32,7 @@ export class AdapterResolutionApplicationService {
       tenantSchema,
       lineage,
       normalizedTarget.platformCode,
-      normalizedTarget.adapterType,
+      normalizedTarget.adapterType
     );
 
     if (adapters.length === 0) {
@@ -65,26 +58,26 @@ export class AdapterResolutionApplicationService {
 
     const resolvedConfigs = configs
       .filter((config) => config.adapterId === effectiveAdapter.id)
-      .map((config): EffectiveAdapterResolvedConfig => ({
-        id: config.id,
-        configKey: config.configKey,
-        configValue: this.resolveConfigValue(
-          config.configValue,
-          config.isSecret || isSecretAdapterConfigKey(config.configKey),
-        ),
-        isSecret: config.isSecret,
-      }));
+      .map(
+        (config): EffectiveAdapterResolvedConfig => ({
+          id: config.id,
+          configKey: config.configKey,
+          configValue: this.resolveConfigValue(
+            config.configValue,
+            config.isSecret || isSecretAdapterConfigKey(config.configKey)
+          ),
+          isSecret: config.isSecret,
+        })
+      );
 
     return buildEffectiveAdapterResolutionResult(
       effectiveAdapter,
       normalizedTarget,
-      resolvedConfigs,
+      resolvedConfigs
     );
   }
 
-  private validateTarget(
-    target: EffectiveAdapterResolutionTarget,
-  ): EffectiveAdapterScope & {
+  private validateTarget(target: EffectiveAdapterResolutionTarget): EffectiveAdapterScope & {
     platformCode: string;
     adapterType?: string;
   } {
@@ -114,7 +107,7 @@ export class AdapterResolutionApplicationService {
 
   private async buildLineage(
     target: EffectiveAdapterScope,
-    tenantSchema: string,
+    tenantSchema: string
   ): Promise<EffectiveAdapterScope[]> {
     if (target.ownerType === OwnerType.TENANT) {
       return buildEffectiveAdapterLineage(target, null);
@@ -123,7 +116,7 @@ export class AdapterResolutionApplicationService {
     if (target.ownerType === OwnerType.SUBSIDIARY) {
       const subsidiary = await this.adapterResolutionRepository.findSubsidiaryScope(
         tenantSchema,
-        target.ownerId as string,
+        target.ownerId as string
       );
 
       if (!subsidiary) {
@@ -138,7 +131,7 @@ export class AdapterResolutionApplicationService {
 
     const talent = await this.adapterResolutionRepository.findTalentHierarchy(
       tenantSchema,
-      target.ownerId as string,
+      target.ownerId as string
     );
 
     if (!talent) {

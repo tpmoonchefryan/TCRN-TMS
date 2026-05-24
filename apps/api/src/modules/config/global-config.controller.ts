@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import {
   Body,
   Controller,
@@ -9,7 +8,14 @@ import {
   Param,
   Patch,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiParam, ApiProperty, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiParam,
+  ApiProperty,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { IsNotEmpty } from 'class-validator';
 
 import { AuthenticatedUser, CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -45,7 +51,10 @@ const GLOBAL_CONFIG_ITEM_SCHEMA = {
   required: ['key', 'value'],
 } as const;
 
-const createSuccessEnvelopeSchema = (dataSchema: Record<string, unknown>, exampleData: unknown) => ({
+const createSuccessEnvelopeSchema = (
+  dataSchema: Record<string, unknown>,
+  exampleData: unknown
+) => ({
   type: 'object',
   properties: {
     success: { type: 'boolean', example: true },
@@ -98,27 +107,27 @@ const GLOBAL_CONFIG_LIST_SCHEMA = createSuccessEnvelopeSchema(
       value: { domain: 'tcrn.app' },
       description: 'Base domain for system subdomains (e.g., tcrn.app)',
     },
-  ],
+  ]
 );
 
 const GLOBAL_CONFIG_BAD_REQUEST_SCHEMA = createErrorEnvelopeSchema(
   'VALIDATION_FAILED',
-  'Config value is required',
+  'Config value is required'
 );
 
 const GLOBAL_CONFIG_UNAUTHORIZED_SCHEMA = createErrorEnvelopeSchema(
   'AUTH_UNAUTHORIZED',
-  'Authentication required',
+  'Authentication required'
 );
 
 const GLOBAL_CONFIG_FORBIDDEN_SCHEMA = createErrorEnvelopeSchema(
   'AUTH_FORBIDDEN',
-  'You do not have permission to access platform config',
+  'You do not have permission to access platform config'
 );
 
 const GLOBAL_CONFIG_NOT_FOUND_SCHEMA = createErrorEnvelopeSchema(
   'CONFIG_NOT_FOUND',
-  "Config 'system.baseDomain' not found",
+  "Config 'system.baseDomain' not found"
 );
 
 /**
@@ -177,9 +186,7 @@ export class GlobalConfigController {
     description: 'Requested platform config key was not found',
     schema: GLOBAL_CONFIG_NOT_FOUND_SCHEMA,
   })
-  async get(
-    @Param('key') key: string,
-  ) {
+  async get(@Param('key') key: string) {
     // Any authenticated user can read config
     const config = await this.globalConfigService.get(key);
 
@@ -228,7 +235,7 @@ export class GlobalConfigController {
   async set(
     @CurrentUser() user: AuthenticatedUser,
     @Param('key') key: string,
-    @Body() dto: SetConfigDto,
+    @Body() dto: SetConfigDto
   ) {
     // Only AC tenant can modify global config
     this.checkAcTenantAccess(user);

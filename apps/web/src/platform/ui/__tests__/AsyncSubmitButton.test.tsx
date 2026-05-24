@@ -11,7 +11,11 @@ describe('AsyncSubmitButton', () => {
   });
 
   it('renders pendingText and sets aria-busy when pending', () => {
-    render(<AsyncSubmitButton isPending pendingText="Saving...">Save</AsyncSubmitButton>);
+    render(
+      <AsyncSubmitButton isPending pendingText="Saving...">
+        Save
+      </AsyncSubmitButton>
+    );
     const button = screen.getByRole('button', { name: 'Saving...' });
     expect(button).toBeInTheDocument();
     expect(button).toHaveAttribute('aria-busy', 'true');
@@ -20,7 +24,11 @@ describe('AsyncSubmitButton', () => {
   });
 
   it('is disabled when disabled prop is true', () => {
-    render(<AsyncSubmitButton disabled pendingText="Saving...">Save</AsyncSubmitButton>);
+    render(
+      <AsyncSubmitButton disabled pendingText="Saving...">
+        Save
+      </AsyncSubmitButton>
+    );
     expect(screen.getByRole('button')).toBeDisabled();
   });
 });

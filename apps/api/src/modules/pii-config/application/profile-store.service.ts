@@ -1,11 +1,11 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import {
   BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+
 import { ErrorCodes, type RequestContext } from '@tcrn/shared';
 
 import { DatabaseService } from '../../database';
@@ -31,7 +31,7 @@ export class ProfileStoreApplicationService {
   constructor(
     private readonly profileStoreRepository: ProfileStoreRepository,
     private readonly databaseService: DatabaseService,
-    private readonly changeLogService: ChangeLogService,
+    private readonly changeLogService: ChangeLogService
   ) {}
 
   async findMany(query: PaginationQueryDto, context: RequestContext) {
@@ -43,13 +43,7 @@ export class ProfileStoreApplicationService {
     const offset = (page - 1) * pageSize;
 
     const [items, total] = await Promise.all([
-      this.profileStoreRepository.findMany(
-        schema,
-        includeInactive,
-        search,
-        pageSize,
-        offset,
-      ),
+      this.profileStoreRepository.findMany(schema, includeInactive, search, pageSize, offset),
       this.profileStoreRepository.countMany(schema, includeInactive, search),
     ]);
 
@@ -61,17 +55,13 @@ export class ProfileStoreApplicationService {
         ]);
 
         return buildProfileStoreListItem(item, talentCount, customerCount);
-      }),
+      })
     );
 
     return {
       items: enrichedItems,
       meta: {
-        pagination: this.databaseService.calculatePaginationMeta(
-          total,
-          page,
-          pageSize,
-        ),
+        pagination: this.databaseService.calculatePaginationMeta(total, page, pageSize),
       },
     };
   }
@@ -97,10 +87,7 @@ export class ProfileStoreApplicationService {
 
   async create(dto: CreateProfileStoreDto, context: RequestContext) {
     const schema = context.tenantSchema;
-    const existing = await this.profileStoreRepository.findByCode(
-      schema,
-      dto.code,
-    );
+    const existing = await this.profileStoreRepository.findByCode(schema, dto.code);
 
     if (existing) {
       throw new ConflictException({
@@ -116,7 +103,7 @@ export class ProfileStoreApplicationService {
     const created = await this.profileStoreRepository.create(
       schema,
       buildProfileStoreCreatePayload(dto),
-      context.userId ?? '',
+      context.userId ?? ''
     );
 
     await this.changeLogService.createDirect(
@@ -131,17 +118,13 @@ export class ProfileStoreApplicationService {
           isDefault: dto.isDefault,
         },
       },
-      context,
+      context
     );
 
     return buildProfileStoreCreateResponse(created);
   }
 
-  async update(
-    id: string,
-    dto: UpdateProfileStoreDto,
-    context: RequestContext,
-  ) {
+  async update(id: string, dto: UpdateProfileStoreDto, context: RequestContext) {
     const schema = context.tenantSchema;
     const existing = await this.profileStoreRepository.findForUpdate(schema, id);
 
@@ -160,10 +143,7 @@ export class ProfileStoreApplicationService {
     }
 
     if (dto.isActive === false) {
-      const customerCount = await this.profileStoreRepository.countCustomerByStoreId(
-        schema,
-        id,
-      );
+      const customerCount = await this.profileStoreRepository.countCustomerByStoreId(schema, id);
 
       if (customerCount > 0) {
         throw new BadRequestException({
@@ -188,13 +168,10 @@ export class ProfileStoreApplicationService {
       schema,
       id,
       buildProfileStoreUpdateChanges(dto, existing),
-      context.userId ?? '',
+      context.userId ?? ''
     );
 
-    const { oldValue, newValue } = buildProfileStoreUpdateAudit(
-      existing,
-      updated,
-    );
+    const { oldValue, newValue } = buildProfileStoreUpdateAudit(existing, updated);
 
     await this.changeLogService.createDirect(
       {
@@ -205,7 +182,7 @@ export class ProfileStoreApplicationService {
         oldValue,
         newValue,
       },
-      context,
+      context
     );
 
     return buildProfileStoreUpdateResponse(updated);

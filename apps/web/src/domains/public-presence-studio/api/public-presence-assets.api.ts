@@ -43,7 +43,7 @@ export interface DuplicatePublicPresenceAssetInput {
 function appendAssetScope(
   path: string,
   scope: PublicPresenceAssetScopeInput = {},
-  extraParams?: URLSearchParams,
+  extraParams?: URLSearchParams
 ) {
   const params = extraParams ?? new URLSearchParams();
 
@@ -61,30 +61,30 @@ function appendAssetScope(
 
 export function listPublicPresenceAssets(
   request: RequestFn,
-  input: PublicPresenceAssetScopeInput & { assetKind: PublicPresenceAssetKind },
+  input: PublicPresenceAssetScopeInput & { assetKind: PublicPresenceAssetKind }
 ) {
   const params = new URLSearchParams();
   params.set('assetKind', input.assetKind);
 
   return request<PublicPresenceAssetListEntry[]>(
-    appendAssetScope('/api/v1/public-presence/assets', input, params),
+    appendAssetScope('/api/v1/public-presence/assets', input, params)
   );
 }
 
 export function readPublicPresenceAsset(
   request: RequestFn,
   assetId: string,
-  scope: PublicPresenceAssetScopeInput = {},
+  scope: PublicPresenceAssetScopeInput = {}
 ) {
   return request<PublicPresenceAssetDetail>(
-    appendAssetScope(`/api/v1/public-presence/assets/${assetId}`, scope),
+    appendAssetScope(`/api/v1/public-presence/assets/${assetId}`, scope)
   );
 }
 
 export function createPublicPresenceAsset(
   request: RequestFn,
   input: CreatePublicPresenceAssetInput,
-  scope: PublicPresenceAssetScopeInput = {},
+  scope: PublicPresenceAssetScopeInput = {}
 ) {
   return request<PublicPresenceAssetDetail>(
     appendAssetScope('/api/v1/public-presence/assets', scope),
@@ -94,7 +94,7 @@ export function createPublicPresenceAsset(
         'Content-Type': 'application/json',
       },
       method: 'POST',
-    },
+    }
   );
 }
 
@@ -102,7 +102,7 @@ export function savePublicPresenceAssetDraft(
   request: RequestFn,
   assetId: string,
   input: UpdatePublicPresenceAssetRevisionInput,
-  scope: PublicPresenceAssetScopeInput = {},
+  scope: PublicPresenceAssetScopeInput = {}
 ) {
   return request<PublicPresenceAssetDetail>(
     appendAssetScope(`/api/v1/public-presence/assets/${assetId}/current`, scope),
@@ -112,7 +112,7 @@ export function savePublicPresenceAssetDraft(
         'Content-Type': 'application/json',
       },
       method: 'PUT',
-    },
+    }
   );
 }
 
@@ -120,7 +120,7 @@ export function validatePublicPresenceAssetDraft(
   request: RequestFn,
   assetId: string,
   input: UpdatePublicPresenceAssetRevisionInput,
-  scope: PublicPresenceAssetScopeInput = {},
+  scope: PublicPresenceAssetScopeInput = {}
 ) {
   return request<PublicPresenceAssetDetail>(
     appendAssetScope(`/api/v1/public-presence/assets/${assetId}/current/validate`, scope),
@@ -130,7 +130,7 @@ export function validatePublicPresenceAssetDraft(
         'Content-Type': 'application/json',
       },
       method: 'POST',
-    },
+    }
   );
 }
 
@@ -138,7 +138,7 @@ export function duplicatePublicPresenceAsset(
   request: RequestFn,
   assetId: string,
   input: DuplicatePublicPresenceAssetInput = {},
-  scope: PublicPresenceAssetScopeInput = {},
+  scope: PublicPresenceAssetScopeInput = {}
 ) {
   return request<PublicPresenceAssetDetail>(
     appendAssetScope(`/api/v1/public-presence/assets/${assetId}/duplicate`, scope),
@@ -148,6 +148,6 @@ export function duplicatePublicPresenceAsset(
         'Content-Type': 'application/json',
       },
       method: 'POST',
-    },
+    }
   );
 }

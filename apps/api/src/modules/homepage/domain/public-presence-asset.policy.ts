@@ -1,6 +1,9 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+import { createHash } from 'node:crypto';
 
 import { BadRequestException } from '@nestjs/common';
+import { z } from 'zod';
+
 import {
   ErrorCodes,
   type LocalizedText,
@@ -16,8 +19,6 @@ import {
   type PublicPresenceAssetValidationState,
   type PublicPresenceSourceBundleFile,
 } from '@tcrn/shared';
-import { createHash } from 'node:crypto';
-import { z } from 'zod';
 
 export interface PublicPresenceAssetValidationSummary {
   issueCount: number;
@@ -25,14 +26,9 @@ export interface PublicPresenceAssetValidationSummary {
   warnCount: number;
 }
 
-const PublicPresenceSourceBundleSchema = z
-  .array(PublicPresenceSourceBundleFileSchema)
-  .min(1);
+const PublicPresenceSourceBundleSchema = z.array(PublicPresenceSourceBundleFileSchema).min(1);
 
-const SOURCE_BUNDLE_PATH_BLOCKLIST = [
-  '..',
-  '\\',
-];
+const SOURCE_BUNDLE_PATH_BLOCKLIST = ['..', '\\'];
 
 const DEFAULT_COPY_SUFFIXES: LocalizedText = {
   en: 'Copy',
@@ -45,11 +41,12 @@ const DEFAULT_COPY_SUFFIXES: LocalizedText = {
 
 export function normalizePublicPresenceAssetScope(
   scopeType?: PublicPresenceAssetScopeType | string,
-  scopeId?: string | null,
+  scopeId?: string | null
 ): PublicPresenceAssetScopeContext {
-  const parsedScopeType = scopeType === undefined
-    ? { data: 'tenant' as const, success: true as const }
-    : PublicPresenceAssetScopeTypeSchema.safeParse(scopeType);
+  const parsedScopeType =
+    scopeType === undefined
+      ? { data: 'tenant' as const, success: true as const }
+      : PublicPresenceAssetScopeTypeSchema.safeParse(scopeType);
 
   if (!parsedScopeType.success) {
     throw new BadRequestException({
@@ -61,9 +58,7 @@ export function normalizePublicPresenceAssetScope(
 
   const normalizedScopeType = parsedScopeType.data;
   const rawScopeId = scopeId?.trim() ?? null;
-  const normalizedScopeId = normalizedScopeType === 'tenant'
-    ? null
-    : rawScopeId;
+  const normalizedScopeId = normalizedScopeType === 'tenant' ? null : rawScopeId;
 
   if (normalizedScopeType === 'tenant' && rawScopeId !== null) {
     throw new BadRequestException({
@@ -105,21 +100,19 @@ export function normalizePublicPresenceAssetCode(input: string): string {
 
 export function normalizePublicPresenceAssetName(
   input: Partial<LocalizedText> | null | undefined,
-  fallback: string,
+  fallback: string
 ): LocalizedText {
   return normalizeLocalizedText(input, fallback);
 }
 
 export function normalizePublicPresenceAssetDescription(
   input: Partial<LocalizedText> | null | undefined,
-  fallback: string,
+  fallback: string
 ): LocalizedText {
   return normalizeLocalizedText(input, fallback);
 }
 
-export function parsePublicPresenceAssetManifest(
-  manifest: unknown,
-): PublicPresenceAssetManifest {
+export function parsePublicPresenceAssetManifest(manifest: unknown): PublicPresenceAssetManifest {
   const parsed = PublicPresenceAssetManifestSchema.safeParse(manifest);
 
   if (!parsed.success) {
@@ -134,7 +127,7 @@ export function parsePublicPresenceAssetManifest(
 }
 
 export function parsePublicPresenceSourceBundle(
-  sourceBundle: unknown,
+  sourceBundle: unknown
 ): PublicPresenceSourceBundleFile[] {
   const parsed = PublicPresenceSourceBundleSchema.safeParse(sourceBundle);
 
@@ -150,8 +143,8 @@ export function parsePublicPresenceSourceBundle(
 
   for (const file of parsed.data) {
     if (
-      SOURCE_BUNDLE_PATH_BLOCKLIST.some((fragment) => file.path.includes(fragment))
-      || file.path.startsWith('/')
+      SOURCE_BUNDLE_PATH_BLOCKLIST.some((fragment) => file.path.includes(fragment)) ||
+      file.path.startsWith('/')
     ) {
       throw new BadRequestException({
         code: ErrorCodes.VALIDATION_FAILED,
@@ -183,16 +176,16 @@ export function calculatePublicPresenceAssetSourceHash(input: {
           manifest: input.manifest,
           runtimeContractVersion: PUBLIC_PRESENCE_ASSET_RUNTIME_VERSION,
           sourceBundle: [...input.sourceBundle].sort((left, right) =>
-            left.path.localeCompare(right.path),
+            left.path.localeCompare(right.path)
           ),
-        }),
-      ),
+        })
+      )
     )
     .digest('hex');
 }
 
 export function buildValidatedPublicPresenceAssetSummary(
-  sourceBundle: PublicPresenceSourceBundleFile[],
+  sourceBundle: PublicPresenceSourceBundleFile[]
 ): {
   validationState: PublicPresenceAssetValidationState;
   validationSummary: PublicPresenceAssetValidationSummary;
@@ -235,9 +228,7 @@ export function buildDraftPublicPresenceAssetSummary(): {
   };
 }
 
-export function appendPublicPresenceAssetCopySuffix(
-  value: LocalizedText,
-): LocalizedText {
+export function appendPublicPresenceAssetCopySuffix(value: LocalizedText): LocalizedText {
   return {
     en: `${value.en} ${DEFAULT_COPY_SUFFIXES.en}`,
     zh_HANS: `${value.zh_HANS} ${DEFAULT_COPY_SUFFIXES.zh_HANS}`,
@@ -262,10 +253,10 @@ export function assertManifestMatchesAssetRecord(input: {
   }
 
   if (
-    input.assetKind === 'template'
-    && input.manifest.assetKind === 'template'
-    && input.templateId
-    && input.manifest.templateId !== input.templateId
+    input.assetKind === 'template' &&
+    input.manifest.assetKind === 'template' &&
+    input.templateId &&
+    input.manifest.templateId !== input.templateId
   ) {
     throw new BadRequestException({
       code: ErrorCodes.VALIDATION_FAILED,
@@ -274,10 +265,10 @@ export function assertManifestMatchesAssetRecord(input: {
   }
 
   if (
-    input.assetKind === 'component'
-    && input.manifest.assetKind === 'component'
-    && input.componentType
-    && input.manifest.componentType !== input.componentType
+    input.assetKind === 'component' &&
+    input.manifest.assetKind === 'component' &&
+    input.componentType &&
+    input.manifest.componentType !== input.componentType
   ) {
     throw new BadRequestException({
       code: ErrorCodes.VALIDATION_FAILED,
@@ -295,9 +286,7 @@ function canonicalizeValue(value: unknown): unknown {
     return Object.keys(value as Record<string, unknown>)
       .sort()
       .reduce<Record<string, unknown>>((accumulator, key) => {
-        accumulator[key] = canonicalizeValue(
-          (value as Record<string, unknown>)[key],
-        );
+        accumulator[key] = canonicalizeValue((value as Record<string, unknown>)[key]);
         return accumulator;
       }, {});
   }

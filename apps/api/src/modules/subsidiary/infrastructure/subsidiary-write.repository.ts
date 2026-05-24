@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable } from '@nestjs/common';
+
 import { Prisma, prisma } from '@tcrn/database';
 import type { LocalizedText } from '@tcrn/shared';
 
@@ -48,9 +48,10 @@ export class SubsidiaryWriteRepository {
       path: string;
       depth: number;
     },
-    userId: string,
+    userId: string
   ): Promise<SubsidiaryData> {
-    const results = await prisma.$queryRawUnsafe<SubsidiaryRawData[]>(`
+    const results = await prisma.$queryRawUnsafe<SubsidiaryRawData[]>(
+      `
       INSERT INTO "${tenantSchema}".subsidiary
         (id, parent_id, code, path, depth, name, extra_data,
          description,
@@ -60,15 +61,16 @@ export class SubsidiaryWriteRepository {
       RETURNING
         ${SUBSIDIARY_SELECT_FIELDS}
     `,
-    data.parentId || null,
-    data.code,
-    data.path,
-    data.depth,
-    stringifyLocalizedText(data.name),
-    data.extraData ? JSON.stringify(data.extraData) : null,
-    stringifyLocalizedText(data.description as LocalizedText),
-    data.sortOrder || 0,
-    userId);
+      data.parentId || null,
+      data.code,
+      data.path,
+      data.depth,
+      stringifyLocalizedText(data.name),
+      data.extraData ? JSON.stringify(data.extraData) : null,
+      stringifyLocalizedText(data.description as LocalizedText),
+      data.sortOrder || 0,
+      userId
+    );
 
     return mapSubsidiaryData(results[0]);
   }
@@ -77,7 +79,7 @@ export class SubsidiaryWriteRepository {
     id: string,
     tenantSchema: string,
     data: SubsidiaryUpdatePersistenceInput,
-    userId: string,
+    userId: string
   ): Promise<SubsidiaryData> {
     const updates: string[] = [];
     const params: unknown[] = [id, userId];
@@ -104,13 +106,16 @@ export class SubsidiaryWriteRepository {
     updates.push('updated_by = $2::uuid');
     updates.push('version = version + 1');
 
-    const results = await prisma.$queryRawUnsafe<SubsidiaryRawData[]>(`
+    const results = await prisma.$queryRawUnsafe<SubsidiaryRawData[]>(
+      `
       UPDATE "${tenantSchema}".subsidiary
       SET ${updates.join(', ')}
       WHERE id = $1::uuid
       RETURNING
         ${SUBSIDIARY_SELECT_FIELDS}
-    `, ...params);
+    `,
+      ...params
+    );
 
     return mapSubsidiaryData(results[0]);
   }
@@ -118,19 +123,27 @@ export class SubsidiaryWriteRepository {
   async deactivateCascade(
     tenantSchema: string,
     path: string,
-    userId: string,
+    userId: string
   ): Promise<{ subsidiaries: number; talents: number }> {
-    const subsidiaries = await prisma.$executeRawUnsafe(`
+    const subsidiaries = (await prisma.$executeRawUnsafe(
+      `
       UPDATE "${tenantSchema}".subsidiary
       SET is_active = false, updated_at = now(), updated_by = $2::uuid
       WHERE path LIKE $1
-    `, `${path}%`, userId) as number;
+    `,
+      `${path}%`,
+      userId
+    )) as number;
 
-    const talents = await prisma.$executeRawUnsafe(`
+    const talents = (await prisma.$executeRawUnsafe(
+      `
       UPDATE "${tenantSchema}".talent
       SET is_active = false, updated_at = now(), updated_by = $2::uuid
       WHERE path LIKE $1
-    `, `${path}%`, userId) as number;
+    `,
+      `${path}%`,
+      userId
+    )) as number;
 
     return {
       subsidiaries,
@@ -138,27 +151,27 @@ export class SubsidiaryWriteRepository {
     };
   }
 
-  async deactivateSingle(
-    id: string,
-    tenantSchema: string,
-    userId: string,
-  ): Promise<void> {
-    await prisma.$executeRawUnsafe(`
+  async deactivateSingle(id: string, tenantSchema: string, userId: string): Promise<void> {
+    await prisma.$executeRawUnsafe(
+      `
       UPDATE "${tenantSchema}".subsidiary
       SET is_active = false, updated_at = now(), updated_by = $2::uuid, version = version + 1
       WHERE id = $1::uuid
-    `, id, userId);
+    `,
+      id,
+      userId
+    );
   }
 
-  async reactivate(
-    id: string,
-    tenantSchema: string,
-    userId: string,
-  ): Promise<void> {
-    await prisma.$executeRawUnsafe(`
+  async reactivate(id: string, tenantSchema: string, userId: string): Promise<void> {
+    await prisma.$executeRawUnsafe(
+      `
       UPDATE "${tenantSchema}".subsidiary
       SET is_active = true, updated_at = now(), updated_by = $2::uuid, version = version + 1
       WHERE id = $1::uuid
-    `, id, userId);
+    `,
+      id,
+      userId
+    );
   }
 }

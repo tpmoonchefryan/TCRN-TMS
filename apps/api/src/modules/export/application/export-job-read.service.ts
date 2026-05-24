@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+
 import { ErrorCodes, type RequestContext } from '@tcrn/shared';
 
 import { CustomerArchiveAccessService } from '../../customer/application/customer-archive-access.service';
@@ -19,7 +19,7 @@ export class ExportJobReadApplicationService {
   constructor(
     private readonly exportJobReadRepository: ExportJobReadRepository,
     private readonly customerArchiveAccessService: CustomerArchiveAccessService,
-    private readonly minioService: MinioService,
+    private readonly minioService: MinioService
   ) {}
 
   async findById(jobId: string, context: RequestContext) {
@@ -38,15 +38,14 @@ export class ExportJobReadApplicationService {
   async findMany(
     talentId: string,
     query: ExportJobQueryDto,
-    context: RequestContext,
+    context: RequestContext
   ): Promise<{ items: ReturnType<typeof mapExportJobResponse>[]; total: number }> {
     let archiveTarget: { profileStoreId: string };
     try {
-      archiveTarget =
-        await this.customerArchiveAccessService.requireTalentArchiveTarget(
-          talentId,
-          context,
-        );
+      archiveTarget = await this.customerArchiveAccessService.requireTalentArchiveTarget(
+        talentId,
+        context
+      );
     } catch {
       return { items: [], total: 0 };
     }
@@ -59,7 +58,7 @@ export class ExportJobReadApplicationService {
           profileStoreId: archiveTarget.profileStoreId,
           status: query.status,
         },
-        pagination,
+        pagination
       ),
       this.exportJobReadRepository.countMany(context.tenantSchema, {
         profileStoreId: archiveTarget.profileStoreId,
@@ -101,7 +100,7 @@ export class ExportJobReadApplicationService {
     return this.minioService.getPresignedUrl(
       BUCKETS.TEMP_REPORTS,
       filePath,
-      EXPORT_JOB_DOWNLOAD_URL_EXPIRY_SECONDS,
+      EXPORT_JOB_DOWNLOAD_URL_EXPIRY_SECONDS
     );
   }
 

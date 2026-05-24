@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { CanActivate, ExecutionContext, Injectable, Logger } from '@nestjs/common';
 import { Request } from 'express';
 
@@ -9,15 +8,15 @@ import { TechEventLogService } from '../../log/services/tech-event-log.service';
  * Blocked User-Agent patterns (malicious crawlers)
  */
 const BLOCKED_UA_PATTERNS = [
-  /^$/,                           // Empty UA
-  /python-requests/i,             // Default Python requests
-  /scrapy/i,                      // Scrapy crawler
-  /HTTrack/i,                     // Website mirroring tool
-  /MJ12bot/i,                     // Malicious SEO crawler
-  /PetalBot/i,                    // Aggressive crawler
-  /dotbot/i,                      // SEO crawler
-  /SemrushBot/i,                  // SEO crawler (optional)
-  /AhrefsBot/i,                   // SEO crawler (optional)
+  /^$/, // Empty UA
+  /python-requests/i, // Default Python requests
+  /scrapy/i, // Scrapy crawler
+  /HTTrack/i, // Website mirroring tool
+  /MJ12bot/i, // Malicious SEO crawler
+  /PetalBot/i, // Aggressive crawler
+  /dotbot/i, // SEO crawler
+  /SemrushBot/i, // SEO crawler (optional)
+  /AhrefsBot/i, // SEO crawler (optional)
 ];
 
 /**
@@ -29,7 +28,7 @@ const ALLOWED_BOTS = [
   /baiduspider/i,
   /YandexBot/i,
   /DuckDuckBot/i,
-  /Slurp/i,                       // Yahoo
+  /Slurp/i, // Yahoo
   /facebookexternalhit/i,
   /Twitterbot/i,
   /LinkedInBot/i,
@@ -47,9 +46,7 @@ const ALLOWED_BOTS = [
 export class UaDetectionGuard implements CanActivate {
   private readonly logger = new Logger(UaDetectionGuard.name);
 
-  constructor(
-    private readonly techEventLogService: TechEventLogService,
-  ) {}
+  constructor(private readonly techEventLogService: TechEventLogService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<Request>();
@@ -65,10 +62,10 @@ export class UaDetectionGuard implements CanActivate {
     // Block malicious UAs
     if (BLOCKED_UA_PATTERNS.some((pattern) => pattern.test(userAgent))) {
       this.logger.warn(`Blocked request from UA: ${userAgent.substring(0, 100)}, IP: ${ip}`);
-      
+
       // Log to TechEventLog
       await this.logBlockedRequest(ip, userAgent, path, 'malicious_user_agent');
-      
+
       return false;
     }
 
@@ -92,23 +89,18 @@ export class UaDetectionGuard implements CanActivate {
     ip: string,
     userAgent: string,
     path: string,
-    reason: string,
+    reason: string
   ): Promise<void> {
     try {
-      await this.techEventLogService.warn(
-        'SECURITY_UA_BLOCKED',
-        `Request blocked: ${reason}`,
-        {
-          ip,
-          userAgent: userAgent.substring(0, 200),
-          path,
-          reason,
-          source: 'UaDetectionGuard',
-        },
-      );
+      await this.techEventLogService.warn('SECURITY_UA_BLOCKED', `Request blocked: ${reason}`, {
+        ip,
+        userAgent: userAgent.substring(0, 200),
+        path,
+        reason,
+        source: 'UaDetectionGuard',
+      });
     } catch (error) {
       this.logger.error(`Failed to log blocked request: ${error}`);
     }
   }
 }
-

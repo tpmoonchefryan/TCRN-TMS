@@ -85,14 +85,20 @@ export async function readCurrentProfile(request: RequestFn) {
   return normalizeProfileLocale(await request<CurrentProfile>('/api/v1/users/me'));
 }
 
-export async function updateCurrentProfile(request: RequestFn, payload: UpdateCurrentProfilePayload) {
+export async function updateCurrentProfile(
+  request: RequestFn,
+  payload: UpdateCurrentProfilePayload
+) {
   return normalizeProfileLocale(
-    await request<CurrentProfile>('/api/v1/users/me', buildJsonRequestInit('PATCH', payload)),
+    await request<CurrentProfile>('/api/v1/users/me', buildJsonRequestInit('PATCH', payload))
   );
 }
 
 export async function changeCurrentPassword(request: RequestFn, payload: ChangePasswordPayload) {
-  return request<{ message: string; passwordExpiresAt: string }>('/api/v1/users/me/password', buildJsonRequestInit('POST', payload));
+  return request<{ message: string; passwordExpiresAt: string }>(
+    '/api/v1/users/me/password',
+    buildJsonRequestInit('POST', payload)
+  );
 }
 
 export async function setupTotp(request: RequestFn) {
@@ -102,15 +108,24 @@ export async function setupTotp(request: RequestFn) {
 }
 
 export async function enableTotp(request: RequestFn, code: string) {
-  return request<TotpEnableResponse>('/api/v1/users/me/totp/enable', buildJsonRequestInit('POST', { code }));
+  return request<TotpEnableResponse>(
+    '/api/v1/users/me/totp/enable',
+    buildJsonRequestInit('POST', { code })
+  );
 }
 
 export async function disableTotp(request: RequestFn, password: string) {
-  return request<TotpDisableResponse>('/api/v1/users/me/totp/disable', buildJsonRequestInit('POST', { password }));
+  return request<TotpDisableResponse>(
+    '/api/v1/users/me/totp/disable',
+    buildJsonRequestInit('POST', { password })
+  );
 }
 
 export async function regenerateRecoveryCodes(request: RequestFn, password: string) {
-  return request<RecoveryCodesResponse>('/api/v1/users/me/recovery-codes', buildJsonRequestInit('POST', { password }));
+  return request<RecoveryCodesResponse>(
+    '/api/v1/users/me/recovery-codes',
+    buildJsonRequestInit('POST', { password })
+  );
 }
 
 export async function listUserSessions(request: RequestFn) {
@@ -140,9 +155,15 @@ export async function deleteCurrentAvatar(request: RequestFn) {
 }
 
 export async function requestEmailChange(request: RequestFn, newEmail: string) {
-  return request<{ message: string }>('/api/v1/users/me/email/request-change', buildJsonRequestInit('POST', { newEmail }));
+  return request<{ message: string }>(
+    '/api/v1/users/me/email/request-change',
+    buildJsonRequestInit('POST', { newEmail })
+  );
 }
 
 export async function confirmEmailChange(request: RequestFn, token: string) {
-  return request<{ message: string; email: string }>('/api/v1/users/me/email/confirm', buildJsonRequestInit('POST', { token }));
+  return request<{ message: string; email: string }>(
+    '/api/v1/users/me/email/confirm',
+    buildJsonRequestInit('POST', { token })
+  );
 }

@@ -1,9 +1,10 @@
-import type { SupportedUiLocale } from '@tcrn/shared';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { MarshmallowManagementScreen } from '@/domains/marshmallow-management/screens/MarshmallowManagementScreen';
+import type { SupportedUiLocale } from '@tcrn/shared';
+
 import { localizedFixture } from '@/domains/config-dictionary-settings/testing/localized-fixtures';
+import { MarshmallowManagementScreen } from '@/domains/marshmallow-management/screens/MarshmallowManagementScreen';
 
 const mockRequest = vi.fn();
 const openSpy = vi.fn();
@@ -145,7 +146,9 @@ describe('MarshmallowManagementScreen', () => {
         };
       }
 
-      if (path === '/api/v1/talents/talent-1/marshmallow/messages?page=1&pageSize=20&status=approved') {
+      if (
+        path === '/api/v1/talents/talent-1/marshmallow/messages?page=1&pageSize=20&status=approved'
+      ) {
         return {
           items: [
             {
@@ -191,8 +194,13 @@ describe('MarshmallowManagementScreen', () => {
 
     render(<MarshmallowManagementScreen tenantId="tenant-1" talentId="talent-1" />);
 
-    expect(await screen.findByRole('heading', { name: 'Marshmallow Management' })).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: 'Moderation Queue' })).toHaveAttribute('aria-selected', 'true');
+    expect(
+      await screen.findByRole('heading', { name: 'Marshmallow Management' })
+    ).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Moderation Queue' })).toHaveAttribute(
+      'aria-selected',
+      'true'
+    );
     expect(screen.getByRole('tab', { name: 'Configuration' })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: 'Export' })).toBeInTheDocument();
     expect(await screen.findByText('Happy birthday!')).toBeInTheDocument();
@@ -205,7 +213,7 @@ describe('MarshmallowManagementScreen', () => {
 
     await waitFor(() => {
       expect(mockRequest).toHaveBeenCalledWith(
-        '/api/v1/talents/talent-1/marshmallow/messages?page=1&pageSize=20&status=approved',
+        '/api/v1/talents/talent-1/marshmallow/messages?page=1&pageSize=20&status=approved'
       );
     });
 
@@ -221,7 +229,10 @@ describe('MarshmallowManagementScreen', () => {
         return buildConfig();
       }
 
-      if (path === '/api/v1/talents/talent-1/marshmallow/messages?page=2&pageSize=50&status=approved&keyword=fan&hasReply=true') {
+      if (
+        path ===
+        '/api/v1/talents/talent-1/marshmallow/messages?page=2&pageSize=50&status=approved&keyword=fan&hasReply=true'
+      ) {
         return {
           items: [
             {
@@ -262,7 +273,10 @@ describe('MarshmallowManagementScreen', () => {
         };
       }
 
-      if (path === '/api/v1/talents/talent-1/marshmallow/messages?page=1&pageSize=50&status=approved&keyword=fan&hasReply=false') {
+      if (
+        path ===
+        '/api/v1/talents/talent-1/marshmallow/messages?page=1&pageSize=50&status=approved&keyword=fan&hasReply=false'
+      ) {
         return {
           items: [
             {
@@ -314,10 +328,10 @@ describe('MarshmallowManagementScreen', () => {
 
     await waitFor(() => {
       expect(mockRequest).toHaveBeenCalledWith(
-        '/api/v1/talents/talent-1/marshmallow/messages?page=1&pageSize=50&status=approved&keyword=fan&hasReply=false',
+        '/api/v1/talents/talent-1/marshmallow/messages?page=1&pageSize=50&status=approved&keyword=fan&hasReply=false'
       );
       expect(replace).toHaveBeenCalledWith(
-        '/tenant/tenant-1/talent/talent-1/marshmallow?keyword=fan&status=approved&reply=unreplied&pageSize=50',
+        '/tenant/tenant-1/talent/talent-1/marshmallow?keyword=fan&status=approved&reply=unreplied&pageSize=50'
       );
     });
 
@@ -377,7 +391,10 @@ describe('MarshmallowManagementScreen', () => {
         };
       }
 
-      if (path === '/api/v1/talents/talent-1/marshmallow/messages/message-1/approve' && init?.method === 'POST') {
+      if (
+        path === '/api/v1/talents/talent-1/marshmallow/messages/message-1/approve' &&
+        init?.method === 'POST'
+      ) {
         approved = true;
         return {
           id: 'message-1',
@@ -391,12 +408,18 @@ describe('MarshmallowManagementScreen', () => {
 
     render(<MarshmallowManagementScreen tenantId="tenant-1" talentId="talent-1" />);
 
-    expect(await screen.findByRole('heading', { name: 'Marshmallow Management' })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { name: 'Marshmallow Management' })
+    ).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Configure mailbox' })).not.toBeInTheDocument();
     expect(screen.queryByDisplayValue('Aki Mailbox')).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('tab', { name: 'Configuration' }));
     expect((await screen.findAllByText('Submission unavailable')).length).toBeGreaterThan(0);
-    expect(screen.getAllByText('Captcha mode may require Turnstile, but runtime configuration is incomplete. Public submission is disabled until the missing key is configured.').length).toBeGreaterThan(0);
+    expect(
+      screen.getAllByText(
+        'Captcha mode may require Turnstile, but runtime configuration is incomplete. Public submission is disabled until the missing key is configured.'
+      ).length
+    ).toBeGreaterThan(0);
 
     expect(await screen.findByDisplayValue('Aki Mailbox')).toBeInTheDocument();
     expect(screen.getByText('Turnstile runtime status')).toBeInTheDocument();
@@ -416,13 +439,12 @@ describe('MarshmallowManagementScreen', () => {
         '/api/v1/talents/talent-1/marshmallow/config',
         expect.objectContaining({
           method: 'PATCH',
-        }),
+        })
       );
     });
     const configPatchCall = mockRequest.mock.calls.find(
       (call) =>
-        call[0] === '/api/v1/talents/talent-1/marshmallow/config' &&
-        call[1]?.method === 'PATCH',
+        call[0] === '/api/v1/talents/talent-1/marshmallow/config' && call[1]?.method === 'PATCH'
     );
     expect(JSON.parse(String(configPatchCall?.[1]?.body))).not.toHaveProperty('turnstile');
 
@@ -440,7 +462,7 @@ describe('MarshmallowManagementScreen', () => {
         '/api/v1/talents/talent-1/marshmallow/messages/message-1/approve',
         expect.objectContaining({
           method: 'POST',
-        }),
+        })
       );
     });
 
@@ -512,7 +534,7 @@ describe('MarshmallowManagementScreen', () => {
         '/api/v1/talents/talent-1/marshmallow/export',
         expect.objectContaining({
           method: 'POST',
-        }),
+        })
       );
     });
 
@@ -521,9 +543,15 @@ describe('MarshmallowManagementScreen', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Download marshmallow export' }));
 
     await waitFor(() => {
-      expect(mockRequest).toHaveBeenCalledWith('/api/v1/talents/talent-1/marshmallow/export/export-1/download');
+      expect(mockRequest).toHaveBeenCalledWith(
+        '/api/v1/talents/talent-1/marshmallow/export/export-1/download'
+      );
     });
 
-    expect(openSpy).toHaveBeenCalledWith('https://files.example.com/marshmallow-export.xlsx', '_blank', 'noopener,noreferrer');
+    expect(openSpy).toHaveBeenCalledWith(
+      'https://files.example.com/marshmallow-export.xlsx',
+      '_blank',
+      'noopener,noreferrer'
+    );
   });
 });

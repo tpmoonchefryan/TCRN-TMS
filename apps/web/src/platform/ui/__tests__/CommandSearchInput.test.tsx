@@ -15,7 +15,7 @@ describe('CommandSearchInput', () => {
         value="alice"
         onValueChange={onValueChange}
         onSubmit={onSubmit}
-      />,
+      />
     );
 
     const input = screen.getByRole('searchbox');
@@ -38,7 +38,7 @@ describe('CommandSearchInput', () => {
         shortcutKey="⌘K"
         shortcut={{ key: 'k', metaKey: true }}
         onShortcut={onShortcut}
-      />,
+      />
     );
 
     fireEvent.keyDown(document, { key: 'k', metaKey: true });

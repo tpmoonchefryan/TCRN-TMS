@@ -1,7 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { createLocalizedText, type BlocklistScopeSummary } from '@tcrn/shared';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { BlocklistReadService } from '../application/blocklist-read.service';
 import { BlocklistWriteService } from '../application/blocklist-write.service';
@@ -59,10 +59,7 @@ describe('BlocklistService facade', () => {
     enableInScope: vi.fn(),
   } as unknown as BlocklistWriteService;
 
-  const service = new BlocklistService(
-    mockReadService,
-    mockWriteService,
-  );
+  const service = new BlocklistService(mockReadService, mockWriteService);
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -108,9 +105,7 @@ describe('BlocklistService facade', () => {
       version: 2,
     });
 
-    await expect(
-      service.findMany('tenant_test', { scopeType: 'tenant' }),
-    ).resolves.toEqual({
+    await expect(service.findMany('tenant_test', { scopeType: 'tenant' })).resolves.toEqual({
       items: [],
       total: 0,
     });
@@ -149,19 +144,13 @@ describe('BlocklistService facade', () => {
           patternType: BlocklistPatternType.KEYWORD,
           name: createLocalizedText({ en: 'Profanity Filter' }),
         },
-        { tenantSchema: 'tenant_test' },
-      ),
+        { tenantSchema: 'tenant_test' }
+      )
     ).resolves.toEqual(detailResponse);
     await expect(
-      service.update(
-        'entry-1',
-        { version: 1 },
-        { tenantSchema: 'tenant_test' },
-      ),
+      service.update('entry-1', { version: 1 }, { tenantSchema: 'tenant_test' })
     ).resolves.toEqual(detailResponse);
-    await expect(
-      service.delete('entry-1', { tenantSchema: 'tenant_test' }),
-    ).resolves.toEqual({
+    await expect(service.delete('entry-1', { tenantSchema: 'tenant_test' })).resolves.toEqual({
       id: 'entry-1',
       deleted: true,
     });
@@ -170,25 +159,20 @@ describe('BlocklistService facade', () => {
         testContent: 'hello',
         pattern: 'badword',
         patternType: BlocklistPatternType.KEYWORD,
-      }),
+      })
     ).toEqual({
       matched: false,
       positions: [],
       highlightedContent: 'hello',
     });
     await expect(
-      service.disableInScope(
-        'tenant_test',
-        'entry-1',
-        { scopeType: 'tenant' },
-        'user-1',
-      ),
+      service.disableInScope('tenant_test', 'entry-1', { scopeType: 'tenant' }, 'user-1')
     ).resolves.toEqual({
       id: 'entry-1',
       disabled: true,
     });
     await expect(
-      service.enableInScope('tenant_test', 'entry-1', { scopeType: 'tenant' }),
+      service.enableInScope('tenant_test', 'entry-1', { scopeType: 'tenant' })
     ).resolves.toEqual({
       id: 'entry-1',
       enabled: true,

@@ -1,13 +1,8 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
-import {
-  CanActivate,
-  ExecutionContext,
-  ForbiddenException,
-  Injectable,
-} from '@nestjs/common';
-import { ErrorCodes } from '@tcrn/shared';
+import { CanActivate, ExecutionContext, ForbiddenException, Injectable } from '@nestjs/common';
 import { Request } from 'express';
+
+import { ErrorCodes } from '@tcrn/shared';
 
 import { TenantService } from './tenant.service';
 
@@ -21,7 +16,8 @@ export class TenantContextGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<Request>();
-    const user = (request as unknown as { user?: { tenantId?: string; tenantSchema?: string } }).user;
+    const user = (request as unknown as { user?: { tenantId?: string; tenantSchema?: string } })
+      .user;
 
     if (!user?.tenantId) {
       // No tenant context (might be public endpoint)
@@ -30,7 +26,7 @@ export class TenantContextGuard implements CanActivate {
 
     // Verify tenant is active
     const tenant = await this.tenantService.getTenantById(user.tenantId);
-    
+
     if (!tenant) {
       throw new ForbiddenException({
         code: ErrorCodes.TENANT_NOT_FOUND,

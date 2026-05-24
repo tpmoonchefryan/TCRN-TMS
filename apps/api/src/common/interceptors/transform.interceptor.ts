@@ -1,11 +1,10 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import {
-    CallHandler,
-    ExecutionContext,
-    Injectable,
-    NestInterceptor,
-    StreamableFile,
+  CallHandler,
+  ExecutionContext,
+  Injectable,
+  NestInterceptor,
+  StreamableFile,
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
@@ -30,10 +29,10 @@ export class TransformInterceptor implements NestInterceptor {
         if (data && typeof data === 'object' && 'success' in data) {
           return data;
         }
-        
+
         // Wrap in success format
         return success(data);
-      }),
+      })
     );
   }
 }

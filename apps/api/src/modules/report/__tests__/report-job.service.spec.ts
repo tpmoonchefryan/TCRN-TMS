@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -63,14 +62,14 @@ describe('ReportJobService', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    
+
     service = new ReportJobService(
       mockDatabaseService as any,
       mockStateService as any,
       mockTechEventLog as any,
       mockMinioService as any,
       mockQueue as any,
-      mockReportPiiPlatformApplicationService as any,
+      mockReportPiiPlatformApplicationService as any
     );
 
     mockQueue.add.mockResolvedValue({ id: 'bull-job-123' });
@@ -86,18 +85,22 @@ describe('ReportJobService', () => {
       mockReportPiiPlatformApplicationService.createMfrReportRequest.mockResolvedValue(null);
 
       // Mock query for talent lookup
-      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([{
-        id: 'talent-123',
-        subsidiary_id: 'sub-123',
-        profile_store_id: 'store-123',
-      }]);
-      
-      // Mock query for job creation  
-      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([{
-        id: 'job-123',
-        status: ReportJobStatus.PENDING,
-        created_at: new Date('2026-01-23T10:00:00Z'),
-      }]);
+      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([
+        {
+          id: 'talent-123',
+          subsidiary_id: 'sub-123',
+          profile_store_id: 'store-123',
+        },
+      ]);
+
+      // Mock query for job creation
+      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([
+        {
+          id: 'job-123',
+          status: ReportJobStatus.PENDING,
+          created_at: new Date('2026-01-23T10:00:00Z'),
+        },
+      ]);
 
       const result = await service.create(
         ReportType.MFR,
@@ -105,7 +108,7 @@ describe('ReportJobService', () => {
         validFilters,
         ReportFormat.XLSX,
         100,
-        mockContext,
+        mockContext
       );
 
       expect(result).toEqual({
@@ -125,7 +128,7 @@ describe('ReportJobService', () => {
           talentId: 'talent-123',
           profileStoreId: 'store-123',
         }),
-        { jobId: 'job-123' },
+        { jobId: 'job-123' }
       );
       expect(mockTechEventLog.log).toHaveBeenCalled();
     });
@@ -140,8 +143,8 @@ describe('ReportJobService', () => {
           validFilters,
           ReportFormat.XLSX,
           60000, // Exceeds limit
-          mockContext,
-        ),
+          mockContext
+        )
       ).rejects.toThrow(BadRequestException);
     });
 
@@ -156,18 +159,20 @@ describe('ReportJobService', () => {
           validFilters,
           ReportFormat.XLSX,
           100,
-          mockContext,
-        ),
+          mockContext
+        )
       ).rejects.toThrow(NotFoundException);
     });
 
     it('should throw NotFoundException when talent has no profile store', async () => {
       mockReportPiiPlatformApplicationService.createMfrReportRequest.mockResolvedValue(null);
-      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([{
-        id: 'talent-123',
-        subsidiary_id: 'sub-123',
-        profile_store_id: null,
-      }]);
+      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([
+        {
+          id: 'talent-123',
+          subsidiary_id: 'sub-123',
+          profile_store_id: null,
+        },
+      ]);
 
       await expect(
         service.create(
@@ -176,23 +181,27 @@ describe('ReportJobService', () => {
           validFilters,
           ReportFormat.XLSX,
           100,
-          mockContext,
-        ),
+          mockContext
+        )
       ).rejects.toThrow(NotFoundException);
     });
 
     it('should log tech event on job creation', async () => {
       mockReportPiiPlatformApplicationService.createMfrReportRequest.mockResolvedValue(null);
-      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([{
-        id: 'talent-123',
-        subsidiary_id: 'sub-123',
-        profile_store_id: 'store-123',
-      }]);
-      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([{
-        id: 'job-123',
-        status: ReportJobStatus.PENDING,
-        created_at: new Date('2026-01-23T10:00:00Z'),
-      }]);
+      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([
+        {
+          id: 'talent-123',
+          subsidiary_id: 'sub-123',
+          profile_store_id: 'store-123',
+        },
+      ]);
+      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([
+        {
+          id: 'job-123',
+          status: ReportJobStatus.PENDING,
+          created_at: new Date('2026-01-23T10:00:00Z'),
+        },
+      ]);
 
       await service.create(
         ReportType.MFR,
@@ -200,7 +209,7 @@ describe('ReportJobService', () => {
         validFilters,
         ReportFormat.XLSX,
         100,
-        mockContext,
+        mockContext
       );
 
       expect(mockTechEventLog.log).toHaveBeenCalledWith(
@@ -212,22 +221,26 @@ describe('ReportJobService', () => {
           }),
         }),
         // Service passes context as second argument
-        expect.anything(),
+        expect.anything()
       );
     });
 
     it('marks the local job failed and throws when queue enqueue fails', async () => {
       mockReportPiiPlatformApplicationService.createMfrReportRequest.mockResolvedValue(null);
-      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([{
-        id: 'talent-123',
-        subsidiary_id: 'sub-123',
-        profile_store_id: 'store-123',
-      }]);
-      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([{
-        id: 'job-123',
-        status: ReportJobStatus.PENDING,
-        created_at: new Date('2026-01-23T10:00:00Z'),
-      }]);
+      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([
+        {
+          id: 'talent-123',
+          subsidiary_id: 'sub-123',
+          profile_store_id: 'store-123',
+        },
+      ]);
+      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([
+        {
+          id: 'job-123',
+          status: ReportJobStatus.PENDING,
+          created_at: new Date('2026-01-23T10:00:00Z'),
+        },
+      ]);
       mockQueue.add.mockRejectedValueOnce(new Error('redis unavailable'));
 
       await expect(
@@ -237,15 +250,15 @@ describe('ReportJobService', () => {
           validFilters,
           ReportFormat.XLSX,
           100,
-          mockContext,
-        ),
+          mockContext
+        )
       ).rejects.toThrow('Failed to enqueue report job');
 
       expect(mockPrisma.$executeRawUnsafe).toHaveBeenCalledWith(
         expect.stringContaining('error_code = $2'),
         'job-123',
         'REPORT_QUEUE_ENQUEUE_FAILED',
-        'redis unavailable',
+        'redis unavailable'
       );
       expect(mockTechEventLog.log).not.toHaveBeenCalled();
     });
@@ -267,8 +280,8 @@ describe('ReportJobService', () => {
           validFilters,
           ReportFormat.XLSX,
           100,
-          mockContext,
-        ),
+          mockContext
+        )
       ).resolves.toEqual({
         deliveryMode: 'pii_platform_portal',
         requestId: 'report-request-1',
@@ -284,7 +297,7 @@ describe('ReportJobService', () => {
         validFilters,
         ReportFormat.XLSX,
         100,
-        mockContext,
+        mockContext
       );
       expect(mockPrisma.$queryRawUnsafe).not.toHaveBeenCalled();
       expect(mockQueue.add).not.toHaveBeenCalled();
@@ -293,36 +306,36 @@ describe('ReportJobService', () => {
 
   describe('findById', () => {
     it('returns the mapped report job detail', async () => {
-      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([{
-        id: 'job-123',
-        report_type: ReportType.MFR,
-        format: ReportFormat.XLSX,
-        filter_criteria: {
-          platformCodes: ['YOUTUBE'],
-          includeExpired: false,
+      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([
+        {
+          id: 'job-123',
+          report_type: ReportType.MFR,
+          format: ReportFormat.XLSX,
+          filter_criteria: {
+            platformCodes: ['YOUTUBE'],
+            includeExpired: false,
+          },
+          status: ReportJobStatus.SUCCESS,
+          total_rows: 100,
+          processed_rows: 100,
+          progress_percentage: 100,
+          error_code: null,
+          error_message: null,
+          file_name: 'report.xlsx',
+          file_path: 'tenant_test/job-123/report.xlsx',
+          file_size_bytes: 2048n,
+          queued_at: new Date('2026-01-23T10:00:00Z'),
+          started_at: new Date('2026-01-23T10:00:05Z'),
+          completed_at: new Date('2026-01-23T10:02:00Z'),
+          downloaded_at: null,
+          expires_at: new Date('2099-01-23T10:07:00Z'),
+          created_at: new Date('2026-01-23T10:00:00Z'),
+          creator_id: 'user-123',
+          creator_username: 'operator',
         },
-        status: ReportJobStatus.SUCCESS,
-        total_rows: 100,
-        processed_rows: 100,
-        progress_percentage: 100,
-        error_code: null,
-        error_message: null,
-        file_name: 'report.xlsx',
-        file_path: 'tenant_test/job-123/report.xlsx',
-        file_size_bytes: 2048n,
-        queued_at: new Date('2026-01-23T10:00:00Z'),
-        started_at: new Date('2026-01-23T10:00:05Z'),
-        completed_at: new Date('2026-01-23T10:02:00Z'),
-        downloaded_at: null,
-        expires_at: new Date('2099-01-23T10:07:00Z'),
-        created_at: new Date('2026-01-23T10:00:00Z'),
-        creator_id: 'user-123',
-        creator_username: 'operator',
-      }]);
+      ]);
 
-      await expect(
-        service.findById('job-123', 'talent-123', mockContext as any),
-      ).resolves.toEqual({
+      await expect(service.findById('job-123', 'talent-123', mockContext as any)).resolves.toEqual({
         id: 'job-123',
         reportType: ReportType.MFR,
         status: ReportJobStatus.SUCCESS,
@@ -375,31 +388,33 @@ describe('ReportJobService', () => {
     });
 
     it('maps failure reason fallback and artifact expiry state', async () => {
-      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([{
-        id: 'job-expired',
-        report_type: ReportType.MFR,
-        format: ReportFormat.CSV,
-        filter_criteria: {
-          statusCodes: ['active'],
+      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([
+        {
+          id: 'job-expired',
+          report_type: ReportType.MFR,
+          format: ReportFormat.CSV,
+          filter_criteria: {
+            statusCodes: ['active'],
+          },
+          status: ReportJobStatus.SUCCESS,
+          total_rows: 1,
+          processed_rows: 1,
+          progress_percentage: 100,
+          error_code: 'REPORT_SOURCE_EMPTY',
+          error_message: null,
+          file_name: 'report.csv',
+          file_path: 'tenant_test/job-expired/report.csv',
+          file_size_bytes: 128n,
+          queued_at: new Date('2026-01-23T10:00:00Z'),
+          started_at: new Date('2026-01-23T10:00:05Z'),
+          completed_at: new Date('2026-01-23T10:02:00Z'),
+          downloaded_at: null,
+          expires_at: new Date('2020-01-23T10:07:00Z'),
+          created_at: new Date('2026-01-23T10:00:00Z'),
+          creator_id: 'user-123',
+          creator_username: 'reporter',
         },
-        status: ReportJobStatus.SUCCESS,
-        total_rows: 1,
-        processed_rows: 1,
-        progress_percentage: 100,
-        error_code: 'REPORT_SOURCE_EMPTY',
-        error_message: null,
-        file_name: 'report.csv',
-        file_path: 'tenant_test/job-expired/report.csv',
-        file_size_bytes: 128n,
-        queued_at: new Date('2026-01-23T10:00:00Z'),
-        started_at: new Date('2026-01-23T10:00:05Z'),
-        completed_at: new Date('2026-01-23T10:02:00Z'),
-        downloaded_at: null,
-        expires_at: new Date('2020-01-23T10:07:00Z'),
-        created_at: new Date('2026-01-23T10:00:00Z'),
-        creator_id: 'user-123',
-        creator_username: 'reporter',
-      }]);
+      ]);
 
       const result = await service.findById('job-expired', 'talent-123', mockContext as any);
 
@@ -415,47 +430,54 @@ describe('ReportJobService', () => {
     it('throws NotFoundException when the report job does not exist', async () => {
       mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([]);
 
-      await expect(
-        service.findById('job-404', 'talent-123', mockContext as any),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.findById('job-404', 'talent-123', mockContext as any)).rejects.toThrow(
+        NotFoundException
+      );
     });
   });
 
   describe('findMany', () => {
     it('returns mapped paginated items and total count', async () => {
       mockPrisma.$queryRawUnsafe
-        .mockResolvedValueOnce([{
-          id: 'job-123',
-          report_type: ReportType.MFR,
-          status: ReportJobStatus.SUCCESS,
-          total_rows: 100,
-          file_name: 'report.xlsx',
-          created_at: new Date('2026-01-23T10:00:00Z'),
-          completed_at: new Date('2026-01-23T10:02:00Z'),
-          expires_at: new Date('2099-01-23T10:07:00Z'),
-        }])
+        .mockResolvedValueOnce([
+          {
+            id: 'job-123',
+            report_type: ReportType.MFR,
+            status: ReportJobStatus.SUCCESS,
+            total_rows: 100,
+            file_name: 'report.xlsx',
+            created_at: new Date('2026-01-23T10:00:00Z'),
+            completed_at: new Date('2026-01-23T10:02:00Z'),
+            expires_at: new Date('2099-01-23T10:07:00Z'),
+          },
+        ])
         .mockResolvedValueOnce([{ count: 1n }]);
 
       await expect(
-        service.findMany({
-          talentId: 'talent-123',
-          status: 'pending,success',
-          createdFrom: '2026-01-01T00:00:00.000Z',
-          createdTo: '2026-01-31T23:59:59.999Z',
-          page: 2,
-          pageSize: 1,
-        }, mockContext as any),
+        service.findMany(
+          {
+            talentId: 'talent-123',
+            status: 'pending,success',
+            createdFrom: '2026-01-01T00:00:00.000Z',
+            createdTo: '2026-01-31T23:59:59.999Z',
+            page: 2,
+            pageSize: 1,
+          },
+          mockContext as any
+        )
       ).resolves.toEqual({
-        items: [{
-          id: 'job-123',
-          reportType: ReportType.MFR,
-          status: ReportJobStatus.SUCCESS,
-          totalRows: 100,
-          fileName: 'report.xlsx',
-          createdAt: '2026-01-23T10:00:00.000Z',
-          completedAt: '2026-01-23T10:02:00.000Z',
-          expiresAt: '2099-01-23T10:07:00.000Z',
-        }],
+        items: [
+          {
+            id: 'job-123',
+            reportType: ReportType.MFR,
+            status: ReportJobStatus.SUCCESS,
+            totalRows: 100,
+            fileName: 'report.xlsx',
+            createdAt: '2026-01-23T10:00:00.000Z',
+            completedAt: '2026-01-23T10:02:00.000Z',
+            expiresAt: '2099-01-23T10:07:00.000Z',
+          },
+        ],
         total: 1,
       });
     });
@@ -463,18 +485,20 @@ describe('ReportJobService', () => {
 
   describe('getDownloadUrl', () => {
     it('returns a presigned URL and marks a successful job as consumed on first download', async () => {
-      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([{
-        id: 'job-123',
-        status: ReportJobStatus.SUCCESS,
-        file_path: 'tenant_test/job-123/report.xlsx',
-        file_name: 'report.xlsx',
-        expires_at: new Date('2099-01-23T10:07:00Z'),
-        downloaded_at: null,
-      }]);
+      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([
+        {
+          id: 'job-123',
+          status: ReportJobStatus.SUCCESS,
+          file_path: 'tenant_test/job-123/report.xlsx',
+          file_name: 'report.xlsx',
+          expires_at: new Date('2099-01-23T10:07:00Z'),
+          downloaded_at: null,
+        },
+      ]);
       mockMinioService.getPresignedUrl.mockResolvedValueOnce('https://minio.example/report.xlsx');
 
       await expect(
-        service.getDownloadUrl('job-123', 'talent-123', mockContext as any),
+        service.getDownloadUrl('job-123', 'talent-123', mockContext as any)
       ).resolves.toEqual({
         downloadUrl: 'https://minio.example/report.xlsx',
         expiresIn: 300,
@@ -483,12 +507,12 @@ describe('ReportJobService', () => {
 
       expect(mockPrisma.$executeRawUnsafe).toHaveBeenCalledWith(
         expect.stringContaining("SET status = 'consumed'"),
-        'job-123',
+        'job-123'
       );
       expect(mockMinioService.getPresignedUrl).toHaveBeenCalledWith(
         BUCKETS.TEMP_REPORTS,
         'tenant_test/job-123/report.xlsx',
-        300,
+        300
       );
       expect(mockTechEventLog.log).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -498,7 +522,7 @@ describe('ReportJobService', () => {
             fileName: 'report.xlsx',
           }),
         }),
-        expect.anything(),
+        expect.anything()
       );
     });
 
@@ -506,39 +530,43 @@ describe('ReportJobService', () => {
       mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([]);
 
       await expect(
-        service.getDownloadUrl('job-404', 'talent-123', mockContext as any),
+        service.getDownloadUrl('job-404', 'talent-123', mockContext as any)
       ).rejects.toThrow(NotFoundException);
     });
 
     it('throws BadRequestException when the report is not downloadable', async () => {
-      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([{
-        id: 'job-123',
-        status: ReportJobStatus.RUNNING,
-        file_path: 'tenant_test/job-123/report.xlsx',
-        file_name: 'report.xlsx',
-        expires_at: new Date('2099-01-23T10:07:00Z'),
-        downloaded_at: null,
-      }]);
+      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([
+        {
+          id: 'job-123',
+          status: ReportJobStatus.RUNNING,
+          file_path: 'tenant_test/job-123/report.xlsx',
+          file_name: 'report.xlsx',
+          expires_at: new Date('2099-01-23T10:07:00Z'),
+          downloaded_at: null,
+        },
+      ]);
 
       await expect(
-        service.getDownloadUrl('job-123', 'talent-123', mockContext as any),
+        service.getDownloadUrl('job-123', 'talent-123', mockContext as any)
       ).rejects.toThrow(BadRequestException);
 
       expect(mockMinioService.getPresignedUrl).not.toHaveBeenCalled();
     });
 
     it('throws BadRequestException when the report file path is missing', async () => {
-      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([{
-        id: 'job-123',
-        status: ReportJobStatus.CONSUMED,
-        file_path: null,
-        file_name: 'report.xlsx',
-        expires_at: new Date('2099-01-23T10:07:00Z'),
-        downloaded_at: new Date('2026-01-23T10:03:00Z'),
-      }]);
+      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([
+        {
+          id: 'job-123',
+          status: ReportJobStatus.CONSUMED,
+          file_path: null,
+          file_name: 'report.xlsx',
+          expires_at: new Date('2099-01-23T10:07:00Z'),
+          downloaded_at: new Date('2026-01-23T10:03:00Z'),
+        },
+      ]);
 
       await expect(
-        service.getDownloadUrl('job-123', 'talent-123', mockContext as any),
+        service.getDownloadUrl('job-123', 'talent-123', mockContext as any)
       ).rejects.toThrow(BadRequestException);
 
       expect(mockPrisma.$executeRawUnsafe).not.toHaveBeenCalled();
@@ -547,14 +575,14 @@ describe('ReportJobService', () => {
 
   describe('cancel', () => {
     it('cancels a pending job and records the change log', async () => {
-      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([{
-        id: 'job-123',
-        status: ReportJobStatus.PENDING,
-      }]);
+      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([
+        {
+          id: 'job-123',
+          status: ReportJobStatus.PENDING,
+        },
+      ]);
 
-      await expect(
-        service.cancel('job-123', 'talent-123', mockContext as any),
-      ).resolves.toEqual({
+      await expect(service.cancel('job-123', 'talent-123', mockContext as any)).resolves.toEqual({
         id: 'job-123',
         status: ReportJobStatus.CANCELLED,
       });
@@ -564,14 +592,16 @@ describe('ReportJobService', () => {
     });
 
     it('rejects cancelling a non-cancellable job state', async () => {
-      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([{
-        id: 'job-123',
-        status: ReportJobStatus.RUNNING,
-      }]);
+      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([
+        {
+          id: 'job-123',
+          status: ReportJobStatus.RUNNING,
+        },
+      ]);
 
-      await expect(
-        service.cancel('job-123', 'talent-123', mockContext as any),
-      ).rejects.toThrow(BadRequestException);
+      await expect(service.cancel('job-123', 'talent-123', mockContext as any)).rejects.toThrow(
+        BadRequestException
+      );
 
       expect(mockPrisma.$executeRawUnsafe).not.toHaveBeenCalled();
     });
@@ -579,48 +609,38 @@ describe('ReportJobService', () => {
     it('throws NotFoundException when cancelling a missing job', async () => {
       mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([]);
 
-      await expect(
-        service.cancel('job-404', 'talent-123', mockContext as any),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.cancel('job-404', 'talent-123', mockContext as any)).rejects.toThrow(
+        NotFoundException
+      );
     });
   });
 
   describe('Row limit validation', () => {
     it('should accept exactly 50000 rows', async () => {
-      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([{
-        id: 'talent-123',
-        subsidiary_id: 'sub-123',
-        profile_store_id: 'store-123',
-      }]);
-      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([{
-        id: 'job-123',
-        status: ReportJobStatus.PENDING,
-        created_at: new Date(),
-      }]);
+      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([
+        {
+          id: 'talent-123',
+          subsidiary_id: 'sub-123',
+          profile_store_id: 'store-123',
+        },
+      ]);
+      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([
+        {
+          id: 'job-123',
+          status: ReportJobStatus.PENDING,
+          created_at: new Date(),
+        },
+      ]);
 
       // Should not throw for exactly 50000
       await expect(
-        service.create(
-          ReportType.MFR,
-          'talent-123',
-          {},
-          ReportFormat.XLSX,
-          50000,
-          mockContext,
-        ),
+        service.create(ReportType.MFR, 'talent-123', {}, ReportFormat.XLSX, 50000, mockContext)
       ).resolves.toBeDefined();
     });
 
     it('should reject 50001 rows', async () => {
       await expect(
-        service.create(
-          ReportType.MFR,
-          'talent-123',
-          {},
-          ReportFormat.XLSX,
-          50001,
-          mockContext,
-        ),
+        service.create(ReportType.MFR, 'talent-123', {}, ReportFormat.XLSX, 50001, mockContext)
       ).rejects.toThrow(BadRequestException);
     });
   });

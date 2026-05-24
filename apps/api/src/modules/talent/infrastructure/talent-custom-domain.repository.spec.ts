@@ -1,5 +1,6 @@
-import { prisma } from '@tcrn/database';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { prisma } from '@tcrn/database';
 
 import { TalentCustomDomainRepository } from './talent-custom-domain.repository';
 
@@ -34,10 +35,10 @@ describe('TalentCustomDomainRepository readiness checks', () => {
       ready: true,
     });
     expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalledWith(
-      expect.stringContaining("to_regclass('public.custom_domain_binding')"),
+      expect.stringContaining("to_regclass('public.custom_domain_binding')")
     );
     expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalledWith(
-      expect.stringContaining("to_regclass('public.custom_domain_talent_selection')"),
+      expect.stringContaining("to_regclass('public.custom_domain_talent_selection')")
     );
   });
 

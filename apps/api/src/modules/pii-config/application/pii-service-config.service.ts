@@ -1,10 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 
-import {
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
 import { ErrorCodes, type RequestContext } from '@tcrn/shared';
 
 import { DatabaseService } from '../../database';
@@ -34,7 +30,7 @@ export class PiiServiceConfigApplicationService {
     private readonly piiServiceConfigRepository: PiiServiceConfigRepository,
     private readonly databaseService: DatabaseService,
     private readonly changeLogService: ChangeLogService,
-    private readonly piiClientService: PiiClientService,
+    private readonly piiClientService: PiiClientService
   ) {}
 
   async findMany(query: PaginationQueryDto, context: RequestContext) {
@@ -45,35 +41,23 @@ export class PiiServiceConfigApplicationService {
     const includeInactive = query.includeInactive ?? false;
 
     const [items, total] = await Promise.all([
-      this.piiServiceConfigRepository.findMany(
-        schema,
-        includeInactive,
-        pageSize,
-        offset,
-      ),
+      this.piiServiceConfigRepository.findMany(schema, includeInactive, pageSize, offset),
       this.piiServiceConfigRepository.countMany(schema, includeInactive),
     ]);
 
     const enrichedItems = await Promise.all(
       items.map(async (item) => {
         const profileStoreCount =
-          await this.piiServiceConfigRepository.countProfileStoresByConfigId(
-            schema,
-            item.id,
-          );
+          await this.piiServiceConfigRepository.countProfileStoresByConfigId(schema, item.id);
 
         return buildPiiServiceConfigListItem(item, profileStoreCount);
-      }),
+      })
     );
 
     return {
       items: enrichedItems,
       meta: {
-        pagination: this.databaseService.calculatePaginationMeta(
-          total,
-          page,
-          pageSize,
-        ),
+        pagination: this.databaseService.calculatePaginationMeta(total, page, pageSize),
       },
     };
   }
@@ -89,21 +73,17 @@ export class PiiServiceConfigApplicationService {
       });
     }
 
-    const profileStoreCount =
-      await this.piiServiceConfigRepository.countProfileStoresByConfigId(
-        schema,
-        id,
-      );
+    const profileStoreCount = await this.piiServiceConfigRepository.countProfileStoresByConfigId(
+      schema,
+      id
+    );
 
     return buildPiiServiceConfigDetailResponse(config, profileStoreCount);
   }
 
   async create(dto: CreatePiiServiceConfigDto, context: RequestContext) {
     const schema = context.tenantSchema;
-    const existing = await this.piiServiceConfigRepository.findByCode(
-      schema,
-      dto.code,
-    );
+    const existing = await this.piiServiceConfigRepository.findByCode(schema, dto.code);
 
     if (existing) {
       throw new ConflictException({
@@ -116,7 +96,7 @@ export class PiiServiceConfigApplicationService {
     const created = await this.piiServiceConfigRepository.create(
       schema,
       payload,
-      context.userId ?? '',
+      context.userId ?? ''
     );
 
     await this.changeLogService.createDirect(
@@ -132,22 +112,15 @@ export class PiiServiceConfigApplicationService {
           authType: dto.authType,
         },
       },
-      context,
+      context
     );
 
     return buildPiiServiceConfigCreateResponse(created);
   }
 
-  async update(
-    id: string,
-    dto: UpdatePiiServiceConfigDto,
-    context: RequestContext,
-  ) {
+  async update(id: string, dto: UpdatePiiServiceConfigDto, context: RequestContext) {
     const schema = context.tenantSchema;
-    const existing = await this.piiServiceConfigRepository.findForUpdate(
-      schema,
-      id,
-    );
+    const existing = await this.piiServiceConfigRepository.findForUpdate(schema, id);
 
     if (!existing) {
       throw new NotFoundException({
@@ -167,13 +140,10 @@ export class PiiServiceConfigApplicationService {
       schema,
       id,
       buildPiiServiceConfigUpdateChanges(dto, existing),
-      context.userId ?? '',
+      context.userId ?? ''
     );
 
-    const { newValue, oldValue } = buildPiiServiceConfigUpdateAudit(
-      existing,
-      updated,
-    );
+    const { newValue, oldValue } = buildPiiServiceConfigUpdateAudit(existing, updated);
 
     await this.changeLogService.createDirect(
       {
@@ -184,7 +154,7 @@ export class PiiServiceConfigApplicationService {
         oldValue,
         newValue,
       },
-      context,
+      context
     );
 
     return buildPiiServiceConfigUpdateResponse(updated);
@@ -192,10 +162,7 @@ export class PiiServiceConfigApplicationService {
 
   async testConnection(id: string, context: RequestContext) {
     const schema = context.tenantSchema;
-    const config = await this.piiServiceConfigRepository.findForConnectionTest(
-      schema,
-      id,
-    );
+    const config = await this.piiServiceConfigRepository.findForConnectionTest(schema, id);
 
     if (!config) {
       throw new NotFoundException({
@@ -204,15 +171,9 @@ export class PiiServiceConfigApplicationService {
       });
     }
 
-    const result = await this.piiClientService.checkHealth(
-      buildPiiServiceHealthBaseUrl(config),
-    );
+    const result = await this.piiClientService.checkHealth(buildPiiServiceHealthBaseUrl(config));
 
-    await this.piiServiceConfigRepository.updateHealthStatus(
-      schema,
-      id,
-      result.status === 'ok',
-    );
+    await this.piiServiceConfigRepository.updateHealthStatus(schema, id, result.status === 'ok');
 
     return buildPiiServiceHealthCheckResponse(result);
   }

@@ -1,5 +1,6 @@
-import { prisma } from '@tcrn/database';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { prisma } from '@tcrn/database';
 
 import { TalentReadRepository } from './talent-read.repository';
 
@@ -41,7 +42,7 @@ describe('TalentReadRepository external pages config', () => {
       ]);
 
     await expect(
-      repository.getExternalPagesDomainConfig('talent-123', 'tenant_test'),
+      repository.getExternalPagesDomainConfig('talent-123', 'tenant_test')
     ).resolves.toEqual({
       homepage: {
         isPublished: true,
@@ -61,19 +62,17 @@ describe('TalentReadRepository external pages config', () => {
     expect(mockPrisma.$queryRawUnsafe).toHaveBeenNthCalledWith(
       2,
       expect.stringContaining('t.marshmallow_path as "path"'),
-      'talent-123',
+      'talent-123'
     );
     expect(mockPrisma.$queryRawUnsafe).toHaveBeenNthCalledWith(
       2,
-      expect.stringContaining(
-        'LEFT JOIN "tenant_test".talent t ON t.id = mc.talent_id',
-      ),
-      'talent-123',
+      expect.stringContaining('LEFT JOIN "tenant_test".talent t ON t.id = mc.talent_id'),
+      'talent-123'
     );
     expect(mockPrisma.$queryRawUnsafe).toHaveBeenNthCalledWith(
       2,
       expect.not.stringContaining('\n              path,'),
-      'talent-123',
+      'talent-123'
     );
   });
 
@@ -83,7 +82,7 @@ describe('TalentReadRepository external pages config', () => {
       .mockRejectedValueOnce(new Error('column "path" does not exist'));
 
     await expect(
-      repository.getExternalPagesDomainConfig('talent-123', 'tenant_test'),
+      repository.getExternalPagesDomainConfig('talent-123', 'tenant_test')
     ).resolves.toEqual({
       homepage: null,
       marshmallow: null,

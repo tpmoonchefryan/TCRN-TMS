@@ -14,7 +14,7 @@ declare global {
           'expired-callback'?: () => void;
           'error-callback'?: () => void;
           theme?: 'light' | 'dark';
-        },
+        }
       ) => string | number;
       reset: (widgetId: string | number) => void;
       remove: (widgetId: string | number) => void;
@@ -36,10 +36,18 @@ export function TurnstileWidget({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const widgetIdRef = useRef<string | number | null>(null);
   const hasMountedResetEffectRef = useRef(false);
-  const [scriptReady, setScriptReady] = useState(Boolean(typeof window !== 'undefined' && window.turnstile));
+  const [scriptReady, setScriptReady] = useState(
+    Boolean(typeof window !== 'undefined' && window.turnstile)
+  );
 
   useEffect(() => {
-    if (!siteKey || !scriptReady || !containerRef.current || widgetIdRef.current !== null || !window.turnstile) {
+    if (
+      !siteKey ||
+      !scriptReady ||
+      !containerRef.current ||
+      widgetIdRef.current !== null ||
+      !window.turnstile
+    ) {
       return;
     }
 

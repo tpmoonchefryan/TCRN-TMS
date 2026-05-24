@@ -264,37 +264,42 @@ describe('PublicPresenceManagementScreen', () => {
   it.each([
     ['fr', 'Gestion de la page d’accueil'],
     ['ko', '홈페이지 관리'],
-  ])('renders localized management copy for %s and keeps standalone launch links', async (locale, heading) => {
-    localeState.locale = locale;
+  ])(
+    'renders localized management copy for %s and keeps standalone launch links',
+    async (locale, heading) => {
+      localeState.locale = locale;
 
-    render(<PublicPresenceManagementScreen tenantId="tenant-1" talentId="talent-1" />);
+      render(<PublicPresenceManagementScreen tenantId="tenant-1" talentId="talent-1" />);
 
-    expect(await screen.findByRole('heading', { name: heading })).toBeInTheDocument();
-    expect(
-      screen.getAllByRole('link', {
-        name: locale === 'fr' ? 'Definir la version live' : '라이브 버전 설정',
-      }).length,
-    ).toBeGreaterThan(0);
-    expect(
-      screen.getAllByRole('link', {
-        name: locale === 'fr' ? 'Auto-switch apres reveal' : '리빌 후 자동 전환',
-      }).length,
-    ).toBeGreaterThan(0);
-    expect(
-      screen
-        .getAllByRole('link', { name: locale === 'fr' ? 'Editer Active Hub' : 'Active Hub 편집' })
-        .map((link) => link.getAttribute('href')),
-    ).toContain('/studio/public-presence/tenant-1/talent-1?templateId=activeTalentHub');
-    expect(
-      screen
-        .getAllByRole('link', { name: locale === 'fr' ? 'Apercu Active Hub' : 'Active Hub 미리보기' })
-        .map((link) => link.getAttribute('href')),
-    ).toContain('/studio/public-presence/tenant-1/talent-1/preview?templateId=activeTalentHub');
-  });
+      expect(await screen.findByRole('heading', { name: heading })).toBeInTheDocument();
+      expect(
+        screen.getAllByRole('link', {
+          name: locale === 'fr' ? 'Definir la version live' : '라이브 버전 설정',
+        }).length
+      ).toBeGreaterThan(0);
+      expect(
+        screen.getAllByRole('link', {
+          name: locale === 'fr' ? 'Auto-switch apres reveal' : '리빌 후 자동 전환',
+        }).length
+      ).toBeGreaterThan(0);
+      expect(
+        screen
+          .getAllByRole('link', { name: locale === 'fr' ? 'Editer Active Hub' : 'Active Hub 편집' })
+          .map((link) => link.getAttribute('href'))
+      ).toContain('/studio/public-presence/tenant-1/talent-1?templateId=activeTalentHub');
+      expect(
+        screen
+          .getAllByRole('link', {
+            name: locale === 'fr' ? 'Apercu Active Hub' : 'Active Hub 미리보기',
+          })
+          .map((link) => link.getAttribute('href'))
+      ).toContain('/studio/public-presence/tenant-1/talent-1/preview?templateId=activeTalentHub');
+    }
+  );
 
   it('surfaces first-level version actions and workflow status for both built-in page versions', async () => {
     const { container } = render(
-      <PublicPresenceManagementScreen tenantId="tenant-1" talentId="talent-1" />,
+      <PublicPresenceManagementScreen tenantId="tenant-1" talentId="talent-1" />
     );
 
     expect(await screen.findByText('Edit Active Hub')).toBeInTheDocument();
@@ -302,25 +307,25 @@ describe('PublicPresenceManagementScreen', () => {
     expect(screen.getByText('Preview Active Hub')).toBeInTheDocument();
     expect(screen.getByText('Preview Debut / Reveal')).toBeInTheDocument();
     expect(screen.getAllByText('Set live version').length).toBeGreaterThan(0);
-    expect(
-      screen.getAllByText('Auto-switch after reveal').length,
-    ).toBeGreaterThan(0);
+    expect(screen.getAllByText('Auto-switch after reveal').length).toBeGreaterThan(0);
     expect(screen.getByText('SEO and share readiness')).toBeInTheDocument();
     expect(screen.getAllByText('Last workflow activity').length).toBeGreaterThan(0);
 
     expect(
       screen
         .getAllByRole('link', { name: 'Set live version' })
-        .map((link) => link.getAttribute('href')),
-    ).toContain('/studio/public-presence/tenant-1/talent-1?templateId=activeTalentHub&focus=release');
+        .map((link) => link.getAttribute('href'))
+    ).toContain(
+      '/studio/public-presence/tenant-1/talent-1?templateId=activeTalentHub&focus=release'
+    );
     expect(
       screen
         .getAllByRole('link', { name: 'Auto-switch after reveal' })
-        .map((link) => link.getAttribute('href')),
+        .map((link) => link.getAttribute('href'))
     ).toContain('/studio/public-presence/tenant-1/talent-1?templateId=debutReveal&focus=countdown');
     expect(screen.getAllByText('Scheduled').length).toBeGreaterThan(0);
     expect(container.textContent).not.toMatch(
-      /projection|content hash|runtime|policy version|workflow event id|registry/i,
+      /projection|content hash|runtime|policy version|workflow event id|registry/i
     );
   });
 
@@ -336,24 +341,18 @@ describe('PublicPresenceManagementScreen', () => {
     expect(screen.getByRole('link', { name: 'Open live public page' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Copy live route' })).toBeInTheDocument();
     expect(
-      commandStrip.compareDocumentPosition(helpPanel) & Node.DOCUMENT_POSITION_FOLLOWING,
+      commandStrip.compareDocumentPosition(helpPanel) & Node.DOCUMENT_POSITION_FOLLOWING
     ).toBeTruthy();
   });
 
   it('falls back legacy homepage surface requests into the management workbench', async () => {
     render(
-      <PublicPresenceManagementScreen
-        surface="templates"
-        talentId="talent-1"
-        tenantId="tenant-1"
-      />,
+      <PublicPresenceManagementScreen surface="templates" talentId="talent-1" tenantId="tenant-1" />
     );
 
     expect(await screen.findByTestId('homepage-surface-fallback-notice')).toBeInTheDocument();
     expect(
-      screen.getByText(
-        'Template Center now opens through asset management and focused IDE flows.',
-      ),
+      screen.getByText('Template Center now opens through asset management and focused IDE flows.')
     ).toBeInTheDocument();
     expect(screen.queryByTestId('homepage-surface-menu')).not.toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Homepage Management' })).toBeInTheDocument();

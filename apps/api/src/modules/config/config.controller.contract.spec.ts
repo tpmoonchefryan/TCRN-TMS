@@ -1,7 +1,6 @@
-import 'reflect-metadata';
-
 import { RequestMethod } from '@nestjs/common';
 import { METHOD_METADATA, PATH_METADATA } from '@nestjs/common/constants';
+import 'reflect-metadata';
 import { describe, expect, it } from 'vitest';
 
 import { ConfigController } from './config.controller';
@@ -22,12 +21,15 @@ const normalizePaths = (value: string | string[] | undefined): string[] => {
 
 const getControllerRoutes = (controller: typeof ConfigController): ControllerRoute[] => {
   const methodNames = Object.getOwnPropertyNames(controller.prototype).filter(
-    (methodName) => methodName !== 'constructor' && typeof controller.prototype[methodName] === 'function',
+    (methodName) =>
+      methodName !== 'constructor' && typeof controller.prototype[methodName] === 'function'
   );
 
   return methodNames.flatMap((methodName) => {
     const handler = controller.prototype[methodName];
-    const requestMethod = Reflect.getMetadata(METHOD_METADATA, handler) as RequestMethod | undefined;
+    const requestMethod = Reflect.getMetadata(METHOD_METADATA, handler) as
+      | RequestMethod
+      | undefined;
 
     if (requestMethod === undefined) {
       return [];
@@ -79,7 +81,7 @@ describe('ConfigController configuration-entity route contract', () => {
           requestMethod: RequestMethod.POST,
           path: ':entityType/:id/reactivate',
         },
-      ]),
+      ])
     );
   });
 
@@ -103,13 +105,13 @@ describe('ConfigController configuration-entity route contract', () => {
           requestMethod: RequestMethod.POST,
           path: 'consumer/:consumerId/revoke-key',
         },
-      ]),
+      ])
     );
   });
 
   it('registers membership helper reads before generic entity GET routes', () => {
     const routes = getControllerRoutes(ConfigController).filter(
-      (route) => route.requestMethod === RequestMethod.GET,
+      (route) => route.requestMethod === RequestMethod.GET
     );
     const routeIndex = (path: string) => routes.findIndex((route) => route.path === path);
 
@@ -120,8 +122,12 @@ describe('ConfigController configuration-entity route contract', () => {
     expect(routeIndex(':entityType/:id')).toBeGreaterThanOrEqual(0);
 
     expect(routeIndex('membership-tree')).toBeLessThan(routeIndex(':entityType'));
-    expect(routeIndex('membership-classes/:classId/types')).toBeLessThan(routeIndex(':entityType/:id'));
-    expect(routeIndex('membership-types/:typeId/levels')).toBeLessThan(routeIndex(':entityType/:id'));
+    expect(routeIndex('membership-classes/:classId/types')).toBeLessThan(
+      routeIndex(':entityType/:id')
+    );
+    expect(routeIndex('membership-types/:typeId/levels')).toBeLessThan(
+      routeIndex(':entityType/:id')
+    );
   });
 
   it('does not expose a DELETE /:entityType/:id hard-delete route for configuration entities', () => {
@@ -130,8 +136,8 @@ describe('ConfigController configuration-entity route contract', () => {
 
     expect(
       routes.some(
-        (route) => route.requestMethod === RequestMethod.DELETE && route.path === ':entityType/:id',
-      ),
+        (route) => route.requestMethod === RequestMethod.DELETE && route.path === ':entityType/:id'
+      )
     ).toBe(false);
     expect(methodNames).not.toContain('delete');
     expect(methodNames).not.toContain('remove');

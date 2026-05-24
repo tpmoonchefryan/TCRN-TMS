@@ -1,8 +1,4 @@
-import type {
-  LocalizedText,
-  PartialLocalizedText,
-  SupportedUiLocale,
-} from '@tcrn/shared';
+import type { LocalizedText, PartialLocalizedText, SupportedUiLocale } from '@tcrn/shared';
 
 import {
   type ApiSuccessEnvelope,
@@ -11,7 +7,10 @@ import {
 } from '@/platform/http/api';
 
 export type RequestFn = <T>(path: string, init?: RequestInit) => Promise<T>;
-export type RequestEnvelopeFn = <T>(path: string, init?: RequestInit) => Promise<ApiSuccessEnvelope<T>>;
+export type RequestEnvelopeFn = <T>(
+  path: string,
+  init?: RequestInit
+) => Promise<ApiSuccessEnvelope<T>>;
 
 function withLocaleHeaders(locale?: string, headers?: HeadersInit) {
   const nextHeaders = new Headers(headers);
@@ -80,7 +79,7 @@ export interface ListDictionaryItemsOptions {
 function buildJsonRequestInit(
   method: 'POST' | 'PATCH' | 'DELETE',
   body?: unknown,
-  headers?: HeadersInit,
+  headers?: HeadersInit
 ): RequestInit {
   const nextHeaders = new Headers(headers);
 
@@ -124,7 +123,7 @@ export async function listDictionaryItems(
   requestEnvelope: RequestEnvelopeFn,
   type: string,
   options: ListDictionaryItemsOptions = {},
-  locale?: string,
+  locale?: string
 ) {
   const page = options.page ?? 1;
   const pageSize = options.pageSize ?? 20;
@@ -139,7 +138,7 @@ export async function listDictionaryItems(
     `/api/v1/system-dictionary/${encodeURIComponent(type)}${query}`,
     {
       headers: withLocaleHeaders(locale),
-    },
+    }
   );
 
   return {
@@ -149,17 +148,20 @@ export async function listDictionaryItems(
 }
 
 export function createDictionaryType(request: RequestFn, input: CreateDictionaryTypeInput) {
-  return request<DictionaryItemRecord>('/api/v1/system-dictionary', buildJsonRequestInit('POST', input));
+  return request<DictionaryItemRecord>(
+    '/api/v1/system-dictionary',
+    buildJsonRequestInit('POST', input)
+  );
 }
 
 export function createDictionaryItem(
   request: RequestFn,
   type: string,
-  input: CreateDictionaryItemInput,
+  input: CreateDictionaryItemInput
 ) {
   return request<DictionaryItemRecord>(
     `/api/v1/system-dictionary/${encodeURIComponent(type)}/items`,
-    buildJsonRequestInit('POST', input),
+    buildJsonRequestInit('POST', input)
   );
 }
 
@@ -167,11 +169,11 @@ export function updateDictionaryItem(
   request: RequestFn,
   type: string,
   itemId: string,
-  input: UpdateDictionaryItemInput,
+  input: UpdateDictionaryItemInput
 ) {
   return request<DictionaryItemRecord>(
     `/api/v1/system-dictionary/${encodeURIComponent(type)}/items/${encodeURIComponent(itemId)}`,
-    buildJsonRequestInit('PATCH', input),
+    buildJsonRequestInit('PATCH', input)
   );
 }
 
@@ -179,11 +181,11 @@ export function deactivateDictionaryItem(
   request: RequestFn,
   type: string,
   itemId: string,
-  input: ToggleDictionaryItemInput,
+  input: ToggleDictionaryItemInput
 ) {
   return request<DictionaryItemRecord>(
     `/api/v1/system-dictionary/${encodeURIComponent(type)}/items/${encodeURIComponent(itemId)}`,
-    buildJsonRequestInit('DELETE', input),
+    buildJsonRequestInit('DELETE', input)
   );
 }
 
@@ -191,10 +193,10 @@ export function reactivateDictionaryItem(
   request: RequestFn,
   type: string,
   itemId: string,
-  input: ToggleDictionaryItemInput,
+  input: ToggleDictionaryItemInput
 ) {
   return request<DictionaryItemRecord>(
     `/api/v1/system-dictionary/${encodeURIComponent(type)}/items/${encodeURIComponent(itemId)}/reactivate`,
-    buildJsonRequestInit('POST', input),
+    buildJsonRequestInit('POST', input)
   );
 }

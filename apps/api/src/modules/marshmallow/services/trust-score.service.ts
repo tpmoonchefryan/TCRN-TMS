@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable, Logger } from '@nestjs/common';
 
 import { RedisService } from '../../redis';
@@ -11,7 +10,7 @@ import { RedisService } from '../../redis';
 export type TrustLevel = 'trusted' | 'neutral' | 'suspicious' | 'blocked';
 
 export interface TrustScore {
-  score: number;        // 0-100, initial 50
+  score: number; // 0-100, initial 50
   level: TrustLevel;
   factors: TrustFactor[];
   lastUpdated: number;
@@ -36,10 +35,10 @@ export type TrustFactorType =
 
 // Trust level thresholds
 const TRUST_THRESHOLDS = {
-  blocked: 20,      // 0-20 = blocked
-  suspicious: 40,   // 21-40 = suspicious
-  neutral: 70,      // 41-70 = neutral
-  trusted: 100,     // 71-100 = trusted
+  blocked: 20, // 0-20 = blocked
+  suspicious: 40, // 21-40 = suspicious
+  neutral: 70, // 41-70 = neutral
+  trusted: 100, // 71-100 = trusted
 };
 
 // Trust score changes for different events
@@ -50,7 +49,7 @@ const TRUST_DELTAS = {
   content_flagged: -5,
   content_rejected: -20,
   rate_limit_hit: -10,
-  time_decay: 1,  // Daily decay towards neutral (50)
+  time_decay: 1, // Daily decay towards neutral (50)
 };
 
 // Cache TTL (30 days)
@@ -115,7 +114,7 @@ export class TrustScoreService {
   async updateFingerprintScore(
     fingerprint: string,
     factorType: TrustFactorType,
-    details?: string,
+    details?: string
   ): Promise<TrustScore> {
     const currentScore = await this.getTrustScore(fingerprint);
     const updatedScore = this.applyFactor(currentScore, factorType, details);
@@ -126,7 +125,9 @@ export class TrustScoreService {
     // Also update history
     await this.addHistoryEntry(fingerprint, factorType, details);
 
-    this.logger.debug(`Updated trust score for fp:${fingerprint.substring(0, 8)}... -> ${updatedScore.score} (${updatedScore.level})`);
+    this.logger.debug(
+      `Updated trust score for fp:${fingerprint.substring(0, 8)}... -> ${updatedScore.score} (${updatedScore.level})`
+    );
 
     return updatedScore;
   }
@@ -137,7 +138,7 @@ export class TrustScoreService {
   async updateIpScore(
     ip: string,
     factorType: TrustFactorType,
-    details?: string,
+    details?: string
   ): Promise<TrustScore> {
     const currentScore = await this.getIpTrustScore(ip);
     const updatedScore = this.applyFactor(currentScore, factorType, details);
@@ -151,11 +152,7 @@ export class TrustScoreService {
   /**
    * Record CAPTCHA result
    */
-  async recordCaptchaResult(
-    fingerprint: string,
-    ip: string,
-    passed: boolean,
-  ): Promise<void> {
+  async recordCaptchaResult(fingerprint: string, ip: string, passed: boolean): Promise<void> {
     const factorType: TrustFactorType = passed ? 'captcha_pass' : 'captcha_fail';
 
     await Promise.all([
@@ -171,7 +168,7 @@ export class TrustScoreService {
   async recordContentResult(
     fingerprint: string,
     ip: string,
-    result: 'clean' | 'flagged' | 'rejected',
+    result: 'clean' | 'flagged' | 'rejected'
   ): Promise<void> {
     const factorTypeMap = {
       clean: 'content_clean' as TrustFactorType,
@@ -204,7 +201,9 @@ export class TrustScoreService {
   /**
    * Get CAPTCHA history for a fingerprint
    */
-  async getCaptchaHistory(fingerprint: string): Promise<Array<{ passed: boolean; timestamp: number; ip: string }>> {
+  async getCaptchaHistory(
+    fingerprint: string
+  ): Promise<Array<{ passed: boolean; timestamp: number; ip: string }>> {
     const key = `trust:captcha_history:${fingerprint}`;
     const history = await this.redisService.lrange(key, 0, 19); // Last 20 entries
 
@@ -297,7 +296,7 @@ export class TrustScoreService {
   private applyFactor(
     current: TrustScore,
     factorType: TrustFactorType,
-    details?: string,
+    details?: string
   ): TrustScore {
     const delta = TRUST_DELTAS[factorType] || 0;
     const newScore = Math.max(0, Math.min(100, current.score + delta));
@@ -368,7 +367,7 @@ export class TrustScoreService {
   private async addHistoryEntry(
     fingerprint: string,
     factorType: TrustFactorType,
-    details?: string,
+    details?: string
   ): Promise<void> {
     const key = `trust:history:${fingerprint}`;
     const entry = JSON.stringify({
@@ -382,11 +381,7 @@ export class TrustScoreService {
     await this.redisService.expire(key, TRUST_SCORE_TTL);
   }
 
-  private async addCaptchaHistory(
-    fingerprint: string,
-    passed: boolean,
-    ip: string,
-  ): Promise<void> {
+  private async addCaptchaHistory(fingerprint: string, passed: boolean, ip: string): Promise<void> {
     const key = `trust:captcha_history:${fingerprint}`;
     const entry = JSON.stringify({
       passed,

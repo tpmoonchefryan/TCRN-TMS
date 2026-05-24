@@ -1,16 +1,8 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
-import {
-  BadRequestException,
-  ConflictException,
-  NotFoundException,
-} from '@nestjs/common';
-import {
-  createLocalizedText,
-  type BlocklistScopeSummary,
-  type RequestContext,
-} from '@tcrn/shared';
+import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { createLocalizedText, type BlocklistScopeSummary, type RequestContext } from '@tcrn/shared';
 
 import { DatabaseService } from '../../database';
 import { ChangeLogService } from '../../log';
@@ -58,10 +50,8 @@ describe('BlocklistWriteService', () => {
   };
 
   const mockPrisma = {
-    $transaction: vi.fn(
-      async (
-        callback: (tx: typeof mockTransactionClient) => Promise<unknown>,
-      ) => callback(mockTransactionClient),
+    $transaction: vi.fn(async (callback: (tx: typeof mockTransactionClient) => Promise<unknown>) =>
+      callback(mockTransactionClient)
     ),
   };
 
@@ -83,7 +73,7 @@ describe('BlocklistWriteService', () => {
     mockReadService,
     mockDatabaseService,
     mockChangeLogService,
-    mockMatcherService,
+    mockMatcherService
   );
 
   beforeEach(() => {
@@ -139,8 +129,8 @@ describe('BlocklistWriteService', () => {
           patternType: BlocklistPatternType.KEYWORD,
           name: createLocalizedText({ en: 'Profanity Filter' }),
         },
-        context,
-      ),
+        context
+      )
     ).resolves.toEqual(detailResponse);
 
     expect(mockChangeLogService.create).toHaveBeenCalled();
@@ -149,12 +139,9 @@ describe('BlocklistWriteService', () => {
       expect.anything(),
       context.tenantSchema,
       expect.any(Object),
-      context.userId,
+      context.userId
     );
-    expect(mockReadService.findById).toHaveBeenCalledWith(
-      context.tenantSchema,
-      'entry-1',
-    );
+    expect(mockReadService.findById).toHaveBeenCalledWith(context.tenantSchema, 'entry-1');
   });
 
   it('fails closed on invalid regex create payloads', async () => {
@@ -166,8 +153,8 @@ describe('BlocklistWriteService', () => {
           patternType: BlocklistPatternType.REGEX,
           name: createLocalizedText({ en: 'Regex Filter' }),
         },
-        context,
-      ),
+        context
+      )
     ).rejects.toThrow(BadRequestException);
   });
 
@@ -186,8 +173,8 @@ describe('BlocklistWriteService', () => {
           version: 2,
           name: { en: 'Updated Filter' },
         },
-        context,
-      ),
+        context
+      )
     ).rejects.toThrow(ConflictException);
   });
 
@@ -207,20 +194,14 @@ describe('BlocklistWriteService', () => {
           version: 1,
           name: { en: 'Updated Filter' },
         },
-        context,
-      ),
+        context
+      )
     ).resolves.toEqual(detailResponse);
 
     expect(mockRepository.update).toHaveBeenCalled();
     expect(mockMatcherService.rebuildMatcher).toHaveBeenCalled();
-    expect(mockRepository.findForWrite).toHaveBeenCalledWith(
-      context.tenantSchema,
-      'entry-1',
-    );
-    expect(mockReadService.findById).toHaveBeenCalledWith(
-      context.tenantSchema,
-      'entry-1',
-    );
+    expect(mockRepository.findForWrite).toHaveBeenCalledWith(context.tenantSchema, 'entry-1');
+    expect(mockReadService.findById).toHaveBeenCalledWith(context.tenantSchema, 'entry-1');
   });
 
   it('normalizes structured scope payloads before creating an entry', async () => {
@@ -241,7 +222,7 @@ describe('BlocklistWriteService', () => {
           ],
         },
       },
-      context,
+      context
     );
 
     expect(mockRepository.create).toHaveBeenCalledWith(
@@ -251,7 +232,7 @@ describe('BlocklistWriteService', () => {
         scope: ['tenant', 'profile-store', 'marshmallow'],
         structuredScope: undefined,
       }),
-      context.userId,
+      context.userId
     );
   });
 
@@ -267,8 +248,8 @@ describe('BlocklistWriteService', () => {
             entries: [{ category: BlocklistScopeCategory.PROFILE_STORE }],
           },
         },
-        context,
-      ),
+        context
+      )
     ).rejects.toThrow(BadRequestException);
   });
 
@@ -283,7 +264,7 @@ describe('BlocklistWriteService', () => {
         patternType: BlocklistPatternType.KEYWORD,
         name: createLocalizedText({ en: 'Default Rule' }),
       },
-      context,
+      context
     );
 
     expect(mockRepository.create).toHaveBeenCalledWith(
@@ -293,16 +274,14 @@ describe('BlocklistWriteService', () => {
         scope: ['marshmallow'],
         structuredScope: undefined,
       }),
-      context.userId,
+      context.userId
     );
   });
 
   it('fails closed when deleting a missing entry', async () => {
     vi.mocked(mockRepository.findForWrite).mockResolvedValue(null);
 
-    await expect(service.delete('missing-entry', context)).rejects.toThrow(
-      NotFoundException,
-    );
+    await expect(service.delete('missing-entry', context)).rejects.toThrow(NotFoundException);
   });
 
   it('deletes an entry and rebuilds the matcher', async () => {
@@ -320,10 +299,7 @@ describe('BlocklistWriteService', () => {
 
     expect(mockRepository.deactivate).toHaveBeenCalled();
     expect(mockMatcherService.rebuildMatcher).toHaveBeenCalled();
-    expect(mockRepository.findForWrite).toHaveBeenCalledWith(
-      context.tenantSchema,
-      'entry-1',
-    );
+    expect(mockRepository.findForWrite).toHaveBeenCalledWith(context.tenantSchema, 'entry-1');
   });
 
   it('delegates pattern testing to the matcher service', () => {
@@ -338,7 +314,7 @@ describe('BlocklistWriteService', () => {
         testContent: 'hello',
         pattern: 'badword',
         patternType: BlocklistPatternType.KEYWORD,
-      }),
+      })
     ).toEqual({
       matched: false,
       positions: [],
@@ -356,12 +332,7 @@ describe('BlocklistWriteService', () => {
     });
 
     await expect(
-      service.disableInScope(
-        'tenant_test',
-        'entry-1',
-        { scopeType: 'tenant' },
-        'user-1',
-      ),
+      service.disableInScope('tenant_test', 'entry-1', { scopeType: 'tenant' }, 'user-1')
     ).rejects.toThrow(BadRequestException);
   });
 
@@ -382,8 +353,8 @@ describe('BlocklistWriteService', () => {
           scopeType: 'subsidiary',
           scopeId: 'sub-1',
         },
-        'user-1',
-      ),
+        'user-1'
+      )
     ).rejects.toThrow(BadRequestException);
   });
 
@@ -404,8 +375,8 @@ describe('BlocklistWriteService', () => {
           scopeType: 'subsidiary',
           scopeId: 'sub-1',
         },
-        'user-1',
-      ),
+        'user-1'
+      )
     ).resolves.toEqual({
       id: 'entry-1',
       disabled: true,
@@ -414,7 +385,7 @@ describe('BlocklistWriteService', () => {
       service.enableInScope('tenant_test', 'entry-1', {
         scopeType: 'subsidiary',
         scopeId: 'sub-1',
-      }),
+      })
     ).resolves.toEqual({
       id: 'entry-1',
       enabled: true,

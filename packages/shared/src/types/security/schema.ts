@@ -1,6 +1,13 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
-import { BlocklistAction, BlocklistPatternType, IpRuleScope, IpRuleSource,IpRuleType, OwnerType, SeverityLevel } from '../enums';
+import {
+  BlocklistAction,
+  BlocklistPatternType,
+  IpRuleScope,
+  IpRuleSource,
+  IpRuleType,
+  OwnerType,
+  SeverityLevel,
+} from '../enums';
 
 // --- Blocklist ---
 export interface BlocklistEntry {
@@ -24,7 +31,7 @@ export interface BlocklistEntry {
   updated_at: string;
   created_by?: { id: string; username: string };
   // Visual helper
-  is_inherited?: boolean; 
+  is_inherited?: boolean;
   source_name?: string;
 }
 

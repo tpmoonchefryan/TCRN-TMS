@@ -1,9 +1,9 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable } from '@nestjs/common';
+
 import { prisma } from '@tcrn/database';
 
-import { BlocklistEntryFields,OwnerType } from './config.types';
+import { BlocklistEntryFields, OwnerType } from './config.types';
 
 export interface BlocklistMatch {
   entryId: string;
@@ -40,7 +40,7 @@ export class BlocklistService {
   ): Promise<BlocklistTestResult> {
     // Get effective blocklist entries
     const entries = await this.getEffectiveEntries(tenantSchema, scopeType, scopeId);
-    
+
     const matches: BlocklistMatch[] = [];
     let filteredText = text;
     let isBlocked = false;
@@ -48,7 +48,7 @@ export class BlocklistService {
     for (const entry of entries) {
       const regex = this.patternToRegex(entry.pattern, entry.patternType);
       let match: RegExpExecArray | null;
-      
+
       while ((match = regex.exec(text)) !== null) {
         matches.push({
           entryId: entry.id,
@@ -80,13 +80,16 @@ export class BlocklistService {
 
     // Update match count
     if (matches.length > 0) {
-      const entryIds = [...new Set(matches.map(m => m.entryId))];
+      const entryIds = [...new Set(matches.map((m) => m.entryId))];
       for (const entryId of entryIds) {
-        await prisma.$executeRawUnsafe(`
+        await prisma.$executeRawUnsafe(
+          `
           UPDATE "${tenantSchema}".blocklist_entry
           SET match_count = match_count + 1, last_matched_at = now()
           WHERE id = $1
-        `, entryId);
+        `,
+          entryId
+        );
       }
     }
 
@@ -105,22 +108,30 @@ export class BlocklistService {
     tenantSchema: string,
     scopeType: OwnerType,
     scopeId: string | null
-  ): Promise<Array<BlocklistEntryFields & { id: string; ownerType: OwnerType; ownerName: string | null }>> {
+  ): Promise<
+    Array<BlocklistEntryFields & { id: string; ownerType: OwnerType; ownerName: string | null }>
+  > {
     // Build scope chain
     const scopeConditions: string[] = [`(owner_type = 'tenant' AND owner_id IS NULL)`];
-    
+
     if (scopeType === 'subsidiary' && scopeId) {
-      const subsidiaries = await prisma.$queryRawUnsafe<Array<{ path: string }>>(`
+      const subsidiaries = await prisma.$queryRawUnsafe<Array<{ path: string }>>(
+        `
         SELECT path FROM "${tenantSchema}".subsidiary WHERE id = $1
-      `, scopeId);
-      
+      `,
+        scopeId
+      );
+
       if (subsidiaries.length > 0) {
-        const ancestors = await prisma.$queryRawUnsafe<Array<{ id: string }>>(`
+        const ancestors = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
+          `
           SELECT id FROM "${tenantSchema}".subsidiary 
           WHERE $1 LIKE path || '%'
           ORDER BY length(path)
-        `, subsidiaries[0].path);
-        
+        `,
+          subsidiaries[0].path
+        );
+
         for (const anc of ancestors) {
           scopeConditions.push(`(owner_type = 'subsidiary' AND owner_id = '${anc.id}')`);
         }
@@ -128,17 +139,25 @@ export class BlocklistService {
     }
 
     if (scopeType === 'talent' && scopeId) {
-      const talents = await prisma.$queryRawUnsafe<Array<{ subsidiaryId: string | null; path: string }>>(`
+      const talents = await prisma.$queryRawUnsafe<
+        Array<{ subsidiaryId: string | null; path: string }>
+      >(
+        `
         SELECT subsidiary_id as "subsidiaryId", path FROM "${tenantSchema}".talent WHERE id = $1
-      `, scopeId);
-      
+      `,
+        scopeId
+      );
+
       if (talents.length > 0 && talents[0].subsidiaryId) {
-        const subsidiaries = await prisma.$queryRawUnsafe<Array<{ id: string }>>(`
+        const subsidiaries = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
+          `
           SELECT id FROM "${tenantSchema}".subsidiary 
           WHERE $1 LIKE path || '%'
           ORDER BY length(path)
-        `, talents[0].path);
-        
+        `,
+          talents[0].path
+        );
+
         for (const sub of subsidiaries) {
           scopeConditions.push(`(owner_type = 'subsidiary' AND owner_id = '${sub.id}')`);
         }
@@ -146,7 +165,9 @@ export class BlocklistService {
       scopeConditions.push(`(owner_type = 'talent' AND owner_id = '${scopeId}')`);
     }
 
-    const entries = await prisma.$queryRawUnsafe<Array<BlocklistEntryFields & { id: string; ownerType: OwnerType; ownerName: string | null }>>(`
+    const entries = await prisma.$queryRawUnsafe<
+      Array<BlocklistEntryFields & { id: string; ownerType: OwnerType; ownerName: string | null }>
+    >(`
       SELECT 
         id, owner_type as "ownerType", NULL as "ownerName",
         pattern, pattern_type as "patternType", action, replacement,
@@ -166,7 +187,7 @@ export class BlocklistService {
     switch (patternType) {
       case 'regex':
         return new RegExp(pattern, 'gi');
-      
+
       case 'wildcard':
         // Convert wildcard to regex: * -> .*, ? -> .
         const regexPattern = pattern
@@ -174,7 +195,7 @@ export class BlocklistService {
           .replace(/\*/g, '.*')
           .replace(/\?/g, '.');
         return new RegExp(regexPattern, 'gi');
-      
+
       case 'keyword':
       default:
         // Escape special regex characters for literal matching

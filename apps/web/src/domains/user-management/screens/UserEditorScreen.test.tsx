@@ -1,8 +1,9 @@
-import type { SupportedUiLocale } from '@tcrn/shared';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { localizedFixture } from '@/domains/config-dictionary-settings/testing/localized-fixtures';
 
+import type { SupportedUiLocale } from '@tcrn/shared';
+
+import { localizedFixture } from '@/domains/config-dictionary-settings/testing/localized-fixtures';
 import { UserEditorScreen } from '@/domains/user-management/screens/UserEditorScreen';
 
 const mockRequest = vi.fn();
@@ -118,7 +119,10 @@ describe('UserEditorScreen', () => {
 
     expect(screen.getByLabelText('Username')).toHaveAttribute('autocomplete', 'username');
     expect(screen.getByLabelText('Email')).toHaveAttribute('autocomplete', 'email');
-    expect(screen.getByLabelText('Initial password')).toHaveAttribute('autocomplete', 'new-password');
+    expect(screen.getByLabelText('Initial password')).toHaveAttribute(
+      'autocomplete',
+      'new-password'
+    );
 
     fireEvent.change(screen.getByLabelText('Username'), {
       target: { value: 'bob' },
@@ -149,7 +153,7 @@ describe('UserEditorScreen', () => {
             preferredLanguage: 'en',
             forceReset: true,
           }),
-        }),
+        })
       );
     });
 
@@ -270,7 +274,9 @@ describe('UserEditorScreen', () => {
     render(<UserEditorScreen tenantId="tenant-1" systemUserId="user-1" mode="edit" />);
 
     expect(await screen.findByRole('heading', { name: 'Alice' })).toBeInTheDocument();
-    expect(screen.queryByRole('option', { name: 'Platform Administrator' })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('option', { name: 'Platform Administrator' })
+    ).not.toBeInTheDocument();
     expect(screen.getByRole('option', { name: 'Administrator' })).toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText('Role'), {
@@ -290,7 +296,7 @@ describe('UserEditorScreen', () => {
             inherit: false,
             expiresAt: null,
           }),
-        }),
+        })
       );
     });
 
@@ -304,7 +310,7 @@ describe('UserEditorScreen', () => {
         '/api/v1/users/user-1/roles/assignment-1',
         expect.objectContaining({
           method: 'DELETE',
-        }),
+        })
       );
     });
 
@@ -420,12 +426,7 @@ describe('UserEditorScreen', () => {
     });
 
     render(
-      <UserEditorScreen
-        tenantId="tenant-ac"
-        systemUserId="user-1"
-        mode="edit"
-        workspaceKind="ac"
-      />,
+      <UserEditorScreen tenantId="tenant-ac" systemUserId="user-1" mode="edit" workspaceKind="ac" />
     );
 
     expect(await screen.findByRole('heading', { name: 'Alice' })).toBeInTheDocument();
@@ -449,12 +450,14 @@ describe('UserEditorScreen', () => {
             inherit: false,
             expiresAt: null,
           }),
-        }),
+        })
       );
     });
 
     expect(await screen.findByText('Platform Administrator was assigned.')).toBeInTheDocument();
-    expect(screen.queryByRole('option', { name: 'Platform Administrator' })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('option', { name: 'Platform Administrator' })
+    ).not.toBeInTheDocument();
     expect(screen.getByRole('option', { name: 'No compatible roles' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Assign role' })).toBeDisabled();
   });

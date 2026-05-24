@@ -1,14 +1,6 @@
 'use client';
 
 import {
-  type MfrFilterCriteria,
-  type PiiPlatformReportCreateResponse,
-  type ReportCatalogItem,
-  type ReportFilterField,
-  type ReportFormat,
-  type ReportJobStatus,
-  } from '@tcrn/shared';
-import {
   Download,
   ExternalLink,
   Eye,
@@ -20,6 +12,15 @@ import {
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { type ReactNode, startTransition, useEffect, useState } from 'react';
+
+import {
+  type MfrFilterCriteria,
+  type PiiPlatformReportCreateResponse,
+  type ReportCatalogItem,
+  type ReportFilterField,
+  type ReportFormat,
+  type ReportJobStatus,
+} from '@tcrn/shared';
 
 import {
   cancelMfrJob,
@@ -192,7 +193,9 @@ function toggleSelectedCode(value: unknown, code: string) {
 }
 
 function removeSelectedCode(value: unknown, code: string) {
-  return readSelectedCodes(value).filter((item) => item !== code).join(', ');
+  return readSelectedCodes(value)
+    .filter((item) => item !== code)
+    .join(', ');
 }
 
 function readBooleanFilter(value: unknown) {
@@ -205,7 +208,7 @@ function readStringFilter(value: unknown) {
 
 function buildDraftFromFilters(
   filters: Record<string, unknown>,
-  format: ReportFormat = 'xlsx',
+  format: ReportFormat = 'xlsx'
 ): ReportFilterDraft {
   return {
     platformCodes: joinCodes(filters.platformCodes),
@@ -252,7 +255,7 @@ function buildMfrFilters(draft: ReportFilterDraft): MfrFilterCriteria | undefine
 function updateDraftField(
   draft: ReportFilterDraft,
   key: string,
-  value: string | boolean,
+  value: string | boolean
 ): ReportFilterDraft {
   if (key === 'platformCodes') {
     return { ...draft, platformCodes: String(value) };
@@ -306,14 +309,14 @@ function parseReportsView(value: string | null): ReportsView {
 }
 
 function parseJobStatusFilter(value: string | null): JobStatusFilter {
-  return value === 'pending'
-    || value === 'running'
-    || value === 'retrying'
-    || value === 'success'
-    || value === 'consumed'
-    || value === 'failed'
-    || value === 'expired'
-    || value === 'cancelled'
+  return value === 'pending' ||
+    value === 'running' ||
+    value === 'retrying' ||
+    value === 'success' ||
+    value === 'consumed' ||
+    value === 'failed' ||
+    value === 'expired' ||
+    value === 'cancelled'
     ? value
     : 'all';
 }
@@ -395,7 +398,9 @@ function MetricChip({
 }>) {
   return (
     <div className="min-w-0 rounded-lg border border-slate-200 bg-white/80 px-3 py-2">
-      <p className="truncate text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">{label}</p>
+      <p className="truncate text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+        {label}
+      </p>
       <p className="mt-1 truncate text-sm font-semibold text-slate-950">{value}</p>
       {hint ? <p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-500">{hint}</p> : null}
     </div>
@@ -446,7 +451,9 @@ function StatusBadge({
           : 'bg-amber-100 text-amber-800';
 
   return (
-    <span className={`rounded-full px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.14em] ${toneClasses}`}>
+    <span
+      className={`rounded-full px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.14em] ${toneClasses}`}
+    >
       {label}
     </span>
   );
@@ -489,7 +496,10 @@ function NoticeBanner({
       : 'border-rose-200 bg-rose-50 text-rose-800';
 
   return (
-    <div role="status" className={`rounded-2xl border px-4 py-3 text-sm font-medium ${toneClasses}`}>
+    <div
+      role="status"
+      className={`rounded-2xl border px-4 py-3 text-sm font-medium ${toneClasses}`}
+    >
       {message}
     </div>
   );
@@ -661,7 +671,7 @@ function filterOptionsBySearch(options: ReportFilterOption[], search: string) {
   }
 
   return options.filter((option) =>
-    `${option.label} ${option.value}`.toLowerCase().includes(normalizedSearch),
+    `${option.label} ${option.value}`.toLowerCase().includes(normalizedSearch)
   );
 }
 
@@ -752,14 +762,17 @@ function SchemaFilterField({
         label={label}
         value={String(getFilterFieldValue(draft, field.targetField))}
         options={[
-          { value: '', label: pickLocaleText(locale, {
-            en: 'Any',
-            zh_HANS: '不限',
-            zh_HANT: '不限',
-            ja: '指定なし',
-            ko: '전체',
-            fr: 'Tous',
-          }) },
+          {
+            value: '',
+            label: pickLocaleText(locale, {
+              en: 'Any',
+              zh_HANS: '不限',
+              zh_HANT: '不限',
+              ja: '指定なし',
+              ko: '전체',
+              fr: 'Tous',
+            }),
+          },
           ...field.options.map((option) => ({
             value: option.value,
             label: pickLocaleText(locale, option.label),
@@ -825,9 +838,7 @@ function SchemaFilterField({
             {[description, source].filter(Boolean).join(' ')}
           </p>
         ) : null}
-        {optionsError ? (
-          <p className="text-xs font-medium text-rose-700">{optionsError}</p>
-        ) : null}
+        {optionsError ? <p className="text-xs font-medium text-rose-700">{optionsError}</p> : null}
         {optionsLoading && visibleOptions.length === 0 ? (
           <p className="text-xs text-slate-500">
             {pickLocaleText(locale, {
@@ -859,12 +870,24 @@ function SchemaFilterField({
         ) : (
           <p className="text-xs text-slate-500">
             {pickLocaleText(locale, {
-              en: visibleOptions.length > 0 ? 'No options selected.' : 'No configured options are available.',
+              en:
+                visibleOptions.length > 0
+                  ? 'No options selected.'
+                  : 'No configured options are available.',
               zh_HANS: visibleOptions.length > 0 ? '未选择选项。' : '当前没有已配置选项。',
               zh_HANT: visibleOptions.length > 0 ? '未選擇選項。' : '目前沒有已設定選項。',
-              ja: visibleOptions.length > 0 ? '選択されていません。' : '利用できる設定済み選択肢がありません。',
-              ko: visibleOptions.length > 0 ? '선택된 옵션이 없습니다.' : '사용 가능한 구성 옵션이 없습니다.',
-              fr: visibleOptions.length > 0 ? 'Aucune option sélectionnée.' : 'Aucune option configuree disponible.',
+              ja:
+                visibleOptions.length > 0
+                  ? '選択されていません。'
+                  : '利用できる設定済み選択肢がありません。',
+              ko:
+                visibleOptions.length > 0
+                  ? '선택된 옵션이 없습니다.'
+                  : '사용 가능한 구성 옵션이 없습니다.',
+              fr:
+                visibleOptions.length > 0
+                  ? 'Aucune option sélectionnée.'
+                  : 'Aucune option configuree disponible.',
             })}
           </p>
         )}
@@ -904,7 +927,9 @@ function SchemaFilterField({
                   fr: 'Fallback avance par codes bruts.',
                 })
               : null,
-          ].filter(Boolean).join(' ')}
+          ]
+            .filter(Boolean)
+            .join(' ')}
         </p>
       ) : null}
     </div>
@@ -974,7 +999,9 @@ export function ReportsManagementScreen({
 
   useEffect(() => {
     setActiveView((current) => (current === urlActiveView ? current : urlActiveView));
-    setJobStatusFilter((current) => (current === urlJobStatusFilter ? current : urlJobStatusFilter));
+    setJobStatusFilter((current) =>
+      current === urlJobStatusFilter ? current : urlJobStatusFilter
+    );
     setPage((current) => (current === urlPage ? current : urlPage));
     setPageSize((current) => (current === urlPageSize ? current : urlPageSize));
   }, [urlActiveView, urlJobStatusFilter, urlPage, urlPageSize]);
@@ -998,9 +1025,11 @@ export function ReportsManagementScreen({
             loading: false,
             error: null,
           });
-          setSelectedReportId((current) => response.items.some((item) => item.id === current)
-            ? current
-            : response.items[0]?.id ?? 'mfr');
+          setSelectedReportId((current) =>
+            response.items.some((item) => item.id === current)
+              ? current
+              : (response.items[0]?.id ?? 'mfr')
+          );
         }
       } catch (reason) {
         if (!cancelled) {
@@ -1022,9 +1051,10 @@ export function ReportsManagementScreen({
 
   useEffect(() => {
     const selectedReport = catalogPanel.data.find((report) => report.id === selectedReportId);
-    const fields = selectedReport?.filterSchema.fields.filter((field) =>
-      field.type === 'config-multi-select' || field.type === 'dictionary-multi-select',
-    ) ?? [];
+    const fields =
+      selectedReport?.filterSchema.fields.filter(
+        (field) => field.type === 'config-multi-select' || field.type === 'dictionary-multi-select'
+      ) ?? [];
     let cancelled = false;
 
     async function loadFilterOptions() {
@@ -1048,13 +1078,16 @@ export function ReportsManagementScreen({
       }));
 
       try {
-        const entries = await Promise.all(fields.map(async (field) => {
-          const response = field.type === 'config-multi-select'
-            ? await listReportConfigFilterOptions(request, field.source, talentId)
-            : await listReportDictionaryFilterOptions(request, field.source);
+        const entries = await Promise.all(
+          fields.map(async (field) => {
+            const response =
+              field.type === 'config-multi-select'
+                ? await listReportConfigFilterOptions(request, field.source, talentId)
+                : await listReportDictionaryFilterOptions(request, field.source);
 
-          return [field.id, response.options] as const;
-        }));
+            return [field.id, response.options] as const;
+          })
+        );
 
         if (!cancelled) {
           setFilterOptionsPanel({
@@ -1079,7 +1112,14 @@ export function ReportsManagementScreen({
     return () => {
       cancelled = true;
     };
-  }, [catalogPanel.data, copy.state.loadCatalogError, isDraftDrawerOpen, request, selectedReportId, talentId]);
+  }, [
+    catalogPanel.data,
+    copy.state.loadCatalogError,
+    isDraftDrawerOpen,
+    request,
+    selectedReportId,
+    talentId,
+  ]);
 
   function applyReportsQueryState(
     nextState: Partial<{
@@ -1087,7 +1127,7 @@ export function ReportsManagementScreen({
       jobStatusFilter: JobStatusFilter;
       page: number;
       pageSize: PageSizeOption;
-    }>,
+    }>
   ) {
     const nextActiveView = nextState.activeView ?? activeView;
     const nextJobStatusFilter = nextState.jobStatusFilter ?? jobStatusFilter;
@@ -1262,7 +1302,7 @@ export function ReportsManagementScreen({
           message: `${copy.state.piiPortalHandoffPrefix} ${formatReportsNumber(
             locale,
             result.customerCount,
-            copy.ledger.pendingRows,
+            copy.ledger.pendingRows
           )} ${copy.state.piiPortalHandoffSuffix}`,
         });
         setIsDraftDrawerOpen(false);
@@ -1275,7 +1315,7 @@ export function ReportsManagementScreen({
         message: `${copy.state.createLocalJobPrefix} ${result.jobId} ${copy.state.createLocalJobSuffix} ${formatReportsNumber(
           locale,
           result.estimatedRows,
-          copy.ledger.pendingRows,
+          copy.ledger.pendingRows
         )} ${copy.state.createLocalJobRowsSuffix}`,
       });
       setIsDraftDrawerOpen(false);
@@ -1343,10 +1383,12 @@ export function ReportsManagementScreen({
       return;
     }
 
-    setDraft(buildDraftFromFilters(
-      detailPanel.data.parameterSnapshot.filters,
-      detailPanel.data.parameterSnapshot.format,
-    ));
+    setDraft(
+      buildDraftFromFilters(
+        detailPanel.data.parameterSnapshot.filters,
+        detailPanel.data.parameterSnapshot.format
+      )
+    );
     setPreviewPanel({
       data: null,
       loading: false,
@@ -1409,11 +1451,11 @@ export function ReportsManagementScreen({
     }
   }
 
-  const activeJobs = jobsPanel.data.filter((job) =>
-    job.status === 'pending' || job.status === 'running' || job.status === 'retrying',
+  const activeJobs = jobsPanel.data.filter(
+    (job) => job.status === 'pending' || job.status === 'running' || job.status === 'retrying'
   ).length;
-  const downloadableJobs = jobsPanel.data.filter((job) =>
-    job.status === 'success' || job.status === 'consumed',
+  const downloadableJobs = jobsPanel.data.filter(
+    (job) => job.status === 'success' || job.status === 'consumed'
   ).length;
   const jobsPagination = buildPaginationMeta(jobsPanel.total, jobsPanel.page, jobsPanel.pageSize);
   const jobsRange = getPaginationRange(jobsPagination, jobsPanel.data.length);
@@ -1468,7 +1510,7 @@ export function ReportsManagementScreen({
     fr: 'Suivant',
   });
   const reportsViewCopy =
-    (locale === 'zh_HANS' || locale === 'zh_HANT')
+    locale === 'zh_HANS' || locale === 'zh_HANT'
       ? locale === 'zh_HANT'
         ? {
             directory: '報表目錄',
@@ -1517,53 +1559,68 @@ export function ReportsManagementScreen({
               historyDescription: "Consultez l'historique d'exécution des rapports.",
             }
           : locale === 'ja'
-        ? {
-            directory: 'レポートディレクトリ',
-            history: '実行履歴',
-            directoryTitle: 'レポートセンター',
-            directoryDescription: '利用できるレポートをここから確認して実行します。',
-            cardBadge: '利用可能',
-            cardAction: 'レポートを起票',
-            cardHistory: '実行履歴を見る',
-            cardEmpty: '今後のレポートはこのディレクトリに追加されます。',
-            historyDescription: 'レポートの実行履歴を確認します。',
-          }
-        : {
-            directory: 'Report Directory',
-            history: 'Run History',
-            directoryTitle: 'Report Center',
-            directoryDescription: 'Browse and run available reports here.',
-            cardBadge: 'Available now',
-            cardAction: 'Draft report',
-            cardHistory: 'Open run history',
-            cardEmpty: 'Additional report types will appear here when they are enabled.',
-            historyDescription: 'Review report execution history.',
-          };
-  const selectedReport = catalogPanel.data.find((report) => report.id === selectedReportId)
-    ?? catalogPanel.data[0]
-    ?? null;
-  const primaryFilterFields = selectedReport?.filterSchema.fields.filter((field) => !field.advanced) ?? [];
-  const advancedFilterFields = selectedReport?.filterSchema.fields.filter((field) => field.advanced) ?? [];
-  const selectedReportName = selectedReport ? pickLocaleText(locale, selectedReport.name) : copy.summary.reportName;
+            ? {
+                directory: 'レポートディレクトリ',
+                history: '実行履歴',
+                directoryTitle: 'レポートセンター',
+                directoryDescription: '利用できるレポートをここから確認して実行します。',
+                cardBadge: '利用可能',
+                cardAction: 'レポートを起票',
+                cardHistory: '実行履歴を見る',
+                cardEmpty: '今後のレポートはこのディレクトリに追加されます。',
+                historyDescription: 'レポートの実行履歴を確認します。',
+              }
+            : {
+                directory: 'Report Directory',
+                history: 'Run History',
+                directoryTitle: 'Report Center',
+                directoryDescription: 'Browse and run available reports here.',
+                cardBadge: 'Available now',
+                cardAction: 'Draft report',
+                cardHistory: 'Open run history',
+                cardEmpty: 'Additional report types will appear here when they are enabled.',
+                historyDescription: 'Review report execution history.',
+              };
+  const selectedReport =
+    catalogPanel.data.find((report) => report.id === selectedReportId) ??
+    catalogPanel.data[0] ??
+    null;
+  const primaryFilterFields =
+    selectedReport?.filterSchema.fields.filter((field) => !field.advanced) ?? [];
+  const advancedFilterFields =
+    selectedReport?.filterSchema.fields.filter((field) => field.advanced) ?? [];
+  const selectedReportName = selectedReport
+    ? pickLocaleText(locale, selectedReport.name)
+    : copy.summary.reportName;
   const selectedReportDescription = selectedReport
     ? pickLocaleText(locale, selectedReport.description)
     : copy.summary.reportDescription;
   const selectedReportIsAvailable = selectedReport?.availability.status === 'available';
-  const reportDirectoryCountLabel = jobsPanel.loading ? copy.summary.jobsLoading : String(jobsPanel.total);
-  const reportCatalogCount = catalogPanel.loading ? copy.summary.jobsLoading : String(catalogPanel.data.length);
+  const reportDirectoryCountLabel = jobsPanel.loading
+    ? copy.summary.jobsLoading
+    : String(jobsPanel.total);
+  const reportCatalogCount = catalogPanel.loading
+    ? copy.summary.jobsLoading
+    : String(catalogPanel.data.length);
   const optionPickerField = optionPicker
-    ? [...primaryFilterFields, ...advancedFilterFields].find((field) => field.id === optionPicker.fieldId)
+    ? [...primaryFilterFields, ...advancedFilterFields].find(
+        (field) => field.id === optionPicker.fieldId
+      )
     : null;
-  const optionPickerFieldLabel = optionPickerField ? pickLocaleText(locale, optionPickerField.label) : '';
+  const optionPickerFieldLabel = optionPickerField
+    ? pickLocaleText(locale, optionPickerField.label)
+    : '';
   const optionPickerFieldDescription = optionPickerField?.description
     ? pickLocaleText(locale, optionPickerField.description)
     : null;
   const optionPickerOptions =
-    optionPickerField?.type === 'config-multi-select' || optionPickerField?.type === 'dictionary-multi-select'
-      ? filterOptionsPanel.data[optionPickerField.id] ?? []
+    optionPickerField?.type === 'config-multi-select' ||
+    optionPickerField?.type === 'dictionary-multi-select'
+      ? (filterOptionsPanel.data[optionPickerField.id] ?? [])
       : [];
   const optionPickerTargetField =
-    optionPickerField?.type === 'config-multi-select' || optionPickerField?.type === 'dictionary-multi-select'
+    optionPickerField?.type === 'config-multi-select' ||
+    optionPickerField?.type === 'dictionary-multi-select'
       ? optionPickerField.targetField
       : null;
   const optionPickerSelectedCodes = optionPickerTargetField
@@ -1575,14 +1632,19 @@ export function ReportsManagementScreen({
   const optionPickerPagination = buildPaginationMeta(
     optionPickerFilteredOptions.length,
     optionPicker?.page ?? 1,
-    OPTION_PICKER_PAGE_SIZE,
+    OPTION_PICKER_PAGE_SIZE
   );
   const optionPickerVisibleOptions = optionPickerFilteredOptions.slice(
     (optionPickerPagination.page - 1) * optionPickerPagination.pageSize,
-    optionPickerPagination.page * optionPickerPagination.pageSize,
+    optionPickerPagination.page * optionPickerPagination.pageSize
   );
-  const optionPickerRange = getPaginationRange(optionPickerPagination, optionPickerVisibleOptions.length);
-  const optionPickerSource = optionPickerField ? describeFilterFieldSource(optionPickerField) : null;
+  const optionPickerRange = getPaginationRange(
+    optionPickerPagination,
+    optionPickerVisibleOptions.length
+  );
+  const optionPickerSource = optionPickerField
+    ? describeFilterFieldSource(optionPickerField)
+    : null;
   const optionPickerPageLabel = pickLocaleText(locale, {
     en: `Page ${optionPickerPagination.page} of ${optionPickerPagination.totalPages}`,
     zh_HANS: `第 ${optionPickerPagination.page} / ${optionPickerPagination.totalPages} 页`,
@@ -1637,7 +1699,9 @@ export function ReportsManagementScreen({
             </div>
             <div className="space-y-3">
               <h1 className="text-3xl font-semibold text-slate-950">{copy.header.title}</h1>
-              <p className="max-w-3xl text-sm leading-6 text-slate-600">{copy.header.description}</p>
+              <p className="max-w-3xl text-sm leading-6 text-slate-600">
+                {copy.header.description}
+              </p>
             </div>
           </div>
 
@@ -1695,26 +1759,44 @@ export function ReportsManagementScreen({
         <GlassSurface className="p-6">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="space-y-2">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">{copy.portal.badge}</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                {copy.portal.badge}
+              </p>
               <h2 className="text-lg font-semibold text-slate-950">{copy.portal.title}</h2>
-              <p className="max-w-2xl text-sm leading-6 text-slate-600">{copy.portal.description}</p>
+              <p className="max-w-2xl text-sm leading-6 text-slate-600">
+                {copy.portal.description}
+              </p>
               <p className="text-sm text-slate-600">
-                {copy.portal.expiresPrefix} {formatReportsDateTime(locale, portalHandoff.expiresAt, copy.common.never)};{' '}
-                {copy.portal.estimatedPrefix} {formatReportsNumber(locale, portalHandoff.estimatedRows, copy.ledger.pendingRows)}{' '}
+                {copy.portal.expiresPrefix}{' '}
+                {formatReportsDateTime(locale, portalHandoff.expiresAt, copy.common.never)};{' '}
+                {copy.portal.estimatedPrefix}{' '}
+                {formatReportsNumber(locale, portalHandoff.estimatedRows, copy.ledger.pendingRows)}{' '}
                 {copy.portal.estimatedSuffix}
               </p>
               <div className="grid gap-3 pt-2 md:grid-cols-3">
                 <div className="rounded-2xl border border-slate-200 bg-white/75 px-4 py-3">
-                  <p className="text-sm font-semibold text-slate-900">{copy.portal.draftStepLabel}</p>
-                  <p className="mt-1 text-xs leading-5 text-slate-500">{copy.portal.draftStepHint}</p>
+                  <p className="text-sm font-semibold text-slate-900">
+                    {copy.portal.draftStepLabel}
+                  </p>
+                  <p className="mt-1 text-xs leading-5 text-slate-500">
+                    {copy.portal.draftStepHint}
+                  </p>
                 </div>
                 <div className="rounded-2xl border border-indigo-200 bg-indigo-50/75 px-4 py-3">
-                  <p className="text-sm font-semibold text-indigo-950">{copy.portal.platformStepLabel}</p>
-                  <p className="mt-1 text-xs leading-5 text-indigo-800">{copy.portal.platformStepHint}</p>
+                  <p className="text-sm font-semibold text-indigo-950">
+                    {copy.portal.platformStepLabel}
+                  </p>
+                  <p className="mt-1 text-xs leading-5 text-indigo-800">
+                    {copy.portal.platformStepHint}
+                  </p>
                 </div>
                 <div className="rounded-2xl border border-slate-200 bg-white/75 px-4 py-3">
-                  <p className="text-sm font-semibold text-slate-900">{copy.portal.historyStepLabel}</p>
-                  <p className="mt-1 text-xs leading-5 text-slate-500">{copy.portal.historyStepHint}</p>
+                  <p className="text-sm font-semibold text-slate-900">
+                    {copy.portal.historyStepLabel}
+                  </p>
+                  <p className="mt-1 text-xs leading-5 text-slate-500">
+                    {copy.portal.historyStepHint}
+                  </p>
                 </div>
               </div>
             </div>
@@ -1746,17 +1828,26 @@ export function ReportsManagementScreen({
           />
 
           <p className="text-sm text-slate-500">
-            {activeView === 'directory' ? reportsViewCopy.directoryDescription : reportsViewCopy.historyDescription}
+            {activeView === 'directory'
+              ? reportsViewCopy.directoryDescription
+              : reportsViewCopy.historyDescription}
           </p>
         </div>
       </GlassSurface>
 
       {activeView === 'directory' ? (
         <GlassSurface className="p-6">
-          <FormSection title={reportsViewCopy.directoryTitle} description={reportsViewCopy.directoryDescription}>
+          <FormSection
+            title={reportsViewCopy.directoryTitle}
+            description={reportsViewCopy.directoryDescription}
+          >
             <div className="space-y-5">
               {catalogPanel.error ? (
-                <StateView status="error" title={copy.drawer.unavailableReport} description={catalogPanel.error} />
+                <StateView
+                  status="error"
+                  title={copy.drawer.unavailableReport}
+                  description={catalogPanel.error}
+                />
               ) : null}
 
               {catalogPanel.loading && catalogPanel.data.length === 0 ? (
@@ -1771,11 +1862,17 @@ export function ReportsManagementScreen({
                     <div className="flex flex-wrap items-start justify-between gap-4">
                       <div className="space-y-3">
                         <p className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700">
-                          {selectedReportIsAvailable ? reportsViewCopy.cardBadge : copy.drawer.unavailableReport}
+                          {selectedReportIsAvailable
+                            ? reportsViewCopy.cardBadge
+                            : copy.drawer.unavailableReport}
                         </p>
                         <div className="space-y-2">
-                          <h2 className="text-xl font-semibold text-slate-950">{selectedReportName}</h2>
-                          <p className="max-w-2xl text-sm leading-6 text-slate-600">{selectedReportDescription}</p>
+                          <h2 className="text-xl font-semibold text-slate-950">
+                            {selectedReportName}
+                          </h2>
+                          <p className="max-w-2xl text-sm leading-6 text-slate-600">
+                            {selectedReportDescription}
+                          </p>
                         </div>
                       </div>
 
@@ -1787,7 +1884,9 @@ export function ReportsManagementScreen({
                           className="inline-flex items-center gap-2 rounded-full border border-slate-900 bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:border-slate-300 disabled:bg-slate-200 disabled:text-slate-500"
                         >
                           <FileSpreadsheet className="h-4 w-4" />
-                          {selectedReportIsAvailable ? reportsViewCopy.cardAction : copy.drawer.unavailableReport}
+                          {selectedReportIsAvailable
+                            ? reportsViewCopy.cardAction
+                            : copy.drawer.unavailableReport}
                         </button>
                         <SecondaryButton
                           onClick={() => applyReportsQueryState({ activeView: 'history' })}
@@ -1834,7 +1933,9 @@ export function ReportsManagementScreen({
                         value={copy.notes.workflowValue}
                         hint={copy.notes.workflowHint}
                       />
-                      <p className="text-sm leading-6 text-slate-500">{reportsViewCopy.cardEmpty}</p>
+                      <p className="text-sm leading-6 text-slate-500">
+                        {reportsViewCopy.cardEmpty}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -1866,9 +1967,14 @@ export function ReportsManagementScreen({
                 />
                 <div className="flex flex-wrap items-center gap-3">
                   <p className="text-sm text-slate-500">
-                    {copy.ledger.showingPrefix} {jobsPanel.data.length} {copy.ledger.showingJobsSuffix} {jobsPanel.total} {copy.ledger.showingTotalSuffix}
+                    {copy.ledger.showingPrefix} {jobsPanel.data.length}{' '}
+                    {copy.ledger.showingJobsSuffix} {jobsPanel.total}{' '}
+                    {copy.ledger.showingTotalSuffix}
                   </p>
-                  <SecondaryButton onClick={() => void handleRefreshJobs()} disabled={jobsPanel.loading}>
+                  <SecondaryButton
+                    onClick={() => void handleRefreshJobs()}
+                    disabled={jobsPanel.loading}
+                  >
                     <RefreshCcw className="h-3.5 w-3.5" />
                     {copy.header.refreshJobs}
                   </SecondaryButton>
@@ -1876,7 +1982,11 @@ export function ReportsManagementScreen({
               </div>
 
               {jobsPanel.error && jobsPanel.data.length === 0 ? (
-                <StateView status="error" title={copy.ledger.unavailableTitle} description={jobsPanel.error} />
+                <StateView
+                  status="error"
+                  title={copy.ledger.unavailableTitle}
+                  description={jobsPanel.error}
+                />
               ) : (
                 <TableShell
                   ariaLabel={copy.ledger.title}
@@ -1895,12 +2005,17 @@ export function ReportsManagementScreen({
                       <tr key={job.id} className="align-top">
                         <td className="px-6 py-4">
                           <div className="space-y-1">
-                            <p className="text-sm font-semibold text-slate-900">{job.fileName || copy.ledger.pendingFileAssignment}</p>
+                            <p className="text-sm font-semibold text-slate-900">
+                              {job.fileName || copy.ledger.pendingFileAssignment}
+                            </p>
                             <p className="text-xs text-slate-500">{job.id}</p>
                           </div>
                         </td>
                         <td className="px-6 py-4">
-                          <StatusBadge status={job.status} label={getReportsJobStatusLabel(locale, job.status)} />
+                          <StatusBadge
+                            status={job.status}
+                            label={getReportsJobStatusLabel(locale, job.status)}
+                          />
                         </td>
                         <td className="px-6 py-4 text-sm text-slate-700">
                           {formatReportsNumber(locale, job.totalRows, copy.ledger.pendingRows)}
@@ -2033,13 +2148,21 @@ export function ReportsManagementScreen({
         {detailPanel.loading ? (
           <StateView status="empty" title={copy.detail.loading} />
         ) : detailPanel.error ? (
-          <StateView status="error" title={copy.detail.unavailableTitle} description={detailPanel.error} />
+          <StateView
+            status="error"
+            title={copy.detail.unavailableTitle}
+            description={detailPanel.error}
+          />
         ) : detailPanel.data ? (
           <div className="space-y-6">
             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
               <SummaryCard
                 label={copy.detail.requestedAt}
-                value={formatReportsDateTime(locale, detailPanel.data.parameterSnapshot.requestedAt, copy.common.never)}
+                value={formatReportsDateTime(
+                  locale,
+                  detailPanel.data.parameterSnapshot.requestedAt,
+                  copy.common.never
+                )}
                 hint={copy.detail.format}
               />
               <SummaryCard
@@ -2054,7 +2177,11 @@ export function ReportsManagementScreen({
               />
               <SummaryCard
                 label={copy.detail.downloadState}
-                value={copy.detail.downloadStates[detailPanel.data.artifacts[0]?.downloadState ?? 'unavailable']}
+                value={
+                  copy.detail.downloadStates[
+                    detailPanel.data.artifacts[0]?.downloadState ?? 'unavailable'
+                  ]
+                }
                 hint={detailPanel.data.artifacts[0]?.fileName || copy.ledger.pendingFileAssignment}
               />
             </div>
@@ -2062,8 +2189,18 @@ export function ReportsManagementScreen({
             <GlassSurface className="p-4">
               <FormSection title={copy.detail.snapshotTitle} description={copy.detail.description}>
                 <div className="space-y-3 text-sm text-slate-700">
-                  <p><span className="font-semibold">{copy.detail.requestedAt}:</span> {formatReportsDateTime(locale, detailPanel.data.parameterSnapshot.requestedAt, copy.common.never)}</p>
-                  <p><span className="font-semibold">{copy.detail.format}:</span> {detailPanel.data.parameterSnapshot.format}</p>
+                  <p>
+                    <span className="font-semibold">{copy.detail.requestedAt}:</span>{' '}
+                    {formatReportsDateTime(
+                      locale,
+                      detailPanel.data.parameterSnapshot.requestedAt,
+                      copy.common.never
+                    )}
+                  </p>
+                  <p>
+                    <span className="font-semibold">{copy.detail.format}:</span>{' '}
+                    {detailPanel.data.parameterSnapshot.format}
+                  </p>
                   <div className="space-y-2">
                     <p className="font-semibold text-slate-900">{copy.detail.filters}</p>
                     {Object.keys(detailPanel.data.parameterSnapshot.filters).length > 0 ? (
@@ -2098,23 +2235,52 @@ export function ReportsManagementScreen({
                 {detailPanel.data.artifacts.length > 0 ? (
                   <div className="space-y-3">
                     {detailPanel.data.artifacts.map((artifact) => (
-                      <div key={`${artifact.kind}-${artifact.fileName || 'artifact'}`} className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">
+                      <div
+                        key={`${artifact.kind}-${artifact.fileName || 'artifact'}`}
+                        className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700"
+                      >
                         <div className="flex flex-wrap items-start justify-between gap-3">
                           <div className="space-y-1">
-                            <p className="font-semibold text-slate-900">{artifact.fileName || copy.ledger.pendingFileAssignment}</p>
-                            <p>{copy.detail.downloadState}: {copy.detail.downloadStates[artifact.downloadState]}</p>
-                            <p>{copy.detail.fileSize}: {formatReportsNumber(locale, artifact.fileSizeBytes, copy.ledger.pendingRows)}</p>
+                            <p className="font-semibold text-slate-900">
+                              {artifact.fileName || copy.ledger.pendingFileAssignment}
+                            </p>
+                            <p>
+                              {copy.detail.downloadState}:{' '}
+                              {copy.detail.downloadStates[artifact.downloadState]}
+                            </p>
+                            <p>
+                              {copy.detail.fileSize}:{' '}
+                              {formatReportsNumber(
+                                locale,
+                                artifact.fileSizeBytes,
+                                copy.ledger.pendingRows
+                              )}
+                            </p>
                           </div>
                           <div className="space-y-1 text-right">
-                            <p>{copy.detail.expiresAt}: {formatReportsDateTime(locale, artifact.expiresAt, copy.common.never)}</p>
-                            <p>{copy.detail.downloadedAt}: {formatReportsDateTime(locale, artifact.downloadedAt, copy.common.never)}</p>
+                            <p>
+                              {copy.detail.expiresAt}:{' '}
+                              {formatReportsDateTime(locale, artifact.expiresAt, copy.common.never)}
+                            </p>
+                            <p>
+                              {copy.detail.downloadedAt}:{' '}
+                              {formatReportsDateTime(
+                                locale,
+                                artifact.downloadedAt,
+                                copy.common.never
+                              )}
+                            </p>
                           </div>
                         </div>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <StateView status="empty" title={copy.detail.artifactsTitle} description={copy.detail.noArtifacts} />
+                  <StateView
+                    status="empty"
+                    title={copy.detail.artifactsTitle}
+                    description={copy.detail.noArtifacts}
+                  />
                 )}
               </FormSection>
             </GlassSurface>
@@ -2128,7 +2294,11 @@ export function ReportsManagementScreen({
             </GlassSurface>
           </div>
         ) : (
-          <StateView status="empty" title={copy.detail.unavailableTitle} description={copy.detail.noArtifacts} />
+          <StateView
+            status="empty"
+            title={copy.detail.unavailableTitle}
+            description={copy.detail.noArtifacts}
+          />
         )}
       </ActionDrawer>
 
@@ -2170,7 +2340,10 @@ export function ReportsManagementScreen({
             >
               {copy.drawer.cancel}
             </button>
-            <SecondaryButton onClick={() => void handlePreview()} disabled={previewPending || createPending}>
+            <SecondaryButton
+              onClick={() => void handlePreview()}
+              disabled={previewPending || createPending}
+            >
               <Search className="h-3.5 w-3.5" />
               {copy.drawer.previewRows}
             </SecondaryButton>
@@ -2205,8 +2378,15 @@ export function ReportsManagementScreen({
             </div>
           </DrawerStep>
 
-          <fieldset disabled={previewPending || createPending} className="space-y-5 disabled:opacity-70">
-            <DrawerStep number="2" title={copy.drawer.codeFiltersTitle} description={copy.drawer.codeFiltersDescription}>
+          <fieldset
+            disabled={previewPending || createPending}
+            className="space-y-5 disabled:opacity-70"
+          >
+            <DrawerStep
+              number="2"
+              title={copy.drawer.codeFiltersTitle}
+              description={copy.drawer.codeFiltersDescription}
+            >
               <div className="grid gap-4 xl:grid-cols-2">
                 {primaryFilterFields.length > 0 ? (
                   primaryFilterFields.map((field) => (
@@ -2226,25 +2406,39 @@ export function ReportsManagementScreen({
                     />
                   ))
                 ) : (
-                  <StateView status="unavailable" title={copy.drawer.unavailableReport} description={copy.drawer.codeFiltersDescription} />
+                  <StateView
+                    status="unavailable"
+                    title={copy.drawer.unavailableReport}
+                    description={copy.drawer.codeFiltersDescription}
+                  />
                 )}
               </div>
             </DrawerStep>
 
-            <DrawerStep number="3" title={copy.drawer.outputTitle} description={copy.drawer.outputDescription}>
+            <DrawerStep
+              number="3"
+              title={copy.drawer.outputTitle}
+              description={copy.drawer.outputDescription}
+            >
               <div className="space-y-5">
                 <SelectField
                   label={copy.drawer.fields.downloadFormat}
                   value={draft.format}
                   options={reportFormatOptions}
-                  onChange={(value) => setDraft((current) => ({ ...current, format: value as ReportFormat }))}
+                  onChange={(value) =>
+                    setDraft((current) => ({ ...current, format: value as ReportFormat }))
+                  }
                 />
 
                 {advancedFilterFields.length > 0 ? (
                   <div className="space-y-4 border-t border-slate-200 pt-4">
                     <div className="space-y-1">
-                      <p className="text-sm font-semibold text-slate-900">{copy.drawer.advancedTitle}</p>
-                      <p className="text-xs leading-5 text-slate-500">{copy.drawer.advancedDescription}</p>
+                      <p className="text-sm font-semibold text-slate-900">
+                        {copy.drawer.advancedTitle}
+                      </p>
+                      <p className="text-xs leading-5 text-slate-500">
+                        {copy.drawer.advancedDescription}
+                      </p>
                     </div>
                     <div className="grid gap-4 xl:grid-cols-2">
                       {advancedFilterFields.map((field) => (
@@ -2273,15 +2467,27 @@ export function ReportsManagementScreen({
 
           <DrawerStep number="4" title={copy.preview.title} description={copy.preview.description}>
             {previewPanel.loading ? (
-              <StateView status="empty" title={copy.drawer.previewRows} description={copy.preview.description} />
+              <StateView
+                status="empty"
+                title={copy.drawer.previewRows}
+                description={copy.preview.description}
+              />
             ) : previewPanel.error ? (
-              <StateView status="error" title={copy.preview.unavailableTitle} description={previewPanel.error} />
+              <StateView
+                status="error"
+                title={copy.preview.unavailableTitle}
+                description={previewPanel.error}
+              />
             ) : previewPanel.data ? (
               <div className="space-y-4">
                 <div className="grid gap-3 sm:grid-cols-3">
                   <MetricChip
                     label={copy.preview.matchedRowsLabel}
-                    value={formatReportsNumber(locale, previewPanel.data.totalCount, copy.ledger.pendingRows)}
+                    value={formatReportsNumber(
+                      locale,
+                      previewPanel.data.totalCount,
+                      copy.ledger.pendingRows
+                    )}
                     hint={copy.preview.matchedRowsHint}
                   />
                   <MetricChip
@@ -2295,8 +2501,14 @@ export function ReportsManagementScreen({
                   />
                   <MetricChip
                     label={copy.preview.dateRangeLabel}
-                    value={previewPanel.data.filterSummary.dateRange || copy.preview.dateRangeUnbounded}
-                    hint={previewPanel.data.filterSummary.includeExpired ? copy.preview.includeExpiredHint : copy.preview.excludeExpiredHint}
+                    value={
+                      previewPanel.data.filterSummary.dateRange || copy.preview.dateRangeUnbounded
+                    }
+                    hint={
+                      previewPanel.data.filterSummary.includeExpired
+                        ? copy.preview.includeExpiredHint
+                        : copy.preview.excludeExpiredHint
+                    }
                   />
                 </div>
 
@@ -2310,12 +2522,20 @@ export function ReportsManagementScreen({
                   emptyDescription={copy.preview.emptyDescription}
                 >
                   {previewPanel.data.preview.map((row, index) => (
-                    <tr key={`${row.nickname || 'row'}-${row.platformName}-${index}`} className="align-top">
-                      <td className="px-6 py-4 text-sm text-slate-700">{row.nickname || copy.preview.unnamedCustomer}</td>
-                      <td className="px-6 py-4 text-sm text-slate-700">{row.platformName}</td>
-                      <td className="px-6 py-4 text-sm text-slate-700">{row.membershipLevelName}</td>
+                    <tr
+                      key={`${row.nickname || 'row'}-${row.platformName}-${index}`}
+                      className="align-top"
+                    >
                       <td className="px-6 py-4 text-sm text-slate-700">
-                        {row.validFrom} {row.validTo ? `→ ${row.validTo}` : `→ ${copy.preview.openEnded}`}
+                        {row.nickname || copy.preview.unnamedCustomer}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-slate-700">{row.platformName}</td>
+                      <td className="px-6 py-4 text-sm text-slate-700">
+                        {row.membershipLevelName}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-slate-700">
+                        {row.validFrom}{' '}
+                        {row.validTo ? `→ ${row.validTo}` : `→ ${copy.preview.openEnded}`}
                       </td>
                       <td className="px-6 py-4 text-sm text-slate-700">{row.statusName}</td>
                     </tr>
@@ -2323,7 +2543,11 @@ export function ReportsManagementScreen({
                 </TableShell>
               </div>
             ) : (
-              <StateView status="empty" title={copy.preview.noPreviewTitle} description={copy.preview.noPreviewDescription} />
+              <StateView
+                status="empty"
+                title={copy.preview.noPreviewTitle}
+                description={copy.preview.noPreviewDescription}
+              />
             )}
           </DrawerStep>
         </div>
@@ -2342,7 +2566,9 @@ export function ReportsManagementScreen({
           zh_HANT: optionPickerFieldLabel ? `選擇${optionPickerFieldLabel}` : '選擇選項',
           ja: optionPickerFieldLabel ? `${optionPickerFieldLabel}を選択` : '選択肢を選ぶ',
           ko: optionPickerFieldLabel ? `${optionPickerFieldLabel} 선택` : '옵션 선택',
-          fr: optionPickerFieldLabel ? `Sélectionner ${optionPickerFieldLabel}` : 'Sélectionner des options',
+          fr: optionPickerFieldLabel
+            ? `Sélectionner ${optionPickerFieldLabel}`
+            : 'Sélectionner des options',
         })}
         description={pickLocaleText(locale, {
           en: 'Search and page through catalog options without expanding the report drawer.',
@@ -2370,7 +2596,12 @@ export function ReportsManagementScreen({
                   setDraft((current) => updateDraftField(current, optionPickerTargetField, ''));
                 }
               }}
-              disabled={!optionPickerTargetField || optionPickerSelectedCodes.length === 0 || previewPending || createPending}
+              disabled={
+                !optionPickerTargetField ||
+                optionPickerSelectedCodes.length === 0 ||
+                previewPending ||
+                createPending
+              }
               className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {pickLocaleText(locale, {
@@ -2404,7 +2635,9 @@ export function ReportsManagementScreen({
             <div className="rounded-lg border border-slate-200 bg-white/80 px-4 py-3">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="space-y-1">
-                  <p className="text-sm font-semibold text-slate-950">{optionPickerSelectedCountLabel}</p>
+                  <p className="text-sm font-semibold text-slate-950">
+                    {optionPickerSelectedCountLabel}
+                  </p>
                   {optionPickerFieldDescription || optionPickerSource ? (
                     <p className="text-xs leading-5 text-slate-500">
                       {[optionPickerFieldDescription, optionPickerSource].filter(Boolean).join(' ')}
@@ -2433,9 +2666,9 @@ export function ReportsManagementScreen({
                 type="search"
                 value={optionPicker?.search ?? ''}
                 onChange={(event) =>
-                  setOptionPicker((current) => current
-                    ? { ...current, page: 1, search: event.target.value }
-                    : current)
+                  setOptionPicker((current) =>
+                    current ? { ...current, page: 1, search: event.target.value } : current
+                  )
                 }
                 placeholder={pickLocaleText(locale, {
                   en: 'Search label or code',
@@ -2450,9 +2683,17 @@ export function ReportsManagementScreen({
             </label>
 
             {filterOptionsPanel.error ? (
-              <StateView status="error" title={copy.preview.unavailableTitle} description={filterOptionsPanel.error} />
+              <StateView
+                status="error"
+                title={copy.preview.unavailableTitle}
+                description={filterOptionsPanel.error}
+              />
             ) : filterOptionsPanel.loading && optionPickerOptions.length === 0 ? (
-              <StateView status="empty" title={copy.drawer.previewRows} description={copy.drawer.codeFiltersDescription} />
+              <StateView
+                status="empty"
+                title={copy.drawer.previewRows}
+                description={copy.drawer.codeFiltersDescription}
+              />
             ) : optionPickerVisibleOptions.length > 0 ? (
               <div className="space-y-2" role="group" aria-label={optionPickerFieldLabel}>
                 {optionPickerVisibleOptions.map((option) => {
@@ -2473,16 +2714,26 @@ export function ReportsManagementScreen({
                               current,
                               optionPickerTargetField,
                               checked
-                                ? removeSelectedCode(getFilterFieldValue(current, optionPickerTargetField), option.value)
-                                : toggleSelectedCode(getFilterFieldValue(current, optionPickerTargetField), option.value),
-                            ),
+                                ? removeSelectedCode(
+                                    getFilterFieldValue(current, optionPickerTargetField),
+                                    option.value
+                                  )
+                                : toggleSelectedCode(
+                                    getFilterFieldValue(current, optionPickerTargetField),
+                                    option.value
+                                  )
+                            )
                           );
                         }}
                         className="mt-0.5 h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
                       />
                       <span className="min-w-0 flex-1">
-                        <span className="block break-words font-medium text-slate-900">{option.label}</span>
-                        <span className="block break-all text-xs text-slate-500">{option.value}</span>
+                        <span className="block break-words font-medium text-slate-900">
+                          {option.label}
+                        </span>
+                        <span className="block break-all text-xs text-slate-500">
+                          {option.value}
+                        </span>
                       </span>
                     </label>
                   );
@@ -2521,7 +2772,7 @@ export function ReportsManagementScreen({
                 nextLabel: nextPageLabel,
               }}
               onPageChange={(nextPage) =>
-                setOptionPicker((current) => current ? { ...current, page: nextPage } : current)
+                setOptionPicker((current) => (current ? { ...current, page: nextPage } : current))
               }
               isLoading={filterOptionsPanel.loading}
               className="rounded-2xl"

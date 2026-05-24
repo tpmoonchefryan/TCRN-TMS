@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { EmailDispatchApplicationService } from '../application/email-dispatch.service';
@@ -20,7 +19,7 @@ describe('EmailService', () => {
     service = new EmailService(
       {} as never,
       {} as never,
-      mockEmailDispatchApplicationService as unknown as EmailDispatchApplicationService,
+      mockEmailDispatchApplicationService as unknown as EmailDispatchApplicationService
     );
   });
 
@@ -34,7 +33,7 @@ describe('EmailService', () => {
         tenantSchema: 'tenant_test',
         templateCode: 'WELCOME_EMAIL',
         recipientEmail: 'operator@example.com',
-      }),
+      })
     ).resolves.toEqual({
       jobId: 'job-123',
     });
@@ -55,23 +54,14 @@ describe('EmailService', () => {
     });
 
     await expect(
-      service.sendSystemEmail(
-        'system@example.com',
-        'WELCOME_EMAIL',
-        'en',
-        { name: 'Sora' },
-      ),
+      service.sendSystemEmail('system@example.com', 'WELCOME_EMAIL', 'en', { name: 'Sora' })
     ).resolves.toEqual({
       jobId: 'job-system',
     });
     await expect(
-      service.sendBusinessEmail(
-        'tenant_test',
-        'business@example.com',
-        'WELCOME_EMAIL',
-        'zh',
-        { name: 'Mio' },
-      ),
+      service.sendBusinessEmail('tenant_test', 'business@example.com', 'WELCOME_EMAIL', 'zh', {
+        name: 'Mio',
+      })
     ).resolves.toEqual({
       jobId: 'job-business',
     });
@@ -80,14 +70,14 @@ describe('EmailService', () => {
       'system@example.com',
       'WELCOME_EMAIL',
       'en',
-      { name: 'Sora' },
+      { name: 'Sora' }
     );
     expect(mockEmailDispatchApplicationService.sendBusinessEmail).toHaveBeenCalledWith(
       'tenant_test',
       'business@example.com',
       'WELCOME_EMAIL',
       'zh',
-      { name: 'Mio' },
+      { name: 'Mio' }
     );
   });
 });

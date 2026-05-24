@@ -1,10 +1,10 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+import type { LocalizedText } from '@tcrn/shared';
 
 import {
   localizedTextOrderExpression,
   localizedTextSearchExpression,
 } from '../../../platform/persistence/localized-text.persistence';
-import type { LocalizedText } from '@tcrn/shared';
 
 export interface SubsidiaryData {
   id: string;
@@ -40,16 +40,9 @@ export interface SubsidiaryListQuery {
 }
 
 export const buildSubsidiaryListQuery = (
-  options: SubsidiaryListOptions = {},
+  options: SubsidiaryListOptions = {}
 ): SubsidiaryListQuery => {
-  const {
-    page = 1,
-    pageSize = 20,
-    parentId,
-    search,
-    isActive,
-    sort,
-  } = options;
+  const { page = 1, pageSize = 20, parentId, search, isActive, sort } = options;
   const offset = (page - 1) * pageSize;
 
   let whereClause = '1=1';

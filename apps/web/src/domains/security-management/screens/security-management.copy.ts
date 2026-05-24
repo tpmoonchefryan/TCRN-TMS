@@ -1,7 +1,4 @@
-import type {
-  LocalizedText,
-  SupportedUiLocale,
-} from '@tcrn/shared';
+import type { LocalizedText, SupportedUiLocale } from '@tcrn/shared';
 
 import type {
   BlocklistAction,
@@ -22,7 +19,7 @@ import {
   resolveLocaleRecord,
 } from '@/platform/runtime/locale/locale-text';
 
-type SecurityLocale = SupportedUiLocale ;
+type SecurityLocale = SupportedUiLocale;
 
 function isChineseLocale(locale: string) {
   return locale === 'zh_HANS' || locale === 'zh_HANT';
@@ -120,13 +117,16 @@ const COPY = {
           cancel: 'Cancel',
           closeButtonAriaLabel: 'Close blocklist rule translations drawer',
           empty: 'No additional translations configured yet.',
-          summary: (count: number) => `${count} additional locale ${count === 1 ? 'value' : 'values'} configured.`,
-          languageLoadError: 'Language options are temporarily unavailable. Supported UI locales are shown instead.',
+          summary: (count: number) =>
+            `${count} additional locale ${count === 1 ? 'value' : 'values'} configured.`,
+          languageLoadError:
+            'Language options are temporarily unavailable. Supported UI locales are shown instead.',
         },
       },
       blocklistTest: {
         title: 'Rule Test Bench',
-        description: 'Test sample text against the current draft or selected rule before saving changes.',
+        description:
+          'Test sample text against the current draft or selected rule before saving changes.',
         run: 'Test rule',
         pending: 'Testing…',
         sampleText: 'Sample text',
@@ -134,7 +134,8 @@ const COPY = {
       },
       blocklistBatch: {
         title: 'Batch Add Blocklist Patterns',
-        description: 'Paste one keyword pattern per line. Duplicate lines are skipped before create calls.',
+        description:
+          'Paste one keyword pattern per line. Duplicate lines are skipped before create calls.',
         inputLabel: 'Patterns',
         inputPlaceholder: 'one pattern per line',
         previewReady: 'Ready to add',
@@ -171,7 +172,8 @@ const COPY = {
         creating: 'Creating…',
         saving: 'Saving…',
         loadingTitle: 'Loading external blocklist detail',
-        loadingDescription: 'Fetching the selected external rule before the editor becomes writable.',
+        loadingDescription:
+          'Fetching the selected external rule before the editor becomes writable.',
         translationManagement: {
           trigger: 'Translation management',
           title: 'External pattern translations',
@@ -180,8 +182,10 @@ const COPY = {
           cancel: 'Cancel',
           closeButtonAriaLabel: 'Close external pattern translations drawer',
           empty: 'No additional translations configured yet.',
-          summary: (count: number) => `${count} additional locale ${count === 1 ? 'value' : 'values'} configured.`,
-          languageLoadError: 'Language options are temporarily unavailable. Supported UI locales are shown instead.',
+          summary: (count: number) =>
+            `${count} additional locale ${count === 1 ? 'value' : 'values'} configured.`,
+          languageLoadError:
+            'Language options are temporarily unavailable. Supported UI locales are shown instead.',
         },
       },
       ipRules: {
@@ -198,13 +202,15 @@ const COPY = {
         closeButtonAriaLabel: 'Close IP rule drawer',
         creating: 'Creating…',
         probeTitle: 'Policy check',
-        probeDescription: 'Check a candidate IP against the current policy before updating your response steps.',
+        probeDescription:
+          'Check a candidate IP against the current policy before updating your response steps.',
         probe: 'Check access',
         probing: 'Checking…',
       },
       runtimeSignals: {
         title: 'Security Overview',
-        description: 'Prioritize active blocks, read-only policy probes, and rate-limit, IP, and fingerprint signals for the current view.',
+        description:
+          'Prioritize active blocks, read-only policy probes, and rate-limit, IP, and fingerprint signals for the current view.',
         activeBlocksTitle: 'Active blocks',
         activeBlocksHint: 'Currently blocked IPs and requests blocked in the last 24 hours.',
         policyProbeTitle: 'Read-only policy probe',
@@ -228,13 +234,15 @@ const COPY = {
         visibleStores: 'Visible stores',
         visibleStoresHint: 'Archive stores currently visible in this view.',
         endpointsTitle: 'Busiest endpoints',
-        endpointsDescription: 'Use these counters to tie request pressure back to concrete endpoints.',
+        endpointsDescription:
+          'Use these counters to tie request pressure back to concrete endpoints.',
         endpointsUnavailable: 'Rate-limit stats unavailable',
         endpointsEmptyTitle: 'No endpoint telemetry',
         endpointsEmptyDescription: 'No active endpoint counters were returned from Redis.',
         endpointsColumns: ['Endpoint', 'Method', 'Current', 'Limit', 'Reset In'],
         topIpsTitle: 'Top IPs & archive stores',
-        topIpsDescription: 'Compare recent IP pressure with the archive stores visible in this view.',
+        topIpsDescription:
+          'Compare recent IP pressure with the archive stores visible in this view.',
         topIpsEmptyTitle: 'No IP telemetry',
         topIpsEmptyDescription: 'Redis did not return any ranked IP traffic samples.',
         topIpsColumns: ['IP', 'Requests', 'Blocked', 'Last Seen'],
@@ -258,7 +266,8 @@ const COPY = {
       action: 'Action',
       replacement: 'Replacement',
       scopes: 'Scopes',
-      scopesHint: 'Advanced-only migration fallback. Add unsupported legacy tokens here; the primary flow uses the structured scope builder.',
+      scopesHint:
+        'Advanced-only migration fallback. Add unsupported legacy tokens here; the primary flow uses the structured scope builder.',
       sortOrder: 'Sort order',
       description: 'Description',
       inherit: 'Inherit into child scopes',
@@ -298,16 +307,19 @@ const COPY = {
     },
     dialogs: {
       disableInheritedTitlePrefix: 'Disable inherited rule',
-      disableInheritedDescription: 'The upstream rule will stay intact, but this scope will stop enforcing it.',
+      disableInheritedDescription:
+        'The upstream rule will stay intact, but this scope will stop enforcing it.',
       disabling: 'Disabling…',
       reEnableTitlePrefix: 'Re-enable',
       reEnableDescription: 'This restores the inherited rule for the selected level.',
       reEnabling: 'Re-enabling…',
       deleteTitlePrefix: 'Delete',
       deleteRuleDescription: 'This permanently removes the rule from the selected level.',
-      deletePatternDescription: 'This permanently removes the external pattern from the selected level.',
+      deletePatternDescription:
+        'This permanently removes the external pattern from the selected level.',
       deleting: 'Deleting…',
-      deleteIpDescription: 'This deactivates the IP access rule and clears it from the in-memory cache.',
+      deleteIpDescription:
+        'This deactivates the IP access rule and clears it from the in-memory cache.',
       discardChangesTitle: 'Discard unsaved security changes?',
       discardChangesDescription: 'This editor has unsaved changes. Discard them and continue?',
       discardChangesConfirm: 'Discard changes',
@@ -573,7 +585,8 @@ const COPY = {
       action: '动作',
       replacement: '替换文本',
       scopes: '用途范围',
-      scopesHint: '仅用于迁移的高级回退。把不受支持的旧 token 填在这里；主流程使用结构化范围构建器。',
+      scopesHint:
+        '仅用于迁移的高级回退。把不受支持的旧 token 填在这里；主流程使用结构化范围构建器。',
       sortOrder: '排序',
       description: '说明',
       inherit: '向子范围继承',
@@ -888,7 +901,8 @@ const COPY = {
       action: '动作',
       replacement: '替换文本',
       scopes: '用途范围',
-      scopesHint: '仅用于迁移的高级回退。把不受支持的旧 token 填在这里；主流程使用结构化范围构建器。',
+      scopesHint:
+        '仅用于迁移的高级回退。把不受支持的旧 token 填在这里；主流程使用结构化范围构建器。',
       sortOrder: '排序',
       description: '说明',
       inherit: '向子范围继承',
@@ -1000,7 +1014,8 @@ const COPY = {
       eyebrowPrefix: 'ワークスペース',
       title: 'セキュリティ',
       descriptionPrefix: '',
-      descriptionSuffix: 'のセキュリティルール、IP アクセス、セキュリティ活動をこの画面で管理します。',
+      descriptionSuffix:
+        'のセキュリティルール、IP アクセス、セキュリティ活動をこの画面で管理します。',
     },
     summary: {
       scopeLensLabel: '現在の表示範囲',
@@ -1073,7 +1088,8 @@ const COPY = {
       },
       blocklistTest: {
         title: 'ルール検証',
-        description: '変更を保存する前に、現在のドラフトまたは選択中ルールでサンプルテキストを検証します。',
+        description:
+          '変更を保存する前に、現在のドラフトまたは選択中ルールでサンプルテキストを検証します。',
         run: 'ルールを検証',
         pending: '検証中…',
         sampleText: 'サンプルテキスト',
@@ -1081,7 +1097,8 @@ const COPY = {
       },
       blocklistBatch: {
         title: '遮断パターンを一括追加',
-        description: 'キーワードパターンを1行ずつ貼り付けてください。重複行は作成前にスキップします。',
+        description:
+          'キーワードパターンを1行ずつ貼り付けてください。重複行は作成前にスキップします。',
         inputLabel: 'パターン一覧',
         inputPlaceholder: '1 行に 1 パターン',
         previewReady: '追加予定',
@@ -1101,7 +1118,8 @@ const COPY = {
         emptyDescription: 'このスコープには外部遮断エントリがありません。',
         batchDeactivate: '一括無効化',
         batchDeactivateTitle: '表示中の外部パターンをすべて無効化しますか？',
-        batchDeactivateDescription: '現在のスコープで表示中のすべての外部ルールに無効化を書き込みます。',
+        batchDeactivateDescription:
+          '現在のスコープで表示中のすべての外部ルールに無効化を書き込みます。',
         batchDeactivateConfirm: '表示中ルールを無効化',
         batchDeactivatePending: '無効化中…',
         batchDeactivateSuccess: '表示中の外部パターンを無効化しました。',
@@ -1136,7 +1154,8 @@ const COPY = {
         listDescription: 'テナントの IP アクセスルールをこの画面で確認・作成・削除します。',
         unavailable: 'IP アクセスルールを利用できません',
         emptyTitle: 'IP ルールは未設定です',
-        emptyDescription: 'このテナントで最初のホワイトリストまたはブラックリストルールを作成してください。',
+        emptyDescription:
+          'このテナントで最初のホワイトリストまたはブラックリストルールを作成してください。',
         columns: ['パターン', '種別', 'スコープ', 'ヒット', '状態', '操作'],
         newRule: 'IP ルールを追加',
         createTitle: 'IP ルールを作成',
@@ -1151,7 +1170,8 @@ const COPY = {
       },
       runtimeSignals: {
         title: 'セキュリティ概要',
-        description: '現在の表示範囲の有効な遮断、読み取り専用ポリシープローブ、レート制限、IP、指紋シグナルを優先して確認します。',
+        description:
+          '現在の表示範囲の有効な遮断、読み取り専用ポリシープローブ、レート制限、IP、指紋シグナルを優先して確認します。',
         activeBlocksTitle: '有効な遮断',
         activeBlocksHint: '現在遮断中の IP と直近 24 時間で遮断されたリクエスト。',
         policyProbeTitle: '読み取り専用ポリシープローブ',
@@ -1175,13 +1195,15 @@ const COPY = {
         visibleStores: '表示ストア数',
         visibleStoresHint: 'この表示範囲で見えているアーカイブストア数です。',
         endpointsTitle: '混雑しているエンドポイント',
-        endpointsDescription: 'これらのカウンターでリクエスト圧力を具体的なエンドポイントへ結び付けます。',
+        endpointsDescription:
+          'これらのカウンターでリクエスト圧力を具体的なエンドポイントへ結び付けます。',
         endpointsUnavailable: 'レート制限統計を利用できません',
         endpointsEmptyTitle: 'エンドポイントテレメトリなし',
         endpointsEmptyDescription: 'Redis から有効なエンドポイントカウンターが返されませんでした。',
         endpointsColumns: ['エンドポイント', 'メソッド', '現在値', '上限', 'リセットまで'],
         topIpsTitle: '上位 IP とアーカイブストア',
-        topIpsDescription: '直近の IP 圧力と、この表示範囲で見えているアーカイブストアを並べて確認します。',
+        topIpsDescription:
+          '直近の IP 圧力と、この表示範囲で見えているアーカイブストアを並べて確認します。',
         topIpsEmptyTitle: 'IP テレメトリなし',
         topIpsEmptyDescription: 'Redis から順位付き IP トラフィックサンプルが返されませんでした。',
         topIpsColumns: ['IP', 'リクエスト', '遮断', '最終観測'],
@@ -1205,7 +1227,8 @@ const COPY = {
       action: '動作',
       replacement: '置換文字列',
       scopes: '用途スコープ',
-      scopesHint: '移行用の高度なフォールバックです。未対応のレガシートークンだけをここに入力し、通常は構造化スコープビルダーを使います。',
+      scopesHint:
+        '移行用の高度なフォールバックです。未対応のレガシートークンだけをここに入力し、通常は構造化スコープビルダーを使います。',
       sortOrder: '並び順',
       description: '説明',
       inherit: '子スコープへ継承',
@@ -1245,7 +1268,8 @@ const COPY = {
     },
     dialogs: {
       disableInheritedTitlePrefix: '継承ルールを無効化',
-      disableInheritedDescription: '上位ルールはそのまま残りますが、このスコープでは適用を停止します。',
+      disableInheritedDescription:
+        '上位ルールはそのまま残りますが、このスコープでは適用を停止します。',
       disabling: '無効化中…',
       reEnableTitlePrefix: '再有効化',
       reEnableDescription: '現在のスコープで継承ルールを復元します。',
@@ -1384,13 +1408,16 @@ const COPY = {
           cancel: 'Cancel',
           closeButtonAriaLabel: 'Close blocklist rule translations drawer',
           empty: 'No additional translations configured yet.',
-          summary: (count: number) => `${count} additional locale ${count === 1 ? 'value' : 'values'} configured.`,
-          languageLoadError: 'Language options are temporarily unavailable. Supported UI locales are shown instead.',
+          summary: (count: number) =>
+            `${count} additional locale ${count === 1 ? 'value' : 'values'} configured.`,
+          languageLoadError:
+            'Language options are temporarily unavailable. Supported UI locales are shown instead.',
         },
       },
       blocklistTest: {
         title: 'Rule Test Bench',
-        description: 'Test sample text against the current draft or selected rule before saving changes.',
+        description:
+          'Test sample text against the current draft or selected rule before saving changes.',
         run: 'Test rule',
         pending: 'Testing…',
         sampleText: 'Sample text',
@@ -1398,7 +1425,8 @@ const COPY = {
       },
       blocklistBatch: {
         title: 'Batch Add Blocklist Patterns',
-        description: 'Paste one keyword pattern per line. Duplicate lines are skipped before create calls.',
+        description:
+          'Paste one keyword pattern per line. Duplicate lines are skipped before create calls.',
         inputLabel: 'Patterns',
         inputPlaceholder: 'one pattern per line',
         previewReady: 'Ready to add',
@@ -1435,7 +1463,8 @@ const COPY = {
         creating: 'Creating…',
         saving: 'Saving…',
         loadingTitle: 'Loading external blocklist detail',
-        loadingDescription: 'Fetching the selected external rule before the editor becomes writable.',
+        loadingDescription:
+          'Fetching the selected external rule before the editor becomes writable.',
         translationManagement: {
           trigger: 'Translation management',
           title: 'External pattern translations',
@@ -1444,8 +1473,10 @@ const COPY = {
           cancel: 'Cancel',
           closeButtonAriaLabel: 'Close external pattern translations drawer',
           empty: 'No additional translations configured yet.',
-          summary: (count: number) => `${count} additional locale ${count === 1 ? 'value' : 'values'} configured.`,
-          languageLoadError: 'Language options are temporarily unavailable. Supported UI locales are shown instead.',
+          summary: (count: number) =>
+            `${count} additional locale ${count === 1 ? 'value' : 'values'} configured.`,
+          languageLoadError:
+            'Language options are temporarily unavailable. Supported UI locales are shown instead.',
         },
       },
       ipRules: {
@@ -1462,13 +1493,15 @@ const COPY = {
         closeButtonAriaLabel: 'Close IP rule drawer',
         creating: 'Creating…',
         probeTitle: 'Policy check',
-        probeDescription: 'Check a candidate IP against the current policy before updating your response steps.',
+        probeDescription:
+          'Check a candidate IP against the current policy before updating your response steps.',
         probe: 'Check access',
         probing: 'Checking…',
       },
       runtimeSignals: {
         title: 'Security Overview',
-        description: 'Prioritize active blocks, read-only policy probes, and rate-limit, IP, and fingerprint signals for the current view.',
+        description:
+          'Prioritize active blocks, read-only policy probes, and rate-limit, IP, and fingerprint signals for the current view.',
         activeBlocksTitle: 'Active blocks',
         activeBlocksHint: 'Currently blocked IPs and requests blocked in the last 24 hours.',
         policyProbeTitle: 'Read-only policy probe',
@@ -1492,13 +1525,15 @@ const COPY = {
         visibleStores: 'Visible stores',
         visibleStoresHint: 'Archive stores currently visible in this view.',
         endpointsTitle: 'Busiest endpoints',
-        endpointsDescription: 'Use these counters to tie request pressure back to concrete endpoints.',
+        endpointsDescription:
+          'Use these counters to tie request pressure back to concrete endpoints.',
         endpointsUnavailable: 'Rate-limit stats unavailable',
         endpointsEmptyTitle: 'No endpoint telemetry',
         endpointsEmptyDescription: 'No active endpoint counters were returned from Redis.',
         endpointsColumns: ['Endpoint', 'Method', 'Current', 'Limit', 'Reset In'],
         topIpsTitle: 'Top IPs & archive stores',
-        topIpsDescription: 'Compare recent IP pressure with the archive stores visible in this view.',
+        topIpsDescription:
+          'Compare recent IP pressure with the archive stores visible in this view.',
         topIpsEmptyTitle: 'No IP telemetry',
         topIpsEmptyDescription: 'Redis did not return any ranked IP traffic samples.',
         topIpsColumns: ['IP', 'Requests', 'Blocked', 'Last Seen'],
@@ -1522,7 +1557,8 @@ const COPY = {
       action: 'Action',
       replacement: 'Replacement',
       scopes: 'Scopes',
-      scopesHint: 'Advanced-only migration fallback. Add unsupported legacy tokens here; the primary flow uses the structured scope builder.',
+      scopesHint:
+        'Advanced-only migration fallback. Add unsupported legacy tokens here; the primary flow uses the structured scope builder.',
       sortOrder: 'Sort order',
       description: 'Description',
       inherit: 'Inherit into child scopes',
@@ -1562,16 +1598,19 @@ const COPY = {
     },
     dialogs: {
       disableInheritedTitlePrefix: 'Disable inherited rule',
-      disableInheritedDescription: 'The upstream rule will stay intact, but this scope will stop enforcing it.',
+      disableInheritedDescription:
+        'The upstream rule will stay intact, but this scope will stop enforcing it.',
       disabling: 'Disabling…',
       reEnableTitlePrefix: 'Re-enable',
       reEnableDescription: 'This restores the inherited rule for the selected level.',
       reEnabling: 'Re-enabling…',
       deleteTitlePrefix: 'Delete',
       deleteRuleDescription: 'This permanently removes the rule from the selected level.',
-      deletePatternDescription: 'This permanently removes the external pattern from the selected level.',
+      deletePatternDescription:
+        'This permanently removes the external pattern from the selected level.',
       deleting: 'Deleting…',
-      deleteIpDescription: 'This deactivates the IP access rule and clears it from the in-memory cache.',
+      deleteIpDescription:
+        'This deactivates the IP access rule and clears it from the in-memory cache.',
       discardChangesTitle: 'Discard unsaved security changes?',
       discardChangesDescription: 'This editor has unsaved changes. Discard them and continue?',
       discardChangesConfirm: 'Discard changes',
@@ -1701,13 +1740,16 @@ const COPY = {
           cancel: 'Cancel',
           closeButtonAriaLabel: 'Close blocklist rule translations drawer',
           empty: 'No additional translations configured yet.',
-          summary: (count: number) => `${count} additional locale ${count === 1 ? 'value' : 'values'} configured.`,
-          languageLoadError: 'Language options are temporarily unavailable. Supported UI locales are shown instead.',
+          summary: (count: number) =>
+            `${count} additional locale ${count === 1 ? 'value' : 'values'} configured.`,
+          languageLoadError:
+            'Language options are temporarily unavailable. Supported UI locales are shown instead.',
         },
       },
       blocklistTest: {
         title: 'Rule Test Bench',
-        description: 'Test sample text against the current draft or selected rule before saving changes.',
+        description:
+          'Test sample text against the current draft or selected rule before saving changes.',
         run: 'Test rule',
         pending: 'Testing…',
         sampleText: 'Sample text',
@@ -1715,7 +1757,8 @@ const COPY = {
       },
       blocklistBatch: {
         title: 'Batch Add Blocklist Patterns',
-        description: 'Paste one keyword pattern per line. Duplicate lines are skipped before create calls.',
+        description:
+          'Paste one keyword pattern per line. Duplicate lines are skipped before create calls.',
         inputLabel: 'Patterns',
         inputPlaceholder: 'one pattern per line',
         previewReady: 'Ready to add',
@@ -1752,7 +1795,8 @@ const COPY = {
         creating: 'Creating…',
         saving: 'Saving…',
         loadingTitle: 'Loading external blocklist detail',
-        loadingDescription: 'Fetching the selected external rule before the editor becomes writable.',
+        loadingDescription:
+          'Fetching the selected external rule before the editor becomes writable.',
         translationManagement: {
           trigger: 'Translation management',
           title: 'External pattern translations',
@@ -1761,8 +1805,10 @@ const COPY = {
           cancel: 'Cancel',
           closeButtonAriaLabel: 'Close external pattern translations drawer',
           empty: 'No additional translations configured yet.',
-          summary: (count: number) => `${count} additional locale ${count === 1 ? 'value' : 'values'} configured.`,
-          languageLoadError: 'Language options are temporarily unavailable. Supported UI locales are shown instead.',
+          summary: (count: number) =>
+            `${count} additional locale ${count === 1 ? 'value' : 'values'} configured.`,
+          languageLoadError:
+            'Language options are temporarily unavailable. Supported UI locales are shown instead.',
         },
       },
       ipRules: {
@@ -1779,13 +1825,15 @@ const COPY = {
         closeButtonAriaLabel: 'Close IP rule drawer',
         creating: 'Creating…',
         probeTitle: 'Policy check',
-        probeDescription: 'Check a candidate IP against the current policy before updating your response steps.',
+        probeDescription:
+          'Check a candidate IP against the current policy before updating your response steps.',
         probe: 'Check access',
         probing: 'Checking…',
       },
       runtimeSignals: {
         title: 'Security Overview',
-        description: 'Prioritize active blocks, read-only policy probes, and rate-limit, IP, and fingerprint signals for the current view.',
+        description:
+          'Prioritize active blocks, read-only policy probes, and rate-limit, IP, and fingerprint signals for the current view.',
         activeBlocksTitle: 'Active blocks',
         activeBlocksHint: 'Currently blocked IPs and requests blocked in the last 24 hours.',
         policyProbeTitle: 'Read-only policy probe',
@@ -1809,13 +1857,15 @@ const COPY = {
         visibleStores: 'Visible stores',
         visibleStoresHint: 'Archive stores currently visible in this view.',
         endpointsTitle: 'Busiest endpoints',
-        endpointsDescription: 'Use these counters to tie request pressure back to concrete endpoints.',
+        endpointsDescription:
+          'Use these counters to tie request pressure back to concrete endpoints.',
         endpointsUnavailable: 'Rate-limit stats unavailable',
         endpointsEmptyTitle: 'No endpoint telemetry',
         endpointsEmptyDescription: 'No active endpoint counters were returned from Redis.',
         endpointsColumns: ['Endpoint', 'Method', 'Current', 'Limit', 'Reset In'],
         topIpsTitle: 'Top IPs & archive stores',
-        topIpsDescription: 'Compare recent IP pressure with the archive stores visible in this view.',
+        topIpsDescription:
+          'Compare recent IP pressure with the archive stores visible in this view.',
         topIpsEmptyTitle: 'No IP telemetry',
         topIpsEmptyDescription: 'Redis did not return any ranked IP traffic samples.',
         topIpsColumns: ['IP', 'Requests', 'Blocked', 'Last Seen'],
@@ -1839,7 +1889,8 @@ const COPY = {
       action: 'Action',
       replacement: 'Replacement',
       scopes: 'Scopes',
-      scopesHint: 'Advanced-only migration fallback. Add unsupported legacy tokens here; the primary flow uses the structured scope builder.',
+      scopesHint:
+        'Advanced-only migration fallback. Add unsupported legacy tokens here; the primary flow uses the structured scope builder.',
       sortOrder: 'Sort order',
       description: 'Description',
       inherit: 'Inherit into child scopes',
@@ -1879,16 +1930,19 @@ const COPY = {
     },
     dialogs: {
       disableInheritedTitlePrefix: 'Disable inherited rule',
-      disableInheritedDescription: 'The upstream rule will stay intact, but this scope will stop enforcing it.',
+      disableInheritedDescription:
+        'The upstream rule will stay intact, but this scope will stop enforcing it.',
       disabling: 'Disabling…',
       reEnableTitlePrefix: 'Re-enable',
       reEnableDescription: 'This restores the inherited rule for the selected level.',
       reEnabling: 'Re-enabling…',
       deleteTitlePrefix: 'Delete',
       deleteRuleDescription: 'This permanently removes the rule from the selected level.',
-      deletePatternDescription: 'This permanently removes the external pattern from the selected level.',
+      deletePatternDescription:
+        'This permanently removes the external pattern from the selected level.',
       deleting: 'Deleting…',
-      deleteIpDescription: 'This deactivates the IP access rule and clears it from the in-memory cache.',
+      deleteIpDescription:
+        'This deactivates the IP access rule and clears it from the in-memory cache.',
       discardChangesTitle: 'Discard unsaved security changes?',
       discardChangesDescription: 'This editor has unsaved changes. Discard them and continue?',
       discardChangesConfirm: 'Discard changes',
@@ -1940,8 +1994,6 @@ function resolveSecurityCopy(locale: SecurityLocale) {
   return resolveLocaleRecord(locale, SECURITY_COPY_RECORD) as SecurityManagementCopy;
 }
 
-
-
 export function useSecurityManagementCopy() {
   const { locale } = useUiLocale();
   const copy = resolveSecurityCopy(locale);
@@ -1949,7 +2001,11 @@ export function useSecurityManagementCopy() {
   return { locale, copy };
 }
 
-export function formatSecurityDateTime(locale: SecurityLocale, value: string | null | undefined, fallback: string) {
+export function formatSecurityDateTime(
+  locale: SecurityLocale,
+  value: string | null | undefined,
+  fallback: string
+) {
   return formatLocaleDateTime(locale, value ?? null, fallback);
 }
 
@@ -1990,7 +2046,11 @@ export function formatSecurityHeaderDescription(locale: SecurityLocale, workspac
   return `${copy.header.descriptionPrefix} ${workspaceName}${copy.header.descriptionSuffix}`;
 }
 
-export function formatSecurityScopeLabel(locale: SecurityLocale, scopeType: SecurityScopeType, _scopeId?: string) {
+export function formatSecurityScopeLabel(
+  locale: SecurityLocale,
+  scopeType: SecurityScopeType,
+  _scopeId?: string
+) {
   const label = resolveSecurityCopy(locale).options.scopeType[scopeType];
   return label;
 }
@@ -1998,7 +2058,7 @@ export function formatSecurityScopeLabel(locale: SecurityLocale, scopeType: Secu
 export function pickSecurityLocalizedName(
   locale: SecurityLocale | string,
   value: SecurityLocalizedNameLike,
-  fallback = '',
+  fallback = ''
 ) {
   const baseFallback = value.localizedName || value.code || fallback;
 
@@ -2017,11 +2077,17 @@ export function getSecurityActionLabel(locale: SecurityLocale, action: Blocklist
   return resolveSecurityCopy(locale).options.action[action];
 }
 
-export function getSecurityBlocklistPatternTypeLabel(locale: SecurityLocale, patternType: BlocklistPatternType) {
+export function getSecurityBlocklistPatternTypeLabel(
+  locale: SecurityLocale,
+  patternType: BlocklistPatternType
+) {
   return resolveSecurityCopy(locale).options.blocklistPatternType[patternType];
 }
 
-export function getSecurityExternalPatternTypeLabel(locale: SecurityLocale, patternType: ExternalPatternType) {
+export function getSecurityExternalPatternTypeLabel(
+  locale: SecurityLocale,
+  patternType: ExternalPatternType
+) {
   return resolveSecurityCopy(locale).options.externalPatternType[patternType];
 }
 
@@ -2051,7 +2117,10 @@ export function getSecurityTabLabel(locale: SecurityLocale, tab: SecurityTab) {
   return copy.tabs.blocklist;
 }
 
-export function formatSecurityBlocklistSaveSuccess(locale: SecurityLocale, mode: 'create' | 'edit') {
+export function formatSecurityBlocklistSaveSuccess(
+  locale: SecurityLocale,
+  mode: 'create' | 'edit'
+) {
   const localeFamily = locale;
 
   if (isChineseLocale(localeFamily)) {
@@ -2090,7 +2159,9 @@ export function formatSecurityExternalSaveSuccess(locale: SecurityLocale, mode: 
     return mode === 'create' ? '外部遮断ルールを作成しました。' : '外部遮断ルールを更新しました。';
   }
 
-  return mode === 'create' ? 'External blocklist entry created.' : 'External blocklist entry updated.';
+  return mode === 'create'
+    ? 'External blocklist entry created.'
+    : 'External blocklist entry updated.';
 }
 
 export function getSecurityExternalSaveError(locale: SecurityLocale) {
@@ -2149,7 +2220,10 @@ export function formatSecurityDeleteSuccess(locale: SecurityLocale, name: string
   return `${name} was deleted.`;
 }
 
-export function formatSecurityBlocklistTestResult(locale: SecurityLocale, result: BlocklistTestResult) {
+export function formatSecurityBlocklistTestResult(
+  locale: SecurityLocale,
+  result: BlocklistTestResult
+) {
   const localeFamily = locale;
 
   if (!result.matched) {
@@ -2167,12 +2241,9 @@ export function formatSecurityBlocklistTestResult(locale: SecurityLocale, result
   const firstMatch = result.matches[0];
   const action = getSecurityActionLabel(
     locale,
-    resolveSecurityAction(result.action || firstMatch?.action),
+    resolveSecurityAction(result.action || firstMatch?.action)
   );
-  const severity = getSecuritySeverityLabel(
-    locale,
-    resolveSecuritySeverity(firstMatch?.severity),
-  );
+  const severity = getSecuritySeverityLabel(locale, resolveSecuritySeverity(firstMatch?.severity));
   const category = firstMatch?.category || '—';
 
   if (isChineseLocale(localeFamily)) {
@@ -2202,7 +2273,7 @@ export function getSecurityBlocklistTestError(locale: SecurityLocale) {
 
 export function getSecurityBlocklistTestValidationError(
   locale: SecurityLocale,
-  field: 'pattern' | 'sampleText',
+  field: 'pattern' | 'sampleText'
 ) {
   const localeFamily = locale;
 
@@ -2260,7 +2331,7 @@ export function getSecurityBlocklistBatchValidationError(locale: SecurityLocale)
 export function formatSecurityBlocklistBatchResult(
   locale: SecurityLocale,
   createdCount: number,
-  failedCount: number,
+  failedCount: number
 ) {
   const localeFamily = locale;
 
@@ -2407,10 +2478,14 @@ export function getSecurityMutationError(locale: SecurityLocale) {
 export function formatSecurityRuleHits(
   locale: SecurityLocale,
   hitCount: number,
-  lastHitAt: string | null | undefined,
+  lastHitAt: string | null | undefined
 ) {
   const localeFamily = locale;
-  const lastHit = formatSecurityDateTime(locale, lastHitAt, resolveSecurityCopy(locale).common.never);
+  const lastHit = formatSecurityDateTime(
+    locale,
+    lastHitAt,
+    resolveSecurityCopy(locale).common.never
+  );
 
   if (isChineseLocale(localeFamily)) {
     return `${hitCount} 次命中 · 上次命中 ${lastHit}`;

@@ -1,9 +1,9 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { ArgumentsHost, HttpException, HttpStatus } from '@nestjs/common';
-import { ErrorCodes } from '@tcrn/shared';
 import type { Request } from 'express';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { ErrorCodes } from '@tcrn/shared';
 
 import { HttpExceptionFilter } from './http-exception.filter';
 
@@ -66,9 +66,9 @@ describe('HttpExceptionFilter trace id envelope', () => {
           message: 'Custom domain registry is unavailable',
           details: { resource: 'custom-domain' },
         },
-        HttpStatus.SERVICE_UNAVAILABLE,
+        HttpStatus.SERVICE_UNAVAILABLE
       ),
-      createHost(request, response),
+      createHost(request, response)
     );
 
     expect(response.status).toHaveBeenCalledWith(HttpStatus.SERVICE_UNAVAILABLE);
@@ -87,7 +87,7 @@ describe('HttpExceptionFilter trace id envelope', () => {
       expect.objectContaining({
         traceId: 'trace_visible_123',
         requestId: 'trace_visible_123',
-      }),
+      })
     );
   });
 
@@ -110,8 +110,10 @@ describe('HttpExceptionFilter trace id envelope', () => {
     } as Partial<Request>;
 
     filter.catch(
-      new Error('PrismaClientKnownRequestError: relation public.custom_domain_binding does not exist'),
-      createHost(request, response),
+      new Error(
+        'PrismaClientKnownRequestError: relation public.custom_domain_binding does not exist'
+      ),
+      createHost(request, response)
     );
 
     expect(response.status).toHaveBeenCalledWith(HttpStatus.INTERNAL_SERVER_ERROR);
@@ -130,14 +132,14 @@ describe('HttpExceptionFilter trace id envelope', () => {
       expect.objectContaining({
         traceId: 'trace_safe_500',
         requestId: 'trace_safe_500',
-      }),
+      })
     );
     expect(logger.warn).toHaveBeenCalledWith(
       expect.stringContaining('SYS_ERROR'),
       expect.objectContaining({
         traceId: 'trace_safe_500',
         requestId: 'trace_safe_500',
-      }),
+      })
     );
   });
 });

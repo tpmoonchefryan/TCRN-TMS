@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import {
   mergeLocalizedText,
   normalizeLocalizedText,
@@ -7,10 +6,7 @@ import {
   type PartialLocalizedText,
 } from '@tcrn/shared';
 
-import type {
-  CreatePiiServiceConfigDto,
-  UpdatePiiServiceConfigDto,
-} from '../dto/pii-config.dto';
+import type { CreatePiiServiceConfigDto, UpdatePiiServiceConfigDto } from '../dto/pii-config.dto';
 
 export interface PiiServiceConfigListRow {
   id: string;
@@ -87,7 +83,7 @@ export interface PiiServiceConfigFieldChange {
 }
 
 export const buildPiiServiceConfigCreatePayload = (
-  dto: CreatePiiServiceConfigDto,
+  dto: CreatePiiServiceConfigDto
 ): PiiServiceConfigCreatePayload => ({
   code: dto.code,
   name: dto.name,
@@ -100,7 +96,7 @@ export const buildPiiServiceConfigCreatePayload = (
 
 export const buildPiiServiceConfigListItem = (
   row: PiiServiceConfigListRow,
-  profileStoreCount: number,
+  profileStoreCount: number
 ) => ({
   id: row.id,
   code: row.code,
@@ -117,7 +113,7 @@ export const buildPiiServiceConfigListItem = (
 
 export const buildPiiServiceConfigDetailResponse = (
   row: PiiServiceConfigDetailRow,
-  profileStoreCount: number,
+  profileStoreCount: number
 ) => ({
   id: row.id,
   code: row.code,
@@ -136,9 +132,7 @@ export const buildPiiServiceConfigDetailResponse = (
   version: row.version,
 });
 
-export const buildPiiServiceConfigCreateResponse = (
-  row: PiiServiceConfigCreateRow,
-) => ({
+export const buildPiiServiceConfigCreateResponse = (row: PiiServiceConfigCreateRow) => ({
   id: row.id,
   code: row.code,
   name: row.name,
@@ -147,7 +141,7 @@ export const buildPiiServiceConfigCreateResponse = (
 
 export const buildPiiServiceConfigUpdateChanges = (
   dto: UpdatePiiServiceConfigDto,
-  current: PiiServiceConfigUpdateLookupRow,
+  current: PiiServiceConfigUpdateLookupRow
 ): PiiServiceConfigFieldChange[] => {
   const changes: PiiServiceConfigFieldChange[] = [];
 
@@ -166,7 +160,7 @@ export const buildPiiServiceConfigUpdateChanges = (
           ...current.description,
           ...(dto.description as PartialLocalizedText),
         },
-        current.description.en,
+        current.description.en
       ),
     });
   }
@@ -191,7 +185,7 @@ export const buildPiiServiceConfigUpdateChanges = (
 
 export const buildPiiServiceConfigUpdateAudit = (
   previous: PiiServiceConfigUpdateLookupRow,
-  updated: PiiServiceConfigUpdateRow,
+  updated: PiiServiceConfigUpdateRow
 ) => ({
   oldValue: {
     name: previous.name,
@@ -207,9 +201,7 @@ export const buildPiiServiceConfigUpdateAudit = (
   },
 });
 
-export const buildPiiServiceConfigUpdateResponse = (
-  row: PiiServiceConfigUpdateRow,
-) => ({
+export const buildPiiServiceConfigUpdateResponse = (row: PiiServiceConfigUpdateRow) => ({
   id: row.id,
   code: row.code,
   version: row.version,
@@ -217,7 +209,7 @@ export const buildPiiServiceConfigUpdateResponse = (
 });
 
 export const buildPiiServiceHealthBaseUrl = (
-  row: Pick<PiiServiceConfigConnectionLookupRow, 'apiUrl' | 'healthCheckUrl'>,
+  row: Pick<PiiServiceConfigConnectionLookupRow, 'apiUrl' | 'healthCheckUrl'>
 ): string => {
   const healthUrl = row.healthCheckUrl ?? `${row.apiUrl}/health`;
   return healthUrl.replace(/\/health$/, '');
@@ -225,7 +217,7 @@ export const buildPiiServiceHealthBaseUrl = (
 
 export const buildPiiServiceHealthCheckResponse = (
   result: PiiServiceHealthCheckResult,
-  testedAt = new Date(),
+  testedAt = new Date()
 ) => ({
   status: result.status,
   latencyMs: result.latencyMs,

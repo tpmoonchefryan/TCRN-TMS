@@ -59,15 +59,23 @@ describe('TenantGovernanceShell', () => {
         >
           <div>Tenant content</div>
         </TenantGovernanceShell>
-      </UiLocaleProvider>,
+      </UiLocaleProvider>
     );
 
     const navigation = screen.getByRole('navigation', { name: 'Main navigation' });
 
-    expect(within(navigation).getByRole('link', { name: 'Organization Structure' })).toBeInTheDocument();
-    expect(within(navigation).getByRole('link', { name: 'Interface Management' })).toBeInTheDocument();
-    expect(within(navigation).getByRole('link', { name: 'Webhook Management' })).toBeInTheDocument();
-    expect(within(navigation).queryByRole('link', { name: 'Integration Management' })).not.toBeInTheDocument();
+    expect(
+      within(navigation).getByRole('link', { name: 'Organization Structure' })
+    ).toBeInTheDocument();
+    expect(
+      within(navigation).getByRole('link', { name: 'Interface Management' })
+    ).toBeInTheDocument();
+    expect(
+      within(navigation).getByRole('link', { name: 'Webhook Management' })
+    ).toBeInTheDocument();
+    expect(
+      within(navigation).queryByRole('link', { name: 'Integration Management' })
+    ).not.toBeInTheDocument();
     expect(within(navigation).queryByRole('link', { name: 'My Profile' })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Tenant Settings' })).not.toBeInTheDocument();
     expect(screen.getAllByText('Tenant')).toHaveLength(2);
@@ -77,7 +85,11 @@ describe('TenantGovernanceShell', () => {
     fireEvent.click(screen.getByRole('option', { name: '简体中文' }));
 
     expect(screen.getByRole('link', { name: '组织架构' })).toBeInTheDocument();
-    expect(within(screen.getByRole('navigation', { name: '主导航' })).queryByRole('link', { name: '我的资料' })).not.toBeInTheDocument();
+    expect(
+      within(screen.getByRole('navigation', { name: '主导航' })).queryByRole('link', {
+        name: '我的资料',
+      })
+    ).not.toBeInTheDocument();
     expect(screen.getAllByText('租户')).toHaveLength(2);
     expect(screen.getByRole('navigation', { name: '主导航' })).toBeInTheDocument();
 
@@ -106,13 +118,15 @@ describe('TenantGovernanceShell', () => {
         >
           <div>Tenant profile security</div>
         </TenantGovernanceShell>
-      </UiLocaleProvider>,
+      </UiLocaleProvider>
     );
 
     const navigation = screen.getByRole('navigation', { name: 'Main navigation' });
 
     expect(within(navigation).queryByRole('link', { name: 'My Profile' })).not.toBeInTheDocument();
-    expect(within(navigation).getByRole('link', { name: 'Security' })).not.toHaveAttribute('aria-current');
+    expect(within(navigation).getByRole('link', { name: 'Security' })).not.toHaveAttribute(
+      'aria-current'
+    );
     expect(within(navigation).queryByRole('link', { current: 'page' })).not.toBeInTheDocument();
   });
 
@@ -128,13 +142,18 @@ describe('TenantGovernanceShell', () => {
         >
           <div>Webhook content</div>
         </TenantGovernanceShell>
-      </UiLocaleProvider>,
+      </UiLocaleProvider>
     );
 
     const navigation = screen.getByRole('navigation', { name: 'Main navigation' });
 
-    expect(within(navigation).getByRole('link', { name: 'Webhook Management' })).toHaveAttribute('aria-current', 'page');
-    expect(within(navigation).getByRole('link', { name: 'Interface Management' })).not.toHaveAttribute('aria-current');
+    expect(within(navigation).getByRole('link', { name: 'Webhook Management' })).toHaveAttribute(
+      'aria-current',
+      'page'
+    );
+    expect(
+      within(navigation).getByRole('link', { name: 'Interface Management' })
+    ).not.toHaveAttribute('aria-current');
     expect(screen.getAllByText('Webhook Management').length).toBeGreaterThan(0);
   });
 });

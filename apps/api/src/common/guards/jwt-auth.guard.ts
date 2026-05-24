@@ -1,14 +1,9 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
-import {
-  CanActivate,
-  ExecutionContext,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { ErrorCodes } from '@tcrn/shared';
 import { Request } from 'express';
+
+import { ErrorCodes } from '@tcrn/shared';
 
 import { AuthService } from '../../modules/auth/auth.service';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
@@ -21,7 +16,7 @@ import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
 export class JwtAuthGuard implements CanActivate {
   constructor(
     private readonly reflector: Reflector,
-    private readonly authService: AuthService,
+    private readonly authService: AuthService
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -47,7 +42,7 @@ export class JwtAuthGuard implements CanActivate {
 
     try {
       const payload = await this.authService.verifyAccessToken(token);
-      
+
       // Attach user to request
       (request as unknown as { user: unknown }).user = {
         id: payload.sub,

@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { ConflictException, Injectable } from '@nestjs/common';
+
 import {
   createPublicPresenceValidationArtifact,
   ErrorCodes,
@@ -10,15 +10,15 @@ import {
   type RequestContext,
 } from '@tcrn/shared';
 
+import { buildPublicPresenceRuntimeAuthority } from '../domain/public-presence-asset-runtime.policy';
 import {
   buildPublicPresenceSnapshotPersistencePayload,
   calculatePublicPresenceContentHash,
   derivePublicPresenceValidationState,
   type PublicPresencePortalRecord,
 } from '../domain/public-presence-foundation.policy';
-import { buildPublicPresenceRuntimeAuthority } from '../domain/public-presence-asset-runtime.policy';
-import { PublicPresenceAssetService } from './public-presence-asset.service';
 import { PublicPresenceFoundationRepository } from '../infrastructure/public-presence-foundation.repository';
+import { PublicPresenceAssetService } from './public-presence-asset.service';
 
 interface SavePublicPresenceDraftOptions {
   expectedCurrentContentHash?: string | null;
@@ -29,14 +29,14 @@ interface SavePublicPresenceDraftOptions {
 export class PublicPresenceFoundationService {
   constructor(
     private readonly publicPresenceFoundationRepository: PublicPresenceFoundationRepository,
-    private readonly publicPresenceAssetService: PublicPresenceAssetService,
+    private readonly publicPresenceAssetService: PublicPresenceAssetService
   ) {}
 
   async saveDraft(
     talentId: string,
     document: PublicPresenceDocument,
     context: RequestContext,
-    options: SavePublicPresenceDraftOptions = {},
+    options: SavePublicPresenceDraftOptions = {}
   ): Promise<{
     draftVersion: {
       contentHash: string;
@@ -63,17 +63,12 @@ export class PublicPresenceFoundationService {
     };
   }> {
     const tenantSchema = context.tenantSchema ?? '';
-    const portal = await this.getOrCreatePortal(
+    const portal = await this.getOrCreatePortal(tenantSchema, talentId, context.userId ?? null);
+    const currentDraft = await this.publicPresenceFoundationRepository.findLatestVersionByTemplate(
       tenantSchema,
-      talentId,
-      context.userId ?? null,
+      portal.id,
+      document.templateId
     );
-    const currentDraft =
-      await this.publicPresenceFoundationRepository.findLatestVersionByTemplate(
-        tenantSchema,
-        portal.id,
-        document.templateId,
-      );
     const templateAssetPin = options.templateAssetPin ?? currentDraft?.templateAssetPin ?? null;
     const componentAssets = await this.publicPresenceAssetService.listAssets(
       tenantSchema,
@@ -82,7 +77,7 @@ export class PublicPresenceFoundationService {
         scopeId: talentId,
         scopeType: 'talent',
       },
-      context.userId ?? null,
+      context.userId ?? null
     );
     const runtimeAuthority = buildPublicPresenceRuntimeAuthority({
       componentAssets,
@@ -94,12 +89,9 @@ export class PublicPresenceFoundationService {
     });
     const draftValidationSnapshot = artifact.snapshot;
     const contentHash = calculatePublicPresenceContentHash(artifact.document);
-    const validationState = derivePublicPresenceValidationState(
-      draftValidationSnapshot,
-    );
-    const validationPersistence = buildPublicPresenceSnapshotPersistencePayload(
-      draftValidationSnapshot,
-    );
+    const validationState = derivePublicPresenceValidationState(draftValidationSnapshot);
+    const validationPersistence =
+      buildPublicPresenceSnapshotPersistencePayload(draftValidationSnapshot);
 
     if (options.expectedCurrentContentHash !== undefined) {
       const currentContentHash = currentDraft?.contentHash ?? null;
@@ -111,8 +103,7 @@ export class PublicPresenceFoundationService {
             currentContentHash,
             expectedCurrentContentHash: options.expectedCurrentContentHash,
           },
-          message:
-            'Public Presence draft hash is stale. Refresh the latest draft before saving.',
+          message: 'Public Presence draft hash is stale. Refresh the latest draft before saving.',
         });
       }
     }
@@ -133,7 +124,7 @@ export class PublicPresenceFoundationService {
             validationSnapshot: draftValidationSnapshot,
             validationState,
             versionId: currentDraft.id,
-          },
+          }
         );
 
       return {
@@ -163,25 +154,19 @@ export class PublicPresenceFoundationService {
       };
     }
 
-    const {
-      validationSnapshot: persistedValidationSnapshot,
-      version,
-    } =
-      await this.publicPresenceFoundationRepository.createDraftVersionAndAssign(
-        tenantSchema,
-        {
-          actorId: context.userId ?? null,
-          contentHash,
-          contentHashAlgorithm: 'sha256',
-          document: artifact.document,
-          portalId: portal.id,
-          templateAssetPin,
-          validationPersistence,
-          validationSnapshot: draftValidationSnapshot,
-          validationState,
-          versionNumber: portal.latestVersionNumber + 1,
-        },
-      );
+    const { validationSnapshot: persistedValidationSnapshot, version } =
+      await this.publicPresenceFoundationRepository.createDraftVersionAndAssign(tenantSchema, {
+        actorId: context.userId ?? null,
+        contentHash,
+        contentHashAlgorithm: 'sha256',
+        document: artifact.document,
+        portalId: portal.id,
+        templateAssetPin,
+        validationPersistence,
+        validationSnapshot: draftValidationSnapshot,
+        validationState,
+        versionNumber: portal.latestVersionNumber + 1,
+      });
 
     return {
       draftVersion: {
@@ -213,13 +198,12 @@ export class PublicPresenceFoundationService {
   private async getOrCreatePortal(
     tenantSchema: string,
     talentId: string,
-    actorId: string | null,
+    actorId: string | null
   ): Promise<PublicPresencePortalRecord> {
-    const existingPortal =
-      await this.publicPresenceFoundationRepository.findPortalByTalentId(
-        tenantSchema,
-        talentId,
-      );
+    const existingPortal = await this.publicPresenceFoundationRepository.findPortalByTalentId(
+      tenantSchema,
+      talentId
+    );
 
     if (existingPortal) {
       return existingPortal;

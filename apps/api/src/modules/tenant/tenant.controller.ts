@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import {
   BadRequestException,
   Body,
@@ -15,7 +14,29 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiParam, ApiProperty, ApiPropertyOptional, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiParam,
+  ApiProperty,
+  ApiPropertyOptional,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
+import * as argon2 from 'argon2';
+import { Type } from 'class-transformer';
+import {
+  IsBoolean,
+  IsEmail,
+  IsInt,
+  IsOptional,
+  IsString,
+  Matches,
+  Min,
+  MinLength,
+  ValidateNested,
+} from 'class-validator';
+
 import { prisma } from '@tcrn/database';
 import {
   ErrorCodes,
@@ -23,9 +44,6 @@ import {
   RBAC_RESOURCES,
   RBAC_ROLE_TEMPLATES,
 } from '@tcrn/shared';
-import * as argon2 from 'argon2';
-import { Type } from 'class-transformer';
-import { IsBoolean, IsEmail, IsInt, IsOptional, IsString, Matches, Min, MinLength, ValidateNested } from 'class-validator';
 
 import { AuthenticatedUser, CurrentUser, RequirePermissions } from '../../common/decorators';
 import { paginated, success } from '../../common/response.util';
@@ -66,16 +84,26 @@ export class TenantSettingsDto {
   @Min(1000)
   maxCustomersPerTalent?: number;
 
-  @ApiPropertyOptional({ description: 'Enabled features list', example: ['homepage', 'marshmallow'], type: [String] })
+  @ApiPropertyOptional({
+    description: 'Enabled features list',
+    example: ['homepage', 'marshmallow'],
+    type: [String],
+  })
   @IsOptional()
   @IsString({ each: true })
   features?: string[];
 }
 
 export class CreateTenantDto {
-  @ApiProperty({ description: 'Tenant code (uppercase)', example: 'ACME_CORP', pattern: '^[A-Z0-9_]{3,32}$' })
+  @ApiProperty({
+    description: 'Tenant code (uppercase)',
+    example: 'ACME_CORP',
+    pattern: '^[A-Z0-9_]{3,32}$',
+  })
   @IsString()
-  @Matches(/^[A-Z0-9_]{3,32}$/, { message: 'Code must be 3-32 uppercase letters, numbers, or underscores' })
+  @Matches(/^[A-Z0-9_]{3,32}$/, {
+    message: 'Code must be 3-32 uppercase letters, numbers, or underscores',
+  })
   code: string;
 
   @ApiProperty({ description: 'Tenant name', example: 'Acme Corporation', minLength: 2 })
@@ -134,7 +162,11 @@ export class ListTenantsQueryDto {
   @IsString()
   search?: string;
 
-  @ApiPropertyOptional({ description: 'Filter by tier', enum: ['ac', 'standard'], example: 'standard' })
+  @ApiPropertyOptional({
+    description: 'Filter by tier',
+    enum: ['ac', 'standard'],
+    example: 'standard',
+  })
   @IsOptional()
   @IsString()
   tier?: 'ac' | 'standard';
@@ -152,13 +184,19 @@ export class ListTenantsQueryDto {
 }
 
 export class DeactivateTenantDto {
-  @ApiPropertyOptional({ description: 'Operator note explaining why the tenant is being deactivated', example: 'UAT tenant retired' })
+  @ApiPropertyOptional({
+    description: 'Operator note explaining why the tenant is being deactivated',
+    example: 'UAT tenant retired',
+  })
   @IsOptional()
   @IsString()
   reason?: string;
 }
 
-const createSuccessEnvelopeSchema = (dataSchema: Record<string, unknown>, exampleData: unknown) => ({
+const createSuccessEnvelopeSchema = (
+  dataSchema: Record<string, unknown>,
+  exampleData: unknown
+) => ({
   type: 'object',
   properties: {
     success: { type: 'boolean', example: true },
@@ -215,7 +253,18 @@ const TENANT_ITEM_SCHEMA = {
     createdAt: { type: 'string', format: 'date-time', example: '2026-04-13T08:00:00.000Z' },
     updatedAt: { type: 'string', format: 'date-time', example: '2026-04-13T09:00:00.000Z' },
   },
-  required: ['id', 'code', 'name', 'schemaName', 'tier', 'isActive', 'settings', 'stats', 'createdAt', 'updatedAt'],
+  required: [
+    'id',
+    'code',
+    'name',
+    'schemaName',
+    'tier',
+    'isActive',
+    'settings',
+    'stats',
+    'createdAt',
+    'updatedAt',
+  ],
 };
 
 const TENANT_LIST_SUCCESS_SCHEMA = {
@@ -272,21 +321,18 @@ const TENANT_LIST_SUCCESS_SCHEMA = {
   },
 };
 
-const TENANT_DETAIL_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
-  TENANT_ITEM_SCHEMA,
-  {
-    id: '550e8400-e29b-41d4-a716-446655440400',
-    code: 'ACME_CORP',
-    name: 'Acme Corporation',
-    schemaName: 'tenant_acme_corp',
-    tier: 'standard',
-    isActive: true,
-    settings: { maxTalents: 100 },
-    stats: { subsidiaryCount: 3, talentCount: 12, userCount: 8 },
-    createdAt: '2026-04-13T08:00:00.000Z',
-    updatedAt: '2026-04-13T09:00:00.000Z',
-  },
-);
+const TENANT_DETAIL_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(TENANT_ITEM_SCHEMA, {
+  id: '550e8400-e29b-41d4-a716-446655440400',
+  code: 'ACME_CORP',
+  name: 'Acme Corporation',
+  schemaName: 'tenant_acme_corp',
+  tier: 'standard',
+  isActive: true,
+  settings: { maxTalents: 100 },
+  stats: { subsidiaryCount: 3, talentCount: 12, userCount: 8 },
+  createdAt: '2026-04-13T08:00:00.000Z',
+  updatedAt: '2026-04-13T09:00:00.000Z',
+});
 
 const TENANT_CREATE_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
   {
@@ -322,7 +368,7 @@ const TENANT_CREATE_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
       email: 'admin@example.com',
     },
     createdAt: '2026-04-13T08:00:00.000Z',
-  },
+  }
 );
 
 const TENANT_UPDATE_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
@@ -345,7 +391,7 @@ const TENANT_UPDATE_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
     isActive: true,
     settings: { maxTalents: 150 },
     updatedAt: '2026-04-13T09:20:00.000Z',
-  },
+  }
 );
 
 const TENANT_ACTIVATION_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
@@ -362,7 +408,7 @@ const TENANT_ACTIVATION_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
     id: '550e8400-e29b-41d4-a716-446655440400',
     isActive: true,
     activatedAt: '2026-04-13T09:30:00.000Z',
-  },
+  }
 );
 
 const TENANT_DEACTIVATION_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
@@ -381,27 +427,27 @@ const TENANT_DEACTIVATION_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
     isActive: false,
     deactivatedAt: '2026-04-13T09:35:00.000Z',
     reason: 'UAT tenant retired',
-  },
+  }
 );
 
 const TENANT_BAD_REQUEST_SCHEMA = createErrorEnvelopeSchema(
   ErrorCodes.CODE_ALREADY_EXISTS,
-  'Tenant code already exists',
+  'Tenant code already exists'
 );
 
 const TENANT_UNAUTHORIZED_SCHEMA = createErrorEnvelopeSchema(
   'AUTH_UNAUTHORIZED',
-  'Authentication required',
+  'Authentication required'
 );
 
 const TENANT_FORBIDDEN_SCHEMA = createErrorEnvelopeSchema(
   ErrorCodes.PERM_ACCESS_DENIED,
-  'Only AC tenant administrators can access this resource',
+  'Only AC tenant administrators can access this resource'
 );
 
 const TENANT_NOT_FOUND_SCHEMA = createErrorEnvelopeSchema(
   ErrorCodes.TENANT_NOT_FOUND,
-  'Tenant not found',
+  'Tenant not found'
 );
 
 const RBAC_ROLE_PERMISSION_ENTRIES = RBAC_ROLE_TEMPLATES.flatMap((role) =>
@@ -411,8 +457,8 @@ const RBAC_ROLE_PERMISSION_ENTRIES = RBAC_ROLE_TEMPLATES.flatMap((role) =>
       resourceCode: permission.resourceCode,
       action,
       effect: permission.effect ?? 'grant',
-    })),
-  ),
+    }))
+  )
 );
 
 /**
@@ -423,9 +469,7 @@ const RBAC_ROLE_PERMISSION_ENTRIES = RBAC_ROLE_TEMPLATES.flatMap((role) =>
 @Controller('tenants')
 @ApiBearerAuth()
 export class TenantController {
-  constructor(
-    private readonly tenantService: TenantService,
-  ) {}
+  constructor(private readonly tenantService: TenantService) {}
 
   /**
    * Verify AC tenant access
@@ -451,15 +495,21 @@ export class TenantController {
     try {
       // Query counts from tenant schema
       const [subsidiaryResult, talentResult, userResult] = await Promise.all([
-        prisma.$queryRawUnsafe<Array<{ count: bigint }>>(
-          `SELECT COUNT(*)::bigint as count FROM "${schemaName}".subsidiary WHERE is_active = true`
-        ).catch(() => [{ count: BigInt(0) }]),
-        prisma.$queryRawUnsafe<Array<{ count: bigint }>>(
-          `SELECT COUNT(*)::bigint as count FROM "${schemaName}".talent WHERE is_active = true`
-        ).catch(() => [{ count: BigInt(0) }]),
-        prisma.$queryRawUnsafe<Array<{ count: bigint }>>(
-          `SELECT COUNT(*)::bigint as count FROM "${schemaName}".system_user WHERE is_active = true`
-        ).catch(() => [{ count: BigInt(0) }]),
+        prisma
+          .$queryRawUnsafe<
+            Array<{ count: bigint }>
+          >(`SELECT COUNT(*)::bigint as count FROM "${schemaName}".subsidiary WHERE is_active = true`)
+          .catch(() => [{ count: BigInt(0) }]),
+        prisma
+          .$queryRawUnsafe<
+            Array<{ count: bigint }>
+          >(`SELECT COUNT(*)::bigint as count FROM "${schemaName}".talent WHERE is_active = true`)
+          .catch(() => [{ count: BigInt(0) }]),
+        prisma
+          .$queryRawUnsafe<
+            Array<{ count: bigint }>
+          >(`SELECT COUNT(*)::bigint as count FROM "${schemaName}".system_user WHERE is_active = true`)
+          .catch(() => [{ count: BigInt(0) }]),
       ]);
 
       return {
@@ -478,7 +528,8 @@ export class TenantController {
    */
   private async seedEssentialDataIfMissing(schemaName: string): Promise<void> {
     for (const resource of RBAC_RESOURCES) {
-      await prisma.$executeRawUnsafe(`
+      await prisma.$executeRawUnsafe(
+        `
         INSERT INTO "${schemaName}".resource (id, code, module, name, sort_order, is_active, created_at, updated_at)
         VALUES (gen_random_uuid(), $1, $2, $3::jsonb, $4, true, now(), now())
         ON CONFLICT (code) DO UPDATE
@@ -487,11 +538,17 @@ export class TenantController {
             sort_order = EXCLUDED.sort_order,
             is_active = true,
             updated_at = now()
-      `, resource.code, resource.module, JSON.stringify(resource.name), resource.sortOrder);
+      `,
+        resource.code,
+        resource.module,
+        JSON.stringify(resource.name),
+        resource.sortOrder
+      );
     }
 
     for (const policy of RBAC_POLICY_DEFINITIONS) {
-      await prisma.$executeRawUnsafe(`
+      await prisma.$executeRawUnsafe(
+        `
         WITH resource_lookup AS (
           SELECT id FROM "${schemaName}".resource WHERE code = $1
         )
@@ -501,11 +558,15 @@ export class TenantController {
         ON CONFLICT (resource_id, action) DO UPDATE
         SET is_active = true,
             updated_at = now()
-      `, policy.resourceCode, policy.action);
+      `,
+        policy.resourceCode,
+        policy.action
+      );
     }
 
     for (const role of RBAC_ROLE_TEMPLATES) {
-      await prisma.$executeRawUnsafe(`
+      await prisma.$executeRawUnsafe(
+        `
         INSERT INTO "${schemaName}".role (id, code, name, description, is_system, is_active, created_at, updated_at, version)
         VALUES (gen_random_uuid(), $1, $2::jsonb, $3, $4, true, now(), now(), 1)
         ON CONFLICT (code) DO UPDATE
@@ -514,11 +575,17 @@ export class TenantController {
             is_system = EXCLUDED.is_system,
             is_active = true,
             updated_at = now()
-      `, role.code, JSON.stringify(role.name), role.description, role.isSystem);
+      `,
+        role.code,
+        JSON.stringify(role.name),
+        role.description,
+        role.isSystem
+      );
     }
 
     for (const entry of RBAC_ROLE_PERMISSION_ENTRIES) {
-      await prisma.$executeRawUnsafe(`
+      await prisma.$executeRawUnsafe(
+        `
         WITH role_lookup AS (
           SELECT id FROM "${schemaName}".role WHERE code = $1
         ),
@@ -533,7 +600,12 @@ export class TenantController {
         FROM role_lookup rl
         CROSS JOIN policy_lookup pl
         ON CONFLICT (role_id, policy_id) DO UPDATE SET effect = EXCLUDED.effect
-      `, entry.roleCode, entry.resourceCode, entry.action, entry.effect);
+      `,
+        entry.roleCode,
+        entry.resourceCode,
+        entry.action,
+        entry.effect
+      );
     }
   }
 
@@ -559,10 +631,7 @@ export class TenantController {
     description: 'Only AC tenant administrators can list tenants',
     schema: TENANT_FORBIDDEN_SCHEMA,
   })
-  async listTenants(
-    @CurrentUser() user: AuthenticatedUser,
-    @Query() query: ListTenantsQueryDto,
-  ) {
+  async listTenants(@CurrentUser() user: AuthenticatedUser, @Query() query: ListTenantsQueryDto) {
     await this.verifyAcAccess(user);
 
     const { page = 1, pageSize = 20, search, tier, isActive, sort } = query;
@@ -601,24 +670,26 @@ export class TenantController {
     ]);
 
     // Get stats for each tenant
-    const data = await Promise.all(tenants.map(async (tenant) => {
-      const stats = tenant.schemaName 
-        ? await this.getTenantStats(tenant.schemaName)
-        : { subsidiaryCount: 0, talentCount: 0, userCount: 0 };
-      
-      return {
-        id: tenant.id,
-        code: tenant.code,
-        name: tenant.name,
-        schemaName: tenant.schemaName,
-        tier: tenant.tier,
-        isActive: tenant.isActive,
-        settings: tenant.settings,
-        stats,
-        createdAt: tenant.createdAt.toISOString(),
-        updatedAt: tenant.updatedAt.toISOString(),
-      };
-    }));
+    const data = await Promise.all(
+      tenants.map(async (tenant) => {
+        const stats = tenant.schemaName
+          ? await this.getTenantStats(tenant.schemaName)
+          : { subsidiaryCount: 0, talentCount: 0, userCount: 0 };
+
+        return {
+          id: tenant.id,
+          code: tenant.code,
+          name: tenant.name,
+          schemaName: tenant.schemaName,
+          tier: tenant.tier,
+          isActive: tenant.isActive,
+          settings: tenant.settings,
+          stats,
+          createdAt: tenant.createdAt.toISOString(),
+          updatedAt: tenant.updatedAt.toISOString(),
+        };
+      })
+    );
 
     return paginated(data, { page, pageSize, totalCount });
   }
@@ -650,10 +721,7 @@ export class TenantController {
     description: 'Only AC tenant administrators can create tenants',
     schema: TENANT_FORBIDDEN_SCHEMA,
   })
-  async createTenant(
-    @CurrentUser() user: AuthenticatedUser,
-    @Body() dto: CreateTenantDto,
-  ) {
+  async createTenant(@CurrentUser() user: AuthenticatedUser, @Body() dto: CreateTenantDto) {
     await this.verifyAcAccess(user);
 
     // Check code uniqueness
@@ -683,34 +751,47 @@ export class TenantController {
       timeCost: 3,
       parallelism: 4,
     });
-    
-    await prisma.$executeRawUnsafe(`
+
+    await prisma.$executeRawUnsafe(
+      `
       INSERT INTO "${tenant.schemaName}".system_user 
         (id, username, email, password_hash, display_name, preferred_language, is_active, created_at, updated_at)
       VALUES 
         (gen_random_uuid(), $1, $2, $3, $4, 'en', true, now(), now())
-    `, dto.adminUser.username, dto.adminUser.email, passwordHash, dto.adminUser.displayName || null);
+    `,
+      dto.adminUser.username,
+      dto.adminUser.email,
+      passwordHash,
+      dto.adminUser.displayName || null
+    );
 
     // Get admin user id and assign TENANT_ADMIN role
-    const adminUsers = await prisma.$queryRawUnsafe<Array<{ id: string }>>(`
+    const adminUsers = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
+      `
       SELECT id FROM "${tenant.schemaName}".system_user WHERE username = $1
-    `, dto.adminUser.username);
+    `,
+      dto.adminUser.username
+    );
 
     if (adminUsers.length > 0) {
       const adminUserId = adminUsers[0].id;
-      
+
       // Get TENANT_ADMIN role id
       const roles = await prisma.$queryRawUnsafe<Array<{ id: string }>>(`
         SELECT id FROM "${tenant.schemaName}".role WHERE code = 'TENANT_ADMIN'
       `);
 
       if (roles.length > 0) {
-        await prisma.$executeRawUnsafe(`
+        await prisma.$executeRawUnsafe(
+          `
           INSERT INTO "${tenant.schemaName}".user_role 
             (id, user_id, role_id, scope_type, granted_at)
           VALUES 
             (gen_random_uuid(), $1::uuid, $2::uuid, 'tenant', now())
-        `, adminUserId, roles[0].id);
+        `,
+          adminUserId,
+          roles[0].id
+        );
       }
     }
 
@@ -763,7 +844,7 @@ export class TenantController {
   })
   async getTenant(
     @CurrentUser() user: AuthenticatedUser,
-    @Param('tenantId', ParseUUIDPipe) tenantId: string,
+    @Param('tenantId', ParseUUIDPipe) tenantId: string
   ) {
     await this.verifyAcAccess(user);
 
@@ -829,7 +910,7 @@ export class TenantController {
   async updateTenant(
     @CurrentUser() user: AuthenticatedUser,
     @Param('tenantId', ParseUUIDPipe) tenantId: string,
-    @Body() dto: UpdateTenantDto,
+    @Body() dto: UpdateTenantDto
   ) {
     await this.verifyAcAccess(user);
 
@@ -846,8 +927,8 @@ export class TenantController {
       where: { id: tenantId },
       data: {
         ...(dto.name && { name: dto.name }),
-        ...(dto.settings && { 
-          settings: { ...(tenant.settings as object || {}), ...dto.settings },
+        ...(dto.settings && {
+          settings: { ...((tenant.settings as object) || {}), ...dto.settings },
         }),
       },
     });
@@ -897,7 +978,7 @@ export class TenantController {
   })
   async activateTenant(
     @CurrentUser() user: AuthenticatedUser,
-    @Param('tenantId', ParseUUIDPipe) tenantId: string,
+    @Param('tenantId', ParseUUIDPipe) tenantId: string
   ) {
     await this.verifyAcAccess(user);
 
@@ -952,7 +1033,7 @@ export class TenantController {
   async deactivateTenant(
     @CurrentUser() user: AuthenticatedUser,
     @Param('tenantId', ParseUUIDPipe) tenantId: string,
-    @Body() body: DeactivateTenantDto,
+    @Body() body: DeactivateTenantDto
   ) {
     await this.verifyAcAccess(user);
 

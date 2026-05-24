@@ -30,11 +30,10 @@ export const mapCustomerExternalIdRecord = (record: CustomerExternalIdRecord) =>
 
 export const buildCustomerExternalIdObjectName = (
   consumerCode: string,
-  externalId: string,
+  externalId: string
 ): string => `${consumerCode}:${externalId}`;
 
 export const buildDuplicateCustomerExternalIdMessage = (
   consumerCode: string,
-  externalId: string,
-): string =>
-  `External ID '${externalId}' already exists for consumer '${consumerCode}'`;
+  externalId: string
+): string => `External ID '${externalId}' already exists for consumer '${consumerCode}'`;

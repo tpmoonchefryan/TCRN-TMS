@@ -1,8 +1,8 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { ConflictException, NotFoundException } from '@nestjs/common';
-import type { RequestContext } from '@tcrn/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import type { RequestContext } from '@tcrn/shared';
 
 import type { DatabaseService } from '../../database';
 import { ProfileType } from '../dto/customer.dto';
@@ -46,7 +46,7 @@ describe('PlatformIdentityApplicationService', () => {
   const service = new PlatformIdentityApplicationService(
     mockRepository,
     mockDatabaseService,
-    mockCustomerArchiveAccessService,
+    mockCustomerArchiveAccessService
   );
 
   const customerArchiveAccessRecord = {
@@ -79,18 +79,18 @@ describe('PlatformIdentityApplicationService', () => {
   });
 
   it('throws NotFoundException when the customer access check fails on the read path', async () => {
-    vi.mocked(
-      mockCustomerArchiveAccessService.requireCustomerArchiveAccess,
-    ).mockRejectedValue(new NotFoundException());
+    vi.mocked(mockCustomerArchiveAccessService.requireCustomerArchiveAccess).mockRejectedValue(
+      new NotFoundException()
+    );
 
-    await expect(
-      service.findByCustomer('customer-1', 'talent-1', context),
-    ).rejects.toThrow(NotFoundException);
+    await expect(service.findByCustomer('customer-1', 'talent-1', context)).rejects.toThrow(
+      NotFoundException
+    );
   });
 
   it('maps platform identity list records on the read path', async () => {
     vi.mocked(mockCustomerArchiveAccessService.requireCustomerArchiveAccess).mockResolvedValue(
-      customerArchiveAccessRecord,
+      customerArchiveAccessRecord
     );
     vi.mocked(mockRepository.findByCustomer).mockResolvedValue([
       {
@@ -111,9 +111,7 @@ describe('PlatformIdentityApplicationService', () => {
       },
     ]);
 
-    await expect(
-      service.findByCustomer('customer-1', 'talent-1', context),
-    ).resolves.toEqual([
+    await expect(service.findByCustomer('customer-1', 'talent-1', context)).resolves.toEqual([
       {
         id: 'identity-1',
         platform: {
@@ -137,7 +135,7 @@ describe('PlatformIdentityApplicationService', () => {
 
   it('throws NotFoundException when create cannot resolve the platform', async () => {
     vi.mocked(mockCustomerArchiveAccessService.requireCustomerArchiveAccess).mockResolvedValue(
-      customerArchiveAccessRecord,
+      customerArchiveAccessRecord
     );
     vi.mocked(mockRepository.findActivePlatformByCode).mockResolvedValue(null);
 
@@ -149,14 +147,14 @@ describe('PlatformIdentityApplicationService', () => {
           platformCode: 'INVALID',
           platformUid: 'UC123',
         },
-        context,
-      ),
+        context
+      )
     ).rejects.toThrow(NotFoundException);
   });
 
   it('throws ConflictException when create sees a duplicate identity', async () => {
     vi.mocked(mockCustomerArchiveAccessService.requireCustomerArchiveAccess).mockResolvedValue(
-      customerArchiveAccessRecord,
+      customerArchiveAccessRecord
     );
     vi.mocked(mockRepository.findActivePlatformByCode).mockResolvedValue({
       id: 'platform-1',
@@ -176,14 +174,14 @@ describe('PlatformIdentityApplicationService', () => {
           platformCode: 'YOUTUBE',
           platformUid: 'UC123',
         },
-        context,
-      ),
+        context
+      )
     ).rejects.toThrow(ConflictException);
   });
 
   it('creates a platform identity and records history plus raw change-log payloads', async () => {
     vi.mocked(mockCustomerArchiveAccessService.requireCustomerArchiveAccess).mockResolvedValue(
-      customerArchiveAccessRecord,
+      customerArchiveAccessRecord
     );
     vi.mocked(mockRepository.findActivePlatformByCode).mockResolvedValue({
       id: 'platform-1',
@@ -213,8 +211,8 @@ describe('PlatformIdentityApplicationService', () => {
           platformUid: 'UC123',
           platformNickname: 'Channel',
         },
-        context,
-      ),
+        context
+      )
     ).resolves.toEqual({
       id: 'identity-1',
       platform: {
@@ -255,7 +253,7 @@ describe('PlatformIdentityApplicationService', () => {
 
   it('updates a platform identity and records typed history changes', async () => {
     vi.mocked(mockCustomerArchiveAccessService.requireCustomerArchiveAccess).mockResolvedValue(
-      customerArchiveAccessRecord,
+      customerArchiveAccessRecord
     );
     vi.mocked(mockRepository.findOwnedIdentity).mockResolvedValue({
       id: 'identity-1',
@@ -292,8 +290,8 @@ describe('PlatformIdentityApplicationService', () => {
           isVerified: true,
           isCurrent: false,
         },
-        context,
-      ),
+        context
+      )
     ).resolves.toEqual({
       id: 'identity-1',
       platformUid: 'UC456',
@@ -328,7 +326,7 @@ describe('PlatformIdentityApplicationService', () => {
 
   it('returns mapped history rows with pagination metadata', async () => {
     vi.mocked(mockCustomerArchiveAccessService.requireCustomerArchiveAccess).mockResolvedValue(
-      customerArchiveAccessRecord,
+      customerArchiveAccessRecord
     );
     vi.mocked(mockRepository.findHistory).mockResolvedValue([
       {
@@ -353,8 +351,8 @@ describe('PlatformIdentityApplicationService', () => {
           page: 1,
           pageSize: 20,
         },
-        context,
-      ),
+        context
+      )
     ).resolves.toEqual({
       items: [
         {

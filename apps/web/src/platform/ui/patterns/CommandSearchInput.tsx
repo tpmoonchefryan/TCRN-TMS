@@ -25,11 +25,13 @@ export interface CommandSearchInputProps {
 }
 
 function matchesShortcut(event: KeyboardEvent, shortcut: CommandShortcut) {
-  return event.key.toLowerCase() === shortcut.key.toLowerCase()
-    && Boolean(event.altKey) === Boolean(shortcut.altKey)
-    && Boolean(event.ctrlKey) === Boolean(shortcut.ctrlKey)
-    && Boolean(event.metaKey) === Boolean(shortcut.metaKey)
-    && Boolean(event.shiftKey) === Boolean(shortcut.shiftKey);
+  return (
+    event.key.toLowerCase() === shortcut.key.toLowerCase() &&
+    Boolean(event.altKey) === Boolean(shortcut.altKey) &&
+    Boolean(event.ctrlKey) === Boolean(shortcut.ctrlKey) &&
+    Boolean(event.metaKey) === Boolean(shortcut.metaKey) &&
+    Boolean(event.shiftKey) === Boolean(shortcut.shiftKey)
+  );
 }
 
 export const CommandSearchInput: React.FC<CommandSearchInputProps> = ({
@@ -90,8 +92,19 @@ export const CommandSearchInput: React.FC<CommandSearchInputProps> = ({
   return (
     <div className={`relative ${className}`}>
       <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-        <svg className="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        <svg
+          className="h-4 w-4 text-slate-400"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          aria-hidden="true"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+          />
         </svg>
       </div>
       <input

@@ -3,7 +3,13 @@ export interface WorkspaceSessionLike {
   tenantTier?: string | null;
 }
 
-export type TalentWorkspaceSection = 'overview' | 'customers' | 'homepage' | 'marshmallow' | 'reports' | 'settings';
+export type TalentWorkspaceSection =
+  | 'overview'
+  | 'customers'
+  | 'homepage'
+  | 'marshmallow'
+  | 'reports'
+  | 'settings';
 export type TalentSettingsSection = 'details' | 'config-entities' | 'settings' | 'dictionary';
 export type TalentSettingsFocus = 'homepage-routing' | 'marshmallow-routing';
 export type PublicPresenceHomepageSurface = 'management' | 'templates' | 'components';
@@ -49,10 +55,7 @@ export function buildTenantWorkspacePath(tenantId: string) {
   return `/tenant/${tenantId}`;
 }
 
-export function buildTenantSettingsPath(
-  tenantId: string,
-  section?: TalentSettingsSection,
-) {
+export function buildTenantSettingsPath(tenantId: string, section?: TalentSettingsSection) {
   const params = new URLSearchParams();
 
   if (section) {
@@ -84,7 +87,7 @@ export function buildSubsidiaryBusinessPath(tenantId: string, subsidiaryId: stri
 export function buildSubsidiarySettingsPath(
   tenantId: string,
   subsidiaryId: string,
-  section?: TalentSettingsSection,
+  section?: TalentSettingsSection
 ) {
   const params = new URLSearchParams();
 
@@ -129,7 +132,7 @@ export function buildTalentWorkspacePath(tenantId: string, talentId: string) {
 export function buildTalentWorkspaceSectionPath(
   tenantId: string,
   talentId: string,
-  section: TalentWorkspaceSection,
+  section: TalentWorkspaceSection
 ) {
   if (section === 'overview') {
     return buildTalentWorkspacePath(tenantId, talentId);
@@ -142,7 +145,7 @@ export function buildPublicPresenceStudioEditorPath(
   tenantId: string,
   talentId: string,
   templateId?: string | null,
-  focus?: PublicPresenceStudioFocus | null,
+  focus?: PublicPresenceStudioFocus | null
 ) {
   const params = new URLSearchParams();
 
@@ -162,7 +165,7 @@ export function buildPublicPresenceStudioEditorPath(
 
 export function mergePathSearchParams(
   path: string,
-  updates: Record<string, string | null | undefined>,
+  updates: Record<string, string | null | undefined>
 ) {
   const url = new URL(path, 'https://tcrn.local');
 
@@ -183,7 +186,7 @@ export function mergePathSearchParams(
 export function buildPublicPresenceHomepageSurfacePath(
   tenantId: string,
   talentId: string,
-  surface: PublicPresenceHomepageSurface = 'management',
+  surface: PublicPresenceHomepageSurface = 'management'
 ) {
   void surface;
   const path = buildTalentWorkspaceSectionPath(tenantId, talentId, 'homepage');
@@ -195,7 +198,7 @@ export function buildPublicPresenceAssetIdePath(
   tenantId: string,
   assetKind: PublicPresenceAssetIdeKind,
   assetId: string,
-  options: PublicPresenceAssetIdePathOptions = {},
+  options: PublicPresenceAssetIdePathOptions = {}
 ) {
   const params = new URLSearchParams();
 
@@ -216,7 +219,7 @@ export function buildPublicPresenceAssetIdePath(
 export function buildPublicPresenceStudioPreviewPath(
   tenantId: string,
   talentId: string,
-  templateId?: string | null,
+  templateId?: string | null
 ) {
   const params = new URLSearchParams();
 
@@ -233,7 +236,7 @@ export function buildPublicPresenceStudioPreviewPath(
 export function buildTalentSettingsPath(
   tenantId: string,
   talentId: string,
-  options: TalentSettingsPathOptions = {},
+  options: TalentSettingsPathOptions = {}
 ) {
   const params = new URLSearchParams();
 
@@ -305,7 +308,9 @@ export function resolveTalentWorkspaceRoute(pathname: string): TalentWorkspaceRo
 }
 
 export function resolveHierarchyBusinessRoute(pathname: string): HierarchyBusinessRoute | null {
-  const subsidiaryMatch = pathname.match(/^\/tenant\/([^/]+)\/subsidiary\/([^/]+)\/business(?:\/|$)/);
+  const subsidiaryMatch = pathname.match(
+    /^\/tenant\/([^/]+)\/subsidiary\/([^/]+)\/business(?:\/|$)/
+  );
 
   if (subsidiaryMatch) {
     const [, tenantId, subsidiaryId] = subsidiaryMatch;
@@ -338,7 +343,10 @@ export function buildDefaultWorkspacePath(session: WorkspaceSessionLike) {
     : buildTenantWorkspacePath(session.tenantId);
 }
 
-export function resolvePostLoginPath(nextHref: string | null | undefined, session: WorkspaceSessionLike) {
+export function resolvePostLoginPath(
+  nextHref: string | null | undefined,
+  session: WorkspaceSessionLike
+) {
   const safeNextHref = normalizeInternalWorkspacePath(nextHref);
 
   if (safeNextHref) {
@@ -350,7 +358,7 @@ export function resolvePostLoginPath(nextHref: string | null | undefined, sessio
 
 export function resolveRecoveryTenantId(
   previousTenantId?: string | null,
-  requestedTenantId?: string | null,
+  requestedTenantId?: string | null
 ) {
   return previousTenantId || requestedTenantId || null;
 }

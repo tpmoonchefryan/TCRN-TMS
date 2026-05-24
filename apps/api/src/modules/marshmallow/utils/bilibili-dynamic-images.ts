@@ -43,7 +43,7 @@ function asBilibiliDynamicModule(value: unknown): BilibiliDynamicModule | null {
 function pushNormalized(
   images: string[],
   value: string | undefined,
-  normalizeUrl: (url: string) => string,
+  normalizeUrl: (url: string) => string
 ) {
   if (typeof value === 'string' && value.length > 0) {
     images.push(normalizeUrl(value));
@@ -52,7 +52,7 @@ function pushNormalized(
 
 export function extractBilibiliImagesFromModules(
   modules: unknown,
-  normalizeUrl: (url: string) => string,
+  normalizeUrl: (url: string) => string
 ): string[] {
   if (!Array.isArray(modules)) {
     return [];

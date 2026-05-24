@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { BatchOperationApplicationService } from '../../application/batch-operation.service';
@@ -22,7 +21,7 @@ describe('BatchOperationService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     service = new BatchOperationService(
-      mockApplicationService as unknown as BatchOperationApplicationService,
+      mockApplicationService as unknown as BatchOperationApplicationService
     );
   });
 
@@ -41,8 +40,8 @@ describe('BatchOperationService', () => {
           customerIds: ['customer-1', 'customer-2'],
           action: BatchAction.DEACTIVATE,
         },
-        mockContext,
-      ),
+        mockContext
+      )
     ).resolves.toEqual({
       total: 2,
       success: 2,
@@ -64,8 +63,8 @@ describe('BatchOperationService', () => {
           customerIds: Array(51).fill('customer-id'),
           action: BatchAction.DEACTIVATE,
         },
-        mockContext,
-      ),
+        mockContext
+      )
     ).resolves.toEqual({
       jobId: 'job-123',
       message: 'Batch operation queued for 51 customers. Check job status for progress.',

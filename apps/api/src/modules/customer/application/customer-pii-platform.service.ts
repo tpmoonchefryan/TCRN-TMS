@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { BadRequestException, Injectable } from '@nestjs/common';
+
 import { ErrorCodes, type RequestContext } from '@tcrn/shared';
 
 import { OwnerType } from '../../integration/dto/integration.dto';
@@ -14,17 +14,13 @@ import {
   PII_PLATFORM_CODE,
   resolveCustomerPiiPlatformRuntime,
 } from '../domain/pii-platform.policy';
-import type {
-  CompanyPiiDataDto,
-  PiiDataDto,
-  ProfileType,
-} from '../dto/customer.dto';
+import type { CompanyPiiDataDto, PiiDataDto, ProfileType } from '../dto/customer.dto';
 
 @Injectable()
 export class CustomerPiiPlatformApplicationService {
   constructor(
     private readonly adapterResolutionService: AdapterResolutionService,
-    private readonly piiClientService: PiiClientService,
+    private readonly piiClientService: PiiClientService
   ) {}
 
   async upsertCustomerPii(
@@ -32,7 +28,7 @@ export class CustomerPiiPlatformApplicationService {
     talentId: string,
     profileType: ProfileType,
     pii: PiiDataDto | CompanyPiiDataDto,
-    context: RequestContext,
+    context: RequestContext
   ) {
     const runtime = await this.resolveRuntime(talentId, context);
 
@@ -44,18 +40,15 @@ export class CustomerPiiPlatformApplicationService {
         profileType,
         pii,
         context,
-        runtime,
+        runtime
       ),
       runtime.serviceToken,
       context.tenantId,
-      context.tenantSchema,
+      context.tenantSchema
     );
   }
 
-  async assertPlatformEnabled(
-    talentId: string,
-    context: RequestContext,
-  ): Promise<void> {
+  async assertPlatformEnabled(talentId: string, context: RequestContext): Promise<void> {
     await this.resolveRuntime(talentId, context);
   }
 
@@ -63,7 +56,7 @@ export class CustomerPiiPlatformApplicationService {
     customerId: string,
     talentId: string,
     profileType: ProfileType,
-    context: RequestContext,
+    context: RequestContext
   ) {
     const runtime = await this.resolveRuntime(talentId, context);
 
@@ -74,11 +67,11 @@ export class CustomerPiiPlatformApplicationService {
         talentId,
         profileType,
         context,
-        runtime,
+        runtime
       ),
       runtime.serviceToken,
       context.tenantId,
-      context.tenantSchema,
+      context.tenantSchema
     );
   }
 
@@ -92,7 +85,7 @@ export class CustomerPiiPlatformApplicationService {
       reasonCode?: string | null;
       occurredAt: Date;
     },
-    context: RequestContext,
+    context: RequestContext
   ) {
     const runtime = await this.resolveRuntimeIfEnabled(talentId, context);
 
@@ -108,17 +101,17 @@ export class CustomerPiiPlatformApplicationService {
         profileType,
         lifecycle,
         context,
-        runtime,
+        runtime
       ),
       runtime.serviceToken,
       context.tenantId,
-      context.tenantSchema,
+      context.tenantSchema
     );
   }
 
   private async resolveRuntime(
     talentId: string,
-    context: RequestContext,
+    context: RequestContext
   ): Promise<CustomerPiiPlatformRuntime> {
     const runtime = await this.resolveRuntimeIfEnabled(talentId, context);
 
@@ -134,7 +127,7 @@ export class CustomerPiiPlatformApplicationService {
 
   private async resolveRuntimeIfEnabled(
     talentId: string,
-    context: RequestContext,
+    context: RequestContext
   ): Promise<CustomerPiiPlatformRuntime | null> {
     const adapter = await this.adapterResolutionService.resolveEffectiveAdapter(
       {
@@ -142,7 +135,7 @@ export class CustomerPiiPlatformApplicationService {
         ownerId: talentId,
         platformCode: PII_PLATFORM_CODE,
       },
-      context,
+      context
     );
 
     if (!adapter) {

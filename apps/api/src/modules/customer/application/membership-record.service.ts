@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable, NotFoundException } from '@nestjs/common';
+
 import { ErrorCodes, type RequestContext } from '@tcrn/shared';
 
 import { DatabaseService } from '../../database';
@@ -26,14 +26,14 @@ export class MembershipRecordApplicationService {
   constructor(
     private readonly membershipRecordRepository: MembershipRecordRepository,
     private readonly databaseService: DatabaseService,
-    private readonly customerArchiveAccessService: CustomerArchiveAccessService,
+    private readonly customerArchiveAccessService: CustomerArchiveAccessService
   ) {}
 
   async findByCustomer(
     customerId: string,
     talentId: string,
     query: MembershipListQueryDto,
-    context: RequestContext,
+    context: RequestContext
   ) {
     await this.verifyCustomerAccess(customerId, talentId, context);
 
@@ -56,14 +56,8 @@ export class MembershipRecordApplicationService {
         isActive: query.isActive,
         includeExpired: query.includeExpired ?? false,
       }),
-      this.membershipRecordRepository.countActiveByCustomer(
-        context.tenantSchema,
-        customerId,
-      ),
-      this.membershipRecordRepository.countExpiredByCustomer(
-        context.tenantSchema,
-        customerId,
-      ),
+      this.membershipRecordRepository.countActiveByCustomer(context.tenantSchema, customerId),
+      this.membershipRecordRepository.countExpiredByCustomer(context.tenantSchema, customerId),
     ]);
 
     return {
@@ -83,13 +77,13 @@ export class MembershipRecordApplicationService {
     customerId: string,
     talentId: string,
     dto: CreateMembershipDto,
-    context: RequestContext,
+    context: RequestContext
   ) {
     await this.verifyCustomerAccess(customerId, talentId, context);
 
     const platform = await this.membershipRecordRepository.findActivePlatformByCode(
       context.tenantSchema,
-      dto.platformCode,
+      dto.platformCode
     );
 
     if (!platform) {
@@ -101,7 +95,7 @@ export class MembershipRecordApplicationService {
 
     const membershipLevel = await this.membershipRecordRepository.findActiveMembershipLevelByCode(
       context.tenantSchema,
-      dto.membershipLevelCode,
+      dto.membershipLevelCode
     );
 
     if (!membershipLevel) {
@@ -111,29 +105,23 @@ export class MembershipRecordApplicationService {
       });
     }
 
-    const created = await this.membershipRecordRepository.create(
-      context.tenantSchema,
-      {
-        customerId,
-        platformId: platform.id,
-        membershipClassId: membershipLevel.membershipClassId,
-        membershipTypeId: membershipLevel.membershipTypeId,
-        membershipLevelId: membershipLevel.id,
-        validFrom: new Date(dto.validFrom),
-        validTo: dto.validTo ? new Date(dto.validTo) : null,
-        autoRenew: dto.autoRenew ?? false,
-        note: dto.note ?? null,
-        userId: context.userId,
-      },
-    );
+    const created = await this.membershipRecordRepository.create(context.tenantSchema, {
+      customerId,
+      platformId: platform.id,
+      membershipClassId: membershipLevel.membershipClassId,
+      membershipTypeId: membershipLevel.membershipTypeId,
+      membershipLevelId: membershipLevel.id,
+      validFrom: new Date(dto.validFrom),
+      validTo: dto.validTo ? new Date(dto.validTo) : null,
+      autoRenew: dto.autoRenew ?? false,
+      note: dto.note ?? null,
+      userId: context.userId,
+    });
 
     await this.membershipRecordRepository.insertChangeLog(context.tenantSchema, {
       action: 'create',
       objectId: created.id,
-      objectName: buildMembershipRecordObjectName(
-        platform.code,
-        membershipLevel.code,
-      ),
+      objectName: buildMembershipRecordObjectName(platform.code, membershipLevel.code),
       diff: buildMembershipRecordCreateChangeLogDiff({
         platformCode: platform.code,
         membershipLevelCode: membershipLevel.code,
@@ -152,14 +140,14 @@ export class MembershipRecordApplicationService {
     recordId: string,
     talentId: string,
     dto: UpdateMembershipDto,
-    context: RequestContext,
+    context: RequestContext
   ) {
     await this.verifyCustomerAccess(customerId, talentId, context);
 
     const record = await this.membershipRecordRepository.findOwnedRecord(
       context.tenantSchema,
       customerId,
-      recordId,
+      recordId
     );
 
     if (!record) {
@@ -169,26 +157,18 @@ export class MembershipRecordApplicationService {
       });
     }
 
-    const updated = await this.membershipRecordRepository.update(
-      context.tenantSchema,
-      recordId,
-      {
-        validTo: dto.validTo !== undefined
-          ? (dto.validTo ? new Date(dto.validTo) : null)
-          : record.validTo,
-        autoRenew: dto.autoRenew ?? record.autoRenew,
-        note: dto.note ?? record.note,
-        userId: context.userId,
-      },
-    );
+    const updated = await this.membershipRecordRepository.update(context.tenantSchema, recordId, {
+      validTo:
+        dto.validTo !== undefined ? (dto.validTo ? new Date(dto.validTo) : null) : record.validTo,
+      autoRenew: dto.autoRenew ?? record.autoRenew,
+      note: dto.note ?? record.note,
+      userId: context.userId,
+    });
 
     await this.membershipRecordRepository.insertChangeLog(context.tenantSchema, {
       action: 'update',
       objectId: recordId,
-      objectName: buildMembershipRecordObjectName(
-        record.platformCode,
-        record.levelCode,
-      ),
+      objectName: buildMembershipRecordObjectName(record.platformCode, record.levelCode),
       diff: buildMembershipRecordUpdateChangeLogDiff(record, updated),
       userId: context.userId,
       ipAddress: context.ipAddress,
@@ -199,18 +179,9 @@ export class MembershipRecordApplicationService {
 
   async getSummary(customerId: string, context: RequestContext) {
     const [highestLevel, activeCount, totalCount] = await Promise.all([
-      this.membershipRecordRepository.findHighestActiveSummary(
-        context.tenantSchema,
-        customerId,
-      ),
-      this.membershipRecordRepository.countActiveByCustomer(
-        context.tenantSchema,
-        customerId,
-      ),
-      this.membershipRecordRepository.countTotalByCustomer(
-        context.tenantSchema,
-        customerId,
-      ),
+      this.membershipRecordRepository.findHighestActiveSummary(context.tenantSchema, customerId),
+      this.membershipRecordRepository.countActiveByCustomer(context.tenantSchema, customerId),
+      this.membershipRecordRepository.countTotalByCustomer(context.tenantSchema, customerId),
     ]);
 
     return buildMembershipSummaryResult(highestLevel, {
@@ -222,12 +193,12 @@ export class MembershipRecordApplicationService {
   private async verifyCustomerAccess(
     customerId: string,
     talentId: string,
-    context: RequestContext,
+    context: RequestContext
   ) {
     return this.customerArchiveAccessService.requireCustomerArchiveAccess(
       customerId,
       talentId,
-      context,
+      context
     );
   }
 }

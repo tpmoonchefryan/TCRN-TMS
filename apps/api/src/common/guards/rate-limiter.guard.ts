@@ -1,12 +1,11 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import {
-    CanActivate,
-    ExecutionContext,
-    HttpException,
-    HttpStatus,
-    Injectable,
-    Logger,
+  CanActivate,
+  ExecutionContext,
+  HttpException,
+  HttpStatus,
+  Injectable,
+  Logger,
 } from '@nestjs/common';
 import { Request } from 'express';
 
@@ -23,13 +22,13 @@ export class RateLimiterGuard implements CanActivate {
 
   constructor(
     private readonly rateLimiterService: RateLimiterService,
-    private readonly techEventLogService: TechEventLogService,
+    private readonly techEventLogService: TechEventLogService
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<Request>();
     const response = context.switchToHttp().getResponse();
-    
+
     const ip = this.getClientIp(request);
     const userAgent = request.headers['user-agent'];
     const path = request.path;
@@ -45,14 +44,14 @@ export class RateLimiterGuard implements CanActivate {
       await this.logBlockedRequest(ip, userAgent, path, 'rate_limit_exceeded');
 
       response.setHeader('Retry-After', result.retryAfter?.toString() || '60');
-      
+
       throw new HttpException(
         {
           statusCode: HttpStatus.TOO_MANY_REQUESTS,
           message: 'Too many requests. Please try again later.',
           retryAfter: result.retryAfter,
         },
-        HttpStatus.TOO_MANY_REQUESTS,
+        HttpStatus.TOO_MANY_REQUESTS
       );
     }
 
@@ -66,9 +65,7 @@ export class RateLimiterGuard implements CanActivate {
     // Check various headers for proxied requests
     const xForwardedFor = request.headers['x-forwarded-for'];
     if (xForwardedFor) {
-      const ips = Array.isArray(xForwardedFor) 
-        ? xForwardedFor[0] 
-        : xForwardedFor.split(',')[0];
+      const ips = Array.isArray(xForwardedFor) ? xForwardedFor[0] : xForwardedFor.split(',')[0];
       return ips.trim();
     }
 
@@ -87,7 +84,7 @@ export class RateLimiterGuard implements CanActivate {
     ip: string,
     userAgent: string | undefined,
     path: string,
-    reason: string,
+    reason: string
   ): Promise<void> {
     try {
       await this.techEventLogService.warn(
@@ -99,7 +96,7 @@ export class RateLimiterGuard implements CanActivate {
           path,
           reason,
           source: 'RateLimiterGuard',
-        },
+        }
       );
     } catch (error) {
       this.logger.error(`Failed to log blocked request: ${error}`);

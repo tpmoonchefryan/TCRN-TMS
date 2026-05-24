@@ -30,10 +30,7 @@ export interface ComponentStarterBlueprint {
   props: Record<string, unknown>;
 }
 
-function readJsonWorkspaceFile(
-  files: readonly WorkspaceJsonFileLike[],
-  path: string,
-) {
+function readJsonWorkspaceFile(files: readonly WorkspaceJsonFileLike[], path: string) {
   const file = files.find((entry) => entry.path === path);
 
   if (!file) {
@@ -48,14 +45,15 @@ function readJsonWorkspaceFile(
 }
 
 function isTemplateId(value: unknown): value is PublicPresenceTemplateId {
-  return typeof value === 'string' && PUBLIC_PRESENCE_TEMPLATE_IDS.includes(
-    value as PublicPresenceTemplateId,
+  return (
+    typeof value === 'string' &&
+    PUBLIC_PRESENCE_TEMPLATE_IDS.includes(value as PublicPresenceTemplateId)
   );
 }
 
 function isComponentType(value: unknown): value is HomepageComponentType {
-  return typeof value === 'string' && HOMEPAGE_COMPONENT_TYPES.includes(
-    value as HomepageComponentType,
+  return (
+    typeof value === 'string' && HOMEPAGE_COMPONENT_TYPES.includes(value as HomepageComponentType)
   );
 }
 
@@ -79,7 +77,7 @@ function readRecord(value: unknown) {
 
 export function buildComponentStarterProps(
   componentType: HomepageComponentType,
-  locale: SupportedUiLocale,
+  locale: SupportedUiLocale
 ) {
   switch (componentType) {
     case 'SocialLinks':
@@ -161,7 +159,7 @@ export function buildComponentStarterProps(
       } satisfies Record<string, unknown>;
     default:
       return structuredClone(
-        buildPublicPresenceComponentSourceManifest(componentType).defaultProps,
+        buildPublicPresenceComponentSourceManifest(componentType).defaultProps
       ) as Record<string, unknown>;
   }
 }
@@ -171,7 +169,7 @@ function findPreferredSectionKind(componentType: HomepageComponentType) {
 
   for (const sectionKind of activeHubTemplate.defaultSectionOrder) {
     const sectionDefinition = activeHubTemplate.stageSections.find(
-      (section) => section.kind === sectionKind,
+      (section) => section.kind === sectionKind
     );
 
     if (sectionDefinition?.allowedComponents.includes(componentType)) {
@@ -180,7 +178,7 @@ function findPreferredSectionKind(componentType: HomepageComponentType) {
   }
 
   const fallbackDefinition = activeHubTemplate.stageSections.find((definition) =>
-    definition.allowedComponents.includes(componentType),
+    definition.allowedComponents.includes(componentType)
   );
 
   return fallbackDefinition?.kind ?? null;
@@ -189,7 +187,7 @@ function findPreferredSectionKind(componentType: HomepageComponentType) {
 export function buildTemplateStarterBlueprint(
   templateId: PublicPresenceTemplateId,
   locale: SupportedUiLocale,
-  linkedComponentDraftKeys: readonly string[] = [],
+  linkedComponentDraftKeys: readonly string[] = []
 ): TemplateStarterBlueprint {
   const template = buildPublicPresenceTemplateSourceManifest(templateId);
 
@@ -229,7 +227,7 @@ export function buildTemplateStarterBlueprint(
 
 export function buildComponentStarterBlueprint(
   componentType: HomepageComponentType,
-  locale: SupportedUiLocale,
+  locale: SupportedUiLocale
 ): ComponentStarterBlueprint {
   return {
     componentType,
@@ -241,7 +239,7 @@ export function buildComponentStarterBlueprint(
 export function buildTemplateAuthoringManifest(
   templateId: PublicPresenceTemplateId,
   locale: SupportedUiLocale,
-  linkedComponentDraftKeys: readonly string[] = [],
+  linkedComponentDraftKeys: readonly string[] = []
 ) {
   const definition = buildPublicPresenceTemplateSourceManifest(templateId);
 
@@ -256,7 +254,7 @@ export function buildTemplateAuthoringManifest(
 
 export function buildComponentAuthoringManifest(
   componentType: HomepageComponentType,
-  locale: SupportedUiLocale,
+  locale: SupportedUiLocale
 ) {
   const definition = buildPublicPresenceComponentSourceManifest(componentType);
 
@@ -270,7 +268,7 @@ export function buildComponentAuthoringManifest(
 }
 
 export function readTemplateStarterBlueprint(
-  files: readonly WorkspaceJsonFileLike[],
+  files: readonly WorkspaceJsonFileLike[]
 ): Partial<TemplateStarterBlueprint> | null {
   const manifest = readJsonWorkspaceFile(files, 'manifest.json');
   const authoring = readRecord(manifest?.authoring);
@@ -283,9 +281,9 @@ export function readTemplateStarterBlueprint(
   const sectionOrder = readStringArray(homepageStarter?.sectionOrder);
   const linkedComponentDraftKeys = readStringArray(homepageStarter?.linkedComponentDraftKeys);
   const baseTemplateId =
-    (isTemplateId(homepageStarter?.baseTemplateId) && homepageStarter?.baseTemplateId)
-    || (isTemplateId(manifest?.templateId) && manifest?.templateId)
-    || null;
+    (isTemplateId(homepageStarter?.baseTemplateId) && homepageStarter?.baseTemplateId) ||
+    (isTemplateId(manifest?.templateId) && manifest?.templateId) ||
+    null;
 
   return {
     baseTemplateId: baseTemplateId ?? undefined,
@@ -298,7 +296,7 @@ export function readTemplateStarterBlueprint(
 }
 
 export function readComponentStarterBlueprint(
-  files: readonly WorkspaceJsonFileLike[],
+  files: readonly WorkspaceJsonFileLike[]
 ): Partial<ComponentStarterBlueprint> | null {
   const manifest = readJsonWorkspaceFile(files, 'manifest.json');
   const authoring = readRecord(manifest?.authoring);
@@ -309,9 +307,9 @@ export function readComponentStarterBlueprint(
   }
 
   const componentType =
-    (isComponentType(homepageStarter?.componentType) && homepageStarter?.componentType)
-    || (isComponentType(manifest?.componentType) && manifest?.componentType)
-    || null;
+    (isComponentType(homepageStarter?.componentType) && homepageStarter?.componentType) ||
+    (isComponentType(manifest?.componentType) && manifest?.componentType) ||
+    null;
   const preferredSectionKind = readString(homepageStarter?.preferredSectionKind);
   const props = readRecord(homepageStarter?.props);
 

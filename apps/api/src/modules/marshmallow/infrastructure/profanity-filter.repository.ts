@@ -1,19 +1,15 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable } from '@nestjs/common';
 
 import { DatabaseService } from '../../database';
 import { RedisService } from '../../redis';
-import type {
-  CustomBlocklistPattern,
-  ExternalPattern,
-} from '../domain/profanity-filter.policy';
+import type { CustomBlocklistPattern, ExternalPattern } from '../domain/profanity-filter.policy';
 
 @Injectable()
 export class ProfanityFilterRepository {
   constructor(
     private readonly databaseService: DatabaseService,
-    private readonly redisService: RedisService,
+    private readonly redisService: RedisService
   ) {}
 
   async getExternalPatterns(talentId: string): Promise<ExternalPattern[]> {

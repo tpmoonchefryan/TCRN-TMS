@@ -1,7 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { LogSeverity, TechEventScope } from '@tcrn/shared';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { TechEventLogService } from '../tech-event-log.service';
 
@@ -50,7 +50,7 @@ describe('TechEventLogService trace correlation', () => {
         eventType: 'custom-domain.registry_unavailable',
         message: 'Registry unavailable',
       },
-      { tenantSchema: 'tenant_test', traceId: 'trace_from_context' },
+      { tenantSchema: 'tenant_test', traceId: 'trace_from_context' }
     );
 
     expect(executeRawUnsafe.mock.calls[0]?.[4]).toBe('trace_from_context');
@@ -66,7 +66,7 @@ describe('TechEventLogService trace correlation', () => {
         traceId: 'trace_from_event',
         message: 'Registry unavailable',
       },
-      { tenantSchema: 'tenant_test', traceId: 'trace_from_context' },
+      { tenantSchema: 'tenant_test', traceId: 'trace_from_context' }
     );
 
     expect(executeRawUnsafe.mock.calls[0]?.[4]).toBe('trace_from_event');
@@ -81,7 +81,7 @@ describe('TechEventLogService trace correlation', () => {
         eventType: 'legacy.request_id',
         message: 'Legacy request id only',
       },
-      { requestId: 'req_legacy' },
+      { requestId: 'req_legacy' }
     );
 
     expect(executeRawUnsafe.mock.calls[0]?.[4]).toBe('req_legacy');

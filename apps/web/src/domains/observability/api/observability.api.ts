@@ -160,7 +160,10 @@ export async function listTechEvents(request: RequestFn, options: ListTechEventO
   return request<PaginatedResult<TechEventRecord>>(`/api/v1/logs/events${query}`);
 }
 
-export async function listIntegrationLogs(request: RequestFn, options: ListIntegrationLogOptions = {}) {
+export async function listIntegrationLogs(
+  request: RequestFn,
+  options: ListIntegrationLogOptions = {}
+) {
   const query = buildQueryString({
     consumerCode: options.consumerCode,
     direction: options.direction,
@@ -173,7 +176,9 @@ export async function listIntegrationLogs(request: RequestFn, options: ListInteg
   });
 
   if (options.failedOnly) {
-    return request<PaginatedResult<IntegrationLogRecord>>(`/api/v1/logs/integrations/failed${query}`);
+    return request<PaginatedResult<IntegrationLogRecord>>(
+      `/api/v1/logs/integrations/failed${query}`
+    );
   }
 
   return request<PaginatedResult<IntegrationLogRecord>>(`/api/v1/logs/integrations${query}`);

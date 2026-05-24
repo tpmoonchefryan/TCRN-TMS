@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable } from '@nestjs/common';
 import { format } from 'date-fns';
 
@@ -112,11 +111,7 @@ export class ExcelBuilderService {
   /**
    * Generate file name for MFR report
    */
-  generateFileName(
-    tenantCode: string,
-    talentCode: string,
-    jobId: string,
-  ): string {
+  generateFileName(tenantCode: string, talentCode: string, jobId: string): string {
     const timestamp = format(new Date(), 'yyyyMMdd_HHmmss');
     const shortId = jobId.substring(0, 8);
     return `MFR_${tenantCode}_${talentCode}_${timestamp}_${shortId}.xlsx`;
@@ -142,7 +137,11 @@ export class ExcelBuilderService {
   buildFilterSummary(filters: Record<string, unknown>): string {
     const parts: string[] = [];
 
-    if (filters.platformCodes && Array.isArray(filters.platformCodes) && filters.platformCodes.length > 0) {
+    if (
+      filters.platformCodes &&
+      Array.isArray(filters.platformCodes) &&
+      filters.platformCodes.length > 0
+    ) {
       parts.push(`平台: ${(filters.platformCodes as string[]).join(', ')}`);
     }
 
@@ -192,7 +191,12 @@ export class ExcelBuilderService {
    * Escape CSV field (handle commas, quotes, newlines)
    */
   private escapeCsvField(field: string): string {
-    if (field.includes(',') || field.includes('"') || field.includes('\n') || field.includes('\r')) {
+    if (
+      field.includes(',') ||
+      field.includes('"') ||
+      field.includes('\n') ||
+      field.includes('\r')
+    ) {
       return `"${field.replace(/"/g, '""')}"`;
     }
     return field;
@@ -201,11 +205,7 @@ export class ExcelBuilderService {
   /**
    * Generate CSV file name for MFR report
    */
-  generateCsvFileName(
-    tenantCode: string,
-    talentCode: string,
-    jobId: string,
-  ): string {
+  generateCsvFileName(tenantCode: string, talentCode: string, jobId: string): string {
     const timestamp = format(new Date(), 'yyyyMMdd_HHmmss');
     const shortId = jobId.substring(0, 8);
     return `MFR_${tenantCode}_${talentCode}_${timestamp}_${shortId}.csv`;

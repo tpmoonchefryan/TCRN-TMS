@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+
 import { ErrorCodes, LogSeverity, TechEventScope, TechEventType } from '@tcrn/shared';
 
 import { TechEventLogService } from '../../log';
@@ -17,13 +17,13 @@ import { ReportJobStateRepository } from '../infrastructure/report-job-state.rep
 export class ReportJobStateApplicationService {
   constructor(
     private readonly reportJobStateRepository: ReportJobStateRepository,
-    private readonly techEventLog: TechEventLogService,
+    private readonly techEventLog: TechEventLogService
   ) {}
 
   async transition(
     jobId: string,
     targetStatus: ReportJobStatus,
-    updates?: Record<string, unknown>,
+    updates?: Record<string, unknown>
   ) {
     const job = await this.reportJobStateRepository.findJobById(jobId);
 
@@ -51,16 +51,12 @@ export class ReportJobStateApplicationService {
           downloadedAt: job.downloadedAt,
         },
         targetStatus,
-        updates,
-      ),
+        updates
+      )
     );
   }
 
-  updateProgress(
-    jobId: string,
-    processedRows: number,
-    totalRows: number,
-  ) {
+  updateProgress(jobId: string, processedRows: number, totalRows: number) {
     return this.reportJobStateRepository.updateJob(jobId, {
       processedRows,
       progressPercentage: getReportJobProgressPercentage(processedRows, totalRows),

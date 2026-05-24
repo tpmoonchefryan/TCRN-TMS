@@ -1,15 +1,16 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
+import { BadRequestException, Body, Controller, Get, Post, Query, Req } from '@nestjs/common';
 import {
-  BadRequestException,
-  Body,
-  Controller,
-  Get,
-  Post,
-  Query,
-  Req,
-} from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiProperty, ApiPropertyOptional, ApiTags } from '@nestjs/swagger';
+  ApiBearerAuth,
+  ApiOperation,
+  ApiProperty,
+  ApiPropertyOptional,
+  ApiTags,
+} from '@nestjs/swagger';
+import { Type } from 'class-transformer';
+import { IsArray, IsBoolean, IsIn, IsOptional, IsString, ValidateNested } from 'class-validator';
+import { Request } from 'express';
+
 import {
   type PermissionActionInput,
   RBAC_ACTION_INPUTS,
@@ -19,15 +20,12 @@ import {
   type RbacResourceCode,
   resolveRbacPermission,
 } from '@tcrn/shared';
-import { Type } from 'class-transformer';
-import { IsArray, IsBoolean, IsIn, IsOptional, IsString, ValidateNested } from 'class-validator';
-import { Request } from 'express';
 
 import { AuthenticatedUser, CurrentUser } from '../../common/decorators/current-user.decorator';
 import { getPrimaryAcceptLanguage } from '../../common/request-locale.util';
 import { success } from '../../common/response.util';
-import { PermissionAction, PermissionService } from './permission.service';
 import { PermissionSnapshotService, ScopeType } from './permission-snapshot.service';
+import { PermissionAction, PermissionService } from './permission.service';
 
 // DTOs
 class ListPermissionsQueryDto {
@@ -53,24 +51,36 @@ class ListPermissionsQueryDto {
 }
 
 class PermissionCheckDto {
-  @ApiProperty({ description: 'Catalog-backed resource code to check', example: 'customer.profile', enum: RBAC_RESOURCE_CODES })
+  @ApiProperty({
+    description: 'Catalog-backed resource code to check',
+    example: 'customer.profile',
+    enum: RBAC_RESOURCE_CODES,
+  })
   @IsIn(RBAC_RESOURCE_CODES)
   resource: RbacResourceCode;
 
   @ApiProperty({
-    description: 'Action to check. Aliases create/update/export are normalized to write/write/execute.',
+    description:
+      'Action to check. Aliases create/update/export are normalized to write/write/execute.',
     example: 'read',
     enum: RBAC_ACTION_INPUTS,
   })
   @IsIn(RBAC_ACTION_INPUTS)
   action: PermissionActionInput;
 
-  @ApiPropertyOptional({ description: 'Scope type for contextual check', example: 'subsidiary', enum: ['tenant', 'subsidiary', 'talent'] })
+  @ApiPropertyOptional({
+    description: 'Scope type for contextual check',
+    example: 'subsidiary',
+    enum: ['tenant', 'subsidiary', 'talent'],
+  })
   @IsOptional()
   @IsString()
   scopeType?: ScopeType;
 
-  @ApiPropertyOptional({ description: 'Scope ID for contextual check', example: '550e8400-e29b-41d4-a716-446655440000' })
+  @ApiPropertyOptional({
+    description: 'Scope ID for contextual check',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+  })
   @IsOptional()
   @IsString()
   scopeId?: string;
@@ -84,14 +94,12 @@ class CheckPermissionsDto {
   checks: PermissionCheckDto[];
 }
 
-
-
 // class GetMyPermissionsQueryDto {
 //   @ApiPropertyOptional({ description: 'Scope type to filter permissions', example: 'talent', enum: ['tenant', 'subsidiary', 'talent'] })
 //   @IsOptional()
 //   @IsString()
 //   scopeType?: ScopeType;
-// 
+//
 //   @ApiPropertyOptional({ description: 'Scope ID to filter permissions', example: '550e8400-e29b-41d4-a716-446655440000' })
 //   @IsOptional()
 //   @IsString()
@@ -108,7 +116,7 @@ class CheckPermissionsDto {
 export class PermissionController {
   constructor(
     private readonly permissionService: PermissionService,
-    private readonly snapshotService: PermissionSnapshotService,
+    private readonly snapshotService: PermissionSnapshotService
   ) {}
 
   /**
@@ -120,7 +128,7 @@ export class PermissionController {
   async list(
     @CurrentUser() user: AuthenticatedUser,
     @Query() query: ListPermissionsQueryDto,
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     const language = getPrimaryAcceptLanguage(req);
 
@@ -149,14 +157,14 @@ export class PermissionController {
    */
   @Get('resources')
   @ApiOperation({ summary: 'Get resource definitions' })
-  async getResources(
-    @CurrentUser() user: AuthenticatedUser,
-    @Req() req: Request,
-  ) {
+  async getResources(@CurrentUser() user: AuthenticatedUser, @Req() req: Request) {
     const language = getPrimaryAcceptLanguage(req);
-    
-    const resources = await this.permissionService.getResourceDefinitions(user.tenantSchema, language);
-    
+
+    const resources = await this.permissionService.getResourceDefinitions(
+      user.tenantSchema,
+      language
+    );
+
     return success(resources);
   }
 
@@ -166,10 +174,7 @@ export class PermissionController {
    */
   @Post('check')
   @ApiOperation({ summary: 'Batch check permissions' })
-  async checkPermissions(
-    @CurrentUser() user: AuthenticatedUser,
-    @Body() dto: CheckPermissionsDto,
-  ) {
+  async checkPermissions(@CurrentUser() user: AuthenticatedUser, @Body() dto: CheckPermissionsDto) {
     const results = await Promise.all(
       dto.checks.map(async (check) => {
         let resolvedPermission: ReturnType<typeof resolveRbacPermission>;
@@ -177,7 +182,7 @@ export class PermissionController {
           resolvedPermission = resolveRbacPermission(check.resource, check.action);
         } catch (error) {
           throw new BadRequestException(
-            error instanceof Error ? error.message : 'Invalid permission check request',
+            error instanceof Error ? error.message : 'Invalid permission check request'
           );
         }
 
@@ -187,7 +192,7 @@ export class PermissionController {
           resolvedPermission.resourceCode,
           resolvedPermission.checkedAction,
           check.scopeType,
-          check.scopeId,
+          check.scopeId
         );
         const allowed = cachedAllowed
           ? true
@@ -197,7 +202,7 @@ export class PermissionController {
               resolvedPermission.resourceCode,
               resolvedPermission.checkedAction,
               check.scopeType,
-              check.scopeId,
+              check.scopeId
             );
         return {
           resource: resolvedPermission.resourceCode,

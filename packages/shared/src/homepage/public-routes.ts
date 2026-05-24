@@ -17,10 +17,18 @@ export function buildSharedMarshmallowPath(tenantCode: string, talentCode: strin
   return `/${normalizePublicRouteSegment(tenantCode)}/${normalizePublicRouteSegment(talentCode)}/${FIXED_CUSTOM_DOMAIN_MARSHMALLOW_PATH}`;
 }
 
-export function buildSharedHomepageUrl(appUrl: string, tenantCode: string, talentCode: string): string {
+export function buildSharedHomepageUrl(
+  appUrl: string,
+  tenantCode: string,
+  talentCode: string
+): string {
   return `${normalizeAppUrl(appUrl)}${buildSharedHomepagePath(tenantCode, talentCode)}`;
 }
 
-export function buildSharedMarshmallowUrl(appUrl: string, tenantCode: string, talentCode: string): string {
+export function buildSharedMarshmallowUrl(
+  appUrl: string,
+  tenantCode: string,
+  talentCode: string
+): string {
   return `${normalizeAppUrl(appUrl)}${buildSharedMarshmallowPath(tenantCode, talentCode)}`;
 }

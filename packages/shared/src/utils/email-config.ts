@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import type { EmailProvider } from '../schemas/email';
 
 export const EMAIL_CONFIG_KEY = 'email.config';
@@ -91,7 +90,9 @@ function normalizeSmtpConfig(value: unknown): StoredSmtpConfig | undefined {
   };
 }
 
-function normalizeTenantSenderOverride(value: unknown): StoredTenantEmailSenderOverride | undefined {
+function normalizeTenantSenderOverride(
+  value: unknown
+): StoredTenantEmailSenderOverride | undefined {
   if (!isRecord(value)) {
     return undefined;
   }
@@ -105,7 +106,9 @@ function normalizeTenantSenderOverride(value: unknown): StoredTenantEmailSenderO
   return override.fromAddress || override.fromName || override.replyTo ? override : undefined;
 }
 
-function normalizeTenantSenderOverrides(value: unknown): Record<string, StoredTenantEmailSenderOverride> | undefined {
+function normalizeTenantSenderOverrides(
+  value: unknown
+): Record<string, StoredTenantEmailSenderOverride> | undefined {
   if (!isRecord(value)) {
     return undefined;
   }

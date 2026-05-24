@@ -48,9 +48,7 @@ export const PERSONAL_INFO_FIELDS: PersonalInfoFieldConfig[] = [
 /**
  * Get field config by field name
  */
-export function getPersonalInfoFieldConfig(
-  field: string
-): PersonalInfoFieldConfig | undefined {
+export function getPersonalInfoFieldConfig(field: string): PersonalInfoFieldConfig | undefined {
   return PERSONAL_INFO_FIELDS.find((f) => f.field === field);
 }
 

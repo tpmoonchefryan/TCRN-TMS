@@ -13,7 +13,10 @@ describe('extractBilibiliImagesFromModules', () => {
             module_dynamic: {
               major: {
                 opus: {
-                  pics: [{ url: 'http://opus.example/1.jpg' }, { url: 'https://opus.example/2.jpg' }],
+                  pics: [
+                    { url: 'http://opus.example/1.jpg' },
+                    { url: 'https://opus.example/2.jpg' },
+                  ],
                 },
                 draw: {
                   items: [{ src: 'http://draw.example/1.png' }],
@@ -31,8 +34,8 @@ describe('extractBilibiliImagesFromModules', () => {
             },
           },
         ],
-        normalizeUrl,
-      ),
+        normalizeUrl
+      )
     ).toEqual([
       'https://opus.example/1.jpg',
       'https://opus.example/2.jpg',
@@ -61,8 +64,8 @@ describe('extractBilibiliImagesFromModules', () => {
             },
           },
         ],
-        normalizeUrl,
-      ),
+        normalizeUrl
+      )
     ).toEqual([]);
 
     expect(extractBilibiliImagesFromModules(null, normalizeUrl)).toEqual([]);

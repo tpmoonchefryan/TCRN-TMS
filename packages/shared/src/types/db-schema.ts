@@ -1,7 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
-import type { RbacRolePolicyEffect } from '../rbac/catalog';
 import type { LocalizedText } from '../constants/locale';
+import type { RbacRolePolicyEffect } from '../rbac/catalog';
 import {
   ActionType,
   AdapterType,
@@ -188,7 +187,7 @@ export interface CustomerProfile extends SoftDeletableEntity {
   notes?: string;
   tags: string[];
   source?: string;
-  
+
   // Relations often populated
   status?: CustomerStatus;
 }

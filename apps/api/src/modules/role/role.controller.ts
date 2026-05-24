@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import {
   Body,
   Controller,
@@ -14,11 +13,35 @@ import {
   Query,
   Req,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiParam, ApiProperty, ApiPropertyOptional, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { ErrorCodes, SUPPORTED_UI_LOCALES, pickLocalizedText, type LocalizedText, type PartialLocalizedText } from '@tcrn/shared';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiParam,
+  ApiProperty,
+  ApiPropertyOptional,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsArray, IsBoolean, IsInt, IsObject, IsOptional, IsString, Matches, Min } from 'class-validator';
+import {
+  IsArray,
+  IsBoolean,
+  IsInt,
+  IsObject,
+  IsOptional,
+  IsString,
+  Matches,
+  Min,
+} from 'class-validator';
 import { Request } from 'express';
+
+import {
+  ErrorCodes,
+  SUPPORTED_UI_LOCALES,
+  pickLocalizedText,
+  type LocalizedText,
+  type PartialLocalizedText,
+} from '@tcrn/shared';
 
 import { AuthenticatedUser, CurrentUser, RequirePermissions } from '../../common/decorators';
 import { getPrimaryAcceptLanguage } from '../../common/request-locale.util';
@@ -51,7 +74,11 @@ export class ListRolesQueryDto {
 }
 
 export class CreateRoleDto {
-  @ApiProperty({ description: 'Role code (uppercase letters, numbers, underscores)', example: 'SALES_MANAGER', pattern: '^[A-Z0-9_]{3,32}$' })
+  @ApiProperty({
+    description: 'Role code (uppercase letters, numbers, underscores)',
+    example: 'SALES_MANAGER',
+    pattern: '^[A-Z0-9_]{3,32}$',
+  })
   @IsString()
   @Matches(/^[A-Z0-9_]{3,32}$/)
   code: string;
@@ -72,12 +99,19 @@ export class CreateRoleDto {
   @IsObject()
   name: LocalizedText;
 
-  @ApiPropertyOptional({ description: 'Role description', example: 'Manages sales team and customer relationships' })
+  @ApiPropertyOptional({
+    description: 'Role description',
+    example: 'Manages sales team and customer relationships',
+  })
   @IsOptional()
   @IsString()
   description?: string;
 
-  @ApiProperty({ description: 'Permission IDs to assign', type: [String], example: ['perm-001', 'perm-002'] })
+  @ApiProperty({
+    description: 'Permission IDs to assign',
+    type: [String],
+    example: ['perm-001', 'perm-002'],
+  })
   @IsArray()
   @IsString({ each: true })
   permissionIds: string[];
@@ -93,7 +127,10 @@ export class UpdateRoleDto {
   @IsObject()
   name?: PartialLocalizedText;
 
-  @ApiPropertyOptional({ description: 'Role description', example: 'Senior manager for sales operations' })
+  @ApiPropertyOptional({
+    description: 'Role description',
+    example: 'Senior manager for sales operations',
+  })
   @IsOptional()
   @IsString()
   description?: string;
@@ -105,7 +142,11 @@ export class UpdateRoleDto {
 }
 
 export class SetPermissionsDto {
-  @ApiProperty({ description: 'Permission IDs to set (replaces all existing)', type: [String], example: ['perm-001', 'perm-002', 'perm-003'] })
+  @ApiProperty({
+    description: 'Permission IDs to set (replaces all existing)',
+    type: [String],
+    example: ['perm-001', 'perm-002', 'perm-003'],
+  })
   @IsArray()
   @IsString({ each: true })
   permissionIds: string[];
@@ -123,7 +164,10 @@ export class RoleActivationDto {
   version: number;
 }
 
-const createSuccessEnvelopeSchema = (dataSchema: Record<string, unknown>, exampleData: unknown) => ({
+const createSuccessEnvelopeSchema = (
+  dataSchema: Record<string, unknown>,
+  exampleData: unknown
+) => ({
   type: 'object',
   properties: {
     success: { type: 'boolean', example: true },
@@ -185,7 +229,17 @@ const ROLE_LIST_ITEM_SCHEMA = {
     createdAt: { type: 'string', format: 'date-time', example: '2026-04-13T09:00:00.000Z' },
     version: { type: 'integer', example: 1 },
   },
-  required: ['id', 'code', 'name', 'isSystem', 'isActive', 'permissionCount', 'userCount', 'createdAt', 'version'],
+  required: [
+    'id',
+    'code',
+    'name',
+    'isSystem',
+    'isActive',
+    'permissionCount',
+    'userCount',
+    'createdAt',
+    'version',
+  ],
 } as const;
 
 const ROLE_DETAIL_SCHEMA = {
@@ -195,7 +249,9 @@ const ROLE_DETAIL_SCHEMA = {
     code: { type: 'string', example: 'SALES_MANAGER' },
     nameTranslations: {
       type: 'object',
-      properties: Object.fromEntries(SUPPORTED_UI_LOCALES.map((locale) => [locale, { type: 'string' }])),
+      properties: Object.fromEntries(
+        SUPPORTED_UI_LOCALES.map((locale) => [locale, { type: 'string' }])
+      ),
       required: SUPPORTED_UI_LOCALES,
       example: {
         en: 'Sales Manager',
@@ -215,7 +271,18 @@ const ROLE_DETAIL_SCHEMA = {
     updatedAt: { type: 'string', format: 'date-time', example: '2026-04-13T09:30:00.000Z' },
     version: { type: 'integer', example: 2 },
   },
-  required: ['id', 'code', 'nameTranslations', 'name', 'isSystem', 'isActive', 'permissions', 'createdAt', 'updatedAt', 'version'],
+  required: [
+    'id',
+    'code',
+    'nameTranslations',
+    'name',
+    'isSystem',
+    'isActive',
+    'permissions',
+    'createdAt',
+    'updatedAt',
+    'version',
+  ],
 } as const;
 
 const ROLE_LIST_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
@@ -233,7 +300,7 @@ const ROLE_LIST_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
       createdAt: '2026-04-13T09:00:00.000Z',
       version: 1,
     },
-  ],
+  ]
 );
 
 const ROLE_DETAIL_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(ROLE_DETAIL_SCHEMA, {
@@ -283,7 +350,7 @@ const ROLE_MUTATION_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
     name: 'Sales Manager',
     updatedAt: '2026-04-13T09:30:00.000Z',
     version: 2,
-  },
+  }
 );
 
 const ROLE_CREATE_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
@@ -318,7 +385,7 @@ const ROLE_CREATE_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
     ],
     createdAt: '2026-04-13T09:00:00.000Z',
     version: 1,
-  },
+  }
 );
 
 const ROLE_PERMISSION_SET_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
@@ -347,7 +414,7 @@ const ROLE_PERMISSION_SET_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
     version: 3,
     affectedUsers: 5,
     snapshotUpdateQueued: true,
-  },
+  }
 );
 
 const ROLE_ACTIVATION_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
@@ -364,36 +431,30 @@ const ROLE_ACTIVATION_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
     id: '550e8400-e29b-41d4-a716-446655440000',
     isActive: false,
     version: 3,
-  },
+  }
 );
 
 const ROLE_BAD_REQUEST_SCHEMA = createErrorEnvelopeSchema(
   'RES_VERSION_MISMATCH',
-  'Data has been modified. Please refresh and try again.',
+  'Data has been modified. Please refresh and try again.'
 );
 
 const ROLE_UNAUTHORIZED_SCHEMA = createErrorEnvelopeSchema(
   'AUTH_UNAUTHORIZED',
-  'Authentication required',
+  'Authentication required'
 );
 
-const ROLE_NOT_FOUND_SCHEMA = createErrorEnvelopeSchema(
-  ErrorCodes.RES_NOT_FOUND,
-  'Role not found',
-);
+const ROLE_NOT_FOUND_SCHEMA = createErrorEnvelopeSchema(ErrorCodes.RES_NOT_FOUND, 'Role not found');
 
 const ROLE_FORBIDDEN_SCHEMA = createErrorEnvelopeSchema(
   ErrorCodes.PERM_ACCESS_DENIED,
-  'Cannot modify system role permissions',
+  'Cannot modify system role permissions'
 );
 
 /**
  * Get localized name based on language
  */
-function getLocalizedName(
-  entity: { name: LocalizedText },
-  language: string = 'en'
-): string {
+function getLocalizedName(entity: { name: LocalizedText }, language: string = 'en'): string {
   return pickLocalizedText(entity.name, language);
 }
 
@@ -427,7 +488,7 @@ export class RoleController {
   async list(
     @CurrentUser() user: AuthenticatedUser,
     @Query() query: ListRolesQueryDto,
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     const language = getPrimaryAcceptLanguage(req);
 
@@ -479,7 +540,7 @@ export class RoleController {
   async create(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: CreateRoleDto,
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     const language = getPrimaryAcceptLanguage(req);
 
@@ -494,7 +555,11 @@ export class RoleController {
       user.id
     );
 
-    const permissions = await this.roleService.getRolePermissions(role.id, user.tenantSchema, language);
+    const permissions = await this.roleService.getRolePermissions(
+      role.id,
+      user.tenantSchema,
+      language
+    );
 
     return success({
       id: role.id,
@@ -538,7 +603,7 @@ export class RoleController {
   async getById(
     @CurrentUser() user: AuthenticatedUser,
     @Param('roleId', ParseUUIDPipe) roleId: string,
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     const language = getPrimaryAcceptLanguage(req);
 
@@ -550,7 +615,11 @@ export class RoleController {
       });
     }
 
-    const permissions = await this.roleService.getRolePermissions(roleId, user.tenantSchema, language);
+    const permissions = await this.roleService.getRolePermissions(
+      roleId,
+      user.tenantSchema,
+      language
+    );
 
     return success({
       id: role.id,
@@ -603,7 +672,7 @@ export class RoleController {
     @CurrentUser() user: AuthenticatedUser,
     @Param('roleId', ParseUUIDPipe) roleId: string,
     @Body() dto: UpdateRoleDto,
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     const language = getPrimaryAcceptLanguage(req);
 
@@ -659,7 +728,7 @@ export class RoleController {
     @CurrentUser() user: AuthenticatedUser,
     @Param('roleId', ParseUUIDPipe) roleId: string,
     @Body() dto: SetPermissionsDto,
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     const language = getPrimaryAcceptLanguage(req);
 
@@ -671,7 +740,11 @@ export class RoleController {
       user.id
     );
 
-    const permissions = await this.roleService.getRolePermissions(role.id, user.tenantSchema, language);
+    const permissions = await this.roleService.getRolePermissions(
+      role.id,
+      user.tenantSchema,
+      language
+    );
 
     return success({
       id: role.id,
@@ -723,9 +796,14 @@ export class RoleController {
   async deactivate(
     @CurrentUser() user: AuthenticatedUser,
     @Param('roleId', ParseUUIDPipe) roleId: string,
-    @Body() body: RoleActivationDto,
+    @Body() body: RoleActivationDto
   ) {
-    const role = await this.roleService.deactivate(roleId, user.tenantSchema, body.version, user.id);
+    const role = await this.roleService.deactivate(
+      roleId,
+      user.tenantSchema,
+      body.version,
+      user.id
+    );
 
     return success({
       id: role.id,
@@ -780,9 +858,14 @@ export class RoleController {
   async reactivate(
     @CurrentUser() user: AuthenticatedUser,
     @Param('roleId', ParseUUIDPipe) roleId: string,
-    @Body() body: RoleActivationDto,
+    @Body() body: RoleActivationDto
   ) {
-    const role = await this.roleService.reactivate(roleId, user.tenantSchema, body.version, user.id);
+    const role = await this.roleService.reactivate(
+      roleId,
+      user.tenantSchema,
+      body.version,
+      user.id
+    );
 
     return success({
       id: role.id,

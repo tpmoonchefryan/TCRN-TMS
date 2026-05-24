@@ -1,7 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+
 import { type RequestContext } from '@tcrn/shared';
 
 import { DatabaseService } from '../../database';
@@ -64,15 +64,15 @@ export class WebhookService {
     changeLogService: ChangeLogService,
     configService: ConfigService,
     private readonly webhookReadApplicationService: WebhookReadApplicationService = new WebhookReadApplicationService(
-      new WebhookReadRepository(databaseService),
+      new WebhookReadRepository(databaseService)
     ),
     private readonly webhookWriteApplicationService: WebhookWriteApplicationService = new WebhookWriteApplicationService(
       new WebhookWriteRepository(databaseService),
       webhookReadApplicationService,
       cryptoService,
       changeLogService,
-      configService,
-    ),
+      configService
+    )
   ) {}
 
   async findMany(context?: RequestContext) {

@@ -1,43 +1,54 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import {
-    Body,
-    Controller,
-    Get,
-    Param,
-    ParseUUIDPipe,
-    Patch,
-    Post,
-    Query,
-    Req,
-    UploadedFile,
-    UseInterceptors,
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+  Query,
+  Req,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
-import type { RequestContext } from '@tcrn/shared';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiConsumes,
+  ApiOperation,
+  ApiParam,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { Request } from 'express';
 
+import type { RequestContext } from '@tcrn/shared';
+
 import {
-    AuthenticatedUser,
-    CurrentUser,
-    RequirePermissions,
-    RequirePublishedTalentAccess,
+  AuthenticatedUser,
+  CurrentUser,
+  RequirePermissions,
+  RequirePublishedTalentAccess,
 } from '../../../common/decorators';
 import {
-    PublishDto,
-    SaveDraftDto,
-    UpdateSettingsDto,
-    VersionListQueryDto,
+  PublishDto,
+  SaveDraftDto,
+  UpdateSettingsDto,
+  VersionListQueryDto,
 } from '../dto/homepage.dto';
-import { HomepageService } from '../services/homepage.service';
 import {
-    HOMEPAGE_ASSET_MAX_FILE_SIZE_BYTES,
-    HomepageAssetService,
+  HOMEPAGE_ASSET_MAX_FILE_SIZE_BYTES,
+  HomepageAssetService,
 } from '../services/homepage-asset.service';
 import { HomepageVersionService } from '../services/homepage-version.service';
+import { HomepageService } from '../services/homepage.service';
 
-const createSuccessEnvelopeSchema = (dataSchema: Record<string, unknown>, exampleData: unknown) => ({
+const createSuccessEnvelopeSchema = (
+  dataSchema: Record<string, unknown>,
+  exampleData: unknown
+) => ({
   type: 'object',
   properties: {
     success: { type: 'boolean', example: true },
@@ -50,7 +61,10 @@ const createSuccessEnvelopeSchema = (dataSchema: Record<string, unknown>, exampl
   },
 });
 
-const createPaginatedEnvelopeSchema = (itemSchema: Record<string, unknown>, exampleItem: unknown) => ({
+const createPaginatedEnvelopeSchema = (
+  itemSchema: Record<string, unknown>,
+  exampleItem: unknown
+) => ({
   type: 'object',
   properties: {
     success: { type: 'boolean', example: true },
@@ -101,7 +115,12 @@ const HOMEPAGE_VERSION_INFO_SCHEMA = {
     versionNumber: { type: 'integer', example: 3 },
     content: { type: 'object', additionalProperties: true },
     theme: { type: 'object', additionalProperties: true },
-    publishedAt: { type: 'string', nullable: true, format: 'date-time', example: '2026-04-13T09:00:00.000Z' },
+    publishedAt: {
+      type: 'string',
+      nullable: true,
+      format: 'date-time',
+      example: '2026-04-13T09:00:00.000Z',
+    },
     publishedBy: {
       type: 'object',
       nullable: true,
@@ -135,7 +154,16 @@ const HOMEPAGE_RESPONSE_SCHEMA = {
     updatedAt: { type: 'string', format: 'date-time', example: '2026-04-13T09:30:00.000Z' },
     version: { type: 'integer', example: 4 },
   },
-  required: ['id', 'talentId', 'isPublished', 'customDomainVerified', 'homepageUrl', 'createdAt', 'updatedAt', 'version'],
+  required: [
+    'id',
+    'talentId',
+    'isPublished',
+    'customDomainVerified',
+    'homepageUrl',
+    'createdAt',
+    'updatedAt',
+    'version',
+  ],
 };
 
 const HOMEPAGE_DRAFT_SAVE_SCHEMA = {
@@ -188,7 +216,8 @@ const HOMEPAGE_ASSET_UPLOAD_SCHEMA = {
   properties: {
     url: {
       type: 'string',
-      example: 'https://app.tcrn.dev/api/v1/public/assets/homepage-assets/tenant_default/550e8400-e29b-41d4-a716-446655440001/asset.png',
+      example:
+        'https://app.tcrn.dev/api/v1/public/assets/homepage-assets/tenant_default/550e8400-e29b-41d4-a716-446655440001/asset.png',
     },
   },
   required: ['url'],
@@ -202,7 +231,12 @@ const HOMEPAGE_VERSION_LIST_ITEM_SCHEMA = {
     status: { type: 'string', enum: ['draft', 'published', 'archived'], example: 'published' },
     contentPreview: { type: 'string', example: 'ProfileCard, SocialLinks, ImageGallery' },
     componentCount: { type: 'integer', example: 3 },
-    publishedAt: { type: 'string', nullable: true, format: 'date-time', example: '2026-04-13T09:35:00.000Z' },
+    publishedAt: {
+      type: 'string',
+      nullable: true,
+      format: 'date-time',
+      example: '2026-04-13T09:35:00.000Z',
+    },
     publishedBy: {
       type: 'object',
       nullable: true,
@@ -275,11 +309,23 @@ const HOMEPAGE_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(HOMEPAGE_RESPONSE_SC
 });
 
 const HOMEPAGE_NOT_FOUND_SCHEMA = createErrorEnvelopeSchema('RES_NOT_FOUND', 'Homepage not found');
-const HOMEPAGE_UNAUTHORIZED_SCHEMA = createErrorEnvelopeSchema('AUTH_UNAUTHORIZED', 'Authentication required');
-const HOMEPAGE_BAD_REQUEST_SCHEMA = createErrorEnvelopeSchema('VALIDATION_FAILED', 'No draft to publish');
-const HOMEPAGE_ASSET_BAD_REQUEST_SCHEMA = createErrorEnvelopeSchema('VALIDATION_FAILED', 'Invalid homepage asset upload');
+const HOMEPAGE_UNAUTHORIZED_SCHEMA = createErrorEnvelopeSchema(
+  'AUTH_UNAUTHORIZED',
+  'Authentication required'
+);
+const HOMEPAGE_BAD_REQUEST_SCHEMA = createErrorEnvelopeSchema(
+  'VALIDATION_FAILED',
+  'No draft to publish'
+);
+const HOMEPAGE_ASSET_BAD_REQUEST_SCHEMA = createErrorEnvelopeSchema(
+  'VALIDATION_FAILED',
+  'Invalid homepage asset upload'
+);
 const HOMEPAGE_FORBIDDEN_SCHEMA = createErrorEnvelopeSchema('AUTH_FORBIDDEN', 'Permission denied');
-const HOMEPAGE_CONFLICT_SCHEMA = createErrorEnvelopeSchema('RES_CONFLICT', 'Homepage path already taken');
+const HOMEPAGE_CONFLICT_SCHEMA = createErrorEnvelopeSchema(
+  'RES_CONFLICT',
+  'Homepage path already taken'
+);
 
 @ApiTags('Ops - Homepage')
 @ApiBearerAuth()
@@ -289,7 +335,7 @@ export class HomepageController {
   constructor(
     private readonly homepageService: HomepageService,
     private readonly versionService: HomepageVersionService,
-    private readonly assetService: HomepageAssetService,
+    private readonly assetService: HomepageAssetService
   ) {}
 
   // =========================================================================
@@ -307,12 +353,24 @@ export class HomepageController {
     description: 'Talent identifier',
     schema: { type: 'string', format: 'uuid' },
   })
-  @ApiResponse({ status: 200, description: 'Returns homepage with draft and published versions', schema: HOMEPAGE_SUCCESS_SCHEMA })
-  @ApiResponse({ status: 401, description: 'Authentication is required to access homepage admin', schema: HOMEPAGE_UNAUTHORIZED_SCHEMA })
-  @ApiResponse({ status: 404, description: 'Homepage or talent was not found', schema: HOMEPAGE_NOT_FOUND_SCHEMA })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns homepage with draft and published versions',
+    schema: HOMEPAGE_SUCCESS_SCHEMA,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Authentication is required to access homepage admin',
+    schema: HOMEPAGE_UNAUTHORIZED_SCHEMA,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Homepage or talent was not found',
+    schema: HOMEPAGE_NOT_FOUND_SCHEMA,
+  })
   async getHomepage(
     @Param('talentId', ParseUUIDPipe) talentId: string,
-    @CurrentUser() user: AuthenticatedUser,
+    @CurrentUser() user: AuthenticatedUser
   ) {
     return this.homepageService.getOrCreate(talentId, user.tenantSchema);
   }
@@ -322,9 +380,11 @@ export class HomepageController {
    */
   @Post('assets')
   @RequirePermissions({ resource: 'talent.homepage', action: 'update' })
-  @UseInterceptors(FileInterceptor('file', {
-    limits: { fileSize: HOMEPAGE_ASSET_MAX_FILE_SIZE_BYTES },
-  }))
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { fileSize: HOMEPAGE_ASSET_MAX_FILE_SIZE_BYTES },
+    })
+  )
   @ApiOperation({ summary: 'Upload homepage image asset' })
   @ApiConsumes('multipart/form-data')
   @ApiParam({
@@ -341,17 +401,37 @@ export class HomepageController {
       required: ['file'],
     },
   })
-  @ApiResponse({ status: 201, description: 'Homepage asset uploaded successfully', schema: createSuccessEnvelopeSchema(HOMEPAGE_ASSET_UPLOAD_SCHEMA, {
-    url: 'https://app.tcrn.dev/api/v1/public/assets/homepage-assets/tenant_default/550e8400-e29b-41d4-a716-446655440001/asset.png',
-  }) })
-  @ApiResponse({ status: 400, description: 'Homepage asset upload is invalid', schema: HOMEPAGE_ASSET_BAD_REQUEST_SCHEMA })
-  @ApiResponse({ status: 401, description: 'Authentication is required to upload homepage assets', schema: HOMEPAGE_UNAUTHORIZED_SCHEMA })
-  @ApiResponse({ status: 403, description: 'Insufficient permissions to upload homepage assets', schema: HOMEPAGE_FORBIDDEN_SCHEMA })
-  @ApiResponse({ status: 404, description: 'Homepage or talent was not found', schema: HOMEPAGE_NOT_FOUND_SCHEMA })
+  @ApiResponse({
+    status: 201,
+    description: 'Homepage asset uploaded successfully',
+    schema: createSuccessEnvelopeSchema(HOMEPAGE_ASSET_UPLOAD_SCHEMA, {
+      url: 'https://app.tcrn.dev/api/v1/public/assets/homepage-assets/tenant_default/550e8400-e29b-41d4-a716-446655440001/asset.png',
+    }),
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Homepage asset upload is invalid',
+    schema: HOMEPAGE_ASSET_BAD_REQUEST_SCHEMA,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Authentication is required to upload homepage assets',
+    schema: HOMEPAGE_UNAUTHORIZED_SCHEMA,
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Insufficient permissions to upload homepage assets',
+    schema: HOMEPAGE_FORBIDDEN_SCHEMA,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Homepage or talent was not found',
+    schema: HOMEPAGE_NOT_FOUND_SCHEMA,
+  })
   async uploadAsset(
     @Param('talentId', ParseUUIDPipe) talentId: string,
     @UploadedFile() file: Express.Multer.File | undefined,
-    @CurrentUser() user: AuthenticatedUser,
+    @CurrentUser() user: AuthenticatedUser
   ) {
     return this.assetService.uploadImage({
       file,
@@ -371,22 +451,34 @@ export class HomepageController {
     description: 'Talent identifier',
     schema: { type: 'string', format: 'uuid' },
   })
-  @ApiResponse({ status: 200, description: 'Draft saved', schema: createSuccessEnvelopeSchema(HOMEPAGE_DRAFT_SAVE_SCHEMA, {
-    draftVersion: {
-      id: '550e8400-e29b-41d4-a716-446655440010',
-      versionNumber: 4,
-      contentHash: 'abc123hash',
-      updatedAt: '2026-04-13T09:30:00.000Z',
-    },
-    isNewVersion: true,
-  }) })
-  @ApiResponse({ status: 401, description: 'Authentication is required to save homepage drafts', schema: HOMEPAGE_UNAUTHORIZED_SCHEMA })
-  @ApiResponse({ status: 404, description: 'Homepage was not found', schema: HOMEPAGE_NOT_FOUND_SCHEMA })
+  @ApiResponse({
+    status: 200,
+    description: 'Draft saved',
+    schema: createSuccessEnvelopeSchema(HOMEPAGE_DRAFT_SAVE_SCHEMA, {
+      draftVersion: {
+        id: '550e8400-e29b-41d4-a716-446655440010',
+        versionNumber: 4,
+        contentHash: 'abc123hash',
+        updatedAt: '2026-04-13T09:30:00.000Z',
+      },
+      isNewVersion: true,
+    }),
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Authentication is required to save homepage drafts',
+    schema: HOMEPAGE_UNAUTHORIZED_SCHEMA,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Homepage was not found',
+    schema: HOMEPAGE_NOT_FOUND_SCHEMA,
+  })
   async saveDraft(
     @Param('talentId', ParseUUIDPipe) talentId: string,
     @Body() dto: SaveDraftDto,
     @CurrentUser() user: AuthenticatedUser,
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     const context = this.buildContext(user, req);
     return this.homepageService.saveDraft(talentId, dto, context);
@@ -403,23 +495,39 @@ export class HomepageController {
     description: 'Talent identifier',
     schema: { type: 'string', format: 'uuid' },
   })
-  @ApiResponse({ status: 200, description: 'Homepage published', schema: createSuccessEnvelopeSchema(HOMEPAGE_PUBLISH_SCHEMA, {
-    publishedVersion: {
-      id: '550e8400-e29b-41d4-a716-446655440010',
-      versionNumber: 4,
-      publishedAt: '2026-04-13T09:35:00.000Z',
-    },
-    homepageUrl: 'https://app.tcrn.dev/p/my-page',
-    cdnPurgeStatus: 'success',
-  }) })
-  @ApiResponse({ status: 400, description: 'Publish request is invalid because no draft exists', schema: HOMEPAGE_BAD_REQUEST_SCHEMA })
-  @ApiResponse({ status: 401, description: 'Authentication is required to publish homepage content', schema: HOMEPAGE_UNAUTHORIZED_SCHEMA })
-  @ApiResponse({ status: 404, description: 'Homepage was not found', schema: HOMEPAGE_NOT_FOUND_SCHEMA })
+  @ApiResponse({
+    status: 200,
+    description: 'Homepage published',
+    schema: createSuccessEnvelopeSchema(HOMEPAGE_PUBLISH_SCHEMA, {
+      publishedVersion: {
+        id: '550e8400-e29b-41d4-a716-446655440010',
+        versionNumber: 4,
+        publishedAt: '2026-04-13T09:35:00.000Z',
+      },
+      homepageUrl: 'https://app.tcrn.dev/p/my-page',
+      cdnPurgeStatus: 'success',
+    }),
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Publish request is invalid because no draft exists',
+    schema: HOMEPAGE_BAD_REQUEST_SCHEMA,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Authentication is required to publish homepage content',
+    schema: HOMEPAGE_UNAUTHORIZED_SCHEMA,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Homepage was not found',
+    schema: HOMEPAGE_NOT_FOUND_SCHEMA,
+  })
   async publish(
     @Param('talentId', ParseUUIDPipe) talentId: string,
     @Body() dto: PublishDto,
     @CurrentUser() user: AuthenticatedUser,
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     const context = this.buildContext(user, req);
     return this.homepageService.publish(talentId, context);
@@ -436,16 +544,28 @@ export class HomepageController {
     description: 'Talent identifier',
     schema: { type: 'string', format: 'uuid' },
   })
-  @ApiResponse({ status: 200, description: 'Homepage unpublished', schema: createSuccessEnvelopeSchema(HOMEPAGE_UNPUBLISH_SCHEMA, {
-    isPublished: false,
-    unpublishedAt: '2026-04-13T09:40:00.000Z',
-  }) })
-  @ApiResponse({ status: 401, description: 'Authentication is required to unpublish homepage content', schema: HOMEPAGE_UNAUTHORIZED_SCHEMA })
-  @ApiResponse({ status: 404, description: 'Homepage was not found', schema: HOMEPAGE_NOT_FOUND_SCHEMA })
+  @ApiResponse({
+    status: 200,
+    description: 'Homepage unpublished',
+    schema: createSuccessEnvelopeSchema(HOMEPAGE_UNPUBLISH_SCHEMA, {
+      isPublished: false,
+      unpublishedAt: '2026-04-13T09:40:00.000Z',
+    }),
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Authentication is required to unpublish homepage content',
+    schema: HOMEPAGE_UNAUTHORIZED_SCHEMA,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Homepage was not found',
+    schema: HOMEPAGE_NOT_FOUND_SCHEMA,
+  })
   async unpublish(
     @Param('talentId', ParseUUIDPipe) talentId: string,
     @CurrentUser() user: AuthenticatedUser,
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     const context = this.buildContext(user, req);
     await this.homepageService.unpublish(talentId, context);
@@ -464,23 +584,33 @@ export class HomepageController {
     schema: { type: 'string', format: 'uuid' },
   })
   @ApiResponse({ status: 200, description: 'Settings updated', schema: HOMEPAGE_SUCCESS_SCHEMA })
-  @ApiResponse({ status: 401, description: 'Authentication is required to update homepage settings', schema: HOMEPAGE_UNAUTHORIZED_SCHEMA })
-  @ApiResponse({ status: 404, description: 'Homepage was not found', schema: HOMEPAGE_NOT_FOUND_SCHEMA })
-  @ApiResponse({ status: 409, description: 'Homepage settings conflict with current stored state', schema: HOMEPAGE_CONFLICT_SCHEMA })
+  @ApiResponse({
+    status: 401,
+    description: 'Authentication is required to update homepage settings',
+    schema: HOMEPAGE_UNAUTHORIZED_SCHEMA,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Homepage was not found',
+    schema: HOMEPAGE_NOT_FOUND_SCHEMA,
+  })
+  @ApiResponse({
+    status: 409,
+    description: 'Homepage settings conflict with current stored state',
+    schema: HOMEPAGE_CONFLICT_SCHEMA,
+  })
   async updateSettings(
     @Param('talentId', ParseUUIDPipe) talentId: string,
     @Body() dto: UpdateSettingsDto,
     @CurrentUser() user: AuthenticatedUser,
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     const context = this.buildContext(user, req);
     return this.homepageService.updateSettings(talentId, dto, context);
   }
 
-
   // Domain management routes removed - now handled by TalentDomainService
   // See: /talents/:talentId/custom-domain endpoints
-
 
   // =========================================================================
   // Version Management
@@ -497,24 +627,36 @@ export class HomepageController {
     description: 'Talent identifier',
     schema: { type: 'string', format: 'uuid' },
   })
-  @ApiResponse({ status: 200, description: 'Returns version list', schema: createPaginatedEnvelopeSchema(HOMEPAGE_VERSION_LIST_ITEM_SCHEMA, {
-    id: '550e8400-e29b-41d4-a716-446655440010',
-    versionNumber: 4,
-    status: 'published',
-    contentPreview: 'ProfileCard, SocialLinks, ImageGallery',
-    componentCount: 3,
-    publishedAt: '2026-04-13T09:35:00.000Z',
-    publishedBy: { id: '550e8400-e29b-41d4-a716-446655440111', username: 'operator' },
-    createdAt: '2026-04-13T09:30:00.000Z',
-    createdBy: { id: '550e8400-e29b-41d4-a716-446655440111', username: 'operator' },
-  }) })
-  @ApiResponse({ status: 401, description: 'Authentication is required to list homepage versions', schema: HOMEPAGE_UNAUTHORIZED_SCHEMA })
-  @ApiResponse({ status: 404, description: 'Homepage was not found', schema: HOMEPAGE_NOT_FOUND_SCHEMA })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns version list',
+    schema: createPaginatedEnvelopeSchema(HOMEPAGE_VERSION_LIST_ITEM_SCHEMA, {
+      id: '550e8400-e29b-41d4-a716-446655440010',
+      versionNumber: 4,
+      status: 'published',
+      contentPreview: 'ProfileCard, SocialLinks, ImageGallery',
+      componentCount: 3,
+      publishedAt: '2026-04-13T09:35:00.000Z',
+      publishedBy: { id: '550e8400-e29b-41d4-a716-446655440111', username: 'operator' },
+      createdAt: '2026-04-13T09:30:00.000Z',
+      createdBy: { id: '550e8400-e29b-41d4-a716-446655440111', username: 'operator' },
+    }),
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Authentication is required to list homepage versions',
+    schema: HOMEPAGE_UNAUTHORIZED_SCHEMA,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Homepage was not found',
+    schema: HOMEPAGE_NOT_FOUND_SCHEMA,
+  })
   async listVersions(
     @Param('talentId', ParseUUIDPipe) talentId: string,
     @Query() query: VersionListQueryDto,
     @CurrentUser() user: AuthenticatedUser,
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     const context = this.buildContext(user, req);
     const result = await this.versionService.listVersions(talentId, query, context);
@@ -540,32 +682,47 @@ export class HomepageController {
     description: 'Homepage version identifier',
     schema: { type: 'string', format: 'uuid' },
   })
-  @ApiResponse({ status: 200, description: 'Returns version detail', schema: createSuccessEnvelopeSchema({
-    type: 'object',
-    properties: {
-      ...HOMEPAGE_VERSION_LIST_ITEM_SCHEMA.properties,
-      content: { type: 'object', additionalProperties: true },
-      theme: { type: 'object', additionalProperties: true },
-    },
-    required: ['id', 'versionNumber', 'status', 'content', 'theme', 'createdAt'],
-  }, {
-    id: '550e8400-e29b-41d4-a716-446655440010',
-    versionNumber: 4,
-    status: 'published',
-    content: { version: '1.0', components: [] },
-    theme: { preset: 'default' },
-    publishedAt: '2026-04-13T09:35:00.000Z',
-    publishedBy: { id: '550e8400-e29b-41d4-a716-446655440111', username: 'operator' },
-    createdAt: '2026-04-13T09:30:00.000Z',
-    createdBy: { id: '550e8400-e29b-41d4-a716-446655440111', username: 'operator' },
-  }) })
-  @ApiResponse({ status: 401, description: 'Authentication is required to read homepage versions', schema: HOMEPAGE_UNAUTHORIZED_SCHEMA })
-  @ApiResponse({ status: 404, description: 'Homepage version was not found', schema: HOMEPAGE_NOT_FOUND_SCHEMA })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns version detail',
+    schema: createSuccessEnvelopeSchema(
+      {
+        type: 'object',
+        properties: {
+          ...HOMEPAGE_VERSION_LIST_ITEM_SCHEMA.properties,
+          content: { type: 'object', additionalProperties: true },
+          theme: { type: 'object', additionalProperties: true },
+        },
+        required: ['id', 'versionNumber', 'status', 'content', 'theme', 'createdAt'],
+      },
+      {
+        id: '550e8400-e29b-41d4-a716-446655440010',
+        versionNumber: 4,
+        status: 'published',
+        content: { version: '1.0', components: [] },
+        theme: { preset: 'default' },
+        publishedAt: '2026-04-13T09:35:00.000Z',
+        publishedBy: { id: '550e8400-e29b-41d4-a716-446655440111', username: 'operator' },
+        createdAt: '2026-04-13T09:30:00.000Z',
+        createdBy: { id: '550e8400-e29b-41d4-a716-446655440111', username: 'operator' },
+      }
+    ),
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Authentication is required to read homepage versions',
+    schema: HOMEPAGE_UNAUTHORIZED_SCHEMA,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Homepage version was not found',
+    schema: HOMEPAGE_NOT_FOUND_SCHEMA,
+  })
   async getVersion(
     @Param('talentId', ParseUUIDPipe) talentId: string,
     @Param('versionId', ParseUUIDPipe) versionId: string,
     @CurrentUser() user: AuthenticatedUser,
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     const context = this.buildContext(user, req);
     return this.versionService.getVersion(talentId, versionId, context);
@@ -587,23 +744,35 @@ export class HomepageController {
     description: 'Homepage version identifier',
     schema: { type: 'string', format: 'uuid' },
   })
-  @ApiResponse({ status: 200, description: 'Version restored', schema: createSuccessEnvelopeSchema(HOMEPAGE_RESTORE_SCHEMA, {
-    newDraftVersion: {
-      id: '550e8400-e29b-41d4-a716-446655440012',
-      versionNumber: 5,
-    },
-    restoredFrom: {
-      id: '550e8400-e29b-41d4-a716-446655440010',
-      versionNumber: 4,
-    },
-  }) })
-  @ApiResponse({ status: 401, description: 'Authentication is required to restore homepage versions', schema: HOMEPAGE_UNAUTHORIZED_SCHEMA })
-  @ApiResponse({ status: 404, description: 'Homepage version was not found', schema: HOMEPAGE_NOT_FOUND_SCHEMA })
+  @ApiResponse({
+    status: 200,
+    description: 'Version restored',
+    schema: createSuccessEnvelopeSchema(HOMEPAGE_RESTORE_SCHEMA, {
+      newDraftVersion: {
+        id: '550e8400-e29b-41d4-a716-446655440012',
+        versionNumber: 5,
+      },
+      restoredFrom: {
+        id: '550e8400-e29b-41d4-a716-446655440010',
+        versionNumber: 4,
+      },
+    }),
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Authentication is required to restore homepage versions',
+    schema: HOMEPAGE_UNAUTHORIZED_SCHEMA,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Homepage version was not found',
+    schema: HOMEPAGE_NOT_FOUND_SCHEMA,
+  })
   async restoreVersion(
     @Param('talentId', ParseUUIDPipe) talentId: string,
     @Param('versionId', ParseUUIDPipe) versionId: string,
     @CurrentUser() user: AuthenticatedUser,
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     const context = this.buildContext(user, req);
     return this.versionService.restoreVersion(talentId, versionId, context);
@@ -612,10 +781,7 @@ export class HomepageController {
   /**
    * Build request context
    */
-  private buildContext(
-    user: AuthenticatedUser,
-    req: Request,
-  ): RequestContext {
+  private buildContext(user: AuthenticatedUser, req: Request): RequestContext {
     return {
       userId: user.id,
       userName: user.username,

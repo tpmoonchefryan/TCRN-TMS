@@ -1,11 +1,13 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import {
   FIXED_CUSTOM_DOMAIN_HOMEPAGE_PATH,
   FIXED_CUSTOM_DOMAIN_MARSHMALLOW_PATH,
 } from '@tcrn/shared';
 
-import type { CustomDomainOwnerType, CustomDomainRouteMode } from '../../talent/domain/talent-custom-domain.policy';
+import type {
+  CustomDomainOwnerType,
+  CustomDomainRouteMode,
+} from '../../talent/domain/talent-custom-domain.policy';
 import type { HomepageContent, ThemeConfig } from '../dto/homepage.dto';
 
 export interface PublicHomepageData {
@@ -85,7 +87,7 @@ export function normalizeLookupDomain(domain: string): string {
 
 export function resolveLookupRoute(
   _route: DomainLookupRouteRecord,
-  tenantSchema: string,
+  tenantSchema: string
 ): DomainLookupResult {
   return {
     homepagePath: FIXED_CUSTOM_DOMAIN_HOMEPAGE_PATH,
@@ -104,7 +106,7 @@ export function resolveLookupRoute(
 
 export function resolveLookupBindingRoute(
   route: DomainLookupBindingRouteRecord,
-  talentCode: string | null = null,
+  talentCode: string | null = null
 ): DomainLookupResult {
   const requiresTalentPath = route.ownerType !== 'talent';
 
@@ -118,13 +120,13 @@ export function resolveLookupBindingRoute(
     ownerType: route.ownerType,
     ownerId: route.ownerId,
     routeMode: requiresTalentPath ? 'scoped_talent_path' : 'dedicated_talent',
-    routePrefix: requiresTalentPath ? talentCode ?? ':talentCode' : null,
+    routePrefix: requiresTalentPath ? (talentCode ?? ':talentCode') : null,
     requiresTalentPath,
   };
 }
 
 export function hasPublishedHomepage(
-  homepage: PublishedHomepageRecord | null,
+  homepage: PublishedHomepageRecord | null
 ): homepage is PublishedHomepageRecord & { publishedVersionId: string } {
   return !!homepage && homepage.isPublished && typeof homepage.publishedVersionId === 'string';
 }

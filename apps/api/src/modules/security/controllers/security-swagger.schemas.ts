@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { createLocalizedText, ErrorCodes } from '@tcrn/shared';
 
 const createErrorEnvelopeSchema = (code: string, message: string) => ({
@@ -45,10 +44,7 @@ const BLOCKLIST_ENTRY_EXAMPLE = {
   scopeSummary: {
     tokens: ['tenant', 'marshmallow'],
     structuredScope: {
-      entries: [
-        { category: 'tenant' },
-        { category: 'surface', value: 'marshmallow' },
-      ],
+      entries: [{ category: 'tenant' }, { category: 'surface', value: 'marshmallow' }],
     },
     unsupported: [],
   },
@@ -72,7 +68,12 @@ const BLOCKLIST_ENTRY_SCHEMA = {
   properties: {
     id: { type: 'string', format: 'uuid', example: BLOCKLIST_ENTRY_EXAMPLE.id },
     ownerType: { type: 'string', example: BLOCKLIST_ENTRY_EXAMPLE.ownerType },
-    ownerId: { type: 'string', format: 'uuid', nullable: true, example: BLOCKLIST_ENTRY_EXAMPLE.ownerId },
+    ownerId: {
+      type: 'string',
+      format: 'uuid',
+      nullable: true,
+      example: BLOCKLIST_ENTRY_EXAMPLE.ownerId,
+    },
     pattern: { type: 'string', example: BLOCKLIST_ENTRY_EXAMPLE.pattern },
     patternType: { type: 'string', example: BLOCKLIST_ENTRY_EXAMPLE.patternType },
     name: {
@@ -136,10 +137,20 @@ const BLOCKLIST_ENTRY_SCHEMA = {
     isForceUse: { type: 'boolean', example: BLOCKLIST_ENTRY_EXAMPLE.isForceUse },
     isSystem: { type: 'boolean', example: BLOCKLIST_ENTRY_EXAMPLE.isSystem },
     matchCount: { type: 'integer', example: BLOCKLIST_ENTRY_EXAMPLE.matchCount },
-    lastMatchedAt: { type: 'string', format: 'date-time', nullable: true, example: BLOCKLIST_ENTRY_EXAMPLE.lastMatchedAt },
+    lastMatchedAt: {
+      type: 'string',
+      format: 'date-time',
+      nullable: true,
+      example: BLOCKLIST_ENTRY_EXAMPLE.lastMatchedAt,
+    },
     createdAt: { type: 'string', format: 'date-time', example: BLOCKLIST_ENTRY_EXAMPLE.createdAt },
     createdBy: { type: 'string', nullable: true, example: BLOCKLIST_ENTRY_EXAMPLE.createdBy },
-    updatedAt: { type: 'string', format: 'date-time', nullable: true, example: '2026-04-13T10:10:00.000Z' },
+    updatedAt: {
+      type: 'string',
+      format: 'date-time',
+      nullable: true,
+      example: '2026-04-13T10:10:00.000Z',
+    },
     version: { type: 'integer', example: BLOCKLIST_ENTRY_EXAMPLE.version },
     isInherited: { type: 'boolean', example: BLOCKLIST_ENTRY_EXAMPLE.isInherited },
     isDisabledHere: { type: 'boolean', example: BLOCKLIST_ENTRY_EXAMPLE.isDisabledHere },
@@ -222,7 +233,7 @@ const BLOCKLIST_TEST_SCHEMA = {
 
 const BLOCKLIST_MUTATION_RESULT_SCHEMA = (
   key: 'deleted' | 'disabled' | 'enabled',
-  value: boolean,
+  value: boolean
 ) => ({
   type: 'object',
   properties: {
@@ -247,7 +258,12 @@ const IP_RULE_SCHEMA = {
     source: { type: 'string', nullable: true, example: 'manual' },
     expiresAt: { type: 'string', format: 'date-time', nullable: true, example: null },
     hitCount: { type: 'integer', example: 12 },
-    lastHitAt: { type: 'string', format: 'date-time', nullable: true, example: '2026-04-13T10:30:00.000Z' },
+    lastHitAt: {
+      type: 'string',
+      format: 'date-time',
+      nullable: true,
+      example: '2026-04-13T10:30:00.000Z',
+    },
     isActive: { type: 'boolean', example: true },
     createdAt: { type: 'string', format: 'date-time', example: '2026-04-13T10:00:00.000Z' },
     createdBy: { type: 'string', nullable: true, example: '550e8400-e29b-41d4-a716-446655440010' },
@@ -339,7 +355,10 @@ const CHECK_IP_ACCESS_SCHEMA = {
 export const SECURITY_FINGERPRINT_SCHEMA = {
   type: 'object',
   properties: {
-    fingerprint: { type: 'string', example: 'b8b9c4d5e6f71234567890abcdef1234567890abcdef1234567890abcdef1234' },
+    fingerprint: {
+      type: 'string',
+      example: 'b8b9c4d5e6f71234567890abcdef1234567890abcdef1234567890abcdef1234',
+    },
     shortFingerprint: { type: 'string', example: 'b8b9c4d5e6f71234' },
     version: { type: 'string', example: 'v1' },
     generatedAt: { type: 'string', format: 'date-time', example: '2026-04-13T10:35:00.000Z' },
@@ -379,25 +398,25 @@ export const SECURITY_IP_RULE_DELETE_SCHEMA = BLOCKLIST_MUTATION_RESULT_SCHEMA('
 
 export const SECURITY_BAD_REQUEST_SCHEMA = createErrorEnvelopeSchema(
   ErrorCodes.VALIDATION_FAILED,
-  'Security request is invalid',
+  'Security request is invalid'
 );
 export const SECURITY_UNAUTHORIZED_SCHEMA = createErrorEnvelopeSchema(
   'AUTH_UNAUTHORIZED',
-  'Authentication required',
+  'Authentication required'
 );
 export const SECURITY_FORBIDDEN_SCHEMA = createErrorEnvelopeSchema(
   ErrorCodes.PERM_ACCESS_DENIED,
-  'Access denied',
+  'Access denied'
 );
 export const SECURITY_NOT_FOUND_SCHEMA = createErrorEnvelopeSchema(
   ErrorCodes.RES_NOT_FOUND,
-  'Security resource not found',
+  'Security resource not found'
 );
 export const SECURITY_CONFLICT_SCHEMA = createErrorEnvelopeSchema(
   ErrorCodes.RES_VERSION_MISMATCH,
-  'Data has been modified by another user',
+  'Data has been modified by another user'
 );
 export const SECURITY_ALREADY_EXISTS_SCHEMA = createErrorEnvelopeSchema(
   ErrorCodes.RES_ALREADY_EXISTS,
-  'Resource already exists',
+  'Resource already exists'
 );

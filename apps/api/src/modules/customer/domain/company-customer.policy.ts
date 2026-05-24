@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import {
   type CompanyPiiDataDto,
   type CreateCompanyCustomerDto,
@@ -57,12 +56,12 @@ export interface CompanyCustomerInfoUpdateInput {
 
 export const hasCompanyCustomerVersionMismatch = (
   customer: CompanyCustomerAccessRecord,
-  version: number,
+  version: number
 ) => customer.version !== version;
 
 export const toCompanyCustomerProfileUpdateInput = (
   dto: UpdateCompanyCustomerDto,
-  statusId: string | null,
+  statusId: string | null
 ): CompanyCustomerProfileUpdateInput => {
   const input: CompanyCustomerProfileUpdateInput = {};
 
@@ -87,7 +86,7 @@ export const toCompanyCustomerProfileUpdateInput = (
 
 export const toCompanyCustomerInfoUpdateInput = (
   dto: UpdateCompanyCustomerDto,
-  businessSegmentId: string | null,
+  businessSegmentId: string | null
 ): CompanyCustomerInfoUpdateInput => {
   const input: CompanyCustomerInfoUpdateInput = {};
 
@@ -104,9 +103,7 @@ export const toCompanyCustomerInfoUpdateInput = (
     input.vatId = dto.vatId;
   }
   if (dto.establishmentDate !== undefined) {
-    input.establishmentDate = dto.establishmentDate
-      ? new Date(dto.establishmentDate)
-      : null;
+    input.establishmentDate = dto.establishmentDate ? new Date(dto.establishmentDate) : null;
   }
   if (businessSegmentId !== null) {
     input.businessSegmentId = businessSegmentId;
@@ -118,13 +115,12 @@ export const toCompanyCustomerInfoUpdateInput = (
   return input;
 };
 
-export const hasCompanyCustomerInfoUpdates = (
-  input: CompanyCustomerInfoUpdateInput,
-) => Object.values(input).some((value) => value !== undefined);
+export const hasCompanyCustomerInfoUpdates = (input: CompanyCustomerInfoUpdateInput) =>
+  Object.values(input).some((value) => value !== undefined);
 
 export const buildCompanyCustomerCreateResult = (
   customer: CompanyCustomerCreatedRecord,
-  dto: CreateCompanyCustomerDto,
+  dto: CreateCompanyCustomerDto
 ) => ({
   id: customer.id,
   profileType: ProfileType.COMPANY,
@@ -136,18 +132,14 @@ export const buildCompanyCustomerCreateResult = (
   createdAt: customer.createdAt,
 });
 
-export const buildCompanyCustomerUpdateResult = (
-  updated: CompanyCustomerUpdatedRecord,
-) => ({
+export const buildCompanyCustomerUpdateResult = (updated: CompanyCustomerUpdatedRecord) => ({
   id: updated.id,
   nickname: updated.nickname,
   version: updated.version,
   updatedAt: updated.updatedAt,
 });
 
-export const buildCompanyCustomerChangeLogOldValue = (
-  customer: CompanyCustomerAccessRecord,
-) => ({
+export const buildCompanyCustomerChangeLogOldValue = (customer: CompanyCustomerAccessRecord) => ({
   nickname: customer.nickname,
   primaryLanguage: customer.primaryLanguage,
   statusId: customer.statusId,
@@ -157,7 +149,7 @@ export const buildCompanyCustomerChangeLogOldValue = (
 
 export const buildCompanyCustomerChangeLogNewValue = (
   nickname: string,
-  dto: UpdateCompanyCustomerDto,
+  dto: UpdateCompanyCustomerDto
 ) => ({
   nickname,
   primaryLanguage: dto.primaryLanguage,
@@ -173,23 +165,20 @@ export const buildCompanyCustomerChangeLogNewValue = (
   website: dto.website,
 });
 
-export const buildCompanyCustomerAccessLogFieldChanges = (
-  dto: UpdateCompanyCustomerDto,
-) => JSON.stringify({
-  nickname: dto.nickname,
-  primaryLanguage: dto.primaryLanguage,
-  statusCode: dto.statusCode,
-  tags: dto.tags,
-  notes: dto.notes,
-  companyLegalName: dto.companyLegalName,
-  companyShortName: dto.companyShortName,
-  registrationNumber: dto.registrationNumber,
-  vatId: dto.vatId,
-  establishmentDate: dto.establishmentDate,
-  businessSegmentCode: dto.businessSegmentCode,
-  website: dto.website,
-});
+export const buildCompanyCustomerAccessLogFieldChanges = (dto: UpdateCompanyCustomerDto) =>
+  JSON.stringify({
+    nickname: dto.nickname,
+    primaryLanguage: dto.primaryLanguage,
+    statusCode: dto.statusCode,
+    tags: dto.tags,
+    notes: dto.notes,
+    companyLegalName: dto.companyLegalName,
+    companyShortName: dto.companyShortName,
+    registrationNumber: dto.registrationNumber,
+    vatId: dto.vatId,
+    establishmentDate: dto.establishmentDate,
+    businessSegmentCode: dto.businessSegmentCode,
+    website: dto.website,
+  });
 
-export const hasCompanyPiiPayload = (
-  pii?: CompanyPiiDataDto,
-) => pii !== undefined;
+export const hasCompanyPiiPayload = (pii?: CompanyPiiDataDto) => pii !== undefined;

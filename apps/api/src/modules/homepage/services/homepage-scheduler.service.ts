@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 
@@ -13,7 +12,7 @@ import type { HomepageDraftArchivalResult } from '../domain/homepage-scheduler.p
 @Injectable()
 export class HomepageSchedulerService {
   constructor(
-    private readonly homepageSchedulerApplicationService: HomepageSchedulerApplicationService,
+    private readonly homepageSchedulerApplicationService: HomepageSchedulerApplicationService
   ) {}
 
   /**

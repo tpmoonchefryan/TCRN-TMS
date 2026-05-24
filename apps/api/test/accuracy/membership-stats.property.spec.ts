@@ -1,6 +1,5 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 // Membership Statistics Property-Based Tests
-
 import * as fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 
@@ -211,15 +210,19 @@ describe('Membership Statistics Properties', () => {
 
     it('should respect start date constraint', () => {
       fc.assert(
-        fc.property(fc.array(membershipArb, { maxLength: 50 }), dateArb, (memberships, startDate) => {
-          // Skip invalid dates
-          if (isNaN(startDate.getTime())) return;
-          
-          const filtered = filterMembershipsByDateRange(memberships, startDate, null);
-          filtered.forEach((m) => {
-            expect(m.validFrom >= startDate).toBe(true);
-          });
-        }),
+        fc.property(
+          fc.array(membershipArb, { maxLength: 50 }),
+          dateArb,
+          (memberships, startDate) => {
+            // Skip invalid dates
+            if (isNaN(startDate.getTime())) return;
+
+            const filtered = filterMembershipsByDateRange(memberships, startDate, null);
+            filtered.forEach((m) => {
+              expect(m.validFrom >= startDate).toBe(true);
+            });
+          }
+        ),
         { numRuns: 50 }
       );
     });
@@ -229,7 +232,7 @@ describe('Membership Statistics Properties', () => {
         fc.property(fc.array(membershipArb, { maxLength: 50 }), dateArb, (memberships, endDate) => {
           // Skip invalid dates
           if (isNaN(endDate.getTime())) return;
-          
+
           const filtered = filterMembershipsByDateRange(memberships, null, endDate);
           filtered.forEach((m) => {
             expect(m.validFrom <= endDate).toBe(true);
@@ -253,10 +256,10 @@ describe('Membership Statistics Properties', () => {
           isActive: true,
         },
       ];
-      
+
       const startDate = new Date('2026-01-01');
       const endDate = new Date('2025-01-01'); // Before start
-      
+
       const filtered = filterMembershipsByDateRange(memberships, startDate, endDate);
       expect(filtered.length).toBe(0);
     });
@@ -271,7 +274,10 @@ describe('Membership Statistics Properties', () => {
     it('should return null when no active memberships', () => {
       fc.assert(
         fc.property(
-          fc.array(membershipArb.map((m) => ({ ...m, isActive: false })), { minLength: 1, maxLength: 20 }),
+          fc.array(
+            membershipArb.map((m) => ({ ...m, isActive: false })),
+            { minLength: 1, maxLength: 20 }
+          ),
           (memberships) => {
             const result = getHighestMembershipLevel(memberships);
             expect(result).toBeNull();
@@ -309,7 +315,7 @@ describe('Membership Statistics Properties', () => {
 
     it('should respect level hierarchy', () => {
       const hierarchy = ['PLATINUM', 'GOLD', 'SILVER', 'BRONZE'];
-      
+
       for (let i = 0; i < hierarchy.length; i++) {
         const lowerLevels = hierarchy.slice(i);
         const memberships: Membership[] = lowerLevels.map((level, idx) => ({
@@ -332,20 +338,17 @@ describe('Membership Statistics Properties', () => {
 describe('Cross-Property Invariants', () => {
   it('filtering should not change stats proportions significantly', () => {
     fc.assert(
-      fc.property(
-        fc.array(membershipArb, { minLength: 10, maxLength: 50 }),
-        (memberships) => {
-          const fullStats = calculateMembershipStats(memberships);
-          
-          // Filter to only active
-          const activeMemberships = memberships.filter((m) => m.isActive);
-          const activeStats = calculateMembershipStats(activeMemberships);
+      fc.property(fc.array(membershipArb, { minLength: 10, maxLength: 50 }), (memberships) => {
+        const fullStats = calculateMembershipStats(memberships);
 
-          // Active count should match
-          expect(activeStats.totalActive).toBe(fullStats.totalActive);
-          expect(activeStats.totalExpired).toBe(0);
-        }
-      ),
+        // Filter to only active
+        const activeMemberships = memberships.filter((m) => m.isActive);
+        const activeStats = calculateMembershipStats(activeMemberships);
+
+        // Active count should match
+        expect(activeStats.totalActive).toBe(fullStats.totalActive);
+        expect(activeStats.totalExpired).toBe(0);
+      }),
       { numRuns: 50 }
     );
   });

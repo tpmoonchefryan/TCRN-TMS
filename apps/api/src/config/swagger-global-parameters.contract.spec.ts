@@ -1,7 +1,10 @@
 import type { OpenAPIObject } from '@nestjs/swagger';
 import { describe, expect, it } from 'vitest';
 
-import { applyGlobalSwaggerParameters, GLOBAL_SWAGGER_PARAMETERS } from './swagger-global-parameters';
+import {
+  applyGlobalSwaggerParameters,
+  GLOBAL_SWAGGER_PARAMETERS,
+} from './swagger-global-parameters';
 
 const createDocument = (): OpenAPIObject => ({
   openapi: '3.0.0',
@@ -21,7 +24,9 @@ const createDocument = (): OpenAPIObject => ({
 
 describe('Swagger global parameter policy contract', () => {
   it('does not advertise legacy private owner headers as global Swagger parameters', () => {
-    const parameterKeys = GLOBAL_SWAGGER_PARAMETERS.map((parameter) => `${parameter.in}:${parameter.name}`);
+    const parameterKeys = GLOBAL_SWAGGER_PARAMETERS.map(
+      (parameter) => `${parameter.in}:${parameter.name}`
+    );
 
     expect(parameterKeys).not.toContain('header:X-Tenant-ID');
     expect(parameterKeys).not.toContain('header:X-Talent-Id');

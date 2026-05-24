@@ -1,16 +1,10 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
-import {
-    CallHandler,
-    ExecutionContext,
-    Injectable,
-    Logger,
-    NestInterceptor,
-} from '@nestjs/common';
-import { BROWSER_PUBLIC_CONSUMER_HEADER } from '@tcrn/shared';
+import { CallHandler, ExecutionContext, Injectable, Logger, NestInterceptor } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
+
+import { BROWSER_PUBLIC_CONSUMER_HEADER } from '@tcrn/shared';
 
 import { resolveTraceIdFromHeaders } from '../trace/trace-id.util';
 
@@ -45,7 +39,7 @@ export class LoggingInterceptor implements NestInterceptor {
     request.traceId = traceId;
     request.requestId = traceId;
     request.publicConsumerCode = publicConsumerCode;
-    
+
     // Set response header
     response.setHeader('X-Trace-ID', traceId);
     response.setHeader('X-Request-ID', traceId);
@@ -56,31 +50,31 @@ export class LoggingInterceptor implements NestInterceptor {
     const consumerSuffix = publicConsumerCode ? ` - consumer=${publicConsumerCode}` : '';
 
     // Log request
-    this.logger.log(
-      `→ ${method} ${url} - ${ip} - ${userAgent.substring(0, 50)}${consumerSuffix}`,
-      { traceId, requestId: traceId },
-    );
+    this.logger.log(`→ ${method} ${url} - ${ip} - ${userAgent.substring(0, 50)}${consumerSuffix}`, {
+      traceId,
+      requestId: traceId,
+    });
 
     return next.handle().pipe(
       tap({
         next: () => {
           const duration = Date.now() - startTime;
           const statusCode = response.statusCode;
-          
-          this.logger.log(
-            `← ${method} ${url} - ${statusCode} - ${duration}ms${consumerSuffix}`,
-            { traceId, requestId: traceId },
-          );
+
+          this.logger.log(`← ${method} ${url} - ${statusCode} - ${duration}ms${consumerSuffix}`, {
+            traceId,
+            requestId: traceId,
+          });
         },
         error: () => {
           const duration = Date.now() - startTime;
-          
-          this.logger.warn(
-            `← ${method} ${url} - ERROR - ${duration}ms${consumerSuffix}`,
-            { traceId, requestId: traceId },
-          );
+
+          this.logger.warn(`← ${method} ${url} - ERROR - ${duration}ms${consumerSuffix}`, {
+            traceId,
+            requestId: traceId,
+          });
         },
-      }),
+      })
     );
   }
 

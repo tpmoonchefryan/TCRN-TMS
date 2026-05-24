@@ -1,12 +1,12 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+
 import { ErrorCodes, LogSeverity, type RequestContext, TechEventType } from '@tcrn/shared';
 
 import { CustomerArchiveAccessService } from '../../customer/application/customer-archive-access.service';
 import { TechEventLogService } from '../../log';
-import { type CreatedImportJobResult } from '../domain/import-job.policy';
 import { canCancelImportJob } from '../domain/import-job-state.policy';
+import { type CreatedImportJobResult } from '../domain/import-job.policy';
 import { ImportJobStatus, type ImportJobType } from '../dto/import.dto';
 import { ImportJobWriteRepository } from '../infrastructure/import-job-write.repository';
 
@@ -15,7 +15,7 @@ export class ImportJobWriteApplicationService {
   constructor(
     private readonly importJobWriteRepository: ImportJobWriteRepository,
     private readonly techEventLogService: TechEventLogService,
-    private readonly customerArchiveAccessService: CustomerArchiveAccessService,
+    private readonly customerArchiveAccessService: CustomerArchiveAccessService
   ) {}
 
   async createJob(
@@ -25,16 +25,15 @@ export class ImportJobWriteApplicationService {
     fileSize: number,
     totalRows: number,
     consumerCode: string | undefined,
-    context: RequestContext,
+    context: RequestContext
   ): Promise<CreatedImportJobResult> {
-    const archiveTarget =
-      await this.customerArchiveAccessService.requireTalentArchiveTarget(
-        talentId,
-        context,
-        {
-          missingArchiveMessage: 'Invalid talent or no profile store configured',
-        },
-      );
+    const archiveTarget = await this.customerArchiveAccessService.requireTalentArchiveTarget(
+      talentId,
+      context,
+      {
+        missingArchiveMessage: 'Invalid talent or no profile store configured',
+      }
+    );
 
     const consumer = consumerCode
       ? await this.importJobWriteRepository.findConsumerByCode(context.tenantSchema, consumerCode)
@@ -52,19 +51,22 @@ export class ImportJobWriteApplicationService {
       userId: context.userId,
     });
 
-    await this.techEventLogService.log({
-      eventType: TechEventType.IMPORT_JOB_STARTED,
-      scope: 'import',
-      severity: LogSeverity.INFO,
-      traceId: job.id,
-      payload: {
-        job_id: job.id,
-        job_type: jobType,
-        file_name: fileName,
-        total_rows: totalRows,
-        talent_id: talentId,
+    await this.techEventLogService.log(
+      {
+        eventType: TechEventType.IMPORT_JOB_STARTED,
+        scope: 'import',
+        severity: LogSeverity.INFO,
+        traceId: job.id,
+        payload: {
+          job_id: job.id,
+          job_type: jobType,
+          file_name: fileName,
+          total_rows: totalRows,
+          talent_id: talentId,
+        },
       },
-    }, context);
+      context
+    );
 
     return {
       id: job.id,
@@ -80,7 +82,7 @@ export class ImportJobWriteApplicationService {
     const job = await this.importJobWriteRepository.findCancelableJob(
       context.tenantSchema,
       jobId,
-      talentId,
+      talentId
     );
 
     if (!job) {

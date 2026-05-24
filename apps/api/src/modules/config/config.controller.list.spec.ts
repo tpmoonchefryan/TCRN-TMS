@@ -1,10 +1,10 @@
-import 'reflect-metadata';
-
 import type { INestApplication } from '@nestjs/common';
 import { Test, type TestingModule } from '@nestjs/testing';
-import { prisma } from '@tcrn/database';
+import 'reflect-metadata';
 import request from 'supertest';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { prisma } from '@tcrn/database';
 
 import { bootstrapTestApp } from '../../testing/bootstrap-test-app';
 import { BlocklistService } from './blocklist.service';

@@ -436,7 +436,7 @@ const MAX_EMAIL_SENDER_TENANT_PAGES = 100;
 async function listConfigurationEntitiesAcrossPages<T>(
   request: RequestFn,
   entityType: 'social-platform' | 'consumer',
-  includeInactive: boolean,
+  includeInactive: boolean
 ): Promise<T[]> {
   const items: T[] = [];
 
@@ -446,7 +446,7 @@ async function listConfigurationEntitiesAcrossPages<T>(
         includeInactive,
         page,
         pageSize: CONFIGURATION_ENTITY_PAGE_SIZE,
-      })}`,
+      })}`
     );
 
     items.push(...batch);
@@ -460,7 +460,11 @@ async function listConfigurationEntitiesAcrossPages<T>(
 }
 
 export function listSocialPlatforms(request: RequestFn) {
-  return listConfigurationEntitiesAcrossPages<SocialPlatformRecord>(request, 'social-platform', false);
+  return listConfigurationEntitiesAcrossPages<SocialPlatformRecord>(
+    request,
+    'social-platform',
+    false
+  );
 }
 
 export function listConsumers(request: RequestFn) {
@@ -478,78 +482,71 @@ export function listWebhookDefinitions(request: RequestFn) {
 export function createConsumer(request: RequestFn, payload: CreateConsumerPayload) {
   return request<IntegrationConsumerRecord>(
     '/api/v1/configuration-entity/consumer',
-    buildJsonRequestInit('POST', payload),
+    buildJsonRequestInit('POST', payload)
   );
 }
 
-export function updateConsumer(request: RequestFn, consumerId: string, payload: UpdateConsumerPayload) {
+export function updateConsumer(
+  request: RequestFn,
+  consumerId: string,
+  payload: UpdateConsumerPayload
+) {
   return request<IntegrationConsumerRecord>(
     `/api/v1/configuration-entity/consumer/${consumerId}`,
-    buildJsonRequestInit('PATCH', payload),
+    buildJsonRequestInit('PATCH', payload)
   );
 }
 
-export function deactivateConsumer(
-  request: RequestFn,
-  consumerId: string,
-  version: number,
-) {
+export function deactivateConsumer(request: RequestFn, consumerId: string, version: number) {
   return request<IntegrationActivationResponse>(
     `/api/v1/configuration-entity/consumer/${consumerId}/deactivate`,
-    buildJsonRequestInit('POST', { version }),
+    buildJsonRequestInit('POST', { version })
   );
 }
 
-export function reactivateConsumer(
-  request: RequestFn,
-  consumerId: string,
-  version: number,
-) {
+export function reactivateConsumer(request: RequestFn, consumerId: string, version: number) {
   return request<IntegrationActivationResponse>(
     `/api/v1/configuration-entity/consumer/${consumerId}/reactivate`,
-    buildJsonRequestInit('POST', { version }),
+    buildJsonRequestInit('POST', { version })
   );
 }
 
 export function generateConsumerKey(request: RequestFn, consumerId: string) {
   return request<ConsumerKeyMutationResponse>(
     `/api/v1/configuration-entity/consumer/${consumerId}/generate-key`,
-    buildJsonRequestInit('POST'),
+    buildJsonRequestInit('POST')
   );
 }
 
 export function rotateConsumerKey(request: RequestFn, consumerId: string) {
   return request<ConsumerKeyMutationResponse>(
     `/api/v1/configuration-entity/consumer/${consumerId}/rotate-key`,
-    buildJsonRequestInit('POST'),
+    buildJsonRequestInit('POST')
   );
 }
 
 export function revokeConsumerKey(request: RequestFn, consumerId: string) {
   return request<ConsumerKeyMutationResponse>(
     `/api/v1/configuration-entity/consumer/${consumerId}/revoke-key`,
-    buildJsonRequestInit('POST'),
+    buildJsonRequestInit('POST')
   );
 }
 
-export function listTenantAdapters(
-  request: RequestFn,
-  options: ListTenantAdaptersOptions = {},
-) {
+export function listTenantAdapters(request: RequestFn, options: ListTenantAdaptersOptions = {}) {
   return request<IntegrationAdapterListItemRecord[]>(
     `/api/v1/integration/adapters${buildQueryString({
       platformId: options.platformId,
       adapterType: options.adapterType,
       includeInherited: options.includeInherited ?? true,
       includeDisabled: options.includeDisabled ?? true,
-    })}`,
+    })}`
   );
 }
 
 export function listScopedAdapters(
   request: RequestFn,
   scope: IntegrationAdapterScope,
-  options: ListTenantAdaptersOptions = {},
+  options: ListTenantAdaptersOptions = {}
 ) {
   return request<IntegrationAdapterListItemRecord[]>(
     `${buildAdapterCollectionPath(scope)}${buildQueryString({
@@ -557,7 +554,7 @@ export function listScopedAdapters(
       adapterType: options.adapterType,
       includeInherited: options.includeInherited ?? true,
       includeDisabled: options.includeDisabled ?? true,
-    })}`,
+    })}`
   );
 }
 
@@ -568,87 +565,87 @@ export function readTenantAdapter(request: RequestFn, adapterId: string) {
 export function createTenantAdapter(request: RequestFn, payload: CreateTenantAdapterPayload) {
   return request<IntegrationAdapterDetailRecord>(
     '/api/v1/integration/adapters',
-    buildJsonRequestInit('POST', payload),
+    buildJsonRequestInit('POST', payload)
   );
 }
 
 export function createScopedAdapter(
   request: RequestFn,
   scope: IntegrationAdapterScope,
-  payload: CreateTenantAdapterPayload,
+  payload: CreateTenantAdapterPayload
 ) {
   return request<IntegrationAdapterDetailRecord>(
     buildAdapterCollectionPath(scope),
-    buildJsonRequestInit('POST', payload),
+    buildJsonRequestInit('POST', payload)
   );
 }
 
 export function updateTenantAdapter(
   request: RequestFn,
   adapterId: string,
-  payload: UpdateTenantAdapterPayload,
+  payload: UpdateTenantAdapterPayload
 ) {
   return request<IntegrationAdapterDetailRecord>(
     `/api/v1/integration/adapters/${adapterId}`,
-    buildJsonRequestInit('PATCH', payload),
+    buildJsonRequestInit('PATCH', payload)
   );
 }
 
 export function updateTenantAdapterConfigs(
   request: RequestFn,
   adapterId: string,
-  payload: UpdateTenantAdapterConfigsPayload,
+  payload: UpdateTenantAdapterConfigsPayload
 ) {
   return request<UpdateAdapterConfigsResponse>(
     `/api/v1/integration/adapters/${adapterId}/configs`,
-    buildJsonRequestInit('PATCH', payload),
+    buildJsonRequestInit('PATCH', payload)
   );
 }
 
 export function revealTenantAdapterConfig(
   request: RequestFn,
   adapterId: string,
-  configKey: string,
+  configKey: string
 ) {
   return request<RevealAdapterConfigResponse>(
     `/api/v1/integration/adapters/${adapterId}/configs/${encodeURIComponent(configKey)}/reveal`,
-    buildJsonRequestInit('POST'),
+    buildJsonRequestInit('POST')
   );
 }
 
 export function deactivateTenantAdapter(request: RequestFn, adapterId: string) {
   return request<IntegrationActivationResponse>(
     `/api/v1/integration/adapters/${adapterId}/deactivate`,
-    buildJsonRequestInit('POST'),
+    buildJsonRequestInit('POST')
   );
 }
 
 export function reactivateTenantAdapter(request: RequestFn, adapterId: string) {
   return request<IntegrationActivationResponse>(
     `/api/v1/integration/adapters/${adapterId}/reactivate`,
-    buildJsonRequestInit('POST'),
+    buildJsonRequestInit('POST')
   );
 }
 
 export function disableInheritedScopedAdapter(
   request: RequestFn,
   scope: Exclude<IntegrationAdapterScope, { ownerType: 'tenant' }>,
-  adapterId: string,
+  adapterId: string
 ) {
   return request<IntegrationActivationResponse>(
     `${buildAdapterCollectionPath(scope)}/${encodeURIComponent(adapterId)}/disable`,
-    buildJsonRequestInit('POST'),
+    buildJsonRequestInit('POST')
   );
 }
 
 export function enableInheritedScopedAdapter(
   request: RequestFn,
   scope: Exclude<IntegrationAdapterScope, { ownerType: 'tenant' }>,
-  adapterId: string,
+  adapterId: string
 ) {
   return request<IntegrationActivationResponse>(
     `${buildAdapterCollectionPath(scope)}/${encodeURIComponent(adapterId)}/enable`,
-    buildJsonRequestInit('POST'),
+    buildJsonRequestInit('POST')
   );
 }
 
@@ -667,18 +664,18 @@ export function readWebhook(request: RequestFn, webhookId: string) {
 export function createWebhook(request: RequestFn, payload: CreateWebhookPayload) {
   return request<IntegrationWebhookDetailRecord>(
     '/api/v1/integration/webhooks',
-    buildJsonRequestInit('POST', payload),
+    buildJsonRequestInit('POST', payload)
   );
 }
 
 export function updateWebhook(
   request: RequestFn,
   webhookId: string,
-  payload: UpdateWebhookPayload,
+  payload: UpdateWebhookPayload
 ) {
   return request<IntegrationWebhookDetailRecord>(
     `/api/v1/integration/webhooks/${webhookId}`,
-    buildJsonRequestInit('PATCH', payload),
+    buildJsonRequestInit('PATCH', payload)
   );
 }
 
@@ -691,14 +688,14 @@ export function deleteWebhook(request: RequestFn, webhookId: string) {
 export function deactivateWebhook(request: RequestFn, webhookId: string) {
   return request<IntegrationActivationResponse>(
     `/api/v1/integration/webhooks/${webhookId}/deactivate`,
-    buildJsonRequestInit('POST'),
+    buildJsonRequestInit('POST')
   );
 }
 
 export function reactivateWebhook(request: RequestFn, webhookId: string) {
   return request<IntegrationActivationResponse>(
     `/api/v1/integration/webhooks/${webhookId}/reactivate`,
-    buildJsonRequestInit('POST'),
+    buildJsonRequestInit('POST')
   );
 }
 
@@ -707,21 +704,29 @@ export function readEmailConfig(request: RequestFn) {
 }
 
 export function saveEmailConfig(request: RequestFn, payload: SaveEmailConfigPayload) {
-  return request<EmailConfigResponse>('/api/v1/email/config', buildJsonRequestInit('PATCH', payload));
+  return request<EmailConfigResponse>(
+    '/api/v1/email/config',
+    buildJsonRequestInit('PATCH', payload)
+  );
 }
 
 export function testEmailConnection(request: RequestFn) {
-  return request<EmailActionResult>('/api/v1/email/config/test-connection', buildJsonRequestInit('POST'));
+  return request<EmailActionResult>(
+    '/api/v1/email/config/test-connection',
+    buildJsonRequestInit('POST')
+  );
 }
 
 export function sendEmailTest(request: RequestFn, testEmail: string) {
   return request<EmailActionResult>(
     '/api/v1/email/config/test',
-    buildJsonRequestInit('POST', { testEmail }),
+    buildJsonRequestInit('POST', { testEmail })
   );
 }
 
-export async function listEmailSenderTenants(request: RequestFn): Promise<EmailSenderTenantTarget[]> {
+export async function listEmailSenderTenants(
+  request: RequestFn
+): Promise<EmailSenderTenantTarget[]> {
   const tenants: EmailSenderTenantTarget[] = [];
 
   for (let page = 1; page <= MAX_EMAIL_SENDER_TENANT_PAGES; page += 1) {
@@ -731,7 +736,7 @@ export async function listEmailSenderTenants(request: RequestFn): Promise<EmailS
         pageSize: EMAIL_SENDER_TENANT_PAGE_SIZE,
         tier: 'standard',
         isActive: true,
-      })}`,
+      })}`
     );
 
     tenants.push(...batch);
@@ -749,31 +754,31 @@ export function listEmailTemplates(
   options: {
     category?: EmailTemplateCategory;
     isActive?: boolean;
-  } = {},
+  } = {}
 ) {
   return request<EmailTemplateRecord[]>(
     `/api/v1/email-templates${buildQueryString({
       category: options.category,
       isActive: options.isActive,
-    })}`,
+    })}`
   );
 }
 
 export function createEmailTemplate(request: RequestFn, payload: CreateEmailTemplatePayload) {
   return request<EmailTemplateRecord>(
     '/api/v1/email-templates',
-    buildJsonRequestInit('POST', payload),
+    buildJsonRequestInit('POST', payload)
   );
 }
 
 export function updateEmailTemplate(
   request: RequestFn,
   code: string,
-  payload: UpdateEmailTemplatePayload,
+  payload: UpdateEmailTemplatePayload
 ) {
   return request<EmailTemplateRecord>(
     `/api/v1/email-templates/${encodeURIComponent(code)}`,
-    buildJsonRequestInit('PATCH', payload),
+    buildJsonRequestInit('PATCH', payload)
   );
 }
 
@@ -786,7 +791,7 @@ export function deactivateEmailTemplate(request: RequestFn, code: string) {
 export function reactivateEmailTemplate(request: RequestFn, code: string) {
   return request<EmailTemplateRecord>(
     `/api/v1/email-templates/${encodeURIComponent(code)}/reactivate`,
-    buildJsonRequestInit('POST'),
+    buildJsonRequestInit('POST')
   );
 }
 
@@ -794,10 +799,10 @@ export function previewEmailTemplate(
   request: RequestFn,
   code: string,
   locale: EmailLocale | undefined,
-  variables: Record<string, string>,
+  variables: Record<string, string>
 ) {
   return request<EmailTemplatePreviewResponse>(
     `/api/v1/email-templates/${encodeURIComponent(code)}/preview`,
-    buildJsonRequestInit('POST', { locale, variables }),
+    buildJsonRequestInit('POST', { locale, variables })
   );
 }

@@ -1,8 +1,8 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { BadRequestException } from '@nestjs/common';
-import { createLocalizedText } from '@tcrn/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { createLocalizedText } from '@tcrn/shared';
 
 import { TalentCustomDomainService } from '../../../talent';
 import { MarshmallowConfigApplicationService } from '../../application/marshmallow-config.service';
@@ -84,7 +84,7 @@ describe('MarshmallowConfigService', () => {
 
     service = new MarshmallowConfigService(
       mockApplicationService as MarshmallowConfigApplicationService,
-      mockTalentCustomDomainService as TalentCustomDomainService,
+      mockTalentCustomDomainService as TalentCustomDomainService
     );
   });
 
@@ -98,10 +98,7 @@ describe('MarshmallowConfigService', () => {
 
       expect(result.isEnabled).toBe(true);
       expect(result.captchaMode).toBe('auto');
-      expect(mockApplicationService.getOrCreate).toHaveBeenCalledWith(
-        'talent-123',
-        'tenant_test',
-      );
+      expect(mockApplicationService.getOrCreate).toHaveBeenCalledWith('talent-123', 'tenant_test');
     });
   });
 
@@ -113,7 +110,7 @@ describe('MarshmallowConfigService', () => {
       };
 
       await expect(
-        service.update('talent-123', 'tenant_test', dto, mockContext),
+        service.update('talent-123', 'tenant_test', dto, mockContext)
       ).resolves.toMatchObject({
         isEnabled: false,
         version: 2,
@@ -123,7 +120,7 @@ describe('MarshmallowConfigService', () => {
         'talent-123',
         'tenant_test',
         dto,
-        mockContext,
+        mockContext
       );
     });
   });
@@ -133,18 +130,15 @@ describe('MarshmallowConfigService', () => {
       const response = await service.setCustomDomain(
         'talent-123',
         'marshmallow.example.com',
-        mockContext,
+        mockContext
       );
 
       expect(response.customDomain).toBe('marshmallow.example.com');
-      expect(mockApplicationService.getOrCreate).toHaveBeenCalledWith(
-        'talent-123',
-        'tenant_test',
-      );
+      expect(mockApplicationService.getOrCreate).toHaveBeenCalledWith('talent-123', 'tenant_test');
       expect(mockTalentCustomDomainService.setCustomDomain).toHaveBeenCalledWith(
         'talent-123',
         'tenant_test',
-        'marshmallow.example.com',
+        'marshmallow.example.com'
       );
     });
 
@@ -152,11 +146,11 @@ describe('MarshmallowConfigService', () => {
       vi.mocked(mockTalentCustomDomainService.setCustomDomain).mockRejectedValueOnce(
         new BadRequestException({
           code: 'RES_ALREADY_EXISTS',
-        }),
+        })
       );
 
       await expect(
-        service.setCustomDomain('talent-123', 'marshmallow.example.com', mockContext),
+        service.setCustomDomain('talent-123', 'marshmallow.example.com', mockContext)
       ).rejects.toMatchObject({
         response: {
           code: 'RES_ALREADY_EXISTS',
@@ -167,20 +161,19 @@ describe('MarshmallowConfigService', () => {
 
   describe('verifyCustomDomain', () => {
     it('checks config existence before delegating DNS verification to talent custom-domain ownership', async () => {
-      await expect(
-        service.verifyCustomDomain('talent-123', mockContext),
-      ).resolves.toEqual({
+      await expect(service.verifyCustomDomain('talent-123', mockContext)).resolves.toEqual({
         verified: true,
         message: 'Domain verified successfully',
       });
 
       expect(mockApplicationService.findExistingConfig).toHaveBeenCalledWith(
         'talent-123',
-        'tenant_test',
+        'tenant_test'
       );
-      expect(
-        mockTalentCustomDomainService.verifyCustomDomain,
-      ).toHaveBeenCalledWith('talent-123', 'tenant_test');
+      expect(mockTalentCustomDomainService.verifyCustomDomain).toHaveBeenCalledWith(
+        'talent-123',
+        'tenant_test'
+      );
     });
   });
 });

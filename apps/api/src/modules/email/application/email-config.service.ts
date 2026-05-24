@@ -1,7 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+
 import { DEFAULT_EMAIL_PROVIDER } from '@tcrn/shared';
 
 import {
@@ -16,8 +16,8 @@ import type {
   EmailConfigResponse,
   SaveEmailConfigDto,
 } from '../dto/email-config.dto';
-import { EmailConfigRepository } from '../infrastructure/email-config.repository';
 import { EmailConfigCryptoService } from '../infrastructure/email-config-crypto.service';
+import { EmailConfigRepository } from '../infrastructure/email-config.repository';
 
 @Injectable()
 export class EmailConfigApplicationService {
@@ -26,7 +26,7 @@ export class EmailConfigApplicationService {
   constructor(
     private readonly emailConfigRepository: EmailConfigRepository,
     private readonly emailConfigCryptoService: EmailConfigCryptoService,
-    private readonly configService: ConfigService,
+    private readonly configService: ConfigService
   ) {}
 
   async getConfig(): Promise<EmailConfigResponse> {
@@ -39,9 +39,8 @@ export class EmailConfigApplicationService {
       };
     }
 
-    const decrypted = buildDecryptedEmailConfig(
-      storedConfig.value,
-      (value) => this.emailConfigCryptoService.decryptField(value),
+    const decrypted = buildDecryptedEmailConfig(storedConfig.value, (value) =>
+      this.emailConfigCryptoService.decryptField(value)
     );
 
     return buildMaskedEmailConfigResponse(decrypted, {
@@ -53,16 +52,13 @@ export class EmailConfigApplicationService {
   async saveConfig(dto: SaveEmailConfigDto): Promise<EmailConfigResponse> {
     const existingStoredConfig = await this.emailConfigRepository.findStoredConfig();
     const existingDecrypted = existingStoredConfig
-      ? buildDecryptedEmailConfig(
-        existingStoredConfig.value,
-        (value) => this.emailConfigCryptoService.decryptField(value),
-      )
+      ? buildDecryptedEmailConfig(existingStoredConfig.value, (value) =>
+          this.emailConfigCryptoService.decryptField(value)
+        )
       : null;
 
-    const newConfig = buildStoredEmailConfig(
-      dto,
-      existingDecrypted,
-      (value) => this.emailConfigCryptoService.encrypt(value),
+    const newConfig = buildStoredEmailConfig(dto, existingDecrypted, (value) =>
+      this.emailConfigCryptoService.encrypt(value)
     );
 
     await this.emailConfigRepository.saveStoredConfig(newConfig);
@@ -79,9 +75,8 @@ export class EmailConfigApplicationService {
       return this.getEnvFallbackConfig();
     }
 
-    return buildDecryptedEmailConfig(
-      storedConfig.value,
-      (value) => this.emailConfigCryptoService.decryptField(value),
+    return buildDecryptedEmailConfig(storedConfig.value, (value) =>
+      this.emailConfigCryptoService.decryptField(value)
     );
   }
 

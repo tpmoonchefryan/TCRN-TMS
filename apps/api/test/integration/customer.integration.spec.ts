@@ -1,13 +1,13 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 // Customer Module Integration Tests
-
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 import type { AddressInfo } from 'node:net';
 
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+
 import { PrismaClient } from '@tcrn/database';
 import {
   createLocalizedText,
@@ -88,7 +88,11 @@ async function startMockPiiRuntime(): Promise<MockPiiRuntime> {
     const authHeader = req.headers.authorization;
     const tenantId = req.headers['x-tenant-id'];
 
-    if (!authHeader?.startsWith('Bearer ') || typeof tenantId !== 'string' || tenantId.length === 0) {
+    if (
+      !authHeader?.startsWith('Bearer ') ||
+      typeof tenantId !== 'string' ||
+      tenantId.length === 0
+    ) {
       sendJson(res, 401, {
         success: false,
         error: {
@@ -209,9 +213,10 @@ async function startMockPiiRuntime(): Promise<MockPiiRuntime> {
 
 async function configureTenantDefaultProfileStore(
   prisma: PrismaClient,
-  schemaName: string,
+  schemaName: string
 ): Promise<void> {
-  await prisma.$executeRawUnsafe(`
+  await prisma.$executeRawUnsafe(
+    `
     INSERT INTO "${schemaName}".profile_store (
       id, code, name, is_default, is_active, sort_order, created_at, updated_at, version
     )
@@ -222,7 +227,9 @@ async function configureTenantDefaultProfileStore(
     SET is_default = true,
         is_active = true,
         updated_at = NOW()
-  `, JSON.stringify(createLocalizedText({ en: 'Default Profile Store' })));
+  `,
+    JSON.stringify(createLocalizedText({ en: 'Default Profile Store' }))
+  );
 }
 
 async function configureTalentPiiPlatformAdapter(
@@ -230,7 +237,7 @@ async function configureTalentPiiPlatformAdapter(
   schemaName: string,
   talentId: string,
   userId: string,
-  baseUrl: string,
+  baseUrl: string
 ): Promise<void> {
   const platformRows = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
     `
@@ -270,7 +277,7 @@ async function configureTalentPiiPlatformAdapter(
       RETURNING id
     `,
     baseUrl,
-    JSON.stringify(createLocalizedText({ en: 'TCRN PII Platform' })),
+    JSON.stringify(createLocalizedText({ en: 'TCRN PII Platform' }))
   );
 
   const adapterRows = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
@@ -317,7 +324,7 @@ async function configureTalentPiiPlatformAdapter(
     talentId,
     platformRows[0].id,
     userId,
-    JSON.stringify(createLocalizedText({ en: 'TCRN PII Platform' })),
+    JSON.stringify(createLocalizedText({ en: 'TCRN PII Platform' }))
   );
 
   await prisma.$executeRawUnsafe(
@@ -340,7 +347,7 @@ async function configureTalentPiiPlatformAdapter(
         updated_at = NOW()
     `,
     adapterRows[0].id,
-    baseUrl,
+    baseUrl
   );
 }
 
@@ -357,9 +364,7 @@ describe('Customer Integration Tests', () => {
   let mockPiiRuntime: MockPiiRuntime;
 
   const withAuth = (req: request.Test) => {
-    req
-      .set('Authorization', `Bearer ${accessToken}`)
-      .set('X-Tenant-ID', tenantFixture.tenant.id);
+    req.set('Authorization', `Bearer ${accessToken}`).set('X-Tenant-ID', tenantFixture.tenant.id);
 
     return req;
   };
@@ -367,25 +372,21 @@ describe('Customer Integration Tests', () => {
   const customerCollectionPath = (currentTalentId: string = talentId) =>
     `/api/v1/talents/${currentTalentId}/customers`;
 
-  const customerDetailPath = (
-    id: string,
-    currentTalentId: string = talentId,
-  ) => `${customerCollectionPath(currentTalentId)}/${id}`;
+  const customerDetailPath = (id: string, currentTalentId: string = talentId) =>
+    `${customerCollectionPath(currentTalentId)}/${id}`;
 
-  const individualCustomerPath = (
-    id: string,
-    currentTalentId: string = talentId,
-  ) => `${customerCollectionPath(currentTalentId)}/individuals/${id}`;
+  const individualCustomerPath = (id: string, currentTalentId: string = talentId) =>
+    `${customerCollectionPath(currentTalentId)}/individuals/${id}`;
 
   const createCustomer = (
     overrides: Record<string, unknown> = {},
-    currentTalentId: string = talentId,
+    currentTalentId: string = talentId
   ) => {
     const payload = { ...overrides };
     delete payload.talentId;
 
     return withAuth(
-      request(app.getHttpServer()).post(`${customerCollectionPath(currentTalentId)}/individuals`),
+      request(app.getHttpServer()).post(`${customerCollectionPath(currentTalentId)}/individuals`)
     ).send({
       nickname: 'Integration Test User',
       tags: ['test', 'integration'],
@@ -395,9 +396,7 @@ describe('Customer Integration Tests', () => {
   };
 
   const getCustomer = (id: string, currentTalentId: string = talentId) =>
-    withAuth(
-      request(app.getHttpServer()).get(customerDetailPath(id, currentTalentId)),
-    );
+    withAuth(request(app.getHttpServer()).get(customerDetailPath(id, currentTalentId)));
 
   const ensureCustomer = async (): Promise<string> => {
     if (customerId) {
@@ -414,9 +413,12 @@ describe('Customer Integration Tests', () => {
       return localOnlyCustomerId;
     }
 
-    const response = await createCustomer({
-      nickname: 'Local Only Customer',
-    }, localOnlyTalentId).expect(201);
+    const response = await createCustomer(
+      {
+        nickname: 'Local Only Customer',
+      },
+      localOnlyTalentId
+    ).expect(201);
     localOnlyCustomerId = response.body.data.id;
     return localOnlyCustomerId;
   };
@@ -429,7 +431,7 @@ describe('Customer Integration Tests', () => {
 
   const getCustomerVersionForTalent = async (
     id: string,
-    currentTalentId: string,
+    currentTalentId: string
   ): Promise<number> => {
     const response = await getCustomer(id, currentTalentId).expect(200);
     return response.body.data.version;
@@ -448,12 +450,9 @@ describe('Customer Integration Tests', () => {
     prisma = new PrismaClient();
     tenantFixture = await createTestTenantFixture(prisma, 'customer');
     await configureTenantDefaultProfileStore(prisma, tenantFixture.schemaName);
-    testUser = await createTestUserInTenant(
-      prisma,
-      tenantFixture,
-      `customer_user_${Date.now()}`,
-      ['ADMIN'],
-    );
+    testUser = await createTestUserInTenant(prisma, tenantFixture, `customer_user_${Date.now()}`, [
+      'ADMIN',
+    ]);
 
     const subsidiary = await createTestSubsidiaryInTenant(prisma, tenantFixture, {
       code: `SUB_${Date.now().toString(36).toUpperCase()}`,
@@ -475,7 +474,7 @@ describe('Customer Integration Tests', () => {
       tenantFixture.schemaName,
       talentId,
       testUser.id,
-      mockPiiRuntime.baseUrl,
+      mockPiiRuntime.baseUrl
     );
 
     const localOnlyStoreRows = await prisma.$queryRawUnsafe<Array<{ id: string }>>(`
@@ -525,9 +524,8 @@ describe('Customer Integration Tests', () => {
   describe('GET /api/v1/talents/:talentId/customers', () => {
     it('should return empty list initially', async () => {
       const response = await withAuth(
-        request(app.getHttpServer()).get(customerCollectionPath()),
-      )
-        .expect(200);
+        request(app.getHttpServer()).get(customerCollectionPath())
+      ).expect(200);
 
       expect(response.body.success).toBe(true);
       expect(Array.isArray(response.body.data)).toBe(true);
@@ -535,15 +533,11 @@ describe('Customer Integration Tests', () => {
     });
 
     it('should require authentication', async () => {
-      await request(app.getHttpServer())
-        .get(customerCollectionPath())
-        .expect(401);
+      await request(app.getHttpServer()).get(customerCollectionPath()).expect(401);
     });
 
     it('should not expose the legacy tenant-root customer list route', async () => {
-      await request(app.getHttpServer())
-        .get('/api/v1/customers')
-        .expect(404);
+      await request(app.getHttpServer()).get('/api/v1/customers').expect(404);
     });
   });
 
@@ -579,13 +573,16 @@ describe('Customer Integration Tests', () => {
     });
 
     it('should reject pii payload when the talent has no active pii platform adapter', async () => {
-      const response = await createCustomer({
-        nickname: 'Local Only With PII',
-        pii: {
-          givenName: 'No',
-          familyName: 'Backend',
+      const response = await createCustomer(
+        {
+          nickname: 'Local Only With PII',
+          pii: {
+            givenName: 'No',
+            familyName: 'Backend',
+          },
         },
-      }, localOnlyTalentId).expect(400);
+        localOnlyTalentId
+      ).expect(400);
 
       expect(response.body.success).toBe(false);
       expect(response.body.error.code).toBe('VALIDATION_FAILED');
@@ -655,9 +652,7 @@ describe('Customer Integration Tests', () => {
 
     it('should return 404 for non-existent customer', async () => {
       const response = await withAuth(
-        request(app.getHttpServer()).get(
-          customerDetailPath('00000000-0000-0000-0000-000000000000'),
-        ),
+        request(app.getHttpServer()).get(customerDetailPath('00000000-0000-0000-0000-000000000000'))
       ).expect(404);
 
       expect(response.body.success).toBe(false);
@@ -671,7 +666,7 @@ describe('Customer Integration Tests', () => {
       const version = await getCustomerVersion();
 
       const response = await withAuth(
-        request(app.getHttpServer()).patch(individualCustomerPath(id)),
+        request(app.getHttpServer()).patch(individualCustomerPath(id))
       )
         .send({
           nickname: 'Updated Nickname',
@@ -689,7 +684,7 @@ describe('Customer Integration Tests', () => {
       const id = await ensureCustomer();
 
       const response = await withAuth(
-        request(app.getHttpServer()).patch(individualCustomerPath(id)),
+        request(app.getHttpServer()).patch(individualCustomerPath(id))
       )
         .send({
           nickname: 'Conflict Test',
@@ -706,7 +701,7 @@ describe('Customer Integration Tests', () => {
       const version = await getCustomerVersionForTalent(id, localOnlyTalentId);
 
       const response = await withAuth(
-        request(app.getHttpServer()).patch(`${individualCustomerPath(id, localOnlyTalentId)}/pii`),
+        request(app.getHttpServer()).patch(`${individualCustomerPath(id, localOnlyTalentId)}/pii`)
       )
         .send({
           version,
@@ -740,9 +735,7 @@ describe('Customer Integration Tests', () => {
       const id = createResponse.body.data.id as string;
       const version = await getCustomerVersionForTalent(id, talentId);
 
-      await withAuth(
-        request(app.getHttpServer()).patch(`${individualCustomerPath(id)}/pii`),
-      )
+      await withAuth(request(app.getHttpServer()).patch(`${individualCustomerPath(id)}/pii`))
         .send({
           version,
           pii: {
@@ -815,8 +808,8 @@ describe('Customer Integration Tests', () => {
 
       const response = await withAuth(
         request(app.getHttpServer()).post(
-          `${individualCustomerPath(id, localOnlyTalentId)}/pii-portal-session`,
-        ),
+          `${individualCustomerPath(id, localOnlyTalentId)}/pii-portal-session`
+        )
       ).expect(400);
 
       expect(response.body.success).toBe(false);
@@ -835,8 +828,8 @@ describe('Customer Integration Tests', () => {
 
       const response = await withAuth(
         request(app.getHttpServer()).post(
-          `${individualCustomerPath(createResponse.body.data.id)}/pii-portal-session`,
-        ),
+          `${individualCustomerPath(createResponse.body.data.id)}/pii-portal-session`
+        )
       ).expect(200);
 
       expect(response.body.success).toBe(true);
@@ -852,7 +845,7 @@ describe('Customer Integration Tests', () => {
       const version = await getCustomerVersion();
 
       const response = await withAuth(
-        request(app.getHttpServer()).post(`${customerDetailPath(id)}/deactivate`),
+        request(app.getHttpServer()).post(`${customerDetailPath(id)}/deactivate`)
       )
         .send({
           version,
@@ -869,7 +862,7 @@ describe('Customer Integration Tests', () => {
       const id = await ensureCustomer();
 
       const response = await withAuth(
-        request(app.getHttpServer()).post(`${customerDetailPath(id)}/reactivate`),
+        request(app.getHttpServer()).post(`${customerDetailPath(id)}/reactivate`)
       ).expect(200);
 
       expect(response.body.success).toBe(true);
@@ -881,9 +874,7 @@ describe('Customer Integration Tests', () => {
     it('should search by nickname', async () => {
       await ensureCustomer();
 
-      const response = await withAuth(
-        request(app.getHttpServer()).get(customerCollectionPath()),
-      )
+      const response = await withAuth(request(app.getHttpServer()).get(customerCollectionPath()))
         .query({
           search: 'Updated',
         })
@@ -891,31 +882,27 @@ describe('Customer Integration Tests', () => {
 
       expect(response.body.success).toBe(true);
       expect(
-        response.body.data.some((item: { nickname: string }) => item.nickname.includes('Updated')),
+        response.body.data.some((item: { nickname: string }) => item.nickname.includes('Updated'))
       ).toBe(true);
     });
 
     it('should filter by tags', async () => {
       await ensureCustomer();
 
-      const response = await withAuth(
-        request(app.getHttpServer()).get(customerCollectionPath()),
-      )
+      const response = await withAuth(request(app.getHttpServer()).get(customerCollectionPath()))
         .query('tags=updated&tags=test')
         .expect(200);
 
       expect(response.body.success).toBe(true);
       expect(
-        response.body.data.every((item: { tags: string[] }) => item.tags.includes('updated')),
+        response.body.data.every((item: { tags: string[] }) => item.tags.includes('updated'))
       ).toBe(true);
     });
 
     it('should paginate results', async () => {
       await ensureCustomer();
 
-      const response = await withAuth(
-        request(app.getHttpServer()).get(customerCollectionPath()),
-      )
+      const response = await withAuth(request(app.getHttpServer()).get(customerCollectionPath()))
         .query({
           page: 1,
           pageSize: 10,

@@ -1,9 +1,8 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { describe, expect, it } from 'vitest';
 
-import { configValidationSchema } from '../config.schema';
 import { getProductionUrlWarning } from '../config-sanity.service';
+import { configValidationSchema } from '../config.schema';
 
 const baseEnv = {
   DATABASE_URL: 'postgresql://tcrn:tcrn@localhost:5432/tcrn_tms',
@@ -39,7 +38,7 @@ describe('getProductionUrlWarning', () => {
       'production',
       'FRONTEND_URL',
       'http://localhost:3000',
-      'Password reset and email verification links may send users to localhost.',
+      'Password reset and email verification links may send users to localhost.'
     );
 
     expect(warning).toContain('FRONTEND_URL');
@@ -52,8 +51,8 @@ describe('getProductionUrlWarning', () => {
         'development',
         'FRONTEND_URL',
         'http://localhost:3000',
-        'Password reset and email verification links may send users to localhost.',
-      ),
+        'Password reset and email verification links may send users to localhost.'
+      )
     ).toBeNull();
 
     expect(
@@ -61,8 +60,8 @@ describe('getProductionUrlWarning', () => {
         'production',
         'APP_URL',
         'https://web.prod.tcrn-tms.com',
-        'Homepage and public-page links may point operators or users back to localhost.',
-      ),
+        'Homepage and public-page links may point operators or users back to localhost.'
+      )
     ).toBeNull();
   });
 });

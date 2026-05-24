@@ -1,7 +1,6 @@
-import 'reflect-metadata';
-
 import { RequestMethod } from '@nestjs/common';
 import { METHOD_METADATA, PATH_METADATA } from '@nestjs/common/constants';
+import 'reflect-metadata';
 import { describe, expect, it } from 'vitest';
 
 import { PERMISSIONS_KEY } from '../../common/decorators';
@@ -35,12 +34,15 @@ const normalizePaths = (value: string | string[] | undefined): string[] => {
 const getControllerRoutes = (controller: object): ControllerRoute[] => {
   const controllerClass = controller as unknown as ControllerClassLike;
   const methodNames = Object.getOwnPropertyNames(controllerClass.prototype).filter(
-    (methodName) => methodName !== 'constructor' && typeof controllerClass.prototype[methodName] === 'function',
+    (methodName) =>
+      methodName !== 'constructor' && typeof controllerClass.prototype[methodName] === 'function'
   );
 
   return methodNames.flatMap((methodName) => {
     const handler = controllerClass.prototype[methodName];
-    const requestMethod = Reflect.getMetadata(METHOD_METADATA, handler) as RequestMethod | undefined;
+    const requestMethod = Reflect.getMetadata(METHOD_METADATA, handler) as
+      | RequestMethod
+      | undefined;
 
     if (requestMethod === undefined) {
       return [];
@@ -58,7 +60,9 @@ describe('HomepageController private route contract', () => {
   const homepageControllerClass = HomepageController as unknown as ControllerClassLike;
 
   it('uses PATCH for draft saves and keeps talent-root homepage routes canonical', () => {
-    expect(Reflect.getMetadata(PATH_METADATA, HomepageController)).toBe('talents/:talentId/homepage');
+    expect(Reflect.getMetadata(PATH_METADATA, HomepageController)).toBe(
+      'talents/:talentId/homepage'
+    );
     expect(getControllerRoutes(HomepageController)).toEqual(
       expect.arrayContaining([
         {
@@ -81,7 +85,7 @@ describe('HomepageController private route contract', () => {
           requestMethod: RequestMethod.POST,
           path: 'publish',
         },
-      ]),
+      ])
     );
   });
 
@@ -90,8 +94,8 @@ describe('HomepageController private route contract', () => {
       Object.keys(
         (Reflect.getMetadata(
           API_RESPONSE_METADATA_KEY,
-          homepageControllerClass.prototype[methodName],
-        ) as Record<string, unknown> | undefined) ?? {},
+          homepageControllerClass.prototype[methodName]
+        ) as Record<string, unknown> | undefined) ?? {}
       ).sort();
 
     expect(getStatuses('getHomepage')).toEqual(['200', '401', '404']);
@@ -107,13 +111,15 @@ describe('HomepageController private route contract', () => {
 
   it('documents talentId and versionId path params on homepage admin routes', () => {
     const getPathParamNames = (methodName: string) =>
-      (((Reflect.getMetadata(
-        API_PARAMETERS_METADATA_KEY,
-        homepageControllerClass.prototype[methodName],
-      ) as Array<{ in?: string; name?: string }> | undefined) ?? [])
+      (
+        (Reflect.getMetadata(
+          API_PARAMETERS_METADATA_KEY,
+          homepageControllerClass.prototype[methodName]
+        ) as Array<{ in?: string; name?: string }> | undefined) ?? []
+      )
         .filter((parameter) => parameter.in === 'path' && typeof parameter.name === 'string')
         .map((parameter) => parameter.name as string)
-        .sort());
+        .sort();
 
     expect(getPathParamNames('getHomepage')).toEqual(['talentId']);
     expect(getPathParamNames('uploadAsset')).toEqual(['talentId']);
@@ -127,9 +133,8 @@ describe('HomepageController private route contract', () => {
   });
 
   it('protects homepage asset uploads with homepage update permission', () => {
-    expect(Reflect.getMetadata(
-      PERMISSIONS_KEY,
-      homepageControllerClass.prototype.uploadAsset,
-    )).toEqual([{ resource: 'talent.homepage', action: 'update' }]);
+    expect(
+      Reflect.getMetadata(PERMISSIONS_KEY, homepageControllerClass.prototype.uploadAsset)
+    ).toEqual([{ resource: 'talent.homepage', action: 'update' }]);
   });
 });

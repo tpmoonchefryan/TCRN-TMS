@@ -1,5 +1,4 @@
 import 'reflect-metadata';
-
 import { describe, expect, it } from 'vitest';
 
 import { CustomerController } from '../modules/customer/controllers/customer.controller';
@@ -7,10 +6,7 @@ import { ExternalIdController } from '../modules/customer/controllers/external-i
 import { MembershipController } from '../modules/customer/controllers/membership.controller';
 import { PlatformIdentityController } from '../modules/customer/controllers/platform-identity.controller';
 import { ImportController } from '../modules/import/controllers/import.controller';
-import {
-  CreateImportJobDto,
-  ImportJobQueryDto,
-} from '../modules/import/dto/import.dto';
+import { CreateImportJobDto, ImportJobQueryDto } from '../modules/import/dto/import.dto';
 
 const API_RESPONSE_METADATA_KEY = 'swagger/apiResponse';
 const API_PARAMETERS_METADATA_KEY = 'swagger/apiParameters';
@@ -19,39 +15,32 @@ const API_MODEL_PROPERTIES_ARRAY_METADATA_KEY = 'swagger/apiModelPropertiesArray
 type ControllerClass = { prototype: object };
 type SwaggerResponseMetadata = Record<string, { schema?: unknown; content?: unknown }>;
 
-const getResponseStatuses = (
-  controllerClass: ControllerClass,
-  methodName: string,
-): string[] => {
+const getResponseStatuses = (controllerClass: ControllerClass, methodName: string): string[] => {
   const prototype = controllerClass.prototype as Record<string, unknown>;
-  const metadata = Reflect.getMetadata(
-    API_RESPONSE_METADATA_KEY,
-    prototype[methodName],
-  ) as Record<string, unknown> | undefined;
+  const metadata = Reflect.getMetadata(API_RESPONSE_METADATA_KEY, prototype[methodName]) as
+    | Record<string, unknown>
+    | undefined;
 
   return Object.keys(metadata ?? {}).sort();
 };
 
 const getResponseMetadata = (
   controllerClass: ControllerClass,
-  methodName: string,
+  methodName: string
 ): SwaggerResponseMetadata => {
   const prototype = controllerClass.prototype as Record<string, unknown>;
-  return ((Reflect.getMetadata(
-    API_RESPONSE_METADATA_KEY,
-    prototype[methodName],
-  ) as SwaggerResponseMetadata | undefined) ?? {});
+  return (
+    (Reflect.getMetadata(API_RESPONSE_METADATA_KEY, prototype[methodName]) as
+      | SwaggerResponseMetadata
+      | undefined) ?? {}
+  );
 };
 
-const getPathParamNames = (
-  controllerClass: ControllerClass,
-  methodName: string,
-): string[] => {
+const getPathParamNames = (controllerClass: ControllerClass, methodName: string): string[] => {
   const prototype = controllerClass.prototype as Record<string, unknown>;
-  const metadata = Reflect.getMetadata(
-    API_PARAMETERS_METADATA_KEY,
-    prototype[methodName],
-  ) as Array<{ in?: string; name?: string }> | undefined;
+  const metadata = Reflect.getMetadata(API_PARAMETERS_METADATA_KEY, prototype[methodName]) as
+    | Array<{ in?: string; name?: string }>
+    | undefined;
 
   return (metadata ?? [])
     .filter((parameter) => parameter.in === 'path' && typeof parameter.name === 'string')
@@ -62,7 +51,7 @@ const getPathParamNames = (
 const getDocumentedDtoProperties = (dtoClass: { prototype: object }): string[] => {
   const metadata = Reflect.getMetadata(
     API_MODEL_PROPERTIES_ARRAY_METADATA_KEY,
-    dtoClass.prototype,
+    dtoClass.prototype
   ) as string[] | undefined;
 
   return (metadata ?? []).map((property) => property.replace(/^:/, '')).sort();
@@ -71,11 +60,39 @@ const getDocumentedDtoProperties = (dtoClass: { prototype: object }): string[] =
 describe('Swagger customer and import family contract', () => {
   it('attaches explicit response schemas to customer and import routes', () => {
     const controllerMethods: Array<[ControllerClass, string[]]> = [
-      [CustomerController, ['list', 'getById', 'createIndividual', 'updateIndividual', 'createPiiPortalSession', 'createCompanyPiiPortalSession', 'updateIndividualPii', 'createCompany', 'updateCompany', 'deactivate', 'reactivate', 'batchOperation']],
+      [
+        CustomerController,
+        [
+          'list',
+          'getById',
+          'createIndividual',
+          'updateIndividual',
+          'createPiiPortalSession',
+          'createCompanyPiiPortalSession',
+          'updateIndividualPii',
+          'createCompany',
+          'updateCompany',
+          'deactivate',
+          'reactivate',
+          'batchOperation',
+        ],
+      ],
       [ExternalIdController, ['list', 'create', 'delete']],
       [MembershipController, ['list', 'create', 'update']],
       [PlatformIdentityController, ['list', 'create', 'update', 'getHistory']],
-      [ImportController, ['downloadIndividualTemplate', 'downloadCompanyTemplate', 'uploadIndividual', 'uploadCompany', 'listJobs', 'getJob', 'getJobErrors', 'cancelJob']],
+      [
+        ImportController,
+        [
+          'downloadIndividualTemplate',
+          'downloadCompanyTemplate',
+          'uploadIndividual',
+          'uploadCompany',
+          'listJobs',
+          'getJob',
+          'getJobErrors',
+          'cancelJob',
+        ],
+      ],
     ];
 
     for (const [controllerClass, methodNames] of controllerMethods) {
@@ -83,9 +100,7 @@ describe('Swagger customer and import family contract', () => {
         const responseEntries = Object.values(getResponseMetadata(controllerClass, methodName));
         expect(responseEntries.length).toBeGreaterThan(0);
         expect(
-          responseEntries.every(
-            (response) => Boolean(response?.schema || response?.content),
-          ),
+          responseEntries.every((response) => Boolean(response?.schema || response?.content))
         ).toBe(true);
       }
     }
@@ -176,12 +191,7 @@ describe('Swagger customer and import family contract', () => {
   });
 
   it('documents response status coverage for nested customer subresources', () => {
-    expect(getResponseStatuses(ExternalIdController, 'list')).toEqual([
-      '200',
-      '401',
-      '403',
-      '404',
-    ]);
+    expect(getResponseStatuses(ExternalIdController, 'list')).toEqual(['200', '401', '403', '404']);
     expect(getResponseStatuses(ExternalIdController, 'create')).toEqual([
       '201',
       '400',
@@ -197,12 +207,7 @@ describe('Swagger customer and import family contract', () => {
       '404',
     ]);
 
-    expect(getResponseStatuses(MembershipController, 'list')).toEqual([
-      '200',
-      '401',
-      '403',
-      '404',
-    ]);
+    expect(getResponseStatuses(MembershipController, 'list')).toEqual(['200', '401', '403', '404']);
     expect(getResponseStatuses(MembershipController, 'create')).toEqual([
       '201',
       '400',
@@ -272,12 +277,7 @@ describe('Swagger customer and import family contract', () => {
       '401',
       '403',
     ]);
-    expect(getResponseStatuses(ImportController, 'listJobs')).toEqual([
-      '200',
-      '400',
-      '401',
-      '403',
-    ]);
+    expect(getResponseStatuses(ImportController, 'listJobs')).toEqual(['200', '400', '401', '403']);
     expect(getResponseStatuses(ImportController, 'getJob')).toEqual([
       '200',
       '400',
@@ -285,11 +285,7 @@ describe('Swagger customer and import family contract', () => {
       '403',
       '404',
     ]);
-    expect(getResponseStatuses(ImportController, 'getJobErrors')).toEqual([
-      '200',
-      '401',
-      '403',
-    ]);
+    expect(getResponseStatuses(ImportController, 'getJobErrors')).toEqual(['200', '401', '403']);
     expect(getResponseStatuses(ImportController, 'cancelJob')).toEqual([
       '200',
       '400',
@@ -324,14 +320,8 @@ describe('Swagger customer and import family contract', () => {
       'customerId',
       'talentId',
     ]);
-    expect(getPathParamNames(CustomerController, 'deactivate')).toEqual([
-      'customerId',
-      'talentId',
-    ]);
-    expect(getPathParamNames(CustomerController, 'reactivate')).toEqual([
-      'customerId',
-      'talentId',
-    ]);
+    expect(getPathParamNames(CustomerController, 'deactivate')).toEqual(['customerId', 'talentId']);
+    expect(getPathParamNames(CustomerController, 'reactivate')).toEqual(['customerId', 'talentId']);
     expect(getPathParamNames(CustomerController, 'batchOperation')).toEqual(['talentId']);
 
     expect(getPathParamNames(ExternalIdController, 'list')).toEqual(['customerId', 'talentId']);
@@ -368,12 +358,8 @@ describe('Swagger customer and import family contract', () => {
       'talentId',
     ]);
 
-    expect(getPathParamNames(ImportController, 'downloadIndividualTemplate')).toEqual([
-      'talentId',
-    ]);
-    expect(getPathParamNames(ImportController, 'downloadCompanyTemplate')).toEqual([
-      'talentId',
-    ]);
+    expect(getPathParamNames(ImportController, 'downloadIndividualTemplate')).toEqual(['talentId']);
+    expect(getPathParamNames(ImportController, 'downloadCompanyTemplate')).toEqual(['talentId']);
     expect(getPathParamNames(ImportController, 'uploadIndividual')).toEqual(['talentId']);
     expect(getPathParamNames(ImportController, 'uploadCompany')).toEqual(['talentId']);
     expect(getPathParamNames(ImportController, 'listJobs')).toEqual(['talentId']);
@@ -383,19 +369,11 @@ describe('Swagger customer and import family contract', () => {
       'talentId',
       'type',
     ]);
-    expect(getPathParamNames(ImportController, 'cancelJob')).toEqual([
-      'jobId',
-      'talentId',
-      'type',
-    ]);
+    expect(getPathParamNames(ImportController, 'cancelJob')).toEqual(['jobId', 'talentId', 'type']);
   });
 
   it('documents request/query DTO properties for import jobs', () => {
     expect(getDocumentedDtoProperties(CreateImportJobDto)).toEqual(['consumerCode']);
-    expect(getDocumentedDtoProperties(ImportJobQueryDto)).toEqual([
-      'page',
-      'pageSize',
-      'status',
-    ]);
+    expect(getDocumentedDtoProperties(ImportJobQueryDto)).toEqual(['page', 'pageSize', 'status']);
   });
 });

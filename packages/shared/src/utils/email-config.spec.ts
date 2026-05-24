@@ -1,11 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { describe, expect, it } from 'vitest';
 
-import {
-  DEFAULT_EMAIL_PROVIDER,
-  normalizeStoredEmailConfig,
-} from './email-config';
+import { DEFAULT_EMAIL_PROVIDER, normalizeStoredEmailConfig } from './email-config';
 
 describe('normalizeStoredEmailConfig', () => {
   it('returns the default provider for non-object values', () => {
@@ -27,7 +23,7 @@ describe('normalizeStoredEmailConfig', () => {
           replyTo: 'reply@example.com',
           ignored: 123,
         },
-      }),
+      })
     ).toEqual({
       provider: 'tencent_ses',
       tencentSes: {
@@ -56,7 +52,7 @@ describe('normalizeStoredEmailConfig', () => {
           fromName: 'SMTP Sender',
           replyTo: 'ignored',
         },
-      }),
+      })
     ).toEqual({
       provider: 'smtp',
       tencentSes: undefined,
@@ -90,7 +86,7 @@ describe('normalizeStoredEmailConfig', () => {
             fromAddress: 'ignored@example.com',
           },
         },
-      }),
+      })
     ).toEqual({
       provider: 'smtp',
       tencentSes: undefined,

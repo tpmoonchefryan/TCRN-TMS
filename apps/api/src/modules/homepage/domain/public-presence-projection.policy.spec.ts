@@ -1,12 +1,13 @@
+import { describe, expect, it } from 'vitest';
+
 import {
   DEFAULT_THEME,
   type PublicPresenceDocument,
   PublicPresenceProjectionSchema,
 } from '@tcrn/shared';
-import { describe, expect, it } from 'vitest';
 
-import type { PublicHomepageData } from './public-homepage-read.policy';
 import { buildPublicPresenceSeedRuntimeAuthorityForTests } from '../testing/public-presence-seed-runtime-authority';
+import type { PublicHomepageData } from './public-homepage-read.policy';
 import {
   buildPublicHomepageProjection,
   buildPublicHomepageProjectionEvent,
@@ -58,8 +59,7 @@ const baseHomepageData: PublicHomepageData = {
         order: 3,
         visible: true,
         props: {
-          contentHtml:
-            '<h2>About</h2><p>Official page.</p><script>alert(1)</script>',
+          contentHtml: '<h2>About</h2><p>Official page.</p><script>alert(1)</script>',
         },
       },
       {
@@ -97,16 +97,13 @@ describe('public presence projection policy', () => {
 
     expect(PublicPresenceProjectionSchema.parse(projection).projectionHash).toBeTruthy();
     expect(projection.route.cacheKeys).toEqual(
-      expect.arrayContaining([
-        'public-homepage',
-        'public-homepage:path:suisei-home',
-      ]),
+      expect.arrayContaining(['public-homepage', 'public-homepage:path:suisei-home'])
     );
     expect(projection.appearance.theme.background.type).not.toBe('image');
     expect(projection.metadata.ogImage).toBeNull();
 
     const videoSection = projection.sections.find(
-      (section) => section.sectionType === 'videoEmbed',
+      (section) => section.sectionType === 'videoEmbed'
     );
     expect(videoSection).toMatchObject({
       providerId: 'youtube',
@@ -143,8 +140,8 @@ describe('public presence projection policy', () => {
           sections: projection.sections,
           actions: projection.actions,
           media: projection.media,
-        }),
-      ),
+        })
+      )
     ).not.toHaveProperty('contentHash');
   });
 
@@ -172,11 +169,11 @@ describe('public presence projection policy', () => {
         canonicalPath: '/tenant-a/suisei/homepage',
         tenantCode: 'tenant-a',
         talentCode: 'suisei',
-      },
+      }
     );
 
     const videoSection = projection.sections.find(
-      (section) => section.sectionType === 'videoEmbed',
+      (section) => section.sectionType === 'videoEmbed'
     );
 
     expect(videoSection).toMatchObject({
@@ -226,16 +223,18 @@ describe('public presence projection policy', () => {
       {
         canonicalPath: '/p/suisei-home',
         legacyPath: 'suisei-home',
-      },
+      }
     );
 
-    expect(projection.sections.find((section) => section.sectionType === 'socialLinks')).toBeFalsy();
+    expect(
+      projection.sections.find((section) => section.sectionType === 'socialLinks')
+    ).toBeFalsy();
     expect(projection.fallbackDecisions).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ reason: 'blocked-protocol-relative' }),
         expect.objectContaining({ reason: 'credential-url' }),
         expect.objectContaining({ reason: 'blocked-protocol-relative' }),
-      ]),
+      ])
     );
   });
 
@@ -261,16 +260,12 @@ describe('public presence projection policy', () => {
       {
         canonicalPath: '/p/suisei-home',
         legacyPath: 'suisei-home',
-      },
+      }
     );
 
-    expect(
-      projection.sections.some((section) => section.id === 'rich-unsafe'),
-    ).toBe(false);
+    expect(projection.sections.some((section) => section.id === 'rich-unsafe')).toBe(false);
     expect(projection.fallbackDecisions).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ reason: 'empty-or-unsafe-rich-text' }),
-      ]),
+      expect.arrayContaining([expect.objectContaining({ reason: 'empty-or-unsafe-rich-text' })])
     );
   });
 
@@ -385,11 +380,9 @@ describe('public presence projection policy', () => {
     });
 
     expect(revealedProjection.metadata.title).toBe('Tokino Sora reveal');
-    expect(revealedProjection.metadata.ogImage?.url).toBe(
-      'https://cdn.example.com/reveal-og.png',
-    );
+    expect(revealedProjection.metadata.ogImage?.url).toBe('https://cdn.example.com/reveal-og.png');
     expect(buildPublicHomepageProjectionEvent(revealedProjection).source).toBe(
-      'publicPresenceDocument',
+      'publicPresenceDocument'
     );
   });
 

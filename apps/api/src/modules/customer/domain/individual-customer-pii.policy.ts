@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import type { PiiDataDto } from '../dto/customer.dto';
 
 export interface IndividualCustomerPiiCustomerRecord {
@@ -21,15 +20,13 @@ export interface IndividualCustomerPiiTalentRecord {
 
 export const hasIndividualCustomerPiiVersionMismatch = (
   customer: IndividualCustomerPiiCustomerRecord,
-  version: number,
+  version: number
 ) => customer.version !== version;
 
-export const collectIndividualCustomerPiiUpdatedFields = (
-  pii: Partial<PiiDataDto>,
-) => Object.keys(pii);
+export const collectIndividualCustomerPiiUpdatedFields = (pii: Partial<PiiDataDto>) =>
+  Object.keys(pii);
 
-export const buildIndividualCustomerPiiUpdateFieldChanges = (
-  pii: Partial<PiiDataDto>,
-) => JSON.stringify({
-  fieldsUpdated: collectIndividualCustomerPiiUpdatedFields(pii),
-});
+export const buildIndividualCustomerPiiUpdateFieldChanges = (pii: Partial<PiiDataDto>) =>
+  JSON.stringify({
+    fieldsUpdated: collectIndividualCustomerPiiUpdatedFields(pii),
+  });

@@ -1,12 +1,8 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable } from '@nestjs/common';
+
 import { Prisma } from '@tcrn/database';
-import {
-  EMAIL_CONFIG_KEY,
-  normalizeStoredEmailConfig,
-  type StoredEmailConfig,
-} from '@tcrn/shared';
+import { EMAIL_CONFIG_KEY, normalizeStoredEmailConfig, type StoredEmailConfig } from '@tcrn/shared';
 
 import { DatabaseService } from '../../database';
 
@@ -17,9 +13,7 @@ export interface StoredEmailConfigRecord {
 
 @Injectable()
 export class EmailConfigRepository {
-  constructor(
-    private readonly databaseService: DatabaseService,
-  ) {}
+  constructor(private readonly databaseService: DatabaseService) {}
 
   private get prisma() {
     return this.databaseService.getPrisma();

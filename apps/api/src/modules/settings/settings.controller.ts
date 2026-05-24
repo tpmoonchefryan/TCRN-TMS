@@ -1,17 +1,17 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
+import { Body, Controller, Get, Param, ParseUUIDPipe, Patch } from '@nestjs/common';
 import {
-  Body,
-  Controller,
-  Get,
-  Param,
-  ParseUUIDPipe,
-  Patch,
-} from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiParam, ApiProperty, ApiResponse, ApiTags } from '@nestjs/swagger';
-import type { ArtistLifecycleFlow } from '@tcrn/shared';
+  ApiBearerAuth,
+  ApiOperation,
+  ApiParam,
+  ApiProperty,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { IsIn, IsInt, IsObject, IsOptional, IsString, Min } from 'class-validator';
+
+import type { ArtistLifecycleFlow } from '@tcrn/shared';
 
 import { AuthenticatedUser, CurrentUser, RequirePermissions } from '../../common/decorators';
 import { success } from '../../common/response.util';
@@ -19,7 +19,10 @@ import { ScopeSettings, SettingsService } from './settings.service';
 
 // DTOs
 export class UpdateSettingsDto {
-  @ApiProperty({ description: 'Settings object to update', example: { defaultLanguage: 'ja', maxItems: 100 } })
+  @ApiProperty({
+    description: 'Settings object to update',
+    example: { defaultLanguage: 'ja', maxItems: 100 },
+  })
   @IsObject()
   settings: Record<string, unknown>;
 
@@ -38,7 +41,8 @@ export class ResetFieldDto {
 
 export class UpdateTenantTurnstileSettingsDto {
   @ApiProperty({
-    description: 'Tenant Cloudflare Turnstile Site Key. Empty or null clears the tenant-owned site key.',
+    description:
+      'Tenant Cloudflare Turnstile Site Key. Empty or null clears the tenant-owned site key.',
     example: '0x4AAAAAAABBBBBBBBBBBBBB',
     required: false,
     nullable: true,
@@ -58,7 +62,8 @@ export class UpdateTenantTurnstileSettingsDto {
   secretKeyMutation?: 'keep' | 'replace' | 'clear';
 
   @ApiProperty({
-    description: 'New Cloudflare Turnstile Secret Key. Only accepted when secretKeyMutation is replace.',
+    description:
+      'New Cloudflare Turnstile Secret Key. Only accepted when secretKeyMutation is replace.',
     example: '0x4AAAAAAASECRET',
     required: false,
     nullable: true,
@@ -121,7 +126,10 @@ const SETTINGS_DATA_SCHEMA = {
   required: ['scopeType', 'scopeId', 'settings', 'overrides', 'inheritedFrom', 'version'],
 } as const;
 
-const createSuccessEnvelopeSchema = (dataSchema: Record<string, unknown>, exampleData: Record<string, unknown>) => ({
+const createSuccessEnvelopeSchema = (
+  dataSchema: Record<string, unknown>,
+  exampleData: Record<string, unknown>
+) => ({
   type: 'object',
   properties: {
     success: { type: 'boolean', example: true },
@@ -137,7 +145,7 @@ const createSuccessEnvelopeSchema = (dataSchema: Record<string, unknown>, exampl
 const createErrorEnvelopeSchema = (
   code: string,
   message: string,
-  details?: Record<string, unknown>,
+  details?: Record<string, unknown>
 ) => ({
   type: 'object',
   properties: {
@@ -188,17 +196,17 @@ const SETTINGS_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(SETTINGS_DATA_SCHEMA
 const SETTINGS_BAD_REQUEST_SCHEMA = createErrorEnvelopeSchema(
   'VALIDATION_FAILED',
   'Settings have been modified by another user',
-  { version: ['Expected the latest settings version before updating'] },
+  { version: ['Expected the latest settings version before updating'] }
 );
 
 const SETTINGS_UNAUTHORIZED_SCHEMA = createErrorEnvelopeSchema(
   'AUTH_UNAUTHORIZED',
-  'Authentication required',
+  'Authentication required'
 );
 
 const SETTINGS_NOT_FOUND_SCHEMA = createErrorEnvelopeSchema(
   'RES_NOT_FOUND',
-  'Requested scope was not found',
+  'Requested scope was not found'
 );
 
 const TURNSTILE_SETTINGS_DATA_SCHEMA = {
@@ -207,7 +215,11 @@ const TURNSTILE_SETTINGS_DATA_SCHEMA = {
     siteKey: { type: 'string', nullable: true, example: '0x4AAAAAAABBBBBBBBBBBBBB' },
     effectiveSiteKey: { type: 'string', nullable: true, example: '0x4AAAAAAABBBBBBBBBBBBBB' },
     source: { type: 'string', enum: ['tenant', 'environment', 'none'], example: 'tenant' },
-    environment: { type: 'string', enum: ['development', 'test', 'staging', 'production'], example: 'staging' },
+    environment: {
+      type: 'string',
+      enum: ['development', 'test', 'staging', 'production'],
+      example: 'staging',
+    },
     siteKeyConfigured: { type: 'boolean', example: true },
     secretKeyConfigured: { type: 'boolean', example: true },
     providerReady: { type: 'boolean', example: true },
@@ -242,7 +254,7 @@ const TURNSTILE_SETTINGS_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
     runtimeBypass: false,
     ready: true,
     secretKeyMasked: '********',
-  },
+  }
 );
 
 const ARTIST_LIFECYCLE_FLOW_DATA_SCHEMA = {
@@ -292,7 +304,15 @@ const ARTIST_LIFECYCLE_FLOW_DATA_SCHEMA = {
       example: [],
     },
   },
-  required: ['scopeType', 'scopeId', 'inheritedFrom', 'writable', 'version', 'flow', 'validationIssues'],
+  required: [
+    'scopeType',
+    'scopeId',
+    'inheritedFrom',
+    'writable',
+    'version',
+    'flow',
+    'validationIssues',
+  ],
 } as const;
 
 const ARTIST_LIFECYCLE_FLOW_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
@@ -309,7 +329,7 @@ const ARTIST_LIFECYCLE_FLOW_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
       homepagePolicyByStage: [],
     },
     validationIssues: [],
-  },
+  }
 );
 
 /**
@@ -339,9 +359,7 @@ export class SettingsController {
     description: 'Authentication is required to read tenant settings',
     schema: SETTINGS_UNAUTHORIZED_SCHEMA,
   })
-  async getTenantSettings(
-    @CurrentUser() user: AuthenticatedUser,
-  ) {
+  async getTenantSettings(@CurrentUser() user: AuthenticatedUser) {
     const settings = await this.settingsService.getEffectiveSettings(
       user.tenantSchema,
       'tenant',
@@ -375,7 +393,7 @@ export class SettingsController {
   })
   async updateTenantSettings(
     @CurrentUser() user: AuthenticatedUser,
-    @Body() dto: UpdateSettingsDto,
+    @Body() dto: UpdateSettingsDto
   ) {
     const settings = await this.settingsService.updateSettings(
       user.tenantSchema,
@@ -397,14 +415,10 @@ export class SettingsController {
     description: 'Returns tenant-owned artist lifecycle flow and homepage policy settings',
     schema: ARTIST_LIFECYCLE_FLOW_SUCCESS_SCHEMA,
   })
-  async getTenantArtistLifecycleFlow(
-    @CurrentUser() user: AuthenticatedUser,
-  ) {
-    return success(await this.settingsService.getArtistLifecycleFlow(
-      user.tenantSchema,
-      'tenant',
-      null,
-    ));
+  async getTenantArtistLifecycleFlow(@CurrentUser() user: AuthenticatedUser) {
+    return success(
+      await this.settingsService.getArtistLifecycleFlow(user.tenantSchema, 'tenant', null)
+    );
   }
 
   @Patch('organization/settings/artist-lifecycle-flow')
@@ -417,12 +431,11 @@ export class SettingsController {
   })
   async updateTenantArtistLifecycleFlow(
     @CurrentUser() user: AuthenticatedUser,
-    @Body() dto: UpdateArtistLifecycleFlowDto,
+    @Body() dto: UpdateArtistLifecycleFlowDto
   ) {
-    return success(await this.settingsService.updateArtistLifecycleFlow(
-      user.tenantSchema,
-      dto.flow,
-    ));
+    return success(
+      await this.settingsService.updateArtistLifecycleFlow(user.tenantSchema, dto.flow)
+    );
   }
 
   @Get('organization/settings/turnstile')
@@ -438,9 +451,7 @@ export class SettingsController {
     description: 'Authentication is required to read tenant Turnstile settings',
     schema: SETTINGS_UNAUTHORIZED_SCHEMA,
   })
-  async getTenantTurnstileSettings(
-    @CurrentUser() user: AuthenticatedUser,
-  ) {
+  async getTenantTurnstileSettings(@CurrentUser() user: AuthenticatedUser) {
     return success(await this.settingsService.getTenantTurnstileSettings(user.tenantSchema));
   }
 
@@ -464,9 +475,11 @@ export class SettingsController {
   })
   async updateTenantTurnstileSettings(
     @CurrentUser() user: AuthenticatedUser,
-    @Body() dto: UpdateTenantTurnstileSettingsDto,
+    @Body() dto: UpdateTenantTurnstileSettingsDto
   ) {
-    return success(await this.settingsService.updateTenantTurnstileSettings(user.tenantSchema, dto));
+    return success(
+      await this.settingsService.updateTenantTurnstileSettings(user.tenantSchema, dto)
+    );
   }
 
   /**
@@ -498,7 +511,7 @@ export class SettingsController {
   })
   async getSubsidiarySettings(
     @CurrentUser() user: AuthenticatedUser,
-    @Param('subsidiaryId', ParseUUIDPipe) subsidiaryId: string,
+    @Param('subsidiaryId', ParseUUIDPipe) subsidiaryId: string
   ) {
     const settings = await this.settingsService.getEffectiveSettings(
       user.tenantSchema,
@@ -524,13 +537,15 @@ export class SettingsController {
   })
   async getSubsidiaryArtistLifecycleFlow(
     @CurrentUser() user: AuthenticatedUser,
-    @Param('subsidiaryId', ParseUUIDPipe) subsidiaryId: string,
+    @Param('subsidiaryId', ParseUUIDPipe) subsidiaryId: string
   ) {
-    return success(await this.settingsService.getArtistLifecycleFlow(
-      user.tenantSchema,
-      'subsidiary',
-      subsidiaryId,
-    ));
+    return success(
+      await this.settingsService.getArtistLifecycleFlow(
+        user.tenantSchema,
+        'subsidiary',
+        subsidiaryId
+      )
+    );
   }
 
   /**
@@ -568,7 +583,7 @@ export class SettingsController {
   async updateSubsidiarySettings(
     @CurrentUser() user: AuthenticatedUser,
     @Param('subsidiaryId', ParseUUIDPipe) subsidiaryId: string,
-    @Body() dto: UpdateSettingsDto,
+    @Body() dto: UpdateSettingsDto
   ) {
     const settings = await this.settingsService.updateSettings(
       user.tenantSchema,
@@ -617,7 +632,7 @@ export class SettingsController {
   async resetSubsidiarySetting(
     @CurrentUser() user: AuthenticatedUser,
     @Param('subsidiaryId', ParseUUIDPipe) subsidiaryId: string,
-    @Body() dto: ResetFieldDto,
+    @Body() dto: ResetFieldDto
   ) {
     const settings = await this.settingsService.resetToInherited(
       user.tenantSchema,
@@ -659,7 +674,7 @@ export class SettingsController {
   })
   async getTalentSettings(
     @CurrentUser() user: AuthenticatedUser,
-    @Param('talentId', ParseUUIDPipe) talentId: string,
+    @Param('talentId', ParseUUIDPipe) talentId: string
   ) {
     const settings = await this.settingsService.getEffectiveSettings(
       user.tenantSchema,
@@ -685,13 +700,11 @@ export class SettingsController {
   })
   async getTalentArtistLifecycleFlow(
     @CurrentUser() user: AuthenticatedUser,
-    @Param('talentId', ParseUUIDPipe) talentId: string,
+    @Param('talentId', ParseUUIDPipe) talentId: string
   ) {
-    return success(await this.settingsService.getArtistLifecycleFlow(
-      user.tenantSchema,
-      'talent',
-      talentId,
-    ));
+    return success(
+      await this.settingsService.getArtistLifecycleFlow(user.tenantSchema, 'talent', talentId)
+    );
   }
 
   /**
@@ -729,7 +742,7 @@ export class SettingsController {
   async updateTalentSettings(
     @CurrentUser() user: AuthenticatedUser,
     @Param('talentId', ParseUUIDPipe) talentId: string,
-    @Body() dto: UpdateSettingsDto,
+    @Body() dto: UpdateSettingsDto
   ) {
     const settings = await this.settingsService.updateSettings(
       user.tenantSchema,
@@ -778,7 +791,7 @@ export class SettingsController {
   async resetTalentSetting(
     @CurrentUser() user: AuthenticatedUser,
     @Param('talentId', ParseUUIDPipe) talentId: string,
-    @Body() dto: ResetFieldDto,
+    @Body() dto: ResetFieldDto
   ) {
     const settings = await this.settingsService.resetToInherited(
       user.tenantSchema,

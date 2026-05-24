@@ -13,11 +13,7 @@ export default async function TalentHomepageManagementPage({
 
   return (
     <TalentBusinessAccessGate allowDraft tenantId={tenantId} talentId={talentId}>
-      <PublicPresenceManagementScreen
-        surface={surface}
-        talentId={talentId}
-        tenantId={tenantId}
-      />
+      <PublicPresenceManagementScreen surface={surface} talentId={talentId} tenantId={tenantId} />
     </TalentBusinessAccessGate>
   );
 }

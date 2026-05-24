@@ -16,7 +16,9 @@ describe('interface-management.api', () => {
       throw new Error(`Unexpected request: ${path}`);
     });
 
-    await expect(listAdapterDefinitions(request as never)).resolves.toEqual([{ key: 'ai-adapter' }]);
+    await expect(listAdapterDefinitions(request as never)).resolves.toEqual([
+      { key: 'ai-adapter' },
+    ]);
   });
 
   it('sends tenant-root AI Adapter create payloads through the tenant adapter endpoint', async () => {
@@ -47,7 +49,7 @@ describe('interface-management.api', () => {
             { configKey: 'token', configValue: 'provider-token' },
           ],
         }),
-      }),
+      })
     );
   });
 
@@ -69,7 +71,7 @@ describe('interface-management.api', () => {
           { configKey: 'model', configValue: 'gemini-example' },
           { configKey: 'token', configValue: 'provider-token' },
         ],
-      },
+      }
     );
 
     expect(request).toHaveBeenCalledWith(
@@ -86,7 +88,7 @@ describe('interface-management.api', () => {
             { configKey: 'token', configValue: 'provider-token' },
           ],
         }),
-      }),
+      })
     );
   });
 });

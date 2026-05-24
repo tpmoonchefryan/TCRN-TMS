@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable } from '@nestjs/common';
+
 import { type RequestContext } from '@tcrn/shared';
 
 import { DatabaseService } from '../../database';
@@ -15,8 +15,8 @@ import type {
   OwnerType,
   UpdateExternalBlocklistDto,
 } from '../dto/external-blocklist.dto';
-import { ExternalBlocklistRepository } from '../infrastructure/external-blocklist.repository';
 import { ExternalBlocklistCacheRepository } from '../infrastructure/external-blocklist-cache.repository';
+import { ExternalBlocklistRepository } from '../infrastructure/external-blocklist.repository';
 
 @Injectable()
 export class ExternalBlocklistService {
@@ -25,13 +25,13 @@ export class ExternalBlocklistService {
     redisService: RedisService,
     private readonly externalBlocklistApplicationService: ExternalBlocklistApplicationService = new ExternalBlocklistApplicationService(
       new ExternalBlocklistRepository(databaseService),
-      new ExternalBlocklistCacheRepository(redisService),
-    ),
+      new ExternalBlocklistCacheRepository(redisService)
+    )
   ) {}
 
   async findMany(
     tenantSchema: string,
-    query: ExternalBlocklistQueryDto,
+    query: ExternalBlocklistQueryDto
   ): Promise<{ items: ExternalBlocklistItemWithMeta[]; total: number }> {
     return this.externalBlocklistApplicationService.findMany(tenantSchema, query);
   }
@@ -39,26 +39,23 @@ export class ExternalBlocklistService {
   async findWithInheritance(
     tenantSchema: string,
     scopeType: OwnerType,
-    scopeId: string | null,
+    scopeId: string | null
   ): Promise<ExternalBlocklistItemWithMeta[]> {
     return this.externalBlocklistApplicationService.findWithInheritance(
       tenantSchema,
       scopeType,
-      scopeId,
+      scopeId
     );
   }
 
-  async findById(
-    tenantSchema: string,
-    id: string,
-  ): Promise<ExternalBlocklistItem | null> {
+  async findById(tenantSchema: string, id: string): Promise<ExternalBlocklistItem | null> {
     return this.externalBlocklistApplicationService.findById(tenantSchema, id);
   }
 
   async create(
     tenantSchema: string,
     dto: CreateExternalBlocklistDto,
-    context: RequestContext,
+    context: RequestContext
   ): Promise<ExternalBlocklistItem> {
     return this.externalBlocklistApplicationService.create(tenantSchema, dto, context);
   }
@@ -67,7 +64,7 @@ export class ExternalBlocklistService {
     tenantSchema: string,
     id: string,
     dto: UpdateExternalBlocklistDto,
-    context: RequestContext,
+    context: RequestContext
   ): Promise<ExternalBlocklistItem> {
     return this.externalBlocklistApplicationService.update(tenantSchema, id, dto, context);
   }
@@ -80,13 +77,13 @@ export class ExternalBlocklistService {
     tenantSchema: string,
     ids: string[],
     isActive: boolean,
-    context: RequestContext,
+    context: RequestContext
   ): Promise<{ updated: number }> {
     return this.externalBlocklistApplicationService.batchToggle(
       tenantSchema,
       ids,
       isActive,
-      context,
+      context
     );
   }
 
@@ -94,20 +91,15 @@ export class ExternalBlocklistService {
     tenantSchema: string,
     id: string,
     dto: DisableExternalBlocklistDto,
-    userId: string,
+    userId: string
   ): Promise<{ id: string; disabled: boolean }> {
-    return this.externalBlocklistApplicationService.disableInScope(
-      tenantSchema,
-      id,
-      dto,
-      userId,
-    );
+    return this.externalBlocklistApplicationService.disableInScope(tenantSchema, id, dto, userId);
   }
 
   async enableInScope(
     tenantSchema: string,
     id: string,
-    dto: DisableExternalBlocklistDto,
+    dto: DisableExternalBlocklistDto
   ): Promise<{ id: string; enabled: boolean }> {
     return this.externalBlocklistApplicationService.enableInScope(tenantSchema, id, dto);
   }

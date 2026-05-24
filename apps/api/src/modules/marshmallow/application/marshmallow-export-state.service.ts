@@ -1,27 +1,25 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable } from '@nestjs/common';
+
 import { LogSeverity, TechEventType } from '@tcrn/shared';
 
 import { TechEventLogService } from '../../log';
+import { getMarshmallowExportJobExpiryAt } from '../domain/marshmallow-export-state.policy';
 import { MarshmallowExportStatus } from '../domain/marshmallow-export.policy';
-import {
-  getMarshmallowExportJobExpiryAt,
-} from '../domain/marshmallow-export-state.policy';
 import { MarshmallowExportStateRepository } from '../infrastructure/marshmallow-export-state.repository';
 
 @Injectable()
 export class MarshmallowExportStateApplicationService {
   constructor(
     private readonly marshmallowExportStateRepository: MarshmallowExportStateRepository,
-    private readonly techEventLogService: TechEventLogService,
+    private readonly techEventLogService: TechEventLogService
   ) {}
 
   async updateProgress(
     jobId: string,
     tenantSchema: string,
     totalRecords: number,
-    processedRecords: number,
+    processedRecords: number
   ): Promise<void> {
     await this.marshmallowExportStateRepository.updateProgress(tenantSchema, {
       jobId,
@@ -36,7 +34,7 @@ export class MarshmallowExportStateApplicationService {
     tenantSchema: string,
     filePath: string,
     fileName: string,
-    totalRecords: number,
+    totalRecords: number
   ): Promise<void> {
     await this.marshmallowExportStateRepository.completeJob(tenantSchema, {
       jobId,
@@ -60,11 +58,7 @@ export class MarshmallowExportStateApplicationService {
     });
   }
 
-  async failJob(
-    jobId: string,
-    tenantSchema: string,
-    errorMessage: string,
-  ): Promise<void> {
+  async failJob(jobId: string, tenantSchema: string, errorMessage: string): Promise<void> {
     await this.marshmallowExportStateRepository.failJob(tenantSchema, {
       jobId,
       status: MarshmallowExportStatus.FAILED,

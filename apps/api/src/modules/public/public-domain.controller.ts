@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Controller, Get, Logger, NotFoundException, Param, Query } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 
@@ -20,13 +19,14 @@ export class PublicDomainController {
 
   @Public()
   @Get('domain-lookup/:hostname')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Lookup custom domain configuration',
-    description: 'Returns talent path and service paths for a verified custom domain. Used by external browser runtimes or edge layers for routing.'
+    description:
+      'Returns talent path and service paths for a verified custom domain. Used by external browser runtimes or edge layers for routing.',
   })
   async lookupDomain(
     @Param('hostname') hostname: string,
-    @Query('talentCode') talentCode?: string,
+    @Query('talentCode') talentCode?: string
   ) {
     const normalizedHost = hostname.toLowerCase().trim();
 
@@ -34,7 +34,7 @@ export class PublicDomainController {
 
     const result = await this.domainLookupService.lookupDomain(
       normalizedHost,
-      talentCode?.trim() || null,
+      talentCode?.trim() || null
     );
 
     if (result) {

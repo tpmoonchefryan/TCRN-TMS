@@ -1,14 +1,14 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 // PII Config Module Zod DTOs - Using createZodDto for Swagger integration
+import { createZodDto } from 'nestjs-zod';
 
 import {
-    CreatePiiServiceConfigSchema,
-    CreateProfileStoreSchema,
-    PiiConfigQuerySchema,
-    UpdatePiiServiceConfigSchema,
-    UpdateProfileStoreSchema,
+  CreatePiiServiceConfigSchema,
+  CreateProfileStoreSchema,
+  PiiConfigQuerySchema,
+  UpdatePiiServiceConfigSchema,
+  UpdateProfileStoreSchema,
 } from '@tcrn/shared';
-import { createZodDto } from 'nestjs-zod';
 
 // Service Config DTOs
 export class CreatePiiServiceConfigZodDto extends createZodDto(CreatePiiServiceConfigSchema) {}

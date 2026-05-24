@@ -1,5 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 import { NotFoundException } from '@nestjs/common';
+
 import type { PermissionActionInput, RbacResourceCode } from '@tcrn/shared';
 
 import {
@@ -59,7 +60,7 @@ export const RequireConfigEntityPermission = (action: PermissionActionInput) =>
   RequireResolvedPermissions((request) => [
     getConfigEntityPermission(
       Array.isArray(request.params.entityType)
-        ? request.params.entityType[0] ?? ''
+        ? (request.params.entityType[0] ?? '')
         : request.params.entityType,
       action
     ),

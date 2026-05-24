@@ -1,22 +1,39 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import {
-    Body,
-    Controller,
-    Get,
-    HttpCode,
-    HttpStatus,
-    NotFoundException,
-    Param,
-    ParseUUIDPipe,
-    Patch,
-    Post,
-    Query,
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  NotFoundException,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+  Query,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiParam, ApiProperty, ApiPropertyOptional, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { ErrorCodes, SUPPORTED_UI_LOCALES, type SupportedUiLocale } from '@tcrn/shared';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiParam,
+  ApiProperty,
+  ApiPropertyOptional,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsBoolean, IsEmail, IsEnum, IsInt, IsOptional, IsString, Min, MinLength } from 'class-validator';
+import {
+  IsBoolean,
+  IsEmail,
+  IsEnum,
+  IsInt,
+  IsOptional,
+  IsString,
+  Min,
+  MinLength,
+} from 'class-validator';
+
+import { ErrorCodes, SUPPORTED_UI_LOCALES, type SupportedUiLocale } from '@tcrn/shared';
 
 import { AuthenticatedUser, CurrentUser, RequirePermissions } from '../../common/decorators';
 import { paginated, success } from '../../common/response.util';
@@ -24,12 +41,18 @@ import { SystemUserService } from './system-user.service';
 
 // DTOs
 export class ListUsersQueryDto {
-  @ApiPropertyOptional({ description: 'Search by username, email, or display name', example: 'john' })
+  @ApiPropertyOptional({
+    description: 'Search by username, email, or display name',
+    example: 'john',
+  })
   @IsOptional()
   @IsString()
   search?: string;
 
-  @ApiPropertyOptional({ description: 'Filter by role ID', example: '550e8400-e29b-41d4-a716-446655440000' })
+  @ApiPropertyOptional({
+    description: 'Filter by role ID',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+  })
   @IsOptional()
   @IsString()
   roleId?: string;
@@ -60,23 +83,37 @@ export class ListUsersQueryDto {
   @Type(() => Number)
   pageSize?: number;
 
-  @ApiPropertyOptional({ description: 'Sort field (prefix with - for desc)', example: '-createdAt' })
+  @ApiPropertyOptional({
+    description: 'Sort field (prefix with - for desc)',
+    example: '-createdAt',
+  })
   @IsOptional()
   @IsString()
   sort?: string;
 }
 
 export class CreateUserDto {
-  @ApiProperty({ description: 'Username (unique within tenant)', example: 'john.doe', minLength: 3 })
+  @ApiProperty({
+    description: 'Username (unique within tenant)',
+    example: 'john.doe',
+    minLength: 3,
+  })
   @IsString()
   @MinLength(3)
   username: string;
 
-  @ApiProperty({ description: 'Email address (unique within tenant)', example: 'john.doe@example.com' })
+  @ApiProperty({
+    description: 'Email address (unique within tenant)',
+    example: 'john.doe@example.com',
+  })
   @IsEmail()
   email: string;
 
-  @ApiProperty({ description: 'Initial password (min 12 chars)', example: 'SecureP@ssw0rd123', minLength: 12 })
+  @ApiProperty({
+    description: 'Initial password (min 12 chars)',
+    example: 'SecureP@ssw0rd123',
+    minLength: 12,
+  })
   @IsString()
   @MinLength(12)
   password: string;
@@ -91,12 +128,20 @@ export class CreateUserDto {
   @IsString()
   phone?: string;
 
-  @ApiPropertyOptional({ description: 'Preferred language', example: 'ja', enum: SUPPORTED_UI_LOCALES })
+  @ApiPropertyOptional({
+    description: 'Preferred language',
+    example: 'ja',
+    enum: SUPPORTED_UI_LOCALES,
+  })
   @IsOptional()
   @IsEnum(SUPPORTED_UI_LOCALES)
   preferredLanguage?: SupportedUiLocale;
 
-  @ApiPropertyOptional({ description: 'Force password reset on first login', example: true, default: false })
+  @ApiPropertyOptional({
+    description: 'Force password reset on first login',
+    example: true,
+    default: false,
+  })
   @IsOptional()
   @IsBoolean()
   forceReset?: boolean;
@@ -113,29 +158,47 @@ export class UpdateUserDto {
   @IsString()
   phone?: string;
 
-  @ApiPropertyOptional({ description: 'Preferred language', example: 'ja', enum: SUPPORTED_UI_LOCALES })
+  @ApiPropertyOptional({
+    description: 'Preferred language',
+    example: 'ja',
+    enum: SUPPORTED_UI_LOCALES,
+  })
   @IsOptional()
   @IsEnum(SUPPORTED_UI_LOCALES)
   preferredLanguage?: SupportedUiLocale;
 
-  @ApiPropertyOptional({ description: 'Avatar URL', example: 'https://example.com/avatars/user.jpg' })
+  @ApiPropertyOptional({
+    description: 'Avatar URL',
+    example: 'https://example.com/avatars/user.jpg',
+  })
   @IsOptional()
   @IsString()
   avatarUrl?: string;
 }
 
 export class ResetPasswordDto {
-  @ApiPropertyOptional({ description: 'New password (if empty, generates random)', example: 'NewSecureP@ss123' })
+  @ApiPropertyOptional({
+    description: 'New password (if empty, generates random)',
+    example: 'NewSecureP@ss123',
+  })
   @IsOptional()
   @IsString()
   newPassword?: string;
 
-  @ApiPropertyOptional({ description: 'Force password reset on next login', example: true, default: true })
+  @ApiPropertyOptional({
+    description: 'Force password reset on next login',
+    example: true,
+    default: true,
+  })
   @IsOptional()
   @IsBoolean()
   forceReset?: boolean;
 
-  @ApiPropertyOptional({ description: 'Send notification email to user', example: true, default: false })
+  @ApiPropertyOptional({
+    description: 'Send notification email to user',
+    example: true,
+    default: false,
+  })
   @IsOptional()
   @IsBoolean()
   notifyUser?: boolean;
@@ -145,12 +208,21 @@ export class SetScopeAccessDto {
   @ApiProperty({
     description: 'Scope access entries to apply',
     type: 'array',
-    example: [{ scopeType: 'talent', scopeId: '550e8400-e29b-41d4-a716-446655440000', includeSubunits: false }],
+    example: [
+      {
+        scopeType: 'talent',
+        scopeId: '550e8400-e29b-41d4-a716-446655440000',
+        includeSubunits: false,
+      },
+    ],
   })
   accesses: Array<{ scopeType: string; scopeId?: string; includeSubunits?: boolean }>;
 }
 
-const createSuccessEnvelopeSchema = (dataSchema: Record<string, unknown>, exampleData: unknown) => ({
+const createSuccessEnvelopeSchema = (
+  dataSchema: Record<string, unknown>,
+  exampleData: unknown
+) => ({
   type: 'object',
   properties: {
     success: { type: 'boolean', example: true },
@@ -197,7 +269,12 @@ const SYSTEM_USER_ITEM_SCHEMA = {
     isActive: { type: 'boolean', example: true },
     isTotpEnabled: { type: 'boolean', example: false },
     forceReset: { type: 'boolean', example: true },
-    lastLoginAt: { type: 'string', nullable: true, format: 'date-time', example: '2026-04-13T09:00:00.000Z' },
+    lastLoginAt: {
+      type: 'string',
+      nullable: true,
+      format: 'date-time',
+      example: '2026-04-13T09:00:00.000Z',
+    },
     createdAt: { type: 'string', format: 'date-time', example: '2026-04-13T08:00:00.000Z' },
   },
   required: ['id', 'username', 'email', 'isActive', 'isTotpEnabled', 'forceReset', 'createdAt'],
@@ -216,7 +293,11 @@ const SYSTEM_USER_DETAIL_SCHEMA = {
         type: 'object',
         properties: {
           id: { type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440010' },
-          roleId: { type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440020' },
+          roleId: {
+            type: 'string',
+            format: 'uuid',
+            example: '550e8400-e29b-41d4-a716-446655440020',
+          },
           roleCode: { type: 'string', example: 'EDITOR' },
           roleName: {
             type: 'object',
@@ -232,14 +313,28 @@ const SYSTEM_USER_DETAIL_SCHEMA = {
           },
           roleIsActive: { type: 'boolean', example: true },
           scopeType: { type: 'string', example: 'talent' },
-          scopeId: { type: 'string', format: 'uuid', nullable: true, example: '550e8400-e29b-41d4-a716-446655440030' },
+          scopeId: {
+            type: 'string',
+            format: 'uuid',
+            nullable: true,
+            example: '550e8400-e29b-41d4-a716-446655440030',
+          },
           scopeName: { type: 'string', nullable: true, example: 'Tokino Sora' },
           scopePath: { type: 'string', nullable: true, example: '/TOKYO/SORA' },
           inherit: { type: 'boolean', example: false },
           grantedAt: { type: 'string', format: 'date-time', example: '2026-04-13T09:10:00.000Z' },
           expiresAt: { type: 'string', format: 'date-time', nullable: true, example: null },
         },
-        required: ['id', 'roleId', 'roleCode', 'roleName', 'roleIsActive', 'scopeType', 'inherit', 'grantedAt'],
+        required: [
+          'id',
+          'roleId',
+          'roleCode',
+          'roleName',
+          'roleIsActive',
+          'scopeType',
+          'inherit',
+          'grantedAt',
+        ],
       },
     },
     scopeAccess: {
@@ -249,7 +344,12 @@ const SYSTEM_USER_DETAIL_SCHEMA = {
         properties: {
           id: { type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440111' },
           scopeType: { type: 'string', example: 'subsidiary' },
-          scopeId: { type: 'string', format: 'uuid', nullable: true, example: '550e8400-e29b-41d4-a716-446655440040' },
+          scopeId: {
+            type: 'string',
+            format: 'uuid',
+            nullable: true,
+            example: '550e8400-e29b-41d4-a716-446655440040',
+          },
           scopeName: { type: 'string', nullable: true, example: 'Tokyo Branch' },
           scopePath: { type: 'string', nullable: true, example: '/TOKYO' },
           includeSubunits: { type: 'boolean', example: true },
@@ -259,7 +359,13 @@ const SYSTEM_USER_DETAIL_SCHEMA = {
       },
     },
   },
-  required: [...(SYSTEM_USER_ITEM_SCHEMA.required as string[]), 'preferredLanguage', 'updatedAt', 'roleAssignments', 'scopeAccess'],
+  required: [
+    ...(SYSTEM_USER_ITEM_SCHEMA.required as string[]),
+    'preferredLanguage',
+    'updatedAt',
+    'roleAssignments',
+    'scopeAccess',
+  ],
 };
 
 const SYSTEM_USER_SCOPE_ACCESS_SCHEMA = {
@@ -267,7 +373,12 @@ const SYSTEM_USER_SCOPE_ACCESS_SCHEMA = {
   properties: {
     id: { type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440111' },
     scopeType: { type: 'string', example: 'talent' },
-    scopeId: { type: 'string', format: 'uuid', nullable: true, example: '550e8400-e29b-41d4-a716-446655440000' },
+    scopeId: {
+      type: 'string',
+      format: 'uuid',
+      nullable: true,
+      example: '550e8400-e29b-41d4-a716-446655440000',
+    },
     includeSubunits: { type: 'boolean', example: false },
   },
   required: ['id', 'scopeType', 'includeSubunits'],
@@ -399,7 +510,7 @@ const SYSTEM_USER_CREATE_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
     isActive: true,
     forceReset: true,
     createdAt: '2026-04-13T08:00:00.000Z',
-  },
+  }
 );
 
 const SYSTEM_USER_UPDATE_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
@@ -422,7 +533,7 @@ const SYSTEM_USER_UPDATE_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
     preferredLanguage: 'ja',
     avatarUrl: null,
     updatedAt: '2026-04-13T09:30:00.000Z',
-  },
+  }
 );
 
 const SYSTEM_USER_MESSAGE_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
@@ -439,7 +550,7 @@ const SYSTEM_USER_MESSAGE_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
     message: 'Password reset successfully',
     tempPassword: 'TempP@ss123456789',
     forceReset: true,
-  },
+  }
 );
 
 const SYSTEM_USER_ACTIVATION_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
@@ -454,7 +565,7 @@ const SYSTEM_USER_ACTIVATION_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
   {
     id: '550e8400-e29b-41d4-a716-446655440000',
     isActive: false,
-  },
+  }
 );
 
 const SYSTEM_USER_SCOPE_ACCESS_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
@@ -466,7 +577,7 @@ const SYSTEM_USER_SCOPE_ACCESS_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
       scopeId: '550e8400-e29b-41d4-a716-446655440000',
       includeSubunits: false,
     },
-  ],
+  ]
 );
 
 const SYSTEM_USER_SCOPE_ACCESS_UPDATE_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
@@ -477,24 +588,23 @@ const SYSTEM_USER_SCOPE_ACCESS_UPDATE_SUCCESS_SCHEMA = createSuccessEnvelopeSche
     },
     required: ['message'],
   },
-  { message: 'Scope access updated' },
+  { message: 'Scope access updated' }
 );
 
 const SYSTEM_USER_BAD_REQUEST_SCHEMA = createErrorEnvelopeSchema(
   ErrorCodes.USER_USERNAME_TAKEN,
-  'System user request is invalid',
+  'System user request is invalid'
 );
 
 const SYSTEM_USER_UNAUTHORIZED_SCHEMA = createErrorEnvelopeSchema(
   'AUTH_UNAUTHORIZED',
-  'Authentication required',
+  'Authentication required'
 );
 
 const SYSTEM_USER_NOT_FOUND_SCHEMA = createErrorEnvelopeSchema(
   ErrorCodes.USER_NOT_FOUND,
-  'User not found',
+  'User not found'
 );
-
 
 /**
  * System User Controller
@@ -523,10 +633,7 @@ export class SystemUserController {
     description: 'Authentication is required to list system users',
     schema: SYSTEM_USER_UNAUTHORIZED_SCHEMA,
   })
-  async list(
-    @CurrentUser() user: AuthenticatedUser,
-    @Query() query: ListUsersQueryDto,
-  ) {
+  async list(@CurrentUser() user: AuthenticatedUser, @Query() query: ListUsersQueryDto) {
     const { data, total } = await this.systemUserService.list(user.tenantSchema, {
       search: query.search,
       roleId: query.roleId,
@@ -579,10 +686,7 @@ export class SystemUserController {
     description: 'Authentication is required to create system users',
     schema: SYSTEM_USER_UNAUTHORIZED_SCHEMA,
   })
-  async create(
-    @CurrentUser() user: AuthenticatedUser,
-    @Body() dto: CreateUserDto,
-  ) {
+  async create(@CurrentUser() user: AuthenticatedUser, @Body() dto: CreateUserDto) {
     const newUser = await this.systemUserService.create(user.tenantSchema, {
       username: dto.username,
       email: dto.email,
@@ -633,7 +737,7 @@ export class SystemUserController {
   })
   async getById(
     @CurrentUser() user: AuthenticatedUser,
-    @Param('systemUserId', ParseUUIDPipe) systemUserId: string,
+    @Param('systemUserId', ParseUUIDPipe) systemUserId: string
   ) {
     const systemUser = await this.systemUserService.findById(systemUserId, user.tenantSchema);
     if (!systemUser) {
@@ -713,7 +817,7 @@ export class SystemUserController {
   async update(
     @CurrentUser() user: AuthenticatedUser,
     @Param('systemUserId', ParseUUIDPipe) systemUserId: string,
-    @Body() dto: UpdateUserDto,
+    @Body() dto: UpdateUserDto
   ) {
     const updated = await this.systemUserService.update(systemUserId, user.tenantSchema, dto);
 
@@ -758,7 +862,7 @@ export class SystemUserController {
   async resetPassword(
     @CurrentUser() user: AuthenticatedUser,
     @Param('systemUserId', ParseUUIDPipe) systemUserId: string,
-    @Body() dto: ResetPasswordDto,
+    @Body() dto: ResetPasswordDto
   ) {
     const result = await this.systemUserService.resetPassword(systemUserId, user.tenantSchema, {
       newPassword: dto.newPassword,
@@ -802,7 +906,7 @@ export class SystemUserController {
   })
   async deactivate(
     @CurrentUser() user: AuthenticatedUser,
-    @Param('systemUserId', ParseUUIDPipe) systemUserId: string,
+    @Param('systemUserId', ParseUUIDPipe) systemUserId: string
   ) {
     const updated = await this.systemUserService.deactivate(systemUserId, user.tenantSchema);
 
@@ -851,7 +955,7 @@ export class SystemUserController {
   })
   async reactivate(
     @CurrentUser() user: AuthenticatedUser,
-    @Param('systemUserId', ParseUUIDPipe) systemUserId: string,
+    @Param('systemUserId', ParseUUIDPipe) systemUserId: string
   ) {
     const updated = await this.systemUserService.reactivate(systemUserId, user.tenantSchema);
 
@@ -881,11 +985,14 @@ export class SystemUserController {
       {
         type: 'object',
         properties: {
-          message: { type: 'string', example: 'User will be required to enable TOTP on next login' },
+          message: {
+            type: 'string',
+            example: 'User will be required to enable TOTP on next login',
+          },
         },
         required: ['message'],
       },
-      { message: 'User will be required to enable TOTP on next login' },
+      { message: 'User will be required to enable TOTP on next login' }
     ),
   })
   @ApiResponse({
@@ -900,7 +1007,7 @@ export class SystemUserController {
   })
   async forceTotp(
     @CurrentUser() user: AuthenticatedUser,
-    @Param('systemUserId', ParseUUIDPipe) systemUserId: string,
+    @Param('systemUserId', ParseUUIDPipe) systemUserId: string
   ) {
     await this.systemUserService.forceTotp(systemUserId, user.tenantSchema);
 
@@ -933,7 +1040,7 @@ export class SystemUserController {
   })
   async getScopeAccess(
     @CurrentUser() user: AuthenticatedUser,
-    @Param('systemUserId', ParseUUIDPipe) systemUserId: string,
+    @Param('systemUserId', ParseUUIDPipe) systemUserId: string
   ) {
     const accesses = await this.systemUserService.getScopeAccess(systemUserId, user.tenantSchema);
     return success(accesses);
@@ -965,9 +1072,14 @@ export class SystemUserController {
   async setScopeAccess(
     @CurrentUser() user: AuthenticatedUser,
     @Param('systemUserId', ParseUUIDPipe) systemUserId: string,
-    @Body() body: SetScopeAccessDto,
+    @Body() body: SetScopeAccessDto
   ) {
-    await this.systemUserService.setScopeAccess(systemUserId, user.tenantSchema, body.accesses, user.id);
+    await this.systemUserService.setScopeAccess(
+      systemUserId,
+      user.tenantSchema,
+      body.accesses,
+      user.id
+    );
     return success({ message: 'Scope access updated' });
   }
 }

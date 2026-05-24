@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable } from '@nestjs/common';
+
 import { Prisma } from '@tcrn/database';
 import type {
   LocalizedText,
@@ -101,16 +101,14 @@ const buildRevisionSelect = (alias?: string) => {
 export class PublicPresenceAssetRepository {
   constructor(private readonly databaseService: DatabaseService) {}
 
-  withTransaction<T>(
-    operation: (prisma: Prisma.TransactionClient) => Promise<T>,
-  ): Promise<T> {
+  withTransaction<T>(operation: (prisma: Prisma.TransactionClient) => Promise<T>): Promise<T> {
     return this.databaseService.getPrisma().$transaction((prisma) => operation(prisma));
   }
 
   async resolveScopeChain(
     tenantSchema: string,
     scopeType: 'tenant' | 'subsidiary' | 'talent',
-    scopeId: string | null,
+    scopeId: string | null
   ): Promise<PublicPresenceAssetScopeRef[]> {
     const prisma = this.databaseService.getPrisma();
     const chain: PublicPresenceAssetScopeRef[] = [
@@ -129,7 +127,7 @@ export class PublicPresenceAssetRepository {
           FROM "${tenantSchema}".subsidiary
           WHERE id = $1::uuid
         `,
-        scopeId,
+        scopeId
       );
 
       if (subsidiaries[0]) {
@@ -140,7 +138,7 @@ export class PublicPresenceAssetRepository {
             WHERE $1 LIKE path || '%' AND path != $1
             ORDER BY length(path)
           `,
-          subsidiaries[0].path,
+          subsidiaries[0].path
         );
 
         for (const ancestor of ancestors) {
@@ -158,7 +156,7 @@ export class PublicPresenceAssetRepository {
           FROM "${tenantSchema}".talent
           WHERE id = $1::uuid
         `,
-        scopeId,
+        scopeId
       );
 
       if (talents[0]) {
@@ -169,7 +167,7 @@ export class PublicPresenceAssetRepository {
             WHERE $1 LIKE path || '%'
             ORDER BY length(path)
           `,
-          talents[0].path,
+          talents[0].path
         );
 
         for (const subsidiary of subsidiaries) {
@@ -186,13 +184,11 @@ export class PublicPresenceAssetRepository {
   async listVisibleAssets(
     tenantSchema: string,
     visibleScopes: PublicPresenceAssetScopeRef[],
-    assetKind?: PublicPresenceAssetKind,
+    assetKind?: PublicPresenceAssetKind
   ): Promise<PublicPresenceAssetRow[]> {
     const prisma = this.databaseService.getPrisma();
     const { params, whereClause } = this.buildVisibleScopeWhereClause(visibleScopes, 1);
-    const assetKindClause = assetKind
-      ? ` AND asset_kind = $${params.length + 1}`
-      : '';
+    const assetKindClause = assetKind ? ` AND asset_kind = $${params.length + 1}` : '';
 
     return prisma.$queryRawUnsafe<PublicPresenceAssetRow[]>(
       `
@@ -212,13 +208,13 @@ export class PublicPresenceAssetRepository {
           created_at DESC,
           code ASC
       `,
-      ...(assetKind ? [...params, assetKind] : params),
+      ...(assetKind ? [...params, assetKind] : params)
     );
   }
 
   async listCurrentRevisionsByAssetIds(
     tenantSchema: string,
-    assetIds: string[],
+    assetIds: string[]
   ): Promise<PublicPresenceAssetRevisionRow[]> {
     if (assetIds.length === 0) {
       return [];
@@ -234,13 +230,13 @@ export class PublicPresenceAssetRepository {
           ON r.id = a.current_revision_id
         WHERE a.id = ANY($1::uuid[])
       `,
-      assetIds,
+      assetIds
     );
   }
 
   async findAssetById(
     tenantSchema: string,
-    assetId: string,
+    assetId: string
   ): Promise<PublicPresenceAssetRow | null> {
     const prisma = this.databaseService.getPrisma();
     const rows = await prisma.$queryRawUnsafe<PublicPresenceAssetRow[]>(
@@ -250,7 +246,7 @@ export class PublicPresenceAssetRepository {
         FROM "${tenantSchema}".public_presence_asset
         WHERE id = $1::uuid
       `,
-      assetId,
+      assetId
     );
 
     return rows[0] ?? null;
@@ -258,7 +254,7 @@ export class PublicPresenceAssetRepository {
 
   async findCurrentRevision(
     tenantSchema: string,
-    assetId: string,
+    assetId: string
   ): Promise<PublicPresenceAssetRevisionRow | null> {
     const prisma = this.databaseService.getPrisma();
     const rows = await prisma.$queryRawUnsafe<PublicPresenceAssetRevisionRow[]>(
@@ -270,7 +266,7 @@ export class PublicPresenceAssetRepository {
           ON r.id = a.current_revision_id
         WHERE a.id = $1::uuid
       `,
-      assetId,
+      assetId
     );
 
     return rows[0] ?? null;
@@ -278,7 +274,7 @@ export class PublicPresenceAssetRepository {
 
   async listRevisions(
     tenantSchema: string,
-    assetId: string,
+    assetId: string
   ): Promise<PublicPresenceAssetRevisionRow[]> {
     const prisma = this.databaseService.getPrisma();
     return prisma.$queryRawUnsafe<PublicPresenceAssetRevisionRow[]>(
@@ -289,7 +285,7 @@ export class PublicPresenceAssetRepository {
         WHERE asset_id = $1::uuid
         ORDER BY revision_number DESC, created_at DESC
       `,
-      assetId,
+      assetId
     );
   }
 
@@ -297,7 +293,7 @@ export class PublicPresenceAssetRepository {
     tenantSchema: string,
     ownerType: PublicPresenceAssetOwnerType,
     ownerId: string | null,
-    code: string,
+    code: string
   ): Promise<PublicPresenceAssetRow | null> {
     const prisma = this.databaseService.getPrisma();
     const rows = await prisma.$queryRawUnsafe<PublicPresenceAssetRow[]>(
@@ -312,7 +308,7 @@ export class PublicPresenceAssetRepository {
       `,
       ownerType,
       ownerId,
-      code,
+      code
     );
 
     return rows[0] ?? null;
@@ -321,7 +317,7 @@ export class PublicPresenceAssetRepository {
   async listCodesAtScope(
     tenantSchema: string,
     ownerType: PublicPresenceAssetOwnerType,
-    ownerId: string | null,
+    ownerId: string | null
   ): Promise<string[]> {
     const prisma = this.databaseService.getPrisma();
     const rows = await prisma.$queryRawUnsafe<Array<{ code: string }>>(
@@ -332,7 +328,7 @@ export class PublicPresenceAssetRepository {
           AND owner_id IS NOT DISTINCT FROM $2::uuid
       `,
       ownerType,
-      ownerId,
+      ownerId
     );
 
     return rows.map((row) => row.code);
@@ -361,7 +357,8 @@ export class PublicPresenceAssetRepository {
         passCount: number;
         warnCount: number;
       };
-    }): Promise<PublicPresenceAssetRow> {
+    }
+  ): Promise<PublicPresenceAssetRow> {
     return this.withTransaction(async (prisma) => {
       const insertedAsset = (
         await prisma.$queryRawUnsafe<Array<{ id: string }>>(
@@ -410,7 +407,7 @@ export class PublicPresenceAssetRepository {
           input.componentType,
           input.status,
           input.ownerType === 'system',
-          input.actorId,
+          input.actorId
         )
       )[0];
 
@@ -461,7 +458,7 @@ export class PublicPresenceAssetRepository {
           input.manifest.runtimeContractVersion,
           input.artifactStatus,
           input.validationState,
-          input.actorId,
+          input.actorId
         )
       )[0];
 
@@ -479,7 +476,7 @@ export class PublicPresenceAssetRepository {
           RETURNING ${ASSET_SELECT}
         `,
         insertedAsset.id,
-        insertedRevision.id,
+        insertedRevision.id
       );
 
       if (!rows[0]) {
@@ -508,7 +505,8 @@ export class PublicPresenceAssetRepository {
         passCount: number;
         warnCount: number;
       };
-    }): Promise<PublicPresenceAssetRow> {
+    }
+  ): Promise<PublicPresenceAssetRow> {
     const prisma = this.databaseService.getPrisma();
     const rows = await prisma.$queryRawUnsafe<PublicPresenceAssetRow[]>(
       `
@@ -576,7 +574,7 @@ export class PublicPresenceAssetRepository {
       input.actorId,
       JSON.stringify(input.name),
       JSON.stringify(input.description),
-      input.status,
+      input.status
     );
 
     return rows[0];
@@ -584,7 +582,7 @@ export class PublicPresenceAssetRepository {
 
   private buildVisibleScopeWhereClause(
     visibleScopes: PublicPresenceAssetScopeRef[],
-    startingParamIndex: number,
+    startingParamIndex: number
   ): { params: Array<string | null>; whereClause: string } {
     const params: Array<string | null> = [];
     const conditions = visibleScopes.map((scope, index) => {

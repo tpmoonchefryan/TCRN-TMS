@@ -6,9 +6,7 @@ import {
 } from '@/platform/routing/workspace-paths';
 
 function normalizeStudioFocus(value?: string): PublicPresenceStudioFocus | null {
-  return value === 'overview' || value === 'release' || value === 'countdown'
-    ? value
-    : null;
+  return value === 'overview' || value === 'release' || value === 'countdown' ? value : null;
 }
 
 export default async function StandaloneHomepageEditorPage({
@@ -22,11 +20,6 @@ export default async function StandaloneHomepageEditorPage({
   const { focus, templateId } = await searchParams;
 
   redirect(
-    buildPublicPresenceStudioEditorPath(
-      tenantId,
-      talentId,
-      templateId,
-      normalizeStudioFocus(focus),
-    ),
+    buildPublicPresenceStudioEditorPath(tenantId, talentId, templateId, normalizeStudioFocus(focus))
   );
 }

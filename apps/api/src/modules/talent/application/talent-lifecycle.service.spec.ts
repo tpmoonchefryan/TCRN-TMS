@@ -1,8 +1,8 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
-import { createLocalizedText } from '@tcrn/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { createLocalizedText } from '@tcrn/shared';
 
 import type { CustomerArchiveAccessService } from '../../customer/application/customer-archive-access.service';
 import { TalentLifecycleRepository } from '../infrastructure/talent-lifecycle.repository';
@@ -33,7 +33,7 @@ describe('TalentLifecycleService', () => {
   const service = new TalentLifecycleService(
     mockReadService,
     mockCustomerArchiveAccessService,
-    mockRepository,
+    mockRepository
   );
 
   const draftTalent = {
@@ -128,9 +128,7 @@ describe('TalentLifecycleService', () => {
       hasActiveArchiveTarget: false,
     });
 
-    await expect(
-      service.getPublishReadiness('talent-123', 'tenant_test'),
-    ).resolves.toMatchObject({
+    await expect(service.getPublishReadiness('talent-123', 'tenant_test')).resolves.toMatchObject({
       canEnterPublishedState: false,
       blockers: [expect.objectContaining({ code: 'PROFILE_STORE_REQUIRED' })],
       warnings: expect.arrayContaining([
@@ -152,7 +150,9 @@ describe('TalentLifecycleService', () => {
       hasActiveArchiveTarget: true,
     });
     vi.mocked(mockRepository.listArtistStages).mockResolvedValue(artistStages as never);
-    vi.mocked(mockRepository.readArtistLifecycleFlow).mockResolvedValue(artistLifecycleFlow as never);
+    vi.mocked(mockRepository.readArtistLifecycleFlow).mockResolvedValue(
+      artistLifecycleFlow as never
+    );
     vi.mocked(mockRepository.transitionToStage).mockResolvedValue({
       ...draftTalent,
       artistStageId: stagePublishedId,
@@ -162,9 +162,7 @@ describe('TalentLifecycleService', () => {
       version: 2,
     } as never);
 
-    await expect(
-      service.publish('talent-123', 'tenant_test', 1, 'user-1'),
-    ).resolves.toMatchObject({
+    await expect(service.publish('talent-123', 'tenant_test', 1, 'user-1')).resolves.toMatchObject({
       lifecycleStatus: 'published',
       version: 2,
     });
@@ -178,11 +176,13 @@ describe('TalentLifecycleService', () => {
       isActive: true,
     } as never);
     vi.mocked(mockRepository.listArtistStages).mockResolvedValue(artistStages as never);
-    vi.mocked(mockRepository.readArtistLifecycleFlow).mockResolvedValue(artistLifecycleFlow as never);
+    vi.mocked(mockRepository.readArtistLifecycleFlow).mockResolvedValue(
+      artistLifecycleFlow as never
+    );
 
-    await expect(
-      service.publish('talent-123', 'tenant_test', 1, 'user-1'),
-    ).rejects.toThrow(ConflictException);
+    await expect(service.publish('talent-123', 'tenant_test', 1, 'user-1')).rejects.toThrow(
+      ConflictException
+    );
   });
 
   it('disables a published talent', async () => {
@@ -193,7 +193,9 @@ describe('TalentLifecycleService', () => {
       isActive: true,
     } as never);
     vi.mocked(mockRepository.listArtistStages).mockResolvedValue(artistStages as never);
-    vi.mocked(mockRepository.readArtistLifecycleFlow).mockResolvedValue(artistLifecycleFlow as never);
+    vi.mocked(mockRepository.readArtistLifecycleFlow).mockResolvedValue(
+      artistLifecycleFlow as never
+    );
     vi.mocked(mockRepository.transitionToStage).mockResolvedValue({
       ...draftTalent,
       artistStageId: stageDisabledId,
@@ -202,9 +204,7 @@ describe('TalentLifecycleService', () => {
       version: 2,
     } as never);
 
-    await expect(
-      service.disable('talent-123', 'tenant_test', 1, 'user-1'),
-    ).resolves.toMatchObject({
+    await expect(service.disable('talent-123', 'tenant_test', 1, 'user-1')).resolves.toMatchObject({
       lifecycleStatus: 'disabled',
       version: 2,
     });
@@ -227,7 +227,9 @@ describe('TalentLifecycleService', () => {
       hasActiveArchiveTarget: true,
     });
     vi.mocked(mockRepository.listArtistStages).mockResolvedValue(artistStages as never);
-    vi.mocked(mockRepository.readArtistLifecycleFlow).mockResolvedValue(artistLifecycleFlow as never);
+    vi.mocked(mockRepository.readArtistLifecycleFlow).mockResolvedValue(
+      artistLifecycleFlow as never
+    );
     vi.mocked(mockRepository.transitionToStage).mockResolvedValue({
       ...draftTalent,
       artistStageId: stagePublishedId,
@@ -236,12 +238,12 @@ describe('TalentLifecycleService', () => {
       version: 2,
     } as never);
 
-    await expect(
-      service.reEnable('talent-123', 'tenant_test', 1, 'user-1'),
-    ).resolves.toMatchObject({
-      lifecycleStatus: 'published',
-      version: 2,
-    });
+    await expect(service.reEnable('talent-123', 'tenant_test', 1, 'user-1')).resolves.toMatchObject(
+      {
+        lifecycleStatus: 'published',
+        version: 2,
+      }
+    );
   });
 
   it('supports an explicit published-to-draft stage return when the flow allows it', async () => {
@@ -252,7 +254,9 @@ describe('TalentLifecycleService', () => {
       isActive: true,
     } as never);
     vi.mocked(mockRepository.listArtistStages).mockResolvedValue(artistStages as never);
-    vi.mocked(mockRepository.readArtistLifecycleFlow).mockResolvedValue(artistLifecycleFlow as never);
+    vi.mocked(mockRepository.readArtistLifecycleFlow).mockResolvedValue(
+      artistLifecycleFlow as never
+    );
     vi.mocked(mockRepository.transitionToStage).mockResolvedValue({
       ...draftTalent,
       artistStageId: stageDraftId,
@@ -269,8 +273,8 @@ describe('TalentLifecycleService', () => {
           version: 1,
           targetArtistStageId: stageDraftId,
         },
-        'user-1',
-      ),
+        'user-1'
+      )
     ).resolves.toMatchObject({
       artistStageId: stageDraftId,
       lifecycleStatus: 'draft',
@@ -286,7 +290,9 @@ describe('TalentLifecycleService', () => {
       isActive: true,
     } as never);
     vi.mocked(mockRepository.listArtistStages).mockResolvedValue(artistStages as never);
-    vi.mocked(mockRepository.readArtistLifecycleFlow).mockResolvedValue(artistLifecycleFlow as never);
+    vi.mocked(mockRepository.readArtistLifecycleFlow).mockResolvedValue(
+      artistLifecycleFlow as never
+    );
     vi.mocked(mockRepository.transitionToStage).mockResolvedValue({
       ...draftTalent,
       artistStageId: stageDraftId,
@@ -303,8 +309,8 @@ describe('TalentLifecycleService', () => {
           version: 1,
           transitionId: 'transition-published-draft',
         },
-        'user-1',
-      ),
+        'user-1'
+      )
     ).resolves.toMatchObject({
       artistStageId: stageDraftId,
       lifecycleStatus: 'draft',
@@ -315,7 +321,9 @@ describe('TalentLifecycleService', () => {
   it('rejects an explicit stage transition that is not allowed by the configured flow', async () => {
     vi.mocked(mockReadService.findById).mockResolvedValue(draftTalent as never);
     vi.mocked(mockRepository.listArtistStages).mockResolvedValue(artistStages as never);
-    vi.mocked(mockRepository.readArtistLifecycleFlow).mockResolvedValue(artistLifecycleFlow as never);
+    vi.mocked(mockRepository.readArtistLifecycleFlow).mockResolvedValue(
+      artistLifecycleFlow as never
+    );
 
     await expect(
       service.transitionArtistStage(
@@ -325,15 +333,17 @@ describe('TalentLifecycleService', () => {
           version: 1,
           targetArtistStageId: stageDisabledId,
         },
-        'user-1',
-      ),
+        'user-1'
+      )
     ).rejects.toThrow(ConflictException);
   });
 
   it('requires exactly one explicit stage transition selector', async () => {
     vi.mocked(mockReadService.findById).mockResolvedValue(draftTalent as never);
     vi.mocked(mockRepository.listArtistStages).mockResolvedValue(artistStages as never);
-    vi.mocked(mockRepository.readArtistLifecycleFlow).mockResolvedValue(artistLifecycleFlow as never);
+    vi.mocked(mockRepository.readArtistLifecycleFlow).mockResolvedValue(
+      artistLifecycleFlow as never
+    );
 
     await expect(
       service.transitionArtistStage(
@@ -342,8 +352,8 @@ describe('TalentLifecycleService', () => {
         {
           version: 1,
         },
-        'user-1',
-      ),
+        'user-1'
+      )
     ).rejects.toThrow(BadRequestException);
 
     await expect(
@@ -355,8 +365,8 @@ describe('TalentLifecycleService', () => {
           targetArtistStageId: stagePublishedId,
           transitionId: 'transition-draft-published',
         },
-        'user-1',
-      ),
+        'user-1'
+      )
     ).rejects.toThrow(BadRequestException);
   });
 
@@ -384,9 +394,9 @@ describe('TalentLifecycleService', () => {
     vi.mocked(mockRepository.listArtistStages).mockResolvedValue(artistStages as never);
     vi.mocked(mockRepository.readArtistLifecycleFlow).mockResolvedValue(ambiguousFlow as never);
 
-    await expect(
-      service.reEnable('talent-123', 'tenant_test', 1, 'user-1'),
-    ).rejects.toThrow(ConflictException);
+    await expect(service.reEnable('talent-123', 'tenant_test', 1, 'user-1')).rejects.toThrow(
+      ConflictException
+    );
 
     vi.mocked(mockReadService.getExternalPagesDomainConfig).mockResolvedValue({
       homepage: { isPublished: true },
@@ -413,8 +423,8 @@ describe('TalentLifecycleService', () => {
           version: 1,
           targetArtistStageId: stagePublishedAltId,
         },
-        'user-1',
-      ),
+        'user-1'
+      )
     ).resolves.toMatchObject({
       artistStageId: stagePublishedAltId,
       lifecycleStatus: 'published',
@@ -423,16 +433,16 @@ describe('TalentLifecycleService', () => {
   });
 
   it('keeps move retired from normal product flow', async () => {
-    await expect(
-      service.move('talent-123', 'tenant_test', 'sub-2', 1, 'user-1'),
-    ).rejects.toThrow(ConflictException);
+    await expect(service.move('talent-123', 'tenant_test', 'sub-2', 1, 'user-1')).rejects.toThrow(
+      ConflictException
+    );
   });
 
   it('fails closed when the talent does not exist', async () => {
     vi.mocked(mockReadService.findById).mockResolvedValue(null);
 
-    await expect(
-      service.getPublishReadiness('missing', 'tenant_test'),
-    ).rejects.toThrow(NotFoundException);
+    await expect(service.getPublishReadiness('missing', 'tenant_test')).rejects.toThrow(
+      NotFoundException
+    );
   });
 });

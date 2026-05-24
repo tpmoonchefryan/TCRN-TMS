@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import type { ExecutionContext } from '@nestjs/common';
 import { ForbiddenException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
@@ -53,10 +52,7 @@ describe('PermissionGuard', () => {
       refreshAndCheckPermission: vi.fn().mockResolvedValue(true),
     };
 
-    guard = new PermissionGuard(
-      mockReflector,
-      mockPermissionService as never,
-    );
+    guard = new PermissionGuard(mockReflector, mockPermissionService as never);
   });
 
   it('uses talentId path scope ahead of legacy scope query values', async () => {
@@ -82,7 +78,7 @@ describe('PermissionGuard', () => {
       'customer.profile',
       'read',
       'talent',
-      'talent-1',
+      'talent-1'
     );
   });
 
@@ -106,7 +102,7 @@ describe('PermissionGuard', () => {
       'customer.profile',
       'read',
       'subsidiary',
-      'subsidiary-1',
+      'subsidiary-1'
     );
   });
 
@@ -131,7 +127,7 @@ describe('PermissionGuard', () => {
       'customer.profile',
       'read',
       'talent',
-      'talent-from-query',
+      'talent-from-query'
     );
   });
 
@@ -153,7 +149,7 @@ describe('PermissionGuard', () => {
       'customer.profile',
       'read',
       undefined,
-      undefined,
+      undefined
     );
     expect(mockPermissionService.refreshAndCheckPermission).not.toHaveBeenCalled();
   });
@@ -179,7 +175,7 @@ describe('PermissionGuard', () => {
       'customer.profile',
       'read',
       undefined,
-      undefined,
+      undefined
     );
     expect(mockPermissionService.refreshAndCheckPermission).toHaveBeenCalledWith(
       'tenant_test',
@@ -187,7 +183,7 @@ describe('PermissionGuard', () => {
       'customer.profile',
       'read',
       undefined,
-      undefined,
+      undefined
     );
   });
 
@@ -204,7 +200,9 @@ describe('PermissionGuard', () => {
       query: {},
     };
 
-    await expect(guard.canActivate(createContext(request))).rejects.toBeInstanceOf(ForbiddenException);
+    await expect(guard.canActivate(createContext(request))).rejects.toBeInstanceOf(
+      ForbiddenException
+    );
     expect(mockPermissionService.refreshAndCheckPermission).toHaveBeenCalledTimes(1);
   });
 });

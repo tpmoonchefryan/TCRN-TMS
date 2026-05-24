@@ -210,7 +210,7 @@ function mapConfigEntityOptions(items: ConfigEntityOptionRecord[]): ReportFilter
 async function listAllConfigEntityOptions(
   request: RequestFn,
   source: ReportConfigFilterOptionSource,
-  talentId: string,
+  talentId: string
 ): Promise<ReportFilterOption[]> {
   const items: ConfigEntityOptionRecord[] = [];
 
@@ -225,7 +225,7 @@ async function listAllConfigEntityOptions(
         page,
         pageSize: CONFIG_ENTITY_OPTION_PAGE_SIZE,
         sort: 'sortOrder',
-      })}`,
+      })}`
     );
 
     items.push(...batch);
@@ -241,14 +241,14 @@ async function listAllConfigEntityOptions(
 async function listMembershipFilterOptions(
   request: RequestFn,
   source: ReportConfigFilterOptionSource,
-  talentId: string,
+  talentId: string
 ): Promise<ReportFilterOption[]> {
   const tree = await request<MembershipClassOptionRecord[]>(
     `/api/v1/configuration-entity/membership-tree${buildQueryString({
       scopeType: 'talent',
       scopeId: talentId,
       includeInactive: false,
-    })}`,
+    })}`
   );
 
   if (source.entityType === 'membership-class') {
@@ -267,7 +267,7 @@ async function listMembershipFilterOptions(
         .map((item) => ({
           value: item.code,
           label: `${membershipClass.name} / ${item.name}`,
-        })),
+        }))
     );
   }
 
@@ -279,19 +279,15 @@ async function listMembershipFilterOptions(
           .map((item) => ({
             value: item.code,
             label: `${membershipClass.name} / ${membershipType.name} / ${item.name}`,
-          })),
-      ),
+          }))
+      )
     );
   }
 
   return [];
 }
 
-export function searchMfr(
-  request: RequestFn,
-  talentId: string,
-  options: SearchMfrOptions = {},
-) {
+export function searchMfr(request: RequestFn, talentId: string, options: SearchMfrOptions = {}) {
   return request<MfrSearchResult>('/api/v1/reports/mfr/search', {
     method: 'POST',
     headers: {
@@ -312,13 +308,14 @@ export function listReportCatalog(request: RequestFn) {
 export async function listReportConfigFilterOptions(
   request: RequestFn,
   source: ReportConfigFilterOptionSource,
-  talentId: string,
+  talentId: string
 ): Promise<ReportFilterOptionResponse> {
-  const options = source.entityType === 'membership-class'
-    || source.entityType === 'membership-type'
-    || source.entityType === 'membership-level'
-    ? await listMembershipFilterOptions(request, source, talentId)
-    : await listAllConfigEntityOptions(request, source, talentId);
+  const options =
+    source.entityType === 'membership-class' ||
+    source.entityType === 'membership-type' ||
+    source.entityType === 'membership-level'
+      ? await listMembershipFilterOptions(request, source, talentId)
+      : await listAllConfigEntityOptions(request, source, talentId);
 
   return {
     options,
@@ -327,14 +324,14 @@ export async function listReportConfigFilterOptions(
 
 export async function listReportDictionaryFilterOptions(
   request: RequestFn,
-  source: ReportDictionaryFilterOptionSource,
+  source: ReportDictionaryFilterOptionSource
 ): Promise<ReportFilterOptionResponse> {
   const items = await request<Array<{ code: string; name: string; isActive: boolean }>>(
     `/api/v1/system-dictionary/${encodeURIComponent(source.dictionaryCode)}${buildQueryString({
       includeInactive: false,
       page: 1,
       pageSize: CONFIG_ENTITY_OPTION_PAGE_SIZE,
-    })}`,
+    })}`
   );
 
   return {
@@ -347,11 +344,7 @@ export async function listReportDictionaryFilterOptions(
   };
 }
 
-export function createMfrJob(
-  request: RequestFn,
-  talentId: string,
-  input: CreateMfrJobInput = {},
-) {
+export function createMfrJob(request: RequestFn, talentId: string, input: CreateMfrJobInput = {}) {
   return request<ReportCreateResponse>('/api/v1/reports/mfr/jobs', {
     method: 'POST',
     headers: {
@@ -368,7 +361,7 @@ export function createMfrJob(
 export function listMfrJobs(
   request: RequestFn,
   talentId: string,
-  options: ListMfrJobsOptions = {},
+  options: ListMfrJobsOptions = {}
 ) {
   const query = buildQueryString({
     talentId,

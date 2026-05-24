@@ -110,7 +110,11 @@ function NoticeBanner({
       ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
       : 'border-rose-200 bg-rose-50 text-rose-800';
 
-  return <div className={`rounded-2xl border px-4 py-3 text-sm font-medium ${toneClasses}`}>{message}</div>;
+  return (
+    <div className={`rounded-2xl border px-4 py-3 text-sm font-medium ${toneClasses}`}>
+      {message}
+    </div>
+  );
 }
 
 function buildItemDraft(item: DictionaryItemRecord): DictionaryItemDraft {
@@ -190,7 +194,13 @@ export function SystemDictionaryScreen() {
         values: typeDraft.descriptionLocaleValues,
       },
     ],
-    [text, typeDraft.descriptionBase, typeDraft.descriptionLocaleValues, typeDraft.nameBase, typeDraft.nameLocaleValues],
+    [
+      text,
+      typeDraft.descriptionBase,
+      typeDraft.descriptionLocaleValues,
+      typeDraft.nameBase,
+      typeDraft.nameLocaleValues,
+    ]
   );
 
   const itemTranslationSections = useMemo(
@@ -209,7 +219,13 @@ export function SystemDictionaryScreen() {
         values: itemDraft.descriptionLocaleValues,
       },
     ],
-    [itemDraft.descriptionBase, itemDraft.descriptionLocaleValues, itemDraft.nameBase, itemDraft.nameLocaleValues, text],
+    [
+      itemDraft.descriptionBase,
+      itemDraft.descriptionLocaleValues,
+      itemDraft.nameBase,
+      itemDraft.nameLocaleValues,
+      text,
+    ]
   );
 
   useEffect(() => {
@@ -250,7 +266,7 @@ export function SystemDictionaryScreen() {
               ja: 'システム辞書タイプの読み込みに失敗しました。',
               ko: '시스템 사전 유형을 불러오지 못했습니다.',
               fr: 'Impossible de charger les types du dictionnaire système.',
-            }),
+            })
           ),
           loading: false,
         });
@@ -318,7 +334,7 @@ export function SystemDictionaryScreen() {
           ja: '辞書タイプコードと英語名は必須です。',
           ko: '사전 유형 코드와 영문 이름은 필수입니다.',
           fr: 'Le code du type et le nom anglais sont obligatoires.',
-        }),
+        })
       );
       return;
     }
@@ -330,7 +346,10 @@ export function SystemDictionaryScreen() {
       const created = await createDictionaryType(request, {
         code: typeDraft.code.trim().toUpperCase(),
         name: buildLocalizedTextPayload(typeDraft.nameBase, typeDraft.nameLocaleValues),
-        description: buildLocalizedTextPayload(typeDraft.descriptionBase, typeDraft.descriptionLocaleValues),
+        description: buildLocalizedTextPayload(
+          typeDraft.descriptionBase,
+          typeDraft.descriptionLocaleValues
+        ),
         sortOrder: parseSortOrder(typeDraft.sortOrder),
       });
 
@@ -358,8 +377,8 @@ export function SystemDictionaryScreen() {
             ja: '辞書タイプの作成に失敗しました。',
             ko: '사전 유형을 생성하지 못했습니다.',
             fr: 'Impossible de créer le type de dictionnaire.',
-          }),
-        ),
+          })
+        )
       );
     } finally {
       setIsSavingType(false);
@@ -380,7 +399,7 @@ export function SystemDictionaryScreen() {
           ja: '辞書項目コードは必須です。',
           ko: '사전 항목 코드는 필수입니다.',
           fr: 'Le code de l’élément est obligatoire.',
-        }),
+        })
       );
       return;
     }
@@ -394,7 +413,7 @@ export function SystemDictionaryScreen() {
           ja: '辞書項目の英語名は必須です。',
           ko: '사전 항목의 영문 이름은 필수입니다.',
           fr: 'Le nom anglais de l’élément est obligatoire.',
-        }),
+        })
       );
       return;
     }
@@ -404,11 +423,21 @@ export function SystemDictionaryScreen() {
     try {
       extraData = parseExtraData(
         itemDraft.extraDataJson,
-        text('Extra data must be a JSON object.', '额外数据必须是 JSON 对象。', '追加データは JSON オブジェクトである必要があります。'),
+        text(
+          'Extra data must be a JSON object.',
+          '额外数据必须是 JSON 对象。',
+          '追加データは JSON オブジェクトである必要があります。'
+        )
       );
     } catch (reason) {
       setItemDraftError(
-        reason instanceof Error ? reason.message : text('Extra data must be a JSON object.', '额外数据必须是 JSON 对象。', '追加データは JSON オブジェクトである必要があります。'),
+        reason instanceof Error
+          ? reason.message
+          : text(
+              'Extra data must be a JSON object.',
+              '额外数据必须是 JSON 对象。',
+              '追加データは JSON オブジェクトである必要があります。'
+            )
       );
       return;
     }
@@ -421,7 +450,10 @@ export function SystemDictionaryScreen() {
         await createDictionaryItem(request, itemMutationState.dictionaryType.type, {
           code: itemDraft.code.trim().toUpperCase(),
           name: buildLocalizedTextPayload(itemDraft.nameBase, itemDraft.nameLocaleValues),
-          description: buildLocalizedTextPayload(itemDraft.descriptionBase, itemDraft.descriptionLocaleValues),
+          description: buildLocalizedTextPayload(
+            itemDraft.descriptionBase,
+            itemDraft.descriptionLocaleValues
+          ),
           sortOrder: parseSortOrder(itemDraft.sortOrder),
           extraData,
         });
@@ -431,24 +463,32 @@ export function SystemDictionaryScreen() {
           message: text(
             `${itemDraft.code.trim().toUpperCase()} item created under ${itemMutationState.dictionaryType.type}.`,
             `已在 ${itemMutationState.dictionaryType.type} 下创建词典项 ${itemDraft.code.trim().toUpperCase()}。`,
-            `${itemMutationState.dictionaryType.type} に辞書項目 ${itemDraft.code.trim().toUpperCase()} を作成しました。`,
+            `${itemMutationState.dictionaryType.type} に辞書項目 ${itemDraft.code.trim().toUpperCase()} を作成しました。`
           ),
         });
       } else if (itemMutationState.item) {
-        await updateDictionaryItem(request, itemMutationState.dictionaryType.type, itemMutationState.item.id, {
-          name: buildLocalizedTextPayload(itemDraft.nameBase, itemDraft.nameLocaleValues),
-          description: buildLocalizedTextPayload(itemDraft.descriptionBase, itemDraft.descriptionLocaleValues),
-          sortOrder: parseSortOrder(itemDraft.sortOrder),
-          extraData,
-          version: itemMutationState.item.version,
-        });
+        await updateDictionaryItem(
+          request,
+          itemMutationState.dictionaryType.type,
+          itemMutationState.item.id,
+          {
+            name: buildLocalizedTextPayload(itemDraft.nameBase, itemDraft.nameLocaleValues),
+            description: buildLocalizedTextPayload(
+              itemDraft.descriptionBase,
+              itemDraft.descriptionLocaleValues
+            ),
+            sortOrder: parseSortOrder(itemDraft.sortOrder),
+            extraData,
+            version: itemMutationState.item.version,
+          }
+        );
 
         setNotice({
           tone: 'success',
           message: text(
             `${itemMutationState.item.code} item updated.`,
             `已更新词典项 ${itemMutationState.item.code}。`,
-            `辞書項目 ${itemMutationState.item.code} を更新しました。`,
+            `辞書項目 ${itemMutationState.item.code} を更新しました。`
           ),
         });
       }
@@ -456,7 +496,16 @@ export function SystemDictionaryScreen() {
       setItemMutationState(null);
       setRefreshToken((current) => current + 1);
     } catch (reason) {
-      setItemDraftError(getErrorMessage(reason, text('Failed to save dictionary item.', '保存词典项失败。', '辞書項目の保存に失敗しました。')));
+      setItemDraftError(
+        getErrorMessage(
+          reason,
+          text(
+            'Failed to save dictionary item.',
+            '保存词典项失败。',
+            '辞書項目の保存に失敗しました。'
+          )
+        )
+      );
     } finally {
       setIsSavingItem(false);
     }
@@ -471,13 +520,23 @@ export function SystemDictionaryScreen() {
 
     try {
       if (confirmState.nextActive) {
-        await reactivateDictionaryItem(request, confirmState.item.dictionaryCode, confirmState.item.id, {
-          version: confirmState.item.version,
-        });
+        await reactivateDictionaryItem(
+          request,
+          confirmState.item.dictionaryCode,
+          confirmState.item.id,
+          {
+            version: confirmState.item.version,
+          }
+        );
       } else {
-        await deactivateDictionaryItem(request, confirmState.item.dictionaryCode, confirmState.item.id, {
-          version: confirmState.item.version,
-        });
+        await deactivateDictionaryItem(
+          request,
+          confirmState.item.dictionaryCode,
+          confirmState.item.id,
+          {
+            version: confirmState.item.version,
+          }
+        );
       }
 
       setNotice({
@@ -485,7 +544,7 @@ export function SystemDictionaryScreen() {
         message: text(
           `${confirmState.item.code} ${confirmState.nextActive ? 'reactivated' : 'deactivated'}.`,
           `${confirmState.item.code}${confirmState.nextActive ? '已重新启用。' : '已停用。'}`,
-          `${confirmState.item.code} を${confirmState.nextActive ? '再有効化しました。' : '無効化しました。'}`,
+          `${confirmState.item.code} を${confirmState.nextActive ? '再有効化しました。' : '無効化しました。'}`
         ),
       });
       setConfirmState(null);
@@ -493,7 +552,14 @@ export function SystemDictionaryScreen() {
     } catch (reason) {
       setNotice({
         tone: 'error',
-        message: getErrorMessage(reason, text('Failed to update dictionary item state.', '更新词典项状态失败。', '辞書項目の状態更新に失敗しました。')),
+        message: getErrorMessage(
+          reason,
+          text(
+            'Failed to update dictionary item state.',
+            '更新词典项状态失败。',
+            '辞書項目の状態更新に失敗しました。'
+          )
+        ),
       });
     } finally {
       setIsConfirmPending(false);
@@ -504,7 +570,13 @@ export function SystemDictionaryScreen() {
     return (
       <div className="space-y-6">
         <GlassSurface className="p-8">
-          <p className="text-sm font-medium text-slate-500">{text('Loading system dictionary…', '正在加载系统词典…', 'システム辞書を読み込んでいます…')}</p>
+          <p className="text-sm font-medium text-slate-500">
+            {text(
+              'Loading system dictionary…',
+              '正在加载系统词典…',
+              'システム辞書を読み込んでいます…'
+            )}
+          </p>
         </GlassSurface>
       </div>
     );
@@ -514,8 +586,19 @@ export function SystemDictionaryScreen() {
     return (
       <StateView
         status="error"
-        title={text('System dictionary unavailable', '系统词典不可用', 'システム辞書を利用できません')}
-        description={typesPanel.error || text('No dictionary catalog payload was returned.', '未返回词典目录数据。', '辞書カタログの応答が返されませんでした。')}
+        title={text(
+          'System dictionary unavailable',
+          '系统词典不可用',
+          'システム辞書を利用できません'
+        )}
+        description={
+          typesPanel.error ||
+          text(
+            'No dictionary catalog payload was returned.',
+            '未返回词典目录数据。',
+            '辞書カタログの応答が返されませんでした。'
+          )
+        }
       />
     );
   }
@@ -530,12 +613,14 @@ export function SystemDictionaryScreen() {
               {text('AC / System Dictionary', 'AC / 系统词典', 'AC / システム辞書')}
             </div>
             <div className="space-y-3">
-              <h1 className="text-3xl font-semibold text-slate-950">{text('System Dictionary', '系统词典', 'システム辞書')}</h1>
+              <h1 className="text-3xl font-semibold text-slate-950">
+                {text('System Dictionary', '系统词典', 'システム辞書')}
+              </h1>
               <p className="max-w-3xl text-sm leading-6 text-slate-600">
                 {text(
                   'Manage dictionary categories, localized labels, and item status.',
                   '管理词典分类、本地化标签与词条状态。',
-                  '辞書カテゴリ、ローカライズラベル、項目状態を管理します。',
+                  '辞書カテゴリ、ローカライズラベル、項目状態を管理します。'
                 )}
               </p>
             </div>
@@ -543,12 +628,20 @@ export function SystemDictionaryScreen() {
 
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="rounded-2xl border border-slate-200 bg-white/80 px-4 py-4 shadow-sm">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{text('Dictionary Types', '词典类型', '辞書タイプ')}</p>
-              <p className="mt-2 text-base font-semibold text-slate-950">{typesPanel.data.length}</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                {text('Dictionary Types', '词典类型', '辞書タイプ')}
+              </p>
+              <p className="mt-2 text-base font-semibold text-slate-950">
+                {typesPanel.data.length}
+              </p>
             </div>
             <div className="rounded-2xl border border-slate-200 bg-white/80 px-4 py-4 shadow-sm">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{text('Active Type', '当前类型', '選択中タイプ')}</p>
-              <p className="mt-2 text-base font-semibold text-slate-950">{selectedType?.type || text('Unselected', '未选择', '未選択')}</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                {text('Active Type', '当前类型', '選択中タイプ')}
+              </p>
+              <p className="mt-2 text-base font-semibold text-slate-950">
+                {selectedType?.type || text('Unselected', '未选择', '未選択')}
+              </p>
             </div>
           </div>
         </div>
@@ -562,7 +655,7 @@ export function SystemDictionaryScreen() {
           description={text(
             'Browse categories, edit multilingual labels, and manage item status.',
             '浏览分类、编辑多语言标签并管理词条状态。',
-            'カテゴリを確認し、多言語ラベルと項目状態を管理します。',
+            'カテゴリを確認し、多言語ラベルと項目状態を管理します。'
           )}
         >
           <DictionaryExplorerPanel
@@ -620,7 +713,9 @@ export function SystemDictionaryScreen() {
                       : 'border border-emerald-200 bg-emerald-50 text-emerald-700 hover:border-emerald-300 hover:bg-emerald-100'
                   }`}
                 >
-                  {item.isActive ? text('Deactivate', '停用', '無効化') : text('Reactivate', '重新启用', '再有効化')}
+                  {item.isActive
+                    ? text('Deactivate', '停用', '無効化')
+                    : text('Reactivate', '重新启用', '再有効化')}
                 </button>
               </div>
             )}
@@ -661,7 +756,7 @@ export function SystemDictionaryScreen() {
           ko: '사전 유형 서랍 닫기',
           fr: 'Fermer le panneau du type de dictionnaire',
         })}
-        footer={(
+        footer={
           <div className="flex justify-end gap-3">
             <button
               type="button"
@@ -670,11 +765,25 @@ export function SystemDictionaryScreen() {
               }}
               className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
             >
-              {text({ en: 'Cancel', zh_HANS: '取消', zh_HANT: '取消', ja: 'キャンセル', ko: '취소', fr: 'Annuler' })}
+              {text({
+                en: 'Cancel',
+                zh_HANS: '取消',
+                zh_HANT: '取消',
+                ja: 'キャンセル',
+                ko: '취소',
+                fr: 'Annuler',
+              })}
             </button>
             <AsyncSubmitButton
               isPending={isSavingType}
-              pendingText={text({ en: 'Creating…', zh_HANS: '创建中…', zh_HANT: '建立中…', ja: '作成中…', ko: '생성 중…', fr: 'Création…' })}
+              pendingText={text({
+                en: 'Creating…',
+                zh_HANS: '创建中…',
+                zh_HANT: '建立中…',
+                ja: '作成中…',
+                ko: '생성 중…',
+                fr: 'Création…',
+              })}
               onClick={handleCreateType}
             >
               {text({
@@ -687,7 +796,7 @@ export function SystemDictionaryScreen() {
               })}
             </AsyncSubmitButton>
           </div>
-        )}
+        }
       >
         <div className="space-y-6">
           {typeDraftError ? <NoticeBanner tone="error" message={typeDraftError} /> : null}
@@ -698,7 +807,9 @@ export function SystemDictionaryScreen() {
               <input
                 aria-label={text('Dictionary type code', '词典类型代码', '辞書タイプコード')}
                 value={typeDraft.code}
-                onChange={(event) => setTypeDraft((current) => ({ ...current, code: event.target.value }))}
+                onChange={(event) =>
+                  setTypeDraft((current) => ({ ...current, code: event.target.value }))
+                }
                 placeholder={text('CUSTOMER_STATUS', 'CUSTOMER_STATUS', 'CUSTOMER_STATUS')}
                 className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm transition focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-200"
               />
@@ -706,11 +817,17 @@ export function SystemDictionaryScreen() {
             <label className="space-y-2 text-sm font-medium text-slate-700">
               <span>{text('Sort order', '排序', '表示順')}</span>
               <input
-                aria-label={text('Dictionary type sort order', '词典类型排序', '辞書タイプの表示順')}
+                aria-label={text(
+                  'Dictionary type sort order',
+                  '词典类型排序',
+                  '辞書タイプの表示順'
+                )}
                 type="number"
                 min={0}
                 value={typeDraft.sortOrder}
-                onChange={(event) => setTypeDraft((current) => ({ ...current, sortOrder: event.target.value }))}
+                onChange={(event) =>
+                  setTypeDraft((current) => ({ ...current, sortOrder: event.target.value }))
+                }
                 className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm transition focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-200"
               />
             </label>
@@ -726,7 +843,7 @@ export function SystemDictionaryScreen() {
                   {text(
                     'Keep English in the main fields and add translated values only when needed.',
                     '主字段保留英文；只有需要额外语种时再补充翻译值。',
-                    '主フィールドは英語のままにし、必要な場合のみ翻訳値を追加します。',
+                    '主フィールドは英語のままにし、必要な場合のみ翻訳値を追加します。'
                   )}
                 </p>
               </div>
@@ -740,9 +857,15 @@ export function SystemDictionaryScreen() {
           <label className="space-y-2 text-sm font-medium text-slate-700">
             <span>{text('Name (EN)', '名称（英文）', '名称（英語）')}</span>
             <input
-              aria-label={text('Dictionary type English name', '词典类型英文名称', '辞書タイプの英語名')}
+              aria-label={text(
+                'Dictionary type English name',
+                '词典类型英文名称',
+                '辞書タイプの英語名'
+              )}
               value={typeDraft.nameBase}
-              onChange={(event) => setTypeDraft((current) => ({ ...current, nameBase: event.target.value }))}
+              onChange={(event) =>
+                setTypeDraft((current) => ({ ...current, nameBase: event.target.value }))
+              }
               className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm transition focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-200"
             />
           </label>
@@ -750,9 +873,15 @@ export function SystemDictionaryScreen() {
           <label className="space-y-2 text-sm font-medium text-slate-700">
             <span>{text('Description (EN)', '描述（英文）', '説明（英語）')}</span>
             <textarea
-              aria-label={text('Dictionary type English description', '词典类型英文描述', '辞書タイプの英語説明')}
+              aria-label={text(
+                'Dictionary type English description',
+                '词典类型英文描述',
+                '辞書タイプの英語説明'
+              )}
               value={typeDraft.descriptionBase}
-              onChange={(event) => setTypeDraft((current) => ({ ...current, descriptionBase: event.target.value }))}
+              onChange={(event) =>
+                setTypeDraft((current) => ({ ...current, descriptionBase: event.target.value }))
+              }
               rows={4}
               className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm transition focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-200"
             />
@@ -819,30 +948,36 @@ export function SystemDictionaryScreen() {
             setIsItemTranslationsOpen(false);
           }
         }}
-        title={itemMutationState?.mode === 'edit'
-          ? text({
-              en: 'Edit dictionary item',
-              zh_HANS: '编辑词典项',
-              zh_HANT: '編輯詞典項',
-              ja: '辞書項目を編集',
-              ko: '사전 항목 편집',
-              fr: 'Modifier l’élément du dictionnaire',
-            })
-          : text({
-              en: 'New dictionary item',
-              zh_HANS: '新建词典项',
-              zh_HANT: '新增詞典項',
-              ja: '新しい辞書項目',
-              ko: '새 사전 항목',
-              fr: 'Nouvel élément du dictionnaire',
-            })}
+        title={
+          itemMutationState?.mode === 'edit'
+            ? text({
+                en: 'Edit dictionary item',
+                zh_HANS: '编辑词典项',
+                zh_HANT: '編輯詞典項',
+                ja: '辞書項目を編集',
+                ko: '사전 항목 편집',
+                fr: 'Modifier l’élément du dictionnaire',
+              })
+            : text({
+                en: 'New dictionary item',
+                zh_HANS: '新建词典项',
+                zh_HANT: '新增詞典項',
+                ja: '新しい辞書項目',
+                ko: '새 사전 항목',
+                fr: 'Nouvel élément du dictionnaire',
+              })
+        }
         description={
           itemMutationState?.mode === 'edit'
-            ? text('Update multilingual labels, descriptions, ordering, and structured extra data.', '更新多语言标签、描述、排序和结构化额外数据。', '多言語ラベル、説明、順序、構造化追加データを更新します。')
+            ? text(
+                'Update multilingual labels, descriptions, ordering, and structured extra data.',
+                '更新多语言标签、描述、排序和结构化额外数据。',
+                '多言語ラベル、説明、順序、構造化追加データを更新します。'
+              )
             : text(
                 `Create a new item inside ${itemMutationState?.dictionaryType.type || 'the selected dictionary'}.`,
                 `在 ${itemMutationState?.dictionaryType.type || '当前词典'} 中创建新的词典项。`,
-                `${itemMutationState?.dictionaryType.type || '選択中の辞書'} に新しい項目を作成します。`,
+                `${itemMutationState?.dictionaryType.type || '選択中の辞書'} に新しい項目を作成します。`
               )
         }
         size="xl"
@@ -854,7 +989,7 @@ export function SystemDictionaryScreen() {
           ko: '사전 항목 서랍 닫기',
           fr: 'Fermer le panneau de l’élément du dictionnaire',
         })}
-        footer={(
+        footer={
           <div className="flex justify-end gap-3">
             <button
               type="button"
@@ -863,19 +998,47 @@ export function SystemDictionaryScreen() {
               }}
               className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
             >
-              {text({ en: 'Cancel', zh_HANS: '取消', zh_HANT: '取消', ja: 'キャンセル', ko: '취소', fr: 'Annuler' })}
+              {text({
+                en: 'Cancel',
+                zh_HANS: '取消',
+                zh_HANT: '取消',
+                ja: 'キャンセル',
+                ko: '취소',
+                fr: 'Annuler',
+              })}
             </button>
             <AsyncSubmitButton
               isPending={isSavingItem}
-              pendingText={text({ en: 'Saving…', zh_HANS: '保存中…', zh_HANT: '儲存中…', ja: '保存中…', ko: '저장 중…', fr: 'Enregistrement…' })}
+              pendingText={text({
+                en: 'Saving…',
+                zh_HANS: '保存中…',
+                zh_HANT: '儲存中…',
+                ja: '保存中…',
+                ko: '저장 중…',
+                fr: 'Enregistrement…',
+              })}
               onClick={handleSaveItem}
             >
               {itemMutationState?.mode === 'edit'
-                ? text({ en: 'Save item', zh_HANS: '保存词典项', zh_HANT: '儲存詞典項', ja: '項目を保存', ko: '항목 저장', fr: 'Enregistrer l’élément' })
-                : text({ en: 'Create item', zh_HANS: '创建词典项', zh_HANT: '建立詞典項', ja: '項目を作成', ko: '항목 생성', fr: 'Créer l’élément' })}
+                ? text({
+                    en: 'Save item',
+                    zh_HANS: '保存词典项',
+                    zh_HANT: '儲存詞典項',
+                    ja: '項目を保存',
+                    ko: '항목 저장',
+                    fr: 'Enregistrer l’élément',
+                  })
+                : text({
+                    en: 'Create item',
+                    zh_HANS: '创建词典项',
+                    zh_HANT: '建立詞典項',
+                    ja: '項目を作成',
+                    ko: '항목 생성',
+                    fr: 'Créer l’élément',
+                  })}
             </AsyncSubmitButton>
           </div>
-        )}
+        }
       >
         <div className="space-y-6">
           {itemDraftError ? <NoticeBanner tone="error" message={itemDraftError} /> : null}
@@ -886,7 +1049,9 @@ export function SystemDictionaryScreen() {
               <input
                 aria-label={text('Dictionary item code', '词典项代码', '辞書項目コード')}
                 value={itemDraft.code}
-                onChange={(event) => setItemDraft((current) => ({ ...current, code: event.target.value }))}
+                onChange={(event) =>
+                  setItemDraft((current) => ({ ...current, code: event.target.value }))
+                }
                 disabled={itemMutationState?.mode === 'edit'}
                 placeholder={text('ACTIVE', 'ACTIVE', 'ACTIVE')}
                 className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm transition focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-200 disabled:cursor-not-allowed disabled:bg-slate-100"
@@ -899,7 +1064,9 @@ export function SystemDictionaryScreen() {
                 type="number"
                 min={0}
                 value={itemDraft.sortOrder}
-                onChange={(event) => setItemDraft((current) => ({ ...current, sortOrder: event.target.value }))}
+                onChange={(event) =>
+                  setItemDraft((current) => ({ ...current, sortOrder: event.target.value }))
+                }
                 className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm transition focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-200"
               />
             </label>
@@ -915,7 +1082,7 @@ export function SystemDictionaryScreen() {
                   {text(
                     'Keep English as the base value and add translated values only when needed.',
                     '英文作为基础值；只有需要额外语种时再补充翻译值。',
-                    '英語を基準値として保持し、必要な場合のみ翻訳値を追加します。',
+                    '英語を基準値として保持し、必要な場合のみ翻訳値を追加します。'
                   )}
                 </p>
               </div>
@@ -929,9 +1096,15 @@ export function SystemDictionaryScreen() {
           <label className="space-y-2 text-sm font-medium text-slate-700">
             <span>{text('Name (EN)', '名称（英文）', '名称（英語）')}</span>
             <input
-              aria-label={text('Dictionary item English name', '词典项英文名称', '辞書項目の英語名')}
+              aria-label={text(
+                'Dictionary item English name',
+                '词典项英文名称',
+                '辞書項目の英語名'
+              )}
               value={itemDraft.nameBase}
-              onChange={(event) => setItemDraft((current) => ({ ...current, nameBase: event.target.value }))}
+              onChange={(event) =>
+                setItemDraft((current) => ({ ...current, nameBase: event.target.value }))
+              }
               className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm transition focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-200"
             />
           </label>
@@ -939,22 +1112,44 @@ export function SystemDictionaryScreen() {
           <label className="space-y-2 text-sm font-medium text-slate-700">
             <span>{text('Description (EN)', '描述（英文）', '説明（英語）')}</span>
             <textarea
-              aria-label={text('Dictionary item English description', '词典项英文描述', '辞書項目の英語説明')}
+              aria-label={text(
+                'Dictionary item English description',
+                '词典项英文描述',
+                '辞書項目の英語説明'
+              )}
               value={itemDraft.descriptionBase}
-              onChange={(event) => setItemDraft((current) => ({ ...current, descriptionBase: event.target.value }))}
+              onChange={(event) =>
+                setItemDraft((current) => ({ ...current, descriptionBase: event.target.value }))
+              }
               rows={4}
               className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm transition focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-200"
             />
           </label>
 
           <label className="space-y-2 text-sm font-medium text-slate-700">
-            <span>{text('Extra data (JSON object)', '额外数据（JSON 对象）', '追加データ（JSON オブジェクト）')}</span>
+            <span>
+              {text(
+                'Extra data (JSON object)',
+                '额外数据（JSON 对象）',
+                '追加データ（JSON オブジェクト）'
+              )}
+            </span>
             <textarea
-              aria-label={text('Dictionary item extra data', '词典项额外数据', '辞書項目の追加データ')}
+              aria-label={text(
+                'Dictionary item extra data',
+                '词典项额外数据',
+                '辞書項目の追加データ'
+              )}
               value={itemDraft.extraDataJson}
-              onChange={(event) => setItemDraft((current) => ({ ...current, extraDataJson: event.target.value }))}
+              onChange={(event) =>
+                setItemDraft((current) => ({ ...current, extraDataJson: event.target.value }))
+              }
               rows={8}
-              placeholder={text('{\n  "color": "#4f46e5"\n}', '{\n  "color": "#4f46e5"\n}', '{\n  "color": "#4f46e5"\n}')}
+              placeholder={text(
+                '{\n  "color": "#4f46e5"\n}',
+                '{\n  "color": "#4f46e5"\n}',
+                '{\n  "color": "#4f46e5"\n}'
+              )}
               className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 font-mono text-sm text-slate-900 shadow-sm transition focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-200"
             />
           </label>
@@ -1014,7 +1209,11 @@ export function SystemDictionaryScreen() {
 
       <ConfirmActionDialog
         open={confirmState !== null}
-        title={confirmState?.nextActive ? text('Reactivate dictionary item', '重新启用词典项', '辞書項目を再有効化') : text('Deactivate dictionary item', '停用词典项', '辞書項目を無効化')}
+        title={
+          confirmState?.nextActive
+            ? text('Reactivate dictionary item', '重新启用词典项', '辞書項目を再有効化')
+            : text('Deactivate dictionary item', '停用词典项', '辞書項目を無効化')
+        }
         description={
           confirmState ? (
             <div className="space-y-2">
@@ -1023,12 +1222,12 @@ export function SystemDictionaryScreen() {
                   ? text(
                       `Restore ${confirmState.item.code} so downstream modules can consume it again.`,
                       `恢复 ${confirmState.item.code}，使下游模块可以再次使用该项。`,
-                      `${confirmState.item.code} を復元し、下流モジュールが再び利用できるようにします。`,
+                      `${confirmState.item.code} を復元し、下流モジュールが再び利用できるようにします。`
                     )
                   : text(
                       `Deactivate ${confirmState.item.code} without changing its stable reference code.`,
                       `停用 ${confirmState.item.code}，但不改变其稳定引用代码。`,
-                      `${confirmState.item.code} を安定参照コードを変えずに無効化します。`,
+                      `${confirmState.item.code} を安定参照コードを変えずに無効化します。`
                     )}
               </p>
               <p className="text-xs uppercase tracking-[0.18em] text-slate-500">
@@ -1039,7 +1238,11 @@ export function SystemDictionaryScreen() {
             ''
           )
         }
-        confirmText={confirmState?.nextActive ? text('Reactivate', '重新启用', '再有効化') : text('Deactivate', '停用', '無効化')}
+        confirmText={
+          confirmState?.nextActive
+            ? text('Reactivate', '重新启用', '再有効化')
+            : text('Deactivate', '停用', '無効化')
+        }
         cancelText={text('Cancel', '取消', 'キャンセル')}
         intent={confirmState?.nextActive ? 'primary' : 'danger'}
         isPending={isConfirmPending}

@@ -1,6 +1,6 @@
 export function mergeUrlSearchParams(
   searchParams: Pick<URLSearchParams, 'toString'>,
-  updates: Record<string, string | null | undefined>,
+  updates: Record<string, string | null | undefined>
 ) {
   const next = new URLSearchParams(searchParams.toString());
 
@@ -30,9 +30,7 @@ export function parseBooleanSearchParam(value: string | null) {
 
 export function parseEnumSearchParam<const TAllowed extends readonly string[]>(
   value: string | null,
-  allowedValues: TAllowed,
+  allowedValues: TAllowed
 ) {
-  return value && allowedValues.includes(value)
-    ? value as TAllowed[number]
-    : null;
+  return value && allowedValues.includes(value) ? (value as TAllowed[number]) : null;
 }

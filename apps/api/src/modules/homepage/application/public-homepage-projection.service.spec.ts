@@ -1,17 +1,21 @@
+import { describe, expect, it, vi } from 'vitest';
+
 import {
   createPublicPresenceValidationArtifact,
   DEFAULT_THEME,
   type PublicPresenceDocument,
 } from '@tcrn/shared';
-import { describe, expect, it, vi } from 'vitest';
 
-import type { PublicHomepageData, PublicHomepageTalentRecord } from '../domain/public-homepage-read.policy';
+import type {
+  PublicHomepageData,
+  PublicHomepageTalentRecord,
+} from '../domain/public-homepage-read.policy';
 import { HomepageAdminRepository } from '../infrastructure/homepage-admin.repository';
 import { PublicHomepageReadRepository } from '../infrastructure/public-homepage-read.repository';
 import { PublicPresenceFoundationRepository } from '../infrastructure/public-presence-foundation.repository';
 import { buildPublicPresenceSeedRuntimeAuthorityForTests } from '../testing/public-presence-seed-runtime-authority';
-import { PublicHomepageService } from './public-homepage.service';
 import { PublicHomepageProjectionService } from './public-homepage-projection.service';
+import { PublicHomepageService } from './public-homepage.service';
 
 const baseHomepageData: PublicHomepageData = {
   talent: {
@@ -79,7 +83,7 @@ const liveDocument: PublicPresenceDocument = {
 function createValidationSnapshotRecord(
   document: PublicPresenceDocument,
   validationMode: 'draft' | 'publish' = 'publish',
-  id: string = 'snapshot-1',
+  id: string = 'snapshot-1'
 ) {
   const artifact = createPublicPresenceValidationArtifact(document, {
     mode: validationMode,
@@ -141,7 +145,7 @@ describe('PublicHomepageProjectionService', () => {
         publicHomepageService,
         publicHomepageReadRepository,
         publicPresenceFoundationRepository,
-        homepageAdminRepository,
+        homepageAdminRepository
       ),
       publicHomepageService,
       publicHomepageReadRepository,
@@ -151,13 +155,10 @@ describe('PublicHomepageProjectionService', () => {
   }
 
   it('falls back to the legacy public homepage runtime when no live Public Presence version exists', async () => {
-    const {
-      service,
-      publicHomepageService,
-    } = createService();
+    const { service, publicHomepageService } = createService();
 
     vi.mocked(publicHomepageService.getPublishedHomepageOrThrow).mockResolvedValue(
-      baseHomepageData,
+      baseHomepageData
     );
 
     const projection = await service.getPublishedHomepageProjectionOrThrow('tokino-sora');
@@ -172,14 +173,11 @@ describe('PublicHomepageProjectionService', () => {
   });
 
   it('prefers the live Public Presence document when the portal has a published version', async () => {
-    const {
-      service,
-      publicHomepageReadRepository,
-      publicPresenceFoundationRepository,
-    } = createService();
+    const { service, publicHomepageReadRepository, publicPresenceFoundationRepository } =
+      createService();
 
     vi.mocked(publicHomepageReadRepository.findPublishedTalentByPath).mockResolvedValue(
-      publishedTalent,
+      publishedTalent
     );
     vi.mocked(publicPresenceFoundationRepository.findPortalByTalentId).mockResolvedValue({
       id: 'portal-1',
@@ -213,7 +211,7 @@ describe('PublicHomepageProjectionService', () => {
       createdBy: 'user-1',
     });
     vi.mocked(publicPresenceFoundationRepository.findValidationSnapshotById).mockResolvedValue(
-      createValidationSnapshotRecord(liveDocument, 'publish'),
+      createValidationSnapshotRecord(liveDocument, 'publish')
     );
 
     const projection = await service.getPublishedHomepageProjectionOrThrow('tokino-sora');
@@ -231,11 +229,8 @@ describe('PublicHomepageProjectionService', () => {
   });
 
   it('builds draft preview projections for the Studio route with optional phase overrides', async () => {
-    const {
-      service,
-      homepageAdminRepository,
-      publicPresenceFoundationRepository,
-    } = createService();
+    const { service, homepageAdminRepository, publicPresenceFoundationRepository } =
+      createService();
 
     vi.mocked(homepageAdminRepository.findTalentById).mockResolvedValue({
       id: 'talent-1',
@@ -248,9 +243,7 @@ describe('PublicHomepageProjectionService', () => {
       lifecycleStatus: 'published',
       timezone: 'Asia/Tokyo',
     });
-    vi.mocked(homepageAdminRepository.findTenantCodeBySchema).mockResolvedValue(
-      'tenant-a',
-    );
+    vi.mocked(homepageAdminRepository.findTenantCodeBySchema).mockResolvedValue('tenant-a');
     vi.mocked(publicPresenceFoundationRepository.findPortalByTalentId).mockResolvedValue({
       id: 'portal-1',
       talentId: 'talent-1',
@@ -283,13 +276,13 @@ describe('PublicHomepageProjectionService', () => {
       createdBy: 'user-1',
     });
     vi.mocked(publicPresenceFoundationRepository.findValidationSnapshotById).mockResolvedValue(
-      createValidationSnapshotRecord(liveDocument, 'draft', 'snapshot-2'),
+      createValidationSnapshotRecord(liveDocument, 'draft', 'snapshot-2')
     );
 
     const projection = await service.getDraftPreviewProjectionOrThrow(
       'talent-1',
       'tenant_alpha',
-      'revealed',
+      'revealed'
     );
 
     expect(projection.route).toMatchObject({
@@ -303,11 +296,8 @@ describe('PublicHomepageProjectionService', () => {
   });
 
   it('uses the talent display name when an existing debut draft still stores raw internal identity copy', async () => {
-    const {
-      service,
-      homepageAdminRepository,
-      publicPresenceFoundationRepository,
-    } = createService();
+    const { service, homepageAdminRepository, publicPresenceFoundationRepository } =
+      createService();
 
     vi.mocked(homepageAdminRepository.findTalentById).mockResolvedValue({
       id: 'talent-1',
@@ -320,9 +310,7 @@ describe('PublicHomepageProjectionService', () => {
       lifecycleStatus: 'published',
       timezone: 'Asia/Tokyo',
     });
-    vi.mocked(homepageAdminRepository.findTenantCodeBySchema).mockResolvedValue(
-      'tenant-a',
-    );
+    vi.mocked(homepageAdminRepository.findTenantCodeBySchema).mockResolvedValue('tenant-a');
     vi.mocked(publicPresenceFoundationRepository.findPortalByTalentId).mockResolvedValue({
       id: 'portal-1',
       talentId: 'talent-1',
@@ -422,14 +410,14 @@ describe('PublicHomepageProjectionService', () => {
           ],
         },
         'draft',
-        'snapshot-raw',
-      ),
+        'snapshot-raw'
+      )
     );
 
     const projection = await service.getDraftPreviewProjectionOrThrow(
       'talent-1',
       'tenant_alpha',
-      'teaser',
+      'teaser'
     );
 
     expect(projection.metadata.title).toBe('Sakura Ch.');

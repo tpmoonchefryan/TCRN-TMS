@@ -1,5 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+
 import { Prisma } from '@tcrn/database';
 import {
   type CreateSystemRoleInput,
@@ -83,7 +84,7 @@ export class SystemRoleService {
   async findAll(
     filters?: { isActive?: boolean; isSystem?: boolean; search?: string },
     tenantSchema?: string,
-    tenantTier?: RbacTenantTier,
+    tenantTier?: RbacTenantTier
   ) {
     // Build where clause based on filters
     const where: Prisma.RoleWhereInput = {};
@@ -111,10 +112,7 @@ export class SystemRoleService {
     // Return roles with optional filters, sorted by isSystem desc, then by code
     const roles = await this.db.getPrisma().role.findMany({
       where,
-      orderBy: [
-        { isSystem: 'desc' },
-        { code: 'asc' },
-      ],
+      orderBy: [{ isSystem: 'desc' }, { code: 'asc' }],
       include: {
         _count: {
           select: {
@@ -134,12 +132,12 @@ export class SystemRoleService {
         `)
       : [];
 
-    const userCountMap = new Map(
-      userCounts.map((row) => [row.roleId, Number(row.userCount)]),
-    );
+    const userCountMap = new Map(userCounts.map((row) => [row.roleId, Number(row.userCount)]));
 
     return roles
-      .filter((role) => (tenantTier ? isRbacRoleAvailableForTenantTier(role.code, tenantTier) : true))
+      .filter((role) =>
+        tenantTier ? isRbacRoleAvailableForTenantTier(role.code, tenantTier) : true
+      )
       .map((role) => ({
         ...this.mapRoleRecord(role),
         permissionCount: role._count?.rolePolicies ?? 0,
@@ -152,16 +150,16 @@ export class SystemRoleService {
     const role = await this.db.getPrisma().role.findUnique({
       where: { id },
       include: {
-         rolePolicies: {
-           include: {
-             policy: {
-               include: {
-                 resource: true
-               }
-             }
-           }
-         }
-      }
+        rolePolicies: {
+          include: {
+            policy: {
+              include: {
+                resource: true,
+              },
+            },
+          },
+        },
+      },
     });
 
     if (!role) return null;
@@ -178,7 +176,8 @@ export class SystemRoleService {
     }));
 
     const scopeBindings = tenantSchema
-      ? await this.db.getPrisma().$queryRawUnsafe<SystemRoleScopeBindingData[]>(`
+      ? await this.db.getPrisma().$queryRawUnsafe<SystemRoleScopeBindingData[]>(
+          `
           SELECT
             ur.scope_type as "scopeType",
             ur.scope_id as "scopeId",
@@ -223,11 +222,14 @@ export class SystemRoleService {
               ELSE 3
             END,
             "scopeName" ASC NULLS FIRST
-        `, id)
+        `,
+          id
+        )
       : [];
 
     const assignedUsers = tenantSchema
-      ? await this.db.getPrisma().$queryRawUnsafe<SystemRoleAssignedUserData[]>(`
+      ? await this.db.getPrisma().$queryRawUnsafe<SystemRoleAssignedUserData[]>(
+          `
           SELECT
             ur.id as "assignmentId",
             su.id as "userId",
@@ -280,12 +282,13 @@ export class SystemRoleService {
             END,
             COALESCE(su.display_name, su.username) ASC,
             su.username ASC
-        `, id)
+        `,
+          id
+        )
       : [];
 
-    const distinctAssignedUserCount = new Set(
-      assignedUsers.map((assignment) => assignment.userId),
-    ).size;
+    const distinctAssignedUserCount = new Set(assignedUsers.map((assignment) => assignment.userId))
+      .size;
 
     return {
       ...this.mapRoleRecord(role),
@@ -376,7 +379,7 @@ export class SystemRoleService {
   private async assignPermissions(
     tx: Prisma.TransactionClient,
     roleId: string,
-    permissions: RolePermissionInput[],
+    permissions: RolePermissionInput[]
   ) {
     const normalizedPermissions = permissions.map((permission) => {
       const resolved = resolveRbacPermission(permission.resource, permission.action);
@@ -405,17 +408,19 @@ export class SystemRoleService {
 
     if (policies.length !== normalizedPermissions.length) {
       const availablePolicyKeys = new Set(
-        policies.map((policy: { action: string; resource: { code: string } }) =>
-          `${policy.resource.code}:${policy.action}`),
+        policies.map(
+          (policy: { action: string; resource: { code: string } }) =>
+            `${policy.resource.code}:${policy.action}`
+        )
       );
 
       const missingPermission = normalizedPermissions.find(
-        (permission) => !availablePolicyKeys.has(`${permission.resource}:${permission.action}`),
+        (permission) => !availablePolicyKeys.has(`${permission.resource}:${permission.action}`)
       );
 
       if (missingPermission) {
         throw new BadRequestException(
-          `RBAC policy ${missingPermission.resource}:${missingPermission.action} is missing from the database contract`,
+          `RBAC policy ${missingPermission.resource}:${missingPermission.action} is missing from the database contract`
         );
       }
     }

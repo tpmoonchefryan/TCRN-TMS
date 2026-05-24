@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import type { LocalizedText } from '../../constants/locale';
 
 // Component Types
@@ -24,11 +23,11 @@ export type HomepageComponentType = ComponentType;
 
 // Component Instance Structure
 export interface ComponentInstance {
-  id: string;               // UUID
+  id: string; // UUID
   type: ComponentType;
   props: Record<string, unknown>;
   visible: boolean;
-  
+
   // New: Component-level overrides
   styleOverrides?: {
     backgroundColor?: string;
@@ -40,7 +39,7 @@ export interface ComponentInstance {
     delay?: number;
     duration?: number;
   };
-  
+
   // New: Internationalization
   // Map of locale tag (e.g., 'zh_HANS', 'zh_HANT', 'ja') to partial props override
   i18n?: Record<string, Record<string, unknown>>;
@@ -48,7 +47,7 @@ export interface ComponentInstance {
 
 // Homepage Content Structure
 export interface HomepageContent {
-  version: string;          // e.g. "1.0"
+  version: string; // e.g. "1.0"
   components: ComponentInstance[];
 }
 
@@ -87,7 +86,7 @@ export interface ThemeDecoration {
   type: 'grid' | 'dots' | 'gradient-blobs' | 'text' | 'none';
   color?: string;
   opacity?: number;
-  
+
   // Text Decoration Props
   text?: string;
   fontSize?: number; // px
@@ -95,7 +94,7 @@ export interface ThemeDecoration {
   fontFamily?: string;
   textDecoration?: 'none' | 'underline' | 'line-through';
   rotation?: number; // degrees
-  
+
   // Customization
   density?: 'low' | 'medium' | 'high';
   speed?: 'slow' | 'normal' | 'fast';
@@ -120,13 +119,13 @@ export interface ThemeTypography {
 export interface ThemeConfig {
   preset: ThemePreset;
   visualStyle: 'simple' | 'glass' | 'neo' | 'retro' | 'flat';
-  
+
   colors: ThemeColors;
   background: ThemeBackground;
   card: ThemeCard;
-  
+
   typography: ThemeTypography;
-  
+
   animation: ThemeAnimation;
   decorations: ThemeDecoration;
 }

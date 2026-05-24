@@ -1,14 +1,13 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { ConfigService } from '@nestjs/config';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { SaveEmailConfigDto } from '../dto/email-config.dto';
+import { EmailConfigCryptoService } from '../infrastructure/email-config-crypto.service';
 import {
   EmailConfigRepository,
   type StoredEmailConfigRecord,
 } from '../infrastructure/email-config.repository';
-import { EmailConfigCryptoService } from '../infrastructure/email-config-crypto.service';
 import { EmailConfigApplicationService } from './email-config.service';
 
 describe('EmailConfigApplicationService', () => {
@@ -71,13 +70,13 @@ describe('EmailConfigApplicationService', () => {
           value,
           updatedAt: baseDate,
         };
-      },
+      }
     );
 
     service = new EmailConfigApplicationService(
       mockEmailConfigRepository as unknown as EmailConfigRepository,
       mockEmailConfigCryptoService as unknown as EmailConfigCryptoService,
-      mockConfigService as unknown as ConfigService,
+      mockConfigService as unknown as ConfigService
     );
   });
 

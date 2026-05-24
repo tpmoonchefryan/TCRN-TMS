@@ -1,5 +1,4 @@
 import 'reflect-metadata';
-
 import { describe, expect, it } from 'vitest';
 
 import { CustomerController } from '../../modules/customer/controllers/customer.controller';
@@ -14,10 +13,7 @@ import { MarshmallowController } from '../../modules/marshmallow/controllers/mar
 import { ReportController } from '../../modules/report/controllers/report.controller';
 import { REQUIRE_PUBLISHED_TALENT_ACCESS_KEY } from './require-published-talent-access.decorator';
 
-function getPublishedTalentAccessMetadata(
-  target: object,
-  propertyKey?: string,
-): unknown {
+function getPublishedTalentAccessMetadata(target: object, propertyKey?: string): unknown {
   if (propertyKey) {
     const handler = (target as Record<string, unknown>)[propertyKey];
     return Reflect.getMetadata(REQUIRE_PUBLISHED_TALENT_ACCESS_KEY, handler);
@@ -45,17 +41,17 @@ describe('RequirePublishedTalentAccess contract coverage', () => {
     expect(getPublishedTalentAccessMetadata(ImportController)).toBeUndefined();
 
     expect(
-      getPublishedTalentAccessMetadata(ImportController.prototype, 'downloadIndividualTemplate'),
+      getPublishedTalentAccessMetadata(ImportController.prototype, 'downloadIndividualTemplate')
     ).toBeUndefined();
     expect(
-      getPublishedTalentAccessMetadata(ImportController.prototype, 'downloadCompanyTemplate'),
+      getPublishedTalentAccessMetadata(ImportController.prototype, 'downloadCompanyTemplate')
     ).toBeUndefined();
 
-    expect(getPublishedTalentAccessMetadata(ImportController.prototype, 'uploadIndividual')).toEqual(
-      {},
-    );
+    expect(
+      getPublishedTalentAccessMetadata(ImportController.prototype, 'uploadIndividual')
+    ).toEqual({});
     expect(getPublishedTalentAccessMetadata(ImportController.prototype, 'uploadCompany')).toEqual(
-      {},
+      {}
     );
     expect(getPublishedTalentAccessMetadata(ImportController.prototype, 'listJobs')).toEqual({});
   });
@@ -84,9 +80,7 @@ describe('RequirePublishedTalentAccess contract coverage', () => {
     expect(getPublishedTalentAccessMetadata(ReportController.prototype, 'getMfrJob')).toEqual({
       jobOwnerSource: 'report',
     });
-    expect(
-      getPublishedTalentAccessMetadata(ReportController.prototype, 'downloadMfrJob'),
-    ).toEqual({
+    expect(getPublishedTalentAccessMetadata(ReportController.prototype, 'downloadMfrJob')).toEqual({
       jobOwnerSource: 'report',
     });
     expect(getPublishedTalentAccessMetadata(ReportController.prototype, 'cancelMfrJob')).toEqual({

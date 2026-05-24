@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+
 import { checkDatabaseConnection, prisma, type PrismaClient } from '@tcrn/database';
 import { ErrorCodes, pickLocalizedText, type LocalizedText } from '@tcrn/shared';
 
@@ -65,11 +65,7 @@ export class DatabaseService {
   /**
    * Increment version for optimistic locking
    */
-  async incrementVersion(
-    tableName: string,
-    schemaName: string,
-    id: string
-  ): Promise<number> {
+  async incrementVersion(tableName: string, schemaName: string, id: string): Promise<number> {
     const result = await prisma.$queryRawUnsafe<Array<{ version: number }>>(
       `UPDATE "${schemaName}"."${tableName}" 
        SET version = version + 1, updated_at = now() 
@@ -146,7 +142,7 @@ export class DatabaseService {
   buildPagination(page: number = 1, pageSize: number = 20): { skip: number; take: number } {
     const safePage = Math.max(1, page);
     const safePageSize = Math.min(Math.max(1, pageSize), 100);
-    
+
     return {
       skip: (safePage - 1) * safePageSize,
       take: safePageSize,

@@ -1,7 +1,15 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { createTenantSchema, getTenantSchemaName, Prisma, prisma, PrismaClient,setTenantSchema, withTenantContext } from '@tcrn/database';
+
+import {
+  createTenantSchema,
+  getTenantSchemaName,
+  Prisma,
+  prisma,
+  PrismaClient,
+  setTenantSchema,
+  withTenantContext,
+} from '@tcrn/database';
 import { ErrorCodes } from '@tcrn/shared';
 
 import { TenantReadService } from './application/tenant-read.service';
@@ -27,8 +35,8 @@ export interface TenantContext {
 export class TenantService {
   constructor(
     private readonly tenantReadService: TenantReadService = new TenantReadService(
-      new TenantReadRepository(),
-    ),
+      new TenantReadRepository()
+    )
   ) {}
 
   /**
@@ -112,10 +120,7 @@ export class TenantService {
   /**
    * Update tenant settings
    */
-  async updateTenantSettings(
-    tenantId: string,
-    settings: Record<string, unknown>
-  ): Promise<Tenant> {
+  async updateTenantSettings(tenantId: string, settings: Record<string, unknown>): Promise<Tenant> {
     const tenant = await prisma.tenant.findUnique({
       where: { id: tenantId },
     });
@@ -153,10 +158,7 @@ export class TenantService {
   /**
    * Execute function within tenant context
    */
-  async withTenant<T>(
-    schemaName: string,
-    fn: () => Promise<T>
-  ): Promise<T> {
+  async withTenant<T>(schemaName: string, fn: () => Promise<T>): Promise<T> {
     return withTenantContext(schemaName, fn);
   }
 
@@ -170,10 +172,7 @@ export class TenantService {
   /**
    * Validate tenant access
    */
-  async validateTenantAccess(
-    tenantId: string,
-    requestedTenantId: string
-  ): Promise<boolean> {
+  async validateTenantAccess(tenantId: string, requestedTenantId: string): Promise<boolean> {
     return this.tenantReadService.validateTenantAccess(tenantId, requestedTenantId);
   }
 }

@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { MarshmallowReactionApplicationService } from '../../application/marshmallow-reaction.service';
@@ -16,7 +15,7 @@ describe('MarshmallowReactionService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     service = new MarshmallowReactionService(
-      mockApplicationService as unknown as MarshmallowReactionApplicationService,
+      mockApplicationService as unknown as MarshmallowReactionApplicationService
     );
   });
 
@@ -30,7 +29,7 @@ describe('MarshmallowReactionService', () => {
       service.toggleReaction('message-123', '❤️', {
         fingerprint: 'fingerprint-abc',
         ip: '192.168.1.1',
-      }),
+      })
     ).resolves.toEqual({
       added: true,
       counts: { '❤️': 1 },
@@ -43,11 +42,7 @@ describe('MarshmallowReactionService', () => {
     });
 
     await expect(
-      service.getUserReactions(
-        ['message-123'],
-        'fingerprint-abc',
-        'tenant_test',
-      ),
+      service.getUserReactions(['message-123'], 'fingerprint-abc', 'tenant_test')
     ).resolves.toEqual({
       'message-123': ['❤️', '👍'],
     });

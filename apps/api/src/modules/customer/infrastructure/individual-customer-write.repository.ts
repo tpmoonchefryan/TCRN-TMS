@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable } from '@nestjs/common';
+
 import { Prisma, type PrismaClient } from '@tcrn/database';
 
 import { DatabaseService } from '../../database';
@@ -15,20 +15,16 @@ type IndividualCustomerWriteDatabaseClient = Prisma.TransactionClient | PrismaCl
 
 @Injectable()
 export class IndividualCustomerWriteRepository {
-  constructor(
-    private readonly databaseService: DatabaseService,
-  ) {}
+  constructor(private readonly databaseService: DatabaseService) {}
 
-  withTransaction<T>(
-    operation: (prisma: Prisma.TransactionClient) => Promise<T>,
-  ): Promise<T> {
+  withTransaction<T>(operation: (prisma: Prisma.TransactionClient) => Promise<T>): Promise<T> {
     return this.databaseService.getPrisma().$transaction((prisma) => operation(prisma));
   }
 
   async findActiveStatusId(
     prisma: IndividualCustomerWriteDatabaseClient,
     tenantSchema: string,
-    statusCode: string,
+    statusCode: string
   ): Promise<string | null> {
     const statuses = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
       `SELECT id
@@ -36,7 +32,7 @@ export class IndividualCustomerWriteRepository {
        WHERE code = $1
          AND is_active = true
        LIMIT 1`,
-      statusCode,
+      statusCode
     );
 
     return statuses[0]?.id ?? null;
@@ -45,7 +41,7 @@ export class IndividualCustomerWriteRepository {
   async findActiveConsumer(
     prisma: IndividualCustomerWriteDatabaseClient,
     tenantSchema: string,
-    consumerCode: string,
+    consumerCode: string
   ): Promise<{ id: string } | null> {
     const consumers = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
       `SELECT id
@@ -53,7 +49,7 @@ export class IndividualCustomerWriteRepository {
        WHERE code = $1
          AND is_active = true
        LIMIT 1`,
-      consumerCode,
+      consumerCode
     );
 
     return consumers[0] ?? null;
@@ -72,7 +68,7 @@ export class IndividualCustomerWriteRepository {
       source?: string | null;
       notes?: string | null;
       userId: string;
-    },
+    }
   ): Promise<IndividualCustomerCreatedRecord> {
     const customers = await prisma.$queryRawUnsafe<IndividualCustomerCreatedRecord[]>(
       `INSERT INTO "${tenantSchema}".customer_profile (
@@ -94,7 +90,7 @@ export class IndividualCustomerWriteRepository {
       args.tags,
       args.source ?? null,
       args.notes ?? null,
-      args.userId,
+      args.userId
     );
 
     return customers[0];
@@ -109,7 +105,7 @@ export class IndividualCustomerWriteRepository {
       consumerId: string;
       externalId: string;
       userId: string;
-    },
+    }
   ) {
     return prisma.$executeRawUnsafe(
       `INSERT INTO "${tenantSchema}".customer_external_id (
@@ -122,7 +118,7 @@ export class IndividualCustomerWriteRepository {
       args.profileStoreId,
       args.consumerId,
       args.externalId,
-      args.userId,
+      args.userId
     );
   }
 
@@ -134,7 +130,7 @@ export class IndividualCustomerWriteRepository {
       talentId: string;
       userId: string;
       update: IndividualCustomerUpdateInput;
-    },
+    }
   ): Promise<IndividualCustomerUpdatedRecord> {
     const setParts = [
       'last_modified_talent_id = $1::uuid',
@@ -176,7 +172,7 @@ export class IndividualCustomerWriteRepository {
          version,
          updated_at as "updatedAt"`,
       ...params,
-      args.customerId,
+      args.customerId
     );
 
     return rows[0];
@@ -196,7 +192,7 @@ export class IndividualCustomerWriteRepository {
       userAgent?: string;
       requestId: string;
       fieldChanges?: string;
-    },
+    }
   ) {
     if (args.fieldChanges !== undefined) {
       return prisma.$executeRawUnsafe(
@@ -216,7 +212,7 @@ export class IndividualCustomerWriteRepository {
         args.userName,
         args.ipAddress ?? '0.0.0.0',
         args.userAgent,
-        args.requestId,
+        args.requestId
       );
     }
 
@@ -236,7 +232,7 @@ export class IndividualCustomerWriteRepository {
       args.userName,
       args.ipAddress ?? '0.0.0.0',
       args.userAgent,
-      args.requestId,
+      args.requestId
     );
   }
 }

@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import {
   DEFAULT_THEME,
   type HomepageContentInput,
@@ -99,7 +98,8 @@ const BASIC_PUBLISHED_CONTENT = {
       id: 'about-1',
       order: 2,
       props: {
-        contentHtml: '<h2>About</h2><p>This sample stays intentionally small for non-canonical published homepages.</p>',
+        contentHtml:
+          '<h2>About</h2><p>This sample stays intentionally small for non-canonical published homepages.</p>',
         textAlign: 'left',
       },
       type: 'RichText',
@@ -206,7 +206,8 @@ const ALL_COMPONENTS_PUBLISHED_CONTENT = {
       id: 'intro-1',
       order: 5,
       props: {
-        contentHtml: '<h2>About Sakura</h2><p>Welcome to the canonical all-components homepage fixture used for acceptance reruns.</p><p>Every supported block type appears at least once with representative data.</p>',
+        contentHtml:
+          '<h2>About Sakura</h2><p>Welcome to the canonical all-components homepage fixture used for acceptance reruns.</p><p>Every supported block type appears at least once with representative data.</p>',
         textAlign: 'left',
       },
       type: 'RichText',

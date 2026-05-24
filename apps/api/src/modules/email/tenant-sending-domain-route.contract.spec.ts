@@ -1,7 +1,6 @@
-import 'reflect-metadata';
-
 import { RequestMethod } from '@nestjs/common';
 import { METHOD_METADATA, PATH_METADATA } from '@nestjs/common/constants';
+import 'reflect-metadata';
 import { describe, expect, it } from 'vitest';
 
 import { PERMISSIONS_KEY } from '../../common/decorators/require-permissions.decorator';
@@ -24,12 +23,15 @@ const normalizePaths = (value: string | string[] | undefined): string[] => {
 const getControllerRoutes = (controller: object): ControllerRoute[] => {
   const controllerClass = controller as { prototype: Record<string, unknown> };
   const methodNames = Object.getOwnPropertyNames(controllerClass.prototype).filter(
-    (methodName) => methodName !== 'constructor' && typeof controllerClass.prototype[methodName] === 'function',
+    (methodName) =>
+      methodName !== 'constructor' && typeof controllerClass.prototype[methodName] === 'function'
   );
 
   return methodNames.flatMap((methodName) => {
     const handler = controllerClass.prototype[methodName];
-    const requestMethod = Reflect.getMetadata(METHOD_METADATA, handler) as RequestMethod | undefined;
+    const requestMethod = Reflect.getMetadata(METHOD_METADATA, handler) as
+      | RequestMethod
+      | undefined;
 
     if (requestMethod === undefined) {
       return [];
@@ -73,7 +75,7 @@ describe('Tenant sending-domain route contract', () => {
           requestMethod: RequestMethod.PATCH,
           path: 'sender-domains',
         },
-      ]),
+      ])
     );
   });
 

@@ -1,14 +1,20 @@
-import { Controller, Get, Logger, NotFoundException, Param, Req, Res, StreamableFile } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Logger,
+  NotFoundException,
+  Param,
+  Req,
+  Res,
+  StreamableFile,
+} from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Request, Response } from 'express';
 import { lookup } from 'mime-types';
 
 import { Public } from '../../common/decorators/public.decorator';
 import { MinioService } from '../minio/minio.service';
-import {
-  extractPublicAssetKey,
-  resolvePublicAssetBucket,
-} from './public-assets.utils';
+import { extractPublicAssetKey, resolvePublicAssetBucket } from './public-assets.utils';
 
 @ApiTags('Public - Assets')
 @Controller('public/assets')
@@ -23,7 +29,7 @@ export class PublicAssetsController {
   async getAsset(
     @Param('bucket') bucket: string,
     @Res({ passthrough: true }) res: Response,
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     try {
       this.logger.log(`Debugging 500: path=${req?.path}, url=${req?.url}, bucket=${bucket}`);

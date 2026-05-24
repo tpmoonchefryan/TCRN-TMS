@@ -1,7 +1,9 @@
+import { randomUUID } from 'crypto';
+
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+
 import { ErrorCodes } from '@tcrn/shared';
-import { randomUUID } from 'crypto';
 
 import { BUCKETS, MinioService } from '../../minio/minio.service';
 
@@ -35,7 +37,7 @@ function validationError(message: string) {
 export class HomepageAssetService {
   constructor(
     private readonly minioService: MinioService,
-    private readonly configService: ConfigService,
+    private readonly configService: ConfigService
   ) {}
 
   async uploadImage(input: UploadHomepageImageInput): Promise<UploadHomepageImageResult> {
@@ -51,7 +53,7 @@ export class HomepageAssetService {
         BUCKETS.HOMEPAGE_ASSETS,
         objectName,
         file.buffer,
-        file.mimetype,
+        file.mimetype
       );
     } catch {
       throw validationError('Homepage asset upload failed.');
@@ -62,7 +64,10 @@ export class HomepageAssetService {
     };
   }
 
-  private validateImage(file?: Express.Multer.File): { extension: string; file: Express.Multer.File } {
+  private validateImage(file?: Express.Multer.File): {
+    extension: string;
+    file: Express.Multer.File;
+  } {
     if (!file) {
       throw validationError('No file uploaded.');
     }

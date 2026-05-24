@@ -1,8 +1,8 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { BadRequestException, ConflictException } from '@nestjs/common';
-import { createLocalizedText, type RequestContext } from '@tcrn/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { createLocalizedText, type RequestContext } from '@tcrn/shared';
 
 import {
   type CreateExternalBlocklistDto,
@@ -69,10 +69,7 @@ describe('ExternalBlocklistService', () => {
     mockPrisma.$queryRawUnsafe.mockReset();
     mockPrisma.$executeRawUnsafe.mockReset();
 
-    service = new ExternalBlocklistService(
-      mockDatabaseService as never,
-      mockRedisService as never,
-    );
+    service = new ExternalBlocklistService(mockDatabaseService as never, mockRedisService as never);
   });
 
   afterEach(() => {
@@ -131,9 +128,9 @@ describe('ExternalBlocklistService', () => {
       name: createLocalizedText({ en: 'Broken Regex' }),
     };
 
-    await expect(
-      service.create('tenant_test', dto, mockContext),
-    ).rejects.toThrow(BadRequestException);
+    await expect(service.create('tenant_test', dto, mockContext)).rejects.toThrow(
+      BadRequestException
+    );
 
     expect(mockPrisma.$queryRawUnsafe).not.toHaveBeenCalled();
     expect(mockRedisService.del).not.toHaveBeenCalled();
@@ -185,9 +182,9 @@ describe('ExternalBlocklistService', () => {
 
     mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([existing]);
 
-    await expect(
-      service.update('tenant_test', existing.id, dto, mockContext),
-    ).rejects.toThrow(BadRequestException);
+    await expect(service.update('tenant_test', existing.id, dto, mockContext)).rejects.toThrow(
+      BadRequestException
+    );
 
     expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalledTimes(1);
   });
@@ -201,21 +198,23 @@ describe('ExternalBlocklistService', () => {
 
     mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([existing]);
 
-    await expect(
-      service.update('tenant_test', existing.id, dto, mockContext),
-    ).rejects.toThrow(ConflictException);
+    await expect(service.update('tenant_test', existing.id, dto, mockContext)).rejects.toThrow(
+      ConflictException
+    );
 
     expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalledTimes(1);
   });
 
   it('rejects disabling a pattern from the same scope', async () => {
-    mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([{
-      id: 'pattern-1',
-      ownerType: OwnerType.TALENT,
-      ownerId: 'talent-123',
-      isForceUse: false,
-      name: createLocalizedText({ en: 'Talent Pattern' }),
-    }]);
+    mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([
+      {
+        id: 'pattern-1',
+        ownerType: OwnerType.TALENT,
+        ownerId: 'talent-123',
+        isForceUse: false,
+        name: createLocalizedText({ en: 'Talent Pattern' }),
+      },
+    ]);
 
     await expect(
       service.disableInScope(
@@ -225,21 +224,23 @@ describe('ExternalBlocklistService', () => {
           scopeType: OwnerType.TALENT,
           scopeId: 'talent-123',
         },
-        'user-123',
-      ),
+        'user-123'
+      )
     ).rejects.toThrow(BadRequestException);
 
     expect(mockPrisma.$executeRawUnsafe).not.toHaveBeenCalled();
   });
 
   it('rejects disabling force-use inherited patterns', async () => {
-    mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([{
-      id: 'pattern-1',
-      ownerType: OwnerType.TENANT,
-      ownerId: null,
-      isForceUse: true,
-      name: createLocalizedText({ en: 'Tenant Pattern' }),
-    }]);
+    mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([
+      {
+        id: 'pattern-1',
+        ownerType: OwnerType.TENANT,
+        ownerId: null,
+        isForceUse: true,
+        name: createLocalizedText({ en: 'Tenant Pattern' }),
+      },
+    ]);
 
     await expect(
       service.disableInScope(
@@ -249,8 +250,8 @@ describe('ExternalBlocklistService', () => {
           scopeType: OwnerType.TALENT,
           scopeId: 'talent-123',
         },
-        'user-123',
-      ),
+        'user-123'
+      )
     ).rejects.toThrow(BadRequestException);
 
     expect(mockPrisma.$executeRawUnsafe).not.toHaveBeenCalled();

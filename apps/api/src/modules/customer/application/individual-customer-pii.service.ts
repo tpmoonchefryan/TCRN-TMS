@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { ConflictException, Injectable } from '@nestjs/common';
+
 import { ErrorCodes, type RequestContext, TechEventType } from '@tcrn/shared';
 
 import { DatabaseService } from '../../database';
@@ -14,11 +14,7 @@ import {
   buildCustomerPiiPlatformSyncResult,
   buildCustomerPiiPortalSessionResult,
 } from '../domain/pii-platform.policy';
-import {
-  CustomerAction,
-  ProfileType,
-  type UpdateIndividualPiiDto,
-} from '../dto/customer.dto';
+import { CustomerAction, ProfileType, type UpdateIndividualPiiDto } from '../dto/customer.dto';
 import { IndividualCustomerPiiRepository } from '../infrastructure/individual-customer-pii.repository';
 import { CustomerArchiveAccessService } from './customer-archive-access.service';
 import { CustomerPiiPlatformApplicationService } from './customer-pii-platform.service';
@@ -30,22 +26,17 @@ export class IndividualCustomerPiiApplicationService {
     private readonly databaseService: DatabaseService,
     private readonly techEventLogService: TechEventLogService,
     private readonly customerArchiveAccessService: CustomerArchiveAccessService,
-    private readonly customerPiiPlatformApplicationService: CustomerPiiPlatformApplicationService,
+    private readonly customerPiiPlatformApplicationService: CustomerPiiPlatformApplicationService
   ) {}
 
-  async createPortalSession(
-    customerId: string,
-    talentId: string,
-    context: RequestContext,
-  ) {
+  async createPortalSession(customerId: string, talentId: string, context: RequestContext) {
     const customer = await this.verifyAccess(customerId, talentId, context);
-    const portalSession =
-      await this.customerPiiPlatformApplicationService.createPortalSession(
-        customerId,
-        talentId,
-        ProfileType.INDIVIDUAL,
-        context,
-      );
+    const portalSession = await this.customerPiiPlatformApplicationService.createPortalSession(
+      customerId,
+      talentId,
+      ProfileType.INDIVIDUAL,
+      context
+    );
 
     await this.techEventLogService.piiAccess(
       TechEventType.PII_ACCESS_REQUESTED,
@@ -57,7 +48,7 @@ export class IndividualCustomerPiiApplicationService {
         ipAddress: context.ipAddress,
         userAgent: context.userAgent,
       },
-      context,
+      context
     );
 
     await this.individualCustomerPiiRepository.insertAccessLog(
@@ -73,7 +64,7 @@ export class IndividualCustomerPiiApplicationService {
         ipAddress: context.ipAddress,
         userAgent: context.userAgent,
         requestId: context.requestId,
-      },
+      }
     );
 
     return buildCustomerPiiPortalSessionResult(portalSession);
@@ -83,7 +74,7 @@ export class IndividualCustomerPiiApplicationService {
     customerId: string,
     talentId: string,
     dto: UpdateIndividualPiiDto,
-    context: RequestContext,
+    context: RequestContext
   ) {
     const customer = await this.verifyAccess(customerId, talentId, context);
 
@@ -99,7 +90,7 @@ export class IndividualCustomerPiiApplicationService {
       talentId,
       ProfileType.INDIVIDUAL,
       dto.pii,
-      context,
+      context
     );
 
     const fieldsUpdated = collectIndividualCustomerPiiUpdatedFields(dto.pii);
@@ -112,7 +103,7 @@ export class IndividualCustomerPiiApplicationService {
         operatorId: context.userId,
         fieldsUpdated,
       },
-      context,
+      context
     );
 
     await this.individualCustomerPiiRepository.withTransaction(async (prisma) => {
@@ -130,7 +121,7 @@ export class IndividualCustomerPiiApplicationService {
           ipAddress: context.ipAddress,
           userAgent: context.userAgent,
           requestId: context.requestId,
-        },
+        }
       );
 
       await this.individualCustomerPiiRepository.incrementCustomerVersion(
@@ -140,25 +131,21 @@ export class IndividualCustomerPiiApplicationService {
           customerId,
           talentId,
           userId: context.userId,
-        },
+        }
       );
     });
 
     return buildCustomerPiiPlatformSyncResult(customerId);
   }
 
-  private async verifyAccess(
-    customerId: string,
-    talentId: string,
-    context: RequestContext,
-  ) {
+  private async verifyAccess(customerId: string, talentId: string, context: RequestContext) {
     return this.customerArchiveAccessService.requireCustomerArchiveAccess(
       customerId,
       talentId,
       context,
       {
         expectedProfileType: ProfileType.INDIVIDUAL,
-      },
+      }
     );
   }
 }

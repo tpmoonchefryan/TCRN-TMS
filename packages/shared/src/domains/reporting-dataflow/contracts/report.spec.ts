@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { describe, expect, it } from 'vitest';
 
 import { AVAILABLE_REPORTS, REPORT_CATALOG } from '../../../index';

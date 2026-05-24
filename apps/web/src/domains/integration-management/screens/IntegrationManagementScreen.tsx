@@ -1,14 +1,6 @@
 'use client';
 
 import {
-  ADAPTER_CONFIG_KEYS,
-  type IntegrationAdapterDefinition,
-  type IntegrationWebhookDefinition,
-  type LocalizedText,
-  type PartialLocalizedText,
-  type SupportedUiLocale,
-} from '@tcrn/shared';
-import {
   Cable,
   ChevronRight,
   Circle,
@@ -24,6 +16,15 @@ import {
 } from 'lucide-react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
+
+import {
+  ADAPTER_CONFIG_KEYS,
+  type IntegrationAdapterDefinition,
+  type IntegrationWebhookDefinition,
+  type LocalizedText,
+  type PartialLocalizedText,
+  type SupportedUiLocale,
+} from '@tcrn/shared';
 
 import {
   createConsumer,
@@ -319,7 +320,7 @@ function buildScopeSelection(
   ownerType: OwnerType,
   ownerId: string | null,
   label: string,
-  hint: string,
+  hint: string
 ): IntegrationScopeSelection {
   return {
     ownerType,
@@ -331,20 +332,20 @@ function buildScopeSelection(
 
 function scopeMatches(
   left: IntegrationScopeSelection | null,
-  right: IntegrationScopeSelection | null,
+  right: IntegrationScopeSelection | null
 ) {
   return left?.ownerType === right?.ownerType && left?.ownerId === right?.ownerId;
 }
 
 function isScopedAdapterScope(
-  scope: IntegrationAdapterScope,
+  scope: IntegrationAdapterScope
 ): scope is Exclude<IntegrationAdapterScope, { ownerType: 'tenant' }> {
   return scope.ownerType !== 'tenant';
 }
 
 function hasSelectionInTree(
   tree: OrganizationTreeResponse,
-  selection: IntegrationScopeSelection | null,
+  selection: IntegrationScopeSelection | null
 ): boolean {
   if (!selection) {
     return false;
@@ -361,8 +362,8 @@ function hasSelectionInTree(
       }
 
       if (
-        selection.ownerType === 'talent'
-        && node.talents.some((talent) => talent.id === selection.ownerId)
+        selection.ownerType === 'talent' &&
+        node.talents.some((talent) => talent.id === selection.ownerId)
       ) {
         return true;
       }
@@ -371,8 +372,8 @@ function hasSelectionInTree(
     });
 
   if (
-    selection.ownerType === 'talent'
-    && tree.directTalents.some((talent) => talent.id === selection.ownerId)
+    selection.ownerType === 'talent' &&
+    tree.directTalents.some((talent) => talent.id === selection.ownerId)
   ) {
     return true;
   }
@@ -380,8 +381,13 @@ function hasSelectionInTree(
   return walkNodes(tree.subsidiaries);
 }
 
-function resolveInitialTab(value: string | null, availableTabs: readonly IntegrationTab[]): IntegrationTab {
-  return availableTabs.includes(value as IntegrationTab) ? (value as IntegrationTab) : availableTabs[0] ?? 'adapters';
+function resolveInitialTab(
+  value: string | null,
+  availableTabs: readonly IntegrationTab[]
+): IntegrationTab {
+  return availableTabs.includes(value as IntegrationTab)
+    ? (value as IntegrationTab)
+    : (availableTabs[0] ?? 'adapters');
 }
 
 function trimToUndefined(value: string) {
@@ -400,7 +406,7 @@ function splitCommaList(value: string) {
 
 function buildAdapterDraft(
   record?: IntegrationAdapterDetailRecord,
-  definition?: IntegrationAdapterDefinition | null,
+  definition?: IntegrationAdapterDefinition | null
 ): AdapterDraft {
   const sourceName = record?.name ?? definition?.name;
 
@@ -417,7 +423,7 @@ function buildAdapterDraft(
 
 function buildAdapterConfigRows(
   record?: IntegrationAdapterDetailRecord,
-  definition?: IntegrationAdapterDefinition | null,
+  definition?: IntegrationAdapterDefinition | null
 ): AdapterConfigDraftRow[] {
   if (!record) {
     if (definition) {
@@ -477,7 +483,7 @@ function buildAdapterConfigRows(
 
 function buildWebhookDraft(
   record?: IntegrationWebhookDetailRecord,
-  definition?: IntegrationWebhookDefinition | null,
+  definition?: IntegrationWebhookDefinition | null
 ): WebhookDraft {
   const sourceName = record?.name ?? definition?.name;
 
@@ -502,7 +508,7 @@ function buildWebhookDraft(
 
 function collectMonitoredTalentOptions(
   tree: OrganizationTreeResponse | null,
-  tenantRootLabel: string,
+  tenantRootLabel: string
 ): MonitoredTalentOption[] {
   if (!tree) {
     return [];
@@ -555,7 +561,7 @@ function buildEmailConfigDraft(record?: EmailConfigResponse): EmailConfigDraft {
         fromName: override.fromName || '',
         replyTo: override.replyTo || '',
       },
-    ]),
+    ])
   );
 
   return {
@@ -660,17 +666,18 @@ function hasDraftChanges<Draft>(draft: Draft, baseline: Draft) {
 
 function normalizeAdapterConfigRowsForDirty(
   rows: AdapterConfigDraftRow[],
-  baselineRows: AdapterConfigDraftRow[],
+  baselineRows: AdapterConfigDraftRow[]
 ) {
   return rows
     .filter((row) => !row.isNew || row.configKey.trim() || row.configValue.trim())
     .map((row) => {
       const baseline = baselineRows.find((item) => item.rowKey === row.rowKey);
-      const revealOnlyValue = baseline?.isSecret
-        && baseline.isMasked
-        && row.isSecret
-        && !row.isMasked
-        && !row.valueEdited;
+      const revealOnlyValue =
+        baseline?.isSecret &&
+        baseline.isMasked &&
+        row.isSecret &&
+        !row.isMasked &&
+        !row.valueEdited;
 
       return {
         rowKey: row.rowKey,
@@ -689,17 +696,17 @@ function isRequiredSecretConfig(adapterType: AdapterDraft['adapterType'], config
   }
 
   return ADAPTER_CONFIG_KEYS[adapterType as keyof typeof ADAPTER_CONFIG_KEYS].some(
-    (definition) => definition.key === configKey && definition.secret && definition.required,
+    (definition) => definition.key === configKey && definition.secret && definition.required
   );
 }
 
 function hasAdapterConfigRowsChanged(
   rows: AdapterConfigDraftRow[],
-  baselineRows: AdapterConfigDraftRow[],
+  baselineRows: AdapterConfigDraftRow[]
 ) {
   return hasDraftChanges(
     normalizeAdapterConfigRowsForDirty(rows, baselineRows),
-    normalizeAdapterConfigRowsForDirty(baselineRows, baselineRows),
+    normalizeAdapterConfigRowsForDirty(baselineRows, baselineRows)
   );
 }
 
@@ -721,7 +728,11 @@ function StatusBadge({
             ? 'bg-indigo-100 text-indigo-800'
             : 'bg-slate-100 text-slate-700';
 
-  return <span className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${toneClasses}`}>{label}</span>;
+  return (
+    <span className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${toneClasses}`}>
+      {label}
+    </span>
+  );
 }
 
 function SummaryCard({
@@ -757,7 +768,10 @@ function NoticeBanner({
         : 'border-indigo-200 bg-indigo-50 text-indigo-800';
 
   return (
-    <div role="status" className={`rounded-2xl border px-4 py-3 text-sm font-medium ${toneClasses}`}>
+    <div
+      role="status"
+      className={`rounded-2xl border px-4 py-3 text-sm font-medium ${toneClasses}`}
+    >
       {message}
     </div>
   );
@@ -813,7 +827,7 @@ function resolveVisiblePageTarget<Item>(
   items: readonly Item[],
   page: number,
   pageSize: PageSizeOption,
-  getTargetId: (item: Item) => string,
+  getTargetId: (item: Item) => string
 ) {
   const pagination = buildPaginationMeta(items.length, page, pageSize);
   const startIndex = (pagination.page - 1) * pagination.pageSize;
@@ -845,7 +859,7 @@ function buildIntegrationPaginationQueryState(
     emailTemplatePageSize: PageSizeOption;
     webhookPage: number;
     webhookPageSize: PageSizeOption;
-  },
+  }
 ) {
   const params = new URLSearchParams(searchParams.toString());
 
@@ -896,7 +910,7 @@ function buildIntegrationPaginationQueryState(
 function buildPaginationFooterLabels(
   locale: SupportedUiLocale,
   pagination: ApiPaginationMeta,
-  itemCount: number,
+  itemCount: number
 ): PaginationFooterLabels {
   const pageRange = getPaginationRange(pagination, itemCount);
   const rowsPerPageLabel = pickLocaleText(locale, {
@@ -1100,81 +1114,82 @@ export function IntegrationManagementScreen({
   const searchParams = useSearchParams();
   const isAcWorkspace = workspaceKind === 'ac';
   const localizedWorkspaceLabel = resolveWorkspaceLabel(isAcWorkspace);
-  const surfaceCopy = surface === 'interfaces'
-    ? {
-        title: text({
-          en: 'Interface Management',
-          zh_HANS: '接口管理',
-          zh_HANT: '介面管理',
-          ja: 'インターフェース管理',
-          ko: '인터페이스 관리',
-          fr: 'Gestion des interfaces',
-        }),
-        chip: text({
-          en: 'Interfaces',
-          zh_HANS: '接口',
-          zh_HANT: '介面',
-          ja: 'インターフェース',
-          ko: '인터페이스',
-          fr: 'Interfaces',
-        }),
-      }
-    : surface === 'webhooks'
+  const surfaceCopy =
+    surface === 'interfaces'
       ? {
           title: text({
-            en: 'Webhook Management',
-            zh_HANS: 'Webhook 管理',
-            zh_HANT: 'Webhook 管理',
-            ja: 'Webhook 管理',
-            ko: '웹훅 관리',
-            fr: 'Gestion des webhooks',
+            en: 'Interface Management',
+            zh_HANS: '接口管理',
+            zh_HANT: '介面管理',
+            ja: 'インターフェース管理',
+            ko: '인터페이스 관리',
+            fr: 'Gestion des interfaces',
           }),
           chip: text({
-            en: 'Webhooks',
-            zh_HANS: 'Webhook',
-            zh_HANT: 'Webhook',
-            ja: 'Webhook',
-            ko: '웹훅',
-            fr: 'Webhooks',
+            en: 'Interfaces',
+            zh_HANS: '接口',
+            zh_HANT: '介面',
+            ja: 'インターフェース',
+            ko: '인터페이스',
+            fr: 'Interfaces',
           }),
         }
-      : surface === 'api-clients'
+      : surface === 'webhooks'
         ? {
             title: text({
-              en: 'API Client Management',
-              zh_HANS: 'API 客户端管理',
-              zh_HANT: 'API 用戶端管理',
-              ja: 'API クライアント管理',
-              ko: 'API 클라이언트 관리',
-              fr: 'Gestion des clients API',
+              en: 'Webhook Management',
+              zh_HANS: 'Webhook 管理',
+              zh_HANT: 'Webhook 管理',
+              ja: 'Webhook 管理',
+              ko: '웹훅 관리',
+              fr: 'Gestion des webhooks',
             }),
             chip: text({
-              en: 'API Clients',
-              zh_HANS: 'API 客户端',
-              zh_HANT: 'API 用戶端',
-              ja: 'API クライアント',
-              ko: 'API 클라이언트',
-              fr: 'Clients API',
+              en: 'Webhooks',
+              zh_HANS: 'Webhook',
+              zh_HANT: 'Webhook',
+              ja: 'Webhook',
+              ko: '웹훅',
+              fr: 'Webhooks',
             }),
           }
-        : {
-            title: text({
-              en: 'Integration Management',
-              zh_HANS: '集成管理',
-              zh_HANT: '整合管理',
-              ja: '統合管理',
-              ko: '통합 관리',
-              fr: 'Gestion des intégrations',
-            }),
-            chip: text({
-              en: 'Integration',
-              zh_HANS: '集成',
-              zh_HANT: '整合',
-              ja: '統合',
-              ko: '통합',
-              fr: 'Intégration',
-            }),
-          };
+        : surface === 'api-clients'
+          ? {
+              title: text({
+                en: 'API Client Management',
+                zh_HANS: 'API 客户端管理',
+                zh_HANT: 'API 用戶端管理',
+                ja: 'API クライアント管理',
+                ko: 'API 클라이언트 관리',
+                fr: 'Gestion des clients API',
+              }),
+              chip: text({
+                en: 'API Clients',
+                zh_HANS: 'API 客户端',
+                zh_HANT: 'API 用戶端',
+                ja: 'API クライアント',
+                ko: 'API 클라이언트',
+                fr: 'Clients API',
+              }),
+            }
+          : {
+              title: text({
+                en: 'Integration Management',
+                zh_HANS: '集成管理',
+                zh_HANT: '整合管理',
+                ja: '統合管理',
+                ko: '통합 관리',
+                fr: 'Gestion des intégrations',
+              }),
+              chip: text({
+                en: 'Integration',
+                zh_HANS: '集成',
+                zh_HANT: '整合',
+                ja: '統合',
+                ko: '통합',
+                fr: 'Intégration',
+              }),
+            };
   const workspaceChipLabel = `${localizedWorkspaceLabel} / ${surfaceCopy.chip}`;
   const workspaceDescriptor = resolveWorkspaceDescriptor(isAcWorkspace);
   const tenantRootLabel = text({
@@ -1185,14 +1200,16 @@ export function IntegrationManagementScreen({
     ko: '테넌트 루트',
     fr: 'Racine du tenant',
   });
-  const tenantRootHint = session?.tenantName || text({
-    en: 'Current tenant',
-    zh_HANS: '当前租户',
-    zh_HANT: '目前租戶',
-    ja: '現在のテナント',
-    ko: '현재 테넌트',
-    fr: 'Tenant actuel',
-  });
+  const tenantRootHint =
+    session?.tenantName ||
+    text({
+      en: 'Current tenant',
+      zh_HANS: '当前租户',
+      zh_HANT: '目前租戶',
+      ja: '現在のテナント',
+      ko: '현재 테넌트',
+      fr: 'Tenant actuel',
+    });
   const translationLanguageLoadError = text({
     en: 'Failed to load translation languages.',
     zh_HANS: '加载翻译语言失败。',
@@ -1203,7 +1220,7 @@ export function IntegrationManagementScreen({
   });
   const tenantRootSelection = useMemo(
     () => buildScopeSelection('tenant', null, tenantRootLabel, tenantRootHint),
-    [tenantRootHint, tenantRootLabel],
+    [tenantRootHint, tenantRootLabel]
   );
   const translationDrawerLabels = {
     addLanguageLabel: text({
@@ -1247,36 +1264,36 @@ export function IntegrationManagementScreen({
       fr: '(Valeur de base / anglais)',
     }),
   };
-  const [organizationTreePanel, setOrganizationTreePanel] = useState<PanelState<OrganizationTreeResponse | null>>(
-    createPanelState<OrganizationTreeResponse | null>(null, !isAcWorkspace),
-  );
+  const [organizationTreePanel, setOrganizationTreePanel] = useState<
+    PanelState<OrganizationTreeResponse | null>
+  >(createPanelState<OrganizationTreeResponse | null>(null, !isAcWorkspace));
   const [selectedScope, setSelectedScope] = useState<IntegrationScopeSelection | null>(null);
   const showScopeTree = !isAcWorkspace && surface !== 'webhooks';
-  const selectedIntegrationScope = isAcWorkspace || surface === 'webhooks'
-    ? tenantRootSelection
-    : selectedScope;
-  const availableTabs: readonly IntegrationTab[] = surface === 'interfaces'
-    ? selectedIntegrationScope
-      ? (['adapters'] as const)
-      : []
-    : surface === 'webhooks'
+  const selectedIntegrationScope =
+    isAcWorkspace || surface === 'webhooks' ? tenantRootSelection : selectedScope;
+  const availableTabs: readonly IntegrationTab[] =
+    surface === 'interfaces'
       ? selectedIntegrationScope
-        ? (['webhooks'] as const)
+        ? (['adapters'] as const)
         : []
-      : surface === 'api-clients'
-        ? isAcWorkspace
-          ? (['api-keys'] as const)
+      : surface === 'webhooks'
+        ? selectedIntegrationScope
+          ? (['webhooks'] as const)
           : []
-        : isAcWorkspace
-          ? TAB_ORDER
-          : selectedIntegrationScope
-            ? selectedIntegrationScope.ownerType === 'tenant'
-              ? TENANT_TAB_ORDER
-              : (['adapters'] as const)
-            : [];
+        : surface === 'api-clients'
+          ? isAcWorkspace
+            ? (['api-keys'] as const)
+            : []
+          : isAcWorkspace
+            ? TAB_ORDER
+            : selectedIntegrationScope
+              ? selectedIntegrationScope.ownerType === 'tenant'
+                ? TENANT_TAB_ORDER
+                : (['adapters'] as const)
+              : [];
   const resolvedInitialTab = resolveInitialTab(
     searchParams.get('tab'),
-    availableTabs.length > 0 ? availableTabs : ([getDefaultTabForSurface(surface)] as const),
+    availableTabs.length > 0 ? availableTabs : ([getDefaultTabForSurface(surface)] as const)
   );
   const urlAdapterPage = parsePageParam(searchParams.get('adapterPage'));
   const urlAdapterPageSize = parsePageSizeParam(searchParams.get('adapterPageSize'));
@@ -1288,71 +1305,77 @@ export function IntegrationManagementScreen({
   const urlEmailTemplatePageSize = parsePageSizeParam(searchParams.get('emailTemplatePageSize'));
 
   const [activeTab, setActiveTab] = useState<IntegrationTab>(resolvedInitialTab);
-  const {
-    displayedValue: displayedTab,
-    transitionClassName: tabTransitionClassName,
-  } = useFadeSwapState(activeTab);
+  const { displayedValue: displayedTab, transitionClassName: tabTransitionClassName } =
+    useFadeSwapState(activeTab);
   const [notice, setNotice] = useState<NoticeState | null>(null);
   const [confirmState, setConfirmState] = useState<ConfirmDialogState | null>(null);
   const [confirmPending, setConfirmPending] = useState(false);
   const [dirtyGuardState, setDirtyGuardState] = useState<DirtyGuardState | null>(null);
 
-  const [adapterDefinitionsPanel, setAdapterDefinitionsPanel] = useState<PanelState<IntegrationAdapterDefinition[]>>(
-    createPanelState<IntegrationAdapterDefinition[]>([]),
-  );
-  const [adaptersPanel, setAdaptersPanel] = useState<PanelState<IntegrationAdapterListItemRecord[]>>(
-    createPanelState<IntegrationAdapterListItemRecord[]>([]),
-  );
+  const [adapterDefinitionsPanel, setAdapterDefinitionsPanel] = useState<
+    PanelState<IntegrationAdapterDefinition[]>
+  >(createPanelState<IntegrationAdapterDefinition[]>([]));
+  const [adaptersPanel, setAdaptersPanel] = useState<
+    PanelState<IntegrationAdapterListItemRecord[]>
+  >(createPanelState<IntegrationAdapterListItemRecord[]>([]));
   const adaptersScopeRef = useRef<IntegrationScopeSelection | null>(null);
-  const [adapterDetailPanel, setAdapterDetailPanel] = useState<PanelState<IntegrationAdapterDetailRecord | null>>(
-    createPanelState<IntegrationAdapterDetailRecord | null>(null, false),
-  );
+  const [adapterDetailPanel, setAdapterDetailPanel] = useState<
+    PanelState<IntegrationAdapterDetailRecord | null>
+  >(createPanelState<IntegrationAdapterDetailRecord | null>(null, false));
   const [adapterPage, setAdapterPage] = useState(urlAdapterPage);
   const [adapterPageSize, setAdapterPageSize] = useState<PageSizeOption>(urlAdapterPageSize);
-  const [webhooksPanel, setWebhooksPanel] = useState<PanelState<IntegrationWebhookListItemRecord[]>>(
-    createPanelState<IntegrationWebhookListItemRecord[]>([]),
-  );
+  const [webhooksPanel, setWebhooksPanel] = useState<
+    PanelState<IntegrationWebhookListItemRecord[]>
+  >(createPanelState<IntegrationWebhookListItemRecord[]>([]));
   const [webhookPage, setWebhookPage] = useState(urlWebhookPage);
   const [webhookPageSize, setWebhookPageSize] = useState<PageSizeOption>(urlWebhookPageSize);
-  const [webhookEventsPanel, setWebhookEventsPanel] = useState<PanelState<WebhookEventDefinition[]>>(
-    createPanelState<WebhookEventDefinition[]>([]),
-  );
-  const [webhookDefinitionsPanel, setWebhookDefinitionsPanel] = useState<PanelState<IntegrationWebhookDefinition[]>>(
-    createPanelState<IntegrationWebhookDefinition[]>([]),
-  );
-  const [webhookDetailPanel, setWebhookDetailPanel] = useState<PanelState<IntegrationWebhookDetailRecord | null>>(
-    createPanelState<IntegrationWebhookDetailRecord | null>(null, false),
-  );
+  const [webhookEventsPanel, setWebhookEventsPanel] = useState<
+    PanelState<WebhookEventDefinition[]>
+  >(createPanelState<WebhookEventDefinition[]>([]));
+  const [webhookDefinitionsPanel, setWebhookDefinitionsPanel] = useState<
+    PanelState<IntegrationWebhookDefinition[]>
+  >(createPanelState<IntegrationWebhookDefinition[]>([]));
+  const [webhookDetailPanel, setWebhookDetailPanel] = useState<
+    PanelState<IntegrationWebhookDetailRecord | null>
+  >(createPanelState<IntegrationWebhookDetailRecord | null>(null, false));
   const [consumersPanel, setConsumersPanel] = useState<PanelState<IntegrationConsumerRecord[]>>(
-    createPanelState<IntegrationConsumerRecord[]>([]),
+    createPanelState<IntegrationConsumerRecord[]>([])
   );
   const [consumerPage, setConsumerPage] = useState(urlConsumerPage);
   const [consumerPageSize, setConsumerPageSize] = useState<PageSizeOption>(urlConsumerPageSize);
   const [emailTemplatesPanel, setEmailTemplatesPanel] = useState<PanelState<EmailTemplateRecord[]>>(
-    createPanelState<EmailTemplateRecord[]>([]),
+    createPanelState<EmailTemplateRecord[]>([])
   );
   const [emailTemplatePage, setEmailTemplatePage] = useState(urlEmailTemplatePage);
-  const [emailTemplatePageSize, setEmailTemplatePageSize] = useState<PageSizeOption>(urlEmailTemplatePageSize);
+  const [emailTemplatePageSize, setEmailTemplatePageSize] =
+    useState<PageSizeOption>(urlEmailTemplatePageSize);
   const [emailConfigPanel, setEmailConfigPanel] = useState<EmailConfigPanelState>({
     data: null,
     loading: true,
     error: null,
     unavailableReason: null,
   });
-  const [emailSenderTenantsPanel, setEmailSenderTenantsPanel] = useState<PanelState<EmailSenderTenantTarget[]>>(
-    createPanelState<EmailSenderTenantTarget[]>([], false),
-  );
+  const [emailSenderTenantsPanel, setEmailSenderTenantsPanel] = useState<
+    PanelState<EmailSenderTenantTarget[]>
+  >(createPanelState<EmailSenderTenantTarget[]>([], false));
 
   const [adapterCreateMode, setAdapterCreateMode] = useState(false);
   const [selectedAdapterId, setSelectedAdapterId] = useState<string | null>(null);
   const [adapterDrawerOpen, setAdapterDrawerOpen] = useState(false);
   const [adapterConfigPanelOpen, setAdapterConfigPanelOpen] = useState(false);
-  const [adapterConfigureSection, setAdapterConfigureSection] = useState<AdapterConfigureSection>('basics');
+  const [adapterConfigureSection, setAdapterConfigureSection] =
+    useState<AdapterConfigureSection>('basics');
   const [adapterDraft, setAdapterDraft] = useState<AdapterDraft>(() => buildAdapterDraft());
-  const [adapterDraftBaseline, setAdapterDraftBaseline] = useState<AdapterDraft>(() => buildAdapterDraft());
+  const [adapterDraftBaseline, setAdapterDraftBaseline] = useState<AdapterDraft>(() =>
+    buildAdapterDraft()
+  );
   const [adapterTranslationDrawerOpen, setAdapterTranslationDrawerOpen] = useState(false);
-  const [adapterConfigRows, setAdapterConfigRows] = useState<AdapterConfigDraftRow[]>(() => buildAdapterConfigRows());
-  const [adapterConfigRowsBaseline, setAdapterConfigRowsBaseline] = useState<AdapterConfigDraftRow[]>(() => buildAdapterConfigRows());
+  const [adapterConfigRows, setAdapterConfigRows] = useState<AdapterConfigDraftRow[]>(() =>
+    buildAdapterConfigRows()
+  );
+  const [adapterConfigRowsBaseline, setAdapterConfigRowsBaseline] = useState<
+    AdapterConfigDraftRow[]
+  >(() => buildAdapterConfigRows());
   const [adapterSubmitting, setAdapterSubmitting] = useState(false);
   const [adapterConfigSubmitting, setAdapterConfigSubmitting] = useState(false);
 
@@ -1360,7 +1383,9 @@ export function IntegrationManagementScreen({
   const [selectedWebhookId, setSelectedWebhookId] = useState<string | null>(null);
   const [webhookDrawerOpen, setWebhookDrawerOpen] = useState(false);
   const [webhookDraft, setWebhookDraft] = useState<WebhookDraft>(() => buildWebhookDraft());
-  const [webhookDraftBaseline, setWebhookDraftBaseline] = useState<WebhookDraft>(() => buildWebhookDraft());
+  const [webhookDraftBaseline, setWebhookDraftBaseline] = useState<WebhookDraft>(() =>
+    buildWebhookDraft()
+  );
   const [webhookTranslationDrawerOpen, setWebhookTranslationDrawerOpen] = useState(false);
   const [webhookSubmitting, setWebhookSubmitting] = useState(false);
 
@@ -1368,32 +1393,46 @@ export function IntegrationManagementScreen({
   const [selectedConsumerId, setSelectedConsumerId] = useState<string | null>(null);
   const [consumerDrawerOpen, setConsumerDrawerOpen] = useState(false);
   const [consumerDraft, setConsumerDraft] = useState<ConsumerDraft>(() => buildConsumerDraft());
-  const [consumerDraftBaseline, setConsumerDraftBaseline] = useState<ConsumerDraft>(() => buildConsumerDraft());
+  const [consumerDraftBaseline, setConsumerDraftBaseline] = useState<ConsumerDraft>(() =>
+    buildConsumerDraft()
+  );
   const [consumerTranslationDrawerOpen, setConsumerTranslationDrawerOpen] = useState(false);
-  const [consumerTranslationOptionsState, setConsumerTranslationOptionsState] = useState<TranslationOptionsState>({
-    data: [],
-    error: null,
-    loading: false,
-  });
+  const [consumerTranslationOptionsState, setConsumerTranslationOptionsState] =
+    useState<TranslationOptionsState>({
+      data: [],
+      error: null,
+      loading: false,
+    });
   const [consumerSubmitting, setConsumerSubmitting] = useState(false);
   const [generatedKey, setGeneratedKey] = useState<GeneratedKeyState | null>(null);
 
   const [templateCreateMode, setTemplateCreateMode] = useState(false);
   const [selectedTemplateCode, setSelectedTemplateCode] = useState<string | null>(null);
   const [templateDrawerOpen, setTemplateDrawerOpen] = useState(false);
-  const [templateDraft, setTemplateDraft] = useState<EmailTemplateDraft>(() => buildEmailTemplateDraft());
-  const [templateDraftBaseline, setTemplateDraftBaseline] = useState<EmailTemplateDraft>(() => buildEmailTemplateDraft());
-  const [templateTranslationSection, setTemplateTranslationSection] = useState<TemplateTranslationSection | null>(null);
+  const [templateDraft, setTemplateDraft] = useState<EmailTemplateDraft>(() =>
+    buildEmailTemplateDraft()
+  );
+  const [templateDraftBaseline, setTemplateDraftBaseline] = useState<EmailTemplateDraft>(() =>
+    buildEmailTemplateDraft()
+  );
+  const [templateTranslationSection, setTemplateTranslationSection] =
+    useState<TemplateTranslationSection | null>(null);
   const [templateSubmitting, setTemplateSubmitting] = useState(false);
   const [templatePreviewVariables, setTemplatePreviewVariables] = useState('name=Tokino Sora');
   const [templatePreview, setTemplatePreview] = useState<EmailPreviewState | null>(null);
   const [templatePreviewLoading, setTemplatePreviewLoading] = useState(false);
 
-  const [emailConfigDraft, setEmailConfigDraft] = useState<EmailConfigDraft>(() => buildEmailConfigDraft());
-  const [emailConfigDraftBaseline, setEmailConfigDraftBaseline] = useState<EmailConfigDraft>(() => buildEmailConfigDraft());
+  const [emailConfigDraft, setEmailConfigDraft] = useState<EmailConfigDraft>(() =>
+    buildEmailConfigDraft()
+  );
+  const [emailConfigDraftBaseline, setEmailConfigDraftBaseline] = useState<EmailConfigDraft>(() =>
+    buildEmailConfigDraft()
+  );
   const [emailConfigDrawerOpen, setEmailConfigDrawerOpen] = useState(false);
   const [emailConfigSubmitting, setEmailConfigSubmitting] = useState(false);
-  const [emailActionPending, setEmailActionPending] = useState<'connection' | 'test-email' | null>(null);
+  const [emailActionPending, setEmailActionPending] = useState<'connection' | 'test-email' | null>(
+    null
+  );
   const [emailActionResult, setEmailActionResult] = useState<EmailActionResult | null>(null);
 
   useEffect(() => {
@@ -1401,10 +1440,11 @@ export function IntegrationManagementScreen({
       setActiveTab(availableTabs[0]);
     }
   }, [activeTab, availableTabs]);
-  const isAnyTranslationDrawerOpen = consumerTranslationDrawerOpen
-    || adapterTranslationDrawerOpen
-    || webhookTranslationDrawerOpen
-    || templateTranslationSection !== null;
+  const isAnyTranslationDrawerOpen =
+    consumerTranslationDrawerOpen ||
+    adapterTranslationDrawerOpen ||
+    webhookTranslationDrawerOpen ||
+    templateTranslationSection !== null;
 
   function setAdapterEditorState(nextDraft: AdapterDraft, nextConfigRows: AdapterConfigDraftRow[]) {
     setAdapterDraft(nextDraft);
@@ -1481,15 +1521,23 @@ export function IntegrationManagementScreen({
 
   useEffect(() => {
     setAdapterPage((current) => (current === urlAdapterPage ? current : urlAdapterPage));
-    setAdapterPageSize((current) => (current === urlAdapterPageSize ? current : urlAdapterPageSize));
+    setAdapterPageSize((current) =>
+      current === urlAdapterPageSize ? current : urlAdapterPageSize
+    );
     setWebhookPage((current) => (current === urlWebhookPage ? current : urlWebhookPage));
-    setWebhookPageSize((current) => (current === urlWebhookPageSize ? current : urlWebhookPageSize));
+    setWebhookPageSize((current) =>
+      current === urlWebhookPageSize ? current : urlWebhookPageSize
+    );
     setConsumerPage((current) => (current === urlConsumerPage ? current : urlConsumerPage));
-    setConsumerPageSize((current) => (current === urlConsumerPageSize ? current : urlConsumerPageSize));
-    setEmailTemplatePage((current) => (current === urlEmailTemplatePage ? current : urlEmailTemplatePage));
-    setEmailTemplatePageSize((current) => (
+    setConsumerPageSize((current) =>
+      current === urlConsumerPageSize ? current : urlConsumerPageSize
+    );
+    setEmailTemplatePage((current) =>
+      current === urlEmailTemplatePage ? current : urlEmailTemplatePage
+    );
+    setEmailTemplatePageSize((current) =>
       current === urlEmailTemplatePageSize ? current : urlEmailTemplatePageSize
-    ));
+    );
   }, [
     urlAdapterPage,
     urlAdapterPageSize,
@@ -1511,7 +1559,7 @@ export function IntegrationManagementScreen({
       emailTemplatePageSize: PageSizeOption;
       webhookPage: number;
       webhookPageSize: PageSizeOption;
-    }>,
+    }>
   ) {
     const nextAdapterPage = nextState.adapterPage ?? adapterPage;
     const nextAdapterPageSize = nextState.adapterPageSize ?? adapterPageSize;
@@ -1601,7 +1649,7 @@ export function IntegrationManagementScreen({
         request,
         requestEnvelope,
         locale,
-        translationLanguageLoadError,
+        translationLanguageLoadError
       );
 
       if (cancelled) {
@@ -1669,8 +1717,8 @@ export function IntegrationManagementScreen({
                 text(
                   'Failed to load the integration scope tree.',
                   '加载集成范围树失败。',
-                  '統合スコープツリーの読み込みに失敗しました。',
-                ),
+                  '統合スコープツリーの読み込みに失敗しました。'
+                )
               ),
           unavailableReason,
         }));
@@ -1686,10 +1734,10 @@ export function IntegrationManagementScreen({
 
   useEffect(() => {
     if (
-      isAcWorkspace
-      || !organizationTreePanel.data
-      || !selectedScope
-      || hasSelectionInTree(organizationTreePanel.data, selectedScope)
+      isAcWorkspace ||
+      !organizationTreePanel.data ||
+      !selectedScope ||
+      hasSelectionInTree(organizationTreePanel.data, selectedScope)
     ) {
       return;
     }
@@ -1773,7 +1821,16 @@ export function IntegrationManagementScreen({
       setAdapterDefinitionsPanel((current) => ({
         data: current.data,
         loading: false,
-        error: unavailableReason ? null : getErrorMessage(reason, text('Failed to load supported adapter definitions.', '加载支持的适配器定义失败。', 'サポート済みアダプター定義の読み込みに失敗しました。')),
+        error: unavailableReason
+          ? null
+          : getErrorMessage(
+              reason,
+              text(
+                'Failed to load supported adapter definitions.',
+                '加载支持的适配器定义失败。',
+                'サポート済みアダプター定義の読み込みに失敗しました。'
+              )
+            ),
         unavailableReason,
       }));
     }
@@ -1800,7 +1857,16 @@ export function IntegrationManagementScreen({
       setWebhookDefinitionsPanel((current) => ({
         data: current.data,
         loading: false,
-        error: unavailableReason ? null : getErrorMessage(reason, text('Failed to load supported webhook definitions.', '加载支持的 Webhook 定义失败。', 'サポート済み Webhook 定義の読み込みに失敗しました。')),
+        error: unavailableReason
+          ? null
+          : getErrorMessage(
+              reason,
+              text(
+                'Failed to load supported webhook definitions.',
+                '加载支持的 Webhook 定义失败。',
+                'サポート済み Webhook 定義の読み込みに失敗しました。'
+              )
+            ),
         unavailableReason,
       }));
     }
@@ -1862,7 +1928,12 @@ export function IntegrationManagementScreen({
           const targetIndex = data.findIndex((item) => item.id === retainedTargetId);
           setAdapterPage(resolvePageForIndex(targetIndex, adapterPageSize));
         } else {
-          const visibleTarget = resolveVisiblePageTarget(data, adapterPage, adapterPageSize, (item) => item.id);
+          const visibleTarget = resolveVisiblePageTarget(
+            data,
+            adapterPage,
+            adapterPageSize,
+            (item) => item.id
+          );
           setSelectedAdapterId(visibleTarget.targetId);
           setAdapterPage(visibleTarget.page);
         }
@@ -1883,8 +1954,8 @@ export function IntegrationManagementScreen({
               text(
                 'Failed to load adapters for the selected scope.',
                 '加载所选范围的适配器失败。',
-                '選択したスコープのアダプター読み込みに失敗しました。',
-              ),
+                '選択したスコープのアダプター読み込みに失敗しました。'
+              )
             ),
         unavailableReason,
       }));
@@ -1925,7 +1996,12 @@ export function IntegrationManagementScreen({
           const targetIndex = data.findIndex((item) => item.id === retainedTargetId);
           setWebhookPage(resolvePageForIndex(targetIndex, webhookPageSize));
         } else {
-          const visibleTarget = resolveVisiblePageTarget(data, webhookPage, webhookPageSize, (item) => item.id);
+          const visibleTarget = resolveVisiblePageTarget(
+            data,
+            webhookPage,
+            webhookPageSize,
+            (item) => item.id
+          );
           setSelectedWebhookId(visibleTarget.targetId);
           setWebhookPage(visibleTarget.page);
         }
@@ -1935,7 +2011,16 @@ export function IntegrationManagementScreen({
       setWebhooksPanel((current) => ({
         data: current.data,
         loading: false,
-        error: unavailableReason ? null : getErrorMessage(reason, text('Failed to load webhooks.', '加载 Webhook 失败。', 'Webhook の読み込みに失敗しました。')),
+        error: unavailableReason
+          ? null
+          : getErrorMessage(
+              reason,
+              text(
+                'Failed to load webhooks.',
+                '加载 Webhook 失败。',
+                'Webhook の読み込みに失敗しました。'
+              )
+            ),
         unavailableReason,
       }));
     }
@@ -1975,7 +2060,12 @@ export function IntegrationManagementScreen({
           const targetIndex = data.findIndex((item) => item.id === retainedTargetId);
           setConsumerPage(resolvePageForIndex(targetIndex, consumerPageSize));
         } else {
-          const visibleTarget = resolveVisiblePageTarget(data, consumerPage, consumerPageSize, (item) => item.id);
+          const visibleTarget = resolveVisiblePageTarget(
+            data,
+            consumerPage,
+            consumerPageSize,
+            (item) => item.id
+          );
           setSelectedConsumerId(visibleTarget.targetId);
           setConsumerPage(visibleTarget.page);
         }
@@ -1985,7 +2075,16 @@ export function IntegrationManagementScreen({
       setConsumersPanel((current) => ({
         data: current.data,
         loading: false,
-        error: unavailableReason ? null : getErrorMessage(reason, text('Failed to load API clients.', '加载 API 客户端失败。', 'API クライアントの読み込みに失敗しました。')),
+        error: unavailableReason
+          ? null
+          : getErrorMessage(
+              reason,
+              text(
+                'Failed to load API clients.',
+                '加载 API 客户端失败。',
+                'API クライアントの読み込みに失敗しました。'
+              )
+            ),
         unavailableReason,
       }));
     }
@@ -2025,7 +2124,12 @@ export function IntegrationManagementScreen({
           const targetIndex = data.findIndex((item) => item.code === retainedTargetCode);
           setEmailTemplatePage(resolvePageForIndex(targetIndex, emailTemplatePageSize));
         } else {
-          const visibleTarget = resolveVisiblePageTarget(data, emailTemplatePage, emailTemplatePageSize, (item) => item.code);
+          const visibleTarget = resolveVisiblePageTarget(
+            data,
+            emailTemplatePage,
+            emailTemplatePageSize,
+            (item) => item.code
+          );
           setSelectedTemplateCode(visibleTarget.targetId);
           setEmailTemplatePage(visibleTarget.page);
         }
@@ -2035,7 +2139,16 @@ export function IntegrationManagementScreen({
       setEmailTemplatesPanel((current) => ({
         data: current.data,
         loading: false,
-        error: unavailableReason ? null : getErrorMessage(reason, text('Failed to load email templates.', '加载邮件模板失败。', 'メールテンプレートの読み込みに失敗しました。')),
+        error: unavailableReason
+          ? null
+          : getErrorMessage(
+              reason,
+              text(
+                'Failed to load email templates.',
+                '加载邮件模板失败。',
+                'メールテンプレートの読み込みに失敗しました。'
+              )
+            ),
         unavailableReason,
       }));
     }
@@ -2062,7 +2175,16 @@ export function IntegrationManagementScreen({
       setWebhookEventsPanel((current) => ({
         data: current.data,
         loading: false,
-        error: unavailableReason ? null : getErrorMessage(reason, text('Failed to load webhook event catalog.', '加载 Webhook 事件目录失败。', 'Webhook イベント一覧の読み込みに失敗しました。')),
+        error: unavailableReason
+          ? null
+          : getErrorMessage(
+              reason,
+              text(
+                'Failed to load webhook event catalog.',
+                '加载 Webhook 事件目录失败。',
+                'Webhook イベント一覧の読み込みに失敗しました。'
+              )
+            ),
         unavailableReason,
       }));
     }
@@ -2114,13 +2236,27 @@ export function IntegrationManagementScreen({
       setEmailConfigPanel((current) => ({
         data: current.data,
         loading: false,
-        error: getErrorMessage(reason, text('Failed to load email configuration.', '加载邮件配置失败。', 'メール設定の読み込みに失敗しました。')),
+        error: getErrorMessage(
+          reason,
+          text(
+            'Failed to load email configuration.',
+            '加载邮件配置失败。',
+            'メール設定の読み込みに失敗しました。'
+          )
+        ),
         unavailableReason: null,
       }));
       setEmailSenderTenantsPanel((current) => ({
         data: current.data,
         loading: false,
-        error: getErrorMessage(reason, text('Failed to load tenant sender targets.', '加载租户发信目标失败。', 'テナント送信者対象の読み込みに失敗しました。')),
+        error: getErrorMessage(
+          reason,
+          text(
+            'Failed to load tenant sender targets.',
+            '加载租户发信目标失败。',
+            'テナント送信者対象の読み込みに失敗しました。'
+          )
+        ),
         unavailableReason: null,
       }));
     }
@@ -2195,7 +2331,11 @@ export function IntegrationManagementScreen({
           tone: 'error',
           message: getErrorMessage(
             firstRejected.reason,
-            text('Part of the integration data failed to load.', '部分集成数据加载失败。', '統合データの一部読み込みに失敗しました。'),
+            text(
+              'Part of the integration data failed to load.',
+              '部分集成数据加载失败。',
+              '統合データの一部読み込みに失敗しました。'
+            )
           ),
         });
       }
@@ -2250,7 +2390,16 @@ export function IntegrationManagementScreen({
           setAdapterDetailPanel({
             data: null,
             loading: false,
-            error: unavailableReason ? null : getErrorMessage(reason, text('Failed to load adapter details.', '加载适配器详情失败。', 'アダプター詳細の読み込みに失敗しました。')),
+            error: unavailableReason
+              ? null
+              : getErrorMessage(
+                  reason,
+                  text(
+                    'Failed to load adapter details.',
+                    '加载适配器详情失败。',
+                    'アダプター詳細の読み込みに失敗しました。'
+                  )
+                ),
             unavailableReason,
           });
         }
@@ -2306,7 +2455,16 @@ export function IntegrationManagementScreen({
           setWebhookDetailPanel({
             data: null,
             loading: false,
-            error: unavailableReason ? null : getErrorMessage(reason, text('Failed to load webhook details.', '加载 Webhook 详情失败。', 'Webhook 詳細の読み込みに失敗しました。')),
+            error: unavailableReason
+              ? null
+              : getErrorMessage(
+                  reason,
+                  text(
+                    'Failed to load webhook details.',
+                    '加载 Webhook 详情失败。',
+                    'Webhook 詳細の読み込みに失敗しました。'
+                  )
+                ),
             unavailableReason,
           });
         }
@@ -2340,7 +2498,9 @@ export function IntegrationManagementScreen({
       return;
     }
 
-    const currentTemplate = emailTemplatesPanel.data.find((item) => item.code === selectedTemplateCode);
+    const currentTemplate = emailTemplatesPanel.data.find(
+      (item) => item.code === selectedTemplateCode
+    );
 
     if (currentTemplate) {
       setTemplateEditorState(buildEmailTemplateDraft(currentTemplate));
@@ -2356,26 +2516,26 @@ export function IntegrationManagementScreen({
 
   const paginatedAdapters = useMemo(
     () => paginateItems(adaptersPanel.data, adapterPage, adapterPageSize),
-    [adapterPage, adapterPageSize, adaptersPanel.data],
+    [adapterPage, adapterPageSize, adaptersPanel.data]
   );
   const paginatedWebhooks = useMemo(
     () => paginateItems(webhooksPanel.data, webhookPage, webhookPageSize),
-    [webhookPage, webhookPageSize, webhooksPanel.data],
+    [webhookPage, webhookPageSize, webhooksPanel.data]
   );
   const paginatedConsumers = useMemo(
     () => paginateItems(consumersPanel.data, consumerPage, consumerPageSize),
-    [consumerPage, consumerPageSize, consumersPanel.data],
+    [consumerPage, consumerPageSize, consumersPanel.data]
   );
   const paginatedEmailTemplates = useMemo(
     () => paginateItems(emailTemplatesPanel.data, emailTemplatePage, emailTemplatePageSize),
-    [emailTemplatePage, emailTemplatePageSize, emailTemplatesPanel.data],
+    [emailTemplatePage, emailTemplatePageSize, emailTemplatesPanel.data]
   );
 
   useEffect(() => {
     if (
-      !adaptersPanel.loading
-      && (adaptersPanel.data.length > 0 || adaptersPanel.error || adaptersPanel.unavailableReason)
-      && adapterPage !== paginatedAdapters.pagination.page
+      !adaptersPanel.loading &&
+      (adaptersPanel.data.length > 0 || adaptersPanel.error || adaptersPanel.unavailableReason) &&
+      adapterPage !== paginatedAdapters.pagination.page
     ) {
       const nextPage = paginatedAdapters.pagination.page;
       setAdapterPage(nextPage);
@@ -2427,9 +2587,9 @@ export function IntegrationManagementScreen({
 
   useEffect(() => {
     if (
-      !webhooksPanel.loading
-      && (webhooksPanel.data.length > 0 || webhooksPanel.error || webhooksPanel.unavailableReason)
-      && webhookPage !== paginatedWebhooks.pagination.page
+      !webhooksPanel.loading &&
+      (webhooksPanel.data.length > 0 || webhooksPanel.error || webhooksPanel.unavailableReason) &&
+      webhookPage !== paginatedWebhooks.pagination.page
     ) {
       const nextPage = paginatedWebhooks.pagination.page;
       setWebhookPage(nextPage);
@@ -2481,9 +2641,11 @@ export function IntegrationManagementScreen({
 
   useEffect(() => {
     if (
-      !consumersPanel.loading
-      && (consumersPanel.data.length > 0 || consumersPanel.error || consumersPanel.unavailableReason)
-      && consumerPage !== paginatedConsumers.pagination.page
+      !consumersPanel.loading &&
+      (consumersPanel.data.length > 0 ||
+        consumersPanel.error ||
+        consumersPanel.unavailableReason) &&
+      consumerPage !== paginatedConsumers.pagination.page
     ) {
       const nextPage = paginatedConsumers.pagination.page;
       setConsumerPage(nextPage);
@@ -2535,9 +2697,11 @@ export function IntegrationManagementScreen({
 
   useEffect(() => {
     if (
-      !emailTemplatesPanel.loading
-      && (emailTemplatesPanel.data.length > 0 || emailTemplatesPanel.error || emailTemplatesPanel.unavailableReason)
-      && emailTemplatePage !== paginatedEmailTemplates.pagination.page
+      !emailTemplatesPanel.loading &&
+      (emailTemplatesPanel.data.length > 0 ||
+        emailTemplatesPanel.error ||
+        emailTemplatesPanel.unavailableReason) &&
+      emailTemplatePage !== paginatedEmailTemplates.pagination.page
     ) {
       const nextPage = paginatedEmailTemplates.pagination.page;
       setEmailTemplatePage(nextPage);
@@ -2589,50 +2753,63 @@ export function IntegrationManagementScreen({
 
   const selectedConsumer = useMemo(
     () => consumersPanel.data.find((item) => item.id === selectedConsumerId) || null,
-    [consumersPanel.data, selectedConsumerId],
+    [consumersPanel.data, selectedConsumerId]
   );
   const selectedTemplate = useMemo(
     () => emailTemplatesPanel.data.find((item) => item.code === selectedTemplateCode) || null,
-    [emailTemplatesPanel.data, selectedTemplateCode],
+    [emailTemplatesPanel.data, selectedTemplateCode]
   );
   const selectedAdapterDefinition = useMemo(
-    () => adapterDefinitionsPanel.data.find((item) => item.key === adapterDraft.definitionKey) || null,
-    [adapterDefinitionsPanel.data, adapterDraft.definitionKey],
+    () =>
+      adapterDefinitionsPanel.data.find((item) => item.key === adapterDraft.definitionKey) || null,
+    [adapterDefinitionsPanel.data, adapterDraft.definitionKey]
   );
   const selectedAdapterDefinitionConfigFields = useMemo(
-    () => new Map((selectedAdapterDefinition?.configFields ?? []).map((field) => [field.key, field] as const)),
-    [selectedAdapterDefinition],
+    () =>
+      new Map(
+        (selectedAdapterDefinition?.configFields ?? []).map((field) => [field.key, field] as const)
+      ),
+    [selectedAdapterDefinition]
   );
   const selectedWebhookDefinition = useMemo(
-    () => webhookDefinitionsPanel.data.find((item) => item.key === webhookDraft.definitionKey) || null,
-    [webhookDefinitionsPanel.data, webhookDraft.definitionKey],
+    () =>
+      webhookDefinitionsPanel.data.find((item) => item.key === webhookDraft.definitionKey) || null,
+    [webhookDefinitionsPanel.data, webhookDraft.definitionKey]
   );
-  const shouldShowAdapterConfigEditor = adapterCreateMode || (Boolean(adapterDetailPanel.data) && adapterConfigPanelOpen);
-  const adapterProfileDirty = activeTab === 'adapters'
-    && (adapterCreateMode || Boolean(adapterDetailPanel.data))
-    && hasDraftChanges(adapterDraft, adapterDraftBaseline);
-  const adapterConfigDirty = activeTab === 'adapters'
-    && shouldShowAdapterConfigEditor
-    && hasAdapterConfigRowsChanged(adapterConfigRows, adapterConfigRowsBaseline);
-  const webhookDraftDirty = activeTab === 'webhooks'
-    && (webhookCreateMode || Boolean(selectedWebhookId))
-    && hasDraftChanges(webhookDraft, webhookDraftBaseline);
-  const consumerDraftDirty = activeTab === 'api-keys'
-    && (consumerCreateMode || Boolean(selectedConsumerId))
-    && hasDraftChanges(consumerDraft, consumerDraftBaseline);
-  const emailConfigDirty = activeTab === 'email'
-    && isAcWorkspace
-    && Boolean(emailConfigPanel.data)
-    && hasDraftChanges(emailConfigDraft, emailConfigDraftBaseline);
-  const templateDraftDirty = activeTab === 'email'
-    && (templateCreateMode || Boolean(selectedTemplateCode))
-    && hasDraftChanges(templateDraft, templateDraftBaseline);
-  const hasDirtyEditor = adapterProfileDirty
-    || adapterConfigDirty
-    || webhookDraftDirty
-    || consumerDraftDirty
-    || emailConfigDirty
-    || templateDraftDirty;
+  const shouldShowAdapterConfigEditor =
+    adapterCreateMode || (Boolean(adapterDetailPanel.data) && adapterConfigPanelOpen);
+  const adapterProfileDirty =
+    activeTab === 'adapters' &&
+    (adapterCreateMode || Boolean(adapterDetailPanel.data)) &&
+    hasDraftChanges(adapterDraft, adapterDraftBaseline);
+  const adapterConfigDirty =
+    activeTab === 'adapters' &&
+    shouldShowAdapterConfigEditor &&
+    hasAdapterConfigRowsChanged(adapterConfigRows, adapterConfigRowsBaseline);
+  const webhookDraftDirty =
+    activeTab === 'webhooks' &&
+    (webhookCreateMode || Boolean(selectedWebhookId)) &&
+    hasDraftChanges(webhookDraft, webhookDraftBaseline);
+  const consumerDraftDirty =
+    activeTab === 'api-keys' &&
+    (consumerCreateMode || Boolean(selectedConsumerId)) &&
+    hasDraftChanges(consumerDraft, consumerDraftBaseline);
+  const emailConfigDirty =
+    activeTab === 'email' &&
+    isAcWorkspace &&
+    Boolean(emailConfigPanel.data) &&
+    hasDraftChanges(emailConfigDraft, emailConfigDraftBaseline);
+  const templateDraftDirty =
+    activeTab === 'email' &&
+    (templateCreateMode || Boolean(selectedTemplateCode)) &&
+    hasDraftChanges(templateDraft, templateDraftBaseline);
+  const hasDirtyEditor =
+    adapterProfileDirty ||
+    adapterConfigDirty ||
+    webhookDraftDirty ||
+    consumerDraftDirty ||
+    emailConfigDirty ||
+    templateDraftDirty;
 
   useEffect(() => {
     if (!hasDirtyEditor) {
@@ -2650,12 +2827,12 @@ export function IntegrationManagementScreen({
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
   }, [hasDirtyEditor]);
-  const formatDateTime = (value: string | null | undefined, fallback = text('Never', '从未', 'なし')) =>
-    formatIntegrationManagementDateTime(locale, value, fallback);
-  const pickLocalizedLabel = (
-    value: LocalizedText | null | undefined,
-    fallback: string,
-  ) => (value ? pickLocaleText(locale, value) : fallback);
+  const formatDateTime = (
+    value: string | null | undefined,
+    fallback = text('Never', '从未', 'なし')
+  ) => formatIntegrationManagementDateTime(locale, value, fallback);
+  const pickLocalizedLabel = (value: LocalizedText | null | undefined, fallback: string) =>
+    value ? pickLocaleText(locale, value) : fallback;
   const pickConsumerDisplayName = (consumer: IntegrationConsumerRecord) =>
     consumer.localizedName || pickLocalizedLabel(consumer.name, consumer.code);
   const pickTemplateName = (template: EmailTemplateRecord) =>
@@ -2663,24 +2840,30 @@ export function IntegrationManagementScreen({
   const pickTemplateSubject = (template: EmailTemplateRecord) =>
     pickLocalizedLabel(template.subject, template.subject.en);
   const pickAdapterDefinitionText = (
-    value: IntegrationAdapterDefinition['name'] | IntegrationAdapterDefinition['description'] | undefined,
-    fallback = '',
+    value:
+      | IntegrationAdapterDefinition['name']
+      | IntegrationAdapterDefinition['description']
+      | undefined,
+    fallback = ''
   ) => (value ? pickLocaleText(locale, value) : fallback);
   const pickWebhookDefinitionText = (
-    value: IntegrationWebhookDefinition['name'] | IntegrationWebhookDefinition['description'] | undefined,
-    fallback = '',
+    value:
+      | IntegrationWebhookDefinition['name']
+      | IntegrationWebhookDefinition['description']
+      | undefined,
+    fallback = ''
   ) => (value ? pickLocaleText(locale, value) : fallback);
   const getInvalidHeaderMessage = (line: string) =>
     text(
       `Invalid header entry "${line}". Use "Header-Name: value".`,
       `无效的请求头条目“${line}”，请使用“Header-Name: value”格式。`,
-      `無効なヘッダー項目「${line}」です。「Header-Name: value」を使用してください。`,
+      `無効なヘッダー項目「${line}」です。「Header-Name: value」を使用してください。`
     );
   const getInvalidVariableMessage = (line: string) =>
     text(
       `Invalid variable entry "${line}". Use "key=value".`,
       `无效的变量条目“${line}”，请使用“key=value”格式。`,
-      `無効な変数項目「${line}」です。「key=value」を使用してください。`,
+      `無効な変数項目「${line}」です。「key=value」を使用してください。`
     );
 
   function requestDiscardDirtyEditor(onDiscard: () => void) {
@@ -2762,7 +2945,10 @@ export function IntegrationManagementScreen({
       setAdapterConfigPanelOpen(true);
       setAdapterConfigureSection('basics');
       const definition = adapterDefinitionsPanel.data[0] ?? null;
-      setAdapterEditorState(buildAdapterDraft(undefined, definition), buildAdapterConfigRows(undefined, definition));
+      setAdapterEditorState(
+        buildAdapterDraft(undefined, definition),
+        buildAdapterConfigRows(undefined, definition)
+      );
     });
   }
 
@@ -2798,7 +2984,11 @@ export function IntegrationManagementScreen({
     if (adapterCreateMode && !selectedAdapterDefinition) {
       setNotice({
         tone: 'error',
-        message: text('Choose a supported adapter definition before creating an adapter.', '请先选择开发者支持的适配器定义。', 'アダプター作成前にサポート済み定義を選択してください。'),
+        message: text(
+          'Choose a supported adapter definition before creating an adapter.',
+          '请先选择开发者支持的适配器定义。',
+          'アダプター作成前にサポート済み定義を選択してください。'
+        ),
       });
       return;
     }
@@ -2809,7 +2999,9 @@ export function IntegrationManagementScreen({
           return false;
         }
 
-        return !adapterConfigRows.some((row) => row.configKey === field.key && row.configValue.trim());
+        return !adapterConfigRows.some(
+          (row) => row.configKey === field.key && row.configValue.trim()
+        );
       });
 
       if (missingRequiredField) {
@@ -2818,7 +3010,7 @@ export function IntegrationManagementScreen({
           message: text(
             `${pickAdapterDefinitionText(missingRequiredField.label, missingRequiredField.key)} is required for ${pickAdapterDefinitionText(selectedAdapterDefinition.name, selectedAdapterDefinition.code)}.`,
             `${pickAdapterDefinitionText(missingRequiredField.label, missingRequiredField.key)} 是 ${pickAdapterDefinitionText(selectedAdapterDefinition.name, selectedAdapterDefinition.code)} 的必填配置。`,
-            `${pickAdapterDefinitionText(selectedAdapterDefinition.name, selectedAdapterDefinition.code)} には ${pickAdapterDefinitionText(missingRequiredField.label, missingRequiredField.key)} が必要です。`,
+            `${pickAdapterDefinitionText(selectedAdapterDefinition.name, selectedAdapterDefinition.code)} には ${pickAdapterDefinitionText(missingRequiredField.label, missingRequiredField.key)} が必要です。`
           ),
         });
         return;
@@ -2856,7 +3048,7 @@ export function IntegrationManagementScreen({
           message: text(
             `${created.code} adapter created.`,
             `已创建适配器 ${created.code}。`,
-            `アダプター ${created.code} を作成しました。`,
+            `アダプター ${created.code} を作成しました。`
           ),
         });
       } else if (selectedAdapterId && adapterDetailPanel.data) {
@@ -2881,14 +3073,21 @@ export function IntegrationManagementScreen({
           message: text(
             `${updated.code} adapter profile updated.`,
             `已更新适配器 ${updated.code} 的资料。`,
-            `アダプター ${updated.code} のプロファイルを更新しました。`,
+            `アダプター ${updated.code} のプロファイルを更新しました。`
           ),
         });
       }
     } catch (reason) {
       setNotice({
         tone: 'error',
-        message: getErrorMessage(reason, text('Failed to save adapter changes.', '保存适配器更改失败。', 'アダプター変更の保存に失敗しました。')),
+        message: getErrorMessage(
+          reason,
+          text(
+            'Failed to save adapter changes.',
+            '保存适配器更改失败。',
+            'アダプター変更の保存に失敗しました。'
+          )
+        ),
       });
     } finally {
       setAdapterSubmitting(false);
@@ -2940,8 +3139,10 @@ export function IntegrationManagementScreen({
         tone: 'info',
         message: text({
           en: 'There are no writable config changes to submit. Masked secrets stay unchanged when untouched; type a replacement before saving.',
-          zh_HANS: '当前没有可提交的配置变更。已遮罩密钥在未触碰时会保持不变；请先输入替换值再保存。',
-          zh_HANT: '目前沒有可提交的設定變更。已遮罩密鑰在未觸碰時會保持不變；請先輸入替換值再儲存。',
+          zh_HANS:
+            '当前没有可提交的配置变更。已遮罩密钥在未触碰时会保持不变；请先输入替换值再保存。',
+          zh_HANT:
+            '目前沒有可提交的設定變更。已遮罩密鑰在未觸碰時會保持不變；請先輸入替換值再儲存。',
           ja: '送信できる設定変更はありません。マスク済みシークレットは未変更のまま保持されます。保存前に置換値を入力してください。',
           ko: '제출할 설정 변경이 없습니다. 마스킹된 시크릿은 건드리지 않으면 유지됩니다. 저장하기 전에 대체 값을 입력하세요.',
           fr: 'Aucun changement de configuration à envoyer. Les secrets masqués restent inchangés tant qu’ils ne sont pas modifiés ; saisissez une valeur de remplacement avant d’enregistrer.',
@@ -2975,13 +3176,20 @@ export function IntegrationManagementScreen({
         message: text(
           `${nextDetail.code} adapter configs updated.`,
           `已更新适配器 ${nextDetail.code} 的配置。`,
-          `アダプター ${nextDetail.code} の設定を更新しました。`,
+          `アダプター ${nextDetail.code} の設定を更新しました。`
         ),
       });
     } catch (reason) {
       setNotice({
         tone: 'error',
-        message: getErrorMessage(reason, text('Failed to update adapter configs.', '更新适配器配置失败。', 'アダプター設定の更新に失敗しました。')),
+        message: getErrorMessage(
+          reason,
+          text(
+            'Failed to update adapter configs.',
+            '更新适配器配置失败。',
+            'アダプター設定の更新に失敗しました。'
+          )
+        ),
       });
     } finally {
       setAdapterConfigSubmitting(false);
@@ -3006,21 +3214,28 @@ export function IntegrationManagementScreen({
                 isMasked: false,
                 valueEdited: row.valueEdited,
               }
-            : row,
-        ),
+            : row
+        )
       );
       setNotice({
         tone: 'info',
         message: text(
           `${revealed.configKey} revealed. Treat it as temporary secret material.`,
           `已显示 ${revealed.configKey}，请将其视为临时敏感信息。`,
-          `${revealed.configKey} を表示しました。一時的な機密情報として扱ってください。`,
+          `${revealed.configKey} を表示しました。一時的な機密情報として扱ってください。`
         ),
       });
     } catch (reason) {
       setNotice({
         tone: 'error',
-        message: getErrorMessage(reason, text('Failed to reveal adapter secret.', '显示适配器密钥失败。', 'アダプターシークレットの表示に失敗しました。')),
+        message: getErrorMessage(
+          reason,
+          text(
+            'Failed to reveal adapter secret.',
+            '显示适配器密钥失败。',
+            'アダプターシークレットの表示に失敗しました。'
+          )
+        ),
       });
     }
   }
@@ -3029,7 +3244,11 @@ export function IntegrationManagementScreen({
     if (webhookCreateMode && !selectedWebhookDefinition) {
       setNotice({
         tone: 'error',
-        message: text('Choose a supported webhook definition before creating a webhook.', '请先选择开发者支持的 Webhook 定义。', 'Webhook 作成前にサポート済み定義を選択してください。'),
+        message: text(
+          'Choose a supported webhook definition before creating a webhook.',
+          '请先选择开发者支持的 Webhook 定义。',
+          'Webhook 作成前にサポート済み定義を選択してください。'
+        ),
       });
       return;
     }
@@ -3039,31 +3258,40 @@ export function IntegrationManagementScreen({
 
     try {
       const headers = parseHeaderLines(webhookDraft.headersText, getInvalidHeaderMessage);
-      const payload = webhookCreateMode && selectedWebhookDefinition
-        ? {
-            definitionKey: selectedWebhookDefinition.key,
-            url: webhookDraft.url.trim(),
-            secret: trimToUndefined(webhookDraft.secret),
-            headers,
-            monitoredTalentIds: webhookDraft.monitoredTalentIds,
-            retryPolicy: {
-              maxRetries: Number(webhookDraft.maxRetries || selectedWebhookDefinition.defaultRetryPolicy?.maxRetries || 3),
-              backoffMs: Number(webhookDraft.backoffMs || selectedWebhookDefinition.defaultRetryPolicy?.backoffMs || 1000),
-            },
-          }
-        : {
-            code: webhookDraft.code.trim().toUpperCase(),
-            name: buildLocalizedTextPayload(webhookDraft.nameBase, webhookDraft.nameLocaleValues),
-            url: webhookDraft.url.trim(),
-            secret: trimToUndefined(webhookDraft.secret),
-            events: webhookDraft.selectedEvents as WebhookEventDefinition['event'][],
-            headers,
-            monitoredTalentIds: webhookDraft.monitoredTalentIds,
-            retryPolicy: {
-              maxRetries: Number(webhookDraft.maxRetries || 3),
-              backoffMs: Number(webhookDraft.backoffMs || 1000),
-            },
-          };
+      const payload =
+        webhookCreateMode && selectedWebhookDefinition
+          ? {
+              definitionKey: selectedWebhookDefinition.key,
+              url: webhookDraft.url.trim(),
+              secret: trimToUndefined(webhookDraft.secret),
+              headers,
+              monitoredTalentIds: webhookDraft.monitoredTalentIds,
+              retryPolicy: {
+                maxRetries: Number(
+                  webhookDraft.maxRetries ||
+                    selectedWebhookDefinition.defaultRetryPolicy?.maxRetries ||
+                    3
+                ),
+                backoffMs: Number(
+                  webhookDraft.backoffMs ||
+                    selectedWebhookDefinition.defaultRetryPolicy?.backoffMs ||
+                    1000
+                ),
+              },
+            }
+          : {
+              code: webhookDraft.code.trim().toUpperCase(),
+              name: buildLocalizedTextPayload(webhookDraft.nameBase, webhookDraft.nameLocaleValues),
+              url: webhookDraft.url.trim(),
+              secret: trimToUndefined(webhookDraft.secret),
+              events: webhookDraft.selectedEvents as WebhookEventDefinition['event'][],
+              headers,
+              monitoredTalentIds: webhookDraft.monitoredTalentIds,
+              retryPolicy: {
+                maxRetries: Number(webhookDraft.maxRetries || 3),
+                backoffMs: Number(webhookDraft.backoffMs || 1000),
+              },
+            };
 
       if (webhookCreateMode) {
         const created = await createWebhook(request, payload);
@@ -3076,7 +3304,7 @@ export function IntegrationManagementScreen({
           message: text(
             `${created.code} webhook created.`,
             `已创建 Webhook ${created.code}。`,
-            `Webhook ${created.code} を作成しました。`,
+            `Webhook ${created.code} を作成しました。`
           ),
         });
       } else if (selectedWebhookId && webhookDetailPanel.data) {
@@ -3104,14 +3332,21 @@ export function IntegrationManagementScreen({
           message: text(
             `${updated.code} webhook updated.`,
             `已更新 Webhook ${updated.code}。`,
-            `Webhook ${updated.code} を更新しました。`,
+            `Webhook ${updated.code} を更新しました。`
           ),
         });
       }
     } catch (reason) {
       setNotice({
         tone: 'error',
-        message: getErrorMessage(reason, text('Failed to save webhook changes.', '保存 Webhook 更改失败。', 'Webhook 変更の保存に失敗しました。')),
+        message: getErrorMessage(
+          reason,
+          text(
+            'Failed to save webhook changes.',
+            '保存 Webhook 更改失败。',
+            'Webhook 変更の保存に失敗しました。'
+          )
+        ),
       });
     } finally {
       setWebhookSubmitting(false);
@@ -3147,7 +3382,7 @@ export function IntegrationManagementScreen({
           message: text(
             `${created.code} API client created.`,
             `已创建 API 客户端 ${created.code}。`,
-            `API クライアント ${created.code} を作成しました。`,
+            `API クライアント ${created.code} を作成しました。`
           ),
         });
       } else if (selectedConsumerId && selectedConsumer) {
@@ -3163,14 +3398,21 @@ export function IntegrationManagementScreen({
           message: text(
             `${updated.code} API client updated.`,
             `已更新 API 客户端 ${updated.code}。`,
-            `API クライアント ${updated.code} を更新しました。`,
+            `API クライアント ${updated.code} を更新しました。`
           ),
         });
       }
     } catch (reason) {
       setNotice({
         tone: 'error',
-        message: getErrorMessage(reason, text('Failed to save API client changes.', '保存 API 客户端更改失败。', 'API クライアント変更の保存に失敗しました。')),
+        message: getErrorMessage(
+          reason,
+          text(
+            'Failed to save API client changes.',
+            '保存 API 客户端更改失败。',
+            'API クライアント変更の保存に失敗しました。'
+          )
+        ),
       });
     } finally {
       setConsumerSubmitting(false);
@@ -3180,7 +3422,7 @@ export function IntegrationManagementScreen({
   function updateTenantSenderOverride(
     tenantSchema: string,
     field: keyof TenantSenderOverrideDraft,
-    value: string,
+    value: string
   ) {
     setEmailConfigDraft((current) => ({
       ...current,
@@ -3209,7 +3451,10 @@ export function IntegrationManagementScreen({
       })
       .filter((entry) => {
         const [tenantSchema, override] = entry;
-        return tenantSchema.trim().length > 0 && !!(override.fromAddress || override.fromName || override.replyTo);
+        return (
+          tenantSchema.trim().length > 0 &&
+          !!(override.fromAddress || override.fromName || override.replyTo)
+        );
       });
 
     return entries.length > 0 ? Object.fromEntries(entries) : undefined;
@@ -3261,12 +3506,23 @@ export function IntegrationManagementScreen({
       setEmailConfigDrawerOpen(false);
       setNotice({
         tone: 'success',
-        message: text('Email configuration saved.', '邮件配置已保存。', 'メール設定を保存しました。'),
+        message: text(
+          'Email configuration saved.',
+          '邮件配置已保存。',
+          'メール設定を保存しました。'
+        ),
       });
     } catch (reason) {
       setNotice({
         tone: 'error',
-        message: getErrorMessage(reason, text('Failed to save email configuration.', '保存邮件配置失败。', 'メール設定の保存に失敗しました。')),
+        message: getErrorMessage(
+          reason,
+          text(
+            'Failed to save email configuration.',
+            '保存邮件配置失败。',
+            'メール設定の保存に失敗しました。'
+          )
+        ),
       });
     } finally {
       setEmailConfigSubmitting(false);
@@ -3294,8 +3550,16 @@ export function IntegrationManagementScreen({
         message: getErrorMessage(
           reason,
           action === 'connection'
-            ? text('Failed to test email connection.', '测试邮件连接失败。', 'メール接続テストに失敗しました。')
-            : text('Failed to send test email.', '发送测试邮件失败。', 'テストメールの送信に失敗しました。'),
+            ? text(
+                'Failed to test email connection.',
+                '测试邮件连接失败。',
+                'メール接続テストに失敗しました。'
+              )
+            : text(
+                'Failed to send test email.',
+                '发送测试邮件失败。',
+                'テストメールの送信に失敗しました。'
+              )
         ),
       });
     } finally {
@@ -3311,9 +3575,18 @@ export function IntegrationManagementScreen({
       const payload = {
         code: templateDraft.code.trim().toUpperCase(),
         name: buildLocalizedTextPayload(templateDraft.nameBase, templateDraft.nameLocaleValues),
-        subject: buildLocalizedTextPayload(templateDraft.subjectBase, templateDraft.subjectLocaleValues),
-        bodyHtml: buildLocalizedTextPayload(templateDraft.bodyHtmlBase, templateDraft.bodyHtmlLocaleValues),
-        bodyText: buildLocalizedTextPayload(templateDraft.bodyTextBase, templateDraft.bodyTextLocaleValues),
+        subject: buildLocalizedTextPayload(
+          templateDraft.subjectBase,
+          templateDraft.subjectLocaleValues
+        ),
+        bodyHtml: buildLocalizedTextPayload(
+          templateDraft.bodyHtmlBase,
+          templateDraft.bodyHtmlLocaleValues
+        ),
+        bodyText: buildLocalizedTextPayload(
+          templateDraft.bodyTextBase,
+          templateDraft.bodyTextLocaleValues
+        ),
         variables: splitCommaList(templateDraft.variablesText),
         category: templateDraft.category,
       };
@@ -3329,7 +3602,7 @@ export function IntegrationManagementScreen({
           message: text(
             `${created.code} email template created.`,
             `已创建邮件模板 ${created.code}。`,
-            `メールテンプレート ${created.code} を作成しました。`,
+            `メールテンプレート ${created.code} を作成しました。`
           ),
         });
       } else if (selectedTemplateCode) {
@@ -3348,14 +3621,21 @@ export function IntegrationManagementScreen({
           message: text(
             `${updated.code} email template updated.`,
             `已更新邮件模板 ${updated.code}。`,
-            `メールテンプレート ${updated.code} を更新しました。`,
+            `メールテンプレート ${updated.code} を更新しました。`
           ),
         });
       }
     } catch (reason) {
       setNotice({
         tone: 'error',
-        message: getErrorMessage(reason, text('Failed to save email template changes.', '保存邮件模板更改失败。', 'メールテンプレート変更の保存に失敗しました。')),
+        message: getErrorMessage(
+          reason,
+          text(
+            'Failed to save email template changes.',
+            '保存邮件模板更改失败。',
+            'メールテンプレート変更の保存に失敗しました。'
+          )
+        ),
       });
     } finally {
       setTemplateSubmitting(false);
@@ -3369,7 +3649,7 @@ export function IntegrationManagementScreen({
         message: text(
           'Save the template first, then preview the stored version.',
           '请先保存新模板，再基于已存储的模板进行预览。',
-          '新しいテンプレートを先に保存してから、保存済みテンプレートでプレビューしてください。',
+          '新しいテンプレートを先に保存してから、保存済みテンプレートでプレビューしてください。'
         ),
       });
       return;
@@ -3380,20 +3660,32 @@ export function IntegrationManagementScreen({
 
     try {
       const variables = parseVariableLines(templatePreviewVariables, getInvalidVariableMessage);
-      const preview = await previewEmailTemplate(request, selectedTemplateCode, locale as EmailLocale, variables);
+      const preview = await previewEmailTemplate(
+        request,
+        selectedTemplateCode,
+        locale as EmailLocale,
+        variables
+      );
       setTemplatePreview(preview);
       setNotice({
         tone: 'success',
         message: text(
           `${selectedTemplateCode} preview rendered.`,
           `已渲染模板 ${selectedTemplateCode} 的预览。`,
-          `テンプレート ${selectedTemplateCode} のプレビューを生成しました。`,
+          `テンプレート ${selectedTemplateCode} のプレビューを生成しました。`
         ),
       });
     } catch (reason) {
       setNotice({
         tone: 'error',
-        message: getErrorMessage(reason, text('Failed to render email template preview.', '渲染邮件模板预览失败。', 'メールテンプレートのプレビュー生成に失敗しました。')),
+        message: getErrorMessage(
+          reason,
+          text(
+            'Failed to render email template preview.',
+            '渲染邮件模板预览失败。',
+            'メールテンプレートのプレビュー生成に失敗しました。'
+          )
+        ),
       });
     } finally {
       setTemplatePreviewLoading(false);
@@ -3403,13 +3695,27 @@ export function IntegrationManagementScreen({
   const adapterCount = adaptersPanel.data.length;
   const webhookCount = webhooksPanel.data.length;
   const consumerCount = consumersPanel.data.length;
-  const configuredAdapterTranslationCount = countConfiguredTranslations(adapterDraft.nameLocaleValues);
-  const configuredWebhookTranslationCount = countConfiguredTranslations(webhookDraft.nameLocaleValues);
-  const configuredConsumerTranslationCount = countConfiguredTranslations(consumerDraft.nameLocaleValues);
-  const configuredTemplateNameTranslationCount = countConfiguredTranslations(templateDraft.nameLocaleValues);
-  const configuredTemplateSubjectTranslationCount = countConfiguredTranslations(templateDraft.subjectLocaleValues);
-  const configuredTemplateBodyHtmlTranslationCount = countConfiguredTranslations(templateDraft.bodyHtmlLocaleValues);
-  const configuredTemplateBodyTextTranslationCount = countConfiguredTranslations(templateDraft.bodyTextLocaleValues);
+  const configuredAdapterTranslationCount = countConfiguredTranslations(
+    adapterDraft.nameLocaleValues
+  );
+  const configuredWebhookTranslationCount = countConfiguredTranslations(
+    webhookDraft.nameLocaleValues
+  );
+  const configuredConsumerTranslationCount = countConfiguredTranslations(
+    consumerDraft.nameLocaleValues
+  );
+  const configuredTemplateNameTranslationCount = countConfiguredTranslations(
+    templateDraft.nameLocaleValues
+  );
+  const configuredTemplateSubjectTranslationCount = countConfiguredTranslations(
+    templateDraft.subjectLocaleValues
+  );
+  const configuredTemplateBodyHtmlTranslationCount = countConfiguredTranslations(
+    templateDraft.bodyHtmlLocaleValues
+  );
+  const configuredTemplateBodyTextTranslationCount = countConfiguredTranslations(
+    templateDraft.bodyTextLocaleValues
+  );
   const emailTemplateCount = emailTemplatesPanel.data.length;
   const templateTranslationDrawerConfig = templateTranslationSection
     ? templateTranslationSection === 'name'
@@ -3448,7 +3754,7 @@ export function IntegrationManagementScreen({
       : selectedIntegrationScope.label;
   const monitoredTalentOptions = useMemo(
     () => collectMonitoredTalentOptions(organizationTreePanel.data, tenantRootHint),
-    [organizationTreePanel.data, tenantRootHint],
+    [organizationTreePanel.data, tenantRootHint]
   );
   const formatMonitoredTalentTarget = (monitoredTalentIds: string[]) =>
     monitoredTalentIds.length === 0
@@ -3478,7 +3784,7 @@ export function IntegrationManagementScreen({
           : text(
               'Select a scope from the left to open its integration workspace.',
               '请先从左侧选择一个范围，再打开对应的集成工作区。',
-              '左側からスコープを選択して統合ワークスペースを開いてください。',
+              '左側からスコープを選択して統合ワークスペースを開いてください。'
             );
   const noScopeTreeHint =
     locale === 'zh_HANT'
@@ -3486,11 +3792,11 @@ export function IntegrationManagementScreen({
       : locale === 'ko'
         ? '먼저 왼쪽 트리에서 테넌트 루트, 하위 범위 또는 탤런트를 선택하세요.'
         : locale === 'fr'
-          ? "Choisissez d’abord une racine de tenant, un périmètre ou un talent dans l’arborescence de gauche."
+          ? 'Choisissez d’abord une racine de tenant, un périmètre ou un talent dans l’arborescence de gauche.'
           : text(
               'Choose tenant root, a subsidiary, or a talent from the left tree first.',
               '请先从左侧树中选择租户根、分目录或艺人。',
-              '先に左側ツリーからテナントルート、配下スコープ、またはタレントを選択してください。',
+              '先に左側ツリーからテナントルート、配下スコープ、またはタレントを選択してください。'
             );
   const noScopeTreeDescription =
     locale === 'zh_HANT'
@@ -3502,82 +3808,89 @@ export function IntegrationManagementScreen({
           : text(
               'Choose a tenant, subsidiary, or talent from the left tree.',
               '请先从左侧树中选择租户、分目录或艺人。',
-              '左側ツリーからテナント、配下スコープ、またはタレントを選択してください。',
+              '左側ツリーからテナント、配下スコープ、またはタレントを選択してください。'
             );
   const selectedScopeHint = !selectedIntegrationScope
     ? noScopeTreeHint
     : selectedIntegrationScope.hint;
-  const adapterSectionTitle = !selectedIntegrationScope || selectedIntegrationScope.ownerType === 'tenant'
-    ? text('Tenant Adapters', '租户适配器', 'テナントアダプター')
-    : selectedIntegrationScope.ownerType === 'subsidiary'
-      ? text('Subsidiary Adapters', '分目录适配器', '配下スコープアダプター')
-      : text('Talent Adapters', '艺人适配器', 'タレントアダプター');
+  const adapterSectionTitle =
+    !selectedIntegrationScope || selectedIntegrationScope.ownerType === 'tenant'
+      ? text('Tenant Adapters', '租户适配器', 'テナントアダプター')
+      : selectedIntegrationScope.ownerType === 'subsidiary'
+        ? text('Subsidiary Adapters', '分目录适配器', '配下スコープアダプター')
+        : text('Talent Adapters', '艺人适配器', 'タレントアダプター');
   const adapterSectionDescription = !selectedIntegrationScope
     ? text(
         'Select a scope before managing adapter records.',
         '请先选择一个范围再管理适配器记录。',
-        'アダプターを管理する前にスコープを選択してください。',
+        'アダプターを管理する前にスコープを選択してください。'
       )
     : selectedIntegrationScope.ownerType === 'tenant'
       ? text(
           'Create, update, and activate adapters tied to shared platform definitions at tenant root.',
           '在租户根范围创建、更新并启停绑定到共享平台定义的适配器。',
-          'テナントルートで共有プラットフォーム定義に紐づくアダプターを作成・更新・有効化します。',
+          'テナントルートで共有プラットフォーム定義に紐づくアダプターを作成・更新・有効化します。'
         )
       : text(
           `Manage adapters inherited by or owned within ${selectedIntegrationScope.label}. API clients stay in Account Center, while webhooks and email stay at tenant root.`,
           `管理 ${selectedIntegrationScope.label} 范围内继承或自有的适配器。API 客户端保留在账户中心，Webhook 与邮件保留在租户根范围。`,
-          `${selectedIntegrationScope.label} に継承または所有されたアダプターを管理します。API クライアントはアカウントセンター、Webhook とメールはテナントルートに保持されます。`,
+          `${selectedIntegrationScope.label} に継承または所有されたアダプターを管理します。API クライアントはアカウントセンター、Webhook とメールはテナントルートに保持されます。`
         );
-  const capabilityTabs: readonly IntegrationTab[] = surface === 'interfaces'
-    ? (['adapters'] as const)
-    : surface === 'webhooks'
-      ? (['webhooks'] as const)
-      : surface === 'api-clients'
-        ? (['api-keys'] as const)
-        : (['adapters', 'webhooks', 'api-keys', 'email'] as const);
+  const capabilityTabs: readonly IntegrationTab[] =
+    surface === 'interfaces'
+      ? (['adapters'] as const)
+      : surface === 'webhooks'
+        ? (['webhooks'] as const)
+        : surface === 'api-clients'
+          ? (['api-keys'] as const)
+          : (['adapters', 'webhooks', 'api-keys', 'email'] as const);
   const integrationCapabilityItems = capabilityTabs.map((tab) => {
     const available = availableTabs.includes(tab);
-    const unavailableReason = tab === 'api-keys'
-      ? text('Account Center only', '仅账户中心', 'アカウントセンターのみ')
-      : selectedIntegrationScope && !isTenantRootScope
-        ? text('Tenant root only', '仅租户根范围', 'テナントルートのみ')
-        : text('Unavailable here', '当前不可用', 'ここでは利用不可');
+    const unavailableReason =
+      tab === 'api-keys'
+        ? text('Account Center only', '仅账户中心', 'アカウントセンターのみ')
+        : selectedIntegrationScope && !isTenantRootScope
+          ? text('Tenant root only', '仅租户根范围', 'テナントルートのみ')
+          : text('Unavailable here', '当前不可用', 'ここでは利用不可');
 
     return {
       id: tab,
       label: tabLabel(tab),
       available,
-      status: available
-        ? text('Available here', '当前可用', 'ここで利用可能')
-        : unavailableReason,
+      status: available ? text('Available here', '当前可用', 'ここで利用可能') : unavailableReason,
     };
   });
-  const scopeAccessNotice = surface !== 'mixed'
-    ? null
-    : !selectedIntegrationScope
-    ? null
-    : isTenantRootScope
-      ? text({
-          en: 'API clients stay in Account Center and do not appear in tenant workspaces. Use this scope for adapters, webhooks, and email.',
-          zh_HANS: 'API 客户端保留在账户中心管理，不会出现在租户工作区中。当前范围用于管理适配器、Webhook 与邮件。',
-          zh_HANT: 'API 用戶端保留在帳戶中心管理，不會出現在租戶工作區中。目前範圍用於管理適配器、Webhook 與郵件。',
-          ja: 'API クライアントはアカウントセンターで管理され、テナントのワークスペースには表示されません。このスコープではアダプター、Webhook、メールを扱います。',
-          ko: 'API 클라이언트는 계정 센터에서 관리되며 테넌트 워크스페이스에는 표시되지 않습니다. 이 범위에서는 어댑터, 웹훅, 메일을 관리합니다.',
-          fr: 'Les clients API restent gérés dans l’Account Center et n’apparaissent pas dans les espaces tenant. Utilisez ce périmètre pour les adaptateurs, webhooks et e-mails.',
-        })
-      : text({
-          en: `API clients stay in Account Center. ${selectedIntegrationScope.label} inherits that contract, so only adapters are editable here.`,
-          zh_HANS: `API 客户端保留在账户中心管理。${selectedIntegrationScope.label} 继承该契约，因此这里只能编辑适配器。`,
-          zh_HANT: `API 用戶端保留在帳戶中心管理。${selectedIntegrationScope.label} 繼承此契約，因此這裡只能編輯適配器。`,
-          ja: `API クライアントはアカウントセンターで管理されます。${selectedIntegrationScope.label} はその契約を継承するため、ここで編集できるのはアダプターのみです。`,
-          ko: `API 클라이언트는 계정 센터에서 관리됩니다. ${selectedIntegrationScope.label}은 해당 계약을 상속하므로 여기서는 어댑터만 편집할 수 있습니다.`,
-          fr: `Les clients API restent gérés dans l’Account Center. ${selectedIntegrationScope.label} hérite de ce contrat, donc seuls les adaptateurs sont modifiables ici.`,
-        });
+  const scopeAccessNotice =
+    surface !== 'mixed'
+      ? null
+      : !selectedIntegrationScope
+        ? null
+        : isTenantRootScope
+          ? text({
+              en: 'API clients stay in Account Center and do not appear in tenant workspaces. Use this scope for adapters, webhooks, and email.',
+              zh_HANS:
+                'API 客户端保留在账户中心管理，不会出现在租户工作区中。当前范围用于管理适配器、Webhook 与邮件。',
+              zh_HANT:
+                'API 用戶端保留在帳戶中心管理，不會出現在租戶工作區中。目前範圍用於管理適配器、Webhook 與郵件。',
+              ja: 'API クライアントはアカウントセンターで管理され、テナントのワークスペースには表示されません。このスコープではアダプター、Webhook、メールを扱います。',
+              ko: 'API 클라이언트는 계정 센터에서 관리되며 테넌트 워크스페이스에는 표시되지 않습니다. 이 범위에서는 어댑터, 웹훅, 메일을 관리합니다.',
+              fr: 'Les clients API restent gérés dans l’Account Center et n’apparaissent pas dans les espaces tenant. Utilisez ce périmètre pour les adaptateurs, webhooks et e-mails.',
+            })
+          : text({
+              en: `API clients stay in Account Center. ${selectedIntegrationScope.label} inherits that contract, so only adapters are editable here.`,
+              zh_HANS: `API 客户端保留在账户中心管理。${selectedIntegrationScope.label} 继承该契约，因此这里只能编辑适配器。`,
+              zh_HANT: `API 用戶端保留在帳戶中心管理。${selectedIntegrationScope.label} 繼承此契約，因此這裡只能編輯適配器。`,
+              ja: `API クライアントはアカウントセンターで管理されます。${selectedIntegrationScope.label} はその契約を継承するため、ここで編集できるのはアダプターのみです。`,
+              ko: `API 클라이언트는 계정 센터에서 관리됩니다. ${selectedIntegrationScope.label}은 해당 계약을 상속하므로 여기서는 어댑터만 편집할 수 있습니다.`,
+              fr: `Les clients API restent gérés dans l’Account Center. ${selectedIntegrationScope.label} hérite de ce contrat, donc seuls les adaptateurs sont modifiables ici.`,
+            });
   const adapterConfigureItems = [
     { id: 'basics', label: text('Basics', '基础信息', '基本情報') },
     { id: 'secrets', label: text('Secrets', '密钥', 'シークレット') },
-    { id: 'webhook-api-client', label: text('Webhook/API Client', 'Webhook/API 客户端', 'Webhook/API クライアント') },
+    {
+      id: 'webhook-api-client',
+      label: text('Webhook/API Client', 'Webhook/API 客户端', 'Webhook/API クライアント'),
+    },
     { id: 'email-templates', label: text('Email Templates', '邮件模板', 'メールテンプレート') },
   ] satisfies Array<{ id: AdapterConfigureSection; label: string }>;
 
@@ -3585,7 +3898,7 @@ export function IntegrationManagementScreen({
     scope: IntegrationScopeSelection,
     depth: number,
     kindLabel: string,
-    options: { leaf?: boolean } = {},
+    options: { leaf?: boolean } = {}
   ) {
     const isActive = scopeMatches(selectedScope, scope);
 
@@ -3602,13 +3915,17 @@ export function IntegrationManagementScreen({
         }`}
         style={{ marginLeft: `${depth * 16}px` }}
       >
-        <div className="mt-1 flex h-5 w-5 flex-none items-center justify-center rounded-full border border-current/20 bg-white/70">
-          {options.leaf ? <Circle className="h-2.5 w-2.5 fill-current" /> : <ChevronRight className="h-3.5 w-3.5" />}
+        <div className="border-current/20 mt-1 flex h-5 w-5 flex-none items-center justify-center rounded-full border bg-white/70">
+          {options.leaf ? (
+            <Circle className="h-2.5 w-2.5 fill-current" />
+          ) : (
+            <ChevronRight className="h-3.5 w-3.5" />
+          )}
         </div>
         <div className="min-w-0 space-y-1">
           <div className="flex flex-wrap items-center gap-2">
             <span className="truncate text-sm font-semibold">{scope.label}</span>
-            <span className="rounded-full border border-current/10 px-2 py-0.5 text-[10px] uppercase tracking-[0.16em] text-current/70">
+            <span className="border-current/10 text-current/70 rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-[0.16em]">
               {kindLabel}
             </span>
           </div>
@@ -3618,28 +3935,24 @@ export function IntegrationManagementScreen({
     );
   }
 
-  function renderTalentScope(
-    talent: OrganizationTalent,
-    labels: string[],
-    depth: number,
-  ) {
+  function renderTalentScope(talent: OrganizationTalent, labels: string[], depth: number) {
     return renderScopeButton(
       buildScopeSelection(
         'talent',
         talent.id,
         talent.displayName,
-        [...labels, talent.displayName].join(' / '),
+        [...labels, talent.displayName].join(' / ')
       ),
       depth,
       text('Talent', '艺人', 'タレント'),
-      { leaf: true },
+      { leaf: true }
     );
   }
 
   function renderOrganizationNodes(
     nodes: OrganizationNode[],
     depth = 1,
-    lineage: string[] = [],
+    lineage: string[] = []
   ): ReactNode[] {
     return nodes.flatMap((node) => {
       const nextLineage = [...lineage, node.displayName];
@@ -3647,14 +3960,9 @@ export function IntegrationManagementScreen({
       return [
         <div key={`subsidiary:${node.id}`} className="space-y-2">
           {renderScopeButton(
-            buildScopeSelection(
-              'subsidiary',
-              node.id,
-              node.displayName,
-              nextLineage.join(' / '),
-            ),
+            buildScopeSelection('subsidiary', node.id, node.displayName, nextLineage.join(' / ')),
             depth,
-            text('Subsidiary', '分目录', '配下スコープ'),
+            text('Subsidiary', '分目录', '配下スコープ')
           )}
           {node.talents.map((talent) => (
             <div key={`talent:${talent.id}`} className="space-y-2">
@@ -3708,8 +4016,10 @@ export function IntegrationManagementScreen({
                     ? noScopeWorkspaceDescription
                     : text({
                         en: 'Manage adapter interfaces for the selected scope. Webhooks, API clients, and email settings stay on their own surfaces.',
-                        zh_HANS: '管理所选范围的适配器接口。Webhook、API 客户端与邮件设置保留在各自独立页面。',
-                        zh_HANT: '管理所選範圍的適配器介面。Webhook、API 用戶端與郵件設定保留在各自獨立頁面。',
+                        zh_HANS:
+                          '管理所选范围的适配器接口。Webhook、API 客户端与邮件设置保留在各自独立页面。',
+                        zh_HANT:
+                          '管理所選範圍的適配器介面。Webhook、API 用戶端與郵件設定保留在各自獨立頁面。',
                         ja: '選択したスコープのアダプターインターフェースを管理します。Webhook、API クライアント、メール設定は独立した画面に残します。',
                         ko: '선택한 범위의 어댑터 인터페이스를 관리합니다. 웹훅, API 클라이언트, 이메일 설정은 별도 화면에 유지합니다.',
                         fr: 'Gérez les interfaces d’adaptateur du périmètre sélectionné. Les webhooks, clients API et paramètres e-mail restent sur leurs surfaces dédiées.',
@@ -3719,8 +4029,10 @@ export function IntegrationManagementScreen({
                       ? noScopeWorkspaceDescription
                       : text({
                           en: 'Manage tenant-root webhook endpoints separately from adapter interfaces and API clients.',
-                          zh_HANS: '在独立页面管理租户根范围 Webhook 端点，与适配器接口和 API 客户端分开。',
-                          zh_HANT: '在獨立頁面管理租戶根範圍 Webhook 端點，並與適配器介面和 API 用戶端分開。',
+                          zh_HANS:
+                            '在独立页面管理租户根范围 Webhook 端点，与适配器接口和 API 客户端分开。',
+                          zh_HANT:
+                            '在獨立頁面管理租戶根範圍 Webhook 端點，並與適配器介面和 API 用戶端分開。',
                           ja: 'テナントルートの Webhook エンドポイントを、アダプターインターフェースや API クライアントから分けて管理します。',
                           ko: '테넌트 루트 웹훅 엔드포인트를 어댑터 인터페이스 및 API 클라이언트와 분리해 관리합니다.',
                           fr: 'Gérez les endpoints webhook de racine tenant séparément des interfaces d’adaptateur et des clients API.',
@@ -3735,33 +4047,33 @@ export function IntegrationManagementScreen({
                           fr: 'Gérez les clients API plateforme et le cycle de vie des clés uniquement depuis l’Account Center.',
                         })
                       : isAcWorkspace
-                  ? text({
-                      en: `Manage ${workspaceDescriptor} integrations, API clients, and email settings.`,
-                      zh_HANS: `管理${workspaceDescriptor}集成、API 客户端与邮件设置。`,
-                      zh_HANT: `管理${workspaceDescriptor}整合、API 用戶端與郵件設定。`,
-                      ja: `${workspaceDescriptor}の連携、API クライアント、メール設定を管理します。`,
-                      ko: `${workspaceDescriptor} 통합, API 클라이언트, 메일 설정을 관리합니다.`,
-                      fr: `Gérez les intégrations ${workspaceDescriptor}, les clients API et les paramètres d’e-mail.`,
-                    })
-                  : !selectedIntegrationScope
-                    ? noScopeWorkspaceDescription
-                    : isTenantRootScope
-                      ? text({
-                          en: 'Manage tenant integrations, webhooks, and email templates here.',
-                          zh_HANS: '在这里管理租户级集成、Webhook 与邮件模板。',
-                          zh_HANT: '在這裡管理租戶層級的整合、Webhook 與郵件範本。',
-                          ja: 'ここでテナントの連携、Webhook、メールテンプレートを管理します。',
-                          ko: '여기에서 테넌트 통합, 웹훅, 이메일 템플릿을 관리합니다.',
-                          fr: 'Gérez ici les intégrations du tenant, les webhooks et les modèles d’e-mail.',
-                        })
-                      : text({
-                          en: `Manage adapters for ${selectedIntegrationScope.label}.`,
-                          zh_HANS: `管理 ${selectedIntegrationScope.label} 的适配器。`,
-                          zh_HANT: `管理 ${selectedIntegrationScope.label} 的適配器。`,
-                          ja: `${selectedIntegrationScope.label} のアダプターを管理します。`,
-                          ko: `${selectedIntegrationScope.label}의 어댑터를 관리합니다.`,
-                          fr: `Gérez les adaptateurs de ${selectedIntegrationScope.label}.`,
-                        })}
+                        ? text({
+                            en: `Manage ${workspaceDescriptor} integrations, API clients, and email settings.`,
+                            zh_HANS: `管理${workspaceDescriptor}集成、API 客户端与邮件设置。`,
+                            zh_HANT: `管理${workspaceDescriptor}整合、API 用戶端與郵件設定。`,
+                            ja: `${workspaceDescriptor}の連携、API クライアント、メール設定を管理します。`,
+                            ko: `${workspaceDescriptor} 통합, API 클라이언트, 메일 설정을 관리합니다.`,
+                            fr: `Gérez les intégrations ${workspaceDescriptor}, les clients API et les paramètres d’e-mail.`,
+                          })
+                        : !selectedIntegrationScope
+                          ? noScopeWorkspaceDescription
+                          : isTenantRootScope
+                            ? text({
+                                en: 'Manage tenant integrations, webhooks, and email templates here.',
+                                zh_HANS: '在这里管理租户级集成、Webhook 与邮件模板。',
+                                zh_HANT: '在這裡管理租戶層級的整合、Webhook 與郵件範本。',
+                                ja: 'ここでテナントの連携、Webhook、メールテンプレートを管理します。',
+                                ko: '여기에서 테넌트 통합, 웹훅, 이메일 템플릿을 관리합니다.',
+                                fr: 'Gérez ici les intégrations du tenant, les webhooks et les modèles d’e-mail.',
+                              })
+                            : text({
+                                en: `Manage adapters for ${selectedIntegrationScope.label}.`,
+                                zh_HANS: `管理 ${selectedIntegrationScope.label} 的适配器。`,
+                                zh_HANT: `管理 ${selectedIntegrationScope.label} 的適配器。`,
+                                ja: `${selectedIntegrationScope.label} のアダプターを管理します。`,
+                                ko: `${selectedIntegrationScope.label}의 어댑터를 관리합니다.`,
+                                fr: `Gérez les adaptateurs de ${selectedIntegrationScope.label}.`,
+                              })}
               </p>
             </div>
           </div>
@@ -3805,14 +4117,22 @@ export function IntegrationManagementScreen({
                 <SummaryCard
                   label={text('Webhooks', 'Webhook', 'Webhook')}
                   value={String(webhookCount)}
-                  hint={text('Endpoint URLs, retry settings, and recent active-state changes.', '端点地址、重试策略与最近的启停状态。', 'エンドポイント URL、再試行設定、最近の有効状態を表示します。')}
+                  hint={text(
+                    'Endpoint URLs, retry settings, and recent active-state changes.',
+                    '端点地址、重试策略与最近的启停状态。',
+                    'エンドポイント URL、再試行設定、最近の有効状態を表示します。'
+                  )}
                 />
               ) : null}
               {surface === 'webhooks' ? (
                 <SummaryCard
                   label={text('Webhooks', 'Webhook', 'Webhook')}
                   value={String(webhookCount)}
-                  hint={text('Endpoint URLs, retry settings, and recent active-state changes.', '端点地址、重试策略与最近的启停状态。', 'エンドポイント URL、再試行設定、最近の有効状態を表示します。')}
+                  hint={text(
+                    'Endpoint URLs, retry settings, and recent active-state changes.',
+                    '端点地址、重试策略与最近的启停状态。',
+                    'エンドポイント URL、再試行設定、最近の有効状態を表示します。'
+                  )}
                 />
               ) : null}
               {surface === 'webhooks' ? (
@@ -3822,7 +4142,7 @@ export function IntegrationManagementScreen({
                   hint={text(
                     'Leave the picker empty to deliver webhook events for all active talents in the tenant.',
                     '将下方选择器留空时，Webhook 会覆盖租户内全部有效艺人。',
-                    'ピッカーを空のままにすると、Webhook はテナント内のすべての有効タレントを対象にします。',
+                    'ピッカーを空のままにすると、Webhook はテナント内のすべての有効タレントを対象にします。'
                   )}
                 />
               ) : null}
@@ -3830,13 +4150,21 @@ export function IntegrationManagementScreen({
                 <SummaryCard
                   label={text('API Clients', 'API 客户端', 'API クライアント')}
                   value={String(consumerCount)}
-                  hint={text('Platform clients and their current key status.', '平台客户端及其当前密钥状态。', 'プラットフォームクライアントと現在のキー状態です。')}
+                  hint={text(
+                    'Platform clients and their current key status.',
+                    '平台客户端及其当前密钥状态。',
+                    'プラットフォームクライアントと現在のキー状態です。'
+                  )}
                 />
               ) : surface === 'mixed' ? (
                 <SummaryCard
                   label={text('Email Templates', '邮件模板', 'メールテンプレート')}
                   value={String(emailTemplateCount)}
-                  hint={text('Notification templates and email settings available at tenant root.', '租户根范围可用的通知模板与邮件设置。', 'テナントルートで利用できる通知テンプレートとメール設定です。')}
+                  hint={text(
+                    'Notification templates and email settings available at tenant root.',
+                    '租户根范围可用的通知模板与邮件设置。',
+                    'テナントルートで利用できる通知テンプレートとメール設定です。'
+                  )}
                 />
               ) : null}
             </div>
@@ -3846,7 +4174,9 @@ export function IntegrationManagementScreen({
 
       {notice ? <NoticeBanner tone={notice.tone} message={notice.message} /> : null}
 
-      <div className={showScopeTree ? 'grid gap-6 xl:grid-cols-[320px_minmax(0,1fr)]' : 'space-y-6'}>
+      <div
+        className={showScopeTree ? 'grid gap-6 xl:grid-cols-[320px_minmax(0,1fr)]' : 'space-y-6'}
+      >
         {showScopeTree ? (
           <GlassSurface className="p-6">
             <FormSection
@@ -3878,7 +4208,7 @@ export function IntegrationManagementScreen({
                     ja: 'テナント',
                     ko: '테넌트',
                     fr: 'Tenant',
-                  }),
+                  })
                 )}
                 {organizationTreePanel.loading ? (
                   <p className="px-4 py-3 text-sm text-slate-500">
@@ -3935,2656 +4265,4184 @@ export function IntegrationManagementScreen({
         ) : null}
 
         <div className="space-y-6">
-
-      {isAcWorkspace || selectedIntegrationScope ? (
-        <>
-          <GlassSurface className="p-6">
-            <div className="space-y-3">
-              <div className="flex flex-wrap items-center gap-3">
-                {availableTabs.length > 1 ? (
-                  <SectionTabs
-                    items={availableTabs.map((tab) => ({ id: tab, label: tabLabel(tab) }))}
-                    activeId={activeTab}
-                    onChange={(nextTab) => requestTabChange(nextTab as IntegrationTab)}
-                    ariaLabel={text('Integration sections', '集成分区', '連携セクション')}
-                  />
-                ) : null}
-                <div className="ml-auto rounded-full border border-slate-200 bg-white/80 px-4 py-2 text-sm text-slate-600">
-                  {currentTabLabel}
-                </div>
-              </div>
-              {!isAcWorkspace && scopeAccessNotice ? (
-                <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-900">
-                  {scopeAccessNotice}
-                </div>
-              ) : null}
-              {surface === 'mixed' ? (
-                <div className="space-y-2" aria-label={text('Scope capability matrix', '范围能力矩阵', 'スコープ機能マトリクス')}>
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                    {text('Scope capability matrix', '范围能力矩阵', 'スコープ機能マトリクス')}
-                  </p>
-                  <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                    {integrationCapabilityItems.map((item) => (
-                      <div
-                        key={item.id}
-                        className={`rounded-2xl border px-4 py-3 ${
-                          item.available
-                            ? 'border-emerald-200 bg-emerald-50/80 text-emerald-950'
-                            : 'border-slate-200 bg-white/70 text-slate-600'
-                        }`}
-                      >
-                        <p className="text-sm font-semibold">{item.label}</p>
-                        <p className="mt-1 text-xs">{item.status}</p>
-                      </div>
-                    ))}
+          {isAcWorkspace || selectedIntegrationScope ? (
+            <>
+              <GlassSurface className="p-6">
+                <div className="space-y-3">
+                  <div className="flex flex-wrap items-center gap-3">
+                    {availableTabs.length > 1 ? (
+                      <SectionTabs
+                        items={availableTabs.map((tab) => ({ id: tab, label: tabLabel(tab) }))}
+                        activeId={activeTab}
+                        onChange={(nextTab) => requestTabChange(nextTab as IntegrationTab)}
+                        ariaLabel={text('Integration sections', '集成分区', '連携セクション')}
+                      />
+                    ) : null}
+                    <div className="ml-auto rounded-full border border-slate-200 bg-white/80 px-4 py-2 text-sm text-slate-600">
+                      {currentTabLabel}
+                    </div>
                   </div>
+                  {!isAcWorkspace && scopeAccessNotice ? (
+                    <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-900">
+                      {scopeAccessNotice}
+                    </div>
+                  ) : null}
+                  {surface === 'mixed' ? (
+                    <div
+                      className="space-y-2"
+                      aria-label={text(
+                        'Scope capability matrix',
+                        '范围能力矩阵',
+                        'スコープ機能マトリクス'
+                      )}
+                    >
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                        {text('Scope capability matrix', '范围能力矩阵', 'スコープ機能マトリクス')}
+                      </p>
+                      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                        {integrationCapabilityItems.map((item) => (
+                          <div
+                            key={item.id}
+                            className={`rounded-2xl border px-4 py-3 ${
+                              item.available
+                                ? 'border-emerald-200 bg-emerald-50/80 text-emerald-950'
+                                : 'border-slate-200 bg-white/70 text-slate-600'
+                            }`}
+                          >
+                            <p className="text-sm font-semibold">{item.label}</p>
+                            <p className="mt-1 text-xs">{item.status}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
-              ) : null}
-            </div>
-          </GlassSurface>
+              </GlassSurface>
 
-          <div className={tabTransitionClassName}>
-          {displayedTab === 'adapters' ? (
-        <>
-          <GlassSurface className="p-6">
-            <FormSection
-              title={adapterSectionTitle}
-              description={adapterSectionDescription}
-              actions={
-                <>
-                  <SecondaryButton onClick={() => void refreshAdapters()}>
-                    <RefreshCcw className="h-4 w-4" />
-                    {text({
-                      en: 'Refresh',
-                      zh_HANS: '刷新',
-                      zh_HANT: '重新整理',
-                      ja: '更新',
-                      ko: '새로고침',
-                      fr: 'Actualiser',
-                    })}
-                  </SecondaryButton>
-                  <SecondaryButton
-                    tone="primary"
-                    onClick={startAdapterCreateFlow}
-                  >
-                    <Plus className="h-4 w-4" />
-                    {text({
-                      en: 'New adapter',
-                      zh_HANS: '新建适配器',
-                      zh_HANT: '新增適配器',
-                      ja: '新しいアダプター',
-                      ko: '새 어댑터',
-                      fr: 'Nouvel adaptateur',
-                    })}
-                  </SecondaryButton>
-                </>
-              }
-            >
-              {adaptersPanel.unavailableReason ? (
-                <StateView
-                  status="unavailable"
-                  title={text('Adapters unavailable for this scope', '当前范围无法使用适配器', 'この範囲ではアダプターを利用できません')}
-                  description={adaptersPanel.unavailableReason}
-                />
-              ) : adaptersPanel.error ? (
-                <StateView status="error" title={text('Adapters unavailable', '适配器不可用', 'アダプターを利用できません')} description={adaptersPanel.error} />
-              ) : (
-                <>
-                  <TableShell
-                  ariaLabel={adapterSectionTitle}
-                  columns={[
-                    text('Platform', '平台', 'プラットフォーム'),
-                    text('Code', '代码', 'コード'),
-                    text('Type', '类型', '種別'),
-                    text('Scope', '范围', 'スコープ'),
-                    text('Configs', '配置项', '設定数'),
-                    text('Status', '状态', '状態'),
-                    text('Actions', '操作', '操作'),
-                  ]}
-                  dataLength={paginatedAdapters.items.length}
-                  isLoading={adaptersPanel.loading}
-                  isEmpty={adaptersPanel.data.length === 0}
-                  emptyTitle={text('No adapters configured', '尚未配置适配器', '設定済みアダプターはありません')}
-                  emptyDescription={text('Create the first adapter for this scope.', '为当前范围创建第一个适配器。', 'この範囲で最初のアダプターを作成してください。')}
-                >
-                  {paginatedAdapters.items.map((adapter) => (
-                    <tr key={adapter.id} className={selectedAdapterId === adapter.id ? 'bg-indigo-50/40' : undefined}>
-                      <td className="px-6 py-4">
-                        <div className="space-y-1">
-                          <p className="text-sm font-semibold text-slate-950">{adapter.platform.displayName}</p>
-                          <p className="text-xs uppercase tracking-[0.18em] text-slate-500">{adapter.platform.code}</p>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-sm font-medium text-slate-800">{adapter.code}</td>
-                      <td className="px-6 py-4">
-                        <StatusBadge tone="info" label={adapterTypeLabel(adapter.adapterType)} />
-                      </td>
-                      <td className="px-6 py-4">
-                        <StatusBadge tone={adapter.isInherited ? 'warning' : 'success'} label={resolveAdapterScopeLabel(adapter)} />
-                      </td>
-                      <td className="px-6 py-4 text-sm text-slate-700">{adapter.configCount}</td>
-                      <td className="px-6 py-4">
-                        <StatusBadge tone={adapter.isActive ? 'success' : 'danger'} label={statusLabel(adapter.isActive)} />
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex flex-wrap gap-2">
-                          <SecondaryButton
-                            onClick={() =>
-                              requestDiscardDirtyEditor(() => {
-                                setAdapterCreateMode(false);
-                                setSelectedAdapterId(adapter.id);
-                                setAdapterDrawerOpen(true);
-                                setAdapterConfigPanelOpen(false);
-                                setAdapterConfigureSection('basics');
-                              })
-                            }
-                          >
-                            {text('Open', '打开', '開く')}
-                          </SecondaryButton>
-                          <SecondaryButton
-                            onClick={() =>
-                              requestDiscardDirtyEditor(() => {
-                                setAdapterCreateMode(false);
-                                setSelectedAdapterId(adapter.id);
-                                setAdapterDrawerOpen(true);
-                                setAdapterConfigPanelOpen(true);
-                                setAdapterConfigureSection('secrets');
-                              })
-                            }
-                          >
-                            {text('Configure', '配置', '設定')}
-                          </SecondaryButton>
-                          {adapter.isActive ? (
-                            <SecondaryButton
-                              tone="danger"
-                              onClick={() =>
-                                setConfirmState({
-                                  title: text(`Deactivate ${adapter.code}?`, `停用 ${adapter.code}？`, `${adapter.code} を無効化しますか？`),
-                                  description: text('The adapter record stays available until you activate it again.', '适配器记录会保留，直到你再次启用它。', 'アダプターレコードは再度有効化するまで保持されます。'),
-                                  confirmText: text('Deactivate adapter', '停用适配器', 'アダプターを無効化'),
-                                  pendingText: text('Deactivating adapter...', '正在停用适配器...', 'アダプターを無効化しています...'),
-                                  intent: 'danger',
-                                  errorFallback: text('Failed to deactivate adapter.', '停用适配器失败。', 'アダプターの無効化に失敗しました。'),
-                                  onConfirm: async () => {
-                                    if (
-                                      adapter.isInherited
-                                      && selectedIntegrationScope
-                                      && isScopedAdapterScope(selectedIntegrationScope)
-                                    ) {
-                                      await disableInheritedScopedAdapter(request, selectedIntegrationScope, adapter.id);
-                                    } else {
-                                      await deactivateTenantAdapter(request, adapter.id);
-                                    }
-                                    await refreshAdapters(adapter.id);
-                                    if (selectedAdapterId === adapter.id) {
-                                      setSelectedAdapterId(adapter.id);
-                                    }
-                                    return text(
-                                      `${adapter.code} adapter deactivated.`,
-                                      `已停用适配器 ${adapter.code}。`,
-                                      `アダプター ${adapter.code} を無効化しました。`,
-                                    );
-                                  },
-                                })
-                              }
-                            >
-                              <Unplug className="h-4 w-4" />
-                              {text('Deactivate', '停用', '無効化')}
+              <div className={tabTransitionClassName}>
+                {displayedTab === 'adapters' ? (
+                  <>
+                    <GlassSurface className="p-6">
+                      <FormSection
+                        title={adapterSectionTitle}
+                        description={adapterSectionDescription}
+                        actions={
+                          <>
+                            <SecondaryButton onClick={() => void refreshAdapters()}>
+                              <RefreshCcw className="h-4 w-4" />
+                              {text({
+                                en: 'Refresh',
+                                zh_HANS: '刷新',
+                                zh_HANT: '重新整理',
+                                ja: '更新',
+                                ko: '새로고침',
+                                fr: 'Actualiser',
+                              })}
                             </SecondaryButton>
+                            <SecondaryButton tone="primary" onClick={startAdapterCreateFlow}>
+                              <Plus className="h-4 w-4" />
+                              {text({
+                                en: 'New adapter',
+                                zh_HANS: '新建适配器',
+                                zh_HANT: '新增適配器',
+                                ja: '新しいアダプター',
+                                ko: '새 어댑터',
+                                fr: 'Nouvel adaptateur',
+                              })}
+                            </SecondaryButton>
+                          </>
+                        }
+                      >
+                        {adaptersPanel.unavailableReason ? (
+                          <StateView
+                            status="unavailable"
+                            title={text(
+                              'Adapters unavailable for this scope',
+                              '当前范围无法使用适配器',
+                              'この範囲ではアダプターを利用できません'
+                            )}
+                            description={adaptersPanel.unavailableReason}
+                          />
+                        ) : adaptersPanel.error ? (
+                          <StateView
+                            status="error"
+                            title={text(
+                              'Adapters unavailable',
+                              '适配器不可用',
+                              'アダプターを利用できません'
+                            )}
+                            description={adaptersPanel.error}
+                          />
+                        ) : (
+                          <>
+                            <TableShell
+                              ariaLabel={adapterSectionTitle}
+                              columns={[
+                                text('Platform', '平台', 'プラットフォーム'),
+                                text('Code', '代码', 'コード'),
+                                text('Type', '类型', '種別'),
+                                text('Scope', '范围', 'スコープ'),
+                                text('Configs', '配置项', '設定数'),
+                                text('Status', '状态', '状態'),
+                                text('Actions', '操作', '操作'),
+                              ]}
+                              dataLength={paginatedAdapters.items.length}
+                              isLoading={adaptersPanel.loading}
+                              isEmpty={adaptersPanel.data.length === 0}
+                              emptyTitle={text(
+                                'No adapters configured',
+                                '尚未配置适配器',
+                                '設定済みアダプターはありません'
+                              )}
+                              emptyDescription={text(
+                                'Create the first adapter for this scope.',
+                                '为当前范围创建第一个适配器。',
+                                'この範囲で最初のアダプターを作成してください。'
+                              )}
+                            >
+                              {paginatedAdapters.items.map((adapter) => (
+                                <tr
+                                  key={adapter.id}
+                                  className={
+                                    selectedAdapterId === adapter.id ? 'bg-indigo-50/40' : undefined
+                                  }
+                                >
+                                  <td className="px-6 py-4">
+                                    <div className="space-y-1">
+                                      <p className="text-sm font-semibold text-slate-950">
+                                        {adapter.platform.displayName}
+                                      </p>
+                                      <p className="text-xs uppercase tracking-[0.18em] text-slate-500">
+                                        {adapter.platform.code}
+                                      </p>
+                                    </div>
+                                  </td>
+                                  <td className="px-6 py-4 text-sm font-medium text-slate-800">
+                                    {adapter.code}
+                                  </td>
+                                  <td className="px-6 py-4">
+                                    <StatusBadge
+                                      tone="info"
+                                      label={adapterTypeLabel(adapter.adapterType)}
+                                    />
+                                  </td>
+                                  <td className="px-6 py-4">
+                                    <StatusBadge
+                                      tone={adapter.isInherited ? 'warning' : 'success'}
+                                      label={resolveAdapterScopeLabel(adapter)}
+                                    />
+                                  </td>
+                                  <td className="px-6 py-4 text-sm text-slate-700">
+                                    {adapter.configCount}
+                                  </td>
+                                  <td className="px-6 py-4">
+                                    <StatusBadge
+                                      tone={adapter.isActive ? 'success' : 'danger'}
+                                      label={statusLabel(adapter.isActive)}
+                                    />
+                                  </td>
+                                  <td className="px-6 py-4">
+                                    <div className="flex flex-wrap gap-2">
+                                      <SecondaryButton
+                                        onClick={() =>
+                                          requestDiscardDirtyEditor(() => {
+                                            setAdapterCreateMode(false);
+                                            setSelectedAdapterId(adapter.id);
+                                            setAdapterDrawerOpen(true);
+                                            setAdapterConfigPanelOpen(false);
+                                            setAdapterConfigureSection('basics');
+                                          })
+                                        }
+                                      >
+                                        {text('Open', '打开', '開く')}
+                                      </SecondaryButton>
+                                      <SecondaryButton
+                                        onClick={() =>
+                                          requestDiscardDirtyEditor(() => {
+                                            setAdapterCreateMode(false);
+                                            setSelectedAdapterId(adapter.id);
+                                            setAdapterDrawerOpen(true);
+                                            setAdapterConfigPanelOpen(true);
+                                            setAdapterConfigureSection('secrets');
+                                          })
+                                        }
+                                      >
+                                        {text('Configure', '配置', '設定')}
+                                      </SecondaryButton>
+                                      {adapter.isActive ? (
+                                        <SecondaryButton
+                                          tone="danger"
+                                          onClick={() =>
+                                            setConfirmState({
+                                              title: text(
+                                                `Deactivate ${adapter.code}?`,
+                                                `停用 ${adapter.code}？`,
+                                                `${adapter.code} を無効化しますか？`
+                                              ),
+                                              description: text(
+                                                'The adapter record stays available until you activate it again.',
+                                                '适配器记录会保留，直到你再次启用它。',
+                                                'アダプターレコードは再度有効化するまで保持されます。'
+                                              ),
+                                              confirmText: text(
+                                                'Deactivate adapter',
+                                                '停用适配器',
+                                                'アダプターを無効化'
+                                              ),
+                                              pendingText: text(
+                                                'Deactivating adapter...',
+                                                '正在停用适配器...',
+                                                'アダプターを無効化しています...'
+                                              ),
+                                              intent: 'danger',
+                                              errorFallback: text(
+                                                'Failed to deactivate adapter.',
+                                                '停用适配器失败。',
+                                                'アダプターの無効化に失敗しました。'
+                                              ),
+                                              onConfirm: async () => {
+                                                if (
+                                                  adapter.isInherited &&
+                                                  selectedIntegrationScope &&
+                                                  isScopedAdapterScope(selectedIntegrationScope)
+                                                ) {
+                                                  await disableInheritedScopedAdapter(
+                                                    request,
+                                                    selectedIntegrationScope,
+                                                    adapter.id
+                                                  );
+                                                } else {
+                                                  await deactivateTenantAdapter(
+                                                    request,
+                                                    adapter.id
+                                                  );
+                                                }
+                                                await refreshAdapters(adapter.id);
+                                                if (selectedAdapterId === adapter.id) {
+                                                  setSelectedAdapterId(adapter.id);
+                                                }
+                                                return text(
+                                                  `${adapter.code} adapter deactivated.`,
+                                                  `已停用适配器 ${adapter.code}。`,
+                                                  `アダプター ${adapter.code} を無効化しました。`
+                                                );
+                                              },
+                                            })
+                                          }
+                                        >
+                                          <Unplug className="h-4 w-4" />
+                                          {text('Deactivate', '停用', '無効化')}
+                                        </SecondaryButton>
+                                      ) : (
+                                        <SecondaryButton
+                                          tone="primary"
+                                          onClick={() =>
+                                            setConfirmState({
+                                              title: text(
+                                                `Reactivate ${adapter.code}?`,
+                                                `重新启用 ${adapter.code}？`,
+                                                `${adapter.code} を再有効化しますか？`
+                                              ),
+                                              description: text(
+                                                'The adapter becomes available for use again.',
+                                                '适配器将重新可用。',
+                                                'アダプターを再び利用できるようにします。'
+                                              ),
+                                              confirmText: text(
+                                                'Reactivate adapter',
+                                                '重新启用适配器',
+                                                'アダプターを再有効化'
+                                              ),
+                                              pendingText: text(
+                                                'Reactivating adapter...',
+                                                '正在重新启用适配器...',
+                                                'アダプターを再有効化しています...'
+                                              ),
+                                              intent: 'primary',
+                                              errorFallback: text(
+                                                'Failed to reactivate adapter.',
+                                                '重新启用适配器失败。',
+                                                'アダプターの再有効化に失敗しました。'
+                                              ),
+                                              onConfirm: async () => {
+                                                if (
+                                                  adapter.isInherited &&
+                                                  selectedIntegrationScope &&
+                                                  isScopedAdapterScope(selectedIntegrationScope)
+                                                ) {
+                                                  await enableInheritedScopedAdapter(
+                                                    request,
+                                                    selectedIntegrationScope,
+                                                    adapter.id
+                                                  );
+                                                } else {
+                                                  await reactivateTenantAdapter(
+                                                    request,
+                                                    adapter.id
+                                                  );
+                                                }
+                                                await refreshAdapters(adapter.id);
+                                                return text(
+                                                  `${adapter.code} adapter reactivated.`,
+                                                  `已重新启用适配器 ${adapter.code}。`,
+                                                  `アダプター ${adapter.code} を再有効化しました。`
+                                                );
+                                              },
+                                            })
+                                          }
+                                        >
+                                          <RotateCcw className="h-4 w-4" />
+                                          {text('Reactivate', '重新启用', '再有効化')}
+                                        </SecondaryButton>
+                                      )}
+                                    </div>
+                                  </td>
+                                </tr>
+                              ))}
+                            </TableShell>
+                            {adaptersPanel.data.length > 0 ? (
+                              <PaginationFooter
+                                pagination={paginatedAdapters.pagination}
+                                itemCount={paginatedAdapters.items.length}
+                                labels={buildPaginationFooterLabels(
+                                  locale,
+                                  paginatedAdapters.pagination,
+                                  paginatedAdapters.items.length
+                                )}
+                                onPageChange={(page) =>
+                                  applyPaginationQueryState({ adapterPage: page })
+                                }
+                                onPageSizeChange={(pageSize) => {
+                                  applyPaginationQueryState({
+                                    adapterPage: 1,
+                                    adapterPageSize: pageSize as PageSizeOption,
+                                  });
+                                }}
+                                isLoading={adaptersPanel.loading}
+                                className="mt-4 rounded-2xl border border-slate-200 bg-slate-50/80"
+                              />
+                            ) : null}
+                          </>
+                        )}
+                      </FormSection>
+                    </GlassSurface>
+
+                    <ActionDrawer
+                      open={adapterDrawerOpen}
+                      onOpenChange={(open) => requestDrawerOpenChange(setAdapterDrawerOpen, open)}
+                      title={text('Configure Adapter', '配置适配器', 'アダプター設定')}
+                      description={text({
+                        en: 'Edit profile, translations, secrets, and related adapter configuration.',
+                        zh_HANS: '编辑资料、翻译、密钥与相关适配器配置。',
+                        zh_HANT: '編輯資料、翻譯、密鑰與相關適配器設定。',
+                        ja: 'プロファイル、翻訳、シークレット、関連するアダプター設定を編集します。',
+                        ko: '프로필, 번역, 시크릿 및 관련 어댑터 설정을 편집합니다.',
+                        fr: 'Modifiez le profil, les traductions, les secrets et la configuration associée.',
+                      })}
+                      size="xl"
+                      closeButtonAriaLabel={text({
+                        en: 'Close adapter configure drawer',
+                        zh_HANS: '关闭适配器配置抽屉',
+                        zh_HANT: '關閉適配器設定抽屜',
+                        ja: 'アダプター設定ドロワーを閉じる',
+                        ko: '어댑터 설정 서랍 닫기',
+                        fr: 'Fermer le panneau de configuration de l’adaptateur',
+                      })}
+                    >
+                      <div className="space-y-4 border-b border-slate-200/50 pb-6">
+                        <div className="space-y-1.5">
+                          <h3 className="text-lg font-bold text-slate-950">
+                            {text('Configure Adapter', '配置适配器', 'アダプター設定')}
+                          </h3>
+                          <p className="text-sm leading-6 text-slate-600">
+                            {text({
+                              en: 'Use sections to keep adapter basics, secrets, related inbound surfaces, and email templates separated.',
+                              zh_HANS: '通过分区拆开适配器基础信息、密钥、相关入站能力与邮件模板。',
+                              zh_HANT: '透過分區拆開適配器基本資訊、密鑰、相關入站能力與郵件範本。',
+                              ja: 'セクションを使って、アダプター基本情報、シークレット、関連する受信面、メールテンプレートを分けて扱います。',
+                              ko: '섹션으로 어댑터 기본 정보, 시크릿, 관련 인바운드 영역, 이메일 템플릿을 나눕니다.',
+                              fr: 'Utilisez les sections pour séparer les informations adaptateur, les secrets, les surfaces entrantes liées et les modèles e-mail.',
+                            })}
+                          </p>
+                        </div>
+                        <SectionTabs
+                          items={adapterConfigureItems}
+                          activeId={adapterConfigureSection}
+                          onChange={(nextSection) =>
+                            setAdapterConfigureSectionRequest(
+                              nextSection as AdapterConfigureSection
+                            )
+                          }
+                          ariaLabel={text(
+                            'Adapter configure sections',
+                            '适配器配置分区',
+                            'アダプター設定セクション'
+                          )}
+                        />
+                      </div>
+
+                      {adapterConfigureSection === 'basics' ? (
+                        <FormSection
+                          title={
+                            adapterCreateMode
+                              ? text('New Adapter', '新建适配器', '新しいアダプター')
+                              : text('Adapter Profile', '适配器资料', 'アダプタープロファイル')
+                          }
+                          description={
+                            adapterCreateMode
+                              ? text(
+                                  'Choose a supported developer-provided adapter definition, then fill only that definition-specific configuration.',
+                                  '选择开发者提供并支持的适配器定义，然后只填写该定义需要的配置。',
+                                  '開発者提供のサポート済みアダプター定義を選び、その定義固有の設定だけを入力します。'
+                                )
+                              : text(
+                                  'Adapter metadata stays editable while secret config values remain masked until explicitly revealed.',
+                                  '适配器元数据可随时编辑，密钥配置在显式显示前会保持遮罩。',
+                                  'アダプターのメタデータは編集でき、シークレット設定値は明示表示するまでマスクされたままです。'
+                                )
+                          }
+                          actions={
+                            <>
+                              {!adapterCreateMode ? (
+                                <SecondaryButton onClick={startAdapterCreateFlow}>
+                                  {text('Start new', '新建', '新規作成')}
+                                </SecondaryButton>
+                              ) : (
+                                <SecondaryButton
+                                  onClick={() =>
+                                    requestDiscardDirtyEditor(() => {
+                                      setAdapterCreateMode(false);
+                                      setAdapterConfigPanelOpen(false);
+                                      setAdapterConfigureSection('basics');
+                                      setSelectedAdapterId(adaptersPanel.data[0]?.id || null);
+                                      setAdapterDrawerOpen(false);
+                                    })
+                                  }
+                                >
+                                  {text('Cancel', '取消', 'キャンセル')}
+                                </SecondaryButton>
+                              )}
+                              <AsyncSubmitButton
+                                onClick={() => void handleAdapterSave()}
+                                isPending={adapterSubmitting}
+                                disabled={adapterCreateMode && !selectedAdapterDefinition}
+                                pendingText={
+                                  adapterCreateMode
+                                    ? text(
+                                        'Creating adapter...',
+                                        '正在创建适配器...',
+                                        'アダプターを作成しています...'
+                                      )
+                                    : text(
+                                        'Saving adapter...',
+                                        '正在保存适配器...',
+                                        'アダプターを保存しています...'
+                                      )
+                                }
+                              >
+                                {adapterCreateMode
+                                  ? text('Create adapter', '创建适配器', 'アダプターを作成')
+                                  : text('Save adapter', '保存适配器', 'アダプターを保存')}
+                              </AsyncSubmitButton>
+                            </>
+                          }
+                        >
+                          {adapterDetailPanel.unavailableReason ? (
+                            <StateView
+                              status="unavailable"
+                              title={text(
+                                'Adapter detail unavailable for this scope',
+                                '当前范围无法查看适配器详情',
+                                'この範囲ではアダプター詳細を表示できません'
+                              )}
+                              description={adapterDetailPanel.unavailableReason}
+                            />
+                          ) : adapterDetailPanel.error ? (
+                            <StateView
+                              status="error"
+                              title={text(
+                                'Adapter detail unavailable',
+                                '适配器详情不可用',
+                                'アダプター詳細を表示できません'
+                              )}
+                              description={adapterDetailPanel.error}
+                            />
+                          ) : adapterDetailPanel.loading ? (
+                            <p className="text-sm text-slate-500">
+                              {text(
+                                'Loading adapter detail…',
+                                '正在加载适配器详情…',
+                                'アダプター詳細を読み込んでいます…'
+                              )}
+                            </p>
+                          ) : adapterCreateMode || adapterDetailPanel.data ? (
+                            <>
+                              <div className="grid gap-4 lg:grid-cols-2">
+                                {adapterCreateMode ? (
+                                  <>
+                                    <SelectField
+                                      label={text(
+                                        'Supported adapter',
+                                        '支持的适配器',
+                                        'サポート済みアダプター'
+                                      )}
+                                      value={adapterDraft.definitionKey}
+                                      onChange={(value) => {
+                                        const definition =
+                                          adapterDefinitionsPanel.data.find(
+                                            (item) => item.key === value
+                                          ) ?? null;
+                                        setAdapterEditorState(
+                                          buildAdapterDraft(undefined, definition),
+                                          buildAdapterConfigRows(undefined, definition)
+                                        );
+                                      }}
+                                      disabled={adapterDefinitionsPanel.loading}
+                                      options={[
+                                        {
+                                          value: '',
+                                          label: text(
+                                            'Choose a supported adapter',
+                                            '选择支持的适配器',
+                                            'サポート済みアダプターを選択'
+                                          ),
+                                        },
+                                        ...adapterDefinitionsPanel.data.map((definition) => ({
+                                          value: definition.key,
+                                          label: `${pickAdapterDefinitionText(definition.name, definition.code)} (${definition.code})`,
+                                        })),
+                                      ]}
+                                    />
+                                    {selectedAdapterDefinition ? (
+                                      <div className="space-y-3 rounded-2xl border border-indigo-100 bg-indigo-50/70 p-4 lg:col-span-2">
+                                        <div className="flex flex-wrap items-center gap-2">
+                                          <StatusBadge
+                                            tone="info"
+                                            label={adapterTypeLabel(
+                                              selectedAdapterDefinition.adapterType
+                                            )}
+                                          />
+                                          {selectedAdapterDefinition.aiProvider ? (
+                                            <StatusBadge
+                                              tone="warning"
+                                              label={selectedAdapterDefinition.aiProvider}
+                                            />
+                                          ) : null}
+                                          <StatusBadge
+                                            tone="neutral"
+                                            label={selectedAdapterDefinition.protocol.family}
+                                          />
+                                        </div>
+                                        <div>
+                                          <p className="text-sm font-semibold text-slate-950">
+                                            {pickAdapterDefinitionText(
+                                              selectedAdapterDefinition.name,
+                                              selectedAdapterDefinition.code
+                                            )}
+                                          </p>
+                                          <p className="mt-1 text-sm leading-6 text-slate-600">
+                                            {pickAdapterDefinitionText(
+                                              selectedAdapterDefinition.description
+                                            )}
+                                          </p>
+                                        </div>
+                                        <p className="text-xs leading-5 text-slate-500">
+                                          {pickAdapterDefinitionText(
+                                            selectedAdapterDefinition.protocol.notes
+                                          )}
+                                        </p>
+                                      </div>
+                                    ) : (
+                                      <StateView
+                                        status={adapterDefinitionsPanel.error ? 'error' : 'empty'}
+                                        title={
+                                          adapterDefinitionsPanel.error
+                                            ? text(
+                                                'Adapter definitions unavailable',
+                                                '适配器定义不可用',
+                                                'アダプター定義を表示できません'
+                                              )
+                                            : text(
+                                                'Choose a supported adapter',
+                                                '选择支持的适配器',
+                                                'サポート済みアダプターを選択'
+                                              )
+                                        }
+                                        description={
+                                          adapterDefinitionsPanel.error ??
+                                          text(
+                                            'The create flow is driven by developer-provided adapter definitions. Free platform/type creation is not available here.',
+                                            '新增流程由开发者提供的适配器定义驱动，这里不提供自由平台/类型创建。',
+                                            '作成フローは開発者提供のアダプター定義で決まります。自由なプラットフォーム/種別作成はここでは利用できません。'
+                                          )
+                                        }
+                                      />
+                                    )}
+                                  </>
+                                ) : (
+                                  <>
+                                    <TextField
+                                      label={text('Adapter code', '适配器代码', 'アダプターコード')}
+                                      value={adapterDraft.code}
+                                      onChange={(value) =>
+                                        setAdapterDraft((current) => ({
+                                          ...current,
+                                          code: value.toUpperCase(),
+                                        }))
+                                      }
+                                      disabled
+                                      placeholder={text(
+                                        'BILIBILI_EXPORT',
+                                        'BILIBILI_EXPORT',
+                                        'BILIBILI_EXPORT'
+                                      )}
+                                    />
+                                    <TextField
+                                      label={text('Base name', '基准名称', '基準名')}
+                                      value={adapterDraft.nameBase}
+                                      onChange={(value) =>
+                                        setAdapterDraft((current) => ({
+                                          ...current,
+                                          nameBase: value,
+                                        }))
+                                      }
+                                    />
+                                    <div className="space-y-2">
+                                      <span className="text-sm font-medium text-slate-700">
+                                        {text('Translations', '翻译', '翻訳')}
+                                      </span>
+                                      <button
+                                        type="button"
+                                        onClick={() => setAdapterTranslationDrawerOpen(true)}
+                                        className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 shadow-sm transition hover:border-slate-300 hover:text-slate-900"
+                                      >
+                                        <Languages className="h-4 w-4" />
+                                        {configuredAdapterTranslationCount > 0
+                                          ? text(
+                                              `Translation management (${configuredAdapterTranslationCount})`,
+                                              `翻译管理（${configuredAdapterTranslationCount}）`,
+                                              `翻訳管理（${configuredAdapterTranslationCount}）`
+                                            )
+                                          : text('Translation management', '翻译管理', '翻訳管理')}
+                                      </button>
+                                      {consumerTranslationOptionsState.error ? (
+                                        <p className="text-xs text-amber-700">
+                                          {consumerTranslationOptionsState.error}
+                                        </p>
+                                      ) : null}
+                                    </div>
+                                    <div className="rounded-2xl border border-slate-200 bg-white/80 p-4">
+                                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                                        {text('Platform', '平台', 'プラットフォーム')}
+                                      </p>
+                                      <p className="mt-2 text-sm font-semibold text-slate-950">
+                                        {adapterDetailPanel.data?.platform.displayName ??
+                                          adapterDraft.platformId}
+                                      </p>
+                                    </div>
+                                    <div className="rounded-2xl border border-slate-200 bg-white/80 p-4">
+                                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                                        {text('Definition / type', '定义 / 类型', '定義 / 種別')}
+                                      </p>
+                                      <div className="mt-2 flex flex-wrap gap-2">
+                                        {adapterDetailPanel.data?.definitionKey ? (
+                                          <StatusBadge
+                                            tone="info"
+                                            label={adapterDetailPanel.data.definitionKey}
+                                          />
+                                        ) : (
+                                          <StatusBadge
+                                            tone="neutral"
+                                            label={text(
+                                              'Legacy adapter',
+                                              '旧式适配器',
+                                              'レガシーアダプター'
+                                            )}
+                                          />
+                                        )}
+                                        <StatusBadge
+                                          tone="neutral"
+                                          label={adapterTypeLabel(adapterDraft.adapterType)}
+                                        />
+                                      </div>
+                                    </div>
+                                  </>
+                                )}
+                              </div>
+                              <CheckboxField
+                                label={text(
+                                  'Allow inherited fallback behavior',
+                                  '允许继承回退行为',
+                                  '継承フォールバックを許可'
+                                )}
+                                checked={adapterDraft.inherit}
+                                onChange={(checked) =>
+                                  setAdapterDraft((current) => ({ ...current, inherit: checked }))
+                                }
+                              />
+                              {!adapterCreateMode && adapterDetailPanel.data ? (
+                                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                                  <SummaryCard
+                                    label={text('Created', '创建时间', '作成日時')}
+                                    value={formatDateTime(
+                                      adapterDetailPanel.data.createdAt,
+                                      text('Unknown', '未知', '不明')
+                                    )}
+                                    hint={text(
+                                      'Original creation timestamp.',
+                                      '首次创建时间。',
+                                      '初回作成日時です。'
+                                    )}
+                                  />
+                                  <SummaryCard
+                                    label={text('Updated', '更新时间', '更新日時')}
+                                    value={formatDateTime(
+                                      adapterDetailPanel.data.updatedAt,
+                                      text('Unknown', '未知', '不明')
+                                    )}
+                                    hint={text(
+                                      'Most recent config or metadata write.',
+                                      '最近一次配置或元数据写入时间。',
+                                      '直近の設定またはメタデータ更新日時です。'
+                                    )}
+                                  />
+                                  <SummaryCard
+                                    label={text('Version', '版本', 'バージョン')}
+                                    value={String(adapterDetailPanel.data.version)}
+                                    hint={text(
+                                      'Current configuration version.',
+                                      '当前配置版本。',
+                                      '現在の設定バージョンです。'
+                                    )}
+                                  />
+                                  <SummaryCard
+                                    label={text('State', '状态', '状態')}
+                                    value={statusLabel(adapterDetailPanel.data.isActive)}
+                                    hint={text(
+                                      'Current active state.',
+                                      '当前启停状态。',
+                                      '現在の有効状態です。'
+                                    )}
+                                  />
+                                </div>
+                              ) : null}
+                            </>
                           ) : (
+                            <StateView
+                              status="empty"
+                              title={text(
+                                'Select an adapter',
+                                '选择一个适配器',
+                                'アダプターを選択'
+                              )}
+                              description={text(
+                                'Pick an adapter from the table or create a new tenant-owned adapter to begin.',
+                                '从表格中选择一个适配器，或先创建新的租户适配器。',
+                                '表からアダプターを選択するか、新しいテナントアダプターを作成してください。'
+                              )}
+                            />
+                          )}
+                        </FormSection>
+                      ) : null}
+
+                      {adapterConfigureSection === 'secrets' ? (
+                        <FormSection
+                          title={text(
+                            'Configuration & secrets',
+                            '配置与密钥',
+                            '設定とシークレット'
+                          )}
+                          description={
+                            shouldShowAdapterConfigEditor
+                              ? text({
+                                  en: 'Add or update config rows here. Masked secrets are kept when untouched; type a replacement to rotate, reveal only when you must inspect the current value, or explicitly clear optional secrets.',
+                                  zh_HANS:
+                                    '可在这里新增或更新配置行。已遮罩密钥在未触碰时会保持不变；输入替换值即可轮换，仅在必须查看当前值时才显示，也可显式清空可选密钥。',
+                                  zh_HANT:
+                                    '可在這裡新增或更新設定列。已遮罩密鑰在未觸碰時會保持不變；輸入替換值即可輪換，只有必須查看目前值時才顯示，也可明確清除可選密鑰。',
+                                  ja: 'ここで設定行を追加・更新できます。マスク済みシークレットは未変更なら保持されます。ローテーションする場合は置換値を入力し、現在値の確認が必要な場合だけ表示し、任意シークレットは明示的に消去できます。',
+                                  ko: '여기에서 설정 행을 추가하거나 업데이트합니다. 마스킹된 시크릿은 건드리지 않으면 유지됩니다. 교체하려면 새 값을 입력하고, 현재 값을 확인해야 할 때만 표시하거나 선택 시크릿을 명시적으로 삭제하세요.',
+                                  fr: 'Ajoutez ou modifiez les lignes de configuration ici. Les secrets masqués sont conservés s’ils ne sont pas modifiés ; saisissez une valeur de remplacement pour les renouveler, révélez-les seulement si nécessaire, ou supprimez explicitement les secrets facultatifs.',
+                                })
+                              : text({
+                                  en: 'Config values and masked secrets stay collapsed until you explicitly configure the selected adapter; untouched masked secrets are preserved.',
+                                  zh_HANS:
+                                    '配置值与已遮罩密钥默认收起，只有显式配置所选适配器时才展开；未触碰的遮罩密钥会被保留。',
+                                  zh_HANT:
+                                    '設定值與已遮罩密鑰預設收起，只有明確設定所選適配器時才展開；未觸碰的遮罩密鑰會被保留。',
+                                  ja: '設定値とマスク済みシークレットは、選択中のアダプターを明示的に設定するまで折りたたまれます。未変更のマスク済みシークレットは保持されます。',
+                                  ko: '설정 값과 마스킹된 시크릿은 선택한 어댑터를 명시적으로 설정할 때까지 접혀 있으며, 건드리지 않은 마스킹 시크릿은 유지됩니다.',
+                                  fr: 'Les valeurs de configuration et les secrets masqués restent repliés jusqu’à configuration explicite de l’adaptateur sélectionné ; les secrets masqués non modifiés sont conservés.',
+                                })
+                          }
+                          actions={
+                            shouldShowAdapterConfigEditor && adapterCreateMode ? (
+                              <AsyncSubmitButton
+                                onClick={() => void handleAdapterSave()}
+                                isPending={adapterSubmitting}
+                                disabled={!selectedAdapterDefinition}
+                                pendingText={text(
+                                  'Creating adapter...',
+                                  '正在创建适配器...',
+                                  'アダプターを作成しています...'
+                                )}
+                              >
+                                {text('Create adapter', '创建适配器', 'アダプターを作成')}
+                              </AsyncSubmitButton>
+                            ) : shouldShowAdapterConfigEditor ? (
+                              <>
+                                <SecondaryButton
+                                  onClick={() =>
+                                    requestDiscardDirtyEditor(() => {
+                                      setAdapterConfigPanelOpen(false);
+                                      setAdapterConfigureSection('basics');
+                                      setAdapterDrawerOpen(false);
+                                    })
+                                  }
+                                >
+                                  {text('Done configuring', '完成配置', '設定を完了')}
+                                </SecondaryButton>
+                                <AsyncSubmitButton
+                                  onClick={() => void handleAdapterConfigSave()}
+                                  isPending={adapterConfigSubmitting}
+                                  pendingText={text(
+                                    'Saving configs...',
+                                    '正在保存配置...',
+                                    '設定を保存しています...'
+                                  )}
+                                >
+                                  {text('Save config changes', '保存配置更改', '設定変更を保存')}
+                                </AsyncSubmitButton>
+                              </>
+                            ) : adapterDetailPanel.data ? (
+                              <SecondaryButton
+                                tone="primary"
+                                onClick={() => {
+                                  setAdapterDrawerOpen(true);
+                                  setAdapterConfigPanelOpen(true);
+                                  setAdapterConfigureSection('secrets');
+                                }}
+                              >
+                                {text('Configure', '配置', '設定')}
+                              </SecondaryButton>
+                            ) : undefined
+                          }
+                        >
+                          {adapterCreateMode && !selectedAdapterDefinition ? (
+                            <StateView
+                              status="empty"
+                              title={text(
+                                'Choose an adapter definition first',
+                                '请先选择适配器定义',
+                                '先にアダプター定義を選択'
+                              )}
+                              description={text(
+                                'Definition-specific configuration fields appear after you choose a supported adapter. Free-form config rows are not part of the primary create flow.',
+                                '选择支持的适配器后会显示该定义专属配置字段。主创建流程不提供自由配置行。',
+                                'サポート済みアダプターを選ぶと定義固有の設定項目が表示されます。主要な作成フローに自由入力の設定行はありません。'
+                              )}
+                            />
+                          ) : shouldShowAdapterConfigEditor ? (
+                            <div className="space-y-4">
+                              {adapterConfigRows.map((row, index) =>
+                                (() => {
+                                  const requiredSecret =
+                                    row.isSecret &&
+                                    isRequiredSecretConfig(adapterDraft.adapterType, row.configKey);
+                                  const canClearSecret =
+                                    !adapterCreateMode &&
+                                    row.isSecret &&
+                                    !row.isNew &&
+                                    !requiredSecret;
+                                  const configField = selectedAdapterDefinitionConfigFields.get(
+                                    row.configKey
+                                  );
+                                  const configLabel = configField
+                                    ? pickAdapterDefinitionText(configField.label, row.configKey)
+                                    : text(
+                                        `Config key ${index + 1}`,
+                                        `配置键 ${index + 1}`,
+                                        `設定キー ${index + 1}`
+                                      );
+                                  const configDescription = configField?.description
+                                    ? pickAdapterDefinitionText(configField.description)
+                                    : null;
+
+                                  return (
+                                    <div
+                                      key={row.rowKey}
+                                      className="grid gap-4 rounded-2xl border border-slate-200 bg-white/70 p-4 lg:grid-cols-[1fr_1fr_auto]"
+                                    >
+                                      <TextField
+                                        label={
+                                          configField
+                                            ? text('Config key', '配置键', '設定キー')
+                                            : configLabel
+                                        }
+                                        value={row.configKey}
+                                        onChange={(value) =>
+                                          setAdapterConfigRows((current) =>
+                                            current.map((item) =>
+                                              item.rowKey === row.rowKey
+                                                ? {
+                                                    ...item,
+                                                    configKey: value,
+                                                    isSecret: /secret|token|password|key/i.test(
+                                                      value
+                                                    ),
+                                                    clearRequested: false,
+                                                  }
+                                                : item
+                                            )
+                                          )
+                                        }
+                                        disabled={row.locked || !row.isNew}
+                                        placeholder={text(
+                                          'client_secret',
+                                          'client_secret',
+                                          'client_secret'
+                                        )}
+                                      />
+                                      <div className="space-y-2">
+                                        {configField?.input === 'select' &&
+                                        configField.options?.length ? (
+                                          <SelectField
+                                            label={
+                                              configField.required
+                                                ? `${configLabel} *`
+                                                : configLabel
+                                            }
+                                            value={row.configValue}
+                                            onChange={(value) =>
+                                              setAdapterConfigRows((current) =>
+                                                current.map((item) =>
+                                                  item.rowKey === row.rowKey
+                                                    ? {
+                                                        ...item,
+                                                        configValue: value,
+                                                        isMasked: false,
+                                                        valueEdited: true,
+                                                        clearRequested: false,
+                                                      }
+                                                    : item
+                                                )
+                                              )
+                                            }
+                                            options={configField.options.map((option) => ({
+                                              value: option.value,
+                                              label: pickAdapterDefinitionText(
+                                                option.label,
+                                                option.value
+                                              ),
+                                            }))}
+                                          />
+                                        ) : (
+                                          <TextField
+                                            label={
+                                              configField?.required
+                                                ? `${configLabel} *`
+                                                : configLabel
+                                            }
+                                            value={row.configValue}
+                                            onChange={(value) =>
+                                              setAdapterConfigRows((current) =>
+                                                current.map((item) =>
+                                                  item.rowKey === row.rowKey
+                                                    ? {
+                                                        ...item,
+                                                        configValue: value,
+                                                        isMasked: false,
+                                                        valueEdited: true,
+                                                        clearRequested: false,
+                                                      }
+                                                    : item
+                                                )
+                                              )
+                                            }
+                                            placeholder={
+                                              configField?.placeholder ??
+                                              (row.isSecret
+                                                ? text('Secret value', '密钥值', 'シークレット値')
+                                                : text('Config value', '配置值', '設定値'))
+                                            }
+                                            type={
+                                              configField?.input === 'password'
+                                                ? 'password'
+                                                : configField?.input === 'url'
+                                                  ? 'url'
+                                                  : 'text'
+                                            }
+                                            disabled={row.clearRequested}
+                                            required={configField?.required}
+                                          />
+                                        )}
+                                        {configDescription ? (
+                                          <p className="text-xs leading-5 text-slate-500">
+                                            {configDescription}
+                                          </p>
+                                        ) : null}
+                                        {row.isSecret ? (
+                                          <p className="text-xs leading-5 text-slate-500">
+                                            {row.clearRequested
+                                              ? text({
+                                                  en: 'This optional secret will be cleared on save. Type a replacement to cancel the clear request.',
+                                                  zh_HANS:
+                                                    '保存时会清除此可选密钥。输入替换值即可取消清空请求。',
+                                                  zh_HANT:
+                                                    '儲存時會清除此可選密鑰。輸入替換值即可取消清除請求。',
+                                                  ja: '保存時にこの任意シークレットを消去します。置換値を入力すると消去要求を取り消します。',
+                                                  ko: '저장 시 이 선택 시크릿이 삭제됩니다. 대체 값을 입력하면 삭제 요청이 취소됩니다.',
+                                                  fr: 'Ce secret facultatif sera supprimé à l’enregistrement. Saisissez une valeur de remplacement pour annuler la suppression.',
+                                                })
+                                              : row.isMasked
+                                                ? requiredSecret
+                                                  ? text({
+                                                      en: 'Required masked secret stays unchanged unless you type a replacement. It cannot be cleared; replace it or disable the adapter.',
+                                                      zh_HANS:
+                                                        '必填遮罩密钥会保持不变，除非你输入替换值。它不能被清空；请替换它或停用适配器。',
+                                                      zh_HANT:
+                                                        '必填遮罩密鑰會保持不變，除非你輸入替換值。它不能被清除；請替換它或停用適配器。',
+                                                      ja: '必須のマスク済みシークレットは、置換値を入力しない限り保持されます。消去はできません。置換するかアダプターを無効化してください。',
+                                                      ko: '필수 마스킹 시크릿은 대체 값을 입력하지 않으면 유지됩니다. 삭제할 수 없으며 교체하거나 어댑터를 비활성화하세요.',
+                                                      fr: 'Le secret masqué obligatoire reste inchangé sauf si vous saisissez une valeur de remplacement. Il ne peut pas être supprimé ; remplacez-le ou désactivez l’adaptateur.',
+                                                    })
+                                                  : text({
+                                                      en: 'Masked optional secret stays unchanged unless you type a replacement or explicitly clear it. Reveal only to inspect the current value.',
+                                                      zh_HANS:
+                                                        '可选遮罩密钥会保持不变，除非你输入替换值或显式清空它。仅在需要查看当前值时才显示。',
+                                                      zh_HANT:
+                                                        '可選遮罩密鑰會保持不變，除非你輸入替換值或明確清除它。只有需要查看目前值時才顯示。',
+                                                      ja: '任意のマスク済みシークレットは、置換値を入力するか明示的に消去しない限り保持されます。現在値の確認が必要な場合だけ表示してください。',
+                                                      ko: '선택 마스킹 시크릿은 대체 값을 입력하거나 명시적으로 삭제하지 않으면 유지됩니다. 현재 값을 확인해야 할 때만 표시하세요.',
+                                                      fr: 'Le secret masqué facultatif reste inchangé sauf si vous saisissez une valeur de remplacement ou le supprimez explicitement. Révélez-le seulement pour inspecter la valeur actuelle.',
+                                                    })
+                                                : text({
+                                                    en: 'This secret value is visible or newly typed. Saving replaces the current stored value.',
+                                                    zh_HANS:
+                                                      '此密钥值当前可见或刚输入；保存会替换当前已存储值。',
+                                                    zh_HANT:
+                                                      '此密鑰值目前可見或剛輸入；儲存會替換目前已儲存值。',
+                                                    ja: 'このシークレット値は表示中、または新しく入力された値です。保存すると現在の保存値を置換します。',
+                                                    ko: '이 시크릿 값은 현재 표시 중이거나 새로 입력된 값입니다. 저장하면 현재 저장된 값을 교체합니다.',
+                                                    fr: 'Cette valeur secrète est visible ou nouvellement saisie. L’enregistrement remplace la valeur stockée actuelle.',
+                                                  })}
+                                          </p>
+                                        ) : null}
+                                      </div>
+                                      <div className="flex flex-wrap items-end gap-2">
+                                        {row.isSecret ? (
+                                          <StatusBadge
+                                            tone="warning"
+                                            label={text('Secret', '密钥', 'シークレット')}
+                                          />
+                                        ) : (
+                                          <StatusBadge
+                                            tone="neutral"
+                                            label={text('Plain', '明文', '平文')}
+                                          />
+                                        )}
+                                        {!adapterCreateMode && row.isSecret && row.isMasked ? (
+                                          <SecondaryButton
+                                            onClick={() =>
+                                              void handleRevealAdapterConfig(row.configKey)
+                                            }
+                                          >
+                                            {text('Reveal', '显示', '表示')}
+                                          </SecondaryButton>
+                                        ) : null}
+                                        {canClearSecret ? (
+                                          <SecondaryButton
+                                            tone={row.clearRequested ? 'neutral' : 'danger'}
+                                            onClick={() =>
+                                              setAdapterConfigRows((current) =>
+                                                current.map((item) =>
+                                                  item.rowKey === row.rowKey
+                                                    ? {
+                                                        ...item,
+                                                        configValue: item.clearRequested
+                                                          ? '******'
+                                                          : '',
+                                                        isMasked: !item.clearRequested,
+                                                        valueEdited: false,
+                                                        clearRequested: !item.clearRequested,
+                                                      }
+                                                    : item
+                                                )
+                                              )
+                                            }
+                                          >
+                                            {row.clearRequested
+                                              ? text(
+                                                  'Keep secret',
+                                                  '保留密钥',
+                                                  'シークレットを保持'
+                                                )
+                                              : text(
+                                                  'Clear secret',
+                                                  '清空密钥',
+                                                  'シークレットを消去'
+                                                )}
+                                          </SecondaryButton>
+                                        ) : null}
+                                        {row.isNew && !row.locked ? (
+                                          <SecondaryButton
+                                            tone="danger"
+                                            onClick={() =>
+                                              setAdapterConfigRows((current) =>
+                                                current.filter((item) => item.rowKey !== row.rowKey)
+                                              )
+                                            }
+                                          >
+                                            {text('Remove', '移除', '削除')}
+                                          </SecondaryButton>
+                                        ) : null}
+                                      </div>
+                                    </div>
+                                  );
+                                })()
+                              )}
+
+                              {!adapterCreateMode ? (
+                                <SecondaryButton
+                                  onClick={() =>
+                                    setAdapterConfigRows((current) => [
+                                      ...current,
+                                      {
+                                        rowKey: `new-config-${current.length + 1}-${Date.now()}`,
+                                        configKey: '',
+                                        configValue: '',
+                                        isSecret: false,
+                                        isMasked: false,
+                                        isNew: true,
+                                        locked: false,
+                                        valueEdited: false,
+                                        clearRequested: false,
+                                      },
+                                    ])
+                                  }
+                                >
+                                  <Plus className="h-4 w-4" />
+                                  {text('Add config row', '新增配置行', '設定行を追加')}
+                                </SecondaryButton>
+                              ) : null}
+                            </div>
+                          ) : adapterDetailPanel.data ? (
+                            <StateView
+                              status="empty"
+                              title={text(
+                                'Configuration is collapsed',
+                                '配置已收起',
+                                '設定は折りたたまれています'
+                              )}
+                              description={text({
+                                en: 'Use Configure when you are ready to review config values. Masked secrets stay preserved unless you reveal or replace them.',
+                                zh_HANS:
+                                  '准备查看配置值时再点击配置。已遮罩密钥会保持不变，除非你显示或替换它。',
+                                zh_HANT:
+                                  '準備查看設定值時再點擊設定。已遮罩密鑰會保持不變，除非你顯示或替換它。',
+                                ja: '設定値を確認する準備ができたら「設定」を使用してください。マスク済みシークレットは、表示または置換しない限り保持されます。',
+                                ko: '설정 값을 검토할 준비가 되었을 때 설정을 사용하세요. 마스킹된 시크릿은 표시하거나 교체하지 않는 한 유지됩니다.',
+                                fr: 'Utilisez Configurer lorsque vous êtes prêt à examiner les valeurs. Les secrets masqués restent conservés sauf si vous les révélez ou les remplacez.',
+                              })}
+                            />
+                          ) : (
+                            <p className="text-sm text-slate-500">
+                              {text(
+                                'Select or create an adapter to manage config values.',
+                                '请选择或创建一个适配器来管理配置值。',
+                                '設定値を管理するにはアダプターを選択または作成してください。'
+                              )}
+                            </p>
+                          )}
+                        </FormSection>
+                      ) : null}
+
+                      {adapterConfigureSection === 'webhook-api-client' ? (
+                        <FormSection
+                          title={text(
+                            'Webhook/API Client',
+                            'Webhook/API 客户端',
+                            'Webhook/API クライアント'
+                          )}
+                          description={text({
+                            en: 'Related inbound surfaces stay in their existing top-level workspaces so list state, lifecycle controls, and key handling remain visible.',
+                            zh_HANS:
+                              '相关入站能力保留在现有一级工作区，确保列表状态、生命周期控制与密钥处理保持可见。',
+                            zh_HANT:
+                              '相關入站能力保留在現有一級工作區，確保列表狀態、生命週期控制與密鑰處理保持可見。',
+                            ja: '関連する受信面は既存のトップレベルワークスペースに保持し、一覧状態、ライフサイクル制御、キー処理を見える状態にします。',
+                            ko: '관련 인바운드 영역은 기존 최상위 작업 영역에 유지되어 목록 상태, 수명 주기 제어, 키 처리를 계속 볼 수 있습니다.',
+                            fr: 'Les surfaces entrantes liées restent dans leurs espaces de premier niveau afin que l’état de liste, le cycle de vie et les clés restent visibles.',
+                          })}
+                        >
+                          <div className="grid gap-4 lg:grid-cols-2">
+                            <StateView
+                              status={availableTabs.includes('webhooks') ? 'empty' : 'unavailable'}
+                              title={text(
+                                'Webhooks stay list-first',
+                                'Webhook 保持列表优先',
+                                'Webhook は一覧優先'
+                              )}
+                              description={
+                                availableTabs.includes('webhooks')
+                                  ? text(
+                                      'Use the top-level Webhooks section for endpoint URLs, retry settings, headers, and lifecycle actions.',
+                                      '请使用一级 Webhook 分区管理端点地址、重试策略、请求头与生命周期操作。',
+                                      'エンドポイント URL、再試行設定、ヘッダー、ライフサイクル操作はトップレベルの Webhook セクションで管理します。'
+                                    )
+                                  : text(
+                                      'Webhook management is available at tenant root or Account Center scope.',
+                                      'Webhook 管理仅在租户根或账户中心范围可用。',
+                                      'Webhook 管理はテナントルートまたはアカウントセンターのスコープで利用できます。'
+                                    )
+                              }
+                            />
+                            <StateView
+                              status={availableTabs.includes('api-keys') ? 'empty' : 'unavailable'}
+                              title={text(
+                                'API clients stay in Account Center',
+                                'API 客户端保留在账户中心',
+                                'API クライアントはアカウントセンターに保持'
+                              )}
+                              description={
+                                availableTabs.includes('api-keys')
+                                  ? text(
+                                      'Use the API Clients section for managed client records, key generation, rotation, and revocation.',
+                                      '请使用 API 客户端分区管理受管客户端记录、密钥生成、轮换与撤销。',
+                                      '管理対象クライアント記録、キー生成、ローテーション、失効は API クライアントセクションで管理します。'
+                                    )
+                                  : text(
+                                      'Tenant, subsidiary, and talent workspaces inherit API client configuration from Account Center.',
+                                      '租户、分目录与艺人工作区继承账户中心的 API 客户端配置。',
+                                      'テナント、配下スコープ、タレントのワークスペースはアカウントセンターの API クライアント設定を継承します。'
+                                    )
+                              }
+                            />
+                          </div>
+                        </FormSection>
+                      ) : null}
+
+                      {adapterConfigureSection === 'email-templates' ? (
+                        <FormSection
+                          title={text('Email Templates', '邮件模板', 'メールテンプレート')}
+                          description={text({
+                            en: 'Notification copy and provider settings stay in the Email workspace so template content, sender identity, and delivery checks are reviewed together.',
+                            zh_HANS:
+                              '通知文案与服务商设置保留在邮件工作区，便于一起检查模板内容、发信身份与投递测试。',
+                            zh_HANT:
+                              '通知文案與服務商設定保留在郵件工作區，便於一起檢查範本內容、發信身分與投遞測試。',
+                            ja: '通知文面とプロバイダー設定はメールワークスペースに保持し、テンプレート内容、送信者情報、配信チェックをまとめて確認します。',
+                            ko: '알림 문구와 제공자 설정은 이메일 작업 영역에 유지되어 템플릿 내용, 발신자 ID, 전달 검사를 함께 검토합니다.',
+                            fr: 'Le contenu des notifications et les paramètres fournisseur restent dans l’espace E-mail afin de réviser ensemble les modèles, l’identité d’expédition et les tests de livraison.',
+                          })}
+                        >
+                          <StateView
+                            status={availableTabs.includes('email') ? 'empty' : 'unavailable'}
+                            title={
+                              availableTabs.includes('email')
+                                ? text(
+                                    'Email workspace owns templates',
+                                    '邮件工作区负责模板',
+                                    'メールワークスペースがテンプレートを管理'
+                                  )
+                                : text(
+                                    'Email templates unavailable for this scope',
+                                    '当前范围无法使用邮件模板',
+                                    'このスコープではメールテンプレートを利用できません'
+                                  )
+                            }
+                            description={
+                              availableTabs.includes('email')
+                                ? text(
+                                    'Use the top-level Email section for template list, editor, preview, and provider configuration.',
+                                    '请使用一级邮件分区管理模板列表、编辑器、预览与服务商配置。',
+                                    'テンプレート一覧、エディター、プレビュー、プロバイダー設定はトップレベルのメールセクションで管理します。'
+                                  )
+                                : text(
+                                    'Email templates are available at tenant root and Account Center scope, not inside subsidiary or talent adapter overrides.',
+                                    '邮件模板在租户根与账户中心范围可用，不在分目录或艺人适配器覆盖中编辑。',
+                                    'メールテンプレートはテナントルートとアカウントセンターのスコープで利用できます。配下スコープやタレントのアダプター上書き内では編集しません。'
+                                  )
+                            }
+                          />
+                        </FormSection>
+                      ) : null}
+                    </ActionDrawer>
+                  </>
+                ) : null}
+
+                {displayedTab === 'webhooks' ? (
+                  <>
+                    <GlassSurface className="p-6">
+                      <FormSection
+                        title={text('Webhook Endpoints', 'Webhook 端点', 'Webhook エンドポイント')}
+                        description={text(
+                          'Create webhook endpoints, manage retry settings, and keep deactivation separate from delete.',
+                          '创建 Webhook 端点、管理重试策略，并将停用与永久删除区分开。',
+                          'Webhook エンドポイントの作成、再試行設定の管理、無効化と削除の分離を行います。'
+                        )}
+                        actions={
+                          <>
+                            <SecondaryButton onClick={() => void refreshWebhooks()}>
+                              <RefreshCcw className="h-4 w-4" />
+                              {text('Refresh', '刷新', '更新')}
+                            </SecondaryButton>
                             <SecondaryButton
                               tone="primary"
                               onClick={() =>
-                                setConfirmState({
-                                  title: text(`Reactivate ${adapter.code}?`, `重新启用 ${adapter.code}？`, `${adapter.code} を再有効化しますか？`),
-                                  description: text('The adapter becomes available for use again.', '适配器将重新可用。', 'アダプターを再び利用できるようにします。'),
-                                  confirmText: text('Reactivate adapter', '重新启用适配器', 'アダプターを再有効化'),
-                                  pendingText: text('Reactivating adapter...', '正在重新启用适配器...', 'アダプターを再有効化しています...'),
-                                  intent: 'primary',
-                                  errorFallback: text('Failed to reactivate adapter.', '重新启用适配器失败。', 'アダプターの再有効化に失敗しました。'),
-                                  onConfirm: async () => {
-                                    if (
-                                      adapter.isInherited
-                                      && selectedIntegrationScope
-                                      && isScopedAdapterScope(selectedIntegrationScope)
-                                    ) {
-                                      await enableInheritedScopedAdapter(request, selectedIntegrationScope, adapter.id);
-                                    } else {
-                                      await reactivateTenantAdapter(request, adapter.id);
-                                    }
-                                    await refreshAdapters(adapter.id);
-                                    return text(
-                                      `${adapter.code} adapter reactivated.`,
-                                      `已重新启用适配器 ${adapter.code}。`,
-                                      `アダプター ${adapter.code} を再有効化しました。`,
-                                    );
-                                  },
+                                requestDiscardDirtyEditor(() => {
+                                  setWebhookCreateMode(true);
+                                  setSelectedWebhookId(null);
+                                  setWebhookDrawerOpen(true);
+                                  setWebhookEditorState(
+                                    buildWebhookDraft(
+                                      undefined,
+                                      webhookDefinitionsPanel.data[0] ?? null
+                                    )
+                                  );
                                 })
                               }
                             >
-                              <RotateCcw className="h-4 w-4" />
-                              {text('Reactivate', '重新启用', '再有効化')}
+                              <Plus className="h-4 w-4" />
+                              {text('New webhook', '新建 Webhook', '新しい Webhook')}
                             </SecondaryButton>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                  </TableShell>
-                  {adaptersPanel.data.length > 0 ? (
-                    <PaginationFooter
-                      pagination={paginatedAdapters.pagination}
-                      itemCount={paginatedAdapters.items.length}
-                      labels={buildPaginationFooterLabels(
-                        locale,
-                        paginatedAdapters.pagination,
-                        paginatedAdapters.items.length,
-                      )}
-                      onPageChange={(page) => applyPaginationQueryState({ adapterPage: page })}
-                      onPageSizeChange={(pageSize) => {
-                        applyPaginationQueryState({
-                          adapterPage: 1,
-                          adapterPageSize: pageSize as PageSizeOption,
-                        });
-                      }}
-                      isLoading={adaptersPanel.loading}
-                      className="mt-4 rounded-2xl border border-slate-200 bg-slate-50/80"
-                    />
-                  ) : null}
-                  </>
-                )}
-              </FormSection>
-            </GlassSurface>
-
-          <ActionDrawer
-            open={adapterDrawerOpen}
-            onOpenChange={(open) => requestDrawerOpenChange(setAdapterDrawerOpen, open)}
-            title={text('Configure Adapter', '配置适配器', 'アダプター設定')}
-            description={text({
-              en: 'Edit profile, translations, secrets, and related adapter configuration.',
-              zh_HANS: '编辑资料、翻译、密钥与相关适配器配置。',
-              zh_HANT: '編輯資料、翻譯、密鑰與相關適配器設定。',
-              ja: 'プロファイル、翻訳、シークレット、関連するアダプター設定を編集します。',
-              ko: '프로필, 번역, 시크릿 및 관련 어댑터 설정을 편집합니다.',
-              fr: 'Modifiez le profil, les traductions, les secrets et la configuration associée.',
-            })}
-            size="xl"
-            closeButtonAriaLabel={text({
-              en: 'Close adapter configure drawer',
-              zh_HANS: '关闭适配器配置抽屉',
-              zh_HANT: '關閉適配器設定抽屜',
-              ja: 'アダプター設定ドロワーを閉じる',
-              ko: '어댑터 설정 서랍 닫기',
-              fr: 'Fermer le panneau de configuration de l’adaptateur',
-            })}
-          >
-            <div className="space-y-4 border-b border-slate-200/50 pb-6">
-              <div className="space-y-1.5">
-                <h3 className="text-lg font-bold text-slate-950">
-                  {text('Configure Adapter', '配置适配器', 'アダプター設定')}
-                </h3>
-                <p className="text-sm leading-6 text-slate-600">
-                  {text({
-                    en: 'Use sections to keep adapter basics, secrets, related inbound surfaces, and email templates separated.',
-                    zh_HANS: '通过分区拆开适配器基础信息、密钥、相关入站能力与邮件模板。',
-                    zh_HANT: '透過分區拆開適配器基本資訊、密鑰、相關入站能力與郵件範本。',
-                    ja: 'セクションを使って、アダプター基本情報、シークレット、関連する受信面、メールテンプレートを分けて扱います。',
-                    ko: '섹션으로 어댑터 기본 정보, 시크릿, 관련 인바운드 영역, 이메일 템플릿을 나눕니다.',
-                    fr: 'Utilisez les sections pour séparer les informations adaptateur, les secrets, les surfaces entrantes liées et les modèles e-mail.',
-                  })}
-                </p>
-              </div>
-              <SectionTabs
-                items={adapterConfigureItems}
-                activeId={adapterConfigureSection}
-                onChange={(nextSection) => setAdapterConfigureSectionRequest(nextSection as AdapterConfigureSection)}
-                ariaLabel={text('Adapter configure sections', '适配器配置分区', 'アダプター設定セクション')}
-              />
-            </div>
-
-            {adapterConfigureSection === 'basics' ? (
-            <FormSection
-              title={adapterCreateMode ? text('New Adapter', '新建适配器', '新しいアダプター') : text('Adapter Profile', '适配器资料', 'アダプタープロファイル')}
-              description={
-                adapterCreateMode
-                  ? text('Choose a supported developer-provided adapter definition, then fill only that definition-specific configuration.', '选择开发者提供并支持的适配器定义，然后只填写该定义需要的配置。', '開発者提供のサポート済みアダプター定義を選び、その定義固有の設定だけを入力します。')
-                  : text('Adapter metadata stays editable while secret config values remain masked until explicitly revealed.', '适配器元数据可随时编辑，密钥配置在显式显示前会保持遮罩。', 'アダプターのメタデータは編集でき、シークレット設定値は明示表示するまでマスクされたままです。')
-              }
-              actions={
-                <>
-                  {!adapterCreateMode ? (
-                    <SecondaryButton
-                      onClick={startAdapterCreateFlow}
-                    >
-                      {text('Start new', '新建', '新規作成')}
-                    </SecondaryButton>
-                  ) : (
-                    <SecondaryButton
-                      onClick={() =>
-                        requestDiscardDirtyEditor(() => {
-                          setAdapterCreateMode(false);
-                          setAdapterConfigPanelOpen(false);
-                          setAdapterConfigureSection('basics');
-                          setSelectedAdapterId(adaptersPanel.data[0]?.id || null);
-                          setAdapterDrawerOpen(false);
-                        })
-                      }
-                    >
-                      {text('Cancel', '取消', 'キャンセル')}
-                    </SecondaryButton>
-                  )}
-                  <AsyncSubmitButton
-                    onClick={() => void handleAdapterSave()}
-                    isPending={adapterSubmitting}
-                    disabled={adapterCreateMode && !selectedAdapterDefinition}
-                    pendingText={
-                      adapterCreateMode
-                        ? text('Creating adapter...', '正在创建适配器...', 'アダプターを作成しています...')
-                        : text('Saving adapter...', '正在保存适配器...', 'アダプターを保存しています...')
-                    }
-                  >
-                    {adapterCreateMode ? text('Create adapter', '创建适配器', 'アダプターを作成') : text('Save adapter', '保存适配器', 'アダプターを保存')}
-                  </AsyncSubmitButton>
-                </>
-              }
-            >
-              {adapterDetailPanel.unavailableReason ? (
-                <StateView
-                  status="unavailable"
-                  title={text('Adapter detail unavailable for this scope', '当前范围无法查看适配器详情', 'この範囲ではアダプター詳細を表示できません')}
-                  description={adapterDetailPanel.unavailableReason}
-                />
-              ) : adapterDetailPanel.error ? (
-                <StateView status="error" title={text('Adapter detail unavailable', '适配器详情不可用', 'アダプター詳細を表示できません')} description={adapterDetailPanel.error} />
-              ) : adapterDetailPanel.loading ? (
-                <p className="text-sm text-slate-500">{text('Loading adapter detail…', '正在加载适配器详情…', 'アダプター詳細を読み込んでいます…')}</p>
-              ) : adapterCreateMode || adapterDetailPanel.data ? (
-                <>
-                  <div className="grid gap-4 lg:grid-cols-2">
-                    {adapterCreateMode ? (
-                      <>
-                        <SelectField
-                          label={text('Supported adapter', '支持的适配器', 'サポート済みアダプター')}
-                          value={adapterDraft.definitionKey}
-                          onChange={(value) => {
-                            const definition = adapterDefinitionsPanel.data.find((item) => item.key === value) ?? null;
-                            setAdapterEditorState(buildAdapterDraft(undefined, definition), buildAdapterConfigRows(undefined, definition));
-                          }}
-                          disabled={adapterDefinitionsPanel.loading}
-                          options={[
-                            { value: '', label: text('Choose a supported adapter', '选择支持的适配器', 'サポート済みアダプターを選択') },
-                            ...adapterDefinitionsPanel.data.map((definition) => ({
-                              value: definition.key,
-                              label: `${pickAdapterDefinitionText(definition.name, definition.code)} (${definition.code})`,
-                            })),
-                          ]}
-                        />
-                        {selectedAdapterDefinition ? (
-                          <div className="space-y-3 rounded-2xl border border-indigo-100 bg-indigo-50/70 p-4 lg:col-span-2">
-                            <div className="flex flex-wrap items-center gap-2">
-                              <StatusBadge tone="info" label={adapterTypeLabel(selectedAdapterDefinition.adapterType)} />
-                              {selectedAdapterDefinition.aiProvider ? (
-                                <StatusBadge tone="warning" label={selectedAdapterDefinition.aiProvider} />
-                              ) : null}
-                              <StatusBadge tone="neutral" label={selectedAdapterDefinition.protocol.family} />
-                            </div>
-                            <div>
-                              <p className="text-sm font-semibold text-slate-950">
-                                {pickAdapterDefinitionText(selectedAdapterDefinition.name, selectedAdapterDefinition.code)}
-                              </p>
-                              <p className="mt-1 text-sm leading-6 text-slate-600">
-                                {pickAdapterDefinitionText(selectedAdapterDefinition.description)}
-                              </p>
-                            </div>
-                            <p className="text-xs leading-5 text-slate-500">
-                              {pickAdapterDefinitionText(selectedAdapterDefinition.protocol.notes)}
-                            </p>
-                          </div>
-                        ) : (
+                          </>
+                        }
+                      >
+                        {webhooksPanel.unavailableReason ? (
                           <StateView
-                            status={adapterDefinitionsPanel.error ? 'error' : 'empty'}
-                            title={adapterDefinitionsPanel.error ? text('Adapter definitions unavailable', '适配器定义不可用', 'アダプター定義を表示できません') : text('Choose a supported adapter', '选择支持的适配器', 'サポート済みアダプターを選択')}
-                            description={adapterDefinitionsPanel.error ?? text('The create flow is driven by developer-provided adapter definitions. Free platform/type creation is not available here.', '新增流程由开发者提供的适配器定义驱动，这里不提供自由平台/类型创建。', '作成フローは開発者提供のアダプター定義で決まります。自由なプラットフォーム/種別作成はここでは利用できません。')}
+                            status="unavailable"
+                            title={text(
+                              'Webhooks unavailable for this scope',
+                              '当前范围无法使用 Webhook',
+                              'この範囲では Webhook を利用できません'
+                            )}
+                            description={webhooksPanel.unavailableReason}
                           />
+                        ) : webhooksPanel.error ? (
+                          <StateView
+                            status="error"
+                            title={text(
+                              'Webhook list unavailable',
+                              'Webhook 列表不可用',
+                              'Webhook 一覧を表示できません'
+                            )}
+                            description={webhooksPanel.error}
+                          />
+                        ) : (
+                          <>
+                            <TableShell
+                              ariaLabel={text('Webhooks', 'Webhook', 'Webhook')}
+                              columns={[
+                                text('Code', '代码', 'コード'),
+                                text('Endpoint', '端点', 'エンドポイント'),
+                                text('Events', '事件数', 'イベント数'),
+                                text('Talents', '艺人范围', 'タレント範囲'),
+                                text('Failures', '失败次数', '失敗回数'),
+                                text('Status', '状态', '状態'),
+                                text('Actions', '操作', '操作'),
+                              ]}
+                              dataLength={paginatedWebhooks.items.length}
+                              isLoading={webhooksPanel.loading}
+                              isEmpty={webhooksPanel.data.length === 0}
+                              emptyTitle={text(
+                                'No webhooks configured',
+                                '尚未配置 Webhook',
+                                '設定済み Webhook はありません'
+                              )}
+                              emptyDescription={text(
+                                'Create the first tenant webhook for customer, membership, marshmallow, report, or import events.',
+                                '创建第一个租户 Webhook，用于发送客户、会员、棉花糖、报表或导入事件。',
+                                '顧客、会員、マシュマロ、レポート、インポートイベント向けの最初の Webhook を作成してください。'
+                              )}
+                            >
+                              {paginatedWebhooks.items.map((webhook) => (
+                                <tr
+                                  key={webhook.id}
+                                  className={
+                                    selectedWebhookId === webhook.id ? 'bg-indigo-50/40' : undefined
+                                  }
+                                >
+                                  <td className="px-6 py-4 text-sm font-semibold text-slate-900">
+                                    {webhook.code}
+                                  </td>
+                                  <td className="px-6 py-4 text-sm text-slate-700">
+                                    {webhook.url}
+                                  </td>
+                                  <td className="px-6 py-4 text-sm text-slate-700">
+                                    {webhook.events.length}
+                                  </td>
+                                  <td className="px-6 py-4 text-sm text-slate-700">
+                                    {formatMonitoredTalentTarget(webhook.monitoredTalentIds)}
+                                  </td>
+                                  <td className="px-6 py-4 text-sm text-slate-700">
+                                    {webhook.consecutiveFailures}
+                                  </td>
+                                  <td className="px-6 py-4">
+                                    <StatusBadge
+                                      tone={webhook.isActive ? 'success' : 'danger'}
+                                      label={statusLabel(webhook.isActive)}
+                                    />
+                                  </td>
+                                  <td className="px-6 py-4">
+                                    <div className="flex flex-wrap gap-2">
+                                      <SecondaryButton
+                                        onClick={() =>
+                                          requestDiscardDirtyEditor(() => {
+                                            setWebhookCreateMode(false);
+                                            setSelectedWebhookId(webhook.id);
+                                            setWebhookDrawerOpen(true);
+                                          })
+                                        }
+                                      >
+                                        {text('Open', '打开', '開く')}
+                                      </SecondaryButton>
+                                      {webhook.isActive ? (
+                                        <SecondaryButton
+                                          tone="danger"
+                                          onClick={() =>
+                                            setConfirmState({
+                                              title: text(
+                                                `Deactivate ${webhook.code}?`,
+                                                `停用 ${webhook.code}？`,
+                                                `${webhook.code} を無効化しますか？`
+                                              ),
+                                              description: text(
+                                                'The webhook stays stored, but sending pauses until you reactivate it.',
+                                                'Webhook 会被保留，但发送会暂停，直到你重新启用它。',
+                                                'Webhook は保持されますが、再有効化するまで送信が停止されます。'
+                                              ),
+                                              confirmText: text(
+                                                'Deactivate webhook',
+                                                '停用 Webhook',
+                                                'Webhook を無効化'
+                                              ),
+                                              pendingText: text(
+                                                'Deactivating webhook...',
+                                                '正在停用 Webhook...',
+                                                'Webhook を無効化しています...'
+                                              ),
+                                              intent: 'danger',
+                                              errorFallback: text(
+                                                'Failed to deactivate webhook.',
+                                                '停用 Webhook 失败。',
+                                                'Webhook の無効化に失敗しました。'
+                                              ),
+                                              onConfirm: async () => {
+                                                await deactivateWebhook(request, webhook.id);
+                                                await refreshWebhooks(webhook.id);
+                                                return text(
+                                                  `${webhook.code} webhook deactivated.`,
+                                                  `已停用 Webhook ${webhook.code}。`,
+                                                  `Webhook ${webhook.code} を無効化しました。`
+                                                );
+                                              },
+                                            })
+                                          }
+                                        >
+                                          {text('Deactivate', '停用', '無効化')}
+                                        </SecondaryButton>
+                                      ) : (
+                                        <SecondaryButton
+                                          tone="primary"
+                                          onClick={() =>
+                                            setConfirmState({
+                                              title: text(
+                                                `Reactivate ${webhook.code}?`,
+                                                `重新启用 ${webhook.code}？`,
+                                                `${webhook.code} を再有効化しますか？`
+                                              ),
+                                              description: text(
+                                                'This re-enables sending for the webhook endpoint.',
+                                                '这会重新启用该 Webhook 端点的发送。',
+                                                'この Webhook エンドポイントの送信を再び有効にします。'
+                                              ),
+                                              confirmText: text(
+                                                'Reactivate webhook',
+                                                '重新启用 Webhook',
+                                                'Webhook を再有効化'
+                                              ),
+                                              pendingText: text(
+                                                'Reactivating webhook...',
+                                                '正在重新启用 Webhook...',
+                                                'Webhook を再有効化しています...'
+                                              ),
+                                              intent: 'primary',
+                                              errorFallback: text(
+                                                'Failed to reactivate webhook.',
+                                                '重新启用 Webhook 失败。',
+                                                'Webhook の再有効化に失敗しました。'
+                                              ),
+                                              onConfirm: async () => {
+                                                await reactivateWebhook(request, webhook.id);
+                                                await refreshWebhooks(webhook.id);
+                                                return text(
+                                                  `${webhook.code} webhook reactivated.`,
+                                                  `已重新启用 Webhook ${webhook.code}。`,
+                                                  `Webhook ${webhook.code} を再有効化しました。`
+                                                );
+                                              },
+                                            })
+                                          }
+                                        >
+                                          {text('Reactivate', '重新启用', '再有効化')}
+                                        </SecondaryButton>
+                                      )}
+                                    </div>
+                                  </td>
+                                </tr>
+                              ))}
+                            </TableShell>
+                            {webhooksPanel.data.length > 0 ? (
+                              <PaginationFooter
+                                pagination={paginatedWebhooks.pagination}
+                                itemCount={paginatedWebhooks.items.length}
+                                labels={buildPaginationFooterLabels(
+                                  locale,
+                                  paginatedWebhooks.pagination,
+                                  paginatedWebhooks.items.length
+                                )}
+                                onPageChange={(page) =>
+                                  applyPaginationQueryState({ webhookPage: page })
+                                }
+                                onPageSizeChange={(pageSize) => {
+                                  applyPaginationQueryState({
+                                    webhookPage: 1,
+                                    webhookPageSize: pageSize as PageSizeOption,
+                                  });
+                                }}
+                                isLoading={webhooksPanel.loading}
+                                className="mt-4 rounded-2xl border border-slate-200 bg-slate-50/80"
+                              />
+                            ) : null}
+                          </>
                         )}
-                      </>
-                    ) : (
-                      <>
-                        <TextField
-                          label={text('Adapter code', '适配器代码', 'アダプターコード')}
-                          value={adapterDraft.code}
-                          onChange={(value) =>
-                            setAdapterDraft((current) => ({
-                              ...current,
-                              code: value.toUpperCase(),
-                            }))
-                          }
-                          disabled
-                          placeholder={text('BILIBILI_EXPORT', 'BILIBILI_EXPORT', 'BILIBILI_EXPORT')}
-                        />
-                        <TextField
-                          label={text('Base name', '基准名称', '基準名')}
-                          value={adapterDraft.nameBase}
-                          onChange={(value) => setAdapterDraft((current) => ({ ...current, nameBase: value }))}
-                        />
-                        <div className="space-y-2">
-                          <span className="text-sm font-medium text-slate-700">
-                            {text('Translations', '翻译', '翻訳')}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => setAdapterTranslationDrawerOpen(true)}
-                            className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 shadow-sm transition hover:border-slate-300 hover:text-slate-900"
-                          >
-                            <Languages className="h-4 w-4" />
-                            {configuredAdapterTranslationCount > 0
-                              ? text(
-                                  `Translation management (${configuredAdapterTranslationCount})`,
-                                  `翻译管理（${configuredAdapterTranslationCount}）`,
-                                  `翻訳管理（${configuredAdapterTranslationCount}）`,
-                                )
-                              : text('Translation management', '翻译管理', '翻訳管理')}
-                          </button>
-                          {consumerTranslationOptionsState.error ? (
-                            <p className="text-xs text-amber-700">{consumerTranslationOptionsState.error}</p>
-                          ) : null}
-                        </div>
-                        <div className="rounded-2xl border border-slate-200 bg-white/80 p-4">
-                          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">{text('Platform', '平台', 'プラットフォーム')}</p>
-                          <p className="mt-2 text-sm font-semibold text-slate-950">
-                            {adapterDetailPanel.data?.platform.displayName ?? adapterDraft.platformId}
-                          </p>
-                        </div>
-                        <div className="rounded-2xl border border-slate-200 bg-white/80 p-4">
-                          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">{text('Definition / type', '定义 / 类型', '定義 / 種別')}</p>
-                          <div className="mt-2 flex flex-wrap gap-2">
-                            {adapterDetailPanel.data?.definitionKey ? (
-                              <StatusBadge tone="info" label={adapterDetailPanel.data.definitionKey} />
-                            ) : (
-                              <StatusBadge tone="neutral" label={text('Legacy adapter', '旧式适配器', 'レガシーアダプター')} />
-                            )}
-                            <StatusBadge tone="neutral" label={adapterTypeLabel(adapterDraft.adapterType)} />
-                          </div>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                  <CheckboxField
-                    label={text('Allow inherited fallback behavior', '允许继承回退行为', '継承フォールバックを許可')}
-                    checked={adapterDraft.inherit}
-                    onChange={(checked) => setAdapterDraft((current) => ({ ...current, inherit: checked }))}
-                  />
-                  {!adapterCreateMode && adapterDetailPanel.data ? (
-                    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                      <SummaryCard label={text('Created', '创建时间', '作成日時')} value={formatDateTime(adapterDetailPanel.data.createdAt, text('Unknown', '未知', '不明'))} hint={text('Original creation timestamp.', '首次创建时间。', '初回作成日時です。')} />
-                      <SummaryCard label={text('Updated', '更新时间', '更新日時')} value={formatDateTime(adapterDetailPanel.data.updatedAt, text('Unknown', '未知', '不明'))} hint={text('Most recent config or metadata write.', '最近一次配置或元数据写入时间。', '直近の設定またはメタデータ更新日時です。')} />
-                      <SummaryCard label={text('Version', '版本', 'バージョン')} value={String(adapterDetailPanel.data.version)} hint={text('Current configuration version.', '当前配置版本。', '現在の設定バージョンです。')} />
-                      <SummaryCard label={text('State', '状态', '状態')} value={statusLabel(adapterDetailPanel.data.isActive)} hint={text('Current active state.', '当前启停状态。', '現在の有効状態です。')} />
-                    </div>
-                  ) : null}
-                </>
-              ) : (
-                <StateView
-                  status="empty"
-                  title={text('Select an adapter', '选择一个适配器', 'アダプターを選択')}
-                  description={text('Pick an adapter from the table or create a new tenant-owned adapter to begin.', '从表格中选择一个适配器，或先创建新的租户适配器。', '表からアダプターを選択するか、新しいテナントアダプターを作成してください。')}
-                />
-              )}
-            </FormSection>
-            ) : null}
+                      </FormSection>
+                    </GlassSurface>
 
-            {adapterConfigureSection === 'secrets' ? (
-            <FormSection
-              title={text('Configuration & secrets', '配置与密钥', '設定とシークレット')}
-              description={
-                shouldShowAdapterConfigEditor
-                  ? text({
-                      en: 'Add or update config rows here. Masked secrets are kept when untouched; type a replacement to rotate, reveal only when you must inspect the current value, or explicitly clear optional secrets.',
-                      zh_HANS: '可在这里新增或更新配置行。已遮罩密钥在未触碰时会保持不变；输入替换值即可轮换，仅在必须查看当前值时才显示，也可显式清空可选密钥。',
-                      zh_HANT: '可在這裡新增或更新設定列。已遮罩密鑰在未觸碰時會保持不變；輸入替換值即可輪換，只有必須查看目前值時才顯示，也可明確清除可選密鑰。',
-                      ja: 'ここで設定行を追加・更新できます。マスク済みシークレットは未変更なら保持されます。ローテーションする場合は置換値を入力し、現在値の確認が必要な場合だけ表示し、任意シークレットは明示的に消去できます。',
-                      ko: '여기에서 설정 행을 추가하거나 업데이트합니다. 마스킹된 시크릿은 건드리지 않으면 유지됩니다. 교체하려면 새 값을 입력하고, 현재 값을 확인해야 할 때만 표시하거나 선택 시크릿을 명시적으로 삭제하세요.',
-                      fr: 'Ajoutez ou modifiez les lignes de configuration ici. Les secrets masqués sont conservés s’ils ne sont pas modifiés ; saisissez une valeur de remplacement pour les renouveler, révélez-les seulement si nécessaire, ou supprimez explicitement les secrets facultatifs.',
-                    })
-                  : text({
-                      en: 'Config values and masked secrets stay collapsed until you explicitly configure the selected adapter; untouched masked secrets are preserved.',
-                      zh_HANS: '配置值与已遮罩密钥默认收起，只有显式配置所选适配器时才展开；未触碰的遮罩密钥会被保留。',
-                      zh_HANT: '設定值與已遮罩密鑰預設收起，只有明確設定所選適配器時才展開；未觸碰的遮罩密鑰會被保留。',
-                      ja: '設定値とマスク済みシークレットは、選択中のアダプターを明示的に設定するまで折りたたまれます。未変更のマスク済みシークレットは保持されます。',
-                      ko: '설정 값과 마스킹된 시크릿은 선택한 어댑터를 명시적으로 설정할 때까지 접혀 있으며, 건드리지 않은 마스킹 시크릿은 유지됩니다.',
-                      fr: 'Les valeurs de configuration et les secrets masqués restent repliés jusqu’à configuration explicite de l’adaptateur sélectionné ; les secrets masqués non modifiés sont conservés.',
-                    })
-              }
-              actions={
-                shouldShowAdapterConfigEditor && adapterCreateMode ? (
-                  <AsyncSubmitButton
-                    onClick={() => void handleAdapterSave()}
-                    isPending={adapterSubmitting}
-                    disabled={!selectedAdapterDefinition}
-                    pendingText={text('Creating adapter...', '正在创建适配器...', 'アダプターを作成しています...')}
-                  >
-                    {text('Create adapter', '创建适配器', 'アダプターを作成')}
-                  </AsyncSubmitButton>
-                ) : shouldShowAdapterConfigEditor ? (
-                  <>
-                    <SecondaryButton
-                      onClick={() =>
-                        requestDiscardDirtyEditor(() => {
-                          setAdapterConfigPanelOpen(false);
-                          setAdapterConfigureSection('basics');
-                          setAdapterDrawerOpen(false);
-                        })
+                    <ActionDrawer
+                      open={webhookDrawerOpen}
+                      onOpenChange={(open) => requestDrawerOpenChange(setWebhookDrawerOpen, open)}
+                      title={
+                        webhookCreateMode
+                          ? text('New Webhook', '新建 Webhook', '新しい Webhook')
+                          : text('Webhook Detail', 'Webhook 详情', 'Webhook 詳細')
                       }
+                      description={
+                        webhookCreateMode
+                          ? text(
+                              'Choose a supported webhook definition, then configure only endpoint delivery settings.',
+                              '选择支持的 Webhook 定义，然后只配置端点投递设置。',
+                              'サポート済み Webhook 定義を選び、エンドポイント配信設定だけを構成します。'
+                            )
+                          : text(
+                              'Edit endpoint URL, retry settings, headers, events, and lifecycle details.',
+                              '编辑端点 URL、重试策略、请求头、事件与生命周期详情。',
+                              'エンドポイント URL、再試行設定、ヘッダー、イベント、ライフサイクル詳細を編集します。'
+                            )
+                      }
+                      size="xl"
+                      closeButtonAriaLabel={text({
+                        en: 'Close webhook detail drawer',
+                        zh_HANS: '关闭 Webhook 详情抽屉',
+                        zh_HANT: '關閉 Webhook 詳情抽屜',
+                        ja: 'Webhook 詳細ドロワーを閉じる',
+                        ko: '웹훅 상세 서랍 닫기',
+                        fr: 'Fermer le panneau de détail du webhook',
+                      })}
                     >
-                      {text('Done configuring', '完成配置', '設定を完了')}
-                    </SecondaryButton>
-                    <AsyncSubmitButton
-                      onClick={() => void handleAdapterConfigSave()}
-                      isPending={adapterConfigSubmitting}
-                      pendingText={text('Saving configs...', '正在保存配置...', '設定を保存しています...')}
-                    >
-                      {text('Save config changes', '保存配置更改', '設定変更を保存')}
-                    </AsyncSubmitButton>
-                  </>
-                ) : adapterDetailPanel.data ? (
-                  <SecondaryButton
-                    tone="primary"
-                    onClick={() => {
-                      setAdapterDrawerOpen(true);
-                      setAdapterConfigPanelOpen(true);
-                      setAdapterConfigureSection('secrets');
-                    }}
-                  >
-                    {text('Configure', '配置', '設定')}
-                  </SecondaryButton>
-                ) : undefined
-              }
-            >
-              {adapterCreateMode && !selectedAdapterDefinition ? (
-                <StateView
-                  status="empty"
-                  title={text('Choose an adapter definition first', '请先选择适配器定义', '先にアダプター定義を選択')}
-                  description={text('Definition-specific configuration fields appear after you choose a supported adapter. Free-form config rows are not part of the primary create flow.', '选择支持的适配器后会显示该定义专属配置字段。主创建流程不提供自由配置行。', 'サポート済みアダプターを選ぶと定義固有の設定項目が表示されます。主要な作成フローに自由入力の設定行はありません。')}
-                />
-              ) : shouldShowAdapterConfigEditor ? (
-                <div className="space-y-4">
-                  {adapterConfigRows.map((row, index) => (
-                    (() => {
-                      const requiredSecret = row.isSecret && isRequiredSecretConfig(adapterDraft.adapterType, row.configKey);
-                      const canClearSecret = !adapterCreateMode && row.isSecret && !row.isNew && !requiredSecret;
-                      const configField = selectedAdapterDefinitionConfigFields.get(row.configKey);
-                      const configLabel = configField
-                        ? pickAdapterDefinitionText(configField.label, row.configKey)
-                        : text(`Config key ${index + 1}`, `配置键 ${index + 1}`, `設定キー ${index + 1}`);
-                      const configDescription = configField?.description
-                        ? pickAdapterDefinitionText(configField.description)
-                        : null;
-
-                      return (
-                        <div key={row.rowKey} className="grid gap-4 rounded-2xl border border-slate-200 bg-white/70 p-4 lg:grid-cols-[1fr_1fr_auto]">
-                          <TextField
-                            label={configField ? text('Config key', '配置键', '設定キー') : configLabel}
-                            value={row.configKey}
-                            onChange={(value) =>
-                              setAdapterConfigRows((current) =>
-                                current.map((item) =>
-                                  item.rowKey === row.rowKey
-                                    ? {
-                                        ...item,
-                                        configKey: value,
-                                        isSecret: /secret|token|password|key/i.test(value),
-                                        clearRequested: false,
-                                      }
-                                    : item,
-                                ),
+                      <FormSection
+                        title={
+                          webhookCreateMode
+                            ? text('New Webhook', '新建 Webhook', '新しい Webhook')
+                            : text('Webhook Detail', 'Webhook 详情', 'Webhook 詳細')
+                        }
+                        description={
+                          webhookCreateMode
+                            ? text(
+                                'Webhook code, name, and supported event set come from the selected definition. Operators only provide the receiving endpoint and delivery metadata.',
+                                'Webhook 代码、名称和支持事件集来自所选定义。操作员只提供接收端点与投递元数据。',
+                                'Webhook コード、名称、サポートイベントは選択した定義から決まります。オペレーターは受信エンドポイントと配信メタデータだけを入力します。'
                               )
-                            }
-                            disabled={row.locked || !row.isNew}
-                            placeholder={text('client_secret', 'client_secret', 'client_secret')}
-                          />
-                          <div className="space-y-2">
-                            {configField?.input === 'select' && configField.options?.length ? (
-                              <SelectField
-                                label={configField.required ? `${configLabel} *` : configLabel}
-                                value={row.configValue}
-                                onChange={(value) =>
-                                  setAdapterConfigRows((current) =>
-                                    current.map((item) =>
-                                      item.rowKey === row.rowKey
-                                        ? {
-                                            ...item,
-                                            configValue: value,
-                                            isMasked: false,
-                                            valueEdited: true,
-                                            clearRequested: false,
-                                          }
-                                        : item,
-                                    ),
-                                  )
-                                }
-                                options={configField.options.map((option) => ({
-                                  value: option.value,
-                                  label: pickAdapterDefinitionText(option.label, option.value),
-                                }))}
-                              />
-                            ) : (
-                              <TextField
-                                label={configField?.required ? `${configLabel} *` : configLabel}
-                                value={row.configValue}
-                                onChange={(value) =>
-                                  setAdapterConfigRows((current) =>
-                                    current.map((item) =>
-                                      item.rowKey === row.rowKey
-                                        ? {
-                                            ...item,
-                                            configValue: value,
-                                            isMasked: false,
-                                            valueEdited: true,
-                                            clearRequested: false,
-                                          }
-                                        : item,
-                                    ),
-                                  )
-                                }
-                                placeholder={configField?.placeholder ?? (row.isSecret ? text('Secret value', '密钥值', 'シークレット値') : text('Config value', '配置值', '設定値'))}
-                                type={configField?.input === 'password' ? 'password' : configField?.input === 'url' ? 'url' : 'text'}
-                                disabled={row.clearRequested}
-                                required={configField?.required}
-                              />
-                            )}
-                            {configDescription ? (
-                              <p className="text-xs leading-5 text-slate-500">{configDescription}</p>
-                            ) : null}
-                            {row.isSecret ? (
-                              <p className="text-xs leading-5 text-slate-500">
-                                {row.clearRequested
-                                  ? text({
-                                      en: 'This optional secret will be cleared on save. Type a replacement to cancel the clear request.',
-                                      zh_HANS: '保存时会清除此可选密钥。输入替换值即可取消清空请求。',
-                                      zh_HANT: '儲存時會清除此可選密鑰。輸入替換值即可取消清除請求。',
-                                      ja: '保存時にこの任意シークレットを消去します。置換値を入力すると消去要求を取り消します。',
-                                      ko: '저장 시 이 선택 시크릿이 삭제됩니다. 대체 값을 입력하면 삭제 요청이 취소됩니다.',
-                                      fr: 'Ce secret facultatif sera supprimé à l’enregistrement. Saisissez une valeur de remplacement pour annuler la suppression.',
-                                    })
-                                  : row.isMasked
-                                    ? requiredSecret
-                                      ? text({
-                                          en: 'Required masked secret stays unchanged unless you type a replacement. It cannot be cleared; replace it or disable the adapter.',
-                                          zh_HANS: '必填遮罩密钥会保持不变，除非你输入替换值。它不能被清空；请替换它或停用适配器。',
-                                          zh_HANT: '必填遮罩密鑰會保持不變，除非你輸入替換值。它不能被清除；請替換它或停用適配器。',
-                                          ja: '必須のマスク済みシークレットは、置換値を入力しない限り保持されます。消去はできません。置換するかアダプターを無効化してください。',
-                                          ko: '필수 마스킹 시크릿은 대체 값을 입력하지 않으면 유지됩니다. 삭제할 수 없으며 교체하거나 어댑터를 비활성화하세요.',
-                                          fr: 'Le secret masqué obligatoire reste inchangé sauf si vous saisissez une valeur de remplacement. Il ne peut pas être supprimé ; remplacez-le ou désactivez l’adaptateur.',
-                                        })
-                                      : text({
-                                          en: 'Masked optional secret stays unchanged unless you type a replacement or explicitly clear it. Reveal only to inspect the current value.',
-                                          zh_HANS: '可选遮罩密钥会保持不变，除非你输入替换值或显式清空它。仅在需要查看当前值时才显示。',
-                                          zh_HANT: '可選遮罩密鑰會保持不變，除非你輸入替換值或明確清除它。只有需要查看目前值時才顯示。',
-                                          ja: '任意のマスク済みシークレットは、置換値を入力するか明示的に消去しない限り保持されます。現在値の確認が必要な場合だけ表示してください。',
-                                          ko: '선택 마스킹 시크릿은 대체 값을 입력하거나 명시적으로 삭제하지 않으면 유지됩니다. 현재 값을 확인해야 할 때만 표시하세요.',
-                                          fr: 'Le secret masqué facultatif reste inchangé sauf si vous saisissez une valeur de remplacement ou le supprimez explicitement. Révélez-le seulement pour inspecter la valeur actuelle.',
-                                        })
-                                    : text({
-                                        en: 'This secret value is visible or newly typed. Saving replaces the current stored value.',
-                                        zh_HANS: '此密钥值当前可见或刚输入；保存会替换当前已存储值。',
-                                        zh_HANT: '此密鑰值目前可見或剛輸入；儲存會替換目前已儲存值。',
-                                        ja: 'このシークレット値は表示中、または新しく入力された値です。保存すると現在の保存値を置換します。',
-                                        ko: '이 시크릿 값은 현재 표시 중이거나 새로 입력된 값입니다. 저장하면 현재 저장된 값을 교체합니다.',
-                                        fr: 'Cette valeur secrète est visible ou nouvellement saisie. L’enregistrement remplace la valeur stockée actuelle.',
-                                      })}
-                              </p>
-                            ) : null}
-                          </div>
-                          <div className="flex flex-wrap items-end gap-2">
-                            {row.isSecret ? <StatusBadge tone="warning" label={text('Secret', '密钥', 'シークレット')} /> : <StatusBadge tone="neutral" label={text('Plain', '明文', '平文')} />}
-                            {!adapterCreateMode && row.isSecret && row.isMasked ? (
-                              <SecondaryButton onClick={() => void handleRevealAdapterConfig(row.configKey)}>
-                                {text('Reveal', '显示', '表示')}
-                              </SecondaryButton>
-                            ) : null}
-                            {canClearSecret ? (
+                            : text(
+                                'The stored secret remains masked in detail reads. Leave the secret field blank during update to preserve the current secret.',
+                                '详情读取时，已存储的密钥会保持遮罩。更新时将密钥字段留空即可保留当前值。',
+                                '保存済みシークレットは詳細取得時にマスクされたままです。更新時にシークレット欄を空欄にすると現在の値を保持します。'
+                              )
+                        }
+                        actions={
+                          <>
+                            {!webhookCreateMode ? (
                               <SecondaryButton
-                                tone={row.clearRequested ? 'neutral' : 'danger'}
                                 onClick={() =>
-                                  setAdapterConfigRows((current) =>
-                                    current.map((item) =>
-                                      item.rowKey === row.rowKey
-                                        ? {
-                                            ...item,
-                                            configValue: item.clearRequested ? '******' : '',
-                                            isMasked: !item.clearRequested,
-                                            valueEdited: false,
-                                            clearRequested: !item.clearRequested,
-                                          }
-                                        : item,
-                                    ),
-                                  )
+                                  requestDiscardDirtyEditor(() => {
+                                    setWebhookCreateMode(true);
+                                    setSelectedWebhookId(null);
+                                    setWebhookDrawerOpen(true);
+                                    setWebhookEditorState(
+                                      buildWebhookDraft(
+                                        undefined,
+                                        webhookDefinitionsPanel.data[0] ?? null
+                                      )
+                                    );
+                                  })
                                 }
                               >
-                                {row.clearRequested ? text('Keep secret', '保留密钥', 'シークレットを保持') : text('Clear secret', '清空密钥', 'シークレットを消去')}
+                                {text('Start new', '新建', '新規作成')}
                               </SecondaryButton>
-                            ) : null}
-                            {row.isNew && !row.locked ? (
+                            ) : (
+                              <SecondaryButton
+                                onClick={() =>
+                                  requestDiscardDirtyEditor(() => {
+                                    setWebhookCreateMode(false);
+                                    setSelectedWebhookId(webhooksPanel.data[0]?.id || null);
+                                    setWebhookDrawerOpen(false);
+                                  })
+                                }
+                              >
+                                {text('Cancel', '取消', 'キャンセル')}
+                              </SecondaryButton>
+                            )}
+                            {!webhookCreateMode && selectedWebhookId ? (
                               <SecondaryButton
                                 tone="danger"
                                 onClick={() =>
-                                  setAdapterConfigRows((current) => current.filter((item) => item.rowKey !== row.rowKey))
+                                  setConfirmState({
+                                    title: text(
+                                      `Delete ${webhookDetailPanel.data?.code || 'webhook'}?`,
+                                      `删除 ${webhookDetailPanel.data?.code || 'Webhook'}？`,
+                                      `${webhookDetailPanel.data?.code || 'Webhook'} を削除しますか？`
+                                    ),
+                                    description: text(
+                                      'Delete permanently removes the webhook record. Prefer deactivation when you only need to stop sending.',
+                                      '删除会永久移除该 Webhook 记录。如果只是想停止发送，请优先停用。',
+                                      '削除すると Webhook レコードは完全に消去されます。送信停止だけが目的なら無効化を優先してください。'
+                                    ),
+                                    confirmText: text(
+                                      'Delete webhook',
+                                      '删除 Webhook',
+                                      'Webhook を削除'
+                                    ),
+                                    pendingText: text(
+                                      'Deleting webhook...',
+                                      '正在删除 Webhook...',
+                                      'Webhook を削除しています...'
+                                    ),
+                                    intent: 'danger',
+                                    errorFallback: text(
+                                      'Failed to delete webhook.',
+                                      '删除 Webhook 失败。',
+                                      'Webhook の削除に失敗しました。'
+                                    ),
+                                    onConfirm: async () => {
+                                      const targetCode =
+                                        webhookDetailPanel.data?.code ||
+                                        text('Webhook', 'Webhook', 'Webhook');
+                                      await deleteWebhook(request, selectedWebhookId);
+                                      setSelectedWebhookId(null);
+                                      await refreshWebhooks();
+                                      return text(
+                                        `${targetCode} deleted permanently.`,
+                                        `已永久删除 ${targetCode}。`,
+                                        `${targetCode} を完全に削除しました。`
+                                      );
+                                    },
+                                  })
                                 }
                               >
-                                {text('Remove', '移除', '削除')}
+                                {text('Delete', '删除', '削除')}
                               </SecondaryButton>
                             ) : null}
-                          </div>
-                        </div>
-                      );
-                    })()
-                  ))}
-
-                  {!adapterCreateMode ? (
-                    <SecondaryButton
-                      onClick={() =>
-                        setAdapterConfigRows((current) => [
-                          ...current,
-                          {
-                            rowKey: `new-config-${current.length + 1}-${Date.now()}`,
-                            configKey: '',
-                            configValue: '',
-                            isSecret: false,
-                            isMasked: false,
-                            isNew: true,
-                            locked: false,
-                            valueEdited: false,
-                            clearRequested: false,
-                          },
-                        ])
-                      }
-                    >
-                      <Plus className="h-4 w-4" />
-                      {text('Add config row', '新增配置行', '設定行を追加')}
-                    </SecondaryButton>
-                  ) : null}
-                </div>
-              ) : adapterDetailPanel.data ? (
-                <StateView
-                  status="empty"
-                  title={text('Configuration is collapsed', '配置已收起', '設定は折りたたまれています')}
-                  description={text({
-                    en: 'Use Configure when you are ready to review config values. Masked secrets stay preserved unless you reveal or replace them.',
-                    zh_HANS: '准备查看配置值时再点击配置。已遮罩密钥会保持不变，除非你显示或替换它。',
-                    zh_HANT: '準備查看設定值時再點擊設定。已遮罩密鑰會保持不變，除非你顯示或替換它。',
-                    ja: '設定値を確認する準備ができたら「設定」を使用してください。マスク済みシークレットは、表示または置換しない限り保持されます。',
-                    ko: '설정 값을 검토할 준비가 되었을 때 설정을 사용하세요. 마스킹된 시크릿은 표시하거나 교체하지 않는 한 유지됩니다.',
-                    fr: 'Utilisez Configurer lorsque vous êtes prêt à examiner les valeurs. Les secrets masqués restent conservés sauf si vous les révélez ou les remplacez.',
-                  })}
-                />
-              ) : (
-                <p className="text-sm text-slate-500">{text('Select or create an adapter to manage config values.', '请选择或创建一个适配器来管理配置值。', '設定値を管理するにはアダプターを選択または作成してください。')}</p>
-              )}
-            </FormSection>
-            ) : null}
-
-            {adapterConfigureSection === 'webhook-api-client' ? (
-              <FormSection
-                title={text('Webhook/API Client', 'Webhook/API 客户端', 'Webhook/API クライアント')}
-                description={text({
-                  en: 'Related inbound surfaces stay in their existing top-level workspaces so list state, lifecycle controls, and key handling remain visible.',
-                  zh_HANS: '相关入站能力保留在现有一级工作区，确保列表状态、生命周期控制与密钥处理保持可见。',
-                  zh_HANT: '相關入站能力保留在現有一級工作區，確保列表狀態、生命週期控制與密鑰處理保持可見。',
-                  ja: '関連する受信面は既存のトップレベルワークスペースに保持し、一覧状態、ライフサイクル制御、キー処理を見える状態にします。',
-                  ko: '관련 인바운드 영역은 기존 최상위 작업 영역에 유지되어 목록 상태, 수명 주기 제어, 키 처리를 계속 볼 수 있습니다.',
-                  fr: 'Les surfaces entrantes liées restent dans leurs espaces de premier niveau afin que l’état de liste, le cycle de vie et les clés restent visibles.',
-                })}
-              >
-                <div className="grid gap-4 lg:grid-cols-2">
-                  <StateView
-                    status={availableTabs.includes('webhooks') ? 'empty' : 'unavailable'}
-                    title={text('Webhooks stay list-first', 'Webhook 保持列表优先', 'Webhook は一覧優先')}
-                    description={
-                      availableTabs.includes('webhooks')
-                        ? text('Use the top-level Webhooks section for endpoint URLs, retry settings, headers, and lifecycle actions.', '请使用一级 Webhook 分区管理端点地址、重试策略、请求头与生命周期操作。', 'エンドポイント URL、再試行設定、ヘッダー、ライフサイクル操作はトップレベルの Webhook セクションで管理します。')
-                        : text('Webhook management is available at tenant root or Account Center scope.', 'Webhook 管理仅在租户根或账户中心范围可用。', 'Webhook 管理はテナントルートまたはアカウントセンターのスコープで利用できます。')
-                    }
-                  />
-                  <StateView
-                    status={availableTabs.includes('api-keys') ? 'empty' : 'unavailable'}
-                    title={text('API clients stay in Account Center', 'API 客户端保留在账户中心', 'API クライアントはアカウントセンターに保持')}
-                    description={
-                      availableTabs.includes('api-keys')
-                        ? text('Use the API Clients section for managed client records, key generation, rotation, and revocation.', '请使用 API 客户端分区管理受管客户端记录、密钥生成、轮换与撤销。', '管理対象クライアント記録、キー生成、ローテーション、失効は API クライアントセクションで管理します。')
-                        : text('Tenant, subsidiary, and talent workspaces inherit API client configuration from Account Center.', '租户、分目录与艺人工作区继承账户中心的 API 客户端配置。', 'テナント、配下スコープ、タレントのワークスペースはアカウントセンターの API クライアント設定を継承します。')
-                    }
-                  />
-                </div>
-              </FormSection>
-            ) : null}
-
-            {adapterConfigureSection === 'email-templates' ? (
-              <FormSection
-                title={text('Email Templates', '邮件模板', 'メールテンプレート')}
-                description={text({
-                  en: 'Notification copy and provider settings stay in the Email workspace so template content, sender identity, and delivery checks are reviewed together.',
-                  zh_HANS: '通知文案与服务商设置保留在邮件工作区，便于一起检查模板内容、发信身份与投递测试。',
-                  zh_HANT: '通知文案與服務商設定保留在郵件工作區，便於一起檢查範本內容、發信身分與投遞測試。',
-                  ja: '通知文面とプロバイダー設定はメールワークスペースに保持し、テンプレート内容、送信者情報、配信チェックをまとめて確認します。',
-                  ko: '알림 문구와 제공자 설정은 이메일 작업 영역에 유지되어 템플릿 내용, 발신자 ID, 전달 검사를 함께 검토합니다.',
-                  fr: 'Le contenu des notifications et les paramètres fournisseur restent dans l’espace E-mail afin de réviser ensemble les modèles, l’identité d’expédition et les tests de livraison.',
-                })}
-              >
-                <StateView
-                  status={availableTabs.includes('email') ? 'empty' : 'unavailable'}
-                  title={
-                    availableTabs.includes('email')
-                      ? text('Email workspace owns templates', '邮件工作区负责模板', 'メールワークスペースがテンプレートを管理')
-                      : text('Email templates unavailable for this scope', '当前范围无法使用邮件模板', 'このスコープではメールテンプレートを利用できません')
-                  }
-                  description={
-                    availableTabs.includes('email')
-                      ? text('Use the top-level Email section for template list, editor, preview, and provider configuration.', '请使用一级邮件分区管理模板列表、编辑器、预览与服务商配置。', 'テンプレート一覧、エディター、プレビュー、プロバイダー設定はトップレベルのメールセクションで管理します。')
-                      : text('Email templates are available at tenant root and Account Center scope, not inside subsidiary or talent adapter overrides.', '邮件模板在租户根与账户中心范围可用，不在分目录或艺人适配器覆盖中编辑。', 'メールテンプレートはテナントルートとアカウントセンターのスコープで利用できます。配下スコープやタレントのアダプター上書き内では編集しません。')
-                  }
-                />
-              </FormSection>
-            ) : null}
-          </ActionDrawer>
-        </>
-      ) : null}
-
-      {displayedTab === 'webhooks' ? (
-        <>
-          <GlassSurface className="p-6">
-            <FormSection
-              title={text('Webhook Endpoints', 'Webhook 端点', 'Webhook エンドポイント')}
-              description={text('Create webhook endpoints, manage retry settings, and keep deactivation separate from delete.', '创建 Webhook 端点、管理重试策略，并将停用与永久删除区分开。', 'Webhook エンドポイントの作成、再試行設定の管理、無効化と削除の分離を行います。')}
-              actions={
-                <>
-                  <SecondaryButton onClick={() => void refreshWebhooks()}>
-                    <RefreshCcw className="h-4 w-4" />
-                    {text('Refresh', '刷新', '更新')}
-                  </SecondaryButton>
-                  <SecondaryButton
-                    tone="primary"
-                    onClick={() =>
-                      requestDiscardDirtyEditor(() => {
-                        setWebhookCreateMode(true);
-                        setSelectedWebhookId(null);
-                        setWebhookDrawerOpen(true);
-                        setWebhookEditorState(buildWebhookDraft(undefined, webhookDefinitionsPanel.data[0] ?? null));
-                      })
-                    }
-                  >
-                    <Plus className="h-4 w-4" />
-                    {text('New webhook', '新建 Webhook', '新しい Webhook')}
-                  </SecondaryButton>
-                </>
-              }
-            >
-              {webhooksPanel.unavailableReason ? (
-                <StateView
-                  status="unavailable"
-                  title={text('Webhooks unavailable for this scope', '当前范围无法使用 Webhook', 'この範囲では Webhook を利用できません')}
-                  description={webhooksPanel.unavailableReason}
-                />
-              ) : webhooksPanel.error ? (
-                <StateView status="error" title={text('Webhook list unavailable', 'Webhook 列表不可用', 'Webhook 一覧を表示できません')} description={webhooksPanel.error} />
-              ) : (
-                <>
-                  <TableShell
-                  ariaLabel={text('Webhooks', 'Webhook', 'Webhook')}
-                  columns={[
-                    text('Code', '代码', 'コード'),
-                    text('Endpoint', '端点', 'エンドポイント'),
-                    text('Events', '事件数', 'イベント数'),
-                    text('Talents', '艺人范围', 'タレント範囲'),
-                    text('Failures', '失败次数', '失敗回数'),
-                    text('Status', '状态', '状態'),
-                    text('Actions', '操作', '操作'),
-                  ]}
-                  dataLength={paginatedWebhooks.items.length}
-                  isLoading={webhooksPanel.loading}
-                  isEmpty={webhooksPanel.data.length === 0}
-                  emptyTitle={text('No webhooks configured', '尚未配置 Webhook', '設定済み Webhook はありません')}
-                  emptyDescription={text('Create the first tenant webhook for customer, membership, marshmallow, report, or import events.', '创建第一个租户 Webhook，用于发送客户、会员、棉花糖、报表或导入事件。', '顧客、会員、マシュマロ、レポート、インポートイベント向けの最初の Webhook を作成してください。')}
-                >
-                  {paginatedWebhooks.items.map((webhook) => (
-                    <tr key={webhook.id} className={selectedWebhookId === webhook.id ? 'bg-indigo-50/40' : undefined}>
-                      <td className="px-6 py-4 text-sm font-semibold text-slate-900">{webhook.code}</td>
-                      <td className="px-6 py-4 text-sm text-slate-700">{webhook.url}</td>
-                      <td className="px-6 py-4 text-sm text-slate-700">{webhook.events.length}</td>
-                      <td className="px-6 py-4 text-sm text-slate-700">
-                        {formatMonitoredTalentTarget(webhook.monitoredTalentIds)}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-slate-700">{webhook.consecutiveFailures}</td>
-                      <td className="px-6 py-4">
-                        <StatusBadge tone={webhook.isActive ? 'success' : 'danger'} label={statusLabel(webhook.isActive)} />
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex flex-wrap gap-2">
-                          <SecondaryButton
-                            onClick={() =>
-                              requestDiscardDirtyEditor(() => {
-                                setWebhookCreateMode(false);
-                                setSelectedWebhookId(webhook.id);
-                                setWebhookDrawerOpen(true);
-                              })
-                            }
-                          >
-                            {text('Open', '打开', '開く')}
-                          </SecondaryButton>
-                          {webhook.isActive ? (
-                            <SecondaryButton
-                              tone="danger"
-                              onClick={() =>
-                                setConfirmState({
-                                  title: text(`Deactivate ${webhook.code}?`, `停用 ${webhook.code}？`, `${webhook.code} を無効化しますか？`),
-                                  description: text('The webhook stays stored, but sending pauses until you reactivate it.', 'Webhook 会被保留，但发送会暂停，直到你重新启用它。', 'Webhook は保持されますが、再有効化するまで送信が停止されます。'),
-                                  confirmText: text('Deactivate webhook', '停用 Webhook', 'Webhook を無効化'),
-                                  pendingText: text('Deactivating webhook...', '正在停用 Webhook...', 'Webhook を無効化しています...'),
-                                  intent: 'danger',
-                                  errorFallback: text('Failed to deactivate webhook.', '停用 Webhook 失败。', 'Webhook の無効化に失敗しました。'),
-                                  onConfirm: async () => {
-                                    await deactivateWebhook(request, webhook.id);
-                                    await refreshWebhooks(webhook.id);
-                                    return text(`${webhook.code} webhook deactivated.`, `已停用 Webhook ${webhook.code}。`, `Webhook ${webhook.code} を無効化しました。`);
-                                  },
-                                })
+                            <AsyncSubmitButton
+                              onClick={() => void handleWebhookSave()}
+                              isPending={webhookSubmitting}
+                              disabled={webhookCreateMode && !selectedWebhookDefinition}
+                              pendingText={
+                                webhookCreateMode
+                                  ? text(
+                                      'Creating webhook...',
+                                      '正在创建 Webhook...',
+                                      'Webhook を作成しています...'
+                                    )
+                                  : text(
+                                      'Saving webhook...',
+                                      '正在保存 Webhook...',
+                                      'Webhook を保存しています...'
+                                    )
                               }
                             >
-                              {text('Deactivate', '停用', '無効化')}
-                            </SecondaryButton>
-                          ) : (
-                            <SecondaryButton
-                              tone="primary"
-                              onClick={() =>
-                                setConfirmState({
-                                  title: text(`Reactivate ${webhook.code}?`, `重新启用 ${webhook.code}？`, `${webhook.code} を再有効化しますか？`),
-                                  description: text('This re-enables sending for the webhook endpoint.', '这会重新启用该 Webhook 端点的发送。', 'この Webhook エンドポイントの送信を再び有効にします。'),
-                                  confirmText: text('Reactivate webhook', '重新启用 Webhook', 'Webhook を再有効化'),
-                                  pendingText: text('Reactivating webhook...', '正在重新启用 Webhook...', 'Webhook を再有効化しています...'),
-                                  intent: 'primary',
-                                  errorFallback: text('Failed to reactivate webhook.', '重新启用 Webhook 失败。', 'Webhook の再有効化に失敗しました。'),
-                                  onConfirm: async () => {
-                                    await reactivateWebhook(request, webhook.id);
-                                    await refreshWebhooks(webhook.id);
-                                    return text(`${webhook.code} webhook reactivated.`, `已重新启用 Webhook ${webhook.code}。`, `Webhook ${webhook.code} を再有効化しました。`);
-                                  },
-                                })
-                              }
-                            >
-                              {text('Reactivate', '重新启用', '再有効化')}
-                            </SecondaryButton>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                  </TableShell>
-                  {webhooksPanel.data.length > 0 ? (
-                    <PaginationFooter
-                      pagination={paginatedWebhooks.pagination}
-                      itemCount={paginatedWebhooks.items.length}
-                      labels={buildPaginationFooterLabels(
-                        locale,
-                        paginatedWebhooks.pagination,
-                        paginatedWebhooks.items.length,
-                      )}
-                      onPageChange={(page) => applyPaginationQueryState({ webhookPage: page })}
-                      onPageSizeChange={(pageSize) => {
-                        applyPaginationQueryState({
-                          webhookPage: 1,
-                          webhookPageSize: pageSize as PageSizeOption,
-                        });
-                      }}
-                      isLoading={webhooksPanel.loading}
-                      className="mt-4 rounded-2xl border border-slate-200 bg-slate-50/80"
-                    />
-                  ) : null}
-                </>
-              )}
-            </FormSection>
-          </GlassSurface>
-
-          <ActionDrawer
-            open={webhookDrawerOpen}
-            onOpenChange={(open) => requestDrawerOpenChange(setWebhookDrawerOpen, open)}
-            title={webhookCreateMode ? text('New Webhook', '新建 Webhook', '新しい Webhook') : text('Webhook Detail', 'Webhook 详情', 'Webhook 詳細')}
-            description={
-              webhookCreateMode
-                ? text('Choose a supported webhook definition, then configure only endpoint delivery settings.', '选择支持的 Webhook 定义，然后只配置端点投递设置。', 'サポート済み Webhook 定義を選び、エンドポイント配信設定だけを構成します。')
-                : text('Edit endpoint URL, retry settings, headers, events, and lifecycle details.', '编辑端点 URL、重试策略、请求头、事件与生命周期详情。', 'エンドポイント URL、再試行設定、ヘッダー、イベント、ライフサイクル詳細を編集します。')
-            }
-            size="xl"
-            closeButtonAriaLabel={text({
-              en: 'Close webhook detail drawer',
-              zh_HANS: '关闭 Webhook 详情抽屉',
-              zh_HANT: '關閉 Webhook 詳情抽屜',
-              ja: 'Webhook 詳細ドロワーを閉じる',
-              ko: '웹훅 상세 서랍 닫기',
-              fr: 'Fermer le panneau de détail du webhook',
-            })}
-          >
-            <FormSection
-              title={webhookCreateMode ? text('New Webhook', '新建 Webhook', '新しい Webhook') : text('Webhook Detail', 'Webhook 详情', 'Webhook 詳細')}
-              description={
-                webhookCreateMode
-                  ? text('Webhook code, name, and supported event set come from the selected definition. Operators only provide the receiving endpoint and delivery metadata.', 'Webhook 代码、名称和支持事件集来自所选定义。操作员只提供接收端点与投递元数据。', 'Webhook コード、名称、サポートイベントは選択した定義から決まります。オペレーターは受信エンドポイントと配信メタデータだけを入力します。')
-                  : text('The stored secret remains masked in detail reads. Leave the secret field blank during update to preserve the current secret.', '详情读取时，已存储的密钥会保持遮罩。更新时将密钥字段留空即可保留当前值。', '保存済みシークレットは詳細取得時にマスクされたままです。更新時にシークレット欄を空欄にすると現在の値を保持します。')
-              }
-              actions={
-                <>
-                  {!webhookCreateMode ? (
-                    <SecondaryButton
-                      onClick={() =>
-                        requestDiscardDirtyEditor(() => {
-                          setWebhookCreateMode(true);
-                          setSelectedWebhookId(null);
-                          setWebhookDrawerOpen(true);
-                          setWebhookEditorState(buildWebhookDraft(undefined, webhookDefinitionsPanel.data[0] ?? null));
-                        })
-                      }
-                    >
-                      {text('Start new', '新建', '新規作成')}
-                    </SecondaryButton>
-                  ) : (
-                    <SecondaryButton
-                      onClick={() =>
-                        requestDiscardDirtyEditor(() => {
-                          setWebhookCreateMode(false);
-                          setSelectedWebhookId(webhooksPanel.data[0]?.id || null);
-                          setWebhookDrawerOpen(false);
-                        })
-                      }
-                    >
-                      {text('Cancel', '取消', 'キャンセル')}
-                    </SecondaryButton>
-                  )}
-                  {!webhookCreateMode && selectedWebhookId ? (
-                    <SecondaryButton
-                      tone="danger"
-                      onClick={() =>
-                        setConfirmState({
-                          title: text(
-                            `Delete ${webhookDetailPanel.data?.code || 'webhook'}?`,
-                            `删除 ${webhookDetailPanel.data?.code || 'Webhook'}？`,
-                            `${webhookDetailPanel.data?.code || 'Webhook'} を削除しますか？`,
-                          ),
-                          description: text('Delete permanently removes the webhook record. Prefer deactivation when you only need to stop sending.', '删除会永久移除该 Webhook 记录。如果只是想停止发送，请优先停用。', '削除すると Webhook レコードは完全に消去されます。送信停止だけが目的なら無効化を優先してください。'),
-                          confirmText: text('Delete webhook', '删除 Webhook', 'Webhook を削除'),
-                          pendingText: text('Deleting webhook...', '正在删除 Webhook...', 'Webhook を削除しています...'),
-                          intent: 'danger',
-                          errorFallback: text('Failed to delete webhook.', '删除 Webhook 失败。', 'Webhook の削除に失敗しました。'),
-                          onConfirm: async () => {
-                            const targetCode = webhookDetailPanel.data?.code || text('Webhook', 'Webhook', 'Webhook');
-                            await deleteWebhook(request, selectedWebhookId);
-                            setSelectedWebhookId(null);
-                            await refreshWebhooks();
-                            return text(`${targetCode} deleted permanently.`, `已永久删除 ${targetCode}。`, `${targetCode} を完全に削除しました。`);
-                          },
-                        })
-                      }
-                    >
-                      {text('Delete', '删除', '削除')}
-                    </SecondaryButton>
-                  ) : null}
-                  <AsyncSubmitButton
-                    onClick={() => void handleWebhookSave()}
-                    isPending={webhookSubmitting}
-                    disabled={webhookCreateMode && !selectedWebhookDefinition}
-                    pendingText={
-                      webhookCreateMode
-                        ? text('Creating webhook...', '正在创建 Webhook...', 'Webhook を作成しています...')
-                        : text('Saving webhook...', '正在保存 Webhook...', 'Webhook を保存しています...')
-                    }
-                  >
-                    {webhookCreateMode ? text('Create webhook', '创建 Webhook', 'Webhook を作成') : text('Save webhook', '保存 Webhook', 'Webhook を保存')}
-                  </AsyncSubmitButton>
-                </>
-              }
-            >
-              {webhookDetailPanel.unavailableReason ? (
-                <StateView
-                  status="unavailable"
-                  title={text('Webhook detail unavailable for this scope', '当前范围无法查看 Webhook 详情', 'この範囲では Webhook 詳細を表示できません')}
-                  description={webhookDetailPanel.unavailableReason}
-                />
-              ) : webhookDetailPanel.error ? (
-                <StateView status="error" title={text('Webhook detail unavailable', 'Webhook 详情不可用', 'Webhook 詳細を表示できません')} description={webhookDetailPanel.error} />
-              ) : webhookDetailPanel.loading ? (
-                <p className="text-sm text-slate-500">{text('Loading webhook detail…', '正在加载 Webhook 详情…', 'Webhook 詳細を読み込んでいます…')}</p>
-              ) : webhookCreateMode || webhookDetailPanel.data ? (
-                <>
-                  <div className="grid gap-4 lg:grid-cols-2">
-                    {webhookCreateMode ? (
-                      <>
-                        <SelectField
-                          label={text('Supported webhook', '支持的 Webhook', 'サポート済み Webhook')}
-                          value={webhookDraft.definitionKey}
-                          onChange={(value) => {
-                            const definition = webhookDefinitionsPanel.data.find((item) => item.key === value) ?? null;
-                            setWebhookEditorState(buildWebhookDraft(undefined, definition));
-                          }}
-                          disabled={webhookDefinitionsPanel.loading}
-                          options={[
-                            { value: '', label: text('Choose a supported webhook', '选择支持的 Webhook', 'サポート済み Webhook を選択') },
-                            ...webhookDefinitionsPanel.data.map((definition) => ({
-                              value: definition.key,
-                              label: `${pickWebhookDefinitionText(definition.name, definition.code)} (${definition.code})`,
-                            })),
-                          ]}
-                        />
-                        {selectedWebhookDefinition ? (
-                          <div className="space-y-3 rounded-2xl border border-indigo-100 bg-indigo-50/70 p-4 lg:col-span-2">
-                            <div className="flex flex-wrap items-center gap-2">
-                              <StatusBadge tone="info" label={selectedWebhookDefinition.code} />
-                              <StatusBadge tone="neutral" label={text(`${selectedWebhookDefinition.events.length} events`, `${selectedWebhookDefinition.events.length} 个事件`, `${selectedWebhookDefinition.events.length} 件のイベント`)} />
-                            </div>
-                            <div>
-                              <p className="text-sm font-semibold text-slate-950">
-                                {pickWebhookDefinitionText(selectedWebhookDefinition.name, selectedWebhookDefinition.code)}
-                              </p>
-                              <p className="mt-1 text-sm leading-6 text-slate-600">
-                                {pickWebhookDefinitionText(selectedWebhookDefinition.description)}
-                              </p>
-                            </div>
-                          </div>
-                        ) : (
+                              {webhookCreateMode
+                                ? text('Create webhook', '创建 Webhook', 'Webhook を作成')
+                                : text('Save webhook', '保存 Webhook', 'Webhook を保存')}
+                            </AsyncSubmitButton>
+                          </>
+                        }
+                      >
+                        {webhookDetailPanel.unavailableReason ? (
                           <StateView
-                            status={webhookDefinitionsPanel.error ? 'error' : 'empty'}
-                            title={webhookDefinitionsPanel.error ? text('Webhook definitions unavailable', 'Webhook 定义不可用', 'Webhook 定義を表示できません') : text('Choose a supported webhook', '选择支持的 Webhook', 'サポート済み Webhook を選択')}
-                            description={webhookDefinitionsPanel.error ?? text('The create flow is driven by developer-provided webhook definitions. Free event-set creation is not available here.', '新增流程由开发者提供的 Webhook 定义驱动，这里不提供自由事件集创建。', '作成フローは開発者提供の Webhook 定義で決まります。自由なイベントセット作成はここでは利用できません。')}
+                            status="unavailable"
+                            title={text(
+                              'Webhook detail unavailable for this scope',
+                              '当前范围无法查看 Webhook 详情',
+                              'この範囲では Webhook 詳細を表示できません'
+                            )}
+                            description={webhookDetailPanel.unavailableReason}
                           />
-                        )}
-                      </>
-                    ) : (
-                      <TextField
-                        label={text('Webhook code', 'Webhook 代码', 'Webhook コード')}
-                        value={webhookDraft.code}
-                        onChange={(value) => setWebhookDraft((current) => ({ ...current, code: value.toUpperCase() }))}
-                        disabled
-                        placeholder={text('CUSTOMER_DELTA', 'CUSTOMER_DELTA', 'CUSTOMER_DELTA')}
-                      />
-                    )}
-                    <TextField
-                      label={text('Endpoint URL', '端点 URL', 'エンドポイント URL')}
-                      value={webhookDraft.url}
-                      onChange={(value) => setWebhookDraft((current) => ({ ...current, url: value }))}
-                      placeholder={text('https://example.com/webhooks/customer', 'https://example.com/webhooks/customer', 'https://example.com/webhooks/customer')}
-                    />
-                    {!webhookCreateMode ? (
-                      <>
-                        <TextField
-                          label={text('Base name', '基准名称', '基準名')}
-                          value={webhookDraft.nameBase}
-                          onChange={(value) => setWebhookDraft((current) => ({ ...current, nameBase: value }))}
-                        />
-                        <div className="space-y-2">
-                          <span className="text-sm font-medium text-slate-700">
-                            {text('Translations', '翻译', '翻訳')}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => setWebhookTranslationDrawerOpen(true)}
-                            className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 shadow-sm transition hover:border-slate-300 hover:text-slate-900"
-                          >
-                            <Languages className="h-4 w-4" />
-                            {configuredWebhookTranslationCount > 0
-                              ? text(
-                                  `Translation management (${configuredWebhookTranslationCount})`,
-                                  `翻译管理（${configuredWebhookTranslationCount}）`,
-                                  `翻訳管理（${configuredWebhookTranslationCount}）`,
-                                )
-                              : text('Translation management', '翻译管理', '翻訳管理')}
-                          </button>
-                          {consumerTranslationOptionsState.error ? (
-                            <p className="text-xs text-amber-700">{consumerTranslationOptionsState.error}</p>
-                          ) : null}
-                        </div>
-                      </>
-                    ) : null}
-                    <TextField
-                      label={text('Secret override', '覆盖密钥', 'シークレット上書き')}
-                      value={webhookDraft.secret}
-                      onChange={(value) => setWebhookDraft((current) => ({ ...current, secret: value }))}
-                      placeholder={
-                        webhookDetailPanel.data?.secret
-                          ? text('Leave blank to preserve current secret', '留空以保留当前密钥', '空欄で現在のシークレットを保持')
-                          : text('Optional shared secret', '可选共享密钥', '任意の共有シークレット')
-                      }
-                    />
-                    <TextField
-                      label={text('Max retries', '最大重试次数', '最大再試行回数')}
-                      value={webhookDraft.maxRetries}
-                      onChange={(value) => setWebhookDraft((current) => ({ ...current, maxRetries: value }))}
-                      type="number"
-                    />
-                    <TextField
-                      label={text('Backoff (ms)', '退避间隔（毫秒）', 'バックオフ（ms）')}
-                      value={webhookDraft.backoffMs}
-                      onChange={(value) => setWebhookDraft((current) => ({ ...current, backoffMs: value }))}
-                      type="number"
-                    />
-                  </div>
-
-                  <div className="rounded-2xl border border-slate-200 bg-white/70 p-4">
-                    <p className="text-sm font-semibold text-slate-900">{text('Subscribed events', '订阅事件', '購読イベント')}</p>
-                    <div className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                      {webhookCreateMode ? (
-                        selectedWebhookDefinition ? (
-                          selectedWebhookDefinition.events.map((eventName) => {
-                            const eventDefinition = webhookEventsPanel.data.find((item) => item.event === eventName);
-
-                            return (
-                              <div key={eventName} className="rounded-2xl border border-slate-200 bg-white/90 p-3 text-sm text-slate-700">
-                                <div className="flex items-start gap-3">
-                                  <StatusBadge tone="info" label={text('Defined', '已定义', '定義済み')} />
-                                  <div className="space-y-1">
-                                    <p className="font-semibold text-slate-900">{eventDefinition?.name ?? eventName}</p>
-                                    <p className="text-xs uppercase tracking-[0.14em] text-slate-500">{eventName}</p>
-                                    {eventDefinition?.description ? (
-                                      <p className="text-xs leading-5 text-slate-500">{eventDefinition.description}</p>
+                        ) : webhookDetailPanel.error ? (
+                          <StateView
+                            status="error"
+                            title={text(
+                              'Webhook detail unavailable',
+                              'Webhook 详情不可用',
+                              'Webhook 詳細を表示できません'
+                            )}
+                            description={webhookDetailPanel.error}
+                          />
+                        ) : webhookDetailPanel.loading ? (
+                          <p className="text-sm text-slate-500">
+                            {text(
+                              'Loading webhook detail…',
+                              '正在加载 Webhook 详情…',
+                              'Webhook 詳細を読み込んでいます…'
+                            )}
+                          </p>
+                        ) : webhookCreateMode || webhookDetailPanel.data ? (
+                          <>
+                            <div className="grid gap-4 lg:grid-cols-2">
+                              {webhookCreateMode ? (
+                                <>
+                                  <SelectField
+                                    label={text(
+                                      'Supported webhook',
+                                      '支持的 Webhook',
+                                      'サポート済み Webhook'
+                                    )}
+                                    value={webhookDraft.definitionKey}
+                                    onChange={(value) => {
+                                      const definition =
+                                        webhookDefinitionsPanel.data.find(
+                                          (item) => item.key === value
+                                        ) ?? null;
+                                      setWebhookEditorState(
+                                        buildWebhookDraft(undefined, definition)
+                                      );
+                                    }}
+                                    disabled={webhookDefinitionsPanel.loading}
+                                    options={[
+                                      {
+                                        value: '',
+                                        label: text(
+                                          'Choose a supported webhook',
+                                          '选择支持的 Webhook',
+                                          'サポート済み Webhook を選択'
+                                        ),
+                                      },
+                                      ...webhookDefinitionsPanel.data.map((definition) => ({
+                                        value: definition.key,
+                                        label: `${pickWebhookDefinitionText(definition.name, definition.code)} (${definition.code})`,
+                                      })),
+                                    ]}
+                                  />
+                                  {selectedWebhookDefinition ? (
+                                    <div className="space-y-3 rounded-2xl border border-indigo-100 bg-indigo-50/70 p-4 lg:col-span-2">
+                                      <div className="flex flex-wrap items-center gap-2">
+                                        <StatusBadge
+                                          tone="info"
+                                          label={selectedWebhookDefinition.code}
+                                        />
+                                        <StatusBadge
+                                          tone="neutral"
+                                          label={text(
+                                            `${selectedWebhookDefinition.events.length} events`,
+                                            `${selectedWebhookDefinition.events.length} 个事件`,
+                                            `${selectedWebhookDefinition.events.length} 件のイベント`
+                                          )}
+                                        />
+                                      </div>
+                                      <div>
+                                        <p className="text-sm font-semibold text-slate-950">
+                                          {pickWebhookDefinitionText(
+                                            selectedWebhookDefinition.name,
+                                            selectedWebhookDefinition.code
+                                          )}
+                                        </p>
+                                        <p className="mt-1 text-sm leading-6 text-slate-600">
+                                          {pickWebhookDefinitionText(
+                                            selectedWebhookDefinition.description
+                                          )}
+                                        </p>
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <StateView
+                                      status={webhookDefinitionsPanel.error ? 'error' : 'empty'}
+                                      title={
+                                        webhookDefinitionsPanel.error
+                                          ? text(
+                                              'Webhook definitions unavailable',
+                                              'Webhook 定义不可用',
+                                              'Webhook 定義を表示できません'
+                                            )
+                                          : text(
+                                              'Choose a supported webhook',
+                                              '选择支持的 Webhook',
+                                              'サポート済み Webhook を選択'
+                                            )
+                                      }
+                                      description={
+                                        webhookDefinitionsPanel.error ??
+                                        text(
+                                          'The create flow is driven by developer-provided webhook definitions. Free event-set creation is not available here.',
+                                          '新增流程由开发者提供的 Webhook 定义驱动，这里不提供自由事件集创建。',
+                                          '作成フローは開発者提供の Webhook 定義で決まります。自由なイベントセット作成はここでは利用できません。'
+                                        )
+                                      }
+                                    />
+                                  )}
+                                </>
+                              ) : (
+                                <TextField
+                                  label={text('Webhook code', 'Webhook 代码', 'Webhook コード')}
+                                  value={webhookDraft.code}
+                                  onChange={(value) =>
+                                    setWebhookDraft((current) => ({
+                                      ...current,
+                                      code: value.toUpperCase(),
+                                    }))
+                                  }
+                                  disabled
+                                  placeholder={text(
+                                    'CUSTOMER_DELTA',
+                                    'CUSTOMER_DELTA',
+                                    'CUSTOMER_DELTA'
+                                  )}
+                                />
+                              )}
+                              <TextField
+                                label={text('Endpoint URL', '端点 URL', 'エンドポイント URL')}
+                                value={webhookDraft.url}
+                                onChange={(value) =>
+                                  setWebhookDraft((current) => ({ ...current, url: value }))
+                                }
+                                placeholder={text(
+                                  'https://example.com/webhooks/customer',
+                                  'https://example.com/webhooks/customer',
+                                  'https://example.com/webhooks/customer'
+                                )}
+                              />
+                              {!webhookCreateMode ? (
+                                <>
+                                  <TextField
+                                    label={text('Base name', '基准名称', '基準名')}
+                                    value={webhookDraft.nameBase}
+                                    onChange={(value) =>
+                                      setWebhookDraft((current) => ({
+                                        ...current,
+                                        nameBase: value,
+                                      }))
+                                    }
+                                  />
+                                  <div className="space-y-2">
+                                    <span className="text-sm font-medium text-slate-700">
+                                      {text('Translations', '翻译', '翻訳')}
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={() => setWebhookTranslationDrawerOpen(true)}
+                                      className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 shadow-sm transition hover:border-slate-300 hover:text-slate-900"
+                                    >
+                                      <Languages className="h-4 w-4" />
+                                      {configuredWebhookTranslationCount > 0
+                                        ? text(
+                                            `Translation management (${configuredWebhookTranslationCount})`,
+                                            `翻译管理（${configuredWebhookTranslationCount}）`,
+                                            `翻訳管理（${configuredWebhookTranslationCount}）`
+                                          )
+                                        : text('Translation management', '翻译管理', '翻訳管理')}
+                                    </button>
+                                    {consumerTranslationOptionsState.error ? (
+                                      <p className="text-xs text-amber-700">
+                                        {consumerTranslationOptionsState.error}
+                                      </p>
                                     ) : null}
                                   </div>
-                                </div>
+                                </>
+                              ) : null}
+                              <TextField
+                                label={text('Secret override', '覆盖密钥', 'シークレット上書き')}
+                                value={webhookDraft.secret}
+                                onChange={(value) =>
+                                  setWebhookDraft((current) => ({ ...current, secret: value }))
+                                }
+                                placeholder={
+                                  webhookDetailPanel.data?.secret
+                                    ? text(
+                                        'Leave blank to preserve current secret',
+                                        '留空以保留当前密钥',
+                                        '空欄で現在のシークレットを保持'
+                                      )
+                                    : text(
+                                        'Optional shared secret',
+                                        '可选共享密钥',
+                                        '任意の共有シークレット'
+                                      )
+                                }
+                              />
+                              <TextField
+                                label={text('Max retries', '最大重试次数', '最大再試行回数')}
+                                value={webhookDraft.maxRetries}
+                                onChange={(value) =>
+                                  setWebhookDraft((current) => ({ ...current, maxRetries: value }))
+                                }
+                                type="number"
+                              />
+                              <TextField
+                                label={text('Backoff (ms)', '退避间隔（毫秒）', 'バックオフ（ms）')}
+                                value={webhookDraft.backoffMs}
+                                onChange={(value) =>
+                                  setWebhookDraft((current) => ({ ...current, backoffMs: value }))
+                                }
+                                type="number"
+                              />
+                            </div>
+
+                            <div className="rounded-2xl border border-slate-200 bg-white/70 p-4">
+                              <p className="text-sm font-semibold text-slate-900">
+                                {text('Subscribed events', '订阅事件', '購読イベント')}
+                              </p>
+                              <div className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                                {webhookCreateMode ? (
+                                  selectedWebhookDefinition ? (
+                                    selectedWebhookDefinition.events.map((eventName) => {
+                                      const eventDefinition = webhookEventsPanel.data.find(
+                                        (item) => item.event === eventName
+                                      );
+
+                                      return (
+                                        <div
+                                          key={eventName}
+                                          className="rounded-2xl border border-slate-200 bg-white/90 p-3 text-sm text-slate-700"
+                                        >
+                                          <div className="flex items-start gap-3">
+                                            <StatusBadge
+                                              tone="info"
+                                              label={text('Defined', '已定义', '定義済み')}
+                                            />
+                                            <div className="space-y-1">
+                                              <p className="font-semibold text-slate-900">
+                                                {eventDefinition?.name ?? eventName}
+                                              </p>
+                                              <p className="text-xs uppercase tracking-[0.14em] text-slate-500">
+                                                {eventName}
+                                              </p>
+                                              {eventDefinition?.description ? (
+                                                <p className="text-xs leading-5 text-slate-500">
+                                                  {eventDefinition.description}
+                                                </p>
+                                              ) : null}
+                                            </div>
+                                          </div>
+                                        </div>
+                                      );
+                                    })
+                                  ) : (
+                                    <StateView
+                                      status="empty"
+                                      title={text(
+                                        'Choose a webhook definition first',
+                                        '请先选择 Webhook 定义',
+                                        '先に Webhook 定義を選択'
+                                      )}
+                                      description={text(
+                                        'Supported events are locked by the developer-provided webhook definition.',
+                                        '支持事件由开发者提供的 Webhook 定义锁定。',
+                                        'サポートイベントは開発者提供の Webhook 定義で固定されます。'
+                                      )}
+                                    />
+                                  )
+                                ) : (
+                                  webhookEventsPanel.data.map((eventDefinition) => (
+                                    <label
+                                      key={eventDefinition.event}
+                                      className="rounded-2xl border border-slate-200 bg-white/90 p-3 text-sm text-slate-700"
+                                    >
+                                      <div className="flex items-start gap-3">
+                                        <input
+                                          type="checkbox"
+                                          checked={webhookDraft.selectedEvents.includes(
+                                            eventDefinition.event
+                                          )}
+                                          onChange={(event) =>
+                                            setWebhookDraft((current) => ({
+                                              ...current,
+                                              selectedEvents: event.target.checked
+                                                ? [...current.selectedEvents, eventDefinition.event]
+                                                : current.selectedEvents.filter(
+                                                    (item) => item !== eventDefinition.event
+                                                  ),
+                                            }))
+                                          }
+                                          className="mt-1 h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                                        />
+                                        <div className="space-y-1">
+                                          <p className="font-semibold text-slate-900">
+                                            {eventDefinition.name}
+                                          </p>
+                                          <p className="text-xs uppercase tracking-[0.14em] text-slate-500">
+                                            {eventDefinition.event}
+                                          </p>
+                                          <p className="text-xs leading-5 text-slate-500">
+                                            {eventDefinition.description}
+                                          </p>
+                                        </div>
+                                      </div>
+                                    </label>
+                                  ))
+                                )}
                               </div>
-                            );
-                          })
+                            </div>
+
+                            <div className="rounded-2xl border border-slate-200 bg-white/70 p-4">
+                              <div className="flex flex-wrap items-start justify-between gap-3">
+                                <div className="space-y-1">
+                                  <p className="text-sm font-semibold text-slate-900">
+                                    {text('Monitored talents', '监控艺人', '監視タレント')}
+                                  </p>
+                                  <p className="text-sm leading-6 text-slate-600">
+                                    {text(
+                                      'Leave the list empty to deliver events for all active talents in the tenant. Select one or more talents to narrow the webhook subscription.',
+                                      '将列表留空时，事件会覆盖租户内全部有效艺人。选择一个或多个艺人即可缩小此 Webhook 的订阅范围。',
+                                      '一覧を空のままにすると、テナント内のすべての有効タレントにイベントを配信します。1 人以上選択すると、この Webhook の購読範囲を絞り込めます。'
+                                    )}
+                                  </p>
+                                </div>
+                                <SecondaryButton
+                                  onClick={() =>
+                                    setWebhookDraft((current) => ({
+                                      ...current,
+                                      monitoredTalentIds: [],
+                                    }))
+                                  }
+                                  disabled={webhookDraft.monitoredTalentIds.length === 0}
+                                >
+                                  {text(
+                                    'Use all talents',
+                                    '使用全部艺人',
+                                    'すべてのタレントを対象にする'
+                                  )}
+                                </SecondaryButton>
+                              </div>
+                              <div className="mt-3 rounded-2xl border border-dashed border-slate-200 bg-slate-50/70 px-4 py-3 text-sm text-slate-700">
+                                {formatMonitoredTalentTarget(webhookDraft.monitoredTalentIds)}
+                              </div>
+                              <div className="mt-3">
+                                {organizationTreePanel.loading ? (
+                                  <p className="text-sm text-slate-500">
+                                    {text(
+                                      'Loading available talents…',
+                                      '正在加载可选艺人…',
+                                      '利用可能なタレントを読み込んでいます…'
+                                    )}
+                                  </p>
+                                ) : organizationTreePanel.unavailableReason ? (
+                                  <StateView
+                                    status="unavailable"
+                                    title={text(
+                                      'Talent picker unavailable',
+                                      '艺人选择器不可用',
+                                      'タレントピッカーを利用できません'
+                                    )}
+                                    description={organizationTreePanel.unavailableReason}
+                                  />
+                                ) : organizationTreePanel.error ? (
+                                  <StateView
+                                    status="error"
+                                    title={text(
+                                      'Talent picker failed to load',
+                                      '艺人选择器加载失败',
+                                      'タレントピッカーの読み込みに失敗しました'
+                                    )}
+                                    description={organizationTreePanel.error}
+                                  />
+                                ) : monitoredTalentOptions.length === 0 ? (
+                                  <StateView
+                                    status="empty"
+                                    title={text(
+                                      'No active talents available',
+                                      '当前没有可选艺人',
+                                      '選択できる有効タレントがありません'
+                                    )}
+                                    description={text(
+                                      'Webhook delivery will stay at tenant level until active talents become available.',
+                                      '在出现可选艺人之前，Webhook 将保持租户级覆盖。',
+                                      '選択できる有効タレントがない間、Webhook はテナント全体を対象にします。'
+                                    )}
+                                  />
+                                ) : (
+                                  <div className="grid gap-3 md:grid-cols-2">
+                                    {monitoredTalentOptions.map((talent) => {
+                                      const checked = webhookDraft.monitoredTalentIds.includes(
+                                        talent.id
+                                      );
+
+                                      return (
+                                        <label
+                                          key={talent.id}
+                                          className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-white/90 p-3 text-sm text-slate-700"
+                                        >
+                                          <input
+                                            type="checkbox"
+                                            checked={checked}
+                                            onChange={(event) =>
+                                              setWebhookDraft((current) => ({
+                                                ...current,
+                                                monitoredTalentIds: event.target.checked
+                                                  ? [...current.monitoredTalentIds, talent.id]
+                                                  : current.monitoredTalentIds.filter(
+                                                      (item) => item !== talent.id
+                                                    ),
+                                              }))
+                                            }
+                                            className="mt-1 h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                                          />
+                                          <div className="space-y-1">
+                                            <p className="font-semibold text-slate-900">
+                                              {talent.label}
+                                            </p>
+                                            <p className="text-xs leading-5 text-slate-500">
+                                              {talent.hint}
+                                            </p>
+                                          </div>
+                                        </label>
+                                      );
+                                    })}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+
+                            <TextAreaField
+                              label={text('Request headers', '请求头', 'リクエストヘッダー')}
+                              value={webhookDraft.headersText}
+                              onChange={(value) =>
+                                setWebhookDraft((current) => ({ ...current, headersText: value }))
+                              }
+                              rows={5}
+                              placeholder={text(
+                                'X-Tenant-Code: TENANT_TEST\nX-Signature-Version: 1',
+                                'X-Tenant-Code: TENANT_TEST\nX-Signature-Version: 1',
+                                'X-Tenant-Code: TENANT_TEST\nX-Signature-Version: 1'
+                              )}
+                            />
+
+                            {!webhookCreateMode && webhookDetailPanel.data ? (
+                              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                                <SummaryCard
+                                  label={text('Created', '创建时间', '作成日時')}
+                                  value={formatDateTime(
+                                    webhookDetailPanel.data.createdAt,
+                                    text('Unknown', '未知', '不明')
+                                  )}
+                                  hint={text(
+                                    'Original creation timestamp.',
+                                    '首次创建时间。',
+                                    '初回作成日時です。'
+                                  )}
+                                />
+                                <SummaryCard
+                                  label={text('Updated', '更新时间', '更新日時')}
+                                  value={formatDateTime(
+                                    webhookDetailPanel.data.updatedAt,
+                                    text('Unknown', '未知', '不明')
+                                  )}
+                                  hint={text(
+                                    'Last write to secret, headers, or metadata.',
+                                    '最近一次对密钥、请求头或元数据的写入时间。',
+                                    'シークレット・ヘッダー・メタデータの最終更新日時です。'
+                                  )}
+                                />
+                                <SummaryCard
+                                  label={text('Last Trigger', '最近触发', '最終実行')}
+                                  value={formatDateTime(webhookDetailPanel.data.lastTriggeredAt)}
+                                  hint={text(
+                                    'Most recent send attempt.',
+                                    '最近一次发送尝试。',
+                                    '直近の送信試行です。'
+                                  )}
+                                />
+                                <SummaryCard
+                                  label={text('Version', '版本', 'バージョン')}
+                                  value={String(webhookDetailPanel.data.version)}
+                                  hint={text(
+                                    'Current configuration version.',
+                                    '当前配置版本。',
+                                    '現在の設定バージョンです。'
+                                  )}
+                                />
+                              </div>
+                            ) : null}
+                          </>
                         ) : (
                           <StateView
                             status="empty"
-                            title={text('Choose a webhook definition first', '请先选择 Webhook 定义', '先に Webhook 定義を選択')}
-                            description={text('Supported events are locked by the developer-provided webhook definition.', '支持事件由开发者提供的 Webhook 定义锁定。', 'サポートイベントは開発者提供の Webhook 定義で固定されます。')}
+                            title={text('Select a webhook', '选择一个 Webhook', 'Webhook を選択')}
+                            description={text(
+                              'Choose an existing webhook from the table or start a new endpoint definition.',
+                              '从表格中选择现有 Webhook，或开始创建新的端点定义。',
+                              '表から既存の Webhook を選択するか、新しいエンドポイント定義を開始してください。'
+                            )}
                           />
-                        )
-                      ) : (
-                        webhookEventsPanel.data.map((eventDefinition) => (
-                          <label key={eventDefinition.event} className="rounded-2xl border border-slate-200 bg-white/90 p-3 text-sm text-slate-700">
-                            <div className="flex items-start gap-3">
-                              <input
-                                type="checkbox"
-                                checked={webhookDraft.selectedEvents.includes(eventDefinition.event)}
-                                onChange={(event) =>
-                                  setWebhookDraft((current) => ({
-                                    ...current,
-                                    selectedEvents: event.target.checked
-                                      ? [...current.selectedEvents, eventDefinition.event]
-                                      : current.selectedEvents.filter((item) => item !== eventDefinition.event),
-                                  }))
-                                }
-                                className="mt-1 h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
-                              />
-                              <div className="space-y-1">
-                                <p className="font-semibold text-slate-900">{eventDefinition.name}</p>
-                                <p className="text-xs uppercase tracking-[0.14em] text-slate-500">{eventDefinition.event}</p>
-                                <p className="text-xs leading-5 text-slate-500">{eventDefinition.description}</p>
-                              </div>
-                            </div>
-                          </label>
-                        ))
-                      )}
-                    </div>
-                  </div>
+                        )}
+                      </FormSection>
+                    </ActionDrawer>
+                  </>
+                ) : null}
 
-                  <div className="rounded-2xl border border-slate-200 bg-white/70 p-4">
-                    <div className="flex flex-wrap items-start justify-between gap-3">
-                      <div className="space-y-1">
-                        <p className="text-sm font-semibold text-slate-900">
-                          {text('Monitored talents', '监控艺人', '監視タレント')}
-                        </p>
-                        <p className="text-sm leading-6 text-slate-600">
-                          {text(
-                            'Leave the list empty to deliver events for all active talents in the tenant. Select one or more talents to narrow the webhook subscription.',
-                            '将列表留空时，事件会覆盖租户内全部有效艺人。选择一个或多个艺人即可缩小此 Webhook 的订阅范围。',
-                            '一覧を空のままにすると、テナント内のすべての有効タレントにイベントを配信します。1 人以上選択すると、この Webhook の購読範囲を絞り込めます。',
-                          )}
-                        </p>
-                      </div>
-                      <SecondaryButton
-                        onClick={() => setWebhookDraft((current) => ({ ...current, monitoredTalentIds: [] }))}
-                        disabled={webhookDraft.monitoredTalentIds.length === 0}
-                      >
-                        {text('Use all talents', '使用全部艺人', 'すべてのタレントを対象にする')}
-                      </SecondaryButton>
-                    </div>
-                    <div className="mt-3 rounded-2xl border border-dashed border-slate-200 bg-slate-50/70 px-4 py-3 text-sm text-slate-700">
-                      {formatMonitoredTalentTarget(webhookDraft.monitoredTalentIds)}
-                    </div>
-                    <div className="mt-3">
-                      {organizationTreePanel.loading ? (
-                        <p className="text-sm text-slate-500">
-                          {text('Loading available talents…', '正在加载可选艺人…', '利用可能なタレントを読み込んでいます…')}
-                        </p>
-                      ) : organizationTreePanel.unavailableReason ? (
-                        <StateView
-                          status="unavailable"
-                          title={text('Talent picker unavailable', '艺人选择器不可用', 'タレントピッカーを利用できません')}
-                          description={organizationTreePanel.unavailableReason}
-                        />
-                      ) : organizationTreePanel.error ? (
-                        <StateView
-                          status="error"
-                          title={text('Talent picker failed to load', '艺人选择器加载失败', 'タレントピッカーの読み込みに失敗しました')}
-                          description={organizationTreePanel.error}
-                        />
-                      ) : monitoredTalentOptions.length === 0 ? (
-                        <StateView
-                          status="empty"
-                          title={text('No active talents available', '当前没有可选艺人', '選択できる有効タレントがありません')}
-                          description={text(
-                            'Webhook delivery will stay at tenant level until active talents become available.',
-                            '在出现可选艺人之前，Webhook 将保持租户级覆盖。',
-                            '選択できる有効タレントがない間、Webhook はテナント全体を対象にします。',
-                          )}
-                        />
-                      ) : (
-                        <div className="grid gap-3 md:grid-cols-2">
-                          {monitoredTalentOptions.map((talent) => {
-                            const checked = webhookDraft.monitoredTalentIds.includes(talent.id);
-
-                            return (
-                              <label
-                                key={talent.id}
-                                className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-white/90 p-3 text-sm text-slate-700"
-                              >
-                                <input
-                                  type="checkbox"
-                                  checked={checked}
-                                  onChange={(event) =>
-                                    setWebhookDraft((current) => ({
-                                      ...current,
-                                      monitoredTalentIds: event.target.checked
-                                        ? [...current.monitoredTalentIds, talent.id]
-                                        : current.monitoredTalentIds.filter((item) => item !== talent.id),
-                                    }))
-                                  }
-                                  className="mt-1 h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
-                                />
-                                <div className="space-y-1">
-                                  <p className="font-semibold text-slate-900">{talent.label}</p>
-                                  <p className="text-xs leading-5 text-slate-500">{talent.hint}</p>
-                                </div>
-                              </label>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <TextAreaField
-                    label={text('Request headers', '请求头', 'リクエストヘッダー')}
-                    value={webhookDraft.headersText}
-                    onChange={(value) => setWebhookDraft((current) => ({ ...current, headersText: value }))}
-                    rows={5}
-                    placeholder={text('X-Tenant-Code: TENANT_TEST\nX-Signature-Version: 1', 'X-Tenant-Code: TENANT_TEST\nX-Signature-Version: 1', 'X-Tenant-Code: TENANT_TEST\nX-Signature-Version: 1')}
-                  />
-
-                  {!webhookCreateMode && webhookDetailPanel.data ? (
-                    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                      <SummaryCard label={text('Created', '创建时间', '作成日時')} value={formatDateTime(webhookDetailPanel.data.createdAt, text('Unknown', '未知', '不明'))} hint={text('Original creation timestamp.', '首次创建时间。', '初回作成日時です。')} />
-                      <SummaryCard label={text('Updated', '更新时间', '更新日時')} value={formatDateTime(webhookDetailPanel.data.updatedAt, text('Unknown', '未知', '不明'))} hint={text('Last write to secret, headers, or metadata.', '最近一次对密钥、请求头或元数据的写入时间。', 'シークレット・ヘッダー・メタデータの最終更新日時です。')} />
-                      <SummaryCard label={text('Last Trigger', '最近触发', '最終実行')} value={formatDateTime(webhookDetailPanel.data.lastTriggeredAt)} hint={text('Most recent send attempt.', '最近一次发送尝试。', '直近の送信試行です。')} />
-                      <SummaryCard label={text('Version', '版本', 'バージョン')} value={String(webhookDetailPanel.data.version)} hint={text('Current configuration version.', '当前配置版本。', '現在の設定バージョンです。')} />
-                    </div>
-                  ) : null}
-                </>
-              ) : (
-                <StateView
-                  status="empty"
-                  title={text('Select a webhook', '选择一个 Webhook', 'Webhook を選択')}
-                  description={text('Choose an existing webhook from the table or start a new endpoint definition.', '从表格中选择现有 Webhook，或开始创建新的端点定义。', '表から既存の Webhook を選択するか、新しいエンドポイント定義を開始してください。')}
-                />
-              )}
-            </FormSection>
-          </ActionDrawer>
-        </>
-      ) : null}
-
-      {displayedTab === 'api-keys' ? (
-        <>
-          <GlassSurface className="p-6">
-            <FormSection
-              title={text('API Clients', 'API 客户端', 'API クライアント')}
-              description={text('Manage platform API clients and their active keys from one workspace.', '在同一工作区内管理平台 API 客户端及其有效密钥。', 'このワークスペースでプラットフォーム API クライアントと有効キーを管理します。')}
-              actions={
-                <>
-                  <SecondaryButton onClick={() => void refreshConsumers()}>
-                    <RefreshCcw className="h-4 w-4" />
-                    {text('Refresh', '刷新', '更新')}
-                  </SecondaryButton>
-                  <SecondaryButton
-                    tone="primary"
-                    onClick={() =>
-                      requestDiscardDirtyEditor(() => {
-                        setConsumerCreateMode(true);
-                        setSelectedConsumerId(null);
-                        setConsumerDrawerOpen(true);
-                        setConsumerEditorState(buildConsumerDraft());
-                      })
-                    }
-                  >
-                    <Plus className="h-4 w-4" />
-                    {text('New API client', '新建 API 客户端', '新しい API クライアント')}
-                  </SecondaryButton>
-                </>
-              }
-            >
-              {consumersPanel.unavailableReason ? (
-                <StateView
-                  status="unavailable"
-                  title={text('API clients unavailable for this scope', '当前范围无法使用 API 客户端', 'この範囲では API クライアントを利用できません')}
-                  description={consumersPanel.unavailableReason}
-                />
-              ) : consumersPanel.error ? (
-                <StateView status="error" title={text('API clients unavailable', 'API 客户端不可用', 'API クライアントを利用できません')} description={consumersPanel.error} />
-              ) : (
-                <>
-                  <TableShell
-                  ariaLabel={text('API clients', 'API 客户端', 'API クライアント')}
-                  columns={[
-                    text('Code', '代码', 'コード'),
-                    text('Category', '分类', 'カテゴリ'),
-                    text('Contact', '联系人', '連絡先'),
-                    text('API Key', 'API 密钥', 'API キー'),
-                    text('Status', '状态', '状態'),
-                    text('Actions', '操作', '操作'),
-                  ]}
-                  dataLength={paginatedConsumers.items.length}
-                  isLoading={consumersPanel.loading}
-                  isEmpty={consumersPanel.data.length === 0}
-                  emptyTitle={text('No API clients configured', '尚未配置 API 客户端', '設定済み API クライアントはありません')}
-                  emptyDescription={text('Create the first inbound consumer before generating or rotating managed API keys.', '在生成或轮换受管 API 密钥前，请先创建第一个入站消费者。', '管理対象 API キーを生成・ローテーションする前に、最初の受信クライアントを作成してください。')}
-                >
-                  {paginatedConsumers.items.map((consumer) => (
-                    <tr key={consumer.id} className={selectedConsumerId === consumer.id ? 'bg-indigo-50/40' : undefined}>
-                      <td className="px-6 py-4">
-                        <div className="space-y-1">
-                          <p className="text-sm font-semibold text-slate-900">{consumer.code}</p>
-                          <p className="text-xs text-slate-500">{pickConsumerDisplayName(consumer)}</p>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <StatusBadge tone="info" label={consumerCategoryLabel(consumer.consumerCategory)} />
-                      </td>
-                      <td className="px-6 py-4 text-sm text-slate-700">{consumer.contactEmail || consumer.contactName || text('Unassigned', '未分配', '未設定')}</td>
-                      <td className="px-6 py-4 text-sm text-slate-700">{consumer.apiKeyPrefix || text('Not generated', '未生成', '未生成')}</td>
-                      <td className="px-6 py-4">
-                        <StatusBadge tone={consumer.isActive ? 'success' : 'danger'} label={statusLabel(consumer.isActive)} />
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex flex-wrap gap-2">
-                          <SecondaryButton
-                            onClick={() =>
-                              requestDiscardDirtyEditor(() => {
-                                setConsumerCreateMode(false);
-                                setSelectedConsumerId(consumer.id);
-                                setConsumerDrawerOpen(true);
-                              })
-                            }
-                          >
-                            {text('Open', '打开', '開く')}
-                          </SecondaryButton>
-                          {consumer.isActive ? (
-                            <SecondaryButton
-                              tone="danger"
-                              onClick={() =>
-                                setConfirmState({
-                                  title: text(`Deactivate ${consumer.code}?`, `停用 ${consumer.code}？`, `${consumer.code} を無効化しますか？`),
-                                  description: text('The API client record remains stored, but should no longer be treated as an active integration consumer.', 'API 客户端记录会保留，但不再应被视为活跃的集成消费者。', 'API クライアントの記録は保持されますが、以後は有効な統合コンシューマーとして扱われません。'),
-                                  confirmText: text('Deactivate client', '停用客户端', 'クライアントを無効化'),
-                                  pendingText: text('Deactivating client...', '正在停用客户端...', 'クライアントを無効化しています...'),
-                                  intent: 'danger',
-                                  errorFallback: text('Failed to deactivate API client.', '停用 API 客户端失败。', 'API クライアントの無効化に失敗しました。'),
-                                  onConfirm: async () => {
-                                    await deactivateConsumer(request, consumer.id, consumer.version);
-                                    await refreshConsumers(consumer.id);
-                                    return text(`${consumer.code} API client deactivated.`, `已停用 API 客户端 ${consumer.code}。`, `API クライアント ${consumer.code} を無効化しました。`);
-                                  },
-                                })
-                              }
-                            >
-                              {text('Deactivate', '停用', '無効化')}
+                {displayedTab === 'api-keys' ? (
+                  <>
+                    <GlassSurface className="p-6">
+                      <FormSection
+                        title={text('API Clients', 'API 客户端', 'API クライアント')}
+                        description={text(
+                          'Manage platform API clients and their active keys from one workspace.',
+                          '在同一工作区内管理平台 API 客户端及其有效密钥。',
+                          'このワークスペースでプラットフォーム API クライアントと有効キーを管理します。'
+                        )}
+                        actions={
+                          <>
+                            <SecondaryButton onClick={() => void refreshConsumers()}>
+                              <RefreshCcw className="h-4 w-4" />
+                              {text('Refresh', '刷新', '更新')}
                             </SecondaryButton>
-                          ) : (
                             <SecondaryButton
                               tone="primary"
                               onClick={() =>
-                                setConfirmState({
-                                  title: text(`Reactivate ${consumer.code}?`, `重新启用 ${consumer.code}？`, `${consumer.code} を再有効化しますか？`),
-                                  description: text('The API client becomes available for use again.', 'API 客户端将重新可用。', 'API クライアントを再び利用可能にします。'),
-                                  confirmText: text('Reactivate client', '重新启用客户端', 'クライアントを再有効化'),
-                                  pendingText: text('Reactivating client...', '正在重新启用客户端...', 'クライアントを再有効化しています...'),
-                                  intent: 'primary',
-                                  errorFallback: text('Failed to reactivate API client.', '重新启用 API 客户端失败。', 'API クライアントの再有効化に失敗しました。'),
-                                  onConfirm: async () => {
-                                    await reactivateConsumer(request, consumer.id, consumer.version);
-                                    await refreshConsumers(consumer.id);
-                                    return text(`${consumer.code} API client reactivated.`, `已重新启用 API 客户端 ${consumer.code}。`, `API クライアント ${consumer.code} を再有効化しました。`);
-                                  },
+                                requestDiscardDirtyEditor(() => {
+                                  setConsumerCreateMode(true);
+                                  setSelectedConsumerId(null);
+                                  setConsumerDrawerOpen(true);
+                                  setConsumerEditorState(buildConsumerDraft());
                                 })
                               }
                             >
-                              {text('Reactivate', '重新启用', '再有効化')}
+                              <Plus className="h-4 w-4" />
+                              {text('New API client', '新建 API 客户端', '新しい API クライアント')}
                             </SecondaryButton>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                  </TableShell>
-                  {consumersPanel.data.length > 0 ? (
-                    <PaginationFooter
-                      pagination={paginatedConsumers.pagination}
-                      itemCount={paginatedConsumers.items.length}
-                      labels={buildPaginationFooterLabels(
-                        locale,
-                        paginatedConsumers.pagination,
-                        paginatedConsumers.items.length,
-                      )}
-                      onPageChange={(page) => applyPaginationQueryState({ consumerPage: page })}
-                      onPageSizeChange={(pageSize) => {
-                        applyPaginationQueryState({
-                          consumerPage: 1,
-                          consumerPageSize: pageSize as PageSizeOption,
-                        });
-                      }}
-                      isLoading={consumersPanel.loading}
-                      className="mt-4 rounded-2xl border border-slate-200 bg-slate-50/80"
-                    />
-                  ) : null}
-                </>
-              )}
-            </FormSection>
-          </GlassSurface>
-
-          <ActionDrawer
-            open={consumerDrawerOpen}
-            onOpenChange={(open) => requestDrawerOpenChange(setConsumerDrawerOpen, open)}
-            title={consumerCreateMode ? text('New API Client', '新建 API 客户端', '新しい API クライアント') : text('API Client Detail', 'API 客户端详情', 'API クライアント詳細')}
-            description={text('Edit client metadata and manage key generation, rotation, and revocation.', '编辑客户端元数据，并管理密钥生成、轮换与撤销。', 'クライアント情報を編集し、キー生成、ローテーション、失効を管理します。')}
-            size="xl"
-            closeButtonAriaLabel={text({
-              en: 'Close API client detail drawer',
-              zh_HANS: '关闭 API 客户端详情抽屉',
-              zh_HANT: '關閉 API 用戶端詳情抽屜',
-              ja: 'API クライアント詳細ドロワーを閉じる',
-              ko: 'API 클라이언트 상세 서랍 닫기',
-              fr: 'Fermer le panneau de détail du client API',
-            })}
-          >
-            <FormSection
-              title={consumerCreateMode ? text('New API Client', '新建 API 客户端', '新しい API クライアント') : text('API Client Detail', 'API 客户端详情', 'API クライアント詳細')}
-              description={text('Review consumer metadata, contact data, IP allowlists, and managed key status.', '查看消费者元数据、联系信息、IP 白名单与受管密钥状态。', 'コンシューマーメタデータ、連絡先、IP 許可リスト、管理キー状態を確認します。')}
-              actions={
-                <>
-                  {!consumerCreateMode ? (
-                    <SecondaryButton
-                      onClick={() =>
-                        requestDiscardDirtyEditor(() => {
-                          setConsumerCreateMode(true);
-                          setSelectedConsumerId(null);
-                          setConsumerDrawerOpen(true);
-                          setConsumerEditorState(buildConsumerDraft());
-                        })
-                      }
-                    >
-                      {text('Start new', '新建', '新規作成')}
-                    </SecondaryButton>
-                  ) : (
-                    <SecondaryButton
-                      onClick={() =>
-                        requestDiscardDirtyEditor(() => {
-                          setConsumerCreateMode(false);
-                          setSelectedConsumerId(consumersPanel.data[0]?.id || null);
-                          setConsumerDrawerOpen(false);
-                        })
-                      }
-                    >
-                      {text('Cancel', '取消', 'キャンセル')}
-                    </SecondaryButton>
-                  )}
-                  <AsyncSubmitButton
-                    onClick={() => void handleConsumerSave()}
-                    isPending={consumerSubmitting}
-                    pendingText={
-                      consumerCreateMode
-                        ? text('Creating API client...', '正在创建 API 客户端...', 'API クライアントを作成しています...')
-                        : text('Saving API client...', '正在保存 API 客户端...', 'API クライアントを保存しています...')
-                    }
-                  >
-                    {consumerCreateMode ? text('Create API client', '创建 API 客户端', 'API クライアントを作成') : text('Save API client', '保存 API 客户端', 'API クライアントを保存')}
-                  </AsyncSubmitButton>
-                </>
-              }
-            >
-              {consumerCreateMode || selectedConsumer ? (
-                <>
-                  <div className="grid gap-4 lg:grid-cols-2">
-                    <TextField
-                      label={text('Consumer code', '消费者代码', 'コンシューマーコード')}
-                      value={consumerDraft.code}
-                      onChange={(value) => setConsumerDraft((current) => ({ ...current, code: value.toUpperCase() }))}
-                      disabled={!consumerCreateMode}
-                      placeholder={text('BATCH_IMPORTER', 'BATCH_IMPORTER', 'BATCH_IMPORTER')}
-                    />
-                    <SelectField
-                      label={text('Category', '分类', 'カテゴリ')}
-                      value={consumerDraft.consumerCategory}
-                      onChange={(value) =>
-                        setConsumerDraft((current) => ({
-                          ...current,
-                          consumerCategory: value as ConsumerDraft['consumerCategory'],
-                        }))
-                      }
-                      options={[
-                        { value: 'external', label: consumerCategoryLabel('external') },
-                        { value: 'partner', label: consumerCategoryLabel('partner') },
-                        { value: 'internal', label: consumerCategoryLabel('internal') },
-                      ]}
-                    />
-                    <TextField
-                      label={text('Base name', '基准名称', '基準名')}
-                      value={consumerDraft.nameBase}
-                      onChange={(value) => setConsumerDraft((current) => ({ ...current, nameBase: value }))}
-                    />
-                    <div className="space-y-2">
-                      <span className="text-sm font-medium text-slate-700">
-                        {text('Translations', '翻译', '翻訳')}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => setConsumerTranslationDrawerOpen(true)}
-                        className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 shadow-sm transition hover:border-slate-300 hover:text-slate-900"
-                      >
-                        <Languages className="h-4 w-4" />
-                        {configuredConsumerTranslationCount > 0
-                          ? text(
-                              `Translation management (${configuredConsumerTranslationCount})`,
-                              `翻译管理（${configuredConsumerTranslationCount}）`,
-                              `翻訳管理（${configuredConsumerTranslationCount}）`,
-                            )
-                          : text('Translation management', '翻译管理', '翻訳管理')}
-                      </button>
-                      {consumerTranslationOptionsState.error ? (
-                        <p className="text-xs text-amber-700">{consumerTranslationOptionsState.error}</p>
-                      ) : null}
-                    </div>
-                    <TextField
-                      label={text('Contact name', '联系人姓名', '担当者名')}
-                      value={consumerDraft.contactName}
-                      onChange={(value) => setConsumerDraft((current) => ({ ...current, contactName: value }))}
-                    />
-                    <TextField
-                      label={text('Contact email', '联系邮箱', '連絡先メール')}
-                      value={consumerDraft.contactEmail}
-                      onChange={(value) => setConsumerDraft((current) => ({ ...current, contactEmail: value }))}
-                      type="email"
-                    />
-                    <TextField
-                      label={text('Rate limit / minute', '每分钟限流', '分あたりレート制限')}
-                      value={consumerDraft.rateLimit}
-                      onChange={(value) => setConsumerDraft((current) => ({ ...current, rateLimit: value }))}
-                      type="number"
-                    />
-                  </div>
-                  <TextField
-                    label={text('Allowed IPs', '允许的 IP', '許可 IP')}
-                    value={consumerDraft.allowedIpsText}
-                    onChange={(value) => setConsumerDraft((current) => ({ ...current, allowedIpsText: value }))}
-                    placeholder={text('192.168.1.10, 10.0.0.0/8', '192.168.1.10, 10.0.0.0/8', '192.168.1.10, 10.0.0.0/8')}
-                  />
-                  <TextAreaField
-                    label={text('Notes', '备注', 'メモ')}
-                    value={consumerDraft.notes}
-                    onChange={(value) => setConsumerDraft((current) => ({ ...current, notes: value }))}
-                    rows={4}
-                    placeholder={text('Operational notes for this inbound consumer.', '记录该入站消费者的运营备注。', 'この受信コンシューマーに関する運用メモを記入します。')}
-                  />
-                </>
-              ) : (
-                <StateView
-                  status="empty"
-                  title={text('Select an API client', '选择一个 API 客户端', 'API クライアントを選択')}
-                  description={text('Pick a stored consumer or create a new one before managing key lifecycle.', '请先选择已有消费者或创建新的消费者，再管理密钥生命周期。', 'キーライフサイクルを管理する前に、保存済みコンシューマーを選ぶか新規作成してください。')}
-                />
-              )}
-            </FormSection>
-
-            <FormSection
-              title={text('Key Lifecycle', '密钥生命周期', 'キーライフサイクル')}
-              description={text('Generated keys are shown only once. Store them securely immediately after generation or rotation.', '生成后的密钥只会显示一次。请在生成或轮换后立即安全保存。', '生成されたキーは一度しか表示されません。生成またはローテーション直後に安全に保管してください。')}
-            >
-              {selectedConsumer ? (
-                <div className="space-y-4">
-                  <div className="flex flex-wrap gap-3">
-                    <SecondaryButton
-                      tone="primary"
-                      onClick={() =>
-                        setConfirmState({
-                          title: selectedConsumer.apiKeyPrefix
-                            ? text(`Rotate API key for ${selectedConsumer.code}?`, `为 ${selectedConsumer.code} 轮换 API 密钥？`, `${selectedConsumer.code} の API キーをローテーションしますか？`)
-                            : text(`Generate API key for ${selectedConsumer.code}?`, `为 ${selectedConsumer.code} 生成 API 密钥？`, `${selectedConsumer.code} の API キーを生成しますか？`),
-                          description: selectedConsumer.apiKeyPrefix
-                            ? text('The previous key becomes unusable after rotation. Make sure the downstream consumer is ready for a new credential.', '轮换后旧密钥将失效。请确认下游消费者已准备好接收新凭据。', 'ローテーション後、以前のキーは無効になります。下流のコンシューマーが新しい認証情報を受け取れる状態か確認してください。')
-                            : text('The generated API key is returned only once. Store it securely before leaving this screen.', '生成后的 API 密钥只会返回一次。请在离开此页面前安全保存。', '生成された API キーは一度しか返されません。この画面を離れる前に安全に保管してください。'),
-                          confirmText: selectedConsumer.apiKeyPrefix ? text('Rotate key', '轮换密钥', 'キーをローテーション') : text('Generate key', '生成密钥', 'キーを生成'),
-                          pendingText: selectedConsumer.apiKeyPrefix ? text('Rotating key...', '正在轮换密钥...', 'キーをローテーションしています...') : text('Generating key...', '正在生成密钥...', 'キーを生成しています...'),
-                          intent: 'primary',
-                          errorFallback: text('Failed to issue API key.', '签发 API 密钥失败。', 'API キーの発行に失敗しました。'),
-                          onConfirm: async () => {
-                            const result = selectedConsumer.apiKeyPrefix
-                              ? await rotateConsumerKey(request, selectedConsumer.id)
-                              : await generateConsumerKey(request, selectedConsumer.id);
-                            setGeneratedKey({
-                              consumerCode: selectedConsumer.code,
-                              apiKey: result.apiKey || '',
-                              apiKeyPrefix: result.apiKeyPrefix,
-                              message: result.message,
-                            });
-                            await refreshConsumers(selectedConsumer.id);
-                            return result.message;
-                          },
-                        })
-                      }
-                    >
-                      <KeyRound className="h-4 w-4" />
-                      {selectedConsumer.apiKeyPrefix ? text('Rotate key', '轮换密钥', 'キーをローテーション') : text('Generate key', '生成密钥', 'キーを生成')}
-                    </SecondaryButton>
-                    {selectedConsumer.apiKeyPrefix ? (
-                      <SecondaryButton
-                        tone="danger"
-                        onClick={() =>
-                        setConfirmState({
-                            title: text(`Revoke API key for ${selectedConsumer.code}?`, `撤销 ${selectedConsumer.code} 的 API 密钥？`, `${selectedConsumer.code} の API キーを失効させますか？`),
-                            description: text('Revocation removes the current managed key from the consumer record.', '撤销会将当前受管密钥从消费者记录中移除。', '失効すると現在の管理キーがコンシューマー記録から削除されます。'),
-                            confirmText: text('Revoke key', '撤销密钥', 'キーを失効'),
-                            pendingText: text('Revoking key...', '正在撤销密钥...', 'キーを失効しています...'),
-                            intent: 'danger',
-                            errorFallback: text('Failed to revoke API key.', '撤销 API 密钥失败。', 'API キーの失効に失敗しました。'),
-                            onConfirm: async () => {
-                              const result = await revokeConsumerKey(request, selectedConsumer.id);
-                              setGeneratedKey(null);
-                              await refreshConsumers(selectedConsumer.id);
-                              return result.message;
-                            },
-                          })
+                          </>
                         }
                       >
-                        {text('Revoke key', '撤销密钥', 'キーを失効')}
-                      </SecondaryButton>
-                    ) : null}
-                  </div>
-
-                  <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                    <SummaryCard
-                      label={text('Active prefix', '当前前缀', '有効プレフィックス')}
-                      value={selectedConsumer.apiKeyPrefix || text('None', '无', 'なし')}
-                      hint={text('Only the stored prefix is ever readable after generation.', '生成后仅能再次读取已保存的前缀。', '生成後に再度参照できるのは保存済みプレフィックスのみです。')}
-                    />
-                    <SummaryCard
-                      label={text('Category', '分类', 'カテゴリ')}
-                      value={consumerCategoryLabel(selectedConsumer.consumerCategory)}
-                      hint={text('Consumer ownership type for inbound traffic.', '入站流量所对应的消费者类型。', '受信トラフィックに紐づくコンシューマー種別です。')}
-                    />
-                    <SummaryCard
-                      label={text('Status', '状态', '状態')}
-                      value={statusLabel(selectedConsumer.isActive)}
-                      hint={text('Client record active-state.', '客户端记录的当前状态。', 'クライアント記録の現在状態です。')}
-                    />
-                    <SummaryCard
-                      label={text('Version', '版本', 'バージョン')}
-                      value={String(selectedConsumer.version)}
-                      hint={text('Current revision of this client record.', '当前客户端记录的修订号。', 'このクライアント記録の現在リビジョンです。')}
-                    />
-                  </div>
-
-                  {generatedKey ? (
-                    <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-                      <p className="font-semibold">{text(`New key material for ${generatedKey.consumerCode}`, `${generatedKey.consumerCode} 的新密钥材料`, `${generatedKey.consumerCode} の新しいキー情報`)}</p>
-                      <p className="mt-2 break-all font-mono text-xs">{generatedKey.apiKey}</p>
-                      <p className="mt-2 text-xs">{generatedKey.message}</p>
-                    </div>
-                  ) : null}
-                </div>
-              ) : (
-                <p className="text-sm text-slate-500">{text('Select an API client to review its details and manage keys.', '请选择一个 API 客户端以查看详情并管理密钥。', 'API クライアントを選択して詳細確認とキー管理を行ってください。')}</p>
-              )}
-            </FormSection>
-          </ActionDrawer>
-        </>
-      ) : null}
-
-      {displayedTab === 'email' ? (
-        <>
-          {isAcWorkspace ? (
-            <>
-              <GlassSurface className="p-6">
-                <FormSection
-                  title={text('Email Configuration', '邮件配置', 'メール設定')}
-                  description={text(
-                    'Review provider status, tenant overrides, and delivery-test readiness.',
-                    '查看服务商状态、租户覆盖与投递测试准备情况。',
-                    'プロバイダー状態、テナント上書き、配信テストの準備状況を確認します。',
-                  )}
-                  actions={
-                    <>
-                      <SecondaryButton onClick={() => void refreshEmailConfig()}>
-                        <RefreshCcw className="h-4 w-4" />
-                        {text('Refresh', '刷新', '更新')}
-                      </SecondaryButton>
-                      <SecondaryButton
-                        tone="primary"
-                        onClick={() => setEmailConfigDrawerOpen(true)}
-                      >
-                        {text('Configure email', '配置邮件', 'メールを設定')}
-                      </SecondaryButton>
-                    </>
-                  }
-                >
-                  {emailConfigPanel.loading ? (
-                    <p className="text-sm text-slate-500">{text('Loading email configuration…', '正在加载邮件配置…', 'メール設定を読み込んでいます…')}</p>
-                  ) : emailConfigPanel.unavailableReason ? (
-                    <StateView
-                      status="unavailable"
-                      title={text('AC-only email configuration', '仅 AC 可用的邮件配置', 'AC 限定のメール設定')}
-                      description={emailConfigPanel.unavailableReason}
-                    />
-                  ) : emailConfigPanel.error ? (
-                    <StateView status="error" title={text('Email configuration unavailable', '邮件配置不可用', 'メール設定を利用できません')} description={emailConfigPanel.error} />
-                  ) : (
-                    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                      <SummaryCard
-                        label={text('Provider', '服务提供商', 'プロバイダー')}
-                        value={emailProviderLabel(emailConfigDraft.provider)}
-                        hint={text('Current global delivery provider.', '当前全局投递服务商。', '現在のグローバル配信プロバイダーです。')}
-                      />
-                      <SummaryCard
-                        label={text('Configured', '配置状态', '設定状態')}
-                        value={emailConfigPanel.data?.isConfigured ? text('Configured', '已配置', '設定済み') : text('Not configured', '未配置', '未設定')}
-                        hint={text('Credential edits stay inside the drawer.', '凭据编辑保留在抽屉内。', '認証情報の編集はドロワー内で行います。')}
-                      />
-                      <SummaryCard
-                        label={text('Tenant overrides', '租户覆盖', 'テナント上書き')}
-                        value={String(emailSenderTenantsPanel.data.length)}
-                        hint={text('Active standard tenants available for sender identity overrides.', '可配置发信身份覆盖的活跃普通租户数量。', '送信者情報の上書き対象となる有効な標準テナント数です。')}
-                      />
-                      <SummaryCard
-                        label={text('Test address', '测试邮箱', 'テスト宛先')}
-                        value={emailConfigDraft.testEmail || text('Unset', '未设置', '未設定')}
-                        hint={text('Used only when sending a test email from the drawer.', '仅在抽屉中发送测试邮件时使用。', 'ドロワーからテストメールを送信するときだけ使用します。')}
-                      />
-                    </div>
-                  )}
-                </FormSection>
-              </GlassSurface>
-
-              <ActionDrawer
-                open={emailConfigDrawerOpen}
-                onOpenChange={(open) => requestDrawerOpenChange(setEmailConfigDrawerOpen, open)}
-                title={text('Email Configuration', '邮件配置', 'メール設定')}
-                description={text('Edit provider credentials, sender identity, tenant overrides, and delivery checks.', '编辑服务商凭据、发信身份、租户覆盖与投递检查。', 'プロバイダー認証情報、送信者情報、テナント上書き、配信チェックを編集します。')}
-                size="xl"
-                closeButtonAriaLabel={text({
-                  en: 'Close email configuration drawer',
-                  zh_HANS: '关闭邮件配置抽屉',
-                  zh_HANT: '關閉郵件設定抽屜',
-                  ja: 'メール設定ドロワーを閉じる',
-                  ko: '이메일 설정 서랍 닫기',
-                  fr: 'Fermer le panneau de configuration e-mail',
-                })}
-              >
-              <FormSection
-                title={text('Email Configuration', '邮件配置', 'メール設定')}
-                description={text(
-                  'Manage global provider credentials and sender identity for platform mail delivery.',
-                  '管理平台邮件投递使用的全局服务商凭据与发信身份。',
-                  'プラットフォームメール配信のグローバル認証情報と送信者情報を管理します。',
-                )}
-                actions={
-                  emailConfigPanel.unavailableReason || emailConfigPanel.error ? (
-                    <SecondaryButton onClick={() => void refreshEmailConfig()}>
-                      <RefreshCcw className="h-4 w-4" />
-                      {text('Retry', '重试', '再試行')}
-                    </SecondaryButton>
-                  ) : (
-                    <>
-                      <SecondaryButton onClick={() => void refreshEmailConfig()}>
-                        <RefreshCcw className="h-4 w-4" />
-                        {text('Refresh', '刷新', '更新')}
-                      </SecondaryButton>
-                      <AsyncSubmitButton
-                        onClick={() => void handleEmailConfigSave()}
-                        isPending={emailConfigSubmitting}
-                        pendingText={text('Saving email config...', '正在保存邮件配置...', 'メール設定を保存しています...')}
-                      >
-                        {text('Save email config', '保存邮件配置', 'メール設定を保存')}
-                      </AsyncSubmitButton>
-                    </>
-                  )
-                }
-              >
-              {emailConfigPanel.loading ? (
-                <p className="text-sm text-slate-500">{text('Loading email configuration…', '正在加载邮件配置…', 'メール設定を読み込んでいます…')}</p>
-              ) : emailConfigPanel.unavailableReason ? (
-                <StateView
-                  status="unavailable"
-                  title={text('AC-only email configuration', '仅 AC 可用的邮件配置', 'AC 限定のメール設定')}
-                  description={emailConfigPanel.unavailableReason}
-                />
-              ) : emailConfigPanel.error ? (
-                <StateView status="error" title={text('Email configuration unavailable', '邮件配置不可用', 'メール設定を利用できません')} description={emailConfigPanel.error} />
-              ) : (
-                <>
-                  <div className="grid gap-4 lg:grid-cols-2">
-                    <SelectField
-                      label={text('Provider', '服务提供商', 'プロバイダー')}
-                      value={emailConfigDraft.provider}
-                      onChange={(value) =>
-                        setEmailConfigDraft((current) => ({
-                          ...current,
-                          provider: value as EmailProvider,
-                        }))
-                      }
-                      options={[
-                        { value: 'smtp', label: emailProviderLabel('smtp') },
-                        { value: 'tencent_ses', label: emailProviderLabel('tencent_ses') },
-                      ]}
-                    />
-                    <TextField
-                      label={text('Test email address', '测试邮箱地址', 'テストメールアドレス')}
-                      value={emailConfigDraft.testEmail}
-                      onChange={(value) => setEmailConfigDraft((current) => ({ ...current, testEmail: value }))}
-                      type="email"
-                    />
-                  </div>
-
-                  {emailConfigDraft.provider === 'smtp' ? (
-                    <div className="grid gap-4 lg:grid-cols-2">
-                      <TextField
-                        label={text('SMTP host', 'SMTP 主机', 'SMTP ホスト')}
-                        value={emailConfigDraft.smtpHost}
-                        onChange={(value) => setEmailConfigDraft((current) => ({ ...current, smtpHost: value }))}
-                      />
-                      <TextField
-                        label={text('SMTP port', 'SMTP 端口', 'SMTP ポート')}
-                        value={emailConfigDraft.smtpPort}
-                        onChange={(value) => setEmailConfigDraft((current) => ({ ...current, smtpPort: value }))}
-                        type="number"
-                      />
-                      <TextField
-                        label={text('Username', '用户名', 'ユーザー名')}
-                        value={emailConfigDraft.smtpUsername}
-                        onChange={(value) => setEmailConfigDraft((current) => ({ ...current, smtpUsername: value }))}
-                      />
-                      <TextField
-                        label={text('Password', '密码', 'パスワード')}
-                        value={emailConfigDraft.smtpPassword}
-                        onChange={(value) => setEmailConfigDraft((current) => ({ ...current, smtpPassword: value }))}
-                      />
-                      <TextField
-                        label={text('From address', '发件地址', '送信元アドレス')}
-                        value={emailConfigDraft.smtpFromAddress}
-                        onChange={(value) => setEmailConfigDraft((current) => ({ ...current, smtpFromAddress: value }))}
-                        type="email"
-                      />
-                      <TextField
-                        label={text('From name', '发件名称', '送信者名')}
-                        value={emailConfigDraft.smtpFromName}
-                        onChange={(value) => setEmailConfigDraft((current) => ({ ...current, smtpFromName: value }))}
-                      />
-                      <CheckboxField
-                        label={text('Use secure SMTP transport', '使用安全 SMTP 传输', '安全な SMTP 転送を使用')}
-                        checked={emailConfigDraft.smtpSecure}
-                        onChange={(checked) => setEmailConfigDraft((current) => ({ ...current, smtpSecure: checked }))}
-                      />
-                    </div>
-                  ) : (
-                    <div className="grid gap-4 lg:grid-cols-2">
-                      <TextField
-                        label={text('SES secret ID', 'SES 密钥 ID', 'SES シークレット ID')}
-                        value={emailConfigDraft.sesSecretId}
-                        onChange={(value) => setEmailConfigDraft((current) => ({ ...current, sesSecretId: value }))}
-                      />
-                      <TextField
-                        label={text('SES secret key', 'SES 密钥 Key', 'SES シークレットキー')}
-                        value={emailConfigDraft.sesSecretKey}
-                        onChange={(value) => setEmailConfigDraft((current) => ({ ...current, sesSecretKey: value }))}
-                      />
-                      <TextField
-                        label={text('Region', '区域', 'リージョン')}
-                        value={emailConfigDraft.sesRegion}
-                        onChange={(value) => setEmailConfigDraft((current) => ({ ...current, sesRegion: value }))}
-                      />
-                      <TextField
-                        label={text('From address', '发件地址', '送信元アドレス')}
-                        value={emailConfigDraft.sesFromAddress}
-                        onChange={(value) => setEmailConfigDraft((current) => ({ ...current, sesFromAddress: value }))}
-                        type="email"
-                      />
-                      <TextField
-                        label={text('From name', '发件名称', '送信者名')}
-                        value={emailConfigDraft.sesFromName}
-                        onChange={(value) => setEmailConfigDraft((current) => ({ ...current, sesFromName: value }))}
-                      />
-                      <TextField
-                        label={text('Reply-to', '回复地址', '返信先')}
-                        value={emailConfigDraft.sesReplyTo}
-                        onChange={(value) => setEmailConfigDraft((current) => ({ ...current, sesReplyTo: value }))}
-                        type="email"
-                      />
-                    </div>
-                  )}
-
-                  <FormSection
-                    title={text('Tenant Sender Overrides', '租户发信身份', 'テナント別送信者')}
-                    description={text(
-                      'Keep provider credentials global, then override sender address and display name for individual tenants when needed.',
-                      '服务商凭据保持全局统一；需要时可为单个租户覆盖发件地址与显示名称。',
-                      'プロバイダー認証情報はグローバルのまま、必要なテナントごとに送信元アドレスと表示名を上書きします。',
-                    )}
-                  >
-                    {emailSenderTenantsPanel.loading ? (
-                      <p className="text-sm text-slate-500">{text('Loading tenants…', '正在加载租户…', 'テナントを読み込んでいます…')}</p>
-                    ) : emailSenderTenantsPanel.error ? (
-                      <StateView
-                        status="error"
-                        title={text('Tenant sender targets unavailable', '租户发信目标不可用', 'テナント送信者対象を利用できません')}
-                        description={emailSenderTenantsPanel.error}
-                      />
-                    ) : emailSenderTenantsPanel.data.length === 0 ? (
-                      <StateView
-                        status="empty"
-                        title={text('No active standard tenants', '没有可配置的普通租户', '設定対象の標準テナントはありません')}
-                        description={text(
-                          'Create or reactivate a standard tenant before adding tenant-specific sender identities.',
-                          '请先创建或重新启用普通租户，再配置租户级发信身份。',
-                          'テナント別送信者を追加する前に、標準テナントを作成または再有効化してください。',
-                        )}
-                      />
-                    ) : (
-                      <div className="space-y-4">
-                        {emailSenderTenantsPanel.data.map((tenant) => {
-                          const override = emailConfigDraft.tenantSenderOverrides[tenant.schemaName] ?? {
-                            fromAddress: '',
-                            fromName: '',
-                            replyTo: '',
-                          };
-
-                          return (
-                            <div
-                              key={tenant.schemaName}
-                              className="rounded-2xl border border-slate-200 bg-white/75 p-4"
+                        {consumersPanel.unavailableReason ? (
+                          <StateView
+                            status="unavailable"
+                            title={text(
+                              'API clients unavailable for this scope',
+                              '当前范围无法使用 API 客户端',
+                              'この範囲では API クライアントを利用できません'
+                            )}
+                            description={consumersPanel.unavailableReason}
+                          />
+                        ) : consumersPanel.error ? (
+                          <StateView
+                            status="error"
+                            title={text(
+                              'API clients unavailable',
+                              'API 客户端不可用',
+                              'API クライアントを利用できません'
+                            )}
+                            description={consumersPanel.error}
+                          />
+                        ) : (
+                          <>
+                            <TableShell
+                              ariaLabel={text('API clients', 'API 客户端', 'API クライアント')}
+                              columns={[
+                                text('Code', '代码', 'コード'),
+                                text('Category', '分类', 'カテゴリ'),
+                                text('Contact', '联系人', '連絡先'),
+                                text('API Key', 'API 密钥', 'API キー'),
+                                text('Status', '状态', '状態'),
+                                text('Actions', '操作', '操作'),
+                              ]}
+                              dataLength={paginatedConsumers.items.length}
+                              isLoading={consumersPanel.loading}
+                              isEmpty={consumersPanel.data.length === 0}
+                              emptyTitle={text(
+                                'No API clients configured',
+                                '尚未配置 API 客户端',
+                                '設定済み API クライアントはありません'
+                              )}
+                              emptyDescription={text(
+                                'Create the first inbound consumer before generating or rotating managed API keys.',
+                                '在生成或轮换受管 API 密钥前，请先创建第一个入站消费者。',
+                                '管理対象 API キーを生成・ローテーションする前に、最初の受信クライアントを作成してください。'
+                              )}
                             >
-                              <div className="flex flex-wrap items-start justify-between gap-3">
-                                <div>
-                                  <p className="text-sm font-semibold text-slate-900">{tenant.name}</p>
-                                  <p className="text-xs text-slate-500">{tenant.code} · {tenant.schemaName}</p>
-                                </div>
-                                <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
-                                  {text('Optional override', '可选覆盖', '任意上書き')}
-                                </span>
-                              </div>
-                              <div className="mt-4 grid gap-4 lg:grid-cols-3">
-                                <TextField
-                                  label={text('From address', '发件地址', '送信元アドレス')}
-                                  value={override.fromAddress}
-                                  onChange={(value) => updateTenantSenderOverride(tenant.schemaName, 'fromAddress', value)}
-                                  type="email"
-                                />
-                                <TextField
-                                  label={text('From name', '发件名称', '送信者名')}
-                                  value={override.fromName}
-                                  onChange={(value) => updateTenantSenderOverride(tenant.schemaName, 'fromName', value)}
-                                />
-                                <TextField
-                                  label={text('Reply-to', '回复地址', '返信先')}
-                                  value={override.replyTo}
-                                  onChange={(value) => updateTenantSenderOverride(tenant.schemaName, 'replyTo', value)}
-                                  type="email"
-                                />
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </FormSection>
+                              {paginatedConsumers.items.map((consumer) => (
+                                <tr
+                                  key={consumer.id}
+                                  className={
+                                    selectedConsumerId === consumer.id
+                                      ? 'bg-indigo-50/40'
+                                      : undefined
+                                  }
+                                >
+                                  <td className="px-6 py-4">
+                                    <div className="space-y-1">
+                                      <p className="text-sm font-semibold text-slate-900">
+                                        {consumer.code}
+                                      </p>
+                                      <p className="text-xs text-slate-500">
+                                        {pickConsumerDisplayName(consumer)}
+                                      </p>
+                                    </div>
+                                  </td>
+                                  <td className="px-6 py-4">
+                                    <StatusBadge
+                                      tone="info"
+                                      label={consumerCategoryLabel(consumer.consumerCategory)}
+                                    />
+                                  </td>
+                                  <td className="px-6 py-4 text-sm text-slate-700">
+                                    {consumer.contactEmail ||
+                                      consumer.contactName ||
+                                      text('Unassigned', '未分配', '未設定')}
+                                  </td>
+                                  <td className="px-6 py-4 text-sm text-slate-700">
+                                    {consumer.apiKeyPrefix ||
+                                      text('Not generated', '未生成', '未生成')}
+                                  </td>
+                                  <td className="px-6 py-4">
+                                    <StatusBadge
+                                      tone={consumer.isActive ? 'success' : 'danger'}
+                                      label={statusLabel(consumer.isActive)}
+                                    />
+                                  </td>
+                                  <td className="px-6 py-4">
+                                    <div className="flex flex-wrap gap-2">
+                                      <SecondaryButton
+                                        onClick={() =>
+                                          requestDiscardDirtyEditor(() => {
+                                            setConsumerCreateMode(false);
+                                            setSelectedConsumerId(consumer.id);
+                                            setConsumerDrawerOpen(true);
+                                          })
+                                        }
+                                      >
+                                        {text('Open', '打开', '開く')}
+                                      </SecondaryButton>
+                                      {consumer.isActive ? (
+                                        <SecondaryButton
+                                          tone="danger"
+                                          onClick={() =>
+                                            setConfirmState({
+                                              title: text(
+                                                `Deactivate ${consumer.code}?`,
+                                                `停用 ${consumer.code}？`,
+                                                `${consumer.code} を無効化しますか？`
+                                              ),
+                                              description: text(
+                                                'The API client record remains stored, but should no longer be treated as an active integration consumer.',
+                                                'API 客户端记录会保留，但不再应被视为活跃的集成消费者。',
+                                                'API クライアントの記録は保持されますが、以後は有効な統合コンシューマーとして扱われません。'
+                                              ),
+                                              confirmText: text(
+                                                'Deactivate client',
+                                                '停用客户端',
+                                                'クライアントを無効化'
+                                              ),
+                                              pendingText: text(
+                                                'Deactivating client...',
+                                                '正在停用客户端...',
+                                                'クライアントを無効化しています...'
+                                              ),
+                                              intent: 'danger',
+                                              errorFallback: text(
+                                                'Failed to deactivate API client.',
+                                                '停用 API 客户端失败。',
+                                                'API クライアントの無効化に失敗しました。'
+                                              ),
+                                              onConfirm: async () => {
+                                                await deactivateConsumer(
+                                                  request,
+                                                  consumer.id,
+                                                  consumer.version
+                                                );
+                                                await refreshConsumers(consumer.id);
+                                                return text(
+                                                  `${consumer.code} API client deactivated.`,
+                                                  `已停用 API 客户端 ${consumer.code}。`,
+                                                  `API クライアント ${consumer.code} を無効化しました。`
+                                                );
+                                              },
+                                            })
+                                          }
+                                        >
+                                          {text('Deactivate', '停用', '無効化')}
+                                        </SecondaryButton>
+                                      ) : (
+                                        <SecondaryButton
+                                          tone="primary"
+                                          onClick={() =>
+                                            setConfirmState({
+                                              title: text(
+                                                `Reactivate ${consumer.code}?`,
+                                                `重新启用 ${consumer.code}？`,
+                                                `${consumer.code} を再有効化しますか？`
+                                              ),
+                                              description: text(
+                                                'The API client becomes available for use again.',
+                                                'API 客户端将重新可用。',
+                                                'API クライアントを再び利用可能にします。'
+                                              ),
+                                              confirmText: text(
+                                                'Reactivate client',
+                                                '重新启用客户端',
+                                                'クライアントを再有効化'
+                                              ),
+                                              pendingText: text(
+                                                'Reactivating client...',
+                                                '正在重新启用客户端...',
+                                                'クライアントを再有効化しています...'
+                                              ),
+                                              intent: 'primary',
+                                              errorFallback: text(
+                                                'Failed to reactivate API client.',
+                                                '重新启用 API 客户端失败。',
+                                                'API クライアントの再有効化に失敗しました。'
+                                              ),
+                                              onConfirm: async () => {
+                                                await reactivateConsumer(
+                                                  request,
+                                                  consumer.id,
+                                                  consumer.version
+                                                );
+                                                await refreshConsumers(consumer.id);
+                                                return text(
+                                                  `${consumer.code} API client reactivated.`,
+                                                  `已重新启用 API 客户端 ${consumer.code}。`,
+                                                  `API クライアント ${consumer.code} を再有効化しました。`
+                                                );
+                                              },
+                                            })
+                                          }
+                                        >
+                                          {text('Reactivate', '重新启用', '再有効化')}
+                                        </SecondaryButton>
+                                      )}
+                                    </div>
+                                  </td>
+                                </tr>
+                              ))}
+                            </TableShell>
+                            {consumersPanel.data.length > 0 ? (
+                              <PaginationFooter
+                                pagination={paginatedConsumers.pagination}
+                                itemCount={paginatedConsumers.items.length}
+                                labels={buildPaginationFooterLabels(
+                                  locale,
+                                  paginatedConsumers.pagination,
+                                  paginatedConsumers.items.length
+                                )}
+                                onPageChange={(page) =>
+                                  applyPaginationQueryState({ consumerPage: page })
+                                }
+                                onPageSizeChange={(pageSize) => {
+                                  applyPaginationQueryState({
+                                    consumerPage: 1,
+                                    consumerPageSize: pageSize as PageSizeOption,
+                                  });
+                                }}
+                                isLoading={consumersPanel.loading}
+                                className="mt-4 rounded-2xl border border-slate-200 bg-slate-50/80"
+                              />
+                            ) : null}
+                          </>
+                        )}
+                      </FormSection>
+                    </GlassSurface>
 
-                  <div className="flex flex-wrap gap-3">
-                    <SecondaryButton
-                      onClick={() => void handleEmailAction('connection')}
-                      disabled={emailActionPending !== null}
+                    <ActionDrawer
+                      open={consumerDrawerOpen}
+                      onOpenChange={(open) => requestDrawerOpenChange(setConsumerDrawerOpen, open)}
+                      title={
+                        consumerCreateMode
+                          ? text('New API Client', '新建 API 客户端', '新しい API クライアント')
+                          : text('API Client Detail', 'API 客户端详情', 'API クライアント詳細')
+                      }
+                      description={text(
+                        'Edit client metadata and manage key generation, rotation, and revocation.',
+                        '编辑客户端元数据，并管理密钥生成、轮换与撤销。',
+                        'クライアント情報を編集し、キー生成、ローテーション、失効を管理します。'
+                      )}
+                      size="xl"
+                      closeButtonAriaLabel={text({
+                        en: 'Close API client detail drawer',
+                        zh_HANS: '关闭 API 客户端详情抽屉',
+                        zh_HANT: '關閉 API 用戶端詳情抽屜',
+                        ja: 'API クライアント詳細ドロワーを閉じる',
+                        ko: 'API 클라이언트 상세 서랍 닫기',
+                        fr: 'Fermer le panneau de détail du client API',
+                      })}
                     >
-                      <ShieldCheck className="h-4 w-4" />
-                      {text('Test connection', '测试连接', '接続をテスト')}
-                    </SecondaryButton>
-                    <SecondaryButton
-                      tone="primary"
-                      onClick={() => void handleEmailAction('test-email')}
-                      disabled={emailActionPending !== null || !emailConfigDraft.testEmail.trim()}
-                    >
-                      <Mail className="h-4 w-4" />
-                      {text('Send test email', '发送测试邮件', 'テストメールを送信')}
-                    </SecondaryButton>
-                  </div>
-
-                  {emailActionResult ? (
-                    <div className={`rounded-2xl border px-4 py-3 text-sm ${
-                      emailActionResult.success
-                        ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
-                        : 'border-rose-200 bg-rose-50 text-rose-800'
-                    }`}>
-                      {emailActionResult.message}
-                      {emailActionResult.error ? <p className="mt-1 text-xs">{emailActionResult.error}</p> : null}
-                    </div>
-                  ) : null}
-                </>
-              )}
-              </FormSection>
-              </ActionDrawer>
-            </>
-          ) : null}
-
-          <GlassSurface className="p-6">
-            <FormSection
-              title={text('Email Templates', '邮件模板', 'メールテンプレート')}
-              description={text('Manage email templates in this workspace.', '在当前工作区管理邮件模板。', 'このワークスペースでメールテンプレートを管理します。')}
-              actions={
-                <>
-                  <SecondaryButton onClick={() => void refreshEmailTemplates()}>
-                    <RefreshCcw className="h-4 w-4" />
-                    {text('Refresh', '刷新', '更新')}
-                  </SecondaryButton>
-                  <SecondaryButton
-                    tone="primary"
-                    onClick={() =>
-                      requestDiscardDirtyEditor(() => {
-                        setTemplateCreateMode(true);
-                        setSelectedTemplateCode(null);
-                        setTemplateDrawerOpen(true);
-                        setTemplateEditorState(buildEmailTemplateDraft());
-                        setTemplatePreview(null);
-                      })
-                    }
-                  >
-                    <Plus className="h-4 w-4" />
-                    {text('New template', '新建模板', '新しいテンプレート')}
-                  </SecondaryButton>
-                </>
-              }
-            >
-              {emailTemplatesPanel.unavailableReason ? (
-                <StateView
-                  status="unavailable"
-                  title={text('Email templates unavailable for this scope', '当前范围无法使用邮件模板', 'この範囲ではメールテンプレートを利用できません')}
-                  description={emailTemplatesPanel.unavailableReason}
-                />
-              ) : emailTemplatesPanel.error ? (
-                <StateView status="error" title={text('Email templates unavailable', '邮件模板不可用', 'メールテンプレートを利用できません')} description={emailTemplatesPanel.error} />
-              ) : (
-                <>
-                  <TableShell
-                  ariaLabel={text('Email templates', '邮件模板', 'メールテンプレート')}
-                  columns={[
-                    text('Code', '代码', 'コード'),
-                    text('Category', '分类', 'カテゴリ'),
-                    text('Locale Base', '当前语种内容', '現在の言語内容'),
-                    text('Variables', '变量数', '変数数'),
-                    text('Status', '状态', '状態'),
-                    text('Actions', '操作', '操作'),
-                  ]}
-                  dataLength={paginatedEmailTemplates.items.length}
-                  isLoading={emailTemplatesPanel.loading}
-                  isEmpty={emailTemplatesPanel.data.length === 0}
-                  emptyTitle={text('No email templates configured', '尚未配置邮件模板', '設定済みメールテンプレートはありません')}
-                  emptyDescription={text('Create the first email template for system or business notifications.', '为系统或业务通知创建第一个邮件模板。', 'システム通知または業務通知用の最初のメールテンプレートを作成してください。')}
-                >
-                  {paginatedEmailTemplates.items.map((template) => (
-                    <tr key={template.code} className={selectedTemplateCode === template.code ? 'bg-indigo-50/40' : undefined}>
-                      <td className="px-6 py-4">
-                        <div className="space-y-1">
-                          <p className="text-sm font-semibold text-slate-900">{template.code}</p>
-                          <p className="text-xs text-slate-500">{pickTemplateName(template)}</p>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <StatusBadge tone="info" label={templateCategoryLabel(template.category)} />
-                      </td>
-                      <td className="px-6 py-4 text-sm text-slate-700">{pickTemplateSubject(template)}</td>
-                      <td className="px-6 py-4 text-sm text-slate-700">{template.variables.length}</td>
-                      <td className="px-6 py-4">
-                        <StatusBadge tone={template.isActive ? 'success' : 'danger'} label={statusLabel(template.isActive)} />
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex flex-wrap gap-2">
-                          <SecondaryButton
-                            onClick={() =>
-                              requestDiscardDirtyEditor(() => {
-                                setTemplateCreateMode(false);
-                                setSelectedTemplateCode(template.code);
-                                setTemplateDrawerOpen(true);
-                              })
-                            }
-                          >
-                            {text('Open', '打开', '開く')}
-                          </SecondaryButton>
-                          {template.isActive ? (
-                            <SecondaryButton
-                              tone="danger"
-                              onClick={() =>
-                                setConfirmState({
-                                  title: text(`Deactivate ${template.code}?`, `停用 ${template.code}？`, `${template.code} を無効化しますか？`),
-                                  description: text('The template stays stored, but is marked inactive until explicitly reactivated.', '模板会被保留，但在显式重新启用前会被标记为停用。', 'テンプレートは保持されますが、再有効化されるまで無効として扱われます。'),
-                                  confirmText: text('Deactivate template', '停用模板', 'テンプレートを無効化'),
-                                  pendingText: text('Deactivating template...', '正在停用模板...', 'テンプレートを無効化しています...'),
-                                  intent: 'danger',
-                                  errorFallback: text('Failed to deactivate email template.', '停用邮件模板失败。', 'メールテンプレートの無効化に失敗しました。'),
-                                  onConfirm: async () => {
-                                    await deactivateEmailTemplate(request, template.code);
-                                    await refreshEmailTemplates(template.code);
-                                    return text(`${template.code} template deactivated.`, `已停用模板 ${template.code}。`, `テンプレート ${template.code} を無効化しました。`);
-                                  },
-                                })
+                      <FormSection
+                        title={
+                          consumerCreateMode
+                            ? text('New API Client', '新建 API 客户端', '新しい API クライアント')
+                            : text('API Client Detail', 'API 客户端详情', 'API クライアント詳細')
+                        }
+                        description={text(
+                          'Review consumer metadata, contact data, IP allowlists, and managed key status.',
+                          '查看消费者元数据、联系信息、IP 白名单与受管密钥状态。',
+                          'コンシューマーメタデータ、連絡先、IP 許可リスト、管理キー状態を確認します。'
+                        )}
+                        actions={
+                          <>
+                            {!consumerCreateMode ? (
+                              <SecondaryButton
+                                onClick={() =>
+                                  requestDiscardDirtyEditor(() => {
+                                    setConsumerCreateMode(true);
+                                    setSelectedConsumerId(null);
+                                    setConsumerDrawerOpen(true);
+                                    setConsumerEditorState(buildConsumerDraft());
+                                  })
+                                }
+                              >
+                                {text('Start new', '新建', '新規作成')}
+                              </SecondaryButton>
+                            ) : (
+                              <SecondaryButton
+                                onClick={() =>
+                                  requestDiscardDirtyEditor(() => {
+                                    setConsumerCreateMode(false);
+                                    setSelectedConsumerId(consumersPanel.data[0]?.id || null);
+                                    setConsumerDrawerOpen(false);
+                                  })
+                                }
+                              >
+                                {text('Cancel', '取消', 'キャンセル')}
+                              </SecondaryButton>
+                            )}
+                            <AsyncSubmitButton
+                              onClick={() => void handleConsumerSave()}
+                              isPending={consumerSubmitting}
+                              pendingText={
+                                consumerCreateMode
+                                  ? text(
+                                      'Creating API client...',
+                                      '正在创建 API 客户端...',
+                                      'API クライアントを作成しています...'
+                                    )
+                                  : text(
+                                      'Saving API client...',
+                                      '正在保存 API 客户端...',
+                                      'API クライアントを保存しています...'
+                                    )
                               }
                             >
-                              {text('Deactivate', '停用', '無効化')}
+                              {consumerCreateMode
+                                ? text(
+                                    'Create API client',
+                                    '创建 API 客户端',
+                                    'API クライアントを作成'
+                                  )
+                                : text(
+                                    'Save API client',
+                                    '保存 API 客户端',
+                                    'API クライアントを保存'
+                                  )}
+                            </AsyncSubmitButton>
+                          </>
+                        }
+                      >
+                        {consumerCreateMode || selectedConsumer ? (
+                          <>
+                            <div className="grid gap-4 lg:grid-cols-2">
+                              <TextField
+                                label={text('Consumer code', '消费者代码', 'コンシューマーコード')}
+                                value={consumerDraft.code}
+                                onChange={(value) =>
+                                  setConsumerDraft((current) => ({
+                                    ...current,
+                                    code: value.toUpperCase(),
+                                  }))
+                                }
+                                disabled={!consumerCreateMode}
+                                placeholder={text(
+                                  'BATCH_IMPORTER',
+                                  'BATCH_IMPORTER',
+                                  'BATCH_IMPORTER'
+                                )}
+                              />
+                              <SelectField
+                                label={text('Category', '分类', 'カテゴリ')}
+                                value={consumerDraft.consumerCategory}
+                                onChange={(value) =>
+                                  setConsumerDraft((current) => ({
+                                    ...current,
+                                    consumerCategory: value as ConsumerDraft['consumerCategory'],
+                                  }))
+                                }
+                                options={[
+                                  { value: 'external', label: consumerCategoryLabel('external') },
+                                  { value: 'partner', label: consumerCategoryLabel('partner') },
+                                  { value: 'internal', label: consumerCategoryLabel('internal') },
+                                ]}
+                              />
+                              <TextField
+                                label={text('Base name', '基准名称', '基準名')}
+                                value={consumerDraft.nameBase}
+                                onChange={(value) =>
+                                  setConsumerDraft((current) => ({ ...current, nameBase: value }))
+                                }
+                              />
+                              <div className="space-y-2">
+                                <span className="text-sm font-medium text-slate-700">
+                                  {text('Translations', '翻译', '翻訳')}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => setConsumerTranslationDrawerOpen(true)}
+                                  className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 shadow-sm transition hover:border-slate-300 hover:text-slate-900"
+                                >
+                                  <Languages className="h-4 w-4" />
+                                  {configuredConsumerTranslationCount > 0
+                                    ? text(
+                                        `Translation management (${configuredConsumerTranslationCount})`,
+                                        `翻译管理（${configuredConsumerTranslationCount}）`,
+                                        `翻訳管理（${configuredConsumerTranslationCount}）`
+                                      )
+                                    : text('Translation management', '翻译管理', '翻訳管理')}
+                                </button>
+                                {consumerTranslationOptionsState.error ? (
+                                  <p className="text-xs text-amber-700">
+                                    {consumerTranslationOptionsState.error}
+                                  </p>
+                                ) : null}
+                              </div>
+                              <TextField
+                                label={text('Contact name', '联系人姓名', '担当者名')}
+                                value={consumerDraft.contactName}
+                                onChange={(value) =>
+                                  setConsumerDraft((current) => ({
+                                    ...current,
+                                    contactName: value,
+                                  }))
+                                }
+                              />
+                              <TextField
+                                label={text('Contact email', '联系邮箱', '連絡先メール')}
+                                value={consumerDraft.contactEmail}
+                                onChange={(value) =>
+                                  setConsumerDraft((current) => ({
+                                    ...current,
+                                    contactEmail: value,
+                                  }))
+                                }
+                                type="email"
+                              />
+                              <TextField
+                                label={text(
+                                  'Rate limit / minute',
+                                  '每分钟限流',
+                                  '分あたりレート制限'
+                                )}
+                                value={consumerDraft.rateLimit}
+                                onChange={(value) =>
+                                  setConsumerDraft((current) => ({ ...current, rateLimit: value }))
+                                }
+                                type="number"
+                              />
+                            </div>
+                            <TextField
+                              label={text('Allowed IPs', '允许的 IP', '許可 IP')}
+                              value={consumerDraft.allowedIpsText}
+                              onChange={(value) =>
+                                setConsumerDraft((current) => ({
+                                  ...current,
+                                  allowedIpsText: value,
+                                }))
+                              }
+                              placeholder={text(
+                                '192.168.1.10, 10.0.0.0/8',
+                                '192.168.1.10, 10.0.0.0/8',
+                                '192.168.1.10, 10.0.0.0/8'
+                              )}
+                            />
+                            <TextAreaField
+                              label={text('Notes', '备注', 'メモ')}
+                              value={consumerDraft.notes}
+                              onChange={(value) =>
+                                setConsumerDraft((current) => ({ ...current, notes: value }))
+                              }
+                              rows={4}
+                              placeholder={text(
+                                'Operational notes for this inbound consumer.',
+                                '记录该入站消费者的运营备注。',
+                                'この受信コンシューマーに関する運用メモを記入します。'
+                              )}
+                            />
+                          </>
+                        ) : (
+                          <StateView
+                            status="empty"
+                            title={text(
+                              'Select an API client',
+                              '选择一个 API 客户端',
+                              'API クライアントを選択'
+                            )}
+                            description={text(
+                              'Pick a stored consumer or create a new one before managing key lifecycle.',
+                              '请先选择已有消费者或创建新的消费者，再管理密钥生命周期。',
+                              'キーライフサイクルを管理する前に、保存済みコンシューマーを選ぶか新規作成してください。'
+                            )}
+                          />
+                        )}
+                      </FormSection>
+
+                      <FormSection
+                        title={text('Key Lifecycle', '密钥生命周期', 'キーライフサイクル')}
+                        description={text(
+                          'Generated keys are shown only once. Store them securely immediately after generation or rotation.',
+                          '生成后的密钥只会显示一次。请在生成或轮换后立即安全保存。',
+                          '生成されたキーは一度しか表示されません。生成またはローテーション直後に安全に保管してください。'
+                        )}
+                      >
+                        {selectedConsumer ? (
+                          <div className="space-y-4">
+                            <div className="flex flex-wrap gap-3">
+                              <SecondaryButton
+                                tone="primary"
+                                onClick={() =>
+                                  setConfirmState({
+                                    title: selectedConsumer.apiKeyPrefix
+                                      ? text(
+                                          `Rotate API key for ${selectedConsumer.code}?`,
+                                          `为 ${selectedConsumer.code} 轮换 API 密钥？`,
+                                          `${selectedConsumer.code} の API キーをローテーションしますか？`
+                                        )
+                                      : text(
+                                          `Generate API key for ${selectedConsumer.code}?`,
+                                          `为 ${selectedConsumer.code} 生成 API 密钥？`,
+                                          `${selectedConsumer.code} の API キーを生成しますか？`
+                                        ),
+                                    description: selectedConsumer.apiKeyPrefix
+                                      ? text(
+                                          'The previous key becomes unusable after rotation. Make sure the downstream consumer is ready for a new credential.',
+                                          '轮换后旧密钥将失效。请确认下游消费者已准备好接收新凭据。',
+                                          'ローテーション後、以前のキーは無効になります。下流のコンシューマーが新しい認証情報を受け取れる状態か確認してください。'
+                                        )
+                                      : text(
+                                          'The generated API key is returned only once. Store it securely before leaving this screen.',
+                                          '生成后的 API 密钥只会返回一次。请在离开此页面前安全保存。',
+                                          '生成された API キーは一度しか返されません。この画面を離れる前に安全に保管してください。'
+                                        ),
+                                    confirmText: selectedConsumer.apiKeyPrefix
+                                      ? text('Rotate key', '轮换密钥', 'キーをローテーション')
+                                      : text('Generate key', '生成密钥', 'キーを生成'),
+                                    pendingText: selectedConsumer.apiKeyPrefix
+                                      ? text(
+                                          'Rotating key...',
+                                          '正在轮换密钥...',
+                                          'キーをローテーションしています...'
+                                        )
+                                      : text(
+                                          'Generating key...',
+                                          '正在生成密钥...',
+                                          'キーを生成しています...'
+                                        ),
+                                    intent: 'primary',
+                                    errorFallback: text(
+                                      'Failed to issue API key.',
+                                      '签发 API 密钥失败。',
+                                      'API キーの発行に失敗しました。'
+                                    ),
+                                    onConfirm: async () => {
+                                      const result = selectedConsumer.apiKeyPrefix
+                                        ? await rotateConsumerKey(request, selectedConsumer.id)
+                                        : await generateConsumerKey(request, selectedConsumer.id);
+                                      setGeneratedKey({
+                                        consumerCode: selectedConsumer.code,
+                                        apiKey: result.apiKey || '',
+                                        apiKeyPrefix: result.apiKeyPrefix,
+                                        message: result.message,
+                                      });
+                                      await refreshConsumers(selectedConsumer.id);
+                                      return result.message;
+                                    },
+                                  })
+                                }
+                              >
+                                <KeyRound className="h-4 w-4" />
+                                {selectedConsumer.apiKeyPrefix
+                                  ? text('Rotate key', '轮换密钥', 'キーをローテーション')
+                                  : text('Generate key', '生成密钥', 'キーを生成')}
+                              </SecondaryButton>
+                              {selectedConsumer.apiKeyPrefix ? (
+                                <SecondaryButton
+                                  tone="danger"
+                                  onClick={() =>
+                                    setConfirmState({
+                                      title: text(
+                                        `Revoke API key for ${selectedConsumer.code}?`,
+                                        `撤销 ${selectedConsumer.code} 的 API 密钥？`,
+                                        `${selectedConsumer.code} の API キーを失効させますか？`
+                                      ),
+                                      description: text(
+                                        'Revocation removes the current managed key from the consumer record.',
+                                        '撤销会将当前受管密钥从消费者记录中移除。',
+                                        '失効すると現在の管理キーがコンシューマー記録から削除されます。'
+                                      ),
+                                      confirmText: text('Revoke key', '撤销密钥', 'キーを失効'),
+                                      pendingText: text(
+                                        'Revoking key...',
+                                        '正在撤销密钥...',
+                                        'キーを失効しています...'
+                                      ),
+                                      intent: 'danger',
+                                      errorFallback: text(
+                                        'Failed to revoke API key.',
+                                        '撤销 API 密钥失败。',
+                                        'API キーの失効に失敗しました。'
+                                      ),
+                                      onConfirm: async () => {
+                                        const result = await revokeConsumerKey(
+                                          request,
+                                          selectedConsumer.id
+                                        );
+                                        setGeneratedKey(null);
+                                        await refreshConsumers(selectedConsumer.id);
+                                        return result.message;
+                                      },
+                                    })
+                                  }
+                                >
+                                  {text('Revoke key', '撤销密钥', 'キーを失効')}
+                                </SecondaryButton>
+                              ) : null}
+                            </div>
+
+                            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                              <SummaryCard
+                                label={text('Active prefix', '当前前缀', '有効プレフィックス')}
+                                value={selectedConsumer.apiKeyPrefix || text('None', '无', 'なし')}
+                                hint={text(
+                                  'Only the stored prefix is ever readable after generation.',
+                                  '生成后仅能再次读取已保存的前缀。',
+                                  '生成後に再度参照できるのは保存済みプレフィックスのみです。'
+                                )}
+                              />
+                              <SummaryCard
+                                label={text('Category', '分类', 'カテゴリ')}
+                                value={consumerCategoryLabel(selectedConsumer.consumerCategory)}
+                                hint={text(
+                                  'Consumer ownership type for inbound traffic.',
+                                  '入站流量所对应的消费者类型。',
+                                  '受信トラフィックに紐づくコンシューマー種別です。'
+                                )}
+                              />
+                              <SummaryCard
+                                label={text('Status', '状态', '状態')}
+                                value={statusLabel(selectedConsumer.isActive)}
+                                hint={text(
+                                  'Client record active-state.',
+                                  '客户端记录的当前状态。',
+                                  'クライアント記録の現在状態です。'
+                                )}
+                              />
+                              <SummaryCard
+                                label={text('Version', '版本', 'バージョン')}
+                                value={String(selectedConsumer.version)}
+                                hint={text(
+                                  'Current revision of this client record.',
+                                  '当前客户端记录的修订号。',
+                                  'このクライアント記録の現在リビジョンです。'
+                                )}
+                              />
+                            </div>
+
+                            {generatedKey ? (
+                              <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                                <p className="font-semibold">
+                                  {text(
+                                    `New key material for ${generatedKey.consumerCode}`,
+                                    `${generatedKey.consumerCode} 的新密钥材料`,
+                                    `${generatedKey.consumerCode} の新しいキー情報`
+                                  )}
+                                </p>
+                                <p className="mt-2 break-all font-mono text-xs">
+                                  {generatedKey.apiKey}
+                                </p>
+                                <p className="mt-2 text-xs">{generatedKey.message}</p>
+                              </div>
+                            ) : null}
+                          </div>
+                        ) : (
+                          <p className="text-sm text-slate-500">
+                            {text(
+                              'Select an API client to review its details and manage keys.',
+                              '请选择一个 API 客户端以查看详情并管理密钥。',
+                              'API クライアントを選択して詳細確認とキー管理を行ってください。'
+                            )}
+                          </p>
+                        )}
+                      </FormSection>
+                    </ActionDrawer>
+                  </>
+                ) : null}
+
+                {displayedTab === 'email' ? (
+                  <>
+                    {isAcWorkspace ? (
+                      <>
+                        <GlassSurface className="p-6">
+                          <FormSection
+                            title={text('Email Configuration', '邮件配置', 'メール設定')}
+                            description={text(
+                              'Review provider status, tenant overrides, and delivery-test readiness.',
+                              '查看服务商状态、租户覆盖与投递测试准备情况。',
+                              'プロバイダー状態、テナント上書き、配信テストの準備状況を確認します。'
+                            )}
+                            actions={
+                              <>
+                                <SecondaryButton onClick={() => void refreshEmailConfig()}>
+                                  <RefreshCcw className="h-4 w-4" />
+                                  {text('Refresh', '刷新', '更新')}
+                                </SecondaryButton>
+                                <SecondaryButton
+                                  tone="primary"
+                                  onClick={() => setEmailConfigDrawerOpen(true)}
+                                >
+                                  {text('Configure email', '配置邮件', 'メールを設定')}
+                                </SecondaryButton>
+                              </>
+                            }
+                          >
+                            {emailConfigPanel.loading ? (
+                              <p className="text-sm text-slate-500">
+                                {text(
+                                  'Loading email configuration…',
+                                  '正在加载邮件配置…',
+                                  'メール設定を読み込んでいます…'
+                                )}
+                              </p>
+                            ) : emailConfigPanel.unavailableReason ? (
+                              <StateView
+                                status="unavailable"
+                                title={text(
+                                  'AC-only email configuration',
+                                  '仅 AC 可用的邮件配置',
+                                  'AC 限定のメール設定'
+                                )}
+                                description={emailConfigPanel.unavailableReason}
+                              />
+                            ) : emailConfigPanel.error ? (
+                              <StateView
+                                status="error"
+                                title={text(
+                                  'Email configuration unavailable',
+                                  '邮件配置不可用',
+                                  'メール設定を利用できません'
+                                )}
+                                description={emailConfigPanel.error}
+                              />
+                            ) : (
+                              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                                <SummaryCard
+                                  label={text('Provider', '服务提供商', 'プロバイダー')}
+                                  value={emailProviderLabel(emailConfigDraft.provider)}
+                                  hint={text(
+                                    'Current global delivery provider.',
+                                    '当前全局投递服务商。',
+                                    '現在のグローバル配信プロバイダーです。'
+                                  )}
+                                />
+                                <SummaryCard
+                                  label={text('Configured', '配置状态', '設定状態')}
+                                  value={
+                                    emailConfigPanel.data?.isConfigured
+                                      ? text('Configured', '已配置', '設定済み')
+                                      : text('Not configured', '未配置', '未設定')
+                                  }
+                                  hint={text(
+                                    'Credential edits stay inside the drawer.',
+                                    '凭据编辑保留在抽屉内。',
+                                    '認証情報の編集はドロワー内で行います。'
+                                  )}
+                                />
+                                <SummaryCard
+                                  label={text('Tenant overrides', '租户覆盖', 'テナント上書き')}
+                                  value={String(emailSenderTenantsPanel.data.length)}
+                                  hint={text(
+                                    'Active standard tenants available for sender identity overrides.',
+                                    '可配置发信身份覆盖的活跃普通租户数量。',
+                                    '送信者情報の上書き対象となる有効な標準テナント数です。'
+                                  )}
+                                />
+                                <SummaryCard
+                                  label={text('Test address', '测试邮箱', 'テスト宛先')}
+                                  value={
+                                    emailConfigDraft.testEmail || text('Unset', '未设置', '未設定')
+                                  }
+                                  hint={text(
+                                    'Used only when sending a test email from the drawer.',
+                                    '仅在抽屉中发送测试邮件时使用。',
+                                    'ドロワーからテストメールを送信するときだけ使用します。'
+                                  )}
+                                />
+                              </div>
+                            )}
+                          </FormSection>
+                        </GlassSurface>
+
+                        <ActionDrawer
+                          open={emailConfigDrawerOpen}
+                          onOpenChange={(open) =>
+                            requestDrawerOpenChange(setEmailConfigDrawerOpen, open)
+                          }
+                          title={text('Email Configuration', '邮件配置', 'メール設定')}
+                          description={text(
+                            'Edit provider credentials, sender identity, tenant overrides, and delivery checks.',
+                            '编辑服务商凭据、发信身份、租户覆盖与投递检查。',
+                            'プロバイダー認証情報、送信者情報、テナント上書き、配信チェックを編集します。'
+                          )}
+                          size="xl"
+                          closeButtonAriaLabel={text({
+                            en: 'Close email configuration drawer',
+                            zh_HANS: '关闭邮件配置抽屉',
+                            zh_HANT: '關閉郵件設定抽屜',
+                            ja: 'メール設定ドロワーを閉じる',
+                            ko: '이메일 설정 서랍 닫기',
+                            fr: 'Fermer le panneau de configuration e-mail',
+                          })}
+                        >
+                          <FormSection
+                            title={text('Email Configuration', '邮件配置', 'メール設定')}
+                            description={text(
+                              'Manage global provider credentials and sender identity for platform mail delivery.',
+                              '管理平台邮件投递使用的全局服务商凭据与发信身份。',
+                              'プラットフォームメール配信のグローバル認証情報と送信者情報を管理します。'
+                            )}
+                            actions={
+                              emailConfigPanel.unavailableReason || emailConfigPanel.error ? (
+                                <SecondaryButton onClick={() => void refreshEmailConfig()}>
+                                  <RefreshCcw className="h-4 w-4" />
+                                  {text('Retry', '重试', '再試行')}
+                                </SecondaryButton>
+                              ) : (
+                                <>
+                                  <SecondaryButton onClick={() => void refreshEmailConfig()}>
+                                    <RefreshCcw className="h-4 w-4" />
+                                    {text('Refresh', '刷新', '更新')}
+                                  </SecondaryButton>
+                                  <AsyncSubmitButton
+                                    onClick={() => void handleEmailConfigSave()}
+                                    isPending={emailConfigSubmitting}
+                                    pendingText={text(
+                                      'Saving email config...',
+                                      '正在保存邮件配置...',
+                                      'メール設定を保存しています...'
+                                    )}
+                                  >
+                                    {text('Save email config', '保存邮件配置', 'メール設定を保存')}
+                                  </AsyncSubmitButton>
+                                </>
+                              )
+                            }
+                          >
+                            {emailConfigPanel.loading ? (
+                              <p className="text-sm text-slate-500">
+                                {text(
+                                  'Loading email configuration…',
+                                  '正在加载邮件配置…',
+                                  'メール設定を読み込んでいます…'
+                                )}
+                              </p>
+                            ) : emailConfigPanel.unavailableReason ? (
+                              <StateView
+                                status="unavailable"
+                                title={text(
+                                  'AC-only email configuration',
+                                  '仅 AC 可用的邮件配置',
+                                  'AC 限定のメール設定'
+                                )}
+                                description={emailConfigPanel.unavailableReason}
+                              />
+                            ) : emailConfigPanel.error ? (
+                              <StateView
+                                status="error"
+                                title={text(
+                                  'Email configuration unavailable',
+                                  '邮件配置不可用',
+                                  'メール設定を利用できません'
+                                )}
+                                description={emailConfigPanel.error}
+                              />
+                            ) : (
+                              <>
+                                <div className="grid gap-4 lg:grid-cols-2">
+                                  <SelectField
+                                    label={text('Provider', '服务提供商', 'プロバイダー')}
+                                    value={emailConfigDraft.provider}
+                                    onChange={(value) =>
+                                      setEmailConfigDraft((current) => ({
+                                        ...current,
+                                        provider: value as EmailProvider,
+                                      }))
+                                    }
+                                    options={[
+                                      { value: 'smtp', label: emailProviderLabel('smtp') },
+                                      {
+                                        value: 'tencent_ses',
+                                        label: emailProviderLabel('tencent_ses'),
+                                      },
+                                    ]}
+                                  />
+                                  <TextField
+                                    label={text(
+                                      'Test email address',
+                                      '测试邮箱地址',
+                                      'テストメールアドレス'
+                                    )}
+                                    value={emailConfigDraft.testEmail}
+                                    onChange={(value) =>
+                                      setEmailConfigDraft((current) => ({
+                                        ...current,
+                                        testEmail: value,
+                                      }))
+                                    }
+                                    type="email"
+                                  />
+                                </div>
+
+                                {emailConfigDraft.provider === 'smtp' ? (
+                                  <div className="grid gap-4 lg:grid-cols-2">
+                                    <TextField
+                                      label={text('SMTP host', 'SMTP 主机', 'SMTP ホスト')}
+                                      value={emailConfigDraft.smtpHost}
+                                      onChange={(value) =>
+                                        setEmailConfigDraft((current) => ({
+                                          ...current,
+                                          smtpHost: value,
+                                        }))
+                                      }
+                                    />
+                                    <TextField
+                                      label={text('SMTP port', 'SMTP 端口', 'SMTP ポート')}
+                                      value={emailConfigDraft.smtpPort}
+                                      onChange={(value) =>
+                                        setEmailConfigDraft((current) => ({
+                                          ...current,
+                                          smtpPort: value,
+                                        }))
+                                      }
+                                      type="number"
+                                    />
+                                    <TextField
+                                      label={text('Username', '用户名', 'ユーザー名')}
+                                      value={emailConfigDraft.smtpUsername}
+                                      onChange={(value) =>
+                                        setEmailConfigDraft((current) => ({
+                                          ...current,
+                                          smtpUsername: value,
+                                        }))
+                                      }
+                                    />
+                                    <TextField
+                                      label={text('Password', '密码', 'パスワード')}
+                                      value={emailConfigDraft.smtpPassword}
+                                      onChange={(value) =>
+                                        setEmailConfigDraft((current) => ({
+                                          ...current,
+                                          smtpPassword: value,
+                                        }))
+                                      }
+                                    />
+                                    <TextField
+                                      label={text('From address', '发件地址', '送信元アドレス')}
+                                      value={emailConfigDraft.smtpFromAddress}
+                                      onChange={(value) =>
+                                        setEmailConfigDraft((current) => ({
+                                          ...current,
+                                          smtpFromAddress: value,
+                                        }))
+                                      }
+                                      type="email"
+                                    />
+                                    <TextField
+                                      label={text('From name', '发件名称', '送信者名')}
+                                      value={emailConfigDraft.smtpFromName}
+                                      onChange={(value) =>
+                                        setEmailConfigDraft((current) => ({
+                                          ...current,
+                                          smtpFromName: value,
+                                        }))
+                                      }
+                                    />
+                                    <CheckboxField
+                                      label={text(
+                                        'Use secure SMTP transport',
+                                        '使用安全 SMTP 传输',
+                                        '安全な SMTP 転送を使用'
+                                      )}
+                                      checked={emailConfigDraft.smtpSecure}
+                                      onChange={(checked) =>
+                                        setEmailConfigDraft((current) => ({
+                                          ...current,
+                                          smtpSecure: checked,
+                                        }))
+                                      }
+                                    />
+                                  </div>
+                                ) : (
+                                  <div className="grid gap-4 lg:grid-cols-2">
+                                    <TextField
+                                      label={text(
+                                        'SES secret ID',
+                                        'SES 密钥 ID',
+                                        'SES シークレット ID'
+                                      )}
+                                      value={emailConfigDraft.sesSecretId}
+                                      onChange={(value) =>
+                                        setEmailConfigDraft((current) => ({
+                                          ...current,
+                                          sesSecretId: value,
+                                        }))
+                                      }
+                                    />
+                                    <TextField
+                                      label={text(
+                                        'SES secret key',
+                                        'SES 密钥 Key',
+                                        'SES シークレットキー'
+                                      )}
+                                      value={emailConfigDraft.sesSecretKey}
+                                      onChange={(value) =>
+                                        setEmailConfigDraft((current) => ({
+                                          ...current,
+                                          sesSecretKey: value,
+                                        }))
+                                      }
+                                    />
+                                    <TextField
+                                      label={text('Region', '区域', 'リージョン')}
+                                      value={emailConfigDraft.sesRegion}
+                                      onChange={(value) =>
+                                        setEmailConfigDraft((current) => ({
+                                          ...current,
+                                          sesRegion: value,
+                                        }))
+                                      }
+                                    />
+                                    <TextField
+                                      label={text('From address', '发件地址', '送信元アドレス')}
+                                      value={emailConfigDraft.sesFromAddress}
+                                      onChange={(value) =>
+                                        setEmailConfigDraft((current) => ({
+                                          ...current,
+                                          sesFromAddress: value,
+                                        }))
+                                      }
+                                      type="email"
+                                    />
+                                    <TextField
+                                      label={text('From name', '发件名称', '送信者名')}
+                                      value={emailConfigDraft.sesFromName}
+                                      onChange={(value) =>
+                                        setEmailConfigDraft((current) => ({
+                                          ...current,
+                                          sesFromName: value,
+                                        }))
+                                      }
+                                    />
+                                    <TextField
+                                      label={text('Reply-to', '回复地址', '返信先')}
+                                      value={emailConfigDraft.sesReplyTo}
+                                      onChange={(value) =>
+                                        setEmailConfigDraft((current) => ({
+                                          ...current,
+                                          sesReplyTo: value,
+                                        }))
+                                      }
+                                      type="email"
+                                    />
+                                  </div>
+                                )}
+
+                                <FormSection
+                                  title={text(
+                                    'Tenant Sender Overrides',
+                                    '租户发信身份',
+                                    'テナント別送信者'
+                                  )}
+                                  description={text(
+                                    'Keep provider credentials global, then override sender address and display name for individual tenants when needed.',
+                                    '服务商凭据保持全局统一；需要时可为单个租户覆盖发件地址与显示名称。',
+                                    'プロバイダー認証情報はグローバルのまま、必要なテナントごとに送信元アドレスと表示名を上書きします。'
+                                  )}
+                                >
+                                  {emailSenderTenantsPanel.loading ? (
+                                    <p className="text-sm text-slate-500">
+                                      {text(
+                                        'Loading tenants…',
+                                        '正在加载租户…',
+                                        'テナントを読み込んでいます…'
+                                      )}
+                                    </p>
+                                  ) : emailSenderTenantsPanel.error ? (
+                                    <StateView
+                                      status="error"
+                                      title={text(
+                                        'Tenant sender targets unavailable',
+                                        '租户发信目标不可用',
+                                        'テナント送信者対象を利用できません'
+                                      )}
+                                      description={emailSenderTenantsPanel.error}
+                                    />
+                                  ) : emailSenderTenantsPanel.data.length === 0 ? (
+                                    <StateView
+                                      status="empty"
+                                      title={text(
+                                        'No active standard tenants',
+                                        '没有可配置的普通租户',
+                                        '設定対象の標準テナントはありません'
+                                      )}
+                                      description={text(
+                                        'Create or reactivate a standard tenant before adding tenant-specific sender identities.',
+                                        '请先创建或重新启用普通租户，再配置租户级发信身份。',
+                                        'テナント別送信者を追加する前に、標準テナントを作成または再有効化してください。'
+                                      )}
+                                    />
+                                  ) : (
+                                    <div className="space-y-4">
+                                      {emailSenderTenantsPanel.data.map((tenant) => {
+                                        const override = emailConfigDraft.tenantSenderOverrides[
+                                          tenant.schemaName
+                                        ] ?? {
+                                          fromAddress: '',
+                                          fromName: '',
+                                          replyTo: '',
+                                        };
+
+                                        return (
+                                          <div
+                                            key={tenant.schemaName}
+                                            className="rounded-2xl border border-slate-200 bg-white/75 p-4"
+                                          >
+                                            <div className="flex flex-wrap items-start justify-between gap-3">
+                                              <div>
+                                                <p className="text-sm font-semibold text-slate-900">
+                                                  {tenant.name}
+                                                </p>
+                                                <p className="text-xs text-slate-500">
+                                                  {tenant.code} · {tenant.schemaName}
+                                                </p>
+                                              </div>
+                                              <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+                                                {text(
+                                                  'Optional override',
+                                                  '可选覆盖',
+                                                  '任意上書き'
+                                                )}
+                                              </span>
+                                            </div>
+                                            <div className="mt-4 grid gap-4 lg:grid-cols-3">
+                                              <TextField
+                                                label={text(
+                                                  'From address',
+                                                  '发件地址',
+                                                  '送信元アドレス'
+                                                )}
+                                                value={override.fromAddress}
+                                                onChange={(value) =>
+                                                  updateTenantSenderOverride(
+                                                    tenant.schemaName,
+                                                    'fromAddress',
+                                                    value
+                                                  )
+                                                }
+                                                type="email"
+                                              />
+                                              <TextField
+                                                label={text('From name', '发件名称', '送信者名')}
+                                                value={override.fromName}
+                                                onChange={(value) =>
+                                                  updateTenantSenderOverride(
+                                                    tenant.schemaName,
+                                                    'fromName',
+                                                    value
+                                                  )
+                                                }
+                                              />
+                                              <TextField
+                                                label={text('Reply-to', '回复地址', '返信先')}
+                                                value={override.replyTo}
+                                                onChange={(value) =>
+                                                  updateTenantSenderOverride(
+                                                    tenant.schemaName,
+                                                    'replyTo',
+                                                    value
+                                                  )
+                                                }
+                                                type="email"
+                                              />
+                                            </div>
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                  )}
+                                </FormSection>
+
+                                <div className="flex flex-wrap gap-3">
+                                  <SecondaryButton
+                                    onClick={() => void handleEmailAction('connection')}
+                                    disabled={emailActionPending !== null}
+                                  >
+                                    <ShieldCheck className="h-4 w-4" />
+                                    {text('Test connection', '测试连接', '接続をテスト')}
+                                  </SecondaryButton>
+                                  <SecondaryButton
+                                    tone="primary"
+                                    onClick={() => void handleEmailAction('test-email')}
+                                    disabled={
+                                      emailActionPending !== null ||
+                                      !emailConfigDraft.testEmail.trim()
+                                    }
+                                  >
+                                    <Mail className="h-4 w-4" />
+                                    {text('Send test email', '发送测试邮件', 'テストメールを送信')}
+                                  </SecondaryButton>
+                                </div>
+
+                                {emailActionResult ? (
+                                  <div
+                                    className={`rounded-2xl border px-4 py-3 text-sm ${
+                                      emailActionResult.success
+                                        ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
+                                        : 'border-rose-200 bg-rose-50 text-rose-800'
+                                    }`}
+                                  >
+                                    {emailActionResult.message}
+                                    {emailActionResult.error ? (
+                                      <p className="mt-1 text-xs">{emailActionResult.error}</p>
+                                    ) : null}
+                                  </div>
+                                ) : null}
+                              </>
+                            )}
+                          </FormSection>
+                        </ActionDrawer>
+                      </>
+                    ) : null}
+
+                    <GlassSurface className="p-6">
+                      <FormSection
+                        title={text('Email Templates', '邮件模板', 'メールテンプレート')}
+                        description={text(
+                          'Manage email templates in this workspace.',
+                          '在当前工作区管理邮件模板。',
+                          'このワークスペースでメールテンプレートを管理します。'
+                        )}
+                        actions={
+                          <>
+                            <SecondaryButton onClick={() => void refreshEmailTemplates()}>
+                              <RefreshCcw className="h-4 w-4" />
+                              {text('Refresh', '刷新', '更新')}
                             </SecondaryButton>
-                          ) : (
                             <SecondaryButton
                               tone="primary"
                               onClick={() =>
-                                setConfirmState({
-                                  title: text(`Reactivate ${template.code}?`, `重新启用 ${template.code}？`, `${template.code} を再有効化しますか？`),
-                                  description: text('The stored template becomes available for use again.', '已存储的模板将重新可用。', '保存済みテンプレートを再び利用可能にします。'),
-                                  confirmText: text('Reactivate template', '重新启用模板', 'テンプレートを再有効化'),
-                                  pendingText: text('Reactivating template...', '正在重新启用模板...', 'テンプレートを再有効化しています...'),
-                                  intent: 'primary',
-                                  errorFallback: text('Failed to reactivate email template.', '重新启用邮件模板失败。', 'メールテンプレートの再有効化に失敗しました。'),
-                                  onConfirm: async () => {
-                                    await reactivateEmailTemplate(request, template.code);
-                                    await refreshEmailTemplates(template.code);
-                                    return text(`${template.code} template reactivated.`, `已重新启用模板 ${template.code}。`, `テンプレート ${template.code} を再有効化しました。`);
-                                  },
+                                requestDiscardDirtyEditor(() => {
+                                  setTemplateCreateMode(true);
+                                  setSelectedTemplateCode(null);
+                                  setTemplateDrawerOpen(true);
+                                  setTemplateEditorState(buildEmailTemplateDraft());
+                                  setTemplatePreview(null);
                                 })
                               }
                             >
-                              {text('Reactivate', '重新启用', '再有効化')}
+                              <Plus className="h-4 w-4" />
+                              {text('New template', '新建模板', '新しいテンプレート')}
                             </SecondaryButton>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                  </TableShell>
-                  {emailTemplatesPanel.data.length > 0 ? (
-                    <PaginationFooter
-                      pagination={paginatedEmailTemplates.pagination}
-                      itemCount={paginatedEmailTemplates.items.length}
-                      labels={buildPaginationFooterLabels(
-                        locale,
-                        paginatedEmailTemplates.pagination,
-                        paginatedEmailTemplates.items.length,
+                          </>
+                        }
+                      >
+                        {emailTemplatesPanel.unavailableReason ? (
+                          <StateView
+                            status="unavailable"
+                            title={text(
+                              'Email templates unavailable for this scope',
+                              '当前范围无法使用邮件模板',
+                              'この範囲ではメールテンプレートを利用できません'
+                            )}
+                            description={emailTemplatesPanel.unavailableReason}
+                          />
+                        ) : emailTemplatesPanel.error ? (
+                          <StateView
+                            status="error"
+                            title={text(
+                              'Email templates unavailable',
+                              '邮件模板不可用',
+                              'メールテンプレートを利用できません'
+                            )}
+                            description={emailTemplatesPanel.error}
+                          />
+                        ) : (
+                          <>
+                            <TableShell
+                              ariaLabel={text('Email templates', '邮件模板', 'メールテンプレート')}
+                              columns={[
+                                text('Code', '代码', 'コード'),
+                                text('Category', '分类', 'カテゴリ'),
+                                text('Locale Base', '当前语种内容', '現在の言語内容'),
+                                text('Variables', '变量数', '変数数'),
+                                text('Status', '状态', '状態'),
+                                text('Actions', '操作', '操作'),
+                              ]}
+                              dataLength={paginatedEmailTemplates.items.length}
+                              isLoading={emailTemplatesPanel.loading}
+                              isEmpty={emailTemplatesPanel.data.length === 0}
+                              emptyTitle={text(
+                                'No email templates configured',
+                                '尚未配置邮件模板',
+                                '設定済みメールテンプレートはありません'
+                              )}
+                              emptyDescription={text(
+                                'Create the first email template for system or business notifications.',
+                                '为系统或业务通知创建第一个邮件模板。',
+                                'システム通知または業務通知用の最初のメールテンプレートを作成してください。'
+                              )}
+                            >
+                              {paginatedEmailTemplates.items.map((template) => (
+                                <tr
+                                  key={template.code}
+                                  className={
+                                    selectedTemplateCode === template.code
+                                      ? 'bg-indigo-50/40'
+                                      : undefined
+                                  }
+                                >
+                                  <td className="px-6 py-4">
+                                    <div className="space-y-1">
+                                      <p className="text-sm font-semibold text-slate-900">
+                                        {template.code}
+                                      </p>
+                                      <p className="text-xs text-slate-500">
+                                        {pickTemplateName(template)}
+                                      </p>
+                                    </div>
+                                  </td>
+                                  <td className="px-6 py-4">
+                                    <StatusBadge
+                                      tone="info"
+                                      label={templateCategoryLabel(template.category)}
+                                    />
+                                  </td>
+                                  <td className="px-6 py-4 text-sm text-slate-700">
+                                    {pickTemplateSubject(template)}
+                                  </td>
+                                  <td className="px-6 py-4 text-sm text-slate-700">
+                                    {template.variables.length}
+                                  </td>
+                                  <td className="px-6 py-4">
+                                    <StatusBadge
+                                      tone={template.isActive ? 'success' : 'danger'}
+                                      label={statusLabel(template.isActive)}
+                                    />
+                                  </td>
+                                  <td className="px-6 py-4">
+                                    <div className="flex flex-wrap gap-2">
+                                      <SecondaryButton
+                                        onClick={() =>
+                                          requestDiscardDirtyEditor(() => {
+                                            setTemplateCreateMode(false);
+                                            setSelectedTemplateCode(template.code);
+                                            setTemplateDrawerOpen(true);
+                                          })
+                                        }
+                                      >
+                                        {text('Open', '打开', '開く')}
+                                      </SecondaryButton>
+                                      {template.isActive ? (
+                                        <SecondaryButton
+                                          tone="danger"
+                                          onClick={() =>
+                                            setConfirmState({
+                                              title: text(
+                                                `Deactivate ${template.code}?`,
+                                                `停用 ${template.code}？`,
+                                                `${template.code} を無効化しますか？`
+                                              ),
+                                              description: text(
+                                                'The template stays stored, but is marked inactive until explicitly reactivated.',
+                                                '模板会被保留，但在显式重新启用前会被标记为停用。',
+                                                'テンプレートは保持されますが、再有効化されるまで無効として扱われます。'
+                                              ),
+                                              confirmText: text(
+                                                'Deactivate template',
+                                                '停用模板',
+                                                'テンプレートを無効化'
+                                              ),
+                                              pendingText: text(
+                                                'Deactivating template...',
+                                                '正在停用模板...',
+                                                'テンプレートを無効化しています...'
+                                              ),
+                                              intent: 'danger',
+                                              errorFallback: text(
+                                                'Failed to deactivate email template.',
+                                                '停用邮件模板失败。',
+                                                'メールテンプレートの無効化に失敗しました。'
+                                              ),
+                                              onConfirm: async () => {
+                                                await deactivateEmailTemplate(
+                                                  request,
+                                                  template.code
+                                                );
+                                                await refreshEmailTemplates(template.code);
+                                                return text(
+                                                  `${template.code} template deactivated.`,
+                                                  `已停用模板 ${template.code}。`,
+                                                  `テンプレート ${template.code} を無効化しました。`
+                                                );
+                                              },
+                                            })
+                                          }
+                                        >
+                                          {text('Deactivate', '停用', '無効化')}
+                                        </SecondaryButton>
+                                      ) : (
+                                        <SecondaryButton
+                                          tone="primary"
+                                          onClick={() =>
+                                            setConfirmState({
+                                              title: text(
+                                                `Reactivate ${template.code}?`,
+                                                `重新启用 ${template.code}？`,
+                                                `${template.code} を再有効化しますか？`
+                                              ),
+                                              description: text(
+                                                'The stored template becomes available for use again.',
+                                                '已存储的模板将重新可用。',
+                                                '保存済みテンプレートを再び利用可能にします。'
+                                              ),
+                                              confirmText: text(
+                                                'Reactivate template',
+                                                '重新启用模板',
+                                                'テンプレートを再有効化'
+                                              ),
+                                              pendingText: text(
+                                                'Reactivating template...',
+                                                '正在重新启用模板...',
+                                                'テンプレートを再有効化しています...'
+                                              ),
+                                              intent: 'primary',
+                                              errorFallback: text(
+                                                'Failed to reactivate email template.',
+                                                '重新启用邮件模板失败。',
+                                                'メールテンプレートの再有効化に失敗しました。'
+                                              ),
+                                              onConfirm: async () => {
+                                                await reactivateEmailTemplate(
+                                                  request,
+                                                  template.code
+                                                );
+                                                await refreshEmailTemplates(template.code);
+                                                return text(
+                                                  `${template.code} template reactivated.`,
+                                                  `已重新启用模板 ${template.code}。`,
+                                                  `テンプレート ${template.code} を再有効化しました。`
+                                                );
+                                              },
+                                            })
+                                          }
+                                        >
+                                          {text('Reactivate', '重新启用', '再有効化')}
+                                        </SecondaryButton>
+                                      )}
+                                    </div>
+                                  </td>
+                                </tr>
+                              ))}
+                            </TableShell>
+                            {emailTemplatesPanel.data.length > 0 ? (
+                              <PaginationFooter
+                                pagination={paginatedEmailTemplates.pagination}
+                                itemCount={paginatedEmailTemplates.items.length}
+                                labels={buildPaginationFooterLabels(
+                                  locale,
+                                  paginatedEmailTemplates.pagination,
+                                  paginatedEmailTemplates.items.length
+                                )}
+                                onPageChange={(page) =>
+                                  applyPaginationQueryState({ emailTemplatePage: page })
+                                }
+                                onPageSizeChange={(pageSize) => {
+                                  applyPaginationQueryState({
+                                    emailTemplatePage: 1,
+                                    emailTemplatePageSize: pageSize as PageSizeOption,
+                                  });
+                                }}
+                                isLoading={emailTemplatesPanel.loading}
+                                className="mt-4 rounded-2xl border border-slate-200 bg-slate-50/80"
+                              />
+                            ) : null}
+                          </>
+                        )}
+                      </FormSection>
+                    </GlassSurface>
+
+                    <ActionDrawer
+                      open={templateDrawerOpen}
+                      onOpenChange={(open) => requestDrawerOpenChange(setTemplateDrawerOpen, open)}
+                      title={
+                        templateCreateMode
+                          ? text('New Template', '新建模板', '新しいテンプレート')
+                          : text('Template Detail', '模板详情', 'テンプレート詳細')
+                      }
+                      description={text(
+                        'Edit template copy, translations, preview variables, and activation state.',
+                        '编辑模板内容、翻译、预览变量与启用状态。',
+                        'テンプレート本文、翻訳、プレビュー変数、有効状態を編集します。'
                       )}
-                      onPageChange={(page) => applyPaginationQueryState({ emailTemplatePage: page })}
-                      onPageSizeChange={(pageSize) => {
-                        applyPaginationQueryState({
-                          emailTemplatePage: 1,
-                          emailTemplatePageSize: pageSize as PageSizeOption,
-                        });
-                      }}
-                      isLoading={emailTemplatesPanel.loading}
-                      className="mt-4 rounded-2xl border border-slate-200 bg-slate-50/80"
-                    />
-                  ) : null}
-                </>
-              )}
-            </FormSection>
-          </GlassSurface>
-
-          <ActionDrawer
-            open={templateDrawerOpen}
-            onOpenChange={(open) => requestDrawerOpenChange(setTemplateDrawerOpen, open)}
-            title={templateCreateMode ? text('New Template', '新建模板', '新しいテンプレート') : text('Template Detail', '模板详情', 'テンプレート詳細')}
-            description={text('Edit template copy, translations, preview variables, and activation state.', '编辑模板内容、翻译、预览变量与启用状态。', 'テンプレート本文、翻訳、プレビュー変数、有効状態を編集します。')}
-            size="xl"
-            closeButtonAriaLabel={text({
-              en: 'Close email template detail drawer',
-              zh_HANS: '关闭邮件模板详情抽屉',
-              zh_HANT: '關閉郵件範本詳情抽屜',
-              ja: 'メールテンプレート詳細ドロワーを閉じる',
-              ko: '이메일 템플릿 상세 서랍 닫기',
-              fr: 'Fermer le panneau de détail du modèle e-mail',
-            })}
-          >
-            <FormSection
-              title={templateCreateMode ? text('New Template', '新建模板', '新しいテンプレート') : text('Template Detail', '模板详情', 'テンプレート詳細')}
-              description={text('Create or edit multilingual email copy. Preview uses the stored template content.', '创建或编辑多语言邮件内容。预览使用已保存的模板内容。', '多言語メール内容を作成・編集します。プレビューは保存済みテンプレートを使用します。')}
-              actions={
-                <>
-                  {!templateCreateMode ? (
-                    <SecondaryButton
-                      onClick={() =>
-                        requestDiscardDirtyEditor(() => {
-                          setTemplateCreateMode(true);
-                          setSelectedTemplateCode(null);
-                          setTemplateDrawerOpen(true);
-                          setTemplateEditorState(buildEmailTemplateDraft());
-                          setTemplatePreview(null);
-                        })
-                      }
+                      size="xl"
+                      closeButtonAriaLabel={text({
+                        en: 'Close email template detail drawer',
+                        zh_HANS: '关闭邮件模板详情抽屉',
+                        zh_HANT: '關閉郵件範本詳情抽屜',
+                        ja: 'メールテンプレート詳細ドロワーを閉じる',
+                        ko: '이메일 템플릿 상세 서랍 닫기',
+                        fr: 'Fermer le panneau de détail du modèle e-mail',
+                      })}
                     >
-                      {text('Start new', '新建', '新規作成')}
-                    </SecondaryButton>
-                  ) : (
-                    <SecondaryButton
-                      onClick={() =>
-                        requestDiscardDirtyEditor(() => {
-                          setTemplateCreateMode(false);
-                          setSelectedTemplateCode(emailTemplatesPanel.data[0]?.code || null);
-                          setTemplateDrawerOpen(false);
-                        })
-                      }
-                    >
-                      {text('Cancel', '取消', 'キャンセル')}
-                    </SecondaryButton>
-                  )}
-                  <SecondaryButton
-                    tone="primary"
-                    onClick={() => void handleTemplatePreview()}
-                    disabled={templatePreviewLoading || (!selectedTemplateCode && !templateCreateMode)}
-                  >
-                    <Sparkles className="h-4 w-4" />
-                    {text('Preview template', '预览模板', 'テンプレートをプレビュー')}
-                  </SecondaryButton>
-                  <AsyncSubmitButton
-                    onClick={() => void handleTemplateSave()}
-                    isPending={templateSubmitting}
-                    pendingText={
-                      templateCreateMode
-                        ? text('Creating template...', '正在创建模板...', 'テンプレートを作成しています...')
-                        : text('Saving template...', '正在保存模板...', 'テンプレートを保存しています...')
-                    }
-                  >
-                    {templateCreateMode ? text('Create template', '创建模板', 'テンプレートを作成') : text('Save template', '保存模板', 'テンプレートを保存')}
-                  </AsyncSubmitButton>
-                </>
-              }
-            >
-              {templateCreateMode || selectedTemplate ? (
-                <>
-                  <div className="grid gap-4 lg:grid-cols-2">
-                    <TextField
-                      label={text('Template code', '模板代码', 'テンプレートコード')}
-                      value={templateDraft.code}
-                      onChange={(value) => setTemplateDraft((current) => ({ ...current, code: value.toUpperCase() }))}
-                      disabled={!templateCreateMode}
-                      placeholder={text('WELCOME_EMAIL', 'WELCOME_EMAIL', 'WELCOME_EMAIL')}
-                    />
-                    <SelectField
-                      label={text('Category', '分类', 'カテゴリ')}
-                      value={templateDraft.category}
-                      onChange={(value) =>
-                        setTemplateDraft((current) => ({
-                          ...current,
-                          category: value as EmailTemplateCategory,
-                        }))
-                      }
-                      options={[
-                        { value: 'system', label: templateCategoryLabel('system') },
-                        { value: 'business', label: templateCategoryLabel('business') },
-                      ]}
-                    />
-                    <TextField
-                      label={text('Base name', '基准名称', '基準名')}
-                      value={templateDraft.nameBase}
-                      onChange={(value) => setTemplateDraft((current) => ({ ...current, nameBase: value }))}
-                    />
-                    <div className="space-y-2">
-                      <span className="text-sm font-medium text-slate-700">
-                        {text('Name translations', '名称翻译', '名称翻訳')}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => setTemplateTranslationSection('name')}
-                        className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 shadow-sm transition hover:border-slate-300 hover:text-slate-900"
+                      <FormSection
+                        title={
+                          templateCreateMode
+                            ? text('New Template', '新建模板', '新しいテンプレート')
+                            : text('Template Detail', '模板详情', 'テンプレート詳細')
+                        }
+                        description={text(
+                          'Create or edit multilingual email copy. Preview uses the stored template content.',
+                          '创建或编辑多语言邮件内容。预览使用已保存的模板内容。',
+                          '多言語メール内容を作成・編集します。プレビューは保存済みテンプレートを使用します。'
+                        )}
+                        actions={
+                          <>
+                            {!templateCreateMode ? (
+                              <SecondaryButton
+                                onClick={() =>
+                                  requestDiscardDirtyEditor(() => {
+                                    setTemplateCreateMode(true);
+                                    setSelectedTemplateCode(null);
+                                    setTemplateDrawerOpen(true);
+                                    setTemplateEditorState(buildEmailTemplateDraft());
+                                    setTemplatePreview(null);
+                                  })
+                                }
+                              >
+                                {text('Start new', '新建', '新規作成')}
+                              </SecondaryButton>
+                            ) : (
+                              <SecondaryButton
+                                onClick={() =>
+                                  requestDiscardDirtyEditor(() => {
+                                    setTemplateCreateMode(false);
+                                    setSelectedTemplateCode(
+                                      emailTemplatesPanel.data[0]?.code || null
+                                    );
+                                    setTemplateDrawerOpen(false);
+                                  })
+                                }
+                              >
+                                {text('Cancel', '取消', 'キャンセル')}
+                              </SecondaryButton>
+                            )}
+                            <SecondaryButton
+                              tone="primary"
+                              onClick={() => void handleTemplatePreview()}
+                              disabled={
+                                templatePreviewLoading ||
+                                (!selectedTemplateCode && !templateCreateMode)
+                              }
+                            >
+                              <Sparkles className="h-4 w-4" />
+                              {text('Preview template', '预览模板', 'テンプレートをプレビュー')}
+                            </SecondaryButton>
+                            <AsyncSubmitButton
+                              onClick={() => void handleTemplateSave()}
+                              isPending={templateSubmitting}
+                              pendingText={
+                                templateCreateMode
+                                  ? text(
+                                      'Creating template...',
+                                      '正在创建模板...',
+                                      'テンプレートを作成しています...'
+                                    )
+                                  : text(
+                                      'Saving template...',
+                                      '正在保存模板...',
+                                      'テンプレートを保存しています...'
+                                    )
+                              }
+                            >
+                              {templateCreateMode
+                                ? text('Create template', '创建模板', 'テンプレートを作成')
+                                : text('Save template', '保存模板', 'テンプレートを保存')}
+                            </AsyncSubmitButton>
+                          </>
+                        }
                       >
-                        <Languages className="h-4 w-4" />
-                        {configuredTemplateNameTranslationCount > 0
-                          ? text(
-                              `Translation management (${configuredTemplateNameTranslationCount})`,
-                              `翻译管理（${configuredTemplateNameTranslationCount}）`,
-                              `翻訳管理（${configuredTemplateNameTranslationCount}）`,
-                            )
-                          : text('Translation management', '翻译管理', '翻訳管理')}
-                      </button>
-                    </div>
-                    <TextField
-                      label={text('Base subject', '基准主题', '基準件名')}
-                      value={templateDraft.subjectBase}
-                      onChange={(value) => setTemplateDraft((current) => ({ ...current, subjectBase: value }))}
-                    />
-                    <div className="space-y-2">
-                      <span className="text-sm font-medium text-slate-700">
-                        {text('Subject translations', '主题翻译', '件名翻訳')}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => setTemplateTranslationSection('subject')}
-                        className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 shadow-sm transition hover:border-slate-300 hover:text-slate-900"
-                      >
-                        <Languages className="h-4 w-4" />
-                        {configuredTemplateSubjectTranslationCount > 0
-                          ? text(
-                              `Translation management (${configuredTemplateSubjectTranslationCount})`,
-                              `翻译管理（${configuredTemplateSubjectTranslationCount}）`,
-                              `翻訳管理（${configuredTemplateSubjectTranslationCount}）`,
-                            )
-                          : text('Translation management', '翻译管理', '翻訳管理')}
-                      </button>
-                    </div>
-                  </div>
+                        {templateCreateMode || selectedTemplate ? (
+                          <>
+                            <div className="grid gap-4 lg:grid-cols-2">
+                              <TextField
+                                label={text('Template code', '模板代码', 'テンプレートコード')}
+                                value={templateDraft.code}
+                                onChange={(value) =>
+                                  setTemplateDraft((current) => ({
+                                    ...current,
+                                    code: value.toUpperCase(),
+                                  }))
+                                }
+                                disabled={!templateCreateMode}
+                                placeholder={text(
+                                  'WELCOME_EMAIL',
+                                  'WELCOME_EMAIL',
+                                  'WELCOME_EMAIL'
+                                )}
+                              />
+                              <SelectField
+                                label={text('Category', '分类', 'カテゴリ')}
+                                value={templateDraft.category}
+                                onChange={(value) =>
+                                  setTemplateDraft((current) => ({
+                                    ...current,
+                                    category: value as EmailTemplateCategory,
+                                  }))
+                                }
+                                options={[
+                                  { value: 'system', label: templateCategoryLabel('system') },
+                                  { value: 'business', label: templateCategoryLabel('business') },
+                                ]}
+                              />
+                              <TextField
+                                label={text('Base name', '基准名称', '基準名')}
+                                value={templateDraft.nameBase}
+                                onChange={(value) =>
+                                  setTemplateDraft((current) => ({ ...current, nameBase: value }))
+                                }
+                              />
+                              <div className="space-y-2">
+                                <span className="text-sm font-medium text-slate-700">
+                                  {text('Name translations', '名称翻译', '名称翻訳')}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => setTemplateTranslationSection('name')}
+                                  className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 shadow-sm transition hover:border-slate-300 hover:text-slate-900"
+                                >
+                                  <Languages className="h-4 w-4" />
+                                  {configuredTemplateNameTranslationCount > 0
+                                    ? text(
+                                        `Translation management (${configuredTemplateNameTranslationCount})`,
+                                        `翻译管理（${configuredTemplateNameTranslationCount}）`,
+                                        `翻訳管理（${configuredTemplateNameTranslationCount}）`
+                                      )
+                                    : text('Translation management', '翻译管理', '翻訳管理')}
+                                </button>
+                              </div>
+                              <TextField
+                                label={text('Base subject', '基准主题', '基準件名')}
+                                value={templateDraft.subjectBase}
+                                onChange={(value) =>
+                                  setTemplateDraft((current) => ({
+                                    ...current,
+                                    subjectBase: value,
+                                  }))
+                                }
+                              />
+                              <div className="space-y-2">
+                                <span className="text-sm font-medium text-slate-700">
+                                  {text('Subject translations', '主题翻译', '件名翻訳')}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => setTemplateTranslationSection('subject')}
+                                  className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 shadow-sm transition hover:border-slate-300 hover:text-slate-900"
+                                >
+                                  <Languages className="h-4 w-4" />
+                                  {configuredTemplateSubjectTranslationCount > 0
+                                    ? text(
+                                        `Translation management (${configuredTemplateSubjectTranslationCount})`,
+                                        `翻译管理（${configuredTemplateSubjectTranslationCount}）`,
+                                        `翻訳管理（${configuredTemplateSubjectTranslationCount}）`
+                                      )
+                                    : text('Translation management', '翻译管理', '翻訳管理')}
+                                </button>
+                              </div>
+                            </div>
 
-                  <div className="grid gap-4 lg:grid-cols-2">
-                    <TextAreaField
-                      label={text('Base HTML body', '基准 HTML 内容', '基準 HTML 本文')}
-                      value={templateDraft.bodyHtmlBase}
-                      onChange={(value) => setTemplateDraft((current) => ({ ...current, bodyHtmlBase: value }))}
-                      rows={8}
-                    />
-                    <div className="space-y-2">
-                      <span className="text-sm font-medium text-slate-700">
-                        {text('HTML body translations', 'HTML 正文翻译', 'HTML 本文翻訳')}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => setTemplateTranslationSection('bodyHtml')}
-                        className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 shadow-sm transition hover:border-slate-300 hover:text-slate-900"
-                      >
-                        <Languages className="h-4 w-4" />
-                        {configuredTemplateBodyHtmlTranslationCount > 0
-                          ? text(
-                              `Translation management (${configuredTemplateBodyHtmlTranslationCount})`,
-                              `翻译管理（${configuredTemplateBodyHtmlTranslationCount}）`,
-                              `翻訳管理（${configuredTemplateBodyHtmlTranslationCount}）`,
-                            )
-                          : text('Translation management', '翻译管理', '翻訳管理')}
-                      </button>
-                    </div>
-                  </div>
+                            <div className="grid gap-4 lg:grid-cols-2">
+                              <TextAreaField
+                                label={text('Base HTML body', '基准 HTML 内容', '基準 HTML 本文')}
+                                value={templateDraft.bodyHtmlBase}
+                                onChange={(value) =>
+                                  setTemplateDraft((current) => ({
+                                    ...current,
+                                    bodyHtmlBase: value,
+                                  }))
+                                }
+                                rows={8}
+                              />
+                              <div className="space-y-2">
+                                <span className="text-sm font-medium text-slate-700">
+                                  {text('HTML body translations', 'HTML 正文翻译', 'HTML 本文翻訳')}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => setTemplateTranslationSection('bodyHtml')}
+                                  className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 shadow-sm transition hover:border-slate-300 hover:text-slate-900"
+                                >
+                                  <Languages className="h-4 w-4" />
+                                  {configuredTemplateBodyHtmlTranslationCount > 0
+                                    ? text(
+                                        `Translation management (${configuredTemplateBodyHtmlTranslationCount})`,
+                                        `翻译管理（${configuredTemplateBodyHtmlTranslationCount}）`,
+                                        `翻訳管理（${configuredTemplateBodyHtmlTranslationCount}）`
+                                      )
+                                    : text('Translation management', '翻译管理', '翻訳管理')}
+                                </button>
+                              </div>
+                            </div>
 
-                  <div className="grid gap-4 lg:grid-cols-2">
-                    <TextAreaField
-                      label={text('Base text body', '基准纯文本内容', '基準テキスト本文')}
-                      value={templateDraft.bodyTextBase}
-                      onChange={(value) => setTemplateDraft((current) => ({ ...current, bodyTextBase: value }))}
-                      rows={5}
-                    />
-                    <div className="space-y-2">
-                      <span className="text-sm font-medium text-slate-700">
-                        {text('Text body translations', '纯文本正文翻译', 'テキスト本文翻訳')}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => setTemplateTranslationSection('bodyText')}
-                        className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 shadow-sm transition hover:border-slate-300 hover:text-slate-900"
-                      >
-                        <Languages className="h-4 w-4" />
-                        {configuredTemplateBodyTextTranslationCount > 0
-                          ? text(
-                              `Translation management (${configuredTemplateBodyTextTranslationCount})`,
-                              `翻译管理（${configuredTemplateBodyTextTranslationCount}）`,
-                              `翻訳管理（${configuredTemplateBodyTextTranslationCount}）`,
-                            )
-                          : text('Translation management', '翻译管理', '翻訳管理')}
-                      </button>
-                    </div>
-                  </div>
+                            <div className="grid gap-4 lg:grid-cols-2">
+                              <TextAreaField
+                                label={text('Base text body', '基准纯文本内容', '基準テキスト本文')}
+                                value={templateDraft.bodyTextBase}
+                                onChange={(value) =>
+                                  setTemplateDraft((current) => ({
+                                    ...current,
+                                    bodyTextBase: value,
+                                  }))
+                                }
+                                rows={5}
+                              />
+                              <div className="space-y-2">
+                                <span className="text-sm font-medium text-slate-700">
+                                  {text(
+                                    'Text body translations',
+                                    '纯文本正文翻译',
+                                    'テキスト本文翻訳'
+                                  )}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => setTemplateTranslationSection('bodyText')}
+                                  className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 shadow-sm transition hover:border-slate-300 hover:text-slate-900"
+                                >
+                                  <Languages className="h-4 w-4" />
+                                  {configuredTemplateBodyTextTranslationCount > 0
+                                    ? text(
+                                        `Translation management (${configuredTemplateBodyTextTranslationCount})`,
+                                        `翻译管理（${configuredTemplateBodyTextTranslationCount}）`,
+                                        `翻訳管理（${configuredTemplateBodyTextTranslationCount}）`
+                                      )
+                                    : text('Translation management', '翻译管理', '翻訳管理')}
+                                </button>
+                              </div>
+                            </div>
 
-                  <TextField
-                    label={text('Template variables', '模板变量', 'テンプレート変数')}
-                    value={templateDraft.variablesText}
-                    onChange={(value) => setTemplateDraft((current) => ({ ...current, variablesText: value }))}
-                    placeholder={text('name, supportEmail', 'name, supportEmail', 'name, supportEmail')}
-                  />
+                            <TextField
+                              label={text('Template variables', '模板变量', 'テンプレート変数')}
+                              value={templateDraft.variablesText}
+                              onChange={(value) =>
+                                setTemplateDraft((current) => ({
+                                  ...current,
+                                  variablesText: value,
+                                }))
+                              }
+                              placeholder={text(
+                                'name, supportEmail',
+                                'name, supportEmail',
+                                'name, supportEmail'
+                              )}
+                            />
 
-                  <TextAreaField
-                    label={text('Preview variables', '预览变量', 'プレビュー変数')}
-                    value={templatePreviewVariables}
-                    onChange={setTemplatePreviewVariables}
-                    rows={4}
-                    placeholder={text('name=Tokino Sora\nsupportEmail=support@example.com', 'name=时乃空\nsupportEmail=support@example.com', 'name=ときのそら\nsupportEmail=support@example.com')}
-                  />
+                            <TextAreaField
+                              label={text('Preview variables', '预览变量', 'プレビュー変数')}
+                              value={templatePreviewVariables}
+                              onChange={setTemplatePreviewVariables}
+                              rows={4}
+                              placeholder={text(
+                                'name=Tokino Sora\nsupportEmail=support@example.com',
+                                'name=时乃空\nsupportEmail=support@example.com',
+                                'name=ときのそら\nsupportEmail=support@example.com'
+                              )}
+                            />
 
-                  {templatePreview ? (
-                    <div className="rounded-2xl border border-slate-200 bg-white/70 p-4">
-                      <p className="text-sm font-semibold text-slate-900">{text('Preview subject', '预览主题', 'プレビュー件名')}</p>
-                      <p className="mt-2 text-sm text-slate-700">{templatePreview.subject}</p>
-                      <p className="mt-4 text-sm font-semibold text-slate-900">{text('Preview HTML', '预览 HTML', 'プレビュー HTML')}</p>
-                      <div className="mt-2 rounded-2xl border border-slate-200 bg-white p-3 text-sm text-slate-700">
-                        <pre className="whitespace-pre-wrap break-words">{templatePreview.htmlBody}</pre>
-                      </div>
-                      {templatePreview.textBody ? (
-                        <>
-                          <p className="mt-4 text-sm font-semibold text-slate-900">{text('Preview text', '预览文本', 'プレビュー本文')}</p>
-                          <div className="mt-2 rounded-2xl border border-slate-200 bg-white p-3 text-sm text-slate-700">
-                            <pre className="whitespace-pre-wrap break-words">{templatePreview.textBody}</pre>
-                          </div>
-                        </>
-                      ) : null}
-                    </div>
-                  ) : null}
-                </>
-              ) : (
-                <StateView
-                  status="empty"
-                  title={text('Select an email template', '选择一个邮件模板', 'メールテンプレートを選択')}
-                  description={text('Open an existing template or create a new one to edit its content.', '请先打开一个已保存模板，或先创建新模板再编辑内容。', '既存テンプレートを開くか、新規作成してから内容を編集してください。')}
-                />
-              )}
-            </FormSection>
-          </ActionDrawer>
-        </>
-      ) : null}
-          </div>
-        </>
-      ) : (
-        <GlassSurface className="p-6">
-          <StateView
-            status="empty"
-            title={text('Select a scope first', '请先选择一个范围', '先にスコープを選択してください')}
-            description={noScopeTreeDescription}
-            action={
-              <div className="grid max-w-3xl gap-3 text-left md:grid-cols-3">
-                <button
-                  type="button"
-                  aria-label={text({
-                    en: 'Start shared integration workspace',
-                    zh_HANS: '打开共享集成工作区',
-                    zh_HANT: '開啟共用整合工作區',
-                    ja: '共有統合ワークスペースを開く',
-                    ko: '공유 통합 작업 영역 열기',
-                    fr: 'Ouvrir l’espace d’intégration partagé',
-                  })}
-                  onClick={() => requestScopeChange(tenantRootSelection)}
-                  className="rounded-2xl border border-indigo-200 bg-indigo-50/90 p-4 text-left text-indigo-950 transition hover:border-indigo-300 hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
-                >
-                  <span className="mb-3 inline-flex h-9 w-9 items-center justify-center rounded-xl bg-white/80 text-indigo-600">
-                    <Cable className="h-4 w-4" />
-                  </span>
-                  <span className="block text-sm font-semibold">
-                    {text({
-                      en: 'Start with tenant root',
-                      zh_HANS: '从租户根开始',
-                      zh_HANT: '從租戶根開始',
-                      ja: 'テナントルートから開始',
-                      ko: '테넌트 루트부터 시작',
-                      fr: 'Commencer par la racine tenant',
-                    })}
-                  </span>
-                  <span className="mt-2 block text-xs leading-5 text-indigo-800">
-                    {text({
-                      en: 'Use tenant root for shared adapters, webhooks, and email before narrowing to subsidiary or talent overrides.',
-                      zh_HANS: '先在租户根管理共享适配器、Webhook 与邮件，再按需下钻到分目录或艺人覆盖。',
-                      zh_HANT: '先在租戶根管理共用適配器、Webhook 與郵件，再依需要下鑽到分目錄或藝人覆寫。',
-                      ja: '共有アダプター、Webhook、メールはテナントルートで管理し、必要に応じて配下スコープやタレントへ絞り込みます。',
-                      ko: '공유 어댑터, 웹훅, 메일은 테넌트 루트에서 관리한 뒤 필요할 때 하위 범위나 탤런트 오버라이드로 좁히세요.',
-                      fr: 'Utilisez la racine tenant pour les adaptateurs partagés, les webhooks et l’e-mail avant de descendre vers les overrides de périmètre ou de talent.',
-                    })}
-                  </span>
-                </button>
-                <div className="rounded-2xl border border-slate-200 bg-white/80 p-4 text-slate-700">
-                  <span className="mb-3 inline-flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 text-slate-500">
-                    <Sparkles className="h-4 w-4" />
-                  </span>
-                  <p className="text-sm font-semibold text-slate-900">
-                    {text({
-                      en: 'Need a scoped override?',
-                      zh_HANS: '需要范围覆盖？',
-                      zh_HANT: '需要範圍覆寫？',
-                      ja: 'スコープ別の上書きが必要ですか？',
-                      ko: '범위별 오버라이드가 필요한가요?',
-                      fr: 'Besoin d’un override ciblé ?',
-                    })}
-                  </p>
-                  <p className="mt-2 text-xs leading-5 text-slate-500">
-                    {text({
-                      en: 'Choose a subsidiary or talent in the tree when the change belongs to that business scope; only adapters are editable there.',
-                      zh_HANS: '当变更属于具体业务范围时，从左侧树选择分目录或艺人；这些范围只编辑适配器。',
-                      zh_HANT: '當變更屬於具體業務範圍時，從左側樹選擇分目錄或藝人；這些範圍只編輯適配器。',
-                      ja: '変更が特定の業務スコープに属する場合は左のツリーで配下スコープまたはタレントを選びます。そこで編集できるのはアダプターのみです。',
-                      ko: '변경이 특정 비즈니스 범위에 속하면 왼쪽 트리에서 하위 범위나 탤런트를 선택하세요. 해당 범위에서는 어댑터만 편집합니다.',
-                      fr: 'Choisissez un périmètre ou un talent dans l’arborescence lorsque le changement appartient à ce périmètre métier ; seuls les adaptateurs y sont modifiables.',
-                    })}
-                  </p>
-                </div>
-                <div className="rounded-2xl border border-slate-200 bg-white/80 p-4 text-slate-700">
-                  <span className="mb-3 inline-flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 text-slate-500">
-                    <KeyRound className="h-4 w-4" />
-                  </span>
-                  <p className="text-sm font-semibold text-slate-900">
-                    {text({
-                      en: 'Looking for API clients?',
-                      zh_HANS: '在找 API 客户端？',
-                      zh_HANT: '在找 API 用戶端？',
-                      ja: 'API クライアントを探していますか？',
-                      ko: 'API 클라이언트를 찾고 있나요?',
-                      fr: 'Vous cherchez les clients API ?',
-                    })}
-                  </p>
-                  <p className="mt-2 text-xs leading-5 text-slate-500">
-                    {text({
-                      en: 'Managed API clients live in Account Center, so tenant users see the availability note instead of an unavailable tab.',
-                      zh_HANS: '受管 API 客户端位于账户中心；租户用户会看到可用性说明，而不是不可用 tab。',
-                      zh_HANT: '受管 API 用戶端位於帳戶中心；租戶使用者會看到可用性說明，而不是不可用 tab。',
-                      ja: '管理対象 API クライアントはアカウントセンターにあるため、テナントユーザーには利用不可タブではなく可用性の説明を表示します。',
-                      ko: '관리형 API 클라이언트는 계정 센터에 있으므로 테넌트 사용자는 사용할 수 없는 탭 대신 가용성 안내를 봅니다.',
-                      fr: 'Les clients API gérés vivent dans l’Account Center ; les utilisateurs tenant voient donc une note de disponibilité plutôt qu’un onglet indisponible.',
-                    })}
-                  </p>
-                </div>
+                            {templatePreview ? (
+                              <div className="rounded-2xl border border-slate-200 bg-white/70 p-4">
+                                <p className="text-sm font-semibold text-slate-900">
+                                  {text('Preview subject', '预览主题', 'プレビュー件名')}
+                                </p>
+                                <p className="mt-2 text-sm text-slate-700">
+                                  {templatePreview.subject}
+                                </p>
+                                <p className="mt-4 text-sm font-semibold text-slate-900">
+                                  {text('Preview HTML', '预览 HTML', 'プレビュー HTML')}
+                                </p>
+                                <div className="mt-2 rounded-2xl border border-slate-200 bg-white p-3 text-sm text-slate-700">
+                                  <pre className="whitespace-pre-wrap break-words">
+                                    {templatePreview.htmlBody}
+                                  </pre>
+                                </div>
+                                {templatePreview.textBody ? (
+                                  <>
+                                    <p className="mt-4 text-sm font-semibold text-slate-900">
+                                      {text('Preview text', '预览文本', 'プレビュー本文')}
+                                    </p>
+                                    <div className="mt-2 rounded-2xl border border-slate-200 bg-white p-3 text-sm text-slate-700">
+                                      <pre className="whitespace-pre-wrap break-words">
+                                        {templatePreview.textBody}
+                                      </pre>
+                                    </div>
+                                  </>
+                                ) : null}
+                              </div>
+                            ) : null}
+                          </>
+                        ) : (
+                          <StateView
+                            status="empty"
+                            title={text(
+                              'Select an email template',
+                              '选择一个邮件模板',
+                              'メールテンプレートを選択'
+                            )}
+                            description={text(
+                              'Open an existing template or create a new one to edit its content.',
+                              '请先打开一个已保存模板，或先创建新模板再编辑内容。',
+                              '既存テンプレートを開くか、新規作成してから内容を編集してください。'
+                            )}
+                          />
+                        )}
+                      </FormSection>
+                    </ActionDrawer>
+                  </>
+                ) : null}
               </div>
-            }
-          />
-        </GlassSurface>
-      )}
+            </>
+          ) : (
+            <GlassSurface className="p-6">
+              <StateView
+                status="empty"
+                title={text(
+                  'Select a scope first',
+                  '请先选择一个范围',
+                  '先にスコープを選択してください'
+                )}
+                description={noScopeTreeDescription}
+                action={
+                  <div className="grid max-w-3xl gap-3 text-left md:grid-cols-3">
+                    <button
+                      type="button"
+                      aria-label={text({
+                        en: 'Start shared integration workspace',
+                        zh_HANS: '打开共享集成工作区',
+                        zh_HANT: '開啟共用整合工作區',
+                        ja: '共有統合ワークスペースを開く',
+                        ko: '공유 통합 작업 영역 열기',
+                        fr: 'Ouvrir l’espace d’intégration partagé',
+                      })}
+                      onClick={() => requestScopeChange(tenantRootSelection)}
+                      className="rounded-2xl border border-indigo-200 bg-indigo-50/90 p-4 text-left text-indigo-950 transition hover:border-indigo-300 hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                    >
+                      <span className="mb-3 inline-flex h-9 w-9 items-center justify-center rounded-xl bg-white/80 text-indigo-600">
+                        <Cable className="h-4 w-4" />
+                      </span>
+                      <span className="block text-sm font-semibold">
+                        {text({
+                          en: 'Start with tenant root',
+                          zh_HANS: '从租户根开始',
+                          zh_HANT: '從租戶根開始',
+                          ja: 'テナントルートから開始',
+                          ko: '테넌트 루트부터 시작',
+                          fr: 'Commencer par la racine tenant',
+                        })}
+                      </span>
+                      <span className="mt-2 block text-xs leading-5 text-indigo-800">
+                        {text({
+                          en: 'Use tenant root for shared adapters, webhooks, and email before narrowing to subsidiary or talent overrides.',
+                          zh_HANS:
+                            '先在租户根管理共享适配器、Webhook 与邮件，再按需下钻到分目录或艺人覆盖。',
+                          zh_HANT:
+                            '先在租戶根管理共用適配器、Webhook 與郵件，再依需要下鑽到分目錄或藝人覆寫。',
+                          ja: '共有アダプター、Webhook、メールはテナントルートで管理し、必要に応じて配下スコープやタレントへ絞り込みます。',
+                          ko: '공유 어댑터, 웹훅, 메일은 테넌트 루트에서 관리한 뒤 필요할 때 하위 범위나 탤런트 오버라이드로 좁히세요.',
+                          fr: 'Utilisez la racine tenant pour les adaptateurs partagés, les webhooks et l’e-mail avant de descendre vers les overrides de périmètre ou de talent.',
+                        })}
+                      </span>
+                    </button>
+                    <div className="rounded-2xl border border-slate-200 bg-white/80 p-4 text-slate-700">
+                      <span className="mb-3 inline-flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 text-slate-500">
+                        <Sparkles className="h-4 w-4" />
+                      </span>
+                      <p className="text-sm font-semibold text-slate-900">
+                        {text({
+                          en: 'Need a scoped override?',
+                          zh_HANS: '需要范围覆盖？',
+                          zh_HANT: '需要範圍覆寫？',
+                          ja: 'スコープ別の上書きが必要ですか？',
+                          ko: '범위별 오버라이드가 필요한가요?',
+                          fr: 'Besoin d’un override ciblé ?',
+                        })}
+                      </p>
+                      <p className="mt-2 text-xs leading-5 text-slate-500">
+                        {text({
+                          en: 'Choose a subsidiary or talent in the tree when the change belongs to that business scope; only adapters are editable there.',
+                          zh_HANS:
+                            '当变更属于具体业务范围时，从左侧树选择分目录或艺人；这些范围只编辑适配器。',
+                          zh_HANT:
+                            '當變更屬於具體業務範圍時，從左側樹選擇分目錄或藝人；這些範圍只編輯適配器。',
+                          ja: '変更が特定の業務スコープに属する場合は左のツリーで配下スコープまたはタレントを選びます。そこで編集できるのはアダプターのみです。',
+                          ko: '변경이 특정 비즈니스 범위에 속하면 왼쪽 트리에서 하위 범위나 탤런트를 선택하세요. 해당 범위에서는 어댑터만 편집합니다.',
+                          fr: 'Choisissez un périmètre ou un talent dans l’arborescence lorsque le changement appartient à ce périmètre métier ; seuls les adaptateurs y sont modifiables.',
+                        })}
+                      </p>
+                    </div>
+                    <div className="rounded-2xl border border-slate-200 bg-white/80 p-4 text-slate-700">
+                      <span className="mb-3 inline-flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 text-slate-500">
+                        <KeyRound className="h-4 w-4" />
+                      </span>
+                      <p className="text-sm font-semibold text-slate-900">
+                        {text({
+                          en: 'Looking for API clients?',
+                          zh_HANS: '在找 API 客户端？',
+                          zh_HANT: '在找 API 用戶端？',
+                          ja: 'API クライアントを探していますか？',
+                          ko: 'API 클라이언트를 찾고 있나요?',
+                          fr: 'Vous cherchez les clients API ?',
+                        })}
+                      </p>
+                      <p className="mt-2 text-xs leading-5 text-slate-500">
+                        {text({
+                          en: 'Managed API clients live in Account Center, so tenant users see the availability note instead of an unavailable tab.',
+                          zh_HANS:
+                            '受管 API 客户端位于账户中心；租户用户会看到可用性说明，而不是不可用 tab。',
+                          zh_HANT:
+                            '受管 API 用戶端位於帳戶中心；租戶使用者會看到可用性說明，而不是不可用 tab。',
+                          ja: '管理対象 API クライアントはアカウントセンターにあるため、テナントユーザーには利用不可タブではなく可用性の説明を表示します。',
+                          ko: '관리형 API 클라이언트는 계정 센터에 있으므로 테넌트 사용자는 사용할 수 없는 탭 대신 가용성 안내를 봅니다.',
+                          fr: 'Les clients API gérés vivent dans l’Account Center ; les utilisateurs tenant voient donc une note de disponibilité plutôt qu’un onglet indisponible.',
+                        })}
+                      </p>
+                    </div>
+                  </div>
+                }
+              />
+            </GlassSurface>
+          )}
         </div>
       </div>
 
@@ -6604,8 +8462,22 @@ export function IntegrationManagementScreen({
             nameLocaleValues: translations,
           }));
         }}
-        saveButtonLabel={text({ en: 'Save', zh_HANS: '保存', zh_HANT: '儲存', ja: '保存', ko: '저장', fr: 'Enregistrer' })}
-        cancelButtonLabel={text({ en: 'Cancel', zh_HANS: '取消', zh_HANT: '取消', ja: 'キャンセル', ko: '취소', fr: 'Annuler' })}
+        saveButtonLabel={text({
+          en: 'Save',
+          zh_HANS: '保存',
+          zh_HANT: '儲存',
+          ja: '保存',
+          ko: '저장',
+          fr: 'Enregistrer',
+        })}
+        cancelButtonLabel={text({
+          en: 'Cancel',
+          zh_HANS: '取消',
+          zh_HANT: '取消',
+          ja: 'キャンセル',
+          ko: '취소',
+          fr: 'Annuler',
+        })}
         closeButtonAriaLabel={text({
           en: 'Close translation management drawer',
           zh_HANS: '关闭翻译管理抽屉',
@@ -6639,8 +8511,22 @@ export function IntegrationManagementScreen({
             nameLocaleValues: translations,
           }));
         }}
-        saveButtonLabel={text({ en: 'Save', zh_HANS: '保存', zh_HANT: '儲存', ja: '保存', ko: '저장', fr: 'Enregistrer' })}
-        cancelButtonLabel={text({ en: 'Cancel', zh_HANS: '取消', zh_HANT: '取消', ja: 'キャンセル', ko: '취소', fr: 'Annuler' })}
+        saveButtonLabel={text({
+          en: 'Save',
+          zh_HANS: '保存',
+          zh_HANT: '儲存',
+          ja: '保存',
+          ko: '저장',
+          fr: 'Enregistrer',
+        })}
+        cancelButtonLabel={text({
+          en: 'Cancel',
+          zh_HANS: '取消',
+          zh_HANT: '取消',
+          ja: 'キャンセル',
+          ko: '취소',
+          fr: 'Annuler',
+        })}
         closeButtonAriaLabel={text({
           en: 'Close adapter translation drawer',
           zh_HANS: '关闭适配器翻译抽屉',
@@ -6674,8 +8560,22 @@ export function IntegrationManagementScreen({
             nameLocaleValues: translations,
           }));
         }}
-        saveButtonLabel={text({ en: 'Save', zh_HANS: '保存', zh_HANT: '儲存', ja: '保存', ko: '저장', fr: 'Enregistrer' })}
-        cancelButtonLabel={text({ en: 'Cancel', zh_HANS: '取消', zh_HANT: '取消', ja: 'キャンセル', ko: '취소', fr: 'Annuler' })}
+        saveButtonLabel={text({
+          en: 'Save',
+          zh_HANS: '保存',
+          zh_HANT: '儲存',
+          ja: '保存',
+          ko: '저장',
+          fr: 'Enregistrer',
+        })}
+        cancelButtonLabel={text({
+          en: 'Cancel',
+          zh_HANS: '取消',
+          zh_HANT: '取消',
+          ja: 'キャンセル',
+          ko: '취소',
+          fr: 'Annuler',
+        })}
         closeButtonAriaLabel={text({
           en: 'Close webhook translation drawer',
           zh_HANS: '关闭 Webhook 翻译抽屉',
@@ -6700,17 +8600,22 @@ export function IntegrationManagementScreen({
             setTemplateTranslationSection(null);
           }
         }}
-        title={templateTranslationDrawerConfig?.title ?? text({
-          en: 'Template translations',
-          zh_HANS: '模板翻译',
-          zh_HANT: '範本翻譯',
-          ja: 'テンプレート翻訳',
-          ko: '템플릿 번역',
-          fr: 'Traductions du modèle',
-        })}
+        title={
+          templateTranslationDrawerConfig?.title ??
+          text({
+            en: 'Template translations',
+            zh_HANS: '模板翻译',
+            zh_HANT: '範本翻譯',
+            ja: 'テンプレート翻訳',
+            ko: '템플릿 번역',
+            fr: 'Traductions du modèle',
+          })
+        }
         baseValue={templateTranslationDrawerConfig?.baseValue ?? ''}
         translations={templateTranslationDrawerConfig?.translations ?? {}}
-        legacyFieldLabel={templateTranslationDrawerConfig?.fieldLabel ?? text('Base name', '基准名称', '基準名')}
+        legacyFieldLabel={
+          templateTranslationDrawerConfig?.fieldLabel ?? text('Base name', '基准名称', '基準名')
+        }
         availableLocales={consumerTranslationOptionsState.data}
         onSave={async (payload) => {
           const translations = extractSingleFieldTranslationPayload(payload);
@@ -6744,8 +8649,22 @@ export function IntegrationManagementScreen({
           });
           setTemplateTranslationSection(null);
         }}
-        saveButtonLabel={text({ en: 'Save', zh_HANS: '保存', zh_HANT: '儲存', ja: '保存', ko: '저장', fr: 'Enregistrer' })}
-        cancelButtonLabel={text({ en: 'Cancel', zh_HANS: '取消', zh_HANT: '取消', ja: 'キャンセル', ko: '취소', fr: 'Annuler' })}
+        saveButtonLabel={text({
+          en: 'Save',
+          zh_HANS: '保存',
+          zh_HANT: '儲存',
+          ja: '保存',
+          ko: '저장',
+          fr: 'Enregistrer',
+        })}
+        cancelButtonLabel={text({
+          en: 'Cancel',
+          zh_HANS: '取消',
+          zh_HANT: '取消',
+          ja: 'キャンセル',
+          ko: '취소',
+          fr: 'Annuler',
+        })}
         closeButtonAriaLabel={text({
           en: 'Close email template translation drawer',
           zh_HANS: '关闭邮件模板翻译抽屉',
@@ -6789,7 +8708,14 @@ export function IntegrationManagementScreen({
           ko: '변경 사항 버리기',
           fr: 'Abandonner les modifications',
         })}
-        cancelText={text({ en: 'Keep editing', zh_HANS: '继续编辑', zh_HANT: '繼續編輯', ja: '編集を続ける', ko: '계속 편집', fr: 'Continuer la modification' })}
+        cancelText={text({
+          en: 'Keep editing',
+          zh_HANS: '继续编辑',
+          zh_HANT: '繼續編輯',
+          ja: '編集を続ける',
+          ko: '계속 편집',
+          fr: 'Continuer la modification',
+        })}
         intent="danger"
         onCancel={() => setDirtyGuardState(null)}
         onConfirm={() => {
@@ -6803,8 +8729,25 @@ export function IntegrationManagementScreen({
         open={Boolean(confirmState)}
         title={confirmState?.title || text('Confirm action', '确认操作', '操作を確認')}
         description={confirmState?.description || ''}
-        confirmText={confirmState?.confirmText ?? text({ en: 'Confirm', zh_HANS: '确认', zh_HANT: '確認', ja: '確認', ko: '확인', fr: 'Confirmer' })}
-        cancelText={text({ en: 'Cancel', zh_HANS: '取消', zh_HANT: '取消', ja: 'キャンセル', ko: '취소', fr: 'Annuler' })}
+        confirmText={
+          confirmState?.confirmText ??
+          text({
+            en: 'Confirm',
+            zh_HANS: '确认',
+            zh_HANT: '確認',
+            ja: '確認',
+            ko: '확인',
+            fr: 'Confirmer',
+          })
+        }
+        cancelText={text({
+          en: 'Cancel',
+          zh_HANS: '取消',
+          zh_HANT: '取消',
+          ja: 'キャンセル',
+          ko: '취소',
+          fr: 'Annuler',
+        })}
         pendingText={confirmState?.pendingText}
         isPending={confirmPending}
         intent={confirmState?.intent}

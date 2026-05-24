@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable } from '@nestjs/common';
+
 import {
   DataMaskingService,
   getSensitiveFieldsForEntity,
@@ -20,7 +20,7 @@ export class LogMaskingService {
    */
   maskChangeLogDiff(
     objectType: string,
-    diff: Record<string, { old: unknown; new: unknown }>,
+    diff: Record<string, { old: unknown; new: unknown }>
   ): Record<string, { old: unknown; new: unknown }> {
     // Get sensitive fields for this entity type
     const sensitiveFields = getSensitiveFieldsForEntity(objectType);
@@ -30,14 +30,8 @@ export class LogMaskingService {
     for (const [field, change] of Object.entries(diff)) {
       if (sensitiveFields.includes(field)) {
         maskedDiff[field] = {
-          old: this.maskingService.maskValue(
-            change.old,
-            this.getFieldType(field),
-          ),
-          new: this.maskingService.maskValue(
-            change.new,
-            this.getFieldType(field),
-          ),
+          old: this.maskingService.maskValue(change.old, this.getFieldType(field)),
+          new: this.maskingService.maskValue(change.new, this.getFieldType(field)),
         };
       } else {
         maskedDiff[field] = change;
@@ -57,9 +51,7 @@ export class LogMaskingService {
   /**
    * Mask Integration Log request/response body
    */
-  maskIntegrationLogBody(
-    body: Record<string, unknown> | null,
-  ): Record<string, unknown> | null {
+  maskIntegrationLogBody(body: Record<string, unknown> | null): Record<string, unknown> | null {
     if (!body) return null;
     return this.deepMaskObject(body);
   }
@@ -75,11 +67,7 @@ export class LogMaskingService {
 
       if (fieldConfig) {
         result[key] = this.maskingService.maskValue(value, fieldConfig.type);
-      } else if (
-        typeof value === 'object' &&
-        value !== null &&
-        !Array.isArray(value)
-      ) {
+      } else if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
         result[key] = this.deepMaskObject(value as Record<string, unknown>);
       } else {
         result[key] = value;

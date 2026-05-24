@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable } from '@nestjs/common';
+
 import type { RequestContext } from '@tcrn/shared';
 
 import { MarshmallowMessageApplicationService } from '../application/marshmallow-message.service';
@@ -15,34 +15,25 @@ import {
 @Injectable()
 export class MarshmallowMessageService {
   constructor(
-    private readonly marshmallowMessageApplicationService: MarshmallowMessageApplicationService,
+    private readonly marshmallowMessageApplicationService: MarshmallowMessageApplicationService
   ) {}
 
   /**
    * List messages (multi-tenant aware)
    */
   findMany(talentId: string, tenantSchema: string, query: MessageListQueryDto) {
-    return this.marshmallowMessageApplicationService.findMany(
-      talentId,
-      tenantSchema,
-      query,
-    );
+    return this.marshmallowMessageApplicationService.findMany(talentId, tenantSchema, query);
   }
 
   /**
    * Approve message (multi-tenant aware)
    */
-  approve(
-    talentId: string,
-    tenantSchema: string,
-    messageId: string,
-    context: RequestContext,
-  ) {
+  approve(talentId: string, tenantSchema: string, messageId: string, context: RequestContext) {
     return this.marshmallowMessageApplicationService.approve(
       talentId,
       tenantSchema,
       messageId,
-      context,
+      context
     );
   }
 
@@ -54,31 +45,26 @@ export class MarshmallowMessageService {
     tenantSchema: string,
     messageId: string,
     dto: RejectMessageDto,
-    context: RequestContext,
+    context: RequestContext
   ) {
     return this.marshmallowMessageApplicationService.reject(
       talentId,
       tenantSchema,
       messageId,
       dto,
-      context,
+      context
     );
   }
 
   /**
    * Unreject message - restore rejected message to pending status (multi-tenant aware)
    */
-  unreject(
-    talentId: string,
-    tenantSchema: string,
-    messageId: string,
-    context: RequestContext,
-  ) {
+  unreject(talentId: string, tenantSchema: string, messageId: string, context: RequestContext) {
     return this.marshmallowMessageApplicationService.unreject(
       talentId,
       tenantSchema,
       messageId,
-      context,
+      context
     );
   }
 
@@ -90,14 +76,14 @@ export class MarshmallowMessageService {
     tenantSchema: string,
     messageId: string,
     dto: ReplyMessageDto,
-    context: RequestContext,
+    context: RequestContext
   ) {
     return this.marshmallowMessageApplicationService.reply(
       talentId,
       tenantSchema,
       messageId,
       dto,
-      context,
+      context
     );
   }
 
@@ -108,13 +94,13 @@ export class MarshmallowMessageService {
     talentId: string,
     tenantSchema: string,
     dto: BatchActionDto,
-    context: RequestContext,
+    context: RequestContext
   ) {
     return this.marshmallowMessageApplicationService.batchAction(
       talentId,
       tenantSchema,
       dto,
-      context,
+      context
     );
   }
 
@@ -126,13 +112,8 @@ export class MarshmallowMessageService {
     tenantSchema: string,
     messageId: string,
     dto: UpdateMessageDto,
-    _context: RequestContext,
+    _context: RequestContext
   ) {
-    return this.marshmallowMessageApplicationService.update(
-      talentId,
-      tenantSchema,
-      messageId,
-      dto,
-    );
+    return this.marshmallowMessageApplicationService.update(talentId, tenantSchema, messageId, dto);
   }
 }

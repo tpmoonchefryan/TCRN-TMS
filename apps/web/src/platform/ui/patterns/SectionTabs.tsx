@@ -56,7 +56,8 @@ export const SectionTabs: React.FC<SectionTabsProps> = ({
 
     if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
       event.preventDefault();
-      const previousItem = enabledItems[(currentIndex - 1 + enabledItems.length) % enabledItems.length];
+      const previousItem =
+        enabledItems[(currentIndex - 1 + enabledItems.length) % enabledItems.length];
       if (previousItem) {
         onChange(previousItem.id);
         focusItem(previousItem.id);
@@ -112,7 +113,9 @@ export const SectionTabs: React.FC<SectionTabsProps> = ({
           >
             <span>{item.label}</span>
             {typeof item.count === 'number' ? (
-              <span className={`rounded-full px-2 py-0.5 text-xs ${isActive ? 'bg-white/15 text-white' : 'bg-slate-100 text-slate-500'}`}>
+              <span
+                className={`rounded-full px-2 py-0.5 text-xs ${isActive ? 'bg-white/15 text-white' : 'bg-slate-100 text-slate-500'}`}
+              >
                 {item.count}
               </span>
             ) : null}

@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { HttpService } from '@nestjs/axios';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -15,7 +14,7 @@ export class CdnPurgeService {
 
   constructor(
     private readonly configService: ConfigService,
-    private readonly httpService: HttpService,
+    private readonly httpService: HttpService
   ) {}
 
   /**
@@ -58,8 +57,8 @@ export class CdnPurgeService {
               Authorization: `Bearer ${apiToken}`,
               'Content-Type': 'application/json',
             },
-          },
-        ),
+          }
+        )
       );
 
       this.logger.log(`CDN cache purged for: ${urls.join(', ')}`);
@@ -91,8 +90,8 @@ export class CdnPurgeService {
               Authorization: `Bearer ${apiToken}`,
               'Content-Type': 'application/json',
             },
-          },
-        ),
+          }
+        )
       );
 
       this.logger.log('CDN cache purged (all)');

@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { createHash, randomBytes } from 'crypto';
 
 export interface ValidatedConsumerRow {

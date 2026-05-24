@@ -31,7 +31,9 @@ export const TopCommandBar: React.FC<TopCommandBarProps> = ({
   const mobileSearchId = useId();
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const hasSearch = Boolean(searchProps);
-  const hasBreadcrumb = Boolean(breadcrumbItems && breadcrumbItems.length > 0 && breadcrumbAriaLabel);
+  const hasBreadcrumb = Boolean(
+    breadcrumbItems && breadcrumbItems.length > 0 && breadcrumbAriaLabel
+  );
   const hasMobileMenu = Boolean(onMobileMenuOpen && mobileMenuButtonLabel);
   const hasMobileSearch = Boolean(hasSearch && mobileSearchButtonLabel && mobileSearchCloseLabel);
 
@@ -45,8 +47,19 @@ export const TopCommandBar: React.FC<TopCommandBarProps> = ({
             aria-label={mobileMenuButtonLabel}
             onClick={onMobileMenuOpen}
           >
-            <svg className="h-5 w-5" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            <svg
+              className="h-5 w-5"
+              aria-hidden="true"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4 6h16M4 12h16M4 18h16"
+              />
             </svg>
           </button>
         ) : null}
@@ -54,7 +67,11 @@ export const TopCommandBar: React.FC<TopCommandBarProps> = ({
         <div className="min-w-0 space-y-1">
           {hasBreadcrumb ? (
             <div className="hidden min-w-0 sm:block">
-              <Breadcrumb items={breadcrumbItems ?? []} ariaLabel={breadcrumbAriaLabel as string} onNavigate={onBreadcrumbNavigate} />
+              <Breadcrumb
+                items={breadcrumbItems ?? []}
+                ariaLabel={breadcrumbAriaLabel as string}
+                onNavigate={onBreadcrumbNavigate}
+              />
             </div>
           ) : null}
           {leftArea}
@@ -75,11 +92,27 @@ export const TopCommandBar: React.FC<TopCommandBarProps> = ({
             aria-controls={mobileSearchId}
             onClick={() => setIsMobileSearchOpen((current) => !current)}
           >
-            <svg className="h-5 w-5" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg
+              className="h-5 w-5"
+              aria-hidden="true"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
               {isMobileSearchOpen ? (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
               ) : (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
               )}
             </svg>
           </button>

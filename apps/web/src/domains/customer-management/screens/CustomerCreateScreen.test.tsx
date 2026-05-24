@@ -1,9 +1,10 @@
-import type { SupportedUiLocale } from '@tcrn/shared';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { CustomerCreateScreen } from '@/domains/customer-management/screens/CustomerCreateScreen';
+import type { SupportedUiLocale } from '@tcrn/shared';
+
 import { localizedFixture } from '@/domains/config-dictionary-settings/testing/localized-fixtures';
+import { CustomerCreateScreen } from '@/domains/customer-management/screens/CustomerCreateScreen';
 
 const replace = vi.fn();
 const mockRequest = vi.fn();
@@ -178,7 +179,9 @@ describe('CustomerCreateScreen', () => {
     });
 
     await waitFor(() => {
-      expect(replace).toHaveBeenCalledWith('/tenant/tenant-1/talent/talent-1/customers?created=Aki');
+      expect(replace).toHaveBeenCalledWith(
+        '/tenant/tenant-1/talent/talent-1/customers?created=Aki'
+      );
     });
   });
 
@@ -190,7 +193,7 @@ describe('CustomerCreateScreen', () => {
     expect(await screen.findByText('Customer creation denied')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Back to customers' })).toHaveAttribute(
       'href',
-      '/tenant/tenant-1/talent/talent-1/customers',
+      '/tenant/tenant-1/talent/talent-1/customers'
     );
     expect(listCustomerSocialPlatforms).not.toHaveBeenCalled();
     expect(listCustomerMembershipTree).not.toHaveBeenCalled();

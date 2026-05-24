@@ -1,14 +1,14 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable } from '@nestjs/common';
+
 import { Prisma } from '@tcrn/database';
 import type { LocalizedText } from '@tcrn/shared';
 
-import { DatabaseService } from '../../database';
 import {
   readLocalizedText,
   stringifyLocalizedText,
 } from '../../../platform/persistence/localized-text.persistence';
+import { DatabaseService } from '../../database';
 import type {
   PiiServiceConfigConnectionLookupRow,
   PiiServiceConfigCreatePayload,
@@ -33,7 +33,10 @@ type PiiServiceConfigCreateRawRow = Omit<PiiServiceConfigCreateRow, 'name'> & {
   name: Prisma.JsonValue;
 };
 
-type PiiServiceConfigUpdateLookupRawRow = Omit<PiiServiceConfigUpdateLookupRow, 'name' | 'description'> & {
+type PiiServiceConfigUpdateLookupRawRow = Omit<
+  PiiServiceConfigUpdateLookupRow,
+  'name' | 'description'
+> & {
   name: Prisma.JsonValue;
   description: Prisma.JsonValue;
 };
@@ -48,32 +51,26 @@ const mapListRow = (row: PiiServiceConfigListRawRow): PiiServiceConfigListRow =>
   name: readLocalizedText(row.name, 'pii_service_config.name'),
 });
 
-const mapDetailRow = (
-  row: PiiServiceConfigDetailRawRow,
-): PiiServiceConfigDetailRow => ({
+const mapDetailRow = (row: PiiServiceConfigDetailRawRow): PiiServiceConfigDetailRow => ({
   ...row,
   name: readLocalizedText(row.name, 'pii_service_config.name'),
   description: readLocalizedText(row.description, 'pii_service_config.description'),
 });
 
-const mapCreateRow = (
-  row: PiiServiceConfigCreateRawRow,
-): PiiServiceConfigCreateRow => ({
+const mapCreateRow = (row: PiiServiceConfigCreateRawRow): PiiServiceConfigCreateRow => ({
   ...row,
   name: readLocalizedText(row.name, 'pii_service_config.name'),
 });
 
 const mapUpdateLookupRow = (
-  row: PiiServiceConfigUpdateLookupRawRow,
+  row: PiiServiceConfigUpdateLookupRawRow
 ): PiiServiceConfigUpdateLookupRow => ({
   ...row,
   name: readLocalizedText(row.name, 'pii_service_config.name'),
   description: readLocalizedText(row.description, 'pii_service_config.description'),
 });
 
-const mapUpdateRow = (
-  row: PiiServiceConfigUpdateRawRow,
-): PiiServiceConfigUpdateRow => ({
+const mapUpdateRow = (row: PiiServiceConfigUpdateRawRow): PiiServiceConfigUpdateRow => ({
   ...row,
   name: readLocalizedText(row.name, 'pii_service_config.name'),
   description: readLocalizedText(row.description, 'pii_service_config.description'),
@@ -87,7 +84,7 @@ export class PiiServiceConfigRepository {
     schema: string,
     includeInactive: boolean,
     pageSize: number,
-    offset: number,
+    offset: number
   ): Promise<PiiServiceConfigListRow[]> {
     const prisma = this.databaseService.getPrisma();
     const whereClause = includeInactive ? '1=1' : 'psc.is_active = true';
@@ -110,7 +107,7 @@ export class PiiServiceConfigRepository {
         LIMIT $1 OFFSET $2
       `,
       pageSize,
-      offset,
+      offset
     );
 
     return rows.map(mapListRow);
@@ -124,16 +121,13 @@ export class PiiServiceConfigRepository {
         SELECT COUNT(*) as count
         FROM "${schema}".pii_service_config psc
         WHERE ${whereClause}
-      `,
+      `
     );
 
     return Number(result[0]?.count ?? 0);
   }
 
-  async countProfileStoresByConfigId(
-    schema: string,
-    configId: string,
-  ): Promise<number> {
+  async countProfileStoresByConfigId(schema: string, configId: string): Promise<number> {
     const prisma = this.databaseService.getPrisma();
     const result = await prisma.$queryRawUnsafe<Array<{ count: bigint }>>(
       `
@@ -141,16 +135,13 @@ export class PiiServiceConfigRepository {
         FROM "${schema}".profile_store
         WHERE pii_service_config_id = $1::uuid
       `,
-      configId,
+      configId
     );
 
     return Number(result[0]?.count ?? 0);
   }
 
-  async findById(
-    schema: string,
-    id: string,
-  ): Promise<PiiServiceConfigDetailRow | null> {
+  async findById(schema: string, id: string): Promise<PiiServiceConfigDetailRow | null> {
     const prisma = this.databaseService.getPrisma();
     const result = await prisma.$queryRawUnsafe<PiiServiceConfigDetailRawRow[]>(
       `
@@ -171,16 +162,13 @@ export class PiiServiceConfigRepository {
         FROM "${schema}".pii_service_config
         WHERE id = $1::uuid
       `,
-      id,
+      id
     );
 
     return result[0] ? mapDetailRow(result[0]) : null;
   }
 
-  async findForUpdate(
-    schema: string,
-    id: string,
-  ): Promise<PiiServiceConfigUpdateLookupRow | null> {
+  async findForUpdate(schema: string, id: string): Promise<PiiServiceConfigUpdateLookupRow | null> {
     const prisma = this.databaseService.getPrisma();
     const result = await prisma.$queryRawUnsafe<PiiServiceConfigUpdateLookupRawRow[]>(
       `
@@ -190,16 +178,13 @@ export class PiiServiceConfigRepository {
         FROM "${schema}".pii_service_config
         WHERE id = $1::uuid
       `,
-      id,
+      id
     );
 
     return result[0] ? mapUpdateLookupRow(result[0]) : null;
   }
 
-  async findByCode(
-    schema: string,
-    code: string,
-  ): Promise<{ id: string } | null> {
+  async findByCode(schema: string, code: string): Promise<{ id: string } | null> {
     const prisma = this.databaseService.getPrisma();
     const result = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
       `
@@ -207,7 +192,7 @@ export class PiiServiceConfigRepository {
         FROM "${schema}".pii_service_config
         WHERE code = $1
       `,
-      code,
+      code
     );
 
     return result[0] ?? null;
@@ -215,7 +200,7 @@ export class PiiServiceConfigRepository {
 
   async findForConnectionTest(
     schema: string,
-    id: string,
+    id: string
   ): Promise<PiiServiceConfigConnectionLookupRow | null> {
     const prisma = this.databaseService.getPrisma();
     const result = await prisma.$queryRawUnsafe<PiiServiceConfigConnectionLookupRow[]>(
@@ -227,7 +212,7 @@ export class PiiServiceConfigRepository {
         FROM "${schema}".pii_service_config
         WHERE id = $1::uuid
       `,
-      id,
+      id
     );
 
     return result[0] ?? null;
@@ -236,7 +221,7 @@ export class PiiServiceConfigRepository {
   async create(
     schema: string,
     payload: PiiServiceConfigCreatePayload,
-    userId: string,
+    userId: string
   ): Promise<PiiServiceConfigCreateRow> {
     const prisma = this.databaseService.getPrisma();
     const result = await prisma.$queryRawUnsafe<PiiServiceConfigCreateRawRow[]>(
@@ -258,7 +243,7 @@ export class PiiServiceConfigRepository {
       payload.authType,
       payload.healthCheckUrl,
       payload.healthCheckIntervalSec,
-      userId,
+      userId
     );
 
     return mapCreateRow(result[0]);
@@ -268,7 +253,7 @@ export class PiiServiceConfigRepository {
     schema: string,
     id: string,
     changes: PiiServiceConfigFieldChange[],
-    userId: string,
+    userId: string
   ): Promise<PiiServiceConfigUpdateRow> {
     const prisma = this.databaseService.getPrisma();
     const updates: string[] = [
@@ -294,17 +279,13 @@ export class PiiServiceConfigRepository {
         WHERE id = $1::uuid
         RETURNING id, code, name, description, api_url as "apiUrl", is_active as "isActive", version, updated_at as "updatedAt"
       `,
-      ...params,
+      ...params
     );
 
     return mapUpdateRow(result[0]);
   }
 
-  async updateHealthStatus(
-    schema: string,
-    id: string,
-    isHealthy: boolean,
-  ): Promise<void> {
+  async updateHealthStatus(schema: string, id: string, isHealthy: boolean): Promise<void> {
     const prisma = this.databaseService.getPrisma();
     await prisma.$executeRawUnsafe(
       `
@@ -313,7 +294,7 @@ export class PiiServiceConfigRepository {
         WHERE id = $1::uuid
       `,
       id,
-      isHealthy,
+      isHealthy
     );
   }
 

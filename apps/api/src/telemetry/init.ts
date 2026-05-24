@@ -1,6 +1,5 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 // OpenTelemetry initialization for TCRN TMS (PRD P-32)
-
 import { Logger } from '@nestjs/common';
 import type { InstrumentationConfigMap } from '@opentelemetry/auto-instrumentations-node';
 import type { Sampler as OtelSampler } from '@opentelemetry/sdk-trace-base';
@@ -33,9 +32,7 @@ export interface TelemetryConfig {
 /**
  * Get default telemetry configuration
  */
-export function getDefaultTelemetryConfig(
-  env: NodeJS.ProcessEnv = process.env,
-): TelemetryConfig {
+export function getDefaultTelemetryConfig(env: NodeJS.ProcessEnv = process.env): TelemetryConfig {
   return {
     serviceName: env.OTEL_SERVICE_NAME || 'tcrn-tms-api',
     serviceVersion: env.APP_VERSION || 'unknown',
@@ -78,10 +75,13 @@ export async function initTelemetry(config?: Partial<TelemetryConfig>): Promise<
   try {
     // Dynamic import to avoid loading dependencies if not enabled
     const sdkNode = (await import('@opentelemetry/sdk-node')) as OtelSdkNodeModule;
-    const autoInstrument = (await import('@opentelemetry/auto-instrumentations-node')) as OtelAutoInstrumentationModule;
-    const traceExporterModule = (await import('@opentelemetry/exporter-trace-otlp-http')) as OtelTraceExporterModule;
+    const autoInstrument =
+      (await import('@opentelemetry/auto-instrumentations-node')) as OtelAutoInstrumentationModule;
+    const traceExporterModule =
+      (await import('@opentelemetry/exporter-trace-otlp-http')) as OtelTraceExporterModule;
     const resourcesModule = (await import('@opentelemetry/resources')) as OtelResourcesModule;
-    const semanticModule = (await import('@opentelemetry/semantic-conventions')) as OtelSemanticModule;
+    const semanticModule =
+      (await import('@opentelemetry/semantic-conventions')) as OtelSemanticModule;
     const traceBaseModule = (await import('@opentelemetry/sdk-trace-base')) as OtelTraceBaseModule;
 
     // Extract classes/constants after the opt-in gate to avoid eager runtime loading.
@@ -122,7 +122,7 @@ export async function initTelemetry(config?: Partial<TelemetryConfig>): Promise<
       });
     } else {
       logger.log(
-        'OpenTelemetry metrics exporter disabled (set OTEL_EXPORTER_OTLP_METRICS_ENDPOINT to enable)',
+        'OpenTelemetry metrics exporter disabled (set OTEL_EXPORTER_OTLP_METRICS_ENDPOINT to enable)'
       );
     }
 
@@ -184,9 +184,7 @@ export async function initTelemetry(config?: Partial<TelemetryConfig>): Promise<
       ...(metricReader ? { metricReader } : {}),
 
       // Auto-instrumentations
-      instrumentations: [
-        getNodeAutoInstrumentations(instrumentationConfig),
-      ],
+      instrumentations: [getNodeAutoInstrumentations(instrumentationConfig)],
     });
 
     // Start SDK
@@ -224,8 +222,6 @@ export async function initTelemetry(config?: Partial<TelemetryConfig>): Promise<
 /**
  * Check if telemetry is enabled
  */
-export function isTelemetryEnabled(
-  env: NodeJS.ProcessEnv = process.env,
-): boolean {
+export function isTelemetryEnabled(env: NodeJS.ProcessEnv = process.env): boolean {
   return env.OTEL_ENABLED === 'true' && !!env.OTEL_EXPORTER_OTLP_ENDPOINT;
 }

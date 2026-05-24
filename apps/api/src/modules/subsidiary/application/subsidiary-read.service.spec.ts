@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { SubsidiaryReadRepository } from '../infrastructure/subsidiary-read.repository';
@@ -21,22 +20,20 @@ describe('SubsidiaryReadApplicationService', () => {
     vi.clearAllMocks();
 
     service = new SubsidiaryReadApplicationService(
-      mockSubsidiaryReadRepository as unknown as SubsidiaryReadRepository,
+      mockSubsidiaryReadRepository as unknown as SubsidiaryReadRepository
     );
   });
 
   it('builds list query defaults and returns paginated data', async () => {
-    mockSubsidiaryReadRepository.list.mockResolvedValue([
-      { id: 'subsidiary-1', code: 'TOKYO' },
-    ]);
+    mockSubsidiaryReadRepository.list.mockResolvedValue([{ id: 'subsidiary-1', code: 'TOKYO' }]);
     mockSubsidiaryReadRepository.count.mockResolvedValue(1);
 
-    await expect(
-      service.list('tenant_test', { search: 'Tokyo', isActive: true }),
-    ).resolves.toEqual({
-      data: [{ id: 'subsidiary-1', code: 'TOKYO' }],
-      total: 1,
-    });
+    await expect(service.list('tenant_test', { search: 'Tokyo', isActive: true })).resolves.toEqual(
+      {
+        data: [{ id: 'subsidiary-1', code: 'TOKYO' }],
+        total: 1,
+      }
+    );
 
     expect(mockSubsidiaryReadRepository.list).toHaveBeenCalledWith(
       'tenant_test',
@@ -45,13 +42,13 @@ describe('SubsidiaryReadApplicationService', () => {
         orderBy: 'sort_order ASC, created_at DESC',
         pageSize: 20,
         offset: 0,
-      }),
+      })
     );
     expect(mockSubsidiaryReadRepository.count).toHaveBeenCalledWith(
       'tenant_test',
       expect.objectContaining({
         params: ['%Tokyo%', true],
-      }),
+      })
     );
   });
 

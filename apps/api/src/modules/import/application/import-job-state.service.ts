@@ -1,6 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { Injectable } from '@nestjs/common';
+
 import { LogSeverity, TechEventType } from '@tcrn/shared';
 
 import { TechEventLogService } from '../../log';
@@ -12,7 +12,7 @@ import { ImportJobStateRepository } from '../infrastructure/import-job-state.rep
 export class ImportJobStateApplicationService {
   constructor(
     private readonly importJobStateRepository: ImportJobStateRepository,
-    private readonly techEventLogService: TechEventLogService,
+    private readonly techEventLogService: TechEventLogService
   ) {}
 
   async updateProgress(
@@ -21,7 +21,7 @@ export class ImportJobStateApplicationService {
     successRows: number,
     failedRows: number,
     warningRows: number,
-    tenantSchema: string,
+    tenantSchema: string
   ): Promise<void> {
     await this.importJobStateRepository.updateProgress(tenantSchema, {
       jobId,
@@ -38,7 +38,7 @@ export class ImportJobStateApplicationService {
     successRows: number,
     failedRows: number,
     warningRows: number,
-    tenantSchema: string,
+    tenantSchema: string
   ): Promise<void> {
     const status = resolveImportJobCompletionStatus(successRows, failedRows);
     const processedRows = successRows + failedRows;
@@ -73,7 +73,7 @@ export class ImportJobStateApplicationService {
     errorCode: string,
     errorMessage: string,
     originalData: string,
-    tenantSchema: string,
+    tenantSchema: string
   ): Promise<void> {
     await this.importJobStateRepository.addError(tenantSchema, {
       jobId,

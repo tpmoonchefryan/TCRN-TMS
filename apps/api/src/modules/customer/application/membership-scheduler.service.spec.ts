@@ -1,7 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { LogSeverity, TechEventType } from '@tcrn/shared';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { TechEventLogService } from '../../log';
 import { MembershipSchedulerRepository } from '../infrastructure/membership-scheduler.repository';
@@ -30,7 +30,7 @@ describe('MembershipSchedulerApplicationService', () => {
 
     service = new MembershipSchedulerApplicationService(
       mockRepository as unknown as MembershipSchedulerRepository,
-      mockTechEventLogService as unknown as TechEventLogService,
+      mockTechEventLogService as unknown as TechEventLogService
     );
   });
 
@@ -46,7 +46,7 @@ describe('MembershipSchedulerApplicationService', () => {
         eventType: TechEventType.SCHEDULED_TASK_COMPLETED,
         scope: 'scheduled',
         severity: LogSeverity.INFO,
-      }),
+      })
     );
   });
 
@@ -69,7 +69,7 @@ describe('MembershipSchedulerApplicationService', () => {
         payload: expect.objectContaining({
           auto_renew_failed_count: 1,
         }),
-      }),
+      })
     );
   });
 
@@ -87,7 +87,7 @@ describe('MembershipSchedulerApplicationService', () => {
           task: 'membership_batch',
           error: 'db offline',
         }),
-      }),
+      })
     );
   });
 
@@ -101,9 +101,7 @@ describe('MembershipSchedulerApplicationService', () => {
       },
     ]);
 
-    await expect(
-      service.getUpcomingExpirations(7, 'tenant_test'),
-    ).resolves.toEqual([
+    await expect(service.getUpcomingExpirations(7, 'tenant_test')).resolves.toEqual([
       {
         customerId: 'customer-1',
         membershipLevelName: 'Gold',

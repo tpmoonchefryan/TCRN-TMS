@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import {
   type CreateExportJobDto,
   ExportFormat,
@@ -63,21 +62,20 @@ export const mapExportJobResponse = (job: RawExportJobRecord): ExportJobResponse
   fileName: job.file_name,
   totalRecords: job.total_records,
   processedRecords: job.processed_records,
-  downloadUrl: job.status === ExportJobStatus.SUCCESS && job.file_path
-    ? `/api/v1/exports/${job.id}/download`
-    : null,
+  downloadUrl:
+    job.status === ExportJobStatus.SUCCESS && job.file_path
+      ? `/api/v1/exports/${job.id}/download`
+      : null,
   expiresAt: job.expires_at?.toISOString() ?? null,
   createdAt: job.created_at.toISOString(),
   completedAt: job.completed_at?.toISOString() ?? null,
 });
 
 export const getRequestedExportFormat = (
-  format: ExportFormatValue | undefined,
+  format: ExportFormatValue | undefined
 ): ExportFormatValue => format ?? ExportFormat.CSV;
 
-export const buildExportJobFilters = (
-  filters: ExportJobFilters,
-): ExportJobFilters => ({
+export const buildExportJobFilters = (filters: ExportJobFilters): ExportJobFilters => ({
   customerIds: filters.customerIds,
   tags: filters.tags,
   membershipClassCode: filters.membershipClassCode,

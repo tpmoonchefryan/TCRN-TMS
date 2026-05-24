@@ -1,7 +1,6 @@
-import 'reflect-metadata';
-
 import { RequestMethod } from '@nestjs/common';
 import { METHOD_METADATA, PATH_METADATA } from '@nestjs/common/constants';
+import 'reflect-metadata';
 import { describe, expect, it } from 'vitest';
 
 import { SubsidiaryController } from '../subsidiary/subsidiary.controller';
@@ -25,12 +24,15 @@ const normalizePaths = (value: string | string[] | undefined): string[] => {
 const getControllerRoutes = (controller: object): ControllerRoute[] => {
   const controllerClass = controller as { prototype: Record<string, unknown> };
   const methodNames = Object.getOwnPropertyNames(controllerClass.prototype).filter(
-    (methodName) => methodName !== 'constructor' && typeof controllerClass.prototype[methodName] === 'function',
+    (methodName) =>
+      methodName !== 'constructor' && typeof controllerClass.prototype[methodName] === 'function'
   );
 
   return methodNames.flatMap((methodName) => {
     const handler = controllerClass.prototype[methodName];
-    const requestMethod = Reflect.getMetadata(METHOD_METADATA, handler) as RequestMethod | undefined;
+    const requestMethod = Reflect.getMetadata(METHOD_METADATA, handler) as
+      | RequestMethod
+      | undefined;
 
     if (requestMethod === undefined) {
       return [];
@@ -71,7 +73,7 @@ describe('Organization resource route contract', () => {
           requestMethod: RequestMethod.POST,
           path: ':tenantId/deactivate',
         },
-      ]),
+      ])
     );
 
     expect(getControllerRoutes(SubsidiaryController)).toEqual(
@@ -101,7 +103,7 @@ describe('Organization resource route contract', () => {
           requestMethod: RequestMethod.POST,
           path: ':subsidiaryId/reactivate',
         },
-      ]),
+      ])
     );
   });
 
@@ -111,15 +113,9 @@ describe('Organization resource route contract', () => {
     const talentRoutes = getControllerRoutes(TalentController);
 
     expect(
-      talentRoutes.some(
-        (route) => route.path.includes(':id') && route.requestMethod !== undefined,
-      ),
+      talentRoutes.some((route) => route.path.includes(':id') && route.requestMethod !== undefined)
     ).toBe(false);
-    expect(
-      talentRoutes.some((route) => route.path === ':talentId/publish'),
-    ).toBe(true);
-    expect(
-      talentRoutes.some((route) => route.path === ':talentId/custom-domain'),
-    ).toBe(true);
+    expect(talentRoutes.some((route) => route.path === ':talentId/publish')).toBe(true);
+    expect(talentRoutes.some((route) => route.path === ':talentId/custom-domain')).toBe(true);
   });
 });

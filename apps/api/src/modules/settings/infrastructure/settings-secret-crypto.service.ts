@@ -1,9 +1,10 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+import { createCipheriv, createDecipheriv, randomBytes } from 'crypto';
 
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+
 import { ErrorCodes } from '@tcrn/shared';
-import { createCipheriv, createDecipheriv, randomBytes } from 'crypto';
 
 @Injectable()
 export class SettingsSecretCryptoService {
@@ -24,12 +25,9 @@ export class SettingsSecretCryptoService {
     let encrypted = cipher.update(plaintext, 'utf8', 'base64');
     encrypted += cipher.final('base64');
 
-    return [
-      'v1',
-      iv.toString('base64'),
-      cipher.getAuthTag().toString('base64'),
-      encrypted,
-    ].join(':');
+    return ['v1', iv.toString('base64'), cipher.getAuthTag().toString('base64'), encrypted].join(
+      ':'
+    );
   }
 
   decrypt(ciphertext: string): string {
@@ -43,12 +41,9 @@ export class SettingsSecretCryptoService {
       });
     }
 
-    const decipher = createDecipheriv(
-      this.algorithm,
-      key,
-      Buffer.from(parts[1], 'base64'),
-      { authTagLength: this.authTagLength },
-    );
+    const decipher = createDecipheriv(this.algorithm, key, Buffer.from(parts[1], 'base64'), {
+      authTagLength: this.authTagLength,
+    });
     decipher.setAuthTag(Buffer.from(parts[2], 'base64'));
 
     let decrypted = decipher.update(parts[3], 'base64', 'utf8');
@@ -82,8 +77,8 @@ export class SettingsSecretCryptoService {
 
   private getEncryptionKey(): Buffer {
     const configuredKey =
-      this.configService.get<string>('SETTINGS_SECRET_ENCRYPTION_KEY')
-      ?? this.configService.get<string>('EMAIL_CONFIG_ENCRYPTION_KEY');
+      this.configService.get<string>('SETTINGS_SECRET_ENCRYPTION_KEY') ??
+      this.configService.get<string>('EMAIL_CONFIG_ENCRYPTION_KEY');
 
     if (configuredKey && /^[0-9a-fA-F]{64}$/.test(configuredKey)) {
       return Buffer.from(configuredKey, 'hex');

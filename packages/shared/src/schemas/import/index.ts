@@ -1,6 +1,5 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 // Import Module Zod Schemas
-
 import { z } from 'zod';
 
 // ============================================================================
@@ -8,7 +7,12 @@ import { z } from 'zod';
 // ============================================================================
 export const ImportJobTypeSchema = z.enum(['individual_import', 'company_import']);
 export const ImportJobStatusSchema = z.enum([
-  'pending', 'running', 'success', 'partial', 'failed', 'cancelled'
+  'pending',
+  'running',
+  'success',
+  'partial',
+  'failed',
+  'cancelled',
 ]);
 
 export type ImportJobType = z.infer<typeof ImportJobTypeSchema>;

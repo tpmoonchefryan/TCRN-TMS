@@ -1,5 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
 import { describe, expect, it } from 'vitest';
 
 import { resolveTraceIdFromHeaders } from './trace-id.util';
@@ -8,7 +7,7 @@ describe('trace id utilities', () => {
   it('preserves a valid x-trace-id header', () => {
     const traceId = resolveTraceIdFromHeaders(
       { 'x-trace-id': 'trace_custom-domain_123' },
-      () => 'trace_generated',
+      () => 'trace_generated'
     );
 
     expect(traceId).toBe('trace_custom-domain_123');
@@ -17,7 +16,7 @@ describe('trace id utilities', () => {
   it('uses a valid x-request-id as compatibility fallback', () => {
     const traceId = resolveTraceIdFromHeaders(
       { 'x-request-id': 'req_existing_456' },
-      () => 'trace_generated',
+      () => 'trace_generated'
     );
 
     expect(traceId).toBe('req_existing_456');
@@ -28,7 +27,7 @@ describe('trace id utilities', () => {
       {
         traceparent: '00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01',
       },
-      () => 'trace_generated',
+      () => 'trace_generated'
     );
 
     expect(traceId).toBe('4bf92f3577b34da6a3ce929d0e0e4736');
@@ -41,7 +40,7 @@ describe('trace id utilities', () => {
         'x-request-id': '<script>',
         traceparent: '00-00000000000000000000000000000000-00f067aa0ba902b7-01',
       },
-      () => 'trace_generated',
+      () => 'trace_generated'
     );
 
     expect(traceId).toBe('trace_generated');

@@ -1,8 +1,9 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import {
   buildPublicPresenceTemplateAssetManifest,
   getPublicPresenceTemplateSeedText,
 } from '@tcrn/shared';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { DatabaseService } from '../../database';
 import { PublicPresenceAssetRepository } from './public-presence-asset.repository';
@@ -16,10 +17,16 @@ describe('PublicPresenceAssetRepository', () => {
   beforeEach(() => {
     queryRawUnsafe = vi.fn();
     transactionQueryRawUnsafe = vi.fn();
-    transaction = vi.fn(async (operation: (prisma: { $queryRawUnsafe: typeof transactionQueryRawUnsafe }) => Promise<unknown>) =>
-      operation({
-        $queryRawUnsafe: transactionQueryRawUnsafe,
-      }));
+    transaction = vi.fn(
+      async (
+        operation: (prisma: {
+          $queryRawUnsafe: typeof transactionQueryRawUnsafe;
+        }) => Promise<unknown>
+      ) =>
+        operation({
+          $queryRawUnsafe: transactionQueryRawUnsafe,
+        })
+    );
     repository = new PublicPresenceAssetRepository({
       getPrisma: () => ({
         $queryRawUnsafe: queryRawUnsafe,
@@ -29,9 +36,7 @@ describe('PublicPresenceAssetRepository', () => {
   });
 
   it('returns the default tenant visibility chain when scopeType is tenant', async () => {
-    await expect(
-      repository.resolveScopeChain('tenant_test', 'tenant', null),
-    ).resolves.toEqual([
+    await expect(repository.resolveScopeChain('tenant_test', 'tenant', null)).resolves.toEqual([
       { ownerType: 'system', ownerId: null },
       { ownerType: 'tenant', ownerId: null },
     ]);
@@ -44,7 +49,7 @@ describe('PublicPresenceAssetRepository', () => {
       .mockResolvedValueOnce([{ id: 'sub-1' }]);
 
     await expect(
-      repository.resolveScopeChain('tenant_test', 'subsidiary', 'sub-2'),
+      repository.resolveScopeChain('tenant_test', 'subsidiary', 'sub-2')
     ).resolves.toEqual([
       { ownerType: 'system', ownerId: null },
       { ownerType: 'tenant', ownerId: null },
@@ -54,9 +59,7 @@ describe('PublicPresenceAssetRepository', () => {
   });
 
   it('skips current revisions lookup when no asset ids are requested', async () => {
-    await expect(
-      repository.listCurrentRevisionsByAssetIds('tenant_test', []),
-    ).resolves.toEqual([]);
+    await expect(repository.listCurrentRevisionsByAssetIds('tenant_test', [])).resolves.toEqual([]);
     expect(queryRawUnsafe).not.toHaveBeenCalled();
   });
 
@@ -135,23 +138,25 @@ describe('PublicPresenceAssetRepository', () => {
     transactionQueryRawUnsafe
       .mockResolvedValueOnce([{ id: assetId }])
       .mockResolvedValueOnce([{ id: revisionId }])
-      .mockResolvedValueOnce([{
-        assetKind: 'template',
-        code: 'activetalenthub-copy',
-        componentType: null,
-        createdAt: new Date('2026-05-24T00:00:00.000Z'),
-        currentRevisionId: revisionId,
-        description: seedText.description,
-        id: assetId,
-        isSystem: false,
-        name: seedText.name,
-        ownerId: null,
-        ownerType: 'tenant',
-        status: 'draft',
-        templateId: 'activeTalentHub',
-        updatedAt: new Date('2026-05-24T00:01:00.000Z'),
-        version: 1,
-      }]);
+      .mockResolvedValueOnce([
+        {
+          assetKind: 'template',
+          code: 'activetalenthub-copy',
+          componentType: null,
+          createdAt: new Date('2026-05-24T00:00:00.000Z'),
+          currentRevisionId: revisionId,
+          description: seedText.description,
+          id: assetId,
+          isSystem: false,
+          name: seedText.name,
+          ownerId: null,
+          ownerType: 'tenant',
+          status: 'draft',
+          templateId: 'activeTalentHub',
+          updatedAt: new Date('2026-05-24T00:01:00.000Z'),
+          version: 1,
+        },
+      ]);
 
     const result = await repository.createAssetWithCurrentRevision('tenant_test', {
       actorId: '11111111-1111-4111-8111-111111111111',
@@ -191,7 +196,9 @@ describe('PublicPresenceAssetRepository', () => {
 
     expect(transaction).toHaveBeenCalledTimes(1);
     expect(transactionQueryRawUnsafe).toHaveBeenCalledTimes(3);
-    expect(String(transactionQueryRawUnsafe.mock.calls[2][0])).toContain('current_revision_id = $2::uuid');
+    expect(String(transactionQueryRawUnsafe.mock.calls[2][0])).toContain(
+      'current_revision_id = $2::uuid'
+    );
     expect(transactionQueryRawUnsafe.mock.calls[2][1]).toBe(assetId);
     expect(transactionQueryRawUnsafe.mock.calls[2][2]).toBe(revisionId);
     expect(result.currentRevisionId).toBe(revisionId);
@@ -239,7 +246,7 @@ describe('PublicPresenceAssetRepository', () => {
           passCount: 0,
           warnCount: 0,
         },
-      }),
+      })
     ).rejects.toThrow('Created asset could not be updated with its current revision.');
   });
 });

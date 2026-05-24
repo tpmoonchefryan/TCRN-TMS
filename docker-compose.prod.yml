@@ -8,7 +8,7 @@ services:
   # =============================================================================
   # Reverse Proxy with Auto HTTPS (Caddy)
   # =============================================================================
-  
+
   caddy:
     image: caddy:2-alpine
     container_name: tcrn-caddy
@@ -16,8 +16,8 @@ services:
     networks:
       - app-network
     ports:
-      - "80:80"
-      - "443:443"
+      - '80:80'
+      - '443:443'
     volumes:
       - ./infra/caddy/Caddyfile.prod:/etc/caddy/Caddyfile:ro
       - caddy-data:/data
@@ -33,10 +33,10 @@ services:
           cpus: '0.25'
           memory: 128M
     logging:
-      driver: "json-file"
+      driver: 'json-file'
       options:
-        max-size: "10m"
-        max-file: "3"
+        max-size: '10m'
+        max-file: '3'
 
   # =============================================================================
   # Application Services
@@ -78,7 +78,7 @@ services:
       TENCENT_SES_FROM_ADDRESS: ${TENCENT_SES_FROM_ADDRESS}
     # No port exposure - accessed via Caddy
     expose:
-      - "4000"
+      - '4000'
     depends_on:
       postgres:
         condition: service_healthy
@@ -92,10 +92,10 @@ services:
           cpus: '1.0'
           memory: 1G
     logging:
-      driver: "json-file"
+      driver: 'json-file'
       options:
-        max-size: "10m"
-        max-file: "3"
+        max-size: '10m'
+        max-file: '3'
 
   # BullMQ Worker
   worker:
@@ -136,15 +136,15 @@ services:
           cpus: '0.5'
           memory: 512M
     logging:
-      driver: "json-file"
+      driver: 'json-file'
       options:
-        max-size: "10m"
-        max-file: "3"
+        max-size: '10m'
+        max-file: '3'
 
   # =============================================================================
   # Infrastructure Overrides for Production
   # =============================================================================
-  
+
   # Ensure Redis has password in production
   redis:
     command: redis-server --requirepass ${REDIS_PASSWORD} --appendonly yes

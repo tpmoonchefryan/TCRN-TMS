@@ -1,12 +1,13 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 
+import { describe, expect, it } from 'vitest';
+
 import {
   type PermissionActionInput,
   RBAC_POLICY_DEFINITIONS,
   resolveRbacPermission,
 } from '@tcrn/shared';
-import { describe, expect, it } from 'vitest';
 
 import { CONFIG_ENTITY_RESOURCE_MAP } from '../../modules/config/config-rbac';
 
@@ -20,9 +21,7 @@ interface StaticPermissionReference {
 const srcRoot = path.resolve(process.cwd(), 'src');
 const modulesRoot = path.join(srcRoot, 'modules');
 const policyKeys = new Set(
-  RBAC_POLICY_DEFINITIONS.map(
-    (definition) => `${definition.resourceCode}:${definition.action}`,
-  ),
+  RBAC_POLICY_DEFINITIONS.map((definition) => `${definition.resourceCode}:${definition.action}`)
 );
 
 const walkControllerFiles = (directory: string): string[] => {
@@ -35,19 +34,14 @@ const walkControllerFiles = (directory: string): string[] => {
       return walkControllerFiles(resolvedPath);
     }
 
-    return entry.isFile() && entry.name.endsWith('.controller.ts')
-      ? [resolvedPath]
-      : [];
+    return entry.isFile() && entry.name.endsWith('.controller.ts') ? [resolvedPath] : [];
   });
 };
 
 const getLineNumber = (source: string, index: number): number =>
   source.slice(0, index).split('\n').length;
 
-const collectStaticPermissions = (
-  source: string,
-  file: string,
-): StaticPermissionReference[] => {
+const collectStaticPermissions = (source: string, file: string): StaticPermissionReference[] => {
   const references: StaticPermissionReference[] = [];
   const decoratorPattern = /@RequirePermissions\s*\(([\s\S]*?)\)/g;
 
@@ -79,13 +73,10 @@ const collectHelperActions = (source: string, helperName: string): string[] => {
   return [...source.matchAll(pattern)].map((match) => match[1] ?? '');
 };
 
-const resolvePolicyKey = (
-  resource: string,
-  action: string,
-): string => {
+const resolvePolicyKey = (resource: string, action: string): string => {
   const resolved = resolveRbacPermission(
     resource as Parameters<typeof resolveRbacPermission>[0],
-    action as PermissionActionInput,
+    action as PermissionActionInput
   );
 
   return `${resolved.resourceCode}:${resolved.checkedAction}`;
@@ -95,7 +86,7 @@ describe('controller RBAC contract', () => {
   it('keeps static @RequirePermissions declarations aligned with shared RBAC policy definitions', () => {
     const controllerFiles = walkControllerFiles(modulesRoot);
     const declarations = controllerFiles.flatMap((file) =>
-      collectStaticPermissions(readFileSync(file, 'utf8'), file),
+      collectStaticPermissions(readFileSync(file, 'utf8'), file)
     );
 
     expect(declarations.length).toBeGreaterThan(100);
@@ -124,19 +115,19 @@ describe('controller RBAC contract', () => {
   it('keeps config permission helpers aligned with shared RBAC policy definitions', () => {
     const configControllerSource = readFileSync(
       path.join(modulesRoot, 'config/config.controller.ts'),
-      'utf8',
+      'utf8'
     );
     const globalConfigControllerSource = readFileSync(
       path.join(modulesRoot, 'config/global-config.controller.ts'),
-      'utf8',
+      'utf8'
     );
     const configEntityActions = collectHelperActions(
       configControllerSource,
-      'RequireConfigEntityPermission',
+      'RequireConfigEntityPermission'
     );
     const platformConfigActions = collectHelperActions(
       globalConfigControllerSource,
-      'RequirePlatformConfigPermission',
+      'RequirePlatformConfigPermission'
     );
 
     expect(configEntityActions.length).toBeGreaterThan(0);
@@ -151,14 +142,14 @@ describe('controller RBAC contract', () => {
 
           if (!policyKeys.has(policyKey)) {
             helperViolations.push(
-              `config.controller.ts -> entity ${entityType} action ${action} resolves to ${policyKey}, but that policy is missing from RBAC_POLICY_DEFINITIONS`,
+              `config.controller.ts -> entity ${entityType} action ${action} resolves to ${policyKey}, but that policy is missing from RBAC_POLICY_DEFINITIONS`
             );
           }
         } catch (error) {
           helperViolations.push(
             `config.controller.ts -> entity ${entityType} action ${action} is invalid for ${resource}: ${
               error instanceof Error ? error.message : String(error)
-            }`,
+            }`
           );
         }
       }
@@ -170,14 +161,14 @@ describe('controller RBAC contract', () => {
 
         if (!policyKeys.has(policyKey)) {
           helperViolations.push(
-            `global-config.controller.ts -> platform config action ${action} resolves to ${policyKey}, but that policy is missing from RBAC_POLICY_DEFINITIONS`,
+            `global-config.controller.ts -> platform config action ${action} resolves to ${policyKey}, but that policy is missing from RBAC_POLICY_DEFINITIONS`
           );
         }
       } catch (error) {
         helperViolations.push(
           `global-config.controller.ts -> platform config action ${action} is invalid: ${
             error instanceof Error ? error.message : String(error)
-          }`,
+          }`
         );
       }
     }

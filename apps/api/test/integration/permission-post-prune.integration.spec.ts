@@ -1,6 +1,5 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 // API-layer regression proof for legacy RBAC prune batches.
-
 import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
@@ -108,21 +107,23 @@ const CONFIG_SECURITY_TARGETS: readonly LegacyPruneTargetFixture[] = [
   },
 ];
 
-const ALL_LEGACY_RESOURCE_CODES = [...new Set(
-  [...CONTENT_LOG_TARGETS, ...CONFIG_SECURITY_TARGETS].map((target) => target.legacyCode),
-)];
+const ALL_LEGACY_RESOURCE_CODES = [
+  ...new Set(
+    [...CONTENT_LOG_TARGETS, ...CONFIG_SECURITY_TARGETS].map((target) => target.legacyCode)
+  ),
+];
 
 const ALL_LEGACY_RESOURCE_PATTERN = new RegExp(
-  `^(${ALL_LEGACY_RESOURCE_CODES.map((resourceCode) => resourceCode.replace('.', '\\.')).join('|')})$`,
+  `^(${ALL_LEGACY_RESOURCE_CODES.map((resourceCode) => resourceCode.replace('.', '\\.')).join('|')})$`
 );
 
 function buildExpectedCanonicalGrants(
-  targets: readonly LegacyPruneTargetFixture[],
+  targets: readonly LegacyPruneTargetFixture[]
 ): Record<string, 'grant'> {
   return Object.fromEntries(
     targets.flatMap((target) =>
-      target.expectedCanonicalPermissions.map((permissionKey) => [permissionKey, 'grant']),
-    ),
+      target.expectedCanonicalPermissions.map((permissionKey) => [permissionKey, 'grant'])
+    )
   ) as Record<string, 'grant'>;
 }
 
@@ -151,24 +152,27 @@ describe('Permission Post-Prune Integration', () => {
 
   const pickPermissions = (
     permissions: Record<string, string>,
-    permissionKeys: readonly string[],
+    permissionKeys: readonly string[]
   ): Record<string, string> =>
     Object.fromEntries(
-      permissionKeys.map((permissionKey) => [permissionKey, permissions[permissionKey] ?? 'missing']),
+      permissionKeys.map((permissionKey) => [
+        permissionKey,
+        permissions[permissionKey] ?? 'missing',
+      ])
     );
 
   const listLegacyPermissionKeys = (
     permissions: Record<string, string>,
-    targets: readonly LegacyPruneTargetFixture[],
+    targets: readonly LegacyPruneTargetFixture[]
   ): string[] =>
     Object.keys(permissions).filter((permissionKey) =>
-      targets.some((target) => permissionKey.startsWith(`${target.legacyCode}:`)),
+      targets.some((target) => permissionKey.startsWith(`${target.legacyCode}:`))
     );
 
   async function seedLegacyResourceGrant(
     schemaName: string,
     roleCode: string,
-    target: LegacyPruneTargetFixture,
+    target: LegacyPruneTargetFixture
   ): Promise<void> {
     await prisma.$executeRawUnsafe(
       `
@@ -186,7 +190,7 @@ describe('Permission Post-Prune Integration', () => {
       target.legacyCode,
       target.module,
       JSON.stringify(target.name),
-      target.sortOrder,
+      target.sortOrder
     );
 
     const roleRows = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
@@ -196,7 +200,7 @@ describe('Permission Post-Prune Integration', () => {
         WHERE code = $1
         LIMIT 1
       `,
-      roleCode,
+      roleCode
     );
 
     const roleId = roleRows[0]?.id;
@@ -212,7 +216,7 @@ describe('Permission Post-Prune Integration', () => {
         WHERE code = $1
         LIMIT 1
       `,
-      target.legacyCode,
+      target.legacyCode
     );
 
     const resourceId = resourceRows[0]?.id;
@@ -233,7 +237,7 @@ describe('Permission Post-Prune Integration', () => {
               updated_at = NOW()
         `,
         resourceId,
-        action,
+        action
       );
 
       const policyRows = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
@@ -245,7 +249,7 @@ describe('Permission Post-Prune Integration', () => {
           LIMIT 1
         `,
         resourceId,
-        action,
+        action
       );
 
       const policyId = policyRows[0]?.id;
@@ -264,7 +268,7 @@ describe('Permission Post-Prune Integration', () => {
           SET effect = 'grant'
         `,
         roleId,
-        policyId,
+        policyId
       );
     }
   }
@@ -277,9 +281,7 @@ describe('Permission Post-Prune Integration', () => {
     }
   }
 
-  async function runPostPruneSmoke(
-    targets: readonly LegacyPruneTargetFixture[],
-  ): Promise<void> {
+  async function runPostPruneSmoke(targets: readonly LegacyPruneTargetFixture[]): Promise<void> {
     const selectedLegacyCodes = targets.map((target) => target.legacyCode);
     const expectedCanonicalGrants = buildExpectedCanonicalGrants(targets);
     const expectedCanonicalKeys = Object.keys(expectedCanonicalGrants);
@@ -292,11 +294,13 @@ describe('Permission Post-Prune Integration', () => {
     await permissionSnapshotService.refreshUserSnapshots(tenantFixture.schemaName, testUser.id);
 
     const beforeResponse = await withAuth(
-      request(app.getHttpServer()).get('/api/v1/users/me/permissions'),
+      request(app.getHttpServer()).get('/api/v1/users/me/permissions')
     ).expect(200);
     const beforePermissions = beforeResponse.body.data.permissions as Record<string, string>;
 
-    expect(pickPermissions(beforePermissions, expectedCanonicalKeys)).toEqual(expectedCanonicalGrants);
+    expect(pickPermissions(beforePermissions, expectedCanonicalKeys)).toEqual(
+      expectedCanonicalGrants
+    );
     expect(listLegacyPermissionKeys(beforePermissions, targets)).toEqual([]);
 
     let auditSummary = await auditLegacyRbac(prisma, {
@@ -324,7 +328,7 @@ describe('Permission Post-Prune Integration', () => {
         auditSummary,
         tenantFixture.schemaName,
         target.legacyCode,
-        runtimeProof.target.affectedUsers.map((user) => user.username),
+        runtimeProof.target.affectedUsers.map((user) => user.username)
       );
     }
 
@@ -352,13 +356,15 @@ describe('Permission Post-Prune Integration', () => {
     await permissionSnapshotService.refreshUserSnapshots(tenantFixture.schemaName, testUser.id);
 
     const afterResponse = await withAuth(
-      request(app.getHttpServer()).get('/api/v1/users/me/permissions'),
+      request(app.getHttpServer()).get('/api/v1/users/me/permissions')
     ).expect(200);
     const afterPermissions = afterResponse.body.data.permissions as Record<string, string>;
 
-    expect(pickPermissions(afterPermissions, expectedCanonicalKeys)).toEqual(expectedCanonicalGrants);
     expect(pickPermissions(afterPermissions, expectedCanonicalKeys)).toEqual(
-      pickPermissions(beforePermissions, expectedCanonicalKeys),
+      expectedCanonicalGrants
+    );
+    expect(pickPermissions(afterPermissions, expectedCanonicalKeys)).toEqual(
+      pickPermissions(beforePermissions, expectedCanonicalKeys)
     );
     expect(listLegacyPermissionKeys(afterPermissions, targets)).toEqual([]);
     expect(afterResponse.body.data.roles).toEqual(
@@ -369,7 +375,7 @@ describe('Permission Post-Prune Integration', () => {
           scopeType: 'tenant',
           scopeId: null,
         }),
-      ]),
+      ])
     );
 
     const postApplyAudit = await auditLegacyRbac(prisma, {
@@ -409,7 +415,7 @@ describe('Permission Post-Prune Integration', () => {
       prisma,
       tenantFixture,
       `perm_prune_admin_${Date.now()}`,
-      ['ADMIN'],
+      ['ADMIN']
     );
   });
 

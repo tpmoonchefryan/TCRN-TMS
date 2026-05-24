@@ -1,8 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-
-import 'reflect-metadata';
-
 import { Injectable } from '@nestjs/common';
+import 'reflect-metadata';
 import { describe, expect, it } from 'vitest';
 
 class HarnessDependency {}
@@ -14,8 +12,6 @@ class HarnessConsumer {
 
 describe('Vitest integration harness', () => {
   it('emits Nest decorator metadata through the SWC integration transform', () => {
-    expect(Reflect.getMetadata('design:paramtypes', HarnessConsumer)).toEqual([
-      HarnessDependency,
-    ]);
+    expect(Reflect.getMetadata('design:paramtypes', HarnessConsumer)).toEqual([HarnessDependency]);
   });
 });

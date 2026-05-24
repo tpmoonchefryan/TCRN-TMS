@@ -1,15 +1,15 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { prisma } from '@tcrn/database';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { PermissionService } from '../permission.service';
 
 vi.mock('@tcrn/database', () => ({
   prisma: {
     $queryRawUnsafe: vi.fn(),
   },
 }));
-
-import { PermissionService } from '../permission.service';
 
 const mockPrisma = prisma as unknown as {
   $queryRawUnsafe: ReturnType<typeof vi.fn>;
@@ -58,7 +58,7 @@ describe('PermissionService', () => {
       expect.not.stringContaining('p.effect'),
       'customer.profile',
       'read',
-      true,
+      true
     );
   });
 
@@ -80,7 +80,7 @@ describe('PermissionService', () => {
     expect(result?.id).toBe('perm-1');
     expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalledWith(
       expect.not.stringContaining('p.effect'),
-      'perm-1',
+      'perm-1'
     );
   });
 

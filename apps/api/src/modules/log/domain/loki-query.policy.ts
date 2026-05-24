@@ -17,11 +17,7 @@ export interface LokiQueryParams {
   rawQuery?: string;
 }
 
-export const LOKI_LOG_STREAMS = [
-  'change_log',
-  'technical_event_log',
-  'integration_log',
-] as const;
+export const LOKI_LOG_STREAMS = ['change_log', 'technical_event_log', 'integration_log'] as const;
 
 export type LokiLogStream = (typeof LOKI_LOG_STREAMS)[number];
 
@@ -100,14 +96,13 @@ export function normalizeLogSearchStream(value?: string): LokiLogStream | undefi
 
 export function resolveRelativeTimeRange(
   timeRange?: string,
-  now = new Date(),
+  now = new Date()
 ): { start: string; end: string } | undefined {
   if (!timeRange) {
     return undefined;
   }
 
-  const durationMs =
-    RELATIVE_TIME_RANGE_MS[timeRange as keyof typeof RELATIVE_TIME_RANGE_MS];
+  const durationMs = RELATIVE_TIME_RANGE_MS[timeRange as keyof typeof RELATIVE_TIME_RANGE_MS];
 
   if (!durationMs) {
     return undefined;
@@ -122,26 +117,21 @@ export function resolveRelativeTimeRange(
   };
 }
 
-export function buildCompatibleRawLogSearchQuery(
-  query: string,
-  stream?: LokiLogStream,
-): string {
+export function buildCompatibleRawLogSearchQuery(query: string, stream?: LokiLogStream): string {
   const trimmedQuery = query.trim();
 
   if (hasLogSelector(trimmedQuery)) {
     return injectStreamIntoFirstSelector(trimmedQuery, stream);
   }
 
-  const selector = stream
-    ? `{app="tcrn-tms", stream="${stream}"}`
-    : '{app="tcrn-tms"}';
+  const selector = stream ? `{app="tcrn-tms", stream="${stream}"}` : '{app="tcrn-tms"}';
 
   return `${selector} |= ${JSON.stringify(trimmedQuery)}`;
 }
 
 export function buildCompatibleLogSearchQuery(
   params: CompatibleLogSearchParams,
-  now = new Date(),
+  now = new Date()
 ): LokiQueryParams {
   const query = params.query?.trim();
   const keyword = params.keyword?.trim() || undefined;
@@ -198,10 +188,7 @@ export function buildLokiQueryLogQl(params: LokiQueryParams): string {
   return query;
 }
 
-export function buildLokiKeywordSearchQuery(
-  keyword: string,
-  stream?: string,
-): string {
+export function buildLokiKeywordSearchQuery(keyword: string, stream?: string): string {
   let logql = '{app="tcrn-tms"';
   if (stream) {
     logql += `, stream="${stream}"`;
@@ -211,10 +198,7 @@ export function buildLokiKeywordSearchQuery(
   return logql;
 }
 
-export function buildChangeLogQuery(params: {
-  objectType?: string;
-  action?: string;
-}): string {
+export function buildChangeLogQuery(params: { objectType?: string; action?: string }): string {
   const labels: string[] = ['app="tcrn-tms"', 'stream="change_log"'];
 
   if (params.objectType) {
@@ -281,7 +265,7 @@ export function transformLokiQueryResponse(data: RawLokiQueryResponse): LokiQuer
       timestamp: new Date(parseInt(timestamp, 10) / 1000000),
       labels: result.stream,
       data: safeJsonParse(value),
-    })),
+    }))
   );
 
   return {
@@ -294,10 +278,7 @@ function hasLogSelector(query: string): boolean {
   return /\{[^}]*\}/.test(query);
 }
 
-function injectStreamIntoFirstSelector(
-  query: string,
-  stream?: LokiLogStream,
-): string {
+function injectStreamIntoFirstSelector(query: string, stream?: LokiLogStream): string {
   if (!stream) {
     return query;
   }
