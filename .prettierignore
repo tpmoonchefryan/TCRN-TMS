@@ -19,5 +19,8 @@ coverage
 # Context docs (maintain original formatting)
 .context/
 
+# Retired browser QA artifacts are kept for historical reference.
+retired-browser-tests/
+
 # Prisma migrations
 packages/database/prisma/migrations
