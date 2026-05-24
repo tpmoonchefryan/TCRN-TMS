@@ -17,17 +17,17 @@
   "dependencies": {
     "@tcrn/database": "workspace:*",
     "@tcrn/shared": "workspace:*",
-    "axios": "1.13.2",
+    "axios": "1.16.1",
     "bullmq": "5.66.5",
     "cron": "4.3.3",
     "csv-parse": "6.1.0",
     "exceljs": "4.4.0",
     "ioredis": "5.7.0",
     "jsonwebtoken": "9.0.3",
-    "minio": "8.0.6",
-    "nodemailer": "7.0.12",
-    "tencentcloud-sdk-nodejs-ses": "^4.1.76",
-    "uuid": "13.0.0"
+    "minio": "8.0.7",
+    "nodemailer": "8.0.8",
+    "tencentcloud-sdk-nodejs-ses": "^4.1.222",
+    "uuid": "13.0.1"
   },
   "devDependencies": {
     "@tcrn/eslint-config": "workspace:*",
@@ -41,6 +41,6 @@
     "tsup": "8.5.0",
     "tsx": "4.20.5",
     "typescript": "5.9.3",
-    "vitest": "4.0.17"
+    "vitest": "4.1.7"
   }
 }
