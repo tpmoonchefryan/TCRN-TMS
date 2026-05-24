@@ -209,7 +209,6 @@ function buildMembershipWhereQuery(
   if (filters.validToEnd) {
     conditions.push(`mr.valid_to <= $${paramIndex}::timestamptz`);
     params.push(new Date(filters.validToEnd));
-    paramIndex += 1;
   }
 
   if (!filters.includeExpired) {

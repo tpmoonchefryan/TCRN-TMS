@@ -82,7 +82,7 @@ export const StateView: React.FC<StateViewProps> = ({
 
   return (
     <div
-      className={`flex flex-col items-center justify-center rounded-2xl border p-12 text-center ${tokens.colors.border} ${tokens.colors.surface} ${tokens.effects.glass} animate-in fade-in duration-300 ${tokens.motion.reduced}`}
+      className={`flex flex-col items-center justify-center rounded-2xl border p-12 text-center ${tokens.colors.border} ${tokens.colors.surface} ${tokens.effects.glass} duration-300 animate-in fade-in ${tokens.motion.reduced}`}
     >
       <div
         className={`mb-6 flex h-16 w-16 items-center justify-center rounded-2xl ${getStatusColor()}`}

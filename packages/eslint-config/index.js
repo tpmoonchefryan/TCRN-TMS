@@ -3,7 +3,7 @@
 import tseslint from '@typescript-eslint/eslint-plugin';
 import tsParser from '@typescript-eslint/parser';
 import prettier from 'eslint-config-prettier';
-import importPlugin from 'eslint-plugin-import';
+import importX from 'eslint-plugin-import-x';
 
 /**
  * 共享 ESLint 配置 - 适用于所有工作区
@@ -23,7 +23,7 @@ export default [
     },
     plugins: {
       '@typescript-eslint': tseslint,
-      import: importPlugin,
+      'import-x': importX,
     },
     rules: {
       // TypeScript 规则
@@ -47,7 +47,7 @@ export default [
       ],
 
       // Import 规则
-      'import/order': [
+      'import-x/order': [
         'warn',
         {
           groups: [
@@ -66,13 +66,14 @@ export default [
           },
         },
       ],
-      'import/no-duplicates': 'warn',
-      'import/newline-after-import': 'warn',
+      'import-x/no-duplicates': 'warn',
+      'import-x/newline-after-import': 'warn',
 
       // 通用规则
       'no-console': ['warn', { allow: ['warn', 'error', 'info'] }],
       'prefer-const': 'warn',
       'no-var': 'error',
+      'no-useless-assignment': 'warn',
       'no-debugger': 'warn',
       'no-empty': 'warn',
     },

@@ -267,7 +267,8 @@ export class MarshmallowController {
       return { url: avatarUrl };
     } catch (error) {
       console.error('Avatar upload failed:', error);
-      throw new BadRequestException(`Upload failed: ${error.message}`);
+      const message = error instanceof Error ? error.message : String(error);
+      throw new BadRequestException(`Upload failed: ${message}`);
     }
   }
 

@@ -9,16 +9,16 @@ module.exports = {
     ecmaVersion: 'latest',
     sourceType: 'module',
   },
-  plugins: ['@typescript-eslint', 'import'],
+  plugins: ['@typescript-eslint', 'import-x'],
   extends: [
     'eslint:recommended',
     'plugin:@typescript-eslint/recommended',
-    'plugin:import/recommended',
-    'plugin:import/typescript',
+    'plugin:import-x/recommended',
+    'plugin:import-x/typescript',
     'prettier',
   ],
   settings: {
-    'import/resolver': {
+    'import-x/resolver': {
       typescript: {
         alwaysTryTypes: true,
       },
@@ -40,7 +40,7 @@ module.exports = {
     '@typescript-eslint/no-non-null-assertion': 'warn',
 
     // Import
-    'import/order': [
+    'import-x/order': [
       'error',
       {
         groups: ['builtin', 'external', 'internal', ['parent', 'sibling'], 'index', 'type'],
@@ -51,13 +51,14 @@ module.exports = {
         },
       },
     ],
-    'import/no-duplicates': 'error',
-    'import/no-unresolved': 'error',
+    'import-x/no-duplicates': 'error',
+    'import-x/no-unresolved': 'error',
 
     // General
     'no-console': ['warn', { allow: ['warn', 'error'] }],
     'prefer-const': 'error',
     'no-var': 'error',
+    'no-useless-assignment': 'warn',
     eqeqeq: ['error', 'always'],
   },
   ignorePatterns: ['node_modules', 'dist', '.next', 'coverage', '*.js'],

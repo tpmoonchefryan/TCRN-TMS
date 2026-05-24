@@ -58,6 +58,17 @@ interface TestTenantArtifacts {
   schemaName: string;
 }
 
+interface CreateTenantFixtureArgs {
+  data: {
+    code: string;
+    name: string;
+    schemaName: string;
+    tier: string;
+    isActive: boolean;
+    settings: Record<string, never>;
+  };
+}
+
 interface SchemaConstraintRow {
   tableName: string;
   constraintName: string;
@@ -558,7 +569,7 @@ export function generateSchemaName(tenantCode: string): string {
 export async function createTestTenantFixture(
   prisma: {
     tenant: {
-      create: (args: { data: Record<string, unknown> }) => Promise<{
+      create: (args: CreateTenantFixtureArgs) => Promise<{
         id: string;
         code: string;
         name: string;

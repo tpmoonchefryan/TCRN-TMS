@@ -281,7 +281,6 @@ async function fetchCustomerExportRows(
       )
     `);
     params.push(filters.membershipClassCode);
-    paramIndex++;
   }
 
   const whereClause = conditions.join(' AND ');

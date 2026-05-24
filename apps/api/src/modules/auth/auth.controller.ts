@@ -932,7 +932,8 @@ This only logs out the current device. Use /logout-all to logout all devices.`,
       const redirectUrl = `${redirectUri}#${params.toString()}`;
       return res.redirect(redirectUrl);
     } catch (error) {
-      throw new UnauthorizedException('Failed to authorize: ' + error.message);
+      const message = error instanceof Error ? error.message : String(error);
+      throw new UnauthorizedException('Failed to authorize: ' + message);
     }
   }
 }

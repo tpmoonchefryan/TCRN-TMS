@@ -54,14 +54,14 @@ export function PublicPresenceDecorationLayer({
         className={publicPresenceClassNames(
           'absolute left-6 top-12 hidden h-28 w-40 -rotate-6 rounded-lg border border-rose-100 bg-white/50 shadow-sm md:block',
           animated &&
-            'motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-left-4 motion-safe:duration-500 motion-reduce:animate-none'
+            'motion-safe:duration-500 motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-left-4 motion-reduce:animate-none'
         )}
       />
       <span
         className={publicPresenceClassNames(
           'absolute right-8 top-24 hidden h-16 w-32 rotate-6 rounded-lg border border-dashed border-sky-200 bg-sky-50/40 lg:block',
           animated &&
-            'motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-right-4 motion-safe:duration-500 motion-reduce:animate-none'
+            'motion-safe:duration-500 motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-right-4 motion-reduce:animate-none'
         )}
       />
       {shouldShowDecoration(density, 'standard') ? (

@@ -4,7 +4,6 @@ import eslint from '@eslint/js';
 import tseslint from '@typescript-eslint/eslint-plugin';
 import tsParser from '@typescript-eslint/parser';
 import prettier from 'eslint-config-prettier';
-import importPlugin from 'eslint-plugin-import';
 import simpleImportSort from 'eslint-plugin-simple-import-sort';
 
 export default [
@@ -71,7 +70,6 @@ export default [
     },
     plugins: {
       '@typescript-eslint': tseslint,
-      import: importPlugin,
       'simple-import-sort': simpleImportSort,
     },
     rules: {
@@ -91,7 +89,6 @@ export default [
       '@typescript-eslint/no-non-null-assertion': 'warn',
 
       // Import 规则
-      'import/order': 'off',
       'simple-import-sort/imports': 'warn',
       'simple-import-sort/exports': 'warn',
 
@@ -99,6 +96,7 @@ export default [
       'no-console': ['warn', { allow: ['warn', 'error'] }],
       'prefer-const': 'warn',
       'no-var': 'error',
+      'no-useless-assignment': 'warn',
       // Disable no-undef for TypeScript (TypeScript handles this)
       'no-undef': 'off',
       // Disable no-case-declarations (wrap case blocks if needed)

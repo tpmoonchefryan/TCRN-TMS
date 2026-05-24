@@ -1,8 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-import { describe, it } from 'node:test';
-
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
+import { describe, it } from 'node:test';
 
 import { createTenantSchema, prisma } from '../client';
 
