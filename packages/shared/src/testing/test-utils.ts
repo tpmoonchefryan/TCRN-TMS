@@ -869,6 +869,7 @@ export async function createTestTalentInTenant(
   overrides: Partial<{
     code: string;
     name: LocalizedText | string;
+    description: LocalizedText | string;
     homepagePath: string;
     displayName: string;
     profileStoreId: string;
@@ -883,6 +884,9 @@ export async function createTestTalentInTenant(
   const name = typeof overrides.name === 'string'
     ? createLocalizedText({ en: overrides.name })
     : overrides.name ?? createLocalizedText({ en: 'Test Talent' });
+  const description = typeof overrides.description === 'string'
+    ? createLocalizedText({ en: overrides.description })
+    : overrides.description ?? createLocalizedText({ en: '' });
   const displayName = overrides.displayName || name.en;
   const homepagePath = overrides.homepagePath || code.toLowerCase().replace(/_/g, '-');
   const createdBy = overrides.createdBy || (
@@ -953,11 +957,11 @@ export async function createTestTalentInTenant(
     INSERT INTO "${tenantFixture.schemaName}".talent
     (
       id, code, path, name, display_name, subsidiary_id, profile_store_id, artist_stage_id,
-      homepage_path, lifecycle_status, published_at, published_by,
+      homepage_path, description, lifecycle_status, published_at, published_by,
       is_active, created_at, updated_at, created_by, updated_by
     )
-    VALUES ($1::uuid, $2, $3, $4::jsonb, $5, $6::uuid, $7::uuid, $8::uuid, $9, $10, $11::timestamptz, $12::uuid, true, NOW(), NOW(), $13::uuid, $13::uuid)
-  `, talentId, code, `${subsidiaryPath}${code}/`, stringifyLocalizedText(name), displayName, subsidiaryId, profileStoreId, artistStageId, homepagePath, lifecycleStatus, publishedAt, publishedBy, createdBy);
+    VALUES ($1::uuid, $2, $3, $4::jsonb, $5, $6::uuid, $7::uuid, $8::uuid, $9, $10::jsonb, $11, $12::timestamptz, $13::uuid, true, NOW(), NOW(), $14::uuid, $14::uuid)
+  `, talentId, code, `${subsidiaryPath}${code}/`, stringifyLocalizedText(name), displayName, subsidiaryId, profileStoreId, artistStageId, homepagePath, stringifyLocalizedText(description), lifecycleStatus, publishedAt, publishedBy, createdBy);
 
   return { id: talentId, code, homepagePath };
 }

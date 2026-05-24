@@ -116,7 +116,7 @@ export class MarshmallowConfigRepository {
         ) VALUES (
           gen_random_uuid(), $1::uuid, $2, $3, $4, $5, $6, $7, $8, $9, $10,
           $11, $12, $13, $14, $15, $16, $17, $18::text[], $19::jsonb,
-          $20::jsonb, $21::jsonb,
+          NULL, $20::jsonb, $21::jsonb,
           1, now(), now()
         )
         RETURNING

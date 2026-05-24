@@ -344,8 +344,8 @@ describe('Marshmallow Integration Tests', () => {
     expect(secondResponse.body.data.counts['👍'] ?? 0).toBe(0);
   });
 
-  it('should toggle the read state of an approved message', async () => {
-    const firstResponse = await withPublicHeaders(
+  it('should reject unauthenticated public mark-read state mutation', async () => {
+    const response = await withPublicHeaders(
       request(app.getHttpServer()).post(
         `${publicBasePath()}/messages/${approvedMessageId}/mark-read`,
       ),
@@ -354,24 +354,10 @@ describe('Marshmallow Integration Tests', () => {
       .send({
         fingerprint: 'mark-read-fp',
       })
-      .expect(200);
+      .expect(403);
 
-    expect(firstResponse.body.success).toBe(true);
-    expect(firstResponse.body.isRead).toBe(true);
-
-    const secondResponse = await withPublicHeaders(
-      request(app.getHttpServer()).post(
-        `${publicBasePath()}/messages/${approvedMessageId}/mark-read`,
-      ),
-      '203.0.113.24',
-    )
-      .send({
-        fingerprint: 'mark-read-fp',
-      })
-      .expect(200);
-
-    expect(secondResponse.body.success).toBe(true);
-    expect(secondResponse.body.isRead).toBe(false);
+    expect(response.body.success).toBe(false);
+    expect(response.body.error.code).toBe('PERM_ACCESS_DENIED');
   });
 
   it('should submit and reject a second pending message', async () => {

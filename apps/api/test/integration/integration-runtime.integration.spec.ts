@@ -12,6 +12,7 @@ import {
   createTestTalentInTenant,
   createTestTenantFixture,
   createTestUserInTenant,
+  normalizeLocalizedText,
   type TenantFixture,
   type TestUser,
 } from '@tcrn/shared';
@@ -301,7 +302,7 @@ describe('Integration Runtime Integration', () => {
     });
     expect(updateWebhookResponse.body.data).toMatchObject({
       id: webhookId,
-      name: createLocalizedText({ en: 'Tenant Webhook Updated' }),
+      name: normalizeLocalizedText({ en: 'Tenant Webhook Updated' }),
       url: 'https://example.com/integration/webhook-updated',
       headers: {
         'x-test-webhook': 'updated',

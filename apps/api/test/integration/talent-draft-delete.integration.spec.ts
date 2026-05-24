@@ -276,11 +276,15 @@ describe('Talent Draft Delete Integration', () => {
       marshmallowConfigCount: 1,
       configOverrideCount: 1,
     });
+    const beforeTalentRow = await getTalentRow(talent.id);
+    if (!beforeTalentRow) {
+      throw new Error(`No talent row found for draft delete test talent ${talent.id}`);
+    }
 
     const response = await withAuth(
       request(app.getHttpServer()).delete(`/api/v1/talents/${talent.id}`),
     )
-      .query({ version: 1 })
+      .query({ version: beforeTalentRow.version })
       .expect(200);
 
     expect(response.body.success).toBe(true);
@@ -303,11 +307,15 @@ describe('Talent Draft Delete Integration', () => {
     async (lifecycleStatus) => {
       const talent = await createDraftTalent();
       await setTalentLifecycle(talent.id, lifecycleStatus);
+      const beforeTalentRow = await getTalentRow(talent.id);
+      if (!beforeTalentRow) {
+        throw new Error(`No talent row found for ${lifecycleStatus} delete test talent ${talent.id}`);
+      }
 
       const response = await withAuth(
         request(app.getHttpServer()).delete(`/api/v1/talents/${talent.id}`),
       )
-        .query({ version: 1 })
+        .query({ version: beforeTalentRow.version })
         .expect(409);
 
       expect(response.body.success).toBe(false);
@@ -337,7 +345,7 @@ describe('Talent Draft Delete Integration', () => {
     const response = await withAuth(
       request(app.getHttpServer()).delete(`/api/v1/talents/${talent.id}`),
     )
-      .query({ version: 1 })
+      .query({ version: talentRow.version })
       .expect(409);
 
     expect(response.body.success).toBe(false);

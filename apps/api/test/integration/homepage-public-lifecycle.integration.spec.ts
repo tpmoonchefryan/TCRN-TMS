@@ -127,12 +127,16 @@ describe('Homepage Public Lifecycle Integration', () => {
       .expect(200);
 
     expect(response.body.success).toBe(true);
-    expect(response.body.data.talent.displayName).toBe('Homepage Public Lifecycle Talent');
-    expect(response.body.data.content).toMatchObject({
-      version: '1.0.0',
-      components: [],
+    expect(response.body.data.metadata.title).toBe('Homepage Public Lifecycle Talent');
+    expect(response.body.data.route).toMatchObject({
+      legacyPath: homepagePath,
     });
-    expect(response.body.data.updatedAt).toBeDefined();
+    expect(response.body.data.sections).toHaveLength(1);
+    expect(response.body.data.sections[0]).toMatchObject({
+      id: 'hero',
+      sectionType: 'hero',
+      title: 'Homepage Public Lifecycle Talent',
+    });
   });
 
   it('returns 404 for the same homepage after the talent is disabled', async () => {

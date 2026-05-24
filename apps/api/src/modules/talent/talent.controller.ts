@@ -9,6 +9,7 @@ import {
   HttpStatus,
   NotFoundException,
   Param,
+  ParseIntPipe,
   ParseUUIDPipe,
   Patch,
   Post,
@@ -1696,10 +1697,10 @@ export class TalentController {
   async deleteTalent(
     @CurrentUser() user: AuthenticatedUser,
     @Param('talentId', ParseUUIDPipe) talentId: string,
-    @Query() query: DeleteTalentQueryDto,
+    @Query('version', ParseIntPipe) version: number,
   ) {
     const result = await this.talentService.delete(talentId, user.tenantSchema, {
-      version: query.version,
+      version,
     });
 
     return success(result);

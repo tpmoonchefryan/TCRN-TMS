@@ -229,7 +229,7 @@ describe('Import Runtime Smoke Integration', () => {
         ) VALUES (
           gen_random_uuid(),
           $1,
-          $2,
+          $2::jsonb,
           $3,
           true,
           NOW(),
