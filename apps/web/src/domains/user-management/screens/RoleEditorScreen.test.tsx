@@ -63,7 +63,7 @@ describe('RoleEditorScreen', () => {
     fireEvent.change(screen.getByLabelText('Role code'), {
       target: { value: 'reviewer' },
     });
-    fireEvent.change(screen.getByLabelText('English role name'), {
+    fireEvent.change(screen.getByLabelText('Base role name'), {
       target: { value: 'Reviewer' },
     });
     fireEvent.change(screen.getByLabelText('System User Read'), {
@@ -207,7 +207,7 @@ describe('RoleEditorScreen', () => {
     fireEvent.click(screen.getAllByRole('button', { name: 'Next' })[1]);
     expect(await screen.findByText('alice-21@example.com')).toBeInTheDocument();
 
-    fireEvent.change(screen.getByLabelText('English role name'), {
+    fireEvent.change(screen.getByLabelText('Base role name'), {
       target: { value: 'Senior Editor' },
     });
     fireEvent.change(screen.getByLabelText('System User Read'), {
@@ -228,7 +228,14 @@ describe('RoleEditorScreen', () => {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            name: localizedFixture('Senior Editor'),
+            name: {
+              en: 'Senior Editor',
+              zh_HANS: 'Editor',
+              zh_HANT: 'Editor',
+              ja: 'Editor',
+              ko: 'Editor',
+              fr: 'Editor',
+            },
             description: 'Can manage tenant content.',
             isActive: true,
             permissions: [

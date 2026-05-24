@@ -223,6 +223,8 @@ async function openAdapterBasics(user: ReturnType<typeof userEvent.setup>, adapt
   await openRowAction(user, adapterCode, 'Open');
   const drawer = await screen.findByRole('dialog', { name: 'Configure Adapter' });
   expect(within(drawer).getByRole('heading', { name: 'Adapter Profile' })).toBeInTheDocument();
+
+  return drawer;
 }
 
 async function openAdapterSecrets(user: ReturnType<typeof userEvent.setup>, adapterCode = 'TCRN_PII_PLATFORM') {
@@ -1174,7 +1176,8 @@ describe('IntegrationManagementScreen', () => {
 
     await user.click(screen.getByRole('tab', { name: 'Basics' }));
     expect(screen.getByRole('tab', { name: 'Basics' })).toHaveAttribute('aria-selected', 'true');
-    expect(screen.getByLabelText('Name (EN)')).toHaveValue('PII Relay');
+    const drawer = screen.getByRole('dialog', { name: 'Configure Adapter' });
+    expect(within(drawer).getByLabelText('Base name')).toHaveValue('PII Relay');
 
     await user.click(screen.getByRole('tab', { name: 'Secrets' }));
 
@@ -1595,9 +1598,9 @@ describe('IntegrationManagementScreen', () => {
     render(<IntegrationManagementScreen tenantId="tenant-1" />);
 
     await selectTenantRootScope(user);
-    await openAdapterBasics(user);
+    const drawer = await openAdapterBasics(user);
 
-    const adapterNameInput = await screen.findByLabelText('Name (EN)');
+    const adapterNameInput = await within(drawer).findByLabelText('Base name');
     await user.clear(adapterNameInput);
     await user.type(adapterNameInput, 'Changed PII Relay');
 

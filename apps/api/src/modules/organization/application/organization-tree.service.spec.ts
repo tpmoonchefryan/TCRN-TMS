@@ -169,7 +169,7 @@ describe('OrganizationTreeService', () => {
       {
         ...talents[0],
         subsidiary_id: 'sub-1',
-        name: localized('Sora', { zh_HANS: '空', ko: '소라' }),
+        name: localized('Sora', { zh_HANS: '空', zh_HANT: '空', ko: '소라' }),
       },
     ]);
 

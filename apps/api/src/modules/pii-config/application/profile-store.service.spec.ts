@@ -5,7 +5,7 @@ import {
   ConflictException,
   NotFoundException,
 } from '@nestjs/common';
-import { createLocalizedText, type RequestContext } from '@tcrn/shared';
+import { createLocalizedText, normalizeLocalizedText, type RequestContext } from '@tcrn/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { DatabaseService } from '../../database';
@@ -64,6 +64,14 @@ describe('ProfileStoreApplicationService', () => {
     ja: '主要な顧客プロフィールストア',
     fr: 'Magasin principal des profils clients',
   });
+  const normalizedDefaultDescription = normalizeLocalizedText(
+    undefined,
+    defaultStoreName.en,
+  );
+  const normalizedLocalizedDescription = normalizeLocalizedText(
+    defaultStoreDescription,
+    defaultStoreName.en,
+  );
   const emptyStoreDescription = createLocalizedText({
     en: 'Default Profile Store',
   });
@@ -205,7 +213,7 @@ describe('ProfileStoreApplicationService', () => {
       {
         code: 'DEFAULT_STORE',
         name: defaultStoreName,
-        description: defaultStoreName,
+        description: normalizedDefaultDescription,
         isDefault: true,
       },
       'user-1',
@@ -237,7 +245,7 @@ describe('ProfileStoreApplicationService', () => {
       {
         code: 'DEFAULT_STORE',
         name: defaultStoreName,
-        description: defaultStoreDescription,
+        description: normalizedLocalizedDescription,
         isDefault: false,
       },
       'user-1',
@@ -247,7 +255,7 @@ describe('ProfileStoreApplicationService', () => {
       id: 'store-1',
       code: 'DEFAULT_STORE',
       name: defaultStoreName,
-      description: defaultStoreDescription,
+      description: normalizedLocalizedDescription,
       extraData: null,
       isDefault: false,
       isActive: true,
@@ -261,7 +269,7 @@ describe('ProfileStoreApplicationService', () => {
     await expect(service.findById('store-1', context)).resolves.toMatchObject({
       id: 'store-1',
       name: defaultStoreName,
-      description: defaultStoreDescription,
+      description: normalizedLocalizedDescription,
     });
   });
 

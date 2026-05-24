@@ -51,7 +51,7 @@ describe('HierarchyBusinessShell', () => {
     mockReadSubsidiaryDetail.mockResolvedValue({
       id: 'sub-7',
       code: 'TOKYO',
-      name: 'Tokyo Branch',
+      localizedName: 'Tokyo Branch',
     });
     Object.defineProperty(window.navigator, 'language', {
       configurable: true,

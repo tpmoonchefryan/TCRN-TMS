@@ -152,6 +152,7 @@ describe('SystemRoleService', () => {
       {
         id: 'role-1',
         code: 'EDITOR',
+        name: roleName,
         isSystem: true,
         isActive: true,
         _count: {
@@ -180,6 +181,7 @@ describe('SystemRoleService', () => {
       {
         id: 'role-1',
         code: 'PLATFORM_ADMIN',
+        name: roleName,
         isSystem: true,
         isActive: true,
         _count: {
@@ -190,6 +192,7 @@ describe('SystemRoleService', () => {
       {
         id: 'role-2',
         code: 'ADMIN',
+        name: roleName,
         isSystem: true,
         isActive: true,
         _count: {
@@ -207,7 +210,7 @@ describe('SystemRoleService', () => {
 
   it('preserves explicit effects and defaults missing effects to grant on create', async () => {
     mockPrisma.role.findUnique.mockResolvedValue(null);
-    mockTx.role.create.mockResolvedValue({ id: 'role-1' });
+    mockTx.role.create.mockResolvedValue({ id: 'role-1', name: roleName });
     mockTx.policy.findMany.mockResolvedValue([
       { id: 'policy-1', action: 'delete', resource: { code: 'customer.export' } },
       { id: 'policy-2', action: 'read', resource: { code: 'customer.export' } },

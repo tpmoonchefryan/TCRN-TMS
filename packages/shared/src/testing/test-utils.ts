@@ -15,6 +15,7 @@ const TENANT_FIXTURE_SEED_TABLES = [
   'social_platform',
   'pii_service_config',
   'profile_store',
+  'artist_stage',
   'blocklist_entry',
   'external_blocklist_pattern',
   'membership_class',
@@ -873,6 +874,7 @@ export async function createTestTalentInTenant(
     profileStoreId: string;
     createdBy: string;
     lifecycleStatus: 'draft' | 'published' | 'disabled';
+    artistStageId: string;
     publishedBy: string;
   }> = {}
 ): Promise<{ id: string; code: string; homepagePath: string }> {
@@ -920,6 +922,26 @@ export async function createTestTalentInTenant(
   }
 
   const lifecycleStatus = overrides.lifecycleStatus ?? 'draft';
+  const artistStageId = overrides.artistStageId || (
+    await prisma.$queryRawUnsafe<Array<{ id: string }>>(`
+      SELECT id
+      FROM "${tenantFixture.schemaName}".artist_stage
+      WHERE owner_type = 'tenant'
+        AND owner_id IS NULL
+        AND is_active = true
+        AND lifecycle_status_mapping = $1
+      ORDER BY
+        CASE WHEN code = $1 THEN 0 ELSE 1 END,
+        sort_order ASC,
+        created_at ASC
+      LIMIT 1
+    `, lifecycleStatus)
+  )[0]?.id;
+
+  if (!artistStageId) {
+    throw new Error(`No active ${lifecycleStatus} artist stage found in ${tenantFixture.schemaName}`);
+  }
+
   const publishedBy = lifecycleStatus === 'draft'
     ? null
     : overrides.publishedBy || createdBy;
@@ -928,14 +950,14 @@ export async function createTestTalentInTenant(
     : new Date().toISOString();
 
   await prisma.$executeRawUnsafe(`
-    INSERT INTO "${tenantFixture.schemaName}".talent 
+    INSERT INTO "${tenantFixture.schemaName}".talent
     (
-      id, code, path, name, display_name, subsidiary_id, profile_store_id,
+      id, code, path, name, display_name, subsidiary_id, profile_store_id, artist_stage_id,
       homepage_path, lifecycle_status, published_at, published_by,
       is_active, created_at, updated_at, created_by, updated_by
     )
-    VALUES ($1::uuid, $2, $3, $4::jsonb, $5, $6::uuid, $7::uuid, $8, $9, $10::timestamptz, $11::uuid, true, NOW(), NOW(), $12::uuid, $12::uuid)
-  `, talentId, code, `${subsidiaryPath}${code}/`, stringifyLocalizedText(name), displayName, subsidiaryId, profileStoreId, homepagePath, lifecycleStatus, publishedAt, publishedBy, createdBy);
+    VALUES ($1::uuid, $2, $3, $4::jsonb, $5, $6::uuid, $7::uuid, $8::uuid, $9, $10, $11::timestamptz, $12::uuid, true, NOW(), NOW(), $13::uuid, $13::uuid)
+  `, talentId, code, `${subsidiaryPath}${code}/`, stringifyLocalizedText(name), displayName, subsidiaryId, profileStoreId, artistStageId, homepagePath, lifecycleStatus, publishedAt, publishedBy, createdBy);
 
   return { id: talentId, code, homepagePath };
 }

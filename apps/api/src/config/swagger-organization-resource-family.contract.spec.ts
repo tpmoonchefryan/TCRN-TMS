@@ -189,6 +189,7 @@ describe('Swagger organization resource family contract', () => {
 
   it('documents request-body DTO properties for talent and dictionary mutations', () => {
     expect(getDocumentedDtoProperties(CreateTalentDto)).toEqual([
+      'artistStageId',
       'avatarUrl',
       'code',
       'description',

@@ -236,7 +236,7 @@ describe('SystemDictionaryScreen', () => {
 
     render(<SystemDictionaryScreen />);
 
-    expect(await screen.findByText('Active customer')).toBeInTheDocument();
+    expect((await screen.findAllByText('Active customer')).length).toBeGreaterThan(0);
 
     fireEvent.click(screen.getByRole('button', { name: /Membership Level/ }));
 
@@ -247,7 +247,7 @@ describe('SystemDictionaryScreen', () => {
       );
     });
     await waitFor(() => {
-      expect(screen.queryByText('Active customer')).not.toBeInTheDocument();
+      expect(screen.queryAllByText('Active customer')).toHaveLength(0);
     });
 
     resolveMembershipItems({
@@ -478,7 +478,7 @@ describe('SystemDictionaryScreen', () => {
     render(<SystemDictionaryScreen />);
 
     expect(await screen.findByRole('heading', { name: 'System Dictionary' })).toBeInTheDocument();
-    expect(await screen.findByText('Active customer')).toBeInTheDocument();
+    expect((await screen.findAllByText('Active customer')).length).toBeGreaterThan(0);
 
     fireEvent.click(screen.getByRole('button', { name: 'New dictionary type' }));
     fireEvent.change(screen.getByLabelText('Dictionary type code'), {
@@ -548,7 +548,13 @@ describe('SystemDictionaryScreen', () => {
         expect.objectContaining({
           method: 'PATCH',
           body: JSON.stringify({
-            name: localizedFixture('Currently active', { zh_HANS: '活跃客户' }),
+            name: localizedFixture('Currently active', {
+              zh_HANS: '活跃客户',
+              zh_HANT: '活跃客户',
+              ja: 'Active customer',
+              ko: 'Active customer',
+              fr: 'Active customer',
+            }),
             description: localizedFixture('Currently active'),
             sortOrder: 0,
             version: 1,
@@ -678,7 +684,7 @@ describe('SystemDictionaryScreen', () => {
 
     render(<SystemDictionaryScreen />);
 
-    expect(await screen.findByText('VIP member')).toBeInTheDocument();
+    expect((await screen.findAllByText('VIP member')).length).toBeGreaterThan(0);
     expect(screen.getByLabelText('Search dictionary items')).toHaveValue('vip');
     expect(screen.getByLabelText('Include inactive dictionary items')).toBeChecked();
     expect(screen.getByText('Page 2 of 2')).toBeInTheDocument();

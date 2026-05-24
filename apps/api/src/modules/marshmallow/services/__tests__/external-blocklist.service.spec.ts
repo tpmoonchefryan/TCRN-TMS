@@ -146,8 +146,11 @@ describe('ExternalBlocklistService', () => {
       patternType: PatternType.DOMAIN,
       name: createLocalizedText({
         en: 'Spam Domain',
+        zh_HANS: 'Spam Domain',
         zh_HANT: '垃圾網域',
+        ja: 'Spam Domain',
         ko: '스팸 도메인',
+        fr: 'Spam Domain',
       }),
     };
 

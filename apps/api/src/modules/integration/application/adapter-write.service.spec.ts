@@ -2,7 +2,14 @@
 
 import 'reflect-metadata';
 
-import { createLocalizedText, ErrorCodes, LogSeverity, type RequestContext, TechEventType } from '@tcrn/shared';
+import {
+  createLocalizedText,
+  ErrorCodes,
+  getIntegrationAdapterCreateDefinition,
+  LogSeverity,
+  type RequestContext,
+  TechEventType,
+} from '@tcrn/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ChangeLogService, TechEventLogService } from '../../log';
@@ -14,6 +21,8 @@ import { AdapterReadApplicationService } from './adapter-read.service';
 import { AdapterWriteApplicationService } from './adapter-write.service';
 
 describe('AdapterWriteApplicationService', () => {
+  const aiAdapterDefinition = getIntegrationAdapterCreateDefinition('ai-adapter');
+
   const context: RequestContext = {
     tenantId: 'tenant-1',
     tenantSchema: 'tenant_test',
@@ -137,7 +146,7 @@ describe('AdapterWriteApplicationService', () => {
       expect.objectContaining({
         platformId: 'platform-ai-adapter',
         code: 'AI_ADAPTER',
-        name: localized('AI Adapter'),
+        name: aiAdapterDefinition?.name,
         adapterType: 'ai',
         extraData: expect.objectContaining({
           definitionKey: 'ai-adapter',

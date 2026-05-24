@@ -64,7 +64,7 @@ describe('PermissionController', () => {
         { headers: { 'accept-language': 'zh-Hant-TW,zh;q=0.9' } } as never,
       );
 
-      expect(result.data[0].name).toBe('客户档案');
+      expect(result.data[0].name).toBe('客戶檔案');
     });
   });
 
