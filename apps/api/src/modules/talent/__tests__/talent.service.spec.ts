@@ -26,6 +26,7 @@ describe('TalentService facade', () => {
     publish: vi.fn(),
     disable: vi.fn(),
     reEnable: vi.fn(),
+    transitionArtistStage: vi.fn(),
     move: vi.fn(),
   } as unknown as TalentLifecycleService;
 
@@ -152,6 +153,12 @@ describe('TalentService facade', () => {
       lifecycleStatus: 'published',
       version: 2,
     } as never);
+    vi.mocked(mockLifecycleService.transitionArtistStage).mockResolvedValue({
+      id: 'talent-123',
+      artistStageId: 'stage-published-2',
+      lifecycleStatus: 'published',
+      version: 3,
+    } as never);
     vi.mocked(mockLifecycleService.move).mockRejectedValue({
       response: {
         code: 'RES_CONFLICT',
@@ -177,6 +184,20 @@ describe('TalentService facade', () => {
       service.reEnable('talent-123', 'tenant_test', 1, 'user-1'),
     ).resolves.toMatchObject({
       lifecycleStatus: 'published',
+    });
+    await expect(
+      service.transitionArtistStage(
+        'talent-123',
+        'tenant_test',
+        {
+          version: 2,
+          targetArtistStageId: 'stage-published-2',
+        },
+        'user-1',
+      ),
+    ).resolves.toMatchObject({
+      artistStageId: 'stage-published-2',
+      version: 3,
     });
     await expect(
       service.move('talent-123', 'tenant_test', 'subsidiary-456', 1, 'user-1'),
@@ -206,6 +227,7 @@ describe('TalentService facade', () => {
         'tenant_test',
         {
           profileStoreId: 'store-123',
+          artistStageId: 'stage-123',
           code: 'TALENT001',
           name: createLocalizedText({ en: 'Talent' }),
           displayName: 'Talent',

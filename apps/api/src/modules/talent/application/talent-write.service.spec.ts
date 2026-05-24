@@ -21,6 +21,7 @@ describe('TalentWriteService', () => {
 
   const mockRepository = {
     hasActiveProfileStore: vi.fn(),
+    findActiveArtistStage: vi.fn(),
     findSubsidiaryPath: vi.fn(),
     create: vi.fn(),
     update: vi.fn(),
@@ -35,6 +36,11 @@ describe('TalentWriteService', () => {
 
   it('creates a talent after validating dependencies and uniqueness', async () => {
     vi.mocked(mockRepository.hasActiveProfileStore).mockResolvedValue(true);
+    vi.mocked(mockRepository.findActiveArtistStage).mockResolvedValue({
+      id: 'stage-1',
+      code: 'PRE_DEBUT',
+      lifecycleStatusMapping: 'draft',
+    } as never);
     vi.mocked(mockReadService.findByCode).mockResolvedValue(null);
     vi.mocked(mockReadService.findByHomepagePath).mockResolvedValue(null);
     vi.mocked(mockRepository.findSubsidiaryPath).mockResolvedValue('/TOKYO/');
@@ -43,7 +49,6 @@ describe('TalentWriteService', () => {
       code: 'SORA',
       path: '/TOKYO/SORA/',
       settings: {
-        homepageEnabled: true,
         marshmallowEnabled: true,
         inheritTimezone: true,
       },
@@ -55,6 +60,7 @@ describe('TalentWriteService', () => {
         {
           subsidiaryId: 'sub-1',
           profileStoreId: 'store-1',
+          artistStageId: 'stage-1',
           code: 'SORA',
           name: createLocalizedText({ en: 'Sora' }),
           displayName: 'Sora',
@@ -64,6 +70,15 @@ describe('TalentWriteService', () => {
     ).resolves.toMatchObject({
       path: '/TOKYO/SORA/',
     });
+
+    expect(mockRepository.create).toHaveBeenCalledWith(
+      'tenant_test',
+      expect.objectContaining({
+        artistStageId: 'stage-1',
+        lifecycleStatus: 'draft',
+      }),
+      'user-1',
+    );
   });
 
   it('fails closed when the profile store is inactive during create', async () => {
@@ -74,6 +89,26 @@ describe('TalentWriteService', () => {
         'tenant_test',
         {
           profileStoreId: 'store-1',
+          artistStageId: 'stage-1',
+          code: 'SORA',
+          name: createLocalizedText({ en: 'Sora' }),
+          displayName: 'Sora',
+        },
+        'user-1',
+      ),
+    ).rejects.toThrow(BadRequestException);
+  });
+
+  it('fails closed when the artist stage is inactive during create', async () => {
+    vi.mocked(mockRepository.hasActiveProfileStore).mockResolvedValue(true);
+    vi.mocked(mockRepository.findActiveArtistStage).mockResolvedValue(null);
+
+    await expect(
+      service.create(
+        'tenant_test',
+        {
+          profileStoreId: 'store-1',
+          artistStageId: 'stage-1',
           code: 'SORA',
           name: createLocalizedText({ en: 'Sora' }),
           displayName: 'Sora',
@@ -85,6 +120,11 @@ describe('TalentWriteService', () => {
 
   it('fails closed when create targets a missing subsidiary', async () => {
     vi.mocked(mockRepository.hasActiveProfileStore).mockResolvedValue(true);
+    vi.mocked(mockRepository.findActiveArtistStage).mockResolvedValue({
+      id: 'stage-1',
+      code: 'PRE_DEBUT',
+      lifecycleStatusMapping: 'draft',
+    } as never);
     vi.mocked(mockReadService.findByCode).mockResolvedValue(null);
     vi.mocked(mockReadService.findByHomepagePath).mockResolvedValue(null);
     vi.mocked(mockRepository.findSubsidiaryPath).mockResolvedValue(null);
@@ -95,6 +135,7 @@ describe('TalentWriteService', () => {
         {
           subsidiaryId: 'sub-1',
           profileStoreId: 'store-1',
+          artistStageId: 'stage-1',
           code: 'SORA',
           name: createLocalizedText({ en: 'Sora' }),
           displayName: 'Sora',

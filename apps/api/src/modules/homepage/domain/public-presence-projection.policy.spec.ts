@@ -6,6 +6,7 @@ import {
 import { describe, expect, it } from 'vitest';
 
 import type { PublicHomepageData } from './public-homepage-read.policy';
+import { buildPublicPresenceSeedRuntimeAuthorityForTests } from '../testing/public-presence-seed-runtime-authority';
 import {
   buildPublicHomepageProjection,
   buildPublicHomepageProjectionEvent,
@@ -354,6 +355,7 @@ describe('public presence projection policy', () => {
         talentCode: 'sora',
         tenantCode: 'tenant-a',
       },
+      runtimeAuthority: buildPublicPresenceSeedRuntimeAuthorityForTests(document.templateId),
       source: 'publicPresenceDocument',
       validationSnapshotId: 'snapshot-1',
     });
@@ -377,6 +379,7 @@ describe('public presence projection policy', () => {
         talentCode: 'sora',
         tenantCode: 'tenant-a',
       },
+      runtimeAuthority: buildPublicPresenceSeedRuntimeAuthorityForTests(document.templateId),
       source: 'publicPresenceDocument',
       validationSnapshotId: 'snapshot-1',
     });
@@ -435,6 +438,7 @@ describe('public presence projection policy', () => {
         talentCode: 'sakura',
         tenantCode: 'tenant-a',
       },
+      runtimeAuthority: buildPublicPresenceSeedRuntimeAuthorityForTests(document.templateId),
       source: 'publicPresenceDocument',
       validationSnapshotId: 'snapshot-raw',
     });
@@ -450,6 +454,7 @@ describe('public presence projection policy', () => {
         talentCode: 'sakura',
         tenantCode: 'tenant-a',
       },
+      runtimeAuthority: buildPublicPresenceSeedRuntimeAuthorityForTests(document.templateId),
       source: 'publicPresenceDocument',
       validationSnapshotId: 'snapshot-raw',
     });

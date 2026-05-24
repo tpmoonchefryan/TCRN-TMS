@@ -18,7 +18,9 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { type FormEvent, startTransition, useDeferredValue, useEffect, useState } from 'react';
 
 import {
+  listConfigEntities,
   listProfileStores,
+  type ConfigEntityRecord,
   type ProfileStoreListResponse,
   readTalentDetail,
 } from '@/domains/config-dictionary-settings/api/settings.api';
@@ -101,6 +103,7 @@ interface CreateTalentDraft {
   nameBase: string;
   nameLocaleValues: Record<string, string>;
   profileStoreId: string;
+  artistStageId: string;
   timezone: string;
 }
 
@@ -145,6 +148,7 @@ type OrganizationValidationKey =
   | 'displayName'
   | 'legalName'
   | 'profileStore'
+  | 'artistStage'
   | 'subsidiaryCode'
   | 'subsidiaryName';
 
@@ -154,6 +158,7 @@ const EMPTY_CREATE_TALENT_DRAFT: CreateTalentDraft = {
   nameBase: '',
   nameLocaleValues: {},
   profileStoreId: '',
+  artistStageId: '',
   timezone: 'Asia/Shanghai',
 };
 
@@ -317,10 +322,18 @@ function resolveDefaultProfileStoreId(profileStores: ProfileStoreListResponse | 
   return profileStores?.items.find((item) => item.isDefault)?.id ?? profileStores?.items[0]?.id ?? '';
 }
 
-function buildCreateDraft(profileStores: ProfileStoreListResponse | null): CreateTalentDraft {
+function resolveDefaultArtistStageId(artistStages: ConfigEntityRecord[] | null) {
+  return artistStages?.[0]?.id ?? '';
+}
+
+function buildCreateDraft(
+  profileStores: ProfileStoreListResponse | null,
+  artistStages: ConfigEntityRecord[] | null = null,
+): CreateTalentDraft {
   return {
     ...EMPTY_CREATE_TALENT_DRAFT,
     profileStoreId: resolveDefaultProfileStoreId(profileStores),
+    artistStageId: resolveDefaultArtistStageId(artistStages),
   };
 }
 
@@ -339,6 +352,10 @@ function validateCreateTalentDraft(draft: CreateTalentDraft): OrganizationValida
 
   if (nameBase.length === 0) {
     return 'legalName';
+  }
+
+  if (!draft.artistStageId) {
+    return 'artistStage';
   }
 
   if (!draft.profileStoreId) {
@@ -552,8 +569,13 @@ export function OrganizationStructureScreen({
     error: null,
     loading: true,
   });
+  const [artistStagesPanel, setArtistStagesPanel] = useState<AsyncPanelState<ConfigEntityRecord[]>>({
+    data: null,
+    error: null,
+    loading: false,
+  });
   const [isCreateDrawerOpen, setIsCreateDrawerOpen] = useState(false);
-  const [createDraft, setCreateDraft] = useState<CreateTalentDraft>(() => buildCreateDraft(null));
+  const [createDraft, setCreateDraft] = useState<CreateTalentDraft>(() => buildCreateDraft(null, null));
   const [createPending, setCreatePending] = useState(false);
   const [isCreateSubsidiaryDrawerOpen, setIsCreateSubsidiaryDrawerOpen] = useState(false);
   const [createSubsidiaryDraft, setCreateSubsidiaryDraft] = useState<CreateSubsidiaryDraft>(
@@ -770,6 +792,67 @@ export function OrganizationStructureScreen({
   }, [copy.state.loadProfileStoresError, request]);
 
   useEffect(() => {
+    if (!isCreateDrawerOpen) {
+      return;
+    }
+
+    let cancelled = false;
+
+    async function loadArtistStages() {
+      setArtistStagesPanel((current) => ({
+        data: current.data,
+        error: null,
+        loading: true,
+      }));
+
+      try {
+        const records = await listConfigEntities(
+          request,
+          'artist-stage',
+          {
+            scopeType: 'tenant',
+            includeInherited: true,
+            includeDisabled: false,
+            includeInactive: false,
+            ownerOnly: false,
+            page: 1,
+            pageSize: 100,
+            sort: 'sortOrder',
+          },
+          locale,
+        );
+
+        if (!cancelled) {
+          setArtistStagesPanel({
+            data: records.filter((record) => record.isActive),
+            error: null,
+            loading: false,
+          });
+        }
+      } catch (reason) {
+        if (!cancelled) {
+          setArtistStagesPanel({
+            data: null,
+            error: getErrorMessage(reason, copy.state.loadArtistStagesError),
+            loading: false,
+          });
+        }
+      }
+    }
+
+    void loadArtistStages();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    copy.state.loadArtistStagesError,
+    isCreateDrawerOpen,
+    locale,
+    request,
+  ]);
+
+  useEffect(() => {
     if (!data || !selectedSubsidiaryId) {
       return;
     }
@@ -833,6 +916,25 @@ export function OrganizationStructureScreen({
     });
   }, [profileStoresPanel.data]);
 
+  useEffect(() => {
+    const defaultArtistStageId = resolveDefaultArtistStageId(artistStagesPanel.data);
+
+    if (!defaultArtistStageId) {
+      return;
+    }
+
+    setCreateDraft((current) => {
+      if (current.artistStageId) {
+        return current;
+      }
+
+      return {
+        ...current,
+        artistStageId: defaultArtistStageId,
+      };
+    });
+  }, [artistStagesPanel.data]);
+
   async function handleCreateTalentSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -856,6 +958,7 @@ export function OrganizationStructureScreen({
       const created = await createOrganizationTalent(request, {
         subsidiaryId: selectedSubsidiaryId,
         profileStoreId: createDraft.profileStoreId,
+        artistStageId: createDraft.artistStageId,
         code: submittedCode,
         displayName: submittedDisplayName,
         name: buildLocalizedTextPayload(submittedNameBase, createDraft.nameLocaleValues),
@@ -875,7 +978,7 @@ export function OrganizationStructureScreen({
         selectedSubsidiaryId: created.subsidiaryId ?? null,
       });
       setReloadVersion((current) => current + 1);
-      setCreateDraft(buildCreateDraft(profileStoresPanel.data));
+      setCreateDraft(buildCreateDraft(profileStoresPanel.data, artistStagesPanel.data));
       setIsCreateDrawerOpen(false);
       setCreatedTalentResult({
         talentId: created.id,
@@ -1386,7 +1489,7 @@ export function OrganizationStructureScreen({
                 <button
                   type="button"
                   onClick={() => {
-                    setCreateDraft(buildCreateDraft(profileStoresPanel.data));
+                    setCreateDraft(buildCreateDraft(profileStoresPanel.data, artistStagesPanel.data));
                     setIsCreateDrawerOpen(true);
                     setNotice(null);
                   }}
@@ -1666,7 +1769,13 @@ export function OrganizationStructureScreen({
               form="organization-create-talent-form"
               isPending={createPending}
               pendingText={copy.form.createPending}
-              disabled={profileStoresPanel.loading || profileStoresPanel.data?.items.length === 0}
+              disabled={
+                profileStoresPanel.loading ||
+                profileStoresPanel.data?.items.length === 0 ||
+                artistStagesPanel.loading ||
+                !artistStagesPanel.data ||
+                artistStagesPanel.data.length === 0
+              }
             >
               {copy.form.submit}
             </AsyncSubmitButton>
@@ -1808,6 +1917,36 @@ export function OrganizationStructureScreen({
                 </select>
               </label>
               <label className="space-y-2">
+                <span className="text-sm font-medium text-slate-700">{copy.form.artistStageLabel}</span>
+                <select
+                  aria-label={copy.form.artistStageLabel}
+                  value={createDraft.artistStageId}
+                  onChange={(event) =>
+                    setCreateDraft((current) => ({
+                      ...current,
+                      artistStageId: event.target.value,
+                    }))
+                  }
+                  className="w-full rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400"
+                >
+                  <option value="">{copy.form.artistStageLabel}</option>
+                  {(artistStagesPanel.data ?? []).map((artistStage) => {
+                    const artistStageName =
+                      pickFirstNonEmptyString([artistStage.localizedName, artistStage.code]) ?? artistStage.code;
+                    const lifecycleLabel = getOrganizationLifecycleLabel(
+                      artistStage.lifecycleStatusMapping ?? 'draft',
+                      locale,
+                    );
+
+                    return (
+                      <option key={artistStage.id} value={artistStage.id}>
+                        {`${artistStageName} · ${artistStage.code ?? ''} · ${lifecycleLabel}`}
+                      </option>
+                    );
+                  })}
+                </select>
+              </label>
+              <label className="space-y-2">
                 <span className="text-sm font-medium text-slate-700">{copy.form.timezoneLabel}</span>
                 <input
                   aria-label={copy.form.timezoneLabel}
@@ -1830,9 +1969,21 @@ export function OrganizationStructureScreen({
               </div>
             ) : null}
 
+            {artistStagesPanel.error ? (
+              <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-800">
+                {artistStagesPanel.error}
+              </div>
+            ) : null}
+
             {!profileStoresPanel.loading && profileStoresPanel.data?.items.length === 0 ? (
               <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800">
                 {copy.form.noProfileStores}
+              </div>
+            ) : null}
+
+            {!artistStagesPanel.loading && artistStagesPanel.data?.length === 0 ? (
+              <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800">
+                {copy.form.noArtistStages}
               </div>
             ) : null}
           </FormSection>

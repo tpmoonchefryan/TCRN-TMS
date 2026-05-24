@@ -1,7 +1,8 @@
 import {
-  PUBLIC_PRESENCE_COMPONENT_DEFINITIONS,
-  PUBLIC_PRESENCE_STAGE_SECTION_DEFINITIONS,
-  PUBLIC_PRESENCE_TEMPLATE_DEFINITIONS,
+  buildPublicPresenceComponentSourceManifest,
+  buildPublicPresenceTemplateSourceManifest,
+  HOMEPAGE_COMPONENT_TYPES,
+  PUBLIC_PRESENCE_TEMPLATE_IDS,
   type HomepageComponentType,
   type PublicPresenceTemplateId,
   type SupportedUiLocale,
@@ -47,11 +48,15 @@ function readJsonWorkspaceFile(
 }
 
 function isTemplateId(value: unknown): value is PublicPresenceTemplateId {
-  return typeof value === 'string' && value in PUBLIC_PRESENCE_TEMPLATE_DEFINITIONS;
+  return typeof value === 'string' && PUBLIC_PRESENCE_TEMPLATE_IDS.includes(
+    value as PublicPresenceTemplateId,
+  );
 }
 
 function isComponentType(value: unknown): value is HomepageComponentType {
-  return typeof value === 'string' && value in PUBLIC_PRESENCE_COMPONENT_DEFINITIONS;
+  return typeof value === 'string' && HOMEPAGE_COMPONENT_TYPES.includes(
+    value as HomepageComponentType,
+  );
 }
 
 function readString(value: unknown) {
@@ -155,28 +160,26 @@ export function buildComponentStarterProps(
         weekOf: '2026-05-18',
       } satisfies Record<string, unknown>;
     default:
-      return structuredClone(PUBLIC_PRESENCE_COMPONENT_DEFINITIONS[componentType].defaultProps) as Record<
-        string,
-        unknown
-      >;
+      return structuredClone(
+        buildPublicPresenceComponentSourceManifest(componentType).defaultProps,
+      ) as Record<string, unknown>;
   }
 }
 
 function findPreferredSectionKind(componentType: HomepageComponentType) {
-  const activeHubOrder = PUBLIC_PRESENCE_TEMPLATE_DEFINITIONS.activeTalentHub.defaultSectionOrder;
+  const activeHubTemplate = buildPublicPresenceTemplateSourceManifest('activeTalentHub');
 
-  for (const sectionKind of activeHubOrder) {
-    const sectionDefinition =
-      PUBLIC_PRESENCE_STAGE_SECTION_DEFINITIONS[
-        sectionKind as keyof typeof PUBLIC_PRESENCE_STAGE_SECTION_DEFINITIONS
-      ];
+  for (const sectionKind of activeHubTemplate.defaultSectionOrder) {
+    const sectionDefinition = activeHubTemplate.stageSections.find(
+      (section) => section.kind === sectionKind,
+    );
 
     if (sectionDefinition?.allowedComponents.includes(componentType)) {
       return sectionDefinition.kind;
     }
   }
 
-  const fallbackDefinition = Object.values(PUBLIC_PRESENCE_STAGE_SECTION_DEFINITIONS).find((definition) =>
+  const fallbackDefinition = activeHubTemplate.stageSections.find((definition) =>
     definition.allowedComponents.includes(componentType),
   );
 
@@ -188,7 +191,7 @@ export function buildTemplateStarterBlueprint(
   locale: SupportedUiLocale,
   linkedComponentDraftKeys: readonly string[] = [],
 ): TemplateStarterBlueprint {
-  const template = PUBLIC_PRESENCE_TEMPLATE_DEFINITIONS[templateId];
+  const template = buildPublicPresenceTemplateSourceManifest(templateId);
 
   return {
     baseTemplateId: template.templateId,
@@ -240,7 +243,7 @@ export function buildTemplateAuthoringManifest(
   locale: SupportedUiLocale,
   linkedComponentDraftKeys: readonly string[] = [],
 ) {
-  const definition = PUBLIC_PRESENCE_TEMPLATE_DEFINITIONS[templateId];
+  const definition = buildPublicPresenceTemplateSourceManifest(templateId);
 
   return {
     ...definition,
@@ -255,7 +258,7 @@ export function buildComponentAuthoringManifest(
   componentType: HomepageComponentType,
   locale: SupportedUiLocale,
 ) {
-  const definition = PUBLIC_PRESENCE_COMPONENT_DEFINITIONS[componentType];
+  const definition = buildPublicPresenceComponentSourceManifest(componentType);
 
   return {
     ...definition,

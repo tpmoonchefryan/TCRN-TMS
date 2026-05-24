@@ -1,0 +1,1 @@
+DROP TABLE IF EXISTS tenant_template.public_presence_authoring_draft;

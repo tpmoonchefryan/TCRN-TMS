@@ -376,7 +376,7 @@ const sectionField = {
   }),
 } as const;
 
-export const PUBLIC_PRESENCE_TEMPLATE_DEFINITIONS: Record<
+export const PUBLIC_PRESENCE_TEMPLATE_SEED_BLUEPRINTS: Record<
   (typeof PUBLIC_PRESENCE_TEMPLATE_IDS)[number],
   PublicPresenceTemplateDefinition
 > = {
@@ -456,7 +456,7 @@ export const PUBLIC_PRESENCE_TEMPLATE_DEFINITIONS: Record<
   },
 };
 
-export const PUBLIC_PRESENCE_STAGE_SECTION_DEFINITIONS: Record<
+export const PUBLIC_PRESENCE_STAGE_SECTION_SEED_BLUEPRINTS: Record<
   (typeof PUBLIC_PRESENCE_STAGE_SECTION_KINDS)[number],
   PublicPresenceStageSectionDefinition
 > = {
@@ -693,7 +693,7 @@ const createComponentDefinition = (
   input: PublicPresenceComponentDefinition,
 ): PublicPresenceComponentDefinition => input;
 
-export const PUBLIC_PRESENCE_COMPONENT_DEFINITIONS: Record<
+export const PUBLIC_PRESENCE_COMPONENT_SEED_BLUEPRINTS: Record<
   HomepageComponentType,
   PublicPresenceComponentDefinition
 > = {
@@ -1626,7 +1626,7 @@ export const PUBLIC_PRESENCE_CONTENT_HASH_POLICY: PublicPresenceContentHashPolic
   ],
 };
 
-export const PUBLIC_PRESENCE_REGISTRY_METADATA = {
+export const PUBLIC_PRESENCE_SEED_METADATA = {
   componentVisualSupport: [...PUBLIC_PRESENCE_COMPONENT_VISUAL_SUPPORT],
   contentHashPolicy: PUBLIC_PRESENCE_CONTENT_HASH_POLICY,
   documentStates: [...PUBLIC_PRESENCE_DOCUMENT_STATES],

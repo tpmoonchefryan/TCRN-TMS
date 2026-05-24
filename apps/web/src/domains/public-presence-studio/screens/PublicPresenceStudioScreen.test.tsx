@@ -869,161 +869,15 @@ describe('PublicPresenceStudioScreen', () => {
     expect(displayNameInput.value).not.toContain('style=');
   });
 
-  it('creates a Studio homepage starter from custom template and component drafts', async () => {
-    currentSearch = 'templateDraftKey=new';
-
-    const starterWorkspace = buildWorkspace({
-      draftVersion: {
-        ...buildWorkspace().draftVersion,
-        contentHash: 'starter-hash-1',
-        document: {
-          ...buildWorkspace().draftVersion.document,
-          sections: [
-            {
-              fields: {
-                displayName: {
-                  provenance: 'override',
-                  value: 'Aki Rosenthal',
-                },
-              },
-              id: 'first-encounter-1',
-              kind: 'firstEncounter',
-              title: 'First Encounter',
-            },
-          ],
-          templateId: 'activeTalentHub',
-        },
-      },
-    });
-    let workspaceState = buildWorkspace({
-      draftVersion: null,
-      liveVersion: null,
-      portal: null,
-    });
-
-    mockRequest.mockImplementation(async (path: string, init?: RequestInit) => {
+  it('keeps legacy starter draft query params as a compatibility notice instead of bootstrapping from authoring drafts', async () => {
+    currentSearch = 'templateDraftKey=new&componentDraftKey=new';
+    mockRequest.mockImplementation(async (path: string) => {
       if (isWorkspaceRequest(path)) {
-        return workspaceState;
+        return buildWorkspace();
       }
 
       if (isPreviewRequest(path)) {
         return buildPreview();
-      }
-
-      if (path === '/api/v1/talents/talent-1/public-presence/authoring/templates/current?subjectKey=new') {
-        return {
-          artifactKind: 'template',
-          artifactStatus: 'draft',
-          id: 'template-draft-1',
-          lastSavedAt: '2026-05-21T01:05:00.000Z',
-          lastValidatedAt: null,
-          sourceBundle: [
-            {
-              contents: JSON.stringify(
-                {
-                  authoring: {
-                    homepageStarter: {
-                      baseTemplateId: 'activeTalentHub',
-                      campaignLabel: 'Custom homepage starter',
-                      heroHeadline: 'Custom homepage ready for fan launch checks.',
-                      heroIntro: 'This starter came from the custom template draft.',
-                      linkedComponentDraftKeys: ['new'],
-                      sectionOrder: ['firstEncounter', 'officialChannels', 'fanActions'],
-                    },
-                  },
-                  templateId: 'activeTalentHub',
-                },
-                null,
-                2,
-              ),
-              kind: 'schema',
-              language: 'json',
-              path: 'manifest.json',
-            },
-          ],
-          subjectKey: 'new',
-          submittedAt: null,
-          updatedAt: '2026-05-21T01:05:00.000Z',
-          validationState: 'unvalidated',
-          validationSummary: {
-            issueCount: 0,
-            passCount: 0,
-            warnCount: 0,
-          },
-          version: 1,
-        };
-      }
-
-      if (path === '/api/v1/talents/talent-1/public-presence/authoring/components/current?subjectKey=new') {
-        return {
-          artifactKind: 'component',
-          artifactStatus: 'draft',
-          id: 'component-draft-1',
-          lastSavedAt: '2026-05-21T01:06:00.000Z',
-          lastValidatedAt: null,
-          sourceBundle: [
-            {
-              contents: JSON.stringify(
-                {
-                  authoring: {
-                    homepageStarter: {
-                      componentType: 'SocialLinks',
-                      preferredSectionKind: 'officialChannels',
-                      props: {
-                        layout: 'horizontal',
-                        platforms: [
-                          {
-                            label: 'Fan Club',
-                            platformCode: 'website',
-                            url: 'https://example.com/fan-club',
-                          },
-                        ],
-                        style: 'pill',
-                      },
-                    },
-                  },
-                  componentType: 'SocialLinks',
-                },
-                null,
-                2,
-              ),
-              kind: 'schema',
-              language: 'json',
-              path: 'manifest.json',
-            },
-          ],
-          subjectKey: 'new',
-          submittedAt: null,
-          updatedAt: '2026-05-21T01:06:00.000Z',
-          validationState: 'unvalidated',
-          validationSummary: {
-            issueCount: 0,
-            passCount: 0,
-            warnCount: 0,
-          },
-          version: 1,
-        };
-      }
-
-      if (path === '/api/v1/talents/talent-1/public-presence/bootstrap' && init?.method === 'POST') {
-        workspaceState = starterWorkspace;
-        return starterWorkspace;
-      }
-
-      if (path === '/api/v1/talents/talent-1/public-presence/draft' && init?.method === 'PATCH') {
-        const payload = JSON.parse(String(init.body ?? '{}')) as {
-          document: TestWorkspaceDocument;
-        };
-        const savedWorkspace = buildWorkspace({
-          draftVersion: {
-            ...starterWorkspace.draftVersion,
-            contentHash: 'starter-hash-2',
-            document: payload.document,
-          },
-          selectedTemplateId: payload.document.templateId,
-        });
-        workspaceState = savedWorkspace;
-        return savedWorkspace;
       }
 
       throw new Error(`Unhandled request: ${path}`);
@@ -1032,57 +886,14 @@ describe('PublicPresenceStudioScreen', () => {
     render(<PublicPresenceStudioScreen tenantId="tenant-1" talentId="talent-1" />);
 
     await screen.findByTestId('canvas-stage', {}, { timeout: STUDIO_RENDER_TIMEOUT });
-
-    await waitFor(() => {
-      expect(mockRequest).toHaveBeenCalledWith(
-        '/api/v1/talents/talent-1/public-presence/bootstrap',
-        expect.objectContaining({
-          method: 'POST',
-        }),
-      );
-      expect(mockRequest).toHaveBeenCalledWith(
-        '/api/v1/talents/talent-1/public-presence/draft',
-        expect.objectContaining({
-          method: 'PATCH',
-        }),
-      );
-    });
-
-    const saveCall = mockRequest.mock.calls.find(
-      ([path, init]) =>
-        path === '/api/v1/talents/talent-1/public-presence/draft'
-        && init?.method === 'PATCH',
-    );
-    const savePayload = JSON.parse(String(saveCall?.[1]?.body ?? '{}')) as {
-      document: TestWorkspaceDocument;
-    };
-    const firstEncounter = savePayload.document.sections.find((section) => section.kind === 'firstEncounter');
-    const officialChannels = savePayload.document.sections.find((section) => section.kind === 'officialChannels');
-    const firstEncounterFields = firstEncounter?.fields as
-      | Record<string, { value?: unknown }>
-      | undefined;
-
-    expect(firstEncounterFields?.headline?.value).toBe('Custom homepage ready for fan launch checks.');
-    expect(firstEncounterFields?.intro?.value).toBe('This starter came from the custom template draft.');
-    expect(savePayload.document.personaKit.campaignLabel).toBe('Custom homepage starter');
-    expect(officialChannels?.components?.[0]?.type).toBe('SocialLinks');
-    expect(officialChannels?.components?.[0]?.props).toMatchObject({
-      layout: 'horizontal',
-      platforms: [
-        {
-          label: 'Fan Club',
-          platformCode: 'website',
-          url: 'https://example.com/fan-club',
-        },
-      ],
-      style: 'pill',
-    });
-    expect(await screen.findByRole('status')).toHaveTextContent(
-      'Custom homepage starter is ready in Studio.',
-    );
+    expect(screen.getByTestId('studio-legacy-starter-notice')).toBeInTheDocument();
+    expect(
+      screen.getByText(/Legacy template\/component draft query parameters are no longer used/i),
+    ).toBeInTheDocument();
+    expect(mockRequest.mock.calls.every(([path]) => !String(path).includes('/authoring/'))).toBe(true);
   });
 
-  it('does not expose a source editor inside visual studio and links Advanced to a standalone route', async () => {
+  it('does not expose source authoring tools inside the ordinary visual studio workbench', async () => {
     mockRequest.mockImplementation(async (path: string) => {
       if (isWorkspaceRequest(path)) {
         return buildWorkspace();
@@ -1108,8 +919,7 @@ describe('PublicPresenceStudioScreen', () => {
     expect(screen.queryByRole('textbox', { name: /source schema/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /save source/i })).not.toBeInTheDocument();
 
-    const advancedLink = screen.getByRole('link', { name: 'Advanced' });
-    expect(advancedLink).toHaveAttribute('href', '/studio/public-presence/tenant-1/talent-1/advanced?templateId=activeTalentHub&mode=page-source');
+    expect(screen.queryByRole('link', { name: 'Advanced' })).not.toBeInTheDocument();
   });
 
   it('dismisses save success feedback after a short timeout while keeping the saved badge', async () => {

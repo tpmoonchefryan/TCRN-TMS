@@ -126,11 +126,6 @@ export function SettingsDefaultsSummaryGrid({
         hint={getSourceHint('currency')}
       />
       <SettingsFieldRow
-        label={text('Public homepage', '公开主页', '公開ホームページ')}
-        value={boolLabel(draft.allowCustomHomepage, text)}
-        hint={getSourceHint('allowCustomHomepage')}
-      />
-      <SettingsFieldRow
         label={text('Public marshmallow', '公开棉花糖', '公開マシュマロ')}
         value={boolLabel(draft.allowMarshmallow, text)}
         hint={getSourceHint('allowMarshmallow')}
@@ -267,17 +262,6 @@ export function SettingsDefaultsFormFields({
       <div className="space-y-3">
         <p className="text-sm font-semibold text-slate-950">{text('Public surfaces', '公开入口', '公開サーフェス')}</p>
         <div className="grid gap-4 md:grid-cols-2">
-          <ToggleField
-            checked={draft.allowCustomHomepage}
-            label={text('Allow public homepage', '允许公开主页', '公開ホームページを許可')}
-            description={getSourceHint('allowCustomHomepage')}
-            onChange={(checked) =>
-              onDraftChange((current) => ({
-                ...current,
-                allowCustomHomepage: checked,
-              }))
-            }
-          />
           <ToggleField
             checked={draft.allowMarshmallow}
             label={text('Allow public marshmallow', '允许公开棉花糖', '公開マシュマロを許可')}

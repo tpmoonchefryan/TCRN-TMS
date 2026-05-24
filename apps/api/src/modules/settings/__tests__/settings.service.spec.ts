@@ -13,6 +13,7 @@ describe('SettingsApplicationService', () => {
   let mockSettingsRepository: {
     findTenantBySchema: ReturnType<typeof vi.fn>;
     findSubsidiaryById: ReturnType<typeof vi.fn>;
+    listArtistStageCatalog: ReturnType<typeof vi.fn>;
     listSubsidiariesByCodes: ReturnType<typeof vi.fn>;
     findTalentById: ReturnType<typeof vi.fn>;
     findScopeSettingsRecord: ReturnType<typeof vi.fn>;
@@ -28,6 +29,7 @@ describe('SettingsApplicationService', () => {
     mockSettingsRepository = {
       findTenantBySchema: vi.fn(),
       findSubsidiaryById: vi.fn(),
+      listArtistStageCatalog: vi.fn(),
       listSubsidiariesByCodes: vi.fn(),
       findTalentById: vi.fn(),
       findScopeSettingsRecord: vi.fn(),
@@ -333,6 +335,111 @@ describe('SettingsApplicationService', () => {
           'user-123',
         ),
       ).rejects.toThrow(NotFoundException);
+    });
+
+    it('rejects tenant-only artistLifecycleFlow writes through lower-scope general settings', async () => {
+      mockSettingsRepository.findTalentById.mockResolvedValue({
+        id: 'talent-123',
+        subsidiaryId: null,
+        settings: {},
+        version: 2,
+      });
+
+      await expect(
+        service.updateSettings(
+          testSchema,
+          'talent',
+          'talent-123',
+          {
+            artistLifecycleFlow: {
+              nodes: [],
+              transitions: [],
+              homepagePolicyByStage: [],
+            },
+          },
+          2,
+          'user-123',
+        ),
+      ).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('artistLifecycleFlow', () => {
+    it('returns the effective tenant flow as read-only for lower scopes', async () => {
+      mockSettingsRepository.findTalentById.mockResolvedValue({
+        id: 'talent-123',
+        subsidiaryId: null,
+        settings: {},
+        version: 3,
+      });
+      mockSettingsRepository.findTenantBySchema.mockResolvedValue({
+        id: 'tenant-123',
+        settings: {
+          artistLifecycleFlow: {
+            nodes: [
+              {
+                stageId: '11111111-1111-4111-8111-111111111111',
+                stageCode: 'pre-debut',
+              },
+            ],
+            transitions: [],
+            homepagePolicyByStage: [
+              {
+                stageId: '11111111-1111-4111-8111-111111111111',
+                allowedTemplateIds: ['debutReveal'],
+              },
+            ],
+          },
+        },
+      });
+      mockSettingsRepository.listArtistStageCatalog.mockResolvedValue([
+        {
+          id: '11111111-1111-4111-8111-111111111111',
+          code: 'pre-debut',
+          isActive: true,
+        },
+      ]);
+
+      const response = await service.getArtistLifecycleFlow(
+        testSchema,
+        'talent',
+        'talent-123',
+      );
+
+      expect(response.writable).toBe(false);
+      expect(response.inheritedFrom).toBe('tenant');
+      expect(response.flow.homepagePolicyByStage[0]?.allowedTemplateIds).toEqual([
+        'debutReveal',
+      ]);
+      expect(response.validationIssues).toEqual([]);
+    });
+
+    it('validates tenant flow updates against the artist stage catalog', async () => {
+      mockSettingsRepository.findTenantBySchema.mockResolvedValue({
+        id: 'tenant-123',
+        settings: {},
+      });
+      mockSettingsRepository.listArtistStageCatalog.mockResolvedValue([
+        {
+          id: '11111111-1111-4111-8111-111111111111',
+          code: 'pre-debut',
+          isActive: true,
+        },
+      ]);
+
+      await expect(
+        service.updateArtistLifecycleFlow(testSchema, {
+          nodes: [
+            {
+              stageId: '22222222-2222-4222-8222-222222222222',
+              stageCode: 'active',
+            },
+          ],
+          transitions: [],
+          homepagePolicyByStage: [],
+        }),
+      ).rejects.toThrow(BadRequestException);
+      expect(mockSettingsRepository.updateTenantSettings).not.toHaveBeenCalled();
     });
   });
 
@@ -644,7 +751,6 @@ describe('SettingsApplicationService', () => {
       expect(result.settings).toHaveProperty('customerImportEnabled');
       expect(result.settings).toHaveProperty('maxImportRows');
       expect(result.settings).toHaveProperty('totpRequiredForAll');
-      expect(result.settings).toHaveProperty('allowCustomHomepage');
       expect(result.settings).toHaveProperty('allowMarshmallow');
       expect(result.settings).toHaveProperty('passwordPolicy');
     });

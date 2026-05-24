@@ -22,6 +22,8 @@ import {
   type PublicPresenceDocumentVersionRecord,
   type PublicPresencePortalRecord,
 } from '../domain/public-presence-foundation.policy';
+import { buildPublicPresenceRuntimeAuthority } from '../domain/public-presence-asset-runtime.policy';
+import { PublicPresenceAssetService } from './public-presence-asset.service';
 import {
   buildPublicHomepageProjectionEvent,
   buildPublicPresenceProjectionFromDocument,
@@ -34,6 +36,7 @@ import {
   buildDebutRevealAutoSwitchDependency,
   extractRevealAutoSwitchAt,
 } from './public-presence-release-readiness';
+import { PublicPresenceStudioService } from './public-presence-studio.service';
 
 interface WorkflowTargetContext {
   portal: PublicPresencePortalRecord;
@@ -50,6 +53,8 @@ export class PublicPresenceWorkflowService {
   constructor(
     private readonly homepageAdminRepository: HomepageAdminRepository,
     private readonly publicPresenceFoundationRepository: PublicPresenceFoundationRepository,
+    private readonly publicPresenceStudioService: PublicPresenceStudioService,
+    private readonly publicPresenceAssetService: PublicPresenceAssetService,
     private readonly cdnPurgeService: CdnPurgeService,
     private readonly talentService: TalentService,
   ) {}
@@ -338,6 +343,7 @@ export class PublicPresenceWorkflowService {
           },
           portalId: target.portal.id,
           sourceVersionId: sourceVersion.id,
+          templateAssetPin: sourceVersion.templateAssetPin,
           templateId: sourceVersion.templateId,
           versionNumber: target.portal.latestVersionNumber + 1,
         },
@@ -345,9 +351,21 @@ export class PublicPresenceWorkflowService {
 
     const artifact = createPublicPresenceValidationArtifact(document, {
       mode: 'draft',
+      runtimeAuthority: await this.loadRuntimeAuthority(
+        target.tenantSchema,
+        target.talent.id,
+        sourceVersion.templateAssetPin,
+        context.userId ?? null,
+      ),
     });
+    const rollbackSnapshot = sourceVersion.templateAssetPin
+      ? {
+          ...artifact.snapshot,
+          templateAssetPin: sourceVersion.templateAssetPin,
+        }
+      : artifact.snapshot;
     const validationPersistence = buildPublicPresenceSnapshotPersistencePayload(
-      artifact.snapshot,
+      rollbackSnapshot,
     );
 
     await this.publicPresenceFoundationRepository.createValidationSnapshotForExistingDraft(
@@ -359,9 +377,10 @@ export class PublicPresenceWorkflowService {
         documentState: 'draft',
         eventType: 'validationSnapshotted',
         portalId: target.portal.id,
+        templateAssetPin: sourceVersion.templateAssetPin,
         validationPersistence,
-        validationSnapshot: artifact.snapshot,
-        validationState: derivePublicPresenceValidationState(artifact.snapshot),
+        validationSnapshot: rollbackSnapshot,
+        validationState: derivePublicPresenceValidationState(rollbackSnapshot),
         versionId: rollbackDraft.id,
       },
     );
@@ -632,11 +651,18 @@ export class PublicPresenceWorkflowService {
   private async preparePublishValidation(
     target: WorkflowTargetContext,
   ) {
+    await this.assertHomepagePolicyAllowsPublish(target);
     const releaseDependency =
       await this.resolveDebutRevealReleaseDependency(target);
     const document = PublicPresenceDocumentSchema.parse(target.version.document);
     const artifact = createPublicPresenceValidationArtifact(document, {
       mode: 'publish',
+      runtimeAuthority: await this.loadRuntimeAuthority(
+        target.tenantSchema,
+        target.talent.id,
+        target.version.templateAssetPin,
+        null,
+      ),
     });
 
     if (artifact.snapshot.issues.some((issue) => issue.blocksPublish)) {
@@ -679,18 +705,65 @@ export class PublicPresenceWorkflowService {
         tenantCode: target.tenantCode,
       },
       source: 'publicPresenceDocument',
+      validationSnapshot: artifact.snapshot,
+      templateAssetPin: target.version.templateAssetPin,
       validationSnapshotId: target.version.lastValidationSnapshotId,
     });
 
     const snapshot = {
       ...artifact.snapshot,
       projectionHash: projection.projectionHash,
+      templateAssetPin: target.version.templateAssetPin,
     };
 
     return {
       projection,
       snapshot,
     };
+  }
+
+  private async assertHomepagePolicyAllowsPublish(
+    target: WorkflowTargetContext,
+  ) {
+    const workspace = await this.publicPresenceStudioService.getWorkspace(
+      target.talent.id,
+      target.tenantSchema,
+      target.version.templateId,
+    );
+
+    if (workspace.homepagePolicy.status !== 'ready') {
+      throw new BadRequestException({
+        code: ErrorCodes.VALIDATION_FAILED,
+        details: {
+          homepagePolicy: workspace.homepagePolicy,
+        },
+        message: 'Homepage work is unavailable for the current Artist Stage.',
+      });
+    }
+
+    const pinnedAssetId = target.version.templateAssetPin?.assetId ?? null;
+
+    if (!pinnedAssetId) {
+      throw new BadRequestException({
+        code: ErrorCodes.VALIDATION_FAILED,
+        message: 'The current draft is missing its pinned template asset revision.',
+      });
+    }
+
+    const pinnedAsset = workspace.templateAssets.find(
+      (asset) => asset.assetId === pinnedAssetId,
+    );
+
+    if (!pinnedAsset || !pinnedAsset.isSelectable) {
+      throw new BadRequestException({
+        code: ErrorCodes.VALIDATION_FAILED,
+        details: {
+          assetId: pinnedAssetId,
+          homepagePolicy: workspace.homepagePolicy,
+        },
+        message: 'The pinned template asset is no longer allowed for the current Artist Stage.',
+      });
+    }
   }
 
   private async persistValidationSnapshot(
@@ -715,6 +788,7 @@ export class PublicPresenceWorkflowService {
               : 'published',
           eventType: 'validationSnapshotted',
           portalId: target.portal.id,
+          templateAssetPin: target.version.templateAssetPin,
           validationPersistence,
           validationSnapshot: snapshot,
           validationState: derivePublicPresenceValidationState(snapshot),
@@ -882,6 +956,28 @@ export class PublicPresenceWorkflowService {
       debutVersion: target.version,
       latestActiveHubVersion,
       publishReadyActiveHubVersion,
+    });
+  }
+
+  private async loadRuntimeAuthority(
+    tenantSchema: string,
+    talentId: string,
+    templateAssetPin: PublicPresenceDocumentVersionRecord['templateAssetPin'],
+    actorId: string | null,
+  ) {
+    const componentAssets = await this.publicPresenceAssetService.listAssets(
+      tenantSchema,
+      {
+        assetKind: 'component',
+        scopeId: talentId,
+        scopeType: 'talent',
+      },
+      actorId,
+    );
+
+    return buildPublicPresenceRuntimeAuthority({
+      componentAssets,
+      templatePin: templateAssetPin,
     });
   }
 }

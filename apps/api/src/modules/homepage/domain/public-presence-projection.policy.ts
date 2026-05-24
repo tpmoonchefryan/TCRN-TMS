@@ -8,8 +8,11 @@ import {
   type HomepageContent,
   normalizeTheme,
   PUBLIC_PRESENCE_PROJECTION_SCHEMA_VERSION,
-  PUBLIC_PRESENCE_REGISTRY_METADATA,
+  PUBLIC_PRESENCE_REGISTRY_VERSION,
+  PUBLIC_PRESENCE_SAFETY_POLICY_VERSION,
   PUBLIC_PRESENCE_SAFETY_POLICY,
+  type PublicPresenceAssetRevisionPin,
+  type PublicPresenceAssetRuntimeAuthority,
   type PublicPresenceDocument,
   type PublicPresenceFallbackDecision,
   type PublicPresenceFallbackPolicy,
@@ -63,7 +66,10 @@ export interface BuildPublicPresenceProjectionFromDocumentInput {
   route: BuildPublicHomepageProjectionRouteInput;
   source?: 'legacyHomepageCompatibility' | 'publicPresenceDocument';
   talentDisplayName?: string | null;
+  templateAssetPin?: PublicPresenceAssetRevisionPin | null;
   theme?: ThemeConfig | Record<string, unknown> | null;
+  runtimeAuthority?: PublicPresenceAssetRuntimeAuthority | null;
+  validationSnapshot?: PublicPresenceValidationSnapshot | null;
   validationSnapshotId?: string | null;
 }
 
@@ -2037,9 +2043,11 @@ export function buildPublicPresenceProjectionFromDocument(
     document,
     input.revealPhaseOverride,
   );
-  const snapshot = createPublicPresenceValidationArtifact(document, {
-    mode: input.mode ?? 'projection',
-  }).snapshot;
+  const snapshot = input.validationSnapshot
+    ?? createPublicPresenceValidationArtifact(document, {
+      mode: input.mode ?? 'projection',
+      runtimeAuthority: input.runtimeAuthority ?? null,
+    }).snapshot;
   const context: PublicPresenceProjectionDraftContext = {
     contentHash,
     document,
@@ -2072,8 +2080,8 @@ export function buildPublicPresenceProjectionFromDocument(
     documentVersionId: input.documentVersionId ?? null,
     contentHash,
     validationSnapshotId: input.validationSnapshotId ?? null,
-    registryVersion: PUBLIC_PRESENCE_REGISTRY_METADATA.registryVersion,
-    safetyPolicyVersion: PUBLIC_PRESENCE_REGISTRY_METADATA.safetyPolicyVersion,
+    registryVersion: snapshot.templateRegistryVersion,
+    safetyPolicyVersion: snapshot.safetyPolicyVersion,
     resolvedRevealPhase,
     route: {
       canonicalPath: input.route.canonicalPath,
@@ -2100,6 +2108,11 @@ export function buildPublicPresenceProjectionFromDocument(
 
   return {
     ...projection,
+    ...(input.templateAssetPin !== undefined
+      ? {
+          templateAssetPin: input.templateAssetPin ?? null,
+        }
+      : {}),
     projectionHash: calculateProjectionHash(projection),
   };
 }
@@ -2146,8 +2159,8 @@ export function buildPublicHomepageProjection(
     documentVersionId: null,
     contentHash,
     validationSnapshotId: null,
-    registryVersion: PUBLIC_PRESENCE_REGISTRY_METADATA.registryVersion,
-    safetyPolicyVersion: PUBLIC_PRESENCE_REGISTRY_METADATA.safetyPolicyVersion,
+    registryVersion: PUBLIC_PRESENCE_REGISTRY_VERSION,
+    safetyPolicyVersion: PUBLIC_PRESENCE_SAFETY_POLICY_VERSION,
     resolvedRevealPhase: 'always' as PublicPresencePhaseVisibility,
     route: {
       canonicalPath: route.canonicalPath,

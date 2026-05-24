@@ -735,7 +735,6 @@ describe('TalentSettingsScreen', () => {
               customerImportEnabled: true,
               maxImportRows: 50000,
               totpRequiredForAll: false,
-              allowCustomHomepage: true,
               allowMarshmallow: true,
               passwordPolicy: {
                 minLength: 12,

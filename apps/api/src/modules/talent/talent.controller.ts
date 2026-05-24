@@ -72,6 +72,14 @@ export class CreateTalentDto {
   profileStoreId: string;
 
   @ApiProperty({
+    description: 'Artist Stage identifier used to derive lifecycle authority for this talent',
+    format: 'uuid',
+    example: '550e8400-e29b-41d4-a716-446655440210',
+  })
+  @IsUUID()
+  artistStageId: string;
+
+  @ApiProperty({
     description: 'Talent code',
     example: 'SORA',
     pattern: '^[A-Z0-9_]{3,32}$',
@@ -124,7 +132,7 @@ export class CreateTalentDto {
 
   @ApiPropertyOptional({
     description: 'Talent feature settings payload',
-    example: { homepageEnabled: true, marshmallowEnabled: true, inheritTimezone: false },
+    example: { marshmallowEnabled: true, inheritTimezone: false },
     additionalProperties: true,
   })
   @IsOptional()
@@ -177,7 +185,7 @@ export class UpdateTalentDto {
 
   @ApiPropertyOptional({
     description: 'Talent feature settings payload',
-    example: { homepageEnabled: true, marshmallowEnabled: true, inheritTimezone: false },
+    example: { marshmallowEnabled: true, inheritTimezone: false },
     additionalProperties: true,
   })
   @IsOptional()
@@ -212,6 +220,28 @@ export class TalentLifecycleMutationDto {
   @IsInt()
   @Min(1)
   version: number;
+}
+
+export class TalentStageTransitionDto extends TalentLifecycleMutationDto {
+  @ApiPropertyOptional({
+    description:
+      'Explicit target Artist Stage identifier. Provide this or `transitionId`, but not both.',
+    format: 'uuid',
+    example: '550e8400-e29b-41d4-a716-446655440210',
+  })
+  @IsOptional()
+  @IsUUID()
+  targetArtistStageId?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'Explicit Artist Lifecycle Flow transition id. Provide this or `targetArtistStageId`, but not both.',
+    example: 'transition-published-draft',
+  })
+  @IsOptional()
+  @IsString()
+  @MinLength(1)
+  transitionId?: string;
 }
 
 export class DeleteTalentQueryDto {
@@ -469,6 +499,7 @@ const TALENT_LIST_ITEM_SCHEMA = {
   properties: {
     id: { type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440300' },
     subsidiaryId: { type: 'string', format: 'uuid', nullable: true, example: '550e8400-e29b-41d4-a716-446655440100' },
+    artistStageId: { type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440210' },
     code: { type: 'string', example: 'SORA' },
     path: { type: 'string', example: '/TOKYO/SORA/' },
     name: TALENT_NAME_SCHEMA,
@@ -487,6 +518,7 @@ const TALENT_LIST_ITEM_SCHEMA = {
   required: [
     'id',
     'subsidiaryId',
+    'artistStageId',
     'code',
     'path',
     'name',
@@ -535,6 +567,7 @@ const TALENT_PAGINATED_SCHEMA = {
       {
         id: '550e8400-e29b-41d4-a716-446655440300',
         subsidiaryId: '550e8400-e29b-41d4-a716-446655440100',
+        artistStageId: '550e8400-e29b-41d4-a716-446655440210',
         code: 'SORA',
         path: '/TOKYO/SORA/',
         name: TALENT_NAME_EXAMPLE,
@@ -605,6 +638,7 @@ const TALENT_DETAIL_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
   {
     id: '550e8400-e29b-41d4-a716-446655440300',
     subsidiaryId: '550e8400-e29b-41d4-a716-446655440100',
+    artistStageId: '550e8400-e29b-41d4-a716-446655440210',
     profileStoreId: '550e8400-e29b-41d4-a716-446655440200',
     profileStore: {
       id: '550e8400-e29b-41d4-a716-446655440200',
@@ -624,7 +658,7 @@ const TALENT_DETAIL_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
     publishedAt: null,
     publishedBy: null,
     isActive: false,
-    settings: { homepageEnabled: true, marshmallowEnabled: true, inheritTimezone: false },
+    settings: { marshmallowEnabled: true, inheritTimezone: false },
     stats: { customerCount: 120, homepageVersionCount: 3, marshmallowMessageCount: 42 },
     externalPagesDomain: { homepage: { isPublished: true }, marshmallow: { isEnabled: true } },
     createdAt: '2026-04-13T08:00:00.000Z',
@@ -639,6 +673,7 @@ const TALENT_CREATE_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
     properties: {
       id: { type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440300' },
       subsidiaryId: { type: 'string', format: 'uuid', nullable: true, example: '550e8400-e29b-41d4-a716-446655440100' },
+      artistStageId: { type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440210' },
       code: { type: 'string', example: 'SORA' },
       path: { type: 'string', example: '/TOKYO/SORA/' },
       name: TALENT_NAME_SCHEMA,
@@ -656,6 +691,7 @@ const TALENT_CREATE_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
     required: [
       'id',
       'subsidiaryId',
+      'artistStageId',
       'code',
       'path',
       'name',
@@ -674,6 +710,7 @@ const TALENT_CREATE_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
   {
     id: '550e8400-e29b-41d4-a716-446655440300',
     subsidiaryId: '550e8400-e29b-41d4-a716-446655440100',
+    artistStageId: '550e8400-e29b-41d4-a716-446655440210',
     code: 'SORA',
     path: '/TOKYO/SORA/',
     name: TALENT_NAME_EXAMPLE,
@@ -695,6 +732,7 @@ const TALENT_UPDATE_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
     type: 'object',
     properties: {
       id: { type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440300' },
+      artistStageId: { type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440210' },
       name: TALENT_NAME_SCHEMA,
       description: TALENT_DESCRIPTION_SCHEMA,
       displayName: { type: 'string', example: 'Sora' },
@@ -706,10 +744,11 @@ const TALENT_UPDATE_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
       updatedAt: { type: 'string', format: 'date-time', example: '2026-04-13T09:20:00.000Z' },
       version: { type: 'integer', example: 2 },
     },
-    required: ['id', 'name', 'description', 'displayName', 'homepagePath', 'lifecycleStatus', 'publishedAt', 'publishedBy', 'isActive', 'updatedAt', 'version'],
+    required: ['id', 'artistStageId', 'name', 'description', 'displayName', 'homepagePath', 'lifecycleStatus', 'publishedAt', 'publishedBy', 'isActive', 'updatedAt', 'version'],
   },
   {
     id: '550e8400-e29b-41d4-a716-446655440300',
+    artistStageId: '550e8400-e29b-41d4-a716-446655440210',
     name: TALENT_NAME_EXAMPLE,
     description: TALENT_DESCRIPTION_EXAMPLE,
     displayName: 'Sora',
@@ -728,16 +767,18 @@ const TALENT_LIFECYCLE_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
     type: 'object',
     properties: {
       id: { type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440300' },
+      artistStageId: { type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440211' },
       lifecycleStatus: { type: 'string', enum: ['draft', 'published', 'disabled'], example: 'published' },
       publishedAt: { type: 'string', nullable: true, format: 'date-time', example: '2026-04-13T09:30:00.000Z' },
       publishedBy: { type: 'string', nullable: true, format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440001' },
       isActive: { type: 'boolean', example: true },
       version: { type: 'integer', example: 3 },
     },
-    required: ['id', 'lifecycleStatus', 'publishedAt', 'publishedBy', 'isActive', 'version'],
+    required: ['id', 'artistStageId', 'lifecycleStatus', 'publishedAt', 'publishedBy', 'isActive', 'version'],
   },
   {
     id: '550e8400-e29b-41d4-a716-446655440300',
+    artistStageId: '550e8400-e29b-41d4-a716-446655440211',
     lifecycleStatus: 'published',
     publishedAt: '2026-04-13T09:30:00.000Z',
     publishedBy: '550e8400-e29b-41d4-a716-446655440001',
@@ -1184,6 +1225,7 @@ export class TalentController {
     const enrichedData = data.map((talent) => ({
         id: talent.id,
         subsidiaryId: talent.subsidiaryId,
+        artistStageId: talent.artistStageId,
         code: talent.code,
         path: talent.path,
         name: talent.name,
@@ -1243,6 +1285,7 @@ export class TalentController {
       {
         subsidiaryId: dto.subsidiaryId,
         profileStoreId: dto.profileStoreId,
+        artistStageId: dto.artistStageId,
         code: dto.code,
         name: dto.name,
         displayName: dto.displayName,
@@ -1258,6 +1301,7 @@ export class TalentController {
     return success({
       id: talent.id,
       subsidiaryId: talent.subsidiaryId,
+      artistStageId: talent.artistStageId,
       code: talent.code,
       path: talent.path,
       name: talent.name,
@@ -1518,6 +1562,7 @@ export class TalentController {
       id: talent.id,
       subsidiaryId: talent.subsidiaryId,
       profileStoreId: talent.profileStoreId,
+      artistStageId: talent.artistStageId,
       profileStore: profileStore ? {
         id: profileStore.id,
         code: profileStore.code,
@@ -1591,6 +1636,7 @@ export class TalentController {
 
     return success({
       id: talent.id,
+      artistStageId: talent.artistStageId,
       name: talent.name,
       description: talent.description,
       displayName: talent.displayName,
@@ -1698,6 +1744,7 @@ export class TalentController {
     return success({
       id: talent.id,
       subsidiaryId: talent.subsidiaryId,
+      artistStageId: talent.artistStageId,
       path: talent.path,
       lifecycleStatus: talent.lifecycleStatus,
       publishedAt: talent.publishedAt?.toISOString() ?? null,
@@ -1741,6 +1788,71 @@ export class TalentController {
     const readiness = await this.talentService.getPublishReadiness(talentId, user.tenantSchema);
 
     return success(readiness);
+  }
+
+  /**
+   * POST /api/v1/talents/:talentId/stage-transitions
+   * Execute an explicit Flow-owned artist stage transition
+   */
+  @Post(':talentId/stage-transitions')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermissions({ resource: 'talent', action: 'update' })
+  @ApiOperation({ summary: 'Transition talent artist stage' })
+  @ApiParam({
+    name: 'talentId',
+    description: 'Talent identifier',
+    schema: { type: 'string', format: 'uuid' },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Transitions the talent to an explicitly requested Artist Stage',
+    schema: TALENT_LIFECYCLE_SUCCESS_SCHEMA,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Stage transition request is invalid or version-mismatched',
+    schema: TALENT_BAD_REQUEST_SCHEMA,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Authentication is required to transition talent stages',
+    schema: TALENT_UNAUTHORIZED_SCHEMA,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Talent was not found',
+    schema: TALENT_NOT_FOUND_SCHEMA,
+  })
+  @ApiResponse({
+    status: 409,
+    description: 'Requested Artist Stage transition is not allowed',
+    schema: TALENT_CONFLICT_SCHEMA,
+  })
+  async transitionArtistStage(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('talentId', ParseUUIDPipe) talentId: string,
+    @Body() dto: TalentStageTransitionDto,
+  ) {
+    const talent = await this.talentService.transitionArtistStage(
+      talentId,
+      user.tenantSchema,
+      {
+        version: dto.version,
+        targetArtistStageId: dto.targetArtistStageId,
+        transitionId: dto.transitionId,
+      },
+      user.id,
+    );
+
+    return success({
+      id: talent.id,
+      artistStageId: talent.artistStageId,
+      lifecycleStatus: talent.lifecycleStatus,
+      publishedAt: talent.publishedAt?.toISOString() ?? null,
+      publishedBy: talent.publishedBy,
+      isActive: talent.isActive,
+      version: talent.version,
+    });
   }
 
   /**
@@ -1795,6 +1907,7 @@ export class TalentController {
 
     return success({
       id: talent.id,
+      artistStageId: talent.artistStageId,
       lifecycleStatus: talent.lifecycleStatus,
       publishedAt: talent.publishedAt?.toISOString() ?? null,
       publishedBy: talent.publishedBy,
@@ -1855,6 +1968,7 @@ export class TalentController {
 
     return success({
       id: talent.id,
+      artistStageId: talent.artistStageId,
       lifecycleStatus: talent.lifecycleStatus,
       publishedAt: talent.publishedAt?.toISOString() ?? null,
       publishedBy: talent.publishedBy,
@@ -1885,6 +1999,7 @@ export class TalentController {
         success: true,
         data: {
           id: '550e8400-e29b-41d4-a716-446655440300',
+          artistStageId: '550e8400-e29b-41d4-a716-446655440211',
           lifecycleStatus: 'published',
           publishedAt: '2026-04-13T09:30:00.000Z',
           publishedBy: '550e8400-e29b-41d4-a716-446655440001',
@@ -1928,6 +2043,7 @@ export class TalentController {
 
     return success({
       id: talent.id,
+      artistStageId: talent.artistStageId,
       lifecycleStatus: talent.lifecycleStatus,
       publishedAt: talent.publishedAt?.toISOString() ?? null,
       publishedBy: talent.publishedBy,

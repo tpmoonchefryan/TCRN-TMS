@@ -1,8 +1,12 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
+import type { ArtistLifecycleFlow } from '@tcrn/shared';
+
 export type SettingsScopeType = 'tenant' | 'subsidiary' | 'talent';
 export type TurnstileConfigSource = 'tenant' | 'environment' | 'none';
 export type TurnstileRuntimeEnvironment = 'development' | 'test' | 'staging' | 'production';
+export type SettingsWriteScope = 'scope-overridable' | 'tenant-only';
+export type SettingsUpdateSurface = 'general' | 'dedicated';
 
 export interface ScopeSettings {
   scopeType: SettingsScopeType;
@@ -56,7 +60,29 @@ export interface UpdateTenantTurnstileSettingsInput {
   secretKey?: string | null;
 }
 
+export interface SettingsContractDefinition {
+  key: string;
+  updateSurface: SettingsUpdateSurface;
+  writeScope: SettingsWriteScope;
+}
+
+export interface ArtistLifecycleFlowValidationIssue {
+  message: string;
+  path: string[];
+}
+
+export interface ArtistLifecycleFlowSettingsResponse {
+  flow: ArtistLifecycleFlow;
+  inheritedFrom: 'default' | 'tenant';
+  scopeId: string | null;
+  scopeType: SettingsScopeType;
+  validationIssues: ArtistLifecycleFlowValidationIssue[];
+  version: number;
+  writable: boolean;
+}
+
 export const TENANT_TURNSTILE_SETTINGS_KEY = 'turnstileConfig';
+export const ARTIST_LIFECYCLE_FLOW_SETTINGS_KEY = 'artistLifecycleFlow';
 export const TURNSTILE_SECRET_MASK = '********';
 
 export const DEFAULT_SETTINGS: Record<string, unknown> = {
@@ -67,7 +93,6 @@ export const DEFAULT_SETTINGS: Record<string, unknown> = {
   customerImportEnabled: true,
   maxImportRows: 50000,
   totpRequiredForAll: false,
-  allowCustomHomepage: true,
   allowMarshmallow: true,
   passwordPolicy: {
     minLength: 12,
@@ -75,6 +100,68 @@ export const DEFAULT_SETTINGS: Record<string, unknown> = {
     maxAgeDays: 90,
   },
 };
+
+export const SETTINGS_CONTRACT_DEFINITIONS: SettingsContractDefinition[] = [
+  {
+    key: 'defaultLanguage',
+    writeScope: 'scope-overridable',
+    updateSurface: 'general',
+  },
+  {
+    key: 'timezone',
+    writeScope: 'scope-overridable',
+    updateSurface: 'general',
+  },
+  {
+    key: 'dateFormat',
+    writeScope: 'scope-overridable',
+    updateSurface: 'general',
+  },
+  {
+    key: 'currency',
+    writeScope: 'scope-overridable',
+    updateSurface: 'general',
+  },
+  {
+    key: 'customerImportEnabled',
+    writeScope: 'scope-overridable',
+    updateSurface: 'general',
+  },
+  {
+    key: 'maxImportRows',
+    writeScope: 'scope-overridable',
+    updateSurface: 'general',
+  },
+  {
+    key: 'totpRequiredForAll',
+    writeScope: 'scope-overridable',
+    updateSurface: 'general',
+  },
+  {
+    key: 'allowMarshmallow',
+    writeScope: 'scope-overridable',
+    updateSurface: 'general',
+  },
+  {
+    key: 'passwordPolicy',
+    writeScope: 'tenant-only',
+    updateSurface: 'general',
+  },
+  {
+    key: TENANT_TURNSTILE_SETTINGS_KEY,
+    writeScope: 'tenant-only',
+    updateSurface: 'dedicated',
+  },
+  {
+    key: ARTIST_LIFECYCLE_FLOW_SETTINGS_KEY,
+    writeScope: 'tenant-only',
+    updateSurface: 'dedicated',
+  },
+];
+
+const SETTINGS_CONTRACT_BY_KEY = new Map(
+  SETTINGS_CONTRACT_DEFINITIONS.map((definition) => [definition.key, definition]),
+);
 
 export function normalizeTurnstileRuntimeEnvironment(
   value: string | null | undefined,
@@ -93,6 +180,48 @@ export function normalizeNullableSettingString(value: unknown): string | null {
 
   const trimmed = value.trim();
   return trimmed || null;
+}
+
+export function createEmptyArtistLifecycleFlow(): ArtistLifecycleFlow {
+  return {
+    nodes: [],
+    transitions: [],
+    homepagePolicyByStage: [],
+  };
+}
+
+export function normalizeStoredArtistLifecycleFlow(value: unknown): ArtistLifecycleFlow {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return createEmptyArtistLifecycleFlow();
+  }
+
+  const record = value as Record<string, unknown>;
+
+  return {
+    nodes: Array.isArray(record.nodes)
+      ? record.nodes as ArtistLifecycleFlow['nodes']
+      : [],
+    transitions: Array.isArray(record.transitions)
+      ? record.transitions as ArtistLifecycleFlow['transitions']
+      : [],
+    homepagePolicyByStage: Array.isArray(record.homepagePolicyByStage)
+      ? record.homepagePolicyByStage as ArtistLifecycleFlow['homepagePolicyByStage']
+      : [],
+  };
+}
+
+export function getSettingsContractDefinition(
+  key: string,
+): SettingsContractDefinition | null {
+  return SETTINGS_CONTRACT_BY_KEY.get(key) ?? null;
+}
+
+export function isTenantOnlySettingsKey(key: string): boolean {
+  return getSettingsContractDefinition(key)?.writeScope === 'tenant-only';
+}
+
+export function canUpdateSettingsKeyThroughGeneralSettings(key: string): boolean {
+  return (getSettingsContractDefinition(key)?.updateSurface ?? 'general') === 'general';
 }
 
 export function readStoredTenantTurnstileSettings(

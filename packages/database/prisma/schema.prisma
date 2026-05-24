@@ -212,6 +212,7 @@ model Talent {
   publishedAt     DateTime? @map("published_at") @db.Timestamptz
   publishedBy     String?   @map("published_by") @db.Uuid
   settings        Json      @default("{}") @db.JsonB
+  artistStageId   String    @map("artist_stage_id") @db.Uuid
   createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz
   updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamptz
   createdBy       String    @map("created_by") @db.Uuid
@@ -227,26 +228,26 @@ model Talent {
   marshmallowCustomPath         String? @default("/ask") @map("marshmallow_custom_path") @db.VarChar(128)
 
   // Relations
-  subsidiary                    Subsidiary?                    @relation(fields: [subsidiaryId], references: [id])
-  profileStore                  ProfileStore?                  @relation(fields: [profileStoreId], references: [id])
-  customerProfiles              CustomerProfile[]              @relation("TalentCustomers")
-  originCustomers               CustomerProfile[]              @relation("OriginTalent")
-  lastModifiedCustomers         CustomerProfile[]              @relation("LastModifiedTalent")
-  homepage                      TalentHomepage?
-  publicPresencePortal          PublicPresencePortal?
-  publicPresenceAuthoringDrafts PublicPresenceAuthoringDraft[]
-  marshmallowConfig             MarshmallowConfig?
-  importJobs                    ImportJob[]
-  exportJobs                    ExportJob[]
-  marshmallowExportJobs         MarshmallowExportJob[]
-  reportJobs                    ReportJob[]
-  customerAccessLogs            CustomerAccessLog[]
-  marshmallowMessages           MarshmallowMessage[]
+  subsidiary            Subsidiary?            @relation(fields: [subsidiaryId], references: [id])
+  profileStore          ProfileStore?          @relation(fields: [profileStoreId], references: [id])
+  customerProfiles      CustomerProfile[]      @relation("TalentCustomers")
+  originCustomers       CustomerProfile[]      @relation("OriginTalent")
+  lastModifiedCustomers CustomerProfile[]      @relation("LastModifiedTalent")
+  homepage              TalentHomepage?
+  publicPresencePortal  PublicPresencePortal?
+  marshmallowConfig     MarshmallowConfig?
+  importJobs            ImportJob[]
+  exportJobs            ExportJob[]
+  marshmallowExportJobs MarshmallowExportJob[]
+  reportJobs            ReportJob[]
+  customerAccessLogs    CustomerAccessLog[]
+  marshmallowMessages   MarshmallowMessage[]
 
   @@index([subsidiaryId])
   @@index([profileStoreId])
   @@index([path])
   @@index([homepagePath])
+  @@index([artistStageId])
   @@index([marshmallowPath])
   @@index([lifecycleStatus])
   @@index([customDomain])
@@ -689,6 +690,32 @@ model PlatformIdentityHistory {
   @@index([identityId])
   @@index([capturedAt])
   @@map("platform_identity_history")
+  @@schema("tenant_template")
+}
+
+model ArtistStage {
+  id                     String   @id @default(uuid()) @db.Uuid
+  ownerType              String   @default("tenant") @map("owner_type") @db.VarChar(16)
+  ownerId                String?  @map("owner_id") @db.Uuid
+  code                   String   @db.VarChar(32)
+  name                   Json     @db.JsonB
+  description            Json     @default("{\"en\":\"\",\"zh_HANS\":\"\",\"zh_HANT\":\"\",\"ja\":\"\",\"ko\":\"\",\"fr\":\"\"}") @db.JsonB
+  sortOrder              Int      @default(0) @map("sort_order")
+  isActive               Boolean  @default(true) @map("is_active")
+  isSystem               Boolean  @default(false) @map("is_system")
+  color                  String?  @db.VarChar(16)
+  lifecycleStatusMapping String   @default("draft") @map("lifecycle_status_mapping") @db.VarChar(16)
+  homepagePolicyKey      String?  @map("homepage_policy_key") @db.VarChar(64)
+  createdAt              DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt              DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  createdBy              String?  @map("created_by") @db.Uuid
+  updatedBy              String?  @map("updated_by") @db.Uuid
+  version                Int      @default(1)
+
+  @@unique([ownerType, ownerId, code])
+  @@index([ownerType, ownerId])
+  @@index([isActive])
+  @@map("artist_stage")
   @@schema("tenant_template")
 }
 
@@ -1345,6 +1372,10 @@ model PublicPresenceDocumentVersion {
   versionNumber            Int       @map("version_number")
   documentSchemaVersion    String    @map("document_schema_version") @db.VarChar(32)
   templateId               String    @map("template_id") @db.VarChar(64)
+  templateAssetId          String?   @map("template_asset_id") @db.Uuid
+  templateAssetRevisionId  String?   @map("template_asset_revision_id") @db.Uuid
+  templateAssetSourceHash  String?   @map("template_asset_source_hash") @db.VarChar(64)
+  templateAssetSnapshot    Json?     @map("template_asset_snapshot") @db.JsonB
   document                 Json      @db.JsonB
   documentState            String    @default("draft") @map("document_state") @db.VarChar(32)
   contentHashAlgorithm     String    @default("sha256") @map("content_hash_algorithm") @db.VarChar(32)
@@ -1370,6 +1401,8 @@ model PublicPresenceDocumentVersion {
   @@index([contentHash])
   @@index([scheduledFor])
   @@index([publishedAt])
+  @@index([templateAssetId])
+  @@index([templateAssetRevisionId])
   @@map("public_presence_document_version")
   @@schema("tenant_template")
 }
@@ -1434,31 +1467,53 @@ model PublicPresenceWorkflowEvent {
   @@schema("tenant_template")
 }
 
-/// Public Presence Authoring Draft
-model PublicPresenceAuthoringDraft {
-  id                String    @id @default(uuid()) @db.Uuid
-  talentId          String    @map("talent_id") @db.Uuid
-  artifactKind      String    @map("artifact_kind") @db.VarChar(32)
-  subjectKey        String    @map("subject_key") @db.VarChar(64)
-  artifactStatus    String    @default("draft") @map("artifact_status") @db.VarChar(32)
-  validationState   String    @default("unvalidated") @map("validation_state") @db.VarChar(32)
-  sourceBundle      Json      @default("[]") @map("source_bundle") @db.JsonB
-  validationSummary Json      @default("{}") @map("validation_summary") @db.JsonB
-  lastSavedAt       DateTime  @default(now()) @map("last_saved_at") @db.Timestamptz
-  lastValidatedAt   DateTime? @map("last_validated_at") @db.Timestamptz
-  submittedAt       DateTime? @map("submitted_at") @db.Timestamptz
-  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamptz
-  createdBy         String?   @map("created_by") @db.Uuid
-  updatedBy         String?   @map("updated_by") @db.Uuid
-  version           Int       @default(1)
+model PublicPresenceAsset {
+  id                String   @id @default(uuid()) @db.Uuid
+  assetKind         String   @map("asset_kind") @db.VarChar(16)
+  ownerType         String   @map("owner_type") @db.VarChar(16)
+  ownerId           String?  @map("owner_id") @db.Uuid
+  code              String   @db.VarChar(64)
+  name              Json     @db.JsonB
+  description       Json     @default("{\"en\":\"\",\"zh_HANS\":\"\",\"zh_HANT\":\"\",\"ja\":\"\",\"ko\":\"\",\"fr\":\"\"}") @db.JsonB
+  templateId        String?  @map("template_id") @db.VarChar(64)
+  componentType     String?  @map("component_type") @db.VarChar(64)
+  status            String   @default("draft") @db.VarChar(32)
+  isSystem          Boolean  @default(false) @map("is_system")
+  currentRevisionId String?  @unique @map("current_revision_id") @db.Uuid
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  createdBy         String?  @map("created_by") @db.Uuid
+  updatedBy         String?  @map("updated_by") @db.Uuid
+  version           Int      @default(1)
 
-  talent Talent @relation(fields: [talentId], references: [id], onDelete: Cascade)
+  @@unique([ownerType, ownerId, code])
+  @@index([assetKind, ownerType, ownerId])
+  @@index([templateId])
+  @@index([componentType])
+  @@map("public_presence_asset")
+  @@schema("tenant_template")
+}
 
-  @@unique([talentId, artifactKind, subjectKey])
-  @@index([talentId, artifactKind, updatedAt])
-  @@index([artifactKind, artifactStatus, updatedAt])
-  @@map("public_presence_authoring_draft")
+model PublicPresenceAssetRevision {
+  id                     String    @id @default(uuid()) @db.Uuid
+  assetId                String    @map("asset_id") @db.Uuid
+  revisionNumber         Int       @map("revision_number")
+  sourceBundle           Json      @default("[]") @map("source_bundle") @db.JsonB
+  manifest               Json      @default("{}") @db.JsonB
+  validationSummary      Json      @default("{}") @map("validation_summary") @db.JsonB
+  sourceHash             String    @map("source_hash") @db.VarChar(64)
+  runtimeContractVersion String    @map("runtime_contract_version") @db.VarChar(32)
+  artifactStatus         String    @default("draft") @map("artifact_status") @db.VarChar(32)
+  validationState        String    @default("unvalidated") @map("validation_state") @db.VarChar(32)
+  lastValidatedAt        DateTime? @map("last_validated_at") @db.Timestamptz
+  submittedAt            DateTime? @map("submitted_at") @db.Timestamptz
+  createdAt              DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  createdBy              String?   @map("created_by") @db.Uuid
+
+  @@unique([assetId, revisionNumber])
+  @@index([assetId, createdAt])
+  @@index([artifactStatus, validationState])
+  @@map("public_presence_asset_revision")
   @@schema("tenant_template")
 }
 

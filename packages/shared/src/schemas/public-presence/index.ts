@@ -22,7 +22,10 @@ import {
   PUBLIC_PRESENCE_VALIDATION_STATES,
   PUBLIC_PRESENCE_WORKFLOW_EVENT_TYPES,
 } from '../../public-presence/types';
+import { PublicPresenceAssetRevisionPinSchema } from './assets';
 import { ThemeConfigSchema } from '../homepage';
+
+export * from './assets';
 
 const hasIanaTimezone = (value: string) => {
   try {
@@ -387,6 +390,7 @@ export const PublicPresenceValidationSnapshotSchema = z.object({
   }).strict()),
   acknowledgementIds: z.array(z.string().min(1).max(512)),
   projectionHash: z.string().min(1).max(255).nullable(),
+  templateAssetPin: PublicPresenceAssetRevisionPinSchema.nullable().optional(),
 }).strict();
 
 export const PublicPresenceProjectedActionSchema = z.object({
@@ -611,6 +615,7 @@ export const PublicPresenceProjectionSchema = z.object({
   documentVersionId: z.string().min(1).max(255).nullable(),
   contentHash: z.string().min(1).max(255),
   validationSnapshotId: z.string().min(1).max(255).nullable(),
+  templateAssetPin: PublicPresenceAssetRevisionPinSchema.nullable().optional(),
   registryVersion: z.string().min(1).max(64),
   safetyPolicyVersion: z.string().min(1).max(64),
   projectionHash: z.string().min(1).max(255),

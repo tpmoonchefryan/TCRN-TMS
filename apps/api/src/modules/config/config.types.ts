@@ -11,6 +11,7 @@ export type OwnerType = 'tenant' | 'subsidiary' | 'talent';
 
 export type ConfigEntityType = 
   | 'channel-category'
+  | 'artist-stage'
   | 'social-platform'
   | 'business-segment'
   | 'communication-type'
@@ -125,6 +126,12 @@ export interface ConsentFields {
   isRequired: boolean;
 }
 
+export interface ArtistStageFields {
+  color: string | null;
+  homepagePolicyKey: string | null;
+  lifecycleStatusMapping: 'draft' | 'published' | 'disabled';
+}
+
 export interface ConsumerFields {
   consumerCategory: 'internal' | 'external' | 'partner';
   contactName: string | null;
@@ -151,6 +158,7 @@ export interface BlocklistEntryFields {
 // Table name mapping (entity type -> database table name)
 export const CONFIG_TABLE_NAMES: Record<ConfigEntityType, string> = {
   'channel-category': 'channel_category',
+  'artist-stage': 'artist_stage',
   'social-platform': 'social_platform',
   'business-segment': 'business_segment',
   'communication-type': 'communication_type',
@@ -170,6 +178,7 @@ export const CONFIG_TABLE_NAMES: Record<ConfigEntityType, string> = {
 // Extra fields for each entity type
 export const CONFIG_EXTRA_FIELDS: Record<ConfigEntityType, string[]> = {
   'channel-category': [],
+  'artist-stage': ['color', 'lifecycle_status_mapping', 'homepage_policy_key'],
   'social-platform': ['display_name', 'icon_url', 'base_url', 'profile_url_template', 'color'],
   'business-segment': [],
   'communication-type': ['channel_category_id'],
@@ -191,6 +200,7 @@ export const CONFIG_EXTRA_FIELDS: Record<ConfigEntityType, string[]> = {
 // NOTE: profile-store is a tenant-level global entity without owner_type/owner_id fields
 export const CONFIG_SCOPED_ENTITIES: Set<ConfigEntityType> = new Set([
   'channel-category',
+  'artist-stage',
   'business-segment',
   'communication-type',
   'address-type',
@@ -221,6 +231,7 @@ export const CONFIG_HAS_EXTRA_DATA: Set<ConfigEntityType> = new Set([
 // NOTE: 'consent' does NOT have description fields - it uses contentMarkdown instead.
 export const CONFIG_HAS_DESCRIPTION: Set<ConfigEntityType> = new Set([
   'channel-category',
+  'artist-stage',
   'business-segment',
   'communication-type',
   'address-type',
@@ -233,8 +244,27 @@ export const CONFIG_HAS_DESCRIPTION: Set<ConfigEntityType> = new Set([
   'profile-store',
 ]);
 
-// Entities that have system control fields (is_system, is_force_use)
-export const CONFIG_HAS_SYSTEM_CONTROL: Set<ConfigEntityType> = new Set([
+// Entities that expose the system-owned marker.
+export const CONFIG_HAS_SYSTEM_FLAG: Set<ConfigEntityType> = new Set([
+  'channel-category',
+  'artist-stage',
+  'social-platform',
+  'business-segment',
+  'communication-type',
+  'address-type',
+  'customer-status',
+  'reason-category',
+  'inactivation-reason',
+  'membership-class',
+  'membership-type',
+  'membership-level',
+  'consent',
+  'consumer',
+  'blocklist-entry',
+]);
+
+// Entities that support force-use overrides in addition to the system-owned marker.
+export const CONFIG_HAS_FORCE_USE_CONTROL: Set<ConfigEntityType> = new Set([
   'channel-category',
   'social-platform',
   'business-segment',
@@ -260,6 +290,7 @@ export const CONFIG_HAS_SYSTEM_CONTROL: Set<ConfigEntityType> = new Set([
 // Entities that have sort_order field
 export const CONFIG_HAS_SORT_ORDER: Set<ConfigEntityType> = new Set([
   'channel-category',
+  'artist-stage',
   'social-platform',
   'business-segment',
   'communication-type',
@@ -280,6 +311,7 @@ export const CONFIG_HAS_SORT_ORDER: Set<ConfigEntityType> = new Set([
 // NOTE: blocklist-entry uses 'pattern' instead of 'code'
 export const CONFIG_HAS_CODE: Set<ConfigEntityType> = new Set([
   'channel-category',
+  'artist-stage',
   'social-platform',
   'business-segment',
   'communication-type',
@@ -299,6 +331,7 @@ export const CONFIG_HAS_CODE: Set<ConfigEntityType> = new Set([
 // Entities that have audit fields (created_by, updated_by)
 export const CONFIG_HAS_AUDIT: Set<ConfigEntityType> = new Set([
   'channel-category',
+  'artist-stage',
   'business-segment',
   'communication-type',
   'address-type',
@@ -312,4 +345,8 @@ export const CONFIG_HAS_AUDIT: Set<ConfigEntityType> = new Set([
   'consumer',
   'blocklist-entry',
   'profile-store',
+]);
+
+export const CONFIG_TENANT_ONLY_SCOPED_ENTITIES: Set<ConfigEntityType> = new Set([
+  'artist-stage',
 ]);

@@ -144,6 +144,7 @@ export type ConfigEntityScopeType = 'tenant' | 'subsidiary' | 'talent';
 
 export type ScopedConfigEntityType =
   | 'channel-category'
+  | 'artist-stage'
   | 'business-segment'
   | 'communication-type'
   | 'address-type'
@@ -179,6 +180,8 @@ export interface ConfigEntityRecord {
   version: number;
   contentMarkdown?: LocalizedText | null;
   color?: string | null;
+  lifecycleStatusMapping?: 'draft' | 'published' | 'disabled' | null;
+  homepagePolicyKey?: string | null;
   channelCategoryId?: string | null;
   reasonCategoryId?: string | null;
   consentVersion?: string | null;
@@ -217,6 +220,8 @@ export interface CreateConfigEntityInput {
   ownerType?: ConfigEntityScopeType;
   ownerId?: string;
   color?: string;
+  lifecycleStatusMapping?: 'draft' | 'published' | 'disabled';
+  homepagePolicyKey?: string;
   channelCategoryId?: string;
   reasonCategoryId?: string;
   membershipClassId?: string;
@@ -348,7 +353,6 @@ export interface TenantSettingsDraft {
   customerImportEnabled: boolean;
   maxImportRows: number;
   totpRequiredForAll: boolean;
-  allowCustomHomepage: boolean;
   allowMarshmallow: boolean;
   passwordPolicy: PasswordPolicyDraft;
 }
@@ -490,7 +494,6 @@ export function buildTenantSettingsDraft(settings: Record<string, unknown>): Ten
     customerImportEnabled: readBoolean(settings.customerImportEnabled, true),
     maxImportRows: readInteger(settings.maxImportRows, 50000),
     totpRequiredForAll: readBoolean(settings.totpRequiredForAll, false),
-    allowCustomHomepage: settings.allowCustomHomepage !== false,
     allowMarshmallow: settings.allowMarshmallow !== false,
     passwordPolicy: {
       minLength: readInteger(passwordPolicy.minLength, 12),
@@ -512,7 +515,6 @@ export function buildTenantSettingsUpdatePayload(draft: TenantSettingsDraft): Re
     customerImportEnabled: draft.customerImportEnabled,
     maxImportRows: draft.maxImportRows,
     totpRequiredForAll: draft.totpRequiredForAll,
-    allowCustomHomepage: draft.allowCustomHomepage,
     allowMarshmallow: draft.allowMarshmallow,
     passwordPolicy: {
       minLength: draft.passwordPolicy.minLength,
@@ -534,7 +536,6 @@ export function isTenantSettingsDraftDirty(source: TenantSettingsDraft, draft: T
     source.customerImportEnabled !== draft.customerImportEnabled ||
     source.maxImportRows !== draft.maxImportRows ||
     source.totpRequiredForAll !== draft.totpRequiredForAll ||
-    source.allowCustomHomepage !== draft.allowCustomHomepage ||
     source.allowMarshmallow !== draft.allowMarshmallow ||
     source.passwordPolicy.minLength !== draft.passwordPolicy.minLength ||
     source.passwordPolicy.requireSpecial !== draft.passwordPolicy.requireSpecial ||

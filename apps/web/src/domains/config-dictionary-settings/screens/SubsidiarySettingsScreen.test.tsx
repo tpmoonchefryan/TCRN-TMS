@@ -325,11 +325,11 @@ describe('SubsidiarySettingsScreen', () => {
 
     render(<SubsidiarySettingsScreen tenantId="tenant-1" subsidiaryId="sub-1" />);
 
-    expect(await screen.findByRole('heading', { name: '东京分部 Subsidiary Settings' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Subsidiary Settings' })).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'System Dictionary' }));
     expect(screen.getAllByText('Customer Status').length).toBeGreaterThan(0);
-    expect(await screen.findByText('Active customer')).toBeInTheDocument();
+    expect((await screen.findAllByText('Active customer')).length).toBeGreaterThan(0);
 
     fireEvent.click(screen.getByRole('button', { name: 'Configuration Entity Management' }));
     expect((await screen.findAllByText('Business Segment')).length).toBeGreaterThan(0);
@@ -407,7 +407,6 @@ describe('SubsidiarySettingsScreen', () => {
               customerImportEnabled: true,
               maxImportRows: 50000,
               totpRequiredForAll: false,
-              allowCustomHomepage: true,
               allowMarshmallow: false,
               passwordPolicy: {
                 minLength: 12,
@@ -497,7 +496,7 @@ describe('SubsidiarySettingsScreen', () => {
 
     render(<SubsidiarySettingsScreen tenantId="tenant-1" subsidiaryId="sub-1" />);
 
-    expect(await screen.findByRole('heading', { name: '东京分部 分目录设置' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: '分目录设置' })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: '设置' }));
     expect(screen.queryByRole('button', { name: '保存分目录设置' })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: '编辑默认值' }));
@@ -581,7 +580,7 @@ describe('SubsidiarySettingsScreen', () => {
 
     const { rerender } = render(<SubsidiarySettingsScreen tenantId="tenant-1" subsidiaryId="sub-1" />);
 
-    expect(await screen.findByRole('heading', { name: 'Tokyo 分目錄設定' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: '分目錄設定' })).toBeInTheDocument();
     expect(screen.getByRole('navigation', { name: '設定分區' })).toBeInTheDocument();
 
     localeState.locale = 'en';
@@ -589,7 +588,7 @@ describe('SubsidiarySettingsScreen', () => {
     installSuccessMocks();
     rerender(<SubsidiarySettingsScreen tenantId="tenant-1" subsidiaryId="sub-1" />);
 
-    expect(await screen.findByRole('heading', { name: 'Tokyo 하위 조직 설정' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: '하위 조직 설정' })).toBeInTheDocument();
     expect(screen.getByRole('navigation', { name: '설정 섹션' })).toBeInTheDocument();
   });
 
@@ -644,7 +643,7 @@ describe('SubsidiarySettingsScreen', () => {
 
     render(<SubsidiarySettingsScreen tenantId="tenant-1" subsidiaryId="sub-1" />);
 
-    expect(await screen.findByRole('heading', { name: 'Tokyo Subsidiary Settings' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Subsidiary Settings' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Open business workspace' })).toHaveAttribute(
       'href',
       '/tenant/tenant-1/subsidiary/sub-1/business',

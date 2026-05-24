@@ -1,21 +1,31 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import { BadRequestException, Injectable, NotFoundException, Optional } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { ErrorCodes, normalizeSupportedUiLocale } from '@tcrn/shared';
+import { ConfigService as NestConfigService } from '@nestjs/config';
+import {
+  createArtistLifecycleFlowSchema,
+  ErrorCodes,
+  normalizeSupportedUiLocale,
+  type ArtistLifecycleFlow,
+} from '@tcrn/shared';
 
 import {
   EMAIL_SENDER_PREFERENCES_SETTINGS_KEY,
   EMAIL_SENDING_DOMAINS_SETTINGS_KEY,
 } from '../../email/domain/tenant-sending-domain.policy';
 import {
+  ARTIST_LIFECYCLE_FLOW_SETTINGS_KEY,
   buildTenantTurnstileSettingsResponse,
+  canUpdateSettingsKeyThroughGeneralSettings,
   createDefaultInheritedFrom,
   DEFAULT_SETTINGS,
   getScopeName,
   hasStoredTenantTurnstileSettings,
+  isTenantOnlySettingsKey,
+  normalizeStoredArtistLifecycleFlow,
   normalizeNullableSettingString,
   readStoredTenantTurnstileSettings,
+  type ArtistLifecycleFlowSettingsResponse,
   type ScopeOwnSettingsRecord,
   type ScopeSettings,
   type SettingsScopeRef,
@@ -31,7 +41,12 @@ import { SettingsSecretCryptoService } from '../infrastructure/settings-secret-c
 const GENERAL_SETTINGS_HIDDEN_KEYS = [
   EMAIL_SENDING_DOMAINS_SETTINGS_KEY,
   EMAIL_SENDER_PREFERENCES_SETTINGS_KEY,
+  ARTIST_LIFECYCLE_FLOW_SETTINGS_KEY,
   TENANT_TURNSTILE_SETTINGS_KEY,
+] as const;
+
+const GENERAL_SETTINGS_RETIRED_KEYS = [
+  'allowCustomHomepage',
 ] as const;
 
 @Injectable()
@@ -39,7 +54,7 @@ export class SettingsApplicationService {
   constructor(
     private readonly settingsRepository: SettingsRepository,
     @Optional() private readonly secretCrypto?: SettingsSecretCryptoService,
-    @Optional() private readonly configService?: ConfigService,
+    @Optional() private readonly configService?: NestConfigService,
   ) {}
 
   async getEffectiveSettings(
@@ -93,6 +108,16 @@ export class SettingsApplicationService {
       }
     }
 
+    for (const key of GENERAL_SETTINGS_RETIRED_KEYS) {
+      delete mergedSettings[key];
+      delete inheritedFrom[key];
+      const overrideIndex = overrides.indexOf(key);
+
+      if (overrideIndex >= 0) {
+        overrides.splice(overrideIndex, 1);
+      }
+    }
+
     return {
       scopeType,
       scopeId,
@@ -122,6 +147,7 @@ export class SettingsApplicationService {
       });
     }
 
+    this.assertGeneralSettingsUpdateAllowed(scopeType, updates);
     const normalizedUpdates = this.normalizeSettingsUpdates(updates);
     const newSettings = { ...(current?.settings ?? {}), ...normalizedUpdates };
     const newVersion = (current?.version ?? 0) + 1;
@@ -129,6 +155,93 @@ export class SettingsApplicationService {
     await this.saveScopeSettings(tenantSchema, scopeType, scopeId, newSettings, newVersion, userId);
 
     return this.getEffectiveSettings(tenantSchema, scopeType, scopeId);
+  }
+
+  async getArtistLifecycleFlow(
+    tenantSchema: string,
+    scopeType: SettingsScopeType,
+    scopeId: string | null,
+  ): Promise<ArtistLifecycleFlowSettingsResponse> {
+    await this.validateScopeExists(tenantSchema, scopeType, scopeId);
+
+    const tenant = await this.settingsRepository.findTenantBySchema(tenantSchema);
+    if (!tenant) {
+      throw new NotFoundException({
+        code: ErrorCodes.RES_NOT_FOUND,
+        message: 'Tenant not found',
+      });
+    }
+
+    const stageCatalog = await this.settingsRepository.listArtistStageCatalog(
+      tenantSchema,
+    );
+    const storedFlow = normalizeStoredArtistLifecycleFlow(
+      tenant.settings?.[ARTIST_LIFECYCLE_FLOW_SETTINGS_KEY],
+    );
+    const parsed = createArtistLifecycleFlowSchema({
+      stageCatalog,
+    }).safeParse(storedFlow);
+
+    return {
+      scopeType,
+      scopeId,
+      flow: parsed.success ? parsed.data : storedFlow,
+      inheritedFrom: 'tenant',
+      validationIssues: parsed.success
+        ? []
+        : parsed.error.issues.map((issue) => ({
+            message: issue.message,
+            path: issue.path.map((segment) => String(segment)),
+          })),
+      version: 1,
+      writable: scopeType === 'tenant',
+    };
+  }
+
+  async updateArtistLifecycleFlow(
+    tenantSchema: string,
+    flow: ArtistLifecycleFlow,
+  ): Promise<ArtistLifecycleFlowSettingsResponse> {
+    const tenant = await this.settingsRepository.findTenantBySchema(tenantSchema);
+    if (!tenant) {
+      throw new NotFoundException({
+        code: ErrorCodes.RES_NOT_FOUND,
+        message: 'Tenant not found',
+      });
+    }
+
+    const stageCatalog = await this.settingsRepository.listArtistStageCatalog(
+      tenantSchema,
+    );
+    let normalizedFlow: ArtistLifecycleFlow;
+
+    try {
+      normalizedFlow = createArtistLifecycleFlowSchema({
+        stageCatalog,
+      }).parse(flow);
+    } catch (error) {
+      throw new BadRequestException({
+        code: ErrorCodes.VALIDATION_FAILED,
+        message: 'Artist lifecycle flow is invalid',
+        details: error instanceof Error ? { reason: error.message } : undefined,
+      });
+    }
+    const nextSettings = {
+      ...(tenant.settings ?? {}),
+      [ARTIST_LIFECYCLE_FLOW_SETTINGS_KEY]: normalizedFlow,
+    };
+
+    await this.settingsRepository.updateTenantSettings(tenantSchema, nextSettings);
+
+    return {
+      scopeType: 'tenant',
+      scopeId: null,
+      flow: normalizedFlow,
+      inheritedFrom: 'tenant',
+      validationIssues: [],
+      version: 1,
+      writable: true,
+    };
   }
 
   async getTenantTurnstileSettings(
@@ -264,6 +377,27 @@ export class SettingsApplicationService {
     }
 
     return normalizedUpdates;
+  }
+
+  private assertGeneralSettingsUpdateAllowed(
+    scopeType: SettingsScopeType,
+    updates: Record<string, unknown>,
+  ): void {
+    for (const key of Object.keys(updates)) {
+      if (!canUpdateSettingsKeyThroughGeneralSettings(key)) {
+        throw new BadRequestException({
+          code: ErrorCodes.VALIDATION_FAILED,
+          message: `${key} must be updated through its dedicated settings workflow`,
+        });
+      }
+
+      if (scopeType !== 'tenant' && isTenantOnlySettingsKey(key)) {
+        throw new BadRequestException({
+          code: ErrorCodes.VALIDATION_FAILED,
+          message: `${key} is tenant-only and cannot be updated at ${scopeType} scope`,
+        });
+      }
+    }
   }
 
   private requireSecretCrypto(): SettingsSecretCryptoService {

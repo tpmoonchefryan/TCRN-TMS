@@ -211,6 +211,98 @@ function buildAdvancedPreview() {
   };
 }
 
+function buildAssetDetail() {
+  return {
+    asset: {
+      assetKind: 'template',
+      code: 'active-talent-hub-local',
+      componentType: null,
+      createdAt: '2026-05-23T01:00:00.000Z',
+      currentRevisionId: 'asset-revision-1',
+      description: {
+        en: 'Tenant-scoped template asset.',
+        fr: 'Tenant-scoped template asset.',
+        ja: 'Tenant-scoped template asset.',
+        ko: 'Tenant-scoped template asset.',
+        zh_HANS: 'Tenant-scoped template asset.',
+        zh_HANT: 'Tenant-scoped template asset.',
+      },
+      id: 'asset-template-1',
+      isSystem: false,
+      name: {
+        en: 'Active Talent Hub Local',
+        fr: 'Active Talent Hub Local',
+        ja: 'Active Talent Hub Local',
+        ko: 'Active Talent Hub Local',
+        zh_HANS: 'Active Talent Hub Local',
+        zh_HANT: 'Active Talent Hub Local',
+      },
+      ownerId: null,
+      ownerType: 'tenant',
+      status: 'draft',
+      templateId: 'activeTalentHub',
+      updatedAt: '2026-05-23T01:05:00.000Z',
+      version: 1,
+    },
+    canEdit: true,
+    currentRevision: {
+      artifactStatus: 'draft',
+      assetId: 'asset-template-1',
+      createdAt: '2026-05-23T01:05:00.000Z',
+      createdBy: 'user-1',
+      id: 'asset-revision-1',
+      lastValidatedAt: null,
+      manifest: {
+        assetKind: 'template',
+        defaultSectionOrder: ['firstEncounter', 'officialChannels'],
+        label: 'Active Talent Hub',
+        lockedSections: [],
+        optionalSections: ['fanActions'],
+        ownerId: null,
+        ownerType: 'tenant',
+        personaKitFields: ['campaignLabel'],
+        policyReferences: ['artistLifecycleFlow'],
+        recommendedSections: ['fanActions'],
+        requiredSections: ['firstEncounter', 'officialChannels'],
+        runtimeContractVersion: '2026.05',
+        templateId: 'activeTalentHub',
+        useCase: 'Always-on official public presence for an active talent.',
+        validationRules: ['requiresOfficialChannels'],
+      },
+      revisionNumber: 1,
+      runtimeContractVersion: '2026.05',
+      sourceBundle: [
+        {
+          contents: 'export function activeTalentHubTemplate() { return null; }\n',
+          kind: 'code',
+          language: 'typescript',
+          path: 'src/template.tsx',
+        },
+        {
+          contents: '{"assetKind":"template"}',
+          kind: 'schema',
+          language: 'json',
+          path: 'manifest.json',
+        },
+      ],
+      sourceHash: 'assethash001',
+      submittedAt: null,
+      validationState: 'unvalidated',
+      validationSummary: {
+        issueCount: 0,
+        passCount: 0,
+        warnCount: 0,
+      },
+    },
+    isInherited: false,
+    revisions: [],
+    scope: {
+      scopeId: null,
+      scopeType: 'tenant',
+    },
+  };
+}
+
 function setWindowWidth(width: number) {
   Object.defineProperty(window, 'innerWidth', {
     configurable: true,
@@ -339,6 +431,94 @@ describe('PublicPresenceAuthoringIdeScreen', () => {
     expect(container.textContent).not.toMatch(ORDINARY_COPY_BOUNDARY_PATTERN);
     expect(screen.getByTestId('mock-public-preview')).toHaveAttribute('data-responsive-mode', 'desktop');
   }, 15_000);
+
+  it('marks legacy non-asset template authoring as a compatibility entry', async () => {
+    render(
+      <PublicPresenceAuthoringIdeScreen
+        target="template"
+        talentId="talent-1"
+        tenantId="tenant-1"
+        templateId="activeTalentHub"
+      />,
+    );
+
+    expect(await screen.findByTestId('legacy-authoring-compatibility-notice')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Open asset workspace' })).toHaveAttribute(
+      'href',
+      '/tenant/tenant-1/talent/talent-1/settings?section=config-entities',
+    );
+    expect(screen.getByRole('link', { name: 'Open Homepage Management' })).toHaveAttribute(
+      'href',
+      '/tenant/tenant-1/talent/talent-1/homepage',
+    );
+  });
+
+  it('loads and saves asset-scoped template revisions through the asset endpoints', async () => {
+    mockRequest.mockImplementation(async (path: string, init?: RequestInit) => {
+      if (path === '/api/v1/public-presence/assets/asset-template-1?scopeType=tenant' && !init) {
+        return buildAssetDetail();
+      }
+
+      if (path === '/api/v1/public-presence/assets/asset-template-1/current?scopeType=tenant' && init?.method === 'PUT') {
+        const payload = JSON.parse(String(init.body ?? '{}')) as {
+          sourceBundle: Array<{
+            contents: string;
+            kind: string;
+            language: string;
+            path: string;
+          }>;
+        };
+
+        return {
+          ...buildAssetDetail(),
+          currentRevision: {
+            ...buildAssetDetail().currentRevision,
+            createdAt: '2026-05-23T01:06:00.000Z',
+            sourceBundle: payload.sourceBundle,
+          },
+        };
+      }
+
+      throw new Error(`Unhandled request: ${path}`);
+    });
+
+    render(
+      <PublicPresenceAuthoringIdeScreen
+        assetId="asset-template-1"
+        assetScopeType="tenant"
+        target="template"
+        tenantId="tenant-1"
+      />,
+    );
+
+    const editor = await screen.findByRole('textbox', { name: 'src/template.tsx' });
+
+    await waitFor(() => {
+      expect(String((editor as HTMLTextAreaElement).value)).toContain('activeTalentHubTemplate');
+    });
+    expect(screen.getByRole('link', { name: 'Exit' })).toHaveAttribute(
+      'href',
+      '/tenant/tenant-1/settings?section=config-entities',
+    );
+    expect(screen.queryByRole('button', { name: 'Submit' })).not.toBeInTheDocument();
+
+    fireEvent.change(editor, {
+      target: {
+        value: 'export function activeTalentHubTemplate() { return "changed"; }\n',
+      },
+    });
+    fireEvent.click(screen.getAllByRole('button', { name: 'Save draft' })[0]);
+
+    await waitFor(() => {
+      expect(mockRequest).toHaveBeenCalledWith(
+        '/api/v1/public-presence/assets/asset-template-1/current?scopeType=tenant',
+        expect.objectContaining({
+          method: 'PUT',
+        }),
+      );
+      expect(screen.getAllByText('Draft saved')[0]).toBeInTheDocument();
+    });
+  });
 
   it('renders a component authoring workspace with file tree and preview controls', async () => {
     render(
@@ -632,7 +812,7 @@ describe('PublicPresenceAuthoringIdeScreen', () => {
     expect(screen.getByRole('option', { name: 'Before reveal hold' })).toBeInTheDocument();
   });
 
-  it('loads current homepage source into Advanced page-source mode', async () => {
+  it('falls back legacy page-source deep links to the safe custom-html mode', async () => {
     render(
       <PublicPresenceAuthoringIdeScreen
         advancedMode="page-source"
@@ -643,18 +823,15 @@ describe('PublicPresenceAuthoringIdeScreen', () => {
       />,
     );
 
-    const editor = await screen.findByRole('textbox', { name: 'src/page-source.json' });
-
-    await waitFor(() => {
-      expect(String((editor as HTMLTextAreaElement).value)).toContain('Sakura Kaze Official Hub');
-    });
-    expect(screen.getByTestId('mock-public-preview')).toHaveTextContent('Sakura Kaze Official Hub');
+    expect(screen.queryByRole('button', { name: 'Page source' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Custom HTML' })).toHaveAttribute('aria-pressed', 'true');
+    expect(await screen.findByRole('textbox', { name: 'src/index.html' })).toBeInTheDocument();
+    expect(screen.getByTestId('ide-custom-html-preview')).toBeInTheDocument();
   });
 
   it('renders a standalone advanced IDE with mode switches and safe custom-html preview', async () => {
     render(
       <PublicPresenceAuthoringIdeScreen
-        componentDraftKey="new"
         advancedMode="custom-html"
         target="advanced"
         talentId="talent-1"
@@ -665,7 +842,7 @@ describe('PublicPresenceAuthoringIdeScreen', () => {
 
     expect(screen.getAllByText('Advanced IDE')[0]).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Custom HTML' })).toHaveAttribute('aria-pressed', 'true');
-    expect(screen.getByRole('button', { name: 'Page source' })).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.queryByRole('button', { name: 'Page source' })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Registry snippets' })).toBeInTheDocument();
     expect(screen.getByTestId('ide-custom-html-preview')).toBeInTheDocument();
     expect(screen.getByText('Safe custom page preview')).toBeInTheDocument();
@@ -673,16 +850,9 @@ describe('PublicPresenceAuthoringIdeScreen', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Registry snippets' }));
     expect(screen.getByRole('button', { name: 'Registry snippets' })).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByText('Approved snippet preview')).toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Page source' }));
-    expect(screen.getByRole('button', { name: 'Page source' })).toHaveAttribute('aria-pressed', 'true');
-    expect(screen.getByText('Structured page preview')).toBeInTheDocument();
-    await waitFor(() => {
-      expect(screen.getByTestId('mock-public-preview')).toHaveTextContent('Sakura Kaze Official Hub');
-    });
   });
 
-  it('saves current homepage source back through the homepage draft endpoint', async () => {
+  it('keeps legacy page-source deep links off the homepage draft endpoint', async () => {
     render(
       <PublicPresenceAuthoringIdeScreen
         advancedMode="page-source"
@@ -693,36 +863,26 @@ describe('PublicPresenceAuthoringIdeScreen', () => {
       />,
     );
 
-    const editor = await screen.findByRole('textbox', { name: 'src/page-source.json' });
+    const editor = await screen.findByRole('textbox', { name: 'src/index.html' });
     fireEvent.change(editor, {
       target: {
-        value: JSON.stringify(
-          {
-            ...buildAdvancedWorkspace().draftVersion.document,
-            metadata: {
-              title: 'Advanced Source Roundtrip',
-            },
-          },
-          null,
-          2,
-        ),
+        value: '<main class="fan-page"><h1>Legacy deep link fallback</h1></main>',
       },
     });
 
     fireEvent.click(screen.getByRole('button', { name: 'Save draft' }));
 
     await waitFor(() => {
-      expect(mockRequest).toHaveBeenCalledWith(
-        '/api/v1/talents/talent-1/public-presence/draft',
-        expect.objectContaining({
-          method: 'PATCH',
-        }),
-      );
       expect(screen.getAllByText('Draft saved')[0]).toBeInTheDocument();
     });
+    expect(
+      mockRequest.mock.calls.some(
+        ([path]) => path === '/api/v1/talents/talent-1/public-presence/draft',
+      ),
+    ).toBe(false);
   });
 
-  it('captures select-all textarea fallback edits for advanced page source saves', async () => {
+  it('captures select-all textarea fallback edits for custom-html saves after legacy deep-link fallback', async () => {
     render(
       <PublicPresenceAuthoringIdeScreen
         advancedMode="page-source"
@@ -733,21 +893,9 @@ describe('PublicPresenceAuthoringIdeScreen', () => {
       />,
     );
 
-    const editor = await screen.findByRole('textbox', { name: 'src/page-source.json' });
-    await waitFor(() => {
-      expect(String((editor as HTMLTextAreaElement).value)).toContain('Sakura Kaze Official Hub');
-    });
+    const editor = await screen.findByRole('textbox', { name: 'src/index.html' });
 
-    const replacement = JSON.stringify(
-      {
-        ...buildAdvancedWorkspace().draftVersion.document,
-        metadata: {
-          title: 'Advanced textarea fallback marker',
-        },
-      },
-      null,
-      2,
-    );
+    const replacement = '<main class="fan-page"><h1>Advanced textarea fallback marker</h1></main>';
     const saveButton = screen.getByRole('button', { name: 'Save draft' });
 
     expect(saveButton).toBeDisabled();
@@ -769,24 +917,18 @@ describe('PublicPresenceAuthoringIdeScreen', () => {
     fireEvent.click(saveButton);
 
     await waitFor(() => {
-      const saveCall = mockRequest.mock.calls.find(
-        ([path, init]) =>
-          path === '/api/v1/talents/talent-1/public-presence/draft'
-          && init?.method === 'PATCH',
+      expect(screen.getByTestId('ide-custom-html-preview').getAttribute('srcdoc')).toContain(
+        'Advanced textarea fallback marker',
       );
-      const payload = JSON.parse(String(saveCall?.[1]?.body ?? '{}')) as {
-        document: {
-          metadata?: {
-            title?: string;
-          };
-        };
-      };
-
-      expect(payload.document.metadata?.title).toBe('Advanced textarea fallback marker');
     });
+    expect(
+      mockRequest.mock.calls.some(
+        ([path]) => path === '/api/v1/talents/talent-1/public-presence/draft',
+      ),
+    ).toBe(false);
   });
 
-  it('keeps the visible editor focus path saveable for custom template drafts', async () => {
+  it('keeps the visible editor focus path saveable for compatibility template routes without legacy draft requests', async () => {
     render(
       <PublicPresenceAuthoringIdeScreen
         target="template"
@@ -818,27 +960,12 @@ describe('PublicPresenceAuthoringIdeScreen', () => {
     fireEvent.click(saveButton);
 
     await waitFor(() => {
-      const saveCall = mockRequest.mock.calls.find(
-        ([path, init]) =>
-          path === '/api/v1/talents/talent-1/public-presence/authoring/templates/current'
-          && init?.method === 'PUT',
-      );
-      const payload = JSON.parse(String(saveCall?.[1]?.body ?? '{}')) as {
-        sourceBundle: Array<{
-          contents: string;
-          path: string;
-        }>;
-      };
-
-      expect(payload.sourceBundle).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({
-            contents: `export const customTemplateVisibleMarker = "${marker}";\n`,
-            path: 'src/template.tsx',
-          }),
-        ]),
-      );
+      expect(screen.getAllByText('Draft saved')[0]).toBeInTheDocument();
+      expect(saveButton).toBeDisabled();
     });
+    expect(
+      mockRequest.mock.calls.some(([path]) => String(path).includes('/public-presence/authoring/')),
+    ).toBe(false);
   });
 
   it('keeps custom HTML authoring in a real dirty-save-validate lifecycle', async () => {
@@ -889,7 +1016,7 @@ describe('PublicPresenceAuthoringIdeScreen', () => {
     });
   });
 
-  it('keeps the custom HTML dirty lifecycle after switching from page source mode', async () => {
+  it('keeps the custom HTML dirty lifecycle after a legacy page-source deep link falls back', async () => {
     render(
       <PublicPresenceAuthoringIdeScreen
         advancedMode="page-source"
@@ -899,8 +1026,6 @@ describe('PublicPresenceAuthoringIdeScreen', () => {
         templateId="activeTalentHub"
       />,
     );
-
-    fireEvent.click(screen.getByRole('button', { name: 'Custom HTML' }));
 
     const saveButton = screen.getByRole('button', { name: 'Save draft' });
     const editor = await screen.findByRole('textbox', { name: 'src/index.html' });
@@ -921,7 +1046,7 @@ describe('PublicPresenceAuthoringIdeScreen', () => {
     );
   });
 
-  it('persists new template drafts after textarea replacement fallback', async () => {
+  it('keeps textarea replacement fallback saveable on compatibility template routes without legacy draft persistence', async () => {
     render(
       <PublicPresenceAuthoringIdeScreen
         target="template"
@@ -951,32 +1076,18 @@ describe('PublicPresenceAuthoringIdeScreen', () => {
     fireEvent.click(saveButton);
 
     await waitFor(() => {
-      const saveCall = mockRequest.mock.calls.find(
-        ([path, init]) =>
-          path === '/api/v1/talents/talent-1/public-presence/authoring/templates/current'
-          && init?.method === 'PUT',
-      );
-      const payload = JSON.parse(String(saveCall?.[1]?.body ?? '{}')) as {
-        sourceBundle: Array<{
-          contents: string;
-          path: string;
-        }>;
-        subjectKey?: string;
-      };
-
-      expect(payload.subjectKey).toBe('new');
-      expect(payload.sourceBundle).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({
-            contents: `export const customTemplateMarker = "${marker}";\n`,
-            path: 'src/template.tsx',
-          }),
-        ]),
-      );
+      expect(screen.getAllByText('Draft saved')[0]).toBeInTheDocument();
+      expect(saveButton).toBeDisabled();
     });
+    expect(
+      (screen.getByRole('textbox', { name: 'src/template.tsx' }) as HTMLTextAreaElement).value,
+    ).toContain(marker);
+    expect(
+      mockRequest.mock.calls.some(([path]) => String(path).includes('/public-presence/authoring/')),
+    ).toBe(false);
   });
 
-  it('persists created workspace file contents after textarea replacement fallback', async () => {
+  it('keeps created workspace file contents saveable on compatibility template routes without legacy draft persistence', async () => {
     setWindowWidth(1440);
 
     render(
@@ -1027,33 +1138,19 @@ describe('PublicPresenceAuthoringIdeScreen', () => {
     fireEvent.click(saveButton);
 
     await waitFor(() => {
-      const saveCall = mockRequest.mock.calls.find(
-        ([path, init]) =>
-          path === '/api/v1/talents/talent-1/public-presence/authoring/templates/current'
-          && init?.method === 'PUT',
-      );
-      const payload = JSON.parse(String(saveCall?.[1]?.body ?? '{}')) as {
-        sourceBundle: Array<{
-          contents: string;
-          path: string;
-        }>;
-      };
-
-      expect(payload.sourceBundle).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({
-            contents: `export const customWorkspaceMarker = "${marker}";\n`,
-            path: 'src/custom-blocks/hero-note.tsx',
-          }),
-          expect.objectContaining({
-            path: 'system/workspace.json',
-          }),
-        ]),
-      );
+      expect(screen.getAllByText('Draft saved')[0]).toBeInTheDocument();
     });
+
+    fireEvent.click(within(fileDrawer).getByTestId('ide-file-src/custom-blocks/hero-note.tsx'));
+    expect(
+      (screen.getByRole('textbox', { name: 'src/custom-blocks/hero-note.tsx' }) as HTMLTextAreaElement).value,
+    ).toContain(marker);
+    expect(
+      mockRequest.mock.calls.some(([path]) => String(path).includes('/public-presence/authoring/')),
+    ).toBe(false);
   });
 
-  it('persists template drafts through durable authoring endpoints', async () => {
+  it('keeps compatibility template routes in a local save-validate-submit lifecycle without legacy authoring endpoints', async () => {
     setWindowWidth(1440);
 
     render(
@@ -1074,33 +1171,17 @@ describe('PublicPresenceAuthoringIdeScreen', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Save draft' }));
     await waitFor(() => {
-      expect(mockRequest).toHaveBeenCalledWith(
-        '/api/v1/talents/talent-1/public-presence/authoring/templates/current',
-        expect.objectContaining({
-          method: 'PUT',
-        }),
-      );
+      expect(screen.getAllByText('Draft saved')[0]).toBeInTheDocument();
     });
 
     fireEvent.click(screen.getByRole('button', { name: 'Validate' }));
     await waitFor(() => {
-      expect(mockRequest).toHaveBeenCalledWith(
-        '/api/v1/talents/talent-1/public-presence/authoring/templates/current/validate',
-        expect.objectContaining({
-          method: 'POST',
-        }),
-      );
       expect(screen.getAllByText('Validation refreshed')[0]).toBeInTheDocument();
     });
 
     fireEvent.click(screen.getByRole('button', { name: 'Submit' }));
-    await waitFor(() => {
-      expect(mockRequest).toHaveBeenCalledWith(
-        '/api/v1/talents/talent-1/public-presence/authoring/templates/current/submit',
-        expect.objectContaining({
-          method: 'POST',
-        }),
-      );
-    });
+    expect(
+      mockRequest.mock.calls.some(([path]) => String(path).includes('/public-presence/authoring/')),
+    ).toBe(false);
   });
 });

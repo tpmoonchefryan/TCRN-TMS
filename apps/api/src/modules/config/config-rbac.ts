@@ -11,6 +11,7 @@ import { CONFIG_TABLE_NAMES, type ConfigEntityType } from './config.types';
 
 export const CONFIG_ENTITY_RESOURCE_MAP: Record<ConfigEntityType, RbacResourceCode> = {
   'channel-category': 'config.dictionary',
+  'artist-stage': 'config.dictionary',
   'social-platform': 'config.platform_registry',
   'business-segment': 'config.dictionary',
   'communication-type': 'config.dictionary',

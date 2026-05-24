@@ -1,11 +1,19 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import { ConflictException } from '@nestjs/common';
-import type { PublicPresenceDocument, RequestContext } from '@tcrn/shared';
+import {
+  buildBlankPublicPresenceAssetSourceBundle,
+  buildPublicPresenceTemplateAssetManifest,
+  getPublicPresenceTemplateSeedText,
+  type PublicPresenceAssetRevisionPin,
+  type PublicPresenceDocument,
+  type RequestContext,
+} from '@tcrn/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { calculatePublicPresenceContentHash } from '../domain/public-presence-foundation.policy';
 import { PublicPresenceFoundationRepository } from '../infrastructure/public-presence-foundation.repository';
+import { PublicPresenceAssetService } from './public-presence-asset.service';
 import { PublicPresenceFoundationService } from './public-presence-foundation.service';
 
 const safeDocument: PublicPresenceDocument = {
@@ -49,6 +57,42 @@ const safeDocument: PublicPresenceDocument = {
 
 describe('PublicPresenceFoundationService', () => {
   let service: PublicPresenceFoundationService;
+  const TEMPLATE_ASSET_ID = '55555555-5555-4555-8555-555555555551';
+  const TEMPLATE_REVISION_ID = '55555555-5555-4555-8555-555555555552';
+  const TALENT_OWNER_ID = '55555555-5555-4555-8555-555555555553';
+
+  const templatePin: PublicPresenceAssetRevisionPin = (() => {
+    const text = getPublicPresenceTemplateSeedText('activeTalentHub');
+    const manifest = buildPublicPresenceTemplateAssetManifest('activeTalentHub', {
+      assetCode: 'active-talent-hub',
+      assetId: TEMPLATE_ASSET_ID,
+      assetRevisionId: TEMPLATE_REVISION_ID,
+      description: text.description,
+      name: text.name,
+      ownerId: TALENT_OWNER_ID,
+      ownerType: 'talent',
+    });
+
+    return {
+      assetId: TEMPLATE_ASSET_ID,
+      assetRevisionId: TEMPLATE_REVISION_ID,
+      snapshot: {
+        assetId: TEMPLATE_ASSET_ID,
+        assetRevisionId: TEMPLATE_REVISION_ID,
+        manifest,
+        revisionNumber: 1,
+        sourceBundle: buildBlankPublicPresenceAssetSourceBundle({
+          assetCode: 'active-talent-hub',
+          assetKind: 'template',
+          manifest,
+          name: text.name,
+          templateId: 'activeTalentHub',
+        }),
+        sourceHash: 'a'.repeat(64),
+      },
+      sourceHash: 'a'.repeat(64),
+    };
+  })();
 
   const mockRepository = {
     createDraftVersionAndAssign: vi.fn(),
@@ -56,6 +100,9 @@ describe('PublicPresenceFoundationService', () => {
     createValidationSnapshotForExistingDraft: vi.fn(),
     findLatestVersionByTemplate: vi.fn(),
     findPortalByTalentId: vi.fn(),
+  };
+  const mockAssetService = {
+    listAssets: vi.fn().mockResolvedValue([]),
   };
 
   const requestContext: RequestContext = {
@@ -72,6 +119,7 @@ describe('PublicPresenceFoundationService', () => {
     vi.clearAllMocks();
     service = new PublicPresenceFoundationService(
       mockRepository as unknown as PublicPresenceFoundationRepository,
+      mockAssetService as unknown as PublicPresenceAssetService,
     );
   });
 
@@ -134,7 +182,9 @@ describe('PublicPresenceFoundationService', () => {
       },
     });
 
-    const result = await service.saveDraft('talent-1', safeDocument, requestContext);
+    const result = await service.saveDraft('talent-1', safeDocument, requestContext, {
+      templateAssetPin: templatePin,
+    });
 
     expect(result).toMatchObject({
       draftVersion: {
@@ -176,6 +226,7 @@ describe('PublicPresenceFoundationService', () => {
       versionNumber: 1,
       documentSchemaVersion: '1.0',
       templateId: 'activeTalentHub',
+      templateAssetPin: templatePin,
       document: safeDocument,
       documentState: 'draft',
       contentHashAlgorithm: 'sha256',
@@ -192,6 +243,7 @@ describe('PublicPresenceFoundationService', () => {
     await expect(
       service.saveDraft('talent-1', safeDocument, requestContext, {
         expectedCurrentContentHash: 'stale-client-hash',
+        templateAssetPin: templatePin,
       }),
     ).rejects.toThrow(ConflictException);
     expect(mockRepository.createDraftVersionAndAssign).not.toHaveBeenCalled();
@@ -218,6 +270,7 @@ describe('PublicPresenceFoundationService', () => {
       versionNumber: 1,
       documentSchemaVersion: '1.0',
       templateId: 'activeTalentHub',
+      templateAssetPin: templatePin,
       document: safeDocument,
       documentState: 'draft',
       contentHashAlgorithm: 'sha256',
@@ -254,7 +307,9 @@ describe('PublicPresenceFoundationService', () => {
       createdBy: 'user-1',
     });
 
-    const result = await service.saveDraft('talent-1', safeDocument, requestContext);
+    const result = await service.saveDraft('talent-1', safeDocument, requestContext, {
+      templateAssetPin: templatePin,
+    });
 
     expect(result).toMatchObject({
       draftVersion: {

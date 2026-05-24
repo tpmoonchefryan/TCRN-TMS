@@ -64,6 +64,16 @@ describe('SettingsController private route contract', () => {
           path: 'organization/settings',
         },
         {
+          methodName: 'getTenantArtistLifecycleFlow',
+          requestMethod: RequestMethod.GET,
+          path: 'organization/settings/artist-lifecycle-flow',
+        },
+        {
+          methodName: 'updateTenantArtistLifecycleFlow',
+          requestMethod: RequestMethod.PATCH,
+          path: 'organization/settings/artist-lifecycle-flow',
+        },
+        {
           methodName: 'getTenantTurnstileSettings',
           requestMethod: RequestMethod.GET,
           path: 'organization/settings/turnstile',
@@ -79,6 +89,11 @@ describe('SettingsController private route contract', () => {
           path: 'subsidiaries/:subsidiaryId/settings',
         },
         {
+          methodName: 'getSubsidiaryArtistLifecycleFlow',
+          requestMethod: RequestMethod.GET,
+          path: 'subsidiaries/:subsidiaryId/settings/artist-lifecycle-flow',
+        },
+        {
           methodName: 'updateSubsidiarySettings',
           requestMethod: RequestMethod.PATCH,
           path: 'subsidiaries/:subsidiaryId/settings',
@@ -92,6 +107,11 @@ describe('SettingsController private route contract', () => {
           methodName: 'getTalentSettings',
           requestMethod: RequestMethod.GET,
           path: 'talents/:talentId/settings',
+        },
+        {
+          methodName: 'getTalentArtistLifecycleFlow',
+          requestMethod: RequestMethod.GET,
+          path: 'talents/:talentId/settings/artist-lifecycle-flow',
         },
         {
           methodName: 'updateTalentSettings',
@@ -114,6 +134,12 @@ describe('SettingsController private route contract', () => {
     expect(getMethodPermissions('updateTenantSettings')).toEqual([
       { resource: 'settings', action: 'update' },
     ]);
+    expect(getMethodPermissions('getTenantArtistLifecycleFlow')).toEqual([
+      { resource: 'settings', action: 'read' },
+    ]);
+    expect(getMethodPermissions('updateTenantArtistLifecycleFlow')).toEqual([
+      { resource: 'settings', action: 'update' },
+    ]);
     expect(getMethodPermissions('getTenantTurnstileSettings')).toEqual([
       { resource: 'config.platform_settings', action: 'read' },
     ]);
@@ -123,6 +149,9 @@ describe('SettingsController private route contract', () => {
     expect(getMethodPermissions('getSubsidiarySettings')).toEqual([
       { resource: 'settings', action: 'read' },
     ]);
+    expect(getMethodPermissions('getSubsidiaryArtistLifecycleFlow')).toEqual([
+      { resource: 'settings', action: 'read' },
+    ]);
     expect(getMethodPermissions('updateSubsidiarySettings')).toEqual([
       { resource: 'settings', action: 'update' },
     ]);
@@ -130,6 +159,9 @@ describe('SettingsController private route contract', () => {
       { resource: 'settings', action: 'update' },
     ]);
     expect(getMethodPermissions('getTalentSettings')).toEqual([
+      { resource: 'settings', action: 'read' },
+    ]);
+    expect(getMethodPermissions('getTalentArtistLifecycleFlow')).toEqual([
       { resource: 'settings', action: 'read' },
     ]);
     expect(getMethodPermissions('updateTalentSettings')).toEqual([

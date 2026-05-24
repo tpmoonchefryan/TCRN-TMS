@@ -8,15 +8,15 @@ import {
   buildAcUserManagementPath,
   buildAcWorkspacePath,
   buildDefaultWorkspacePath,
+  buildPublicPresenceAssetIdePath,
   buildPublicPresenceStudioEditorPath,
-  buildPublicPresenceTemplateAuthoringPath,
-  buildPublicPresenceAdvancedIdePath,
-  buildPublicPresenceComponentAuthoringPath,
   buildPublicPresenceHomepageSurfacePath,
   buildPublicPresenceStudioPreviewPath,
+  buildSubsidiarySettingsPath,
   mergePathSearchParams,
   buildSubsidiaryBusinessPath,
   buildTalentSettingsPath,
+  buildTenantSettingsPath,
   buildTalentWorkspacePath,
   buildTalentWorkspaceSectionPath,
   buildTenantBusinessPath,
@@ -142,35 +142,31 @@ describe('workspace-paths', () => {
       '/tenant/tenant-3/talent/talent-8/homepage',
     );
     expect(buildPublicPresenceHomepageSurfacePath('tenant-3', 'talent-8', 'templates')).toBe(
-      '/tenant/tenant-3/talent/talent-8/homepage?surface=templates',
+      '/tenant/tenant-3/talent/talent-8/homepage',
     );
     expect(buildPublicPresenceHomepageSurfacePath('tenant-3', 'talent-8', 'components')).toBe(
-      '/tenant/tenant-3/talent/talent-8/homepage?surface=components',
+      '/tenant/tenant-3/talent/talent-8/homepage',
     );
-    expect(buildPublicPresenceTemplateAuthoringPath('tenant-3', 'talent-8')).toBe(
-      '/studio/public-presence/tenant-3/talent-8/templates/new',
-    );
-    expect(buildPublicPresenceTemplateAuthoringPath('tenant-3', 'talent-8', 'debutReveal')).toBe(
-      '/studio/public-presence/tenant-3/talent-8/templates/new?templateId=debutReveal',
-    );
-    expect(buildPublicPresenceAdvancedIdePath('tenant-3', 'talent-8')).toBe(
-      '/studio/public-presence/tenant-3/talent-8/advanced',
-    );
-    expect(buildPublicPresenceAdvancedIdePath('tenant-3', 'talent-8', {
-      mode: 'custom-html',
-      templateId: 'activeTalentHub',
-    })).toBe(
-      '/studio/public-presence/tenant-3/talent-8/advanced?templateId=activeTalentHub&mode=custom-html',
-    );
-    expect(buildPublicPresenceComponentAuthoringPath('tenant-3', 'talent-8')).toBe(
-      '/studio/public-presence/tenant-3/talent-8/components/new',
-    );
-    expect(buildPublicPresenceComponentAuthoringPath('tenant-3', 'talent-8', 'VideoEmbed')).toBe(
-      '/studio/public-presence/tenant-3/talent-8/components/new?componentType=VideoEmbed',
-    );
+    expect(
+      buildPublicPresenceAssetIdePath('tenant-3', 'template', 'asset-1', {
+        scopeType: 'tenant',
+      }),
+    ).toBe('/studio/public-presence/tenant-3/assets/template/asset-1?scopeType=tenant');
+    expect(
+      buildPublicPresenceAssetIdePath('tenant-3', 'component', 'asset-2', {
+        scopeId: 'sub-7',
+        scopeType: 'subsidiary',
+      }),
+    ).toBe('/studio/public-presence/tenant-3/assets/component/asset-2?scopeType=subsidiary&scopeId=sub-7');
   });
 
   it('builds talent settings paths with optional section focus state', () => {
+    expect(buildTenantSettingsPath('tenant-3')).toBe('/tenant/tenant-3/settings');
+    expect(buildTenantSettingsPath('tenant-3', 'config-entities')).toBe('/tenant/tenant-3/settings?section=config-entities');
+    expect(buildSubsidiarySettingsPath('tenant-3', 'sub-7')).toBe('/tenant/tenant-3/subsidiary/sub-7/settings');
+    expect(buildSubsidiarySettingsPath('tenant-3', 'sub-7', 'config-entities')).toBe(
+      '/tenant/tenant-3/subsidiary/sub-7/settings?section=config-entities',
+    );
     expect(buildTalentSettingsPath('tenant-3', 'talent-8')).toBe('/tenant/tenant-3/talent/talent-8/settings');
     expect(
       buildTalentSettingsPath('tenant-3', 'talent-8', {

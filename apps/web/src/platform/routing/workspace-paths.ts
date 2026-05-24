@@ -8,7 +8,7 @@ export type TalentSettingsSection = 'details' | 'config-entities' | 'settings' |
 export type TalentSettingsFocus = 'homepage-routing' | 'marshmallow-routing';
 export type PublicPresenceHomepageSurface = 'management' | 'templates' | 'components';
 export type PublicPresenceStudioFocus = 'overview' | 'release' | 'countdown';
-export type PublicPresenceAdvancedIdeMode = 'page-source' | 'custom-html' | 'registry-snippets';
+export type PublicPresenceAssetIdeKind = 'template' | 'component';
 
 export interface TalentWorkspaceRoute {
   tenantId: string;
@@ -25,6 +25,11 @@ export interface HierarchyBusinessRoute {
 export interface TalentSettingsPathOptions {
   section?: TalentSettingsSection;
   focus?: TalentSettingsFocus;
+}
+
+export interface PublicPresenceAssetIdePathOptions {
+  scopeId?: string | null;
+  scopeType?: 'tenant' | 'subsidiary' | 'talent';
 }
 
 const TALENT_WORKSPACE_SECTIONS: readonly TalentWorkspaceSection[] = [
@@ -44,6 +49,22 @@ export function buildTenantWorkspacePath(tenantId: string) {
   return `/tenant/${tenantId}`;
 }
 
+export function buildTenantSettingsPath(
+  tenantId: string,
+  section?: TalentSettingsSection,
+) {
+  const params = new URLSearchParams();
+
+  if (section) {
+    params.set('section', section);
+  }
+
+  const query = params.toString();
+  const path = `${buildTenantWorkspacePath(tenantId)}/settings`;
+
+  return query ? `${path}?${query}` : path;
+}
+
 export function buildTenantOrganizationStructurePath(tenantId: string) {
   return `${buildTenantWorkspacePath(tenantId)}/organization-structure`;
 }
@@ -58,6 +79,23 @@ export function buildTenantBusinessPath(tenantId: string) {
 
 export function buildSubsidiaryBusinessPath(tenantId: string, subsidiaryId: string) {
   return `/tenant/${tenantId}/subsidiary/${subsidiaryId}/business`;
+}
+
+export function buildSubsidiarySettingsPath(
+  tenantId: string,
+  subsidiaryId: string,
+  section?: TalentSettingsSection,
+) {
+  const params = new URLSearchParams();
+
+  if (section) {
+    params.set('section', section);
+  }
+
+  const query = params.toString();
+  const path = `/tenant/${tenantId}/subsidiary/${subsidiaryId}/settings`;
+
+  return query ? `${path}?${query}` : path;
 }
 
 export function buildTenantUserCreatePath(tenantId: string) {
@@ -147,72 +185,30 @@ export function buildPublicPresenceHomepageSurfacePath(
   talentId: string,
   surface: PublicPresenceHomepageSurface = 'management',
 ) {
+  void surface;
   const path = buildTalentWorkspaceSectionPath(tenantId, talentId, 'homepage');
 
-  if (surface === 'management') {
-    return path;
-  }
-
-  const params = new URLSearchParams();
-  params.set('surface', surface);
-
-  return `${path}?${params.toString()}`;
+  return path;
 }
 
-export function buildPublicPresenceTemplateAuthoringPath(
+export function buildPublicPresenceAssetIdePath(
   tenantId: string,
-  talentId: string,
-  templateId?: string | null,
+  assetKind: PublicPresenceAssetIdeKind,
+  assetId: string,
+  options: PublicPresenceAssetIdePathOptions = {},
 ) {
   const params = new URLSearchParams();
 
-  if (templateId) {
-    params.set('templateId', templateId);
+  if (options.scopeType) {
+    params.set('scopeType', options.scopeType);
+  }
+
+  if (options.scopeId) {
+    params.set('scopeId', options.scopeId);
   }
 
   const query = params.toString();
-  const path = `/studio/public-presence/${tenantId}/${talentId}/templates/new`;
-
-  return query ? `${path}?${query}` : path;
-}
-
-export function buildPublicPresenceAdvancedIdePath(
-  tenantId: string,
-  talentId: string,
-  options: {
-    mode?: PublicPresenceAdvancedIdeMode | null;
-    templateId?: string | null;
-  } = {},
-) {
-  const params = new URLSearchParams();
-
-  if (options.templateId) {
-    params.set('templateId', options.templateId);
-  }
-
-  if (options.mode) {
-    params.set('mode', options.mode);
-  }
-
-  const query = params.toString();
-  const path = `/studio/public-presence/${tenantId}/${talentId}/advanced`;
-
-  return query ? `${path}?${query}` : path;
-}
-
-export function buildPublicPresenceComponentAuthoringPath(
-  tenantId: string,
-  talentId: string,
-  componentType?: string | null,
-) {
-  const params = new URLSearchParams();
-
-  if (componentType) {
-    params.set('componentType', componentType);
-  }
-
-  const query = params.toString();
-  const path = `/studio/public-presence/${tenantId}/${talentId}/components/new`;
+  const path = `/studio/public-presence/${tenantId}/assets/${assetKind}/${assetId}`;
 
   return query ? `${path}?${query}` : path;
 }

@@ -4,6 +4,7 @@ import { createHash } from 'node:crypto';
 
 import {
   PUBLIC_PRESENCE_CONTENT_HASH_POLICY,
+  type PublicPresenceAssetRevisionPin,
   type PublicPresenceDocument,
   type PublicPresenceDocumentState,
   type PublicPresenceHashAlgorithm,
@@ -39,6 +40,7 @@ export interface PublicPresenceDocumentVersionRecord {
   versionNumber: number;
   documentSchemaVersion: string;
   templateId: string;
+  templateAssetPin: PublicPresenceAssetRevisionPin | null;
   document: Record<string, unknown>;
   documentState: string;
   contentHashAlgorithm: string;
@@ -121,6 +123,7 @@ export interface PersistPublicPresenceDraftVersionInput {
   portalId: string;
   versionNumber: number;
   document: PublicPresenceDocument;
+  templateAssetPin: PublicPresenceAssetRevisionPin | null;
   contentHashAlgorithm: PublicPresenceHashAlgorithm;
   contentHash: string;
   validationSnapshot: PublicPresenceValidationSnapshot;
@@ -133,6 +136,7 @@ export interface PersistPublicPresenceValidationSnapshotInput {
   portalId: string;
   versionId: string;
   documentState: PublicPresenceDocumentState;
+  templateAssetPin: PublicPresenceAssetRevisionPin | null;
   contentHashAlgorithm: PublicPresenceHashAlgorithm;
   contentHash: string;
   validationSnapshot: PublicPresenceValidationSnapshot;
@@ -165,6 +169,7 @@ export interface CreatePublicPresenceDocumentFromSourceInput {
   payload?: Record<string, unknown>;
   portalId: string;
   sourceVersionId: string | null;
+  templateAssetPin: PublicPresenceAssetRevisionPin | null;
   templateId: string;
   versionNumber: number;
 }

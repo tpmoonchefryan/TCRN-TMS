@@ -4,9 +4,11 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import {
   ErrorCodes,
   PublicPresenceDocumentSchema,
+  PublicPresenceValidationSnapshotSchema,
   type PublicPresencePhaseVisibility,
   type PublicPresencePublicProjection,
   type PublicPresenceProjection,
+  type PublicPresenceValidationSnapshot,
 } from '@tcrn/shared';
 
 import type { PublicHomepageTalentRecord } from '../domain/public-homepage-read.policy';
@@ -160,6 +162,10 @@ export class PublicHomepageProjectionService {
     const tenantCode =
       (await this.homepageAdminRepository.findTenantCodeBySchema(tenantSchema))
       ?? tenantSchema;
+    const validationSnapshot = await this.loadValidationSnapshot(
+      tenantSchema,
+      version.lastValidationSnapshotId,
+    );
 
     return buildPublicPresenceProjectionFromDocument({
       contentHash: version.contentHash,
@@ -178,6 +184,8 @@ export class PublicHomepageProjectionService {
       },
       source: 'publicPresenceDocument',
       talentDisplayName: talent.displayName,
+      templateAssetPin: version.templateAssetPin,
+      validationSnapshot,
       validationSnapshotId: version.lastValidationSnapshotId,
     });
   }
@@ -243,6 +251,10 @@ export class PublicHomepageProjectionService {
     if (!liveVersion) {
       return null;
     }
+    const validationSnapshot = await this.loadValidationSnapshot(
+      schema,
+      liveVersion.lastValidationSnapshotId,
+    );
 
     return buildPublicPresenceProjectionFromDocument({
       contentHash: liveVersion.contentHash,
@@ -259,8 +271,35 @@ export class PublicHomepageProjectionService {
       },
       source: 'publicPresenceDocument',
       talentDisplayName: talent.displayName,
+      templateAssetPin: liveVersion.templateAssetPin,
+      validationSnapshot,
       validationSnapshotId: liveVersion.lastValidationSnapshotId,
     });
+  }
+
+  private async loadValidationSnapshot(
+    tenantSchema: string,
+    validationSnapshotId: string | null,
+  ): Promise<PublicPresenceValidationSnapshot | null> {
+    if (!validationSnapshotId) {
+      return null;
+    }
+
+    const record =
+      await this.publicPresenceFoundationRepository.findValidationSnapshotById(
+        tenantSchema,
+        validationSnapshotId,
+      );
+
+    if (!record) {
+      return null;
+    }
+
+    return PublicPresenceValidationSnapshotSchema.parse({
+      ...record.snapshot,
+      projectionHash:
+        (record.snapshot as { projectionHash?: string | null }).projectionHash ?? null,
+    }) as PublicPresenceValidationSnapshot;
   }
 
   toPublicProjection(

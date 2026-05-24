@@ -4,6 +4,7 @@ import { ConflictException, Injectable } from '@nestjs/common';
 import {
   createPublicPresenceValidationArtifact,
   ErrorCodes,
+  type PublicPresenceAssetRevisionPin,
   type PublicPresenceDocument,
   type PublicPresenceDocumentState,
   type RequestContext,
@@ -15,16 +16,20 @@ import {
   derivePublicPresenceValidationState,
   type PublicPresencePortalRecord,
 } from '../domain/public-presence-foundation.policy';
+import { buildPublicPresenceRuntimeAuthority } from '../domain/public-presence-asset-runtime.policy';
+import { PublicPresenceAssetService } from './public-presence-asset.service';
 import { PublicPresenceFoundationRepository } from '../infrastructure/public-presence-foundation.repository';
 
 interface SavePublicPresenceDraftOptions {
   expectedCurrentContentHash?: string | null;
+  templateAssetPin?: PublicPresenceAssetRevisionPin | null;
 }
 
 @Injectable()
 export class PublicPresenceFoundationService {
   constructor(
     private readonly publicPresenceFoundationRepository: PublicPresenceFoundationRepository,
+    private readonly publicPresenceAssetService: PublicPresenceAssetService,
   ) {}
 
   async saveDraft(
@@ -63,20 +68,38 @@ export class PublicPresenceFoundationService {
       talentId,
       context.userId ?? null,
     );
-    const artifact = createPublicPresenceValidationArtifact(document, {
-      mode: 'draft',
-    });
-    const contentHash = calculatePublicPresenceContentHash(artifact.document);
-    const validationState = derivePublicPresenceValidationState(artifact.snapshot);
-    const validationPersistence = buildPublicPresenceSnapshotPersistencePayload(
-      artifact.snapshot,
-    );
     const currentDraft =
       await this.publicPresenceFoundationRepository.findLatestVersionByTemplate(
         tenantSchema,
         portal.id,
         document.templateId,
       );
+    const templateAssetPin = options.templateAssetPin ?? currentDraft?.templateAssetPin ?? null;
+    const componentAssets = await this.publicPresenceAssetService.listAssets(
+      tenantSchema,
+      {
+        assetKind: 'component',
+        scopeId: talentId,
+        scopeType: 'talent',
+      },
+      context.userId ?? null,
+    );
+    const runtimeAuthority = buildPublicPresenceRuntimeAuthority({
+      componentAssets,
+      templatePin: templateAssetPin,
+    });
+    const artifact = createPublicPresenceValidationArtifact(document, {
+      mode: 'draft',
+      runtimeAuthority,
+    });
+    const draftValidationSnapshot = artifact.snapshot;
+    const contentHash = calculatePublicPresenceContentHash(artifact.document);
+    const validationState = derivePublicPresenceValidationState(
+      draftValidationSnapshot,
+    );
+    const validationPersistence = buildPublicPresenceSnapshotPersistencePayload(
+      draftValidationSnapshot,
+    );
 
     if (options.expectedCurrentContentHash !== undefined) {
       const currentContentHash = currentDraft?.contentHash ?? null;
@@ -95,7 +118,7 @@ export class PublicPresenceFoundationService {
     }
 
     if (currentDraft && currentDraft.contentHash === contentHash) {
-      const validationSnapshot =
+      const persistedValidationSnapshot =
         await this.publicPresenceFoundationRepository.createValidationSnapshotForExistingDraft(
           tenantSchema,
           {
@@ -105,8 +128,9 @@ export class PublicPresenceFoundationService {
             documentState: currentDraft.documentState as PublicPresenceDocumentState,
             eventType: 'validationSnapshotted',
             portalId: portal.id,
+            templateAssetPin,
             validationPersistence,
-            validationSnapshot: artifact.snapshot,
+            validationSnapshot: draftValidationSnapshot,
             validationState,
             versionId: currentDraft.id,
           },
@@ -124,22 +148,25 @@ export class PublicPresenceFoundationService {
         isNewVersion: false,
         portalId: portal.id,
         validationSnapshot: {
-          blockerCount: validationSnapshot.blockerCount,
-          blocksAiPatch: validationSnapshot.blocksAiPatch,
-          blocksPublish: validationSnapshot.blocksPublish,
-          blocksVisualEdit: validationSnapshot.blocksVisualEdit,
-          createdAt: validationSnapshot.createdAt.toISOString(),
-          fatalCount: validationSnapshot.fatalCount,
-          id: validationSnapshot.id,
-          infoCount: validationSnapshot.infoCount,
-          validationMode: validationSnapshot.validationMode,
-          validationState: validationSnapshot.validationState,
-          warningCount: validationSnapshot.warningCount,
+          blockerCount: persistedValidationSnapshot.blockerCount,
+          blocksAiPatch: persistedValidationSnapshot.blocksAiPatch,
+          blocksPublish: persistedValidationSnapshot.blocksPublish,
+          blocksVisualEdit: persistedValidationSnapshot.blocksVisualEdit,
+          createdAt: persistedValidationSnapshot.createdAt.toISOString(),
+          fatalCount: persistedValidationSnapshot.fatalCount,
+          id: persistedValidationSnapshot.id,
+          infoCount: persistedValidationSnapshot.infoCount,
+          validationMode: persistedValidationSnapshot.validationMode,
+          validationState: persistedValidationSnapshot.validationState,
+          warningCount: persistedValidationSnapshot.warningCount,
         },
       };
     }
 
-    const { validationSnapshot, version } =
+    const {
+      validationSnapshot: persistedValidationSnapshot,
+      version,
+    } =
       await this.publicPresenceFoundationRepository.createDraftVersionAndAssign(
         tenantSchema,
         {
@@ -148,8 +175,9 @@ export class PublicPresenceFoundationService {
           contentHashAlgorithm: 'sha256',
           document: artifact.document,
           portalId: portal.id,
+          templateAssetPin,
           validationPersistence,
-          validationSnapshot: artifact.snapshot,
+          validationSnapshot: draftValidationSnapshot,
           validationState,
           versionNumber: portal.latestVersionNumber + 1,
         },
@@ -167,17 +195,17 @@ export class PublicPresenceFoundationService {
       isNewVersion: true,
       portalId: portal.id,
       validationSnapshot: {
-        blockerCount: validationSnapshot.blockerCount,
-        blocksAiPatch: validationSnapshot.blocksAiPatch,
-        blocksPublish: validationSnapshot.blocksPublish,
-        blocksVisualEdit: validationSnapshot.blocksVisualEdit,
-        createdAt: validationSnapshot.createdAt.toISOString(),
-        fatalCount: validationSnapshot.fatalCount,
-        id: validationSnapshot.id,
-        infoCount: validationSnapshot.infoCount,
-        validationMode: validationSnapshot.validationMode,
-        validationState: validationSnapshot.validationState,
-        warningCount: validationSnapshot.warningCount,
+        blockerCount: persistedValidationSnapshot.blockerCount,
+        blocksAiPatch: persistedValidationSnapshot.blocksAiPatch,
+        blocksPublish: persistedValidationSnapshot.blocksPublish,
+        blocksVisualEdit: persistedValidationSnapshot.blocksVisualEdit,
+        createdAt: persistedValidationSnapshot.createdAt.toISOString(),
+        fatalCount: persistedValidationSnapshot.fatalCount,
+        id: persistedValidationSnapshot.id,
+        infoCount: persistedValidationSnapshot.infoCount,
+        validationMode: persistedValidationSnapshot.validationMode,
+        validationState: persistedValidationSnapshot.validationState,
+        warningCount: persistedValidationSnapshot.warningCount,
       },
     };
   }

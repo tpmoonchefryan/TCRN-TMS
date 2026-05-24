@@ -2,20 +2,28 @@
 
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import {
+  createArtistLifecycleFlowSchema,
   ErrorCodes,
   PUBLIC_PRESENCE_DOCUMENT_SCHEMA_VERSION,
-  PUBLIC_PRESENCE_STAGE_SECTION_DEFINITIONS,
-  PUBLIC_PRESENCE_TEMPLATE_DEFINITIONS,
+  type ArtistLifecycleFlow,
+  type HomepageComponentType,
+  type LocalizedText,
+  type PublicPresenceAssetListEntry,
+  type PublicPresenceAssetRevisionPin,
+  type PublicPresenceComponentDefinition,
+  type PublicPresenceTemplateAssetManifest,
   type PublicPresenceDocument,
   PublicPresenceDocumentSchema,
   type PublicPresenceFieldProvenance,
   type PublicPresenceFieldValue,
   type PublicPresencePhaseVisibility,
   type PublicPresenceStageSectionDefinition,
+  type PublicPresenceStageSectionKind,
   type PublicPresenceTemplateDefinition,
   type PublicPresenceTemplateId,
   PublicPresenceTemplateIdSchema,
@@ -29,8 +37,14 @@ import type {
   PublicPresencePortalRecord,
   PublicPresenceValidationSnapshotRecord,
 } from '../domain/public-presence-foundation.policy';
+import {
+  readComponentSourceManifestFromAssetEntry,
+  readTemplateSourceManifestFromAssetEntry,
+  readTemplateSourceManifestFromPin,
+} from '../domain/public-presence-asset-runtime.policy';
 import { HomepageAdminRepository } from '../infrastructure/homepage-admin.repository';
 import { PublicPresenceFoundationRepository } from '../infrastructure/public-presence-foundation.repository';
+import { PublicPresenceAssetService } from './public-presence-asset.service';
 import { PublicPresenceFoundationService } from './public-presence-foundation.service';
 import {
   buildStudioReleaseReadinessSummary,
@@ -79,6 +93,37 @@ export interface PublicPresenceStudioStageSectionSummary {
   sourcePolicy: string;
 }
 
+export interface PublicPresenceStudioComponentSummary {
+  collectionOperations: Array<{
+    addLabel: string;
+    canAdd: boolean;
+    canRemove: boolean;
+    canReorder: boolean;
+    collectionKey: string;
+    disabledReason?: string | null;
+    itemLabel: string;
+    maxItems?: number;
+    minItems?: number;
+    removeLabel: string;
+    reorderLabel: string;
+  }>;
+  componentType: HomepageComponentType;
+  defaultProps: Record<string, unknown>;
+  fieldDefinitions: Array<{
+    fieldKey: string;
+    provenance: string[];
+    required: string;
+    sourceOnly: boolean;
+    valueType: string;
+    visualEditable: boolean;
+  }>;
+  lockedSourceOwnedPolicy: string;
+  rendererSupport: boolean;
+  sourcePolicy: string;
+  unknownFieldPolicy: string;
+  visualSupport: string;
+}
+
 export interface PublicPresenceStudioVersionSummary {
   contentHash: string;
   contentHashAlgorithm: string;
@@ -90,10 +135,58 @@ export interface PublicPresenceStudioVersionSummary {
   lastValidationSnapshotId: string | null;
   publishedAt: string | null;
   scheduledFor: string | null;
+  templateAssetPin: PublicPresenceAssetRevisionPin | null;
   templateId: string;
   updatedAt: string;
   validationSnapshot: PublicPresenceValidationSnapshot | null;
   versionNumber: number;
+}
+
+export interface PublicPresenceStudioArtistStageSummary {
+  code: string;
+  homepagePolicyKey: string | null;
+  id: string;
+  lifecycleStatusMapping: string;
+  name: LocalizedText;
+}
+
+export interface PublicPresenceStudioPolicyBlockReason {
+  code:
+    | 'artistStageUnavailable'
+    | 'artistLifecycleFlowInvalid'
+    | 'homepagePolicyMissing'
+    | 'noAllowedTemplateAssets';
+  messageKey: string;
+}
+
+export interface PublicPresenceStudioHomepagePolicySummary {
+  allowedTemplateIds: PublicPresenceTemplateId[];
+  blockedReasons: PublicPresenceStudioPolicyBlockReason[];
+  status: 'blocked' | 'ready';
+}
+
+export interface PublicPresenceStudioTemplateAssetSummary {
+  assetCode: string;
+  assetDescription: LocalizedText;
+  assetId: string;
+  assetName: LocalizedText;
+  blockedReasonCode: 'homepagePolicyMissing' | 'noCurrentRevision' | 'notAllowedInCurrentStage' | 'validationRequired' | null;
+  canEdit: boolean;
+  currentRevisionId: string | null;
+  currentRevisionNumber: number | null;
+  currentRevisionSourceHash: string | null;
+  currentRevisionStatus: string | null;
+  currentRevisionValidationState: string | null;
+  defaultSectionOrder: string[];
+  isSelectable: boolean;
+  isSystem: boolean;
+  label: string;
+  optionalSections: string[];
+  ownerType: string;
+  recommendedSections: string[];
+  requiredSections: string[];
+  templateId: PublicPresenceTemplateId;
+  useCase: string;
 }
 
 export interface PublicPresenceStudioWorkflowEventSummary {
@@ -117,7 +210,11 @@ export interface PublicPresenceStudioPageVersionSummary {
 }
 
 export interface PublicPresenceStudioWorkspace {
+  componentDefinitions?: PublicPresenceStudioComponentSummary[];
+  currentArtistStage: PublicPresenceStudioArtistStageSummary | null;
   draftVersion: PublicPresenceStudioVersionSummary | null;
+  effectiveLifecycleStatus: string | null;
+  homepagePolicy: PublicPresenceStudioHomepagePolicySummary;
   liveVersion: PublicPresenceStudioVersionSummary | null;
   liveTemplateId: PublicPresenceTemplateId | null;
   pageVersions: PublicPresenceStudioPageVersionSummary[];
@@ -144,8 +241,10 @@ export interface PublicPresenceStudioWorkspace {
     blockingDependencyCount: number;
     dependencies: PublicPresenceStudioReleaseDependency[];
   };
+  selectedTemplateAssetId: string | null;
   selectedTemplateId: PublicPresenceTemplateId;
   stageSections: PublicPresenceStudioStageSectionSummary[];
+  templateAssets: PublicPresenceStudioTemplateAssetSummary[];
   templates: PublicPresenceStudioTemplateSummary[];
   workflowEvents: PublicPresenceStudioWorkflowEventSummary[];
 }
@@ -158,7 +257,7 @@ function createFieldValue<T>(
 }
 
 function buildStarterSection(
-  kind: string,
+  kind: PublicPresenceStageSectionKind,
   index: number,
   talent: {
     code: string;
@@ -166,6 +265,7 @@ function buildStarterSection(
     timezone: string | null;
   },
   templateId: PublicPresenceTemplateId,
+  stageSectionsByKind: ReadonlyMap<string, PublicPresenceStudioStageSectionSummary>,
 ): PublicPresenceDocument['sections'][number] {
   const displayName = talent.displayName.trim() || talent.code;
 
@@ -231,10 +331,7 @@ function buildStarterSection(
     };
   }
 
-  const definition =
-    PUBLIC_PRESENCE_STAGE_SECTION_DEFINITIONS[
-      kind as keyof typeof PUBLIC_PRESENCE_STAGE_SECTION_DEFINITIONS
-    ];
+  const definition = stageSectionsByKind.get(kind);
   const phaseVisibility = definition?.phaseVisibility?.[0] as
     | PublicPresencePhaseVisibility
     | undefined;
@@ -249,14 +346,26 @@ function buildStarterSection(
 }
 
 function buildStarterDocument(
-  template: PublicPresenceTemplateDefinition,
+  template: Pick<
+    PublicPresenceStudioTemplateAssetSummary,
+    | 'defaultSectionOrder'
+    | 'label'
+    | 'optionalSections'
+    | 'recommendedSections'
+    | 'requiredSections'
+    | 'templateId'
+  >,
   talent: {
     code: string;
     displayName: string;
     timezone: string | null;
   },
+  stageSections: PublicPresenceStudioStageSectionSummary[],
 ): PublicPresenceDocument {
   const displayName = talent.displayName.trim() || talent.code;
+  const stageSectionsByKind = new Map(
+    stageSections.map((section) => [section.kind, section] as const),
+  );
   const sectionKinds = Array.from(
     new Set([
       ...template.requiredSections,
@@ -264,6 +373,8 @@ function buildStarterDocument(
       ...template.optionalSections,
       ...template.defaultSectionOrder,
     ]),
+  ).filter((kind): kind is PublicPresenceStageSectionKind =>
+    stageSectionsByKind.has(kind),
   );
 
   return {
@@ -279,24 +390,285 @@ function buildStarterDocument(
     },
     schemaVersion: PUBLIC_PRESENCE_DOCUMENT_SCHEMA_VERSION,
     sections: sectionKinds.map((kind, index) =>
-      buildStarterSection(kind, index, talent, template.templateId),
+      buildStarterSection(
+        kind,
+        index,
+        talent,
+        template.templateId,
+        stageSectionsByKind,
+      ),
     ),
     templateId: template.templateId,
   };
 }
 
-function serializeTemplateDefinition(
-  definition: PublicPresenceTemplateDefinition,
+function serializeArtistStage(
+  stage: {
+    code: string;
+    homepagePolicyKey: string | null;
+    id: string;
+    lifecycleStatusMapping: string;
+    name: LocalizedText;
+  } | null,
+): PublicPresenceStudioArtistStageSummary | null {
+  if (!stage) {
+    return null;
+  }
+
+  return {
+    code: stage.code,
+    homepagePolicyKey: stage.homepagePolicyKey,
+    id: stage.id,
+    lifecycleStatusMapping: stage.lifecycleStatusMapping,
+    name: stage.name,
+  };
+}
+
+function readTemplateAssetManifest(
+  asset: PublicPresenceAssetListEntry,
+): PublicPresenceTemplateAssetManifest | null {
+  const manifest = asset.currentRevision?.manifest;
+
+  if (!manifest || manifest.assetKind !== 'template') {
+    return null;
+  }
+
+  return manifest;
+}
+
+function serializeTemplateAssetSummary(input: {
+  allowedTemplateIds: PublicPresenceTemplateId[];
+  homepagePolicyBlocked: boolean;
+  visibleAsset: PublicPresenceAssetListEntry;
+}): PublicPresenceStudioTemplateAssetSummary | null {
+  const manifest = readTemplateAssetManifest(input.visibleAsset);
+  const currentRevision = input.visibleAsset.currentRevision;
+  let blockedReasonCode: PublicPresenceStudioTemplateAssetSummary['blockedReasonCode'] = null;
+
+  if (!manifest || !currentRevision) {
+    blockedReasonCode = 'noCurrentRevision';
+  } else if (input.homepagePolicyBlocked) {
+    blockedReasonCode = 'homepagePolicyMissing';
+  } else if (!input.allowedTemplateIds.includes(manifest.templateId)) {
+    blockedReasonCode = 'notAllowedInCurrentStage';
+  } else if (currentRevision.validationState === 'unvalidated') {
+    blockedReasonCode = 'validationRequired';
+  }
+
+  if (!manifest) {
+    return null;
+  }
+
+  return {
+    assetCode: input.visibleAsset.asset.code,
+    assetDescription: input.visibleAsset.asset.description,
+    assetId: input.visibleAsset.asset.id,
+    assetName: input.visibleAsset.asset.name,
+    blockedReasonCode,
+    canEdit: input.visibleAsset.canEdit,
+    currentRevisionId: currentRevision?.id ?? null,
+    currentRevisionNumber: currentRevision?.revisionNumber ?? null,
+    currentRevisionSourceHash: currentRevision?.sourceHash ?? null,
+    currentRevisionStatus: currentRevision?.artifactStatus ?? null,
+    currentRevisionValidationState: currentRevision?.validationState ?? null,
+    defaultSectionOrder: [...manifest.defaultSectionOrder],
+    isSelectable: blockedReasonCode === null,
+    isSystem: input.visibleAsset.asset.isSystem,
+    label: manifest.label,
+    optionalSections: [...manifest.optionalSections],
+    ownerType: input.visibleAsset.asset.ownerType,
+    recommendedSections: [...manifest.recommendedSections],
+    requiredSections: [...manifest.requiredSections],
+    templateId: manifest.templateId,
+    useCase: manifest.useCase,
+  };
+}
+
+function resolveSelectedTemplateAssetId(input: {
+  selectedTemplateId: PublicPresenceTemplateId;
+  templateAssets: PublicPresenceStudioTemplateAssetSummary[];
+  version: PublicPresenceDocumentVersionRecord | null;
+}): string | null {
+  const pinnedAssetId = input.version?.templateAssetPin?.assetId ?? null;
+
+  if (
+    pinnedAssetId
+    && input.templateAssets.some((asset) => asset.assetId === pinnedAssetId)
+  ) {
+    return pinnedAssetId;
+  }
+
+  return (
+    input.templateAssets.find(
+      (asset) =>
+        asset.isSelectable && asset.templateId === input.selectedTemplateId,
+    )?.assetId
+    ?? input.templateAssets.find((asset) => asset.isSelectable)?.assetId
+    ?? null
+  );
+}
+
+function buildTemplateAssetPinFromListEntry(
+  asset: PublicPresenceAssetListEntry,
+): PublicPresenceAssetRevisionPin {
+  const manifest = readTemplateAssetManifest(asset);
+  const currentRevision = asset.currentRevision;
+
+  if (!manifest || !currentRevision) {
+    throw new ConflictException({
+      code: ErrorCodes.RES_CONFLICT,
+      message: 'Selected template asset is missing a current revision.',
+    });
+  }
+
+  return {
+    assetId: asset.asset.id,
+    assetRevisionId: currentRevision.id,
+    snapshot: {
+      assetId: asset.asset.id,
+      assetRevisionId: currentRevision.id,
+      manifest,
+      revisionNumber: currentRevision.revisionNumber,
+      sourceBundle: currentRevision.sourceBundle,
+      sourceHash: currentRevision.sourceHash,
+    },
+    sourceHash: currentRevision.sourceHash,
+  };
+}
+
+function serializeTemplateSummaryFromManifest(
+  manifest: Pick<
+    PublicPresenceTemplateAssetManifest,
+    | 'defaultSectionOrder'
+    | 'label'
+    | 'optionalSections'
+    | 'recommendedSections'
+    | 'requiredSections'
+    | 'templateId'
+    | 'useCase'
+  >,
 ): PublicPresenceStudioTemplateSummary {
   return {
-    defaultSectionOrder: [...definition.defaultSectionOrder],
-    label: definition.label,
-    optionalSections: [...definition.optionalSections],
-    recommendedSections: [...definition.recommendedSections],
-    requiredSections: [...definition.requiredSections],
-    templateId: definition.templateId,
-    useCase: definition.useCase,
+    defaultSectionOrder: [...manifest.defaultSectionOrder],
+    label: manifest.label,
+    optionalSections: [...manifest.optionalSections],
+    recommendedSections: [...manifest.recommendedSections],
+    requiredSections: [...manifest.requiredSections],
+    templateId: manifest.templateId,
+    useCase: manifest.useCase,
   };
+}
+
+function readPinnedTemplateManifest(
+  record: PublicPresenceDocumentVersionRecord | null,
+): PublicPresenceTemplateAssetManifest | null {
+  const manifest = record?.templateAssetPin?.snapshot?.manifest;
+
+  if (!manifest || manifest.assetKind !== 'template') {
+    return null;
+  }
+
+  return manifest;
+}
+
+function buildWorkspaceTemplateSummaries(input: {
+  templateAssets: PublicPresenceStudioTemplateAssetSummary[];
+  versionRecords: PublicPresenceDocumentVersionRecord[];
+}): PublicPresenceStudioTemplateSummary[] {
+  const summaryByTemplateId = new Map<PublicPresenceTemplateId, PublicPresenceStudioTemplateSummary>();
+
+  for (const asset of input.templateAssets) {
+    if (summaryByTemplateId.has(asset.templateId)) {
+      continue;
+    }
+
+    summaryByTemplateId.set(
+      asset.templateId,
+      serializeTemplateSummaryFromManifest(asset),
+    );
+  }
+
+  for (const record of input.versionRecords) {
+    const manifest = readPinnedTemplateManifest(record);
+
+    if (!manifest || summaryByTemplateId.has(manifest.templateId)) {
+      continue;
+    }
+
+    summaryByTemplateId.set(
+      manifest.templateId,
+      serializeTemplateSummaryFromManifest(manifest),
+    );
+  }
+
+  return Array.from(summaryByTemplateId.values());
+}
+
+function collectWorkspaceTemplateIds(input: {
+  selectedTemplateId: PublicPresenceTemplateId;
+  templateAssets: PublicPresenceStudioTemplateAssetSummary[];
+  versionRecords: PublicPresenceDocumentVersionRecord[];
+}): PublicPresenceTemplateId[] {
+  const templateIds: PublicPresenceTemplateId[] = [];
+  const seenTemplateIds = new Set<PublicPresenceTemplateId>();
+
+  const appendTemplateId = (templateId: PublicPresenceTemplateId | null) => {
+    if (!templateId || seenTemplateIds.has(templateId)) {
+      return;
+    }
+
+    seenTemplateIds.add(templateId);
+    templateIds.push(templateId);
+  };
+
+  for (const asset of input.templateAssets) {
+    appendTemplateId(asset.templateId);
+  }
+
+  for (const record of input.versionRecords) {
+    const parsedTemplateId = PublicPresenceTemplateIdSchema.safeParse(record.templateId);
+
+    if (parsedTemplateId.success) {
+      appendTemplateId(parsedTemplateId.data);
+    }
+  }
+
+  appendTemplateId(input.selectedTemplateId);
+
+  return templateIds;
+}
+
+function serializeCollectionOperations(
+  operations: PublicPresenceStageSectionDefinition['collectionOperations']
+    | PublicPresenceComponentDefinition['collectionOperations'],
+) {
+  return (operations ?? []).map((operation) => ({
+    addLabel: operation.addLabel,
+    canAdd: operation.canAdd,
+    canRemove: operation.canRemove,
+    canReorder: operation.canReorder,
+    collectionKey: operation.collectionKey,
+    disabledReason: operation.disabledReason ?? null,
+    itemLabel: operation.itemLabel,
+    maxItems: operation.maxItems,
+    minItems: operation.minItems,
+    removeLabel: operation.removeLabel,
+    reorderLabel: operation.reorderLabel,
+  }));
+}
+
+function serializeFieldDefinitions(
+  fieldDefinitions: PublicPresenceStageSectionDefinition['fieldDefinitions']
+    | PublicPresenceComponentDefinition['fieldDefinitions'],
+) {
+  return fieldDefinitions.map((field) => ({
+    fieldKey: field.fieldKey,
+    provenance: [...field.provenance],
+    required: field.required,
+    sourceOnly: field.sourceOnly,
+    valueType: field.valueType,
+    visualEditable: field.visualEditable,
+  }));
 }
 
 function serializeStageSectionDefinition(
@@ -304,34 +676,95 @@ function serializeStageSectionDefinition(
 ): PublicPresenceStudioStageSectionSummary {
   return {
     allowedComponents: [...definition.allowedComponents],
-    collectionOperations: (definition.collectionOperations ?? []).map((operation) => ({
-      addLabel: operation.addLabel,
-      canAdd: operation.canAdd,
-      canRemove: operation.canRemove,
-      canReorder: operation.canReorder,
-      collectionKey: operation.collectionKey,
-      disabledReason: operation.disabledReason ?? null,
-      itemLabel: operation.itemLabel,
-      maxItems: operation.maxItems,
-      minItems: operation.minItems,
-      removeLabel: operation.removeLabel,
-      reorderLabel: operation.reorderLabel,
-    })),
+    collectionOperations: serializeCollectionOperations(
+      definition.collectionOperations,
+    ),
     editabilityState: definition.editabilityState,
     fallbackBehavior: definition.fallbackBehavior,
-    fieldDefinitions: definition.fieldDefinitions.map((field) => ({
-      fieldKey: field.fieldKey,
-      provenance: [...field.provenance],
-      required: field.required,
-      sourceOnly: field.sourceOnly,
-      valueType: field.valueType,
-      visualEditable: field.visualEditable,
-    })),
+    fieldDefinitions: serializeFieldDefinitions(definition.fieldDefinitions),
     kind: definition.kind,
     phaseVisibility: [...definition.phaseVisibility],
     purpose: definition.purpose,
     sourcePolicy: definition.sourcePolicy,
   };
+}
+
+function serializeComponentDefinition(
+  definition: PublicPresenceComponentDefinition,
+): PublicPresenceStudioComponentSummary {
+  return {
+    collectionOperations: serializeCollectionOperations(
+      definition.collectionOperations,
+    ),
+    componentType: definition.componentType,
+    defaultProps: structuredClone(definition.defaultProps),
+    fieldDefinitions: serializeFieldDefinitions(definition.fieldDefinitions),
+    lockedSourceOwnedPolicy: definition.lockedSourceOwnedPolicy,
+    rendererSupport: definition.rendererSupport,
+    sourcePolicy: definition.sourcePolicy,
+    unknownFieldPolicy: definition.unknownFieldPolicy,
+    visualSupport: definition.visualSupport,
+  };
+}
+
+function buildWorkspaceComponentDefinitions(
+  visibleComponentAssets: PublicPresenceAssetListEntry[],
+): PublicPresenceStudioComponentSummary[] {
+  const definitions = new Map<HomepageComponentType, PublicPresenceStudioComponentSummary>();
+
+  for (const asset of visibleComponentAssets) {
+    const manifest = readComponentSourceManifestFromAssetEntry(asset);
+
+    if (!manifest) {
+      continue;
+    }
+
+    definitions.set(
+      manifest.componentType,
+      serializeComponentDefinition({
+        aiPatchAllowlist: [...manifest.aiPatchAllowlist],
+        collectionOperations: structuredClone(manifest.collectionOperations ?? []),
+        componentType: manifest.componentType,
+        defaultProps: structuredClone(manifest.defaultProps),
+        fieldDefinitions: structuredClone(manifest.fieldDefinitions),
+        lockedSourceOwnedPolicy: manifest.lockedSourceOwnedPolicy,
+        propsSchemaKey: manifest.propsSchemaKey,
+        publicProjectionMode: manifest.projectionMode,
+        rendererSupport: manifest.rendererSupport,
+        safetyPolicyReferences: [...manifest.safetyPolicyReferences],
+        sourcePolicy: manifest.sourcePolicy,
+        unknownFieldPolicy: manifest.unknownFieldPolicy,
+        visualSupport: manifest.visualSupport,
+      }),
+    );
+  }
+
+  return Array.from(definitions.values());
+}
+
+function resolveWorkspaceStageSections(input: {
+  selectedTemplateAssetId: string | null;
+  templateAssets: PublicPresenceStudioTemplateAssetSummary[];
+  version: PublicPresenceDocumentVersionRecord | null;
+  visibleTemplateAssets: PublicPresenceAssetListEntry[];
+  versionRecords: PublicPresenceDocumentVersionRecord[];
+}): PublicPresenceStudioStageSectionSummary[] {
+  const selectedTemplateEntry = input.selectedTemplateAssetId
+    ? input.visibleTemplateAssets.find(
+        (asset) => asset.asset.id === input.selectedTemplateAssetId,
+      ) ?? null
+    : null;
+  const selectedTemplateSourceManifest =
+    readTemplateSourceManifestFromAssetEntry(selectedTemplateEntry ?? { currentRevision: null })
+    ?? readTemplateSourceManifestFromPin(input.version?.templateAssetPin ?? null)
+    ?? input.versionRecords
+      .map((record) => readTemplateSourceManifestFromPin(record.templateAssetPin))
+      .find((manifest) => Boolean(manifest))
+    ?? null;
+
+  return selectedTemplateSourceManifest
+    ? selectedTemplateSourceManifest.stageSections.map(serializeStageSectionDefinition)
+    : [];
 }
 
 function serializePortal(
@@ -364,12 +797,13 @@ function parseValidationSnapshot(
     return null;
   }
 
-  const parsed = PublicPresenceValidationSnapshotSchema.parse(record.snapshot);
+  const parsed = PublicPresenceValidationSnapshotSchema.parse({
+    ...record.snapshot,
+    projectionHash:
+      (record.snapshot as { projectionHash?: string | null }).projectionHash ?? null,
+  });
 
-  return {
-    ...parsed,
-    projectionHash: parsed.projectionHash ?? null,
-  };
+  return parsed as PublicPresenceValidationSnapshot;
 }
 
 function serializeVersion(
@@ -387,6 +821,7 @@ function serializeVersion(
     lastValidationSnapshotId: record.lastValidationSnapshotId,
     publishedAt: record.publishedAt?.toISOString() ?? null,
     scheduledFor: record.scheduledFor?.toISOString() ?? null,
+    templateAssetPin: record.templateAssetPin,
     templateId: record.templateId,
     updatedAt: record.updatedAt.toISOString(),
     validationSnapshot,
@@ -461,14 +896,14 @@ export class PublicPresenceStudioService {
   constructor(
     private readonly homepageAdminRepository: HomepageAdminRepository,
     private readonly publicPresenceFoundationRepository: PublicPresenceFoundationRepository,
+    private readonly publicPresenceAssetService: PublicPresenceAssetService,
     private readonly publicPresenceFoundationService: PublicPresenceFoundationService,
   ) {}
 
-  async getWorkspace(
+  private async loadStudioPolicyContext(
     talentId: string,
     tenantSchema: string,
-    templateIdInput?: string | null,
-  ): Promise<PublicPresenceStudioWorkspace> {
+  ) {
     const talent = await this.homepageAdminRepository.findTalentById(
       tenantSchema,
       talentId,
@@ -481,6 +916,137 @@ export class PublicPresenceStudioService {
       });
     }
 
+    const [stageCatalog, flowRecord, visibleTemplateAssets, visibleComponentAssets] = await Promise.all([
+      this.homepageAdminRepository.listArtistStages(tenantSchema),
+      this.homepageAdminRepository.readArtistLifecycleFlow(tenantSchema),
+      this.publicPresenceAssetService.listAssets(
+        tenantSchema,
+        {
+          assetKind: 'template',
+          scopeId: talentId,
+          scopeType: 'talent',
+        },
+        null,
+      ),
+      this.publicPresenceAssetService.listAssets(
+        tenantSchema,
+        {
+          assetKind: 'component',
+          scopeId: talentId,
+          scopeType: 'talent',
+        },
+        null,
+      ),
+    ]);
+    const blockedReasons: PublicPresenceStudioPolicyBlockReason[] = [];
+    const currentStage =
+      stageCatalog.find((stage) => stage.id === talent.artistStageId) ?? null;
+
+    if (!currentStage) {
+      blockedReasons.push({
+        code: 'artistStageUnavailable',
+        messageKey: 'publicPresence.policy.artistStageUnavailable',
+      });
+    }
+
+    let normalizedFlow: ArtistLifecycleFlow | null = null;
+
+    try {
+      normalizedFlow = createArtistLifecycleFlowSchema({
+        stageCatalog: stageCatalog.map((stage) => ({
+          code: stage.code,
+          id: stage.id,
+          isActive: stage.isActive,
+          lifecycleStatusMapping: stage.lifecycleStatusMapping,
+        })),
+      }).parse(flowRecord);
+    } catch {
+      blockedReasons.push({
+        code: 'artistLifecycleFlowInvalid',
+        messageKey: 'publicPresence.policy.artistLifecycleFlowInvalid',
+      });
+    }
+
+    const allowedTemplateIds = currentStage && normalizedFlow
+      ? normalizedFlow.homepagePolicyByStage.find(
+          (policy) => policy.stageId === currentStage.id,
+        )?.allowedTemplateIds ?? []
+      : [];
+
+    if (currentStage && normalizedFlow && allowedTemplateIds.length === 0) {
+      blockedReasons.push({
+        code: 'homepagePolicyMissing',
+        messageKey: 'publicPresence.policy.homepagePolicyMissing',
+      });
+    }
+
+    const homepagePolicyBlocked = blockedReasons.length > 0;
+    const templateAssets = visibleTemplateAssets
+      .map((asset) =>
+        serializeTemplateAssetSummary({
+          allowedTemplateIds,
+          homepagePolicyBlocked,
+          visibleAsset: asset,
+        }),
+      )
+      .filter((asset): asset is PublicPresenceStudioTemplateAssetSummary => Boolean(asset));
+
+    if (!homepagePolicyBlocked && !templateAssets.some((asset) => asset.isSelectable)) {
+      blockedReasons.push({
+        code: 'noAllowedTemplateAssets',
+        messageKey: 'publicPresence.policy.noAllowedTemplateAssets',
+      });
+    }
+
+    return {
+      currentStage,
+      homepagePolicy: {
+        allowedTemplateIds,
+        blockedReasons,
+        status: blockedReasons.length > 0 ? 'blocked' : 'ready',
+      } satisfies PublicPresenceStudioHomepagePolicySummary,
+      talent,
+      visibleComponentAssets,
+      templateAssets,
+      visibleTemplateAssets,
+    };
+  }
+
+  private resolveBootstrapTemplateAsset(
+    templateAssets: PublicPresenceStudioTemplateAssetSummary[],
+    selection: string,
+  ) {
+    const normalizedSelection = selection.trim();
+
+    return (
+      templateAssets.find(
+        (asset) =>
+          asset.assetId === normalizedSelection && asset.isSelectable,
+      )
+      ?? templateAssets.find(
+        (asset) =>
+          asset.templateId === normalizedSelection && asset.isSelectable,
+      )
+      ?? null
+    );
+  }
+
+  async getWorkspace(
+    talentId: string,
+    tenantSchema: string,
+    templateIdInput?: string | null,
+  ): Promise<PublicPresenceStudioWorkspace> {
+    const {
+      currentStage,
+      homepagePolicy,
+      talent,
+      visibleComponentAssets,
+      templateAssets,
+      visibleTemplateAssets,
+    } = await this.loadStudioPolicyContext(
+      talentId,
+      tenantSchema,
+    );
     const tenantCode =
       (await this.homepageAdminRepository.findTenantCodeBySchema(tenantSchema))
       ?? tenantSchema;
@@ -492,12 +1058,9 @@ export class PublicPresenceStudioService {
         talentId,
       );
 
-    const templates = Object.values(PUBLIC_PRESENCE_TEMPLATE_DEFINITIONS).map(
-      serializeTemplateDefinition,
+    const componentDefinitions = buildWorkspaceComponentDefinitions(
+      visibleComponentAssets,
     );
-    const stageSections = Object.values(
-      PUBLIC_PRESENCE_STAGE_SECTION_DEFINITIONS,
-    ).map(serializeStageSectionDefinition);
 
     if (!portal) {
       const selectedTemplateId = resolveSelectedTemplateId(
@@ -505,17 +1068,35 @@ export class PublicPresenceStudioService {
         [],
         null,
       );
+      const templates = buildWorkspaceTemplateSummaries({
+        templateAssets,
+        versionRecords: [],
+      });
+      const workspaceTemplateIds = collectWorkspaceTemplateIds({
+        selectedTemplateId,
+        templateAssets,
+        versionRecords: [],
+      });
+      const selectedTemplateAssetId = resolveSelectedTemplateAssetId({
+        selectedTemplateId,
+        templateAssets,
+        version: null,
+      });
 
       return {
+        componentDefinitions,
+        currentArtistStage: serializeArtistStage(currentStage),
         draftVersion: null,
+        effectiveLifecycleStatus: talent.lifecycleStatus,
+        homepagePolicy,
         liveVersion: null,
         liveTemplateId: null,
-        pageVersions: Object.values(PUBLIC_PRESENCE_TEMPLATE_DEFINITIONS).map((template) => ({
+        pageVersions: workspaceTemplateIds.map((templateId) => ({
           latestVersion: null,
           liveVersion: null,
           revealAutoSwitchAt: null,
           scheduledVersion: null,
-          templateId: template.templateId,
+          templateId,
         })),
         portal: null,
         publicRoute: {
@@ -529,8 +1110,16 @@ export class PublicPresenceStudioService {
           blockingDependencyCount: 0,
           dependencies: [],
         },
+        selectedTemplateAssetId,
         selectedTemplateId,
-        stageSections,
+        stageSections: resolveWorkspaceStageSections({
+          selectedTemplateAssetId,
+          templateAssets,
+          version: null,
+          versionRecords: [],
+          visibleTemplateAssets,
+        }),
+        templateAssets,
         templates,
         workflowEvents: [],
       };
@@ -552,21 +1141,21 @@ export class PublicPresenceStudioService {
         portal.id,
       ),
       Promise.all(
-        Object.values(PUBLIC_PRESENCE_TEMPLATE_DEFINITIONS).map((template) =>
+        templateAssets.map((templateAsset) =>
           this.publicPresenceFoundationRepository.findLatestVersionByTemplate(
             tenantSchema,
             portal.id,
-            template.templateId,
+            templateAsset.templateId,
             ['scheduled'],
           ),
         ),
       ),
       Promise.all(
-        Object.values(PUBLIC_PRESENCE_TEMPLATE_DEFINITIONS).map((template) =>
+        templateAssets.map((templateAsset) =>
           this.publicPresenceFoundationRepository.findLatestVersionByTemplate(
             tenantSchema,
             portal.id,
-            template.templateId,
+            templateAsset.templateId,
             ['approved', 'scheduled', 'published'],
           ),
         ),
@@ -620,13 +1209,26 @@ export class PublicPresenceStudioService {
     ).success
       ? (liveRecord?.templateId as PublicPresenceTemplateId)
       : null;
-    const pageVersions = Object.values(PUBLIC_PRESENCE_TEMPLATE_DEFINITIONS).map((template) => {
+    const templateVersionRecords = [
+      ...uniqueVersionRecords,
+      ...publishReadyRecords.filter((record): record is PublicPresenceDocumentVersionRecord => Boolean(record)),
+    ];
+    const templates = buildWorkspaceTemplateSummaries({
+      templateAssets,
+      versionRecords: templateVersionRecords,
+    });
+    const workspaceTemplateIds = collectWorkspaceTemplateIds({
+      selectedTemplateId,
+      templateAssets,
+      versionRecords: templateVersionRecords,
+    });
+    const pageVersions = workspaceTemplateIds.map((templateId) => {
       const latestRecord =
-        latestRecordByTemplate.get(template.templateId) ?? null;
+        latestRecordByTemplate.get(templateId) ?? null;
       const scheduledRecord =
-        scheduledRecordByTemplate.get(template.templateId) ?? null;
+        scheduledRecordByTemplate.get(templateId) ?? null;
       const liveTemplateVersion =
-        liveRecord?.templateId === template.templateId ? liveRecord : null;
+        liveRecord?.templateId === templateId ? liveRecord : null;
 
       return {
         latestVersion: latestRecord
@@ -648,22 +1250,41 @@ export class PublicPresenceStudioService {
               snapshotByVersionId.get(scheduledRecord.id) ?? null,
             )
           : null,
-        templateId: template.templateId,
+        templateId,
       } satisfies PublicPresenceStudioPageVersionSummary;
     });
     const selectedPageVersion =
       pageVersions.find((pageVersion) => pageVersion.templateId === selectedTemplateId)
       ?? null;
+    const selectedVersionRecord =
+      latestRecordByTemplate.get(selectedTemplateId)
+      ?? (liveRecord?.templateId === selectedTemplateId ? liveRecord : null);
     const releaseReadiness = buildStudioReleaseReadinessSummary({
       latestActiveHubVersion: latestRecordByTemplate.get('activeTalentHub') ?? null,
       publishReadyActiveHubVersion:
         publishReadyRecordByTemplate.get('activeTalentHub')
         ?? (liveRecord?.templateId === 'activeTalentHub' ? liveRecord : null),
-      selectedVersion: latestRecordByTemplate.get(selectedTemplateId) ?? null,
+      selectedVersion: selectedVersionRecord,
+    });
+    const selectedTemplateAssetId = resolveSelectedTemplateAssetId({
+      selectedTemplateId,
+      templateAssets,
+      version: selectedVersionRecord,
+    });
+    const stageSections = resolveWorkspaceStageSections({
+      selectedTemplateAssetId,
+      templateAssets,
+      version: selectedVersionRecord,
+      versionRecords: templateVersionRecords,
+      visibleTemplateAssets,
     });
 
     return {
+      componentDefinitions,
+      currentArtistStage: serializeArtistStage(currentStage),
       draftVersion: selectedPageVersion?.latestVersion ?? null,
+      effectiveLifecycleStatus: talent.lifecycleStatus,
+      homepagePolicy,
       liveVersion: liveRecord
         ? serializeVersion(liveRecord, snapshotByVersionId.get(liveRecord.id) ?? null)
         : null,
@@ -678,8 +1299,10 @@ export class PublicPresenceStudioService {
         tenantCode: normalizedTenantCode,
       },
       releaseReadiness,
+      selectedTemplateAssetId,
       selectedTemplateId,
       stageSections,
+      templateAssets,
       templates,
       workflowEvents: workflowEvents.map(serializeWorkflowEvent),
     };
@@ -687,52 +1310,75 @@ export class PublicPresenceStudioService {
 
   async bootstrapDraft(
     talentId: string,
-    templateIdInput: string,
+    templateSelection: string,
     context: RequestContext,
   ): Promise<PublicPresenceStudioWorkspace> {
     const tenantSchema = context.tenantSchema ?? '';
-    const templateIdResult =
-      PublicPresenceTemplateIdSchema.safeParse(templateIdInput);
+    const {
+      homepagePolicy,
+      talent,
+      templateAssets,
+      visibleTemplateAssets,
+    } = await this.loadStudioPolicyContext(
+      talentId,
+      tenantSchema,
+    );
 
-    if (!templateIdResult.success) {
+    if (homepagePolicy.status !== 'ready') {
+      throw new ConflictException({
+        code: ErrorCodes.RES_CONFLICT,
+        details: homepagePolicy,
+        message: 'Homepage work is unavailable for the current Artist Stage.',
+      });
+    }
+
+    const selectedTemplateAsset = this.resolveBootstrapTemplateAsset(
+      templateAssets,
+      templateSelection,
+    );
+
+    if (!selectedTemplateAsset) {
       throw new BadRequestException({
         code: ErrorCodes.VALIDATION_FAILED,
-        message: 'Invalid Public Presence template id.',
+        message: 'Selected template asset is unavailable in the current scope.',
       });
     }
 
     const existingWorkspace = await this.getWorkspace(
       talentId,
       tenantSchema,
-      templateIdResult.data,
+      selectedTemplateAsset.templateId,
     );
 
     if (existingWorkspace.pageVersions.some((pageVersion) => (
-      pageVersion.templateId === templateIdResult.data
+      pageVersion.templateId === selectedTemplateAsset.templateId
       && pageVersion.latestVersion !== null
     ))) {
       return existingWorkspace;
     }
-
-    const talent = await this.homepageAdminRepository.findTalentById(
-      tenantSchema,
-      talentId,
+    const selectedTemplateEntry = visibleTemplateAssets.find(
+      (asset) => asset.asset.id === selectedTemplateAsset.assetId,
     );
 
-    if (!talent) {
-      throw new NotFoundException({
-        code: ErrorCodes.RES_NOT_FOUND,
-        message: 'Talent not found',
+    if (!selectedTemplateEntry) {
+      throw new ConflictException({
+        code: ErrorCodes.RES_CONFLICT,
+        message: 'Selected template asset is no longer available for this workspace.',
       });
     }
 
-    const template =
-      PUBLIC_PRESENCE_TEMPLATE_DEFINITIONS[templateIdResult.data];
-    const starterDocument = buildStarterDocument(template, {
+    const stageSections = resolveWorkspaceStageSections({
+      selectedTemplateAssetId: selectedTemplateAsset.assetId,
+      templateAssets,
+      version: null,
+      versionRecords: [],
+      visibleTemplateAssets,
+    });
+    const starterDocument = buildStarterDocument(selectedTemplateAsset, {
       code: talent.code,
       displayName: talent.displayName,
       timezone: talent.timezone,
-    });
+    }, stageSections);
 
     await this.publicPresenceFoundationService.saveDraft(
       talentId,
@@ -740,10 +1386,15 @@ export class PublicPresenceStudioService {
       context,
       {
         expectedCurrentContentHash: null,
+        templateAssetPin: buildTemplateAssetPinFromListEntry(selectedTemplateEntry),
       },
     );
 
-    return this.getWorkspace(talentId, tenantSchema, templateIdResult.data);
+    return this.getWorkspace(
+      talentId,
+      tenantSchema,
+      selectedTemplateAsset.templateId,
+    );
   }
 
   async saveDraft(
@@ -761,18 +1412,32 @@ export class PublicPresenceStudioService {
       });
     }
 
+    const tenantSchema = context.tenantSchema ?? '';
+    const portal = await this.publicPresenceFoundationRepository.findPortalByTalentId(
+      tenantSchema,
+      talentId,
+    );
+    const currentVersion = portal
+      ? await this.publicPresenceFoundationRepository.findLatestVersionByTemplate(
+          tenantSchema,
+          portal.id,
+          documentResult.data.templateId,
+        )
+      : null;
+
     await this.publicPresenceFoundationService.saveDraft(
       talentId,
       documentResult.data,
       context,
       {
         expectedCurrentContentHash,
+        templateAssetPin: currentVersion?.templateAssetPin ?? null,
       },
     );
 
     return this.getWorkspace(
       talentId,
-      context.tenantSchema ?? '',
+      tenantSchema,
       documentResult.data.templateId,
     );
   }

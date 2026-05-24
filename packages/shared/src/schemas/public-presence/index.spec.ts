@@ -3,12 +3,15 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-  PUBLIC_PRESENCE_COMPONENT_DEFINITIONS,
-  PUBLIC_PRESENCE_REGISTRY_METADATA,
+  PUBLIC_PRESENCE_COMPONENT_SEED_BLUEPRINTS,
+  PUBLIC_PRESENCE_SEED_METADATA,
   PUBLIC_PRESENCE_SAFETY_POLICY,
-  PUBLIC_PRESENCE_STAGE_SECTION_DEFINITIONS,
-  PUBLIC_PRESENCE_TEMPLATE_DEFINITIONS,
+  PUBLIC_PRESENCE_STAGE_SECTION_SEED_BLUEPRINTS,
+  PUBLIC_PRESENCE_TEMPLATE_SEED_BLUEPRINTS,
 } from '../../public-presence/registry';
+import {
+  buildPublicPresenceSeedRuntimeAuthority,
+} from '../../public-presence/asset-runtime';
 import {
   createPublicPresenceValidationArtifact,
   validatePublicPresenceDocument,
@@ -84,26 +87,29 @@ const safeActiveDocument = {
   },
 };
 
+const activeHubRuntimeAuthority =
+  buildPublicPresenceSeedRuntimeAuthority('activeTalentHub');
+
 describe('public presence registry and schema', () => {
   it('exposes the approved template and section vocabulary', () => {
-    expect(Object.keys(PUBLIC_PRESENCE_TEMPLATE_DEFINITIONS)).toEqual([
+    expect(Object.keys(PUBLIC_PRESENCE_TEMPLATE_SEED_BLUEPRINTS)).toEqual([
       'activeTalentHub',
       'debutReveal',
     ]);
-    expect(PUBLIC_PRESENCE_STAGE_SECTION_DEFINITIONS.firstEncounter.fieldDefinitions.map((field) => field.fieldKey)).toEqual(
+    expect(PUBLIC_PRESENCE_STAGE_SECTION_SEED_BLUEPRINTS.firstEncounter.fieldDefinitions.map((field) => field.fieldKey)).toEqual(
       expect.arrayContaining(['displayName', 'primaryCtaUrl']),
     );
-    expect(PUBLIC_PRESENCE_COMPONENT_DEFINITIONS.SocialLinks.aiPatchAllowlist).toEqual([
+    expect(PUBLIC_PRESENCE_COMPONENT_SEED_BLUEPRINTS.SocialLinks.aiPatchAllowlist).toEqual([
       'platforms',
       'style',
       'layout',
       'iconSize',
     ]);
-    expect(PUBLIC_PRESENCE_REGISTRY_METADATA.contentHashPolicy).toMatchObject({
+    expect(PUBLIC_PRESENCE_SEED_METADATA.contentHashPolicy).toMatchObject({
       algorithm: 'sha256',
       canonicalization: 'stableJson',
     });
-    expect(PUBLIC_PRESENCE_REGISTRY_METADATA.documentStates).toEqual(
+    expect(PUBLIC_PRESENCE_SEED_METADATA.documentStates).toEqual(
       expect.arrayContaining(['draft', 'approved', 'published']),
     );
     expect(PUBLIC_PRESENCE_SAFETY_POLICY.embedPolicies.youtube.acceptedHosts).toEqual(
@@ -127,6 +133,7 @@ describe('public presence validation artifact', () => {
   it('builds a clean validation snapshot for a safe active talent document', () => {
     const artifact = createPublicPresenceValidationArtifact(safeActiveDocument, {
       mode: 'publish',
+      runtimeAuthority: activeHubRuntimeAuthority,
     });
 
     expect(artifact.snapshot.issueCounts).toEqual({
@@ -166,6 +173,8 @@ describe('public presence validation artifact', () => {
           ],
         },
       ],
+    }, {
+      runtimeAuthority: activeHubRuntimeAuthority,
     });
 
     expect(artifact.normalizedDocument.sections[0].unknownFields).toMatchObject({
@@ -223,6 +232,7 @@ describe('public presence validation artifact', () => {
       ],
     }, {
       mode: 'publish',
+      runtimeAuthority: activeHubRuntimeAuthority,
     });
 
     const unsafeIssue = snapshot.issues.find((issue) => issue.code === 'unsafe.url.invalid' || issue.code === 'unsafe.url.protocol');
@@ -243,8 +253,14 @@ describe('public presence validation artifact', () => {
       sections: [safeActiveDocument.sections[0]],
     };
 
-    const first = validatePublicPresenceDocument(input, { mode: 'publish' });
-    const second = validatePublicPresenceDocument(input, { mode: 'publish' });
+    const first = validatePublicPresenceDocument(input, {
+      mode: 'publish',
+      runtimeAuthority: activeHubRuntimeAuthority,
+    });
+    const second = validatePublicPresenceDocument(input, {
+      mode: 'publish',
+      runtimeAuthority: activeHubRuntimeAuthority,
+    });
 
     expect(first.issues.map((issue) => issue.id)).toEqual(
       second.issues.map((issue) => issue.id),

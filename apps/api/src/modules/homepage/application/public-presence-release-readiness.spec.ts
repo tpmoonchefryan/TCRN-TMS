@@ -95,6 +95,7 @@ function createVersionRecord(
     publishedAt: null,
     publishedBy: null,
     scheduledFor: null,
+    templateAssetPin: null,
     templateId,
     updatedAt: new Date('2026-05-15T12:05:00.000Z'),
     versionNumber: 1,

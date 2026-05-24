@@ -9,6 +9,7 @@ import type { TalentLifecycleStatus } from './talent-read.policy';
 export interface TalentCreateInput {
   subsidiaryId?: string | null;
   profileStoreId: string;
+  artistStageId: string;
   code: string;
   name: LocalizedText;
   extraData?: Record<string, unknown> | null;
@@ -164,7 +165,6 @@ export const buildTalentPath = (
 export const buildTalentDefaultSettings = (
   settings?: Record<string, unknown>,
 ): Record<string, unknown> => ({
-  homepageEnabled: true,
   marshmallowEnabled: true,
   inheritTimezone: true,
   ...(settings || {}),

@@ -38,6 +38,34 @@ const mapTalentData = (row: TalentRawData): TalentData => ({
 
 @Injectable()
 export class TalentWriteRepository {
+  async findActiveArtistStage(
+    tenantSchema: string,
+    artistStageId: string,
+  ): Promise<{
+    code: string;
+    id: string;
+    lifecycleStatusMapping: TalentLifecycleStatus;
+  } | null> {
+    const stages = await prisma.$queryRawUnsafe<Array<{
+      code: string;
+      id: string;
+      lifecycleStatusMapping: TalentLifecycleStatus;
+    }>>(
+      `SELECT
+         id,
+         code,
+         lifecycle_status_mapping as "lifecycleStatusMapping"
+       FROM "${tenantSchema}".artist_stage
+       WHERE id = $1::uuid
+         AND owner_type = 'tenant'
+         AND owner_id IS NULL
+         AND is_active = true`,
+      artistStageId,
+    );
+
+    return stages[0] ?? null;
+  }
+
   async hasActiveProfileStore(
     tenantSchema: string,
     profileStoreId: string,
@@ -70,6 +98,7 @@ export class TalentWriteRepository {
     tenantSchema: string,
     data: TalentCreateInput & {
       extraData?: Record<string, unknown> | null;
+      lifecycleStatus: TalentLifecycleStatus;
       path: string;
       settings: Record<string, unknown>;
     },
@@ -77,17 +106,18 @@ export class TalentWriteRepository {
   ): Promise<TalentData> {
     const results = await prisma.$queryRawUnsafe<TalentRawData[]>(
       `INSERT INTO "${tenantSchema}".talent
-        (id, subsidiary_id, profile_store_id, code, path, name, extra_data, display_name,
+        (id, subsidiary_id, profile_store_id, artist_stage_id, code, path, name, extra_data, display_name,
          description, avatar_url, homepage_path, timezone,
          is_active, lifecycle_status, published_at, published_by, settings,
          created_at, updated_at, created_by, updated_by, version)
        VALUES
-        (gen_random_uuid(), $1::uuid, $2::uuid, $3, $4, $5::jsonb, $6::jsonb, $7, $8::jsonb, $9, $10, $11,
-         false, 'draft', NULL, NULL, $12::jsonb, now(), now(), $13::uuid, $13::uuid, 1)
+        (gen_random_uuid(), $1::uuid, $2::uuid, $3::uuid, $4, $5, $6::jsonb, $7::jsonb, $8, $9::jsonb, $10, $11, $12,
+         $13, $14, CASE WHEN $14 = 'published' THEN now() ELSE NULL END, CASE WHEN $14 = 'published' THEN $15::uuid ELSE NULL END, $16::jsonb, now(), now(), $15::uuid, $15::uuid, 1)
        RETURNING
          ${TALENT_SELECT_FIELDS}`,
       data.subsidiaryId || null,
       data.profileStoreId,
+      data.artistStageId,
       data.code,
       data.path,
       stringifyLocalizedText(data.name),
@@ -97,8 +127,10 @@ export class TalentWriteRepository {
       data.avatarUrl || null,
       data.homepagePath || null,
       data.timezone || 'UTC',
-      JSON.stringify(data.settings),
+      data.lifecycleStatus === 'published',
+      data.lifecycleStatus,
       userId,
+      JSON.stringify(data.settings),
     );
 
     return mapTalentData(results[0]);

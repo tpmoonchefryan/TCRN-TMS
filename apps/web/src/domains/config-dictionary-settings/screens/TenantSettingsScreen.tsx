@@ -25,6 +25,7 @@ import {
   listDictionaryTypes,
 } from '@/domains/config-dictionary-settings/api/system-dictionary.api';
 import { DictionaryExplorerPanel } from '@/domains/config-dictionary-settings/components/DictionaryExplorerPanel';
+import { PublicPresenceAssetWorkspace } from '@/domains/config-dictionary-settings/components/PublicPresenceAssetWorkspace';
 import { ScopedConfigEntityWorkspace } from '@/domains/config-dictionary-settings/components/ScopedConfigEntityWorkspace';
 import { SettingsCategoryWorkbench } from '@/domains/config-dictionary-settings/components/SettingsCategoryWorkbench';
 import {
@@ -718,12 +719,12 @@ export function TenantSettingsScreen({
               <FormSection
                 title={common.configEntities}
                 description={text({
-                  en: 'Maintain tenant-owned configuration families, including Profile Store, in one scoped workspace inherited by subsidiary and talent scopes.',
-                  zh_HANS: '在同一个范围工作区维护租户自有配置实体，包括档案库，并向下游分目录与艺人范围继承。',
-                  zh_HANT: '在同一個範圍工作區維護租戶自有配置實體，包括檔案庫，並向下游分目錄與藝人範圍繼承。',
-                  ja: 'プロフィールストアを含むテナント所有の設定エンティティを、配下スコープとタレントスコープへ継承される単一のスコープワークスペースで管理します。',
-                  ko: '프로필 스토어를 포함한 테넌트 소유 구성 엔티티를 하위 조직 및 탤런트 범위로 상속되는 하나의 범위 작업 공간에서 관리합니다.',
-                  fr: 'Gérez les familles de configuration détenues par le tenant, y compris Profile Store, dans un espace par portée hérité par les périmètres et talents.',
+                  en: 'Maintain tenant-owned configuration families here, then manage homepage template and component assets in the dedicated inventory below.',
+                  zh_HANS: '先在这里维护租户自有配置实体，再在下方专用清单中管理主页模板与组件资产。',
+                  zh_HANT: '先在這裡維護租戶自有配置實體，再在下方專用清單中管理主頁模板與元件資產。',
+                  ja: 'まずここでテナント所有の設定エンティティを管理し、その下の専用インベントリでホームページのテンプレート資産とコンポーネント資産を管理します。',
+                  ko: '먼저 여기서 테넌트 소유 구성 엔티티를 관리한 뒤, 아래 전용 인벤토리에서 홈페이지 템플릿 및 컴포넌트 자산을 관리하세요.',
+                  fr: 'Gérez d’abord ici les familles de configuration du tenant, puis les assets template et composant de homepage dans l’inventaire dédié ci-dessous.',
                 })}
               >
                 <ScopedConfigEntityWorkspace
@@ -733,6 +734,34 @@ export function TenantSettingsScreen({
                   locale={locale}
                   copy={scopedConfigCopy}
                   catalog={localizedConfigEntityCatalog}
+                />
+              </FormSection>
+            </GlassSurface>
+
+            <GlassSurface className="p-6">
+              <FormSection
+                title={text({
+                  en: 'Homepage Assets',
+                  zh_HANS: '主页资产',
+                  zh_HANT: '主頁資產',
+                  ja: 'ホームページ資産',
+                  ko: '홈페이지 자산',
+                  fr: 'Assets de homepage',
+                })}
+                description={text({
+                  en: 'Template and component assets now live inside Entity Management so duplication, ownership, and IDE entry stay scoped to this tenant.',
+                  zh_HANS: '模板与组件资产现在纳入 Entity Management，确保复制、归属和 IDE 入口都绑定到当前租户范围。',
+                  zh_HANT: '模板與元件資產現在納入 Entity Management，確保複製、歸屬與 IDE 入口都綁定到目前租戶範圍。',
+                  ja: 'テンプレート資産とコンポーネント資産は Entity Management に統合され、このテナント範囲で複製・所有権・IDE 入口を揃えて扱います。',
+                  ko: '템플릿 및 컴포넌트 자산은 이제 Entity Management 안에서 관리되며, 복제·소유권·IDE 진입이 현재 테넌트 범위에 맞춰집니다.',
+                  fr: 'Les assets template et composant vivent désormais dans Entity Management afin que duplication, propriété et entrée IDE restent liées à ce tenant.',
+                })}
+              >
+                <PublicPresenceAssetWorkspace
+                  locale={locale}
+                  request={request}
+                  scopeType="tenant"
+                  tenantId={tenantId}
                 />
               </FormSection>
             </GlassSurface>

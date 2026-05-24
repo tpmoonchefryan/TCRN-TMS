@@ -873,6 +873,7 @@ const CONFIG_ENTITY_COPY: Record<SupportedUiLocale, ConfigEntityCopyMap> & Parti
     'customer-status': { label: '客户状态', description: '供下游客户流程筛选与生命周期提示使用的状态标签。' },
     'address-type': { label: '地址类型', description: '客户与档案表单复用的地址分类值。' },
     'channel-category': { label: '渠道类别', description: '供沟通方式记录继承的高层渠道分组。' },
+    'artist-stage': { label: '艺人阶段', description: '租户拥有的艺人阶段目录，用于艺人创建与生命周期流转。' },
     'communication-type': { label: '沟通方式', description: '下游客户联系流程继承的沟通方式。' },
     'reason-category': { label: '原因分类', description: '客户停用原因与运营选择使用的顶层分类。' },
     'inactivation-reason': { label: '停用原因', description: '挂在原因分类下的具体客户停用原因。' },
@@ -888,6 +889,7 @@ const CONFIG_ENTITY_COPY: Record<SupportedUiLocale, ConfigEntityCopyMap> & Parti
     'customer-status': { label: '客戶狀態', description: '供下游客戶流程篩選與生命週期提示使用的狀態標籤。' },
     'address-type': { label: '地址類型', description: '客戶與檔案表單複用的地址分類值。' },
     'channel-category': { label: '渠道類別', description: '供溝通方式記錄繼承的高層渠道分組。' },
+    'artist-stage': { label: '藝人階段', description: '租戶擁有的藝人階段目錄，用於藝人建立與生命週期流轉。' },
     'communication-type': { label: '溝通方式', description: '下游客戶聯絡流程繼承的溝通方式。' },
     'reason-category': { label: '原因分類', description: '客戶停用原因與營運選擇使用的頂層分類。' },
     'inactivation-reason': { label: '停用原因', description: '掛在原因分類下的具體客戶停用原因。' },
@@ -903,6 +905,7 @@ const CONFIG_ENTITY_COPY: Record<SupportedUiLocale, ConfigEntityCopyMap> & Parti
     'customer-status': { label: '顧客ステータス', description: '下流の顧客ワークフローで利用する状態ラベルです。' },
     'address-type': { label: '住所タイプ', description: '顧客・プロフィールフォームで再利用する住所分類です。' },
     'channel-category': { label: 'チャネルカテゴリ', description: 'コミュニケーション種別が継承する上位チャネル分類です。' },
+    'artist-stage': { label: 'アーティスト段階', description: 'タレント作成とライフサイクル遷移に使う、テナント所有のアーティスト段階カタログです。' },
     'communication-type': { label: 'コミュニケーション種別', description: '下流の顧客連絡フローで使う連絡方法です。' },
     'reason-category': { label: '理由カテゴリ', description: '顧客無効化理由の上位カテゴリです。' },
     'inactivation-reason': { label: '無効化理由', description: '理由カテゴリに紐づく具体的な無効化理由です。' },
@@ -918,6 +921,7 @@ const CONFIG_ENTITY_COPY: Record<SupportedUiLocale, ConfigEntityCopyMap> & Parti
     'customer-status': { label: '고객 상태', description: '하위 고객 흐름의 필터와 수명주기 표시에 쓰는 상태 라벨입니다.' },
     'address-type': { label: '주소 유형', description: '고객 및 프로필 양식에서 재사용하는 주소 분류입니다.' },
     'channel-category': { label: '채널 카테고리', description: '연락 방식이 상속하는 상위 채널 분류입니다.' },
+    'artist-stage': { label: '아티스트 단계', description: '탤런트 생성과 수명주기 흐름에 쓰는 테넌트 소유 아티스트 단계 카탈로그입니다.' },
     'communication-type': { label: '연락 방식', description: '하위 고객 연락 흐름에서 사용하는 연락 방법입니다.' },
     'reason-category': { label: '사유 카테고리', description: '고객 비활성화 사유의 상위 분류입니다.' },
     'inactivation-reason': { label: '비활성화 사유', description: '사유 카테고리에 속한 구체적인 고객 비활성화 사유입니다.' },
@@ -933,6 +937,7 @@ const CONFIG_ENTITY_COPY: Record<SupportedUiLocale, ConfigEntityCopyMap> & Parti
     'customer-status': { label: 'Statut client', description: 'Libelles de statut utilises par les filtres et cycles client.' },
     'address-type': { label: 'Type d adresse', description: 'Classification d adresse reutilisee dans les formulaires client et profil.' },
     'channel-category': { label: 'Categorie de canal', description: 'Groupe de canal parent herite par les modes de contact.' },
+    'artist-stage': { label: 'Etape artiste', description: 'Catalogue d etapes artiste gere par le tenant pour la creation et les transitions de cycle de vie.' },
     'communication-type': { label: 'Mode de contact', description: 'Methode de contact utilisee par les flux client aval.' },
     'reason-category': { label: 'Categorie de motif', description: 'Classification parent pour les motifs de desactivation client.' },
     'inactivation-reason': { label: 'Motif de desactivation', description: 'Motif concret rattache a une categorie de motif.' },
@@ -949,6 +954,15 @@ const CONFIG_FIELD_COPY: Record<SupportedUiLocale, ConfigFieldCopyMap> & Partial
   en: {},
   zh_HANS: {
     color: { label: '徽标颜色' },
+    lifecycleStatusMapping: {
+      label: '生命周期映射',
+      options: [
+        { value: 'draft', label: '草稿' },
+        { value: 'published', label: '已发布' },
+        { value: 'disabled', label: '已停用' },
+      ],
+    },
+    homepagePolicyKey: { label: '主页策略键', description: '供租户生命周期策略判定主页可用性使用的引用键。' },
     channelCategoryId: { label: '渠道类别' },
     reasonCategoryId: { label: '原因分类' },
     membershipClassId: { label: '会员类别' },
@@ -966,6 +980,15 @@ const CONFIG_FIELD_COPY: Record<SupportedUiLocale, ConfigFieldCopyMap> & Partial
   },
   zh_HANT: {
     color: { label: '徽標顏色' },
+    lifecycleStatusMapping: {
+      label: '生命週期映射',
+      options: [
+        { value: 'draft', label: '草稿' },
+        { value: 'published', label: '已發布' },
+        { value: 'disabled', label: '已停用' },
+      ],
+    },
+    homepagePolicyKey: { label: '主頁策略鍵', description: '供租戶生命週期策略判定主頁可用性使用的參照鍵。' },
     channelCategoryId: { label: '渠道類別' },
     reasonCategoryId: { label: '原因分類' },
     membershipClassId: { label: '會員類別' },
@@ -983,6 +1006,15 @@ const CONFIG_FIELD_COPY: Record<SupportedUiLocale, ConfigFieldCopyMap> & Partial
   },
   ja: {
     color: { label: 'バッジ色' },
+    lifecycleStatusMapping: {
+      label: 'ライフサイクル対応',
+      options: [
+        { value: 'draft', label: '下書き' },
+        { value: 'published', label: '公開済み' },
+        { value: 'disabled', label: '無効' },
+      ],
+    },
+    homepagePolicyKey: { label: 'ホームページポリシーキー', description: 'テナントのライフサイクルポリシーが公開可否を判定するための参照キーです。' },
     channelCategoryId: { label: 'チャネルカテゴリ' },
     reasonCategoryId: { label: '理由カテゴリ' },
     membershipClassId: { label: '会員カテゴリ' },
@@ -1000,6 +1032,15 @@ const CONFIG_FIELD_COPY: Record<SupportedUiLocale, ConfigFieldCopyMap> & Partial
   },
   ko: {
     color: { label: '배지 색상' },
+    lifecycleStatusMapping: {
+      label: '수명주기 매핑',
+      options: [
+        { value: 'draft', label: '초안' },
+        { value: 'published', label: '게시됨' },
+        { value: 'disabled', label: '중지됨' },
+      ],
+    },
+    homepagePolicyKey: { label: '홈페이지 정책 키', description: '테넌트 수명주기 정책이 홈페이지 가용성을 판단할 때 쓰는 참조 키입니다.' },
     channelCategoryId: { label: '채널 카테고리' },
     reasonCategoryId: { label: '사유 카테고리' },
     membershipClassId: { label: '멤버십 카테고리' },
@@ -1017,6 +1058,15 @@ const CONFIG_FIELD_COPY: Record<SupportedUiLocale, ConfigFieldCopyMap> & Partial
   },
   fr: {
     color: { label: 'Couleur du badge' },
+    lifecycleStatusMapping: {
+      label: 'Mappage du cycle de vie',
+      options: [
+        { value: 'draft', label: 'Brouillon' },
+        { value: 'published', label: 'Publie' },
+        { value: 'disabled', label: 'Desactive' },
+      ],
+    },
+    homepagePolicyKey: { label: 'Cle de politique homepage', description: 'Cle de reference utilisee par la politique de cycle de vie du tenant pour decider de la disponibilite homepage.' },
     channelCategoryId: { label: 'Categorie de canal' },
     reasonCategoryId: { label: 'Categorie de motif' },
     membershipClassId: { label: 'Categorie d adhesion' },

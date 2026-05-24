@@ -1,6 +1,11 @@
 import {
+  buildBlankPublicPresenceAssetSourceBundle,
+  buildPublicPresenceTemplateAssetManifest,
   createPublicPresenceValidationArtifact,
+  createLocalizedText,
+  getPublicPresenceTemplateSeedText,
   type PublicPresenceDocument,
+  type PublicPresenceAssetListEntry,
   type RequestContext,
 } from '@tcrn/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -12,8 +17,23 @@ import type {
 } from '../domain/public-presence-foundation.policy';
 import { HomepageAdminRepository } from '../infrastructure/homepage-admin.repository';
 import { PublicPresenceFoundationRepository } from '../infrastructure/public-presence-foundation.repository';
+import { buildPublicPresenceSeedRuntimeAuthorityForTests } from '../testing/public-presence-seed-runtime-authority';
+import { PublicPresenceAssetService } from './public-presence-asset.service';
 import { PublicPresenceFoundationService } from './public-presence-foundation.service';
 import { PublicPresenceStudioService } from './public-presence-studio.service';
+
+const ARTIST_STAGE_ID = '11111111-1111-4111-8111-111111111111';
+const TALENT_OWNER_ID = '22222222-2222-4222-8222-222222222222';
+const TEMPLATE_FIXTURES = {
+  activeTalentHub: {
+    assetId: '33333333-3333-4333-8333-333333333331',
+    revisionId: '33333333-3333-4333-8333-333333333332',
+  },
+  debutReveal: {
+    assetId: '44444444-4444-4444-8444-444444444441',
+    revisionId: '44444444-4444-4444-8444-444444444442',
+  },
+} as const;
 
 const draftDocument: PublicPresenceDocument = {
   metadata: {
@@ -55,6 +75,7 @@ const draftDocument: PublicPresenceDocument = {
 
 const validationArtifact = createPublicPresenceValidationArtifact(draftDocument, {
   mode: 'draft',
+  runtimeAuthority: buildPublicPresenceSeedRuntimeAuthorityForTests('activeTalentHub'),
 });
 
 function createPortalRecord(): PublicPresencePortalRecord {
@@ -87,6 +108,7 @@ function createVersionRecord(): PublicPresenceDocumentVersionRecord {
     publishedAt: null,
     publishedBy: null,
     scheduledFor: null,
+    templateAssetPin: null,
     templateId: 'activeTalentHub',
     updatedAt: new Date('2026-05-15T12:05:00.000Z'),
     versionNumber: 1,
@@ -172,9 +194,80 @@ function createSnapshotRecord(): PublicPresenceValidationSnapshotRecord {
   };
 }
 
+function createTemplateAssetEntry(
+  templateId: 'activeTalentHub' | 'debutReveal',
+): PublicPresenceAssetListEntry {
+  const label = templateId === 'debutReveal' ? 'Debut Reveal' : 'Active Talent Hub';
+  const assetId = TEMPLATE_FIXTURES[templateId].assetId;
+  const revisionId = TEMPLATE_FIXTURES[templateId].revisionId;
+  const text = getPublicPresenceTemplateSeedText(templateId);
+  const manifest = buildPublicPresenceTemplateAssetManifest(templateId, {
+    assetCode: `${templateId}-code`,
+    assetId,
+    assetRevisionId: revisionId,
+    description: text.description,
+    name: text.name,
+    ownerId: TALENT_OWNER_ID,
+    ownerType: 'talent',
+  });
+
+  return {
+    asset: {
+      assetKind: 'template',
+      code: `${templateId}-code`,
+      componentType: null,
+      createdAt: '2026-05-15T12:00:00.000Z',
+      currentRevisionId: revisionId,
+      description: createLocalizedText({ en: `${label} description` }),
+      id: assetId,
+      isSystem: templateId === 'activeTalentHub',
+      name: createLocalizedText({ en: label }),
+      ownerId: TALENT_OWNER_ID,
+      ownerType: 'talent',
+      status: 'active',
+      templateId,
+      updatedAt: '2026-05-15T12:05:00.000Z',
+      version: 1,
+    },
+    canEdit: true,
+    currentRevision: {
+      artifactStatus: 'active',
+      assetId,
+      createdAt: '2026-05-15T12:00:00.000Z',
+      createdBy: 'user-1',
+      id: revisionId,
+      lastValidatedAt: '2026-05-15T12:05:00.000Z',
+      manifest,
+      revisionNumber: 1,
+      runtimeContractVersion: '1.0.0',
+      sourceBundle: buildBlankPublicPresenceAssetSourceBundle({
+        assetCode: `${templateId}-code`,
+        assetKind: 'template',
+        manifest,
+        name: text.name,
+        templateId,
+      }),
+      sourceHash: 'a'.repeat(64),
+      submittedAt: '2026-05-15T12:05:00.000Z',
+      validationState: 'ready',
+      validationSummary: {
+        issueCount: 0,
+        passCount: 1,
+        warnCount: 0,
+      },
+    },
+    isInherited: false,
+    scope: {
+      scopeId: 'talent-1',
+      scopeType: 'talent',
+    },
+  };
+}
+
 describe('PublicPresenceStudioService', () => {
   let homepageAdminRepository: HomepageAdminRepository;
   let publicPresenceFoundationRepository: PublicPresenceFoundationRepository;
+  let publicPresenceAssetService: PublicPresenceAssetService;
   let publicPresenceFoundationService: PublicPresenceFoundationService;
   let service: PublicPresenceStudioService;
 
@@ -188,6 +281,34 @@ describe('PublicPresenceStudioService', () => {
   beforeEach(() => {
     homepageAdminRepository = {
       findTalentById: vi.fn(),
+      listArtistStages: vi.fn().mockResolvedValue([
+        {
+          code: 'live',
+          description: createLocalizedText({ en: 'Live stage' }),
+          homepagePolicyKey: 'live-policy',
+          id: ARTIST_STAGE_ID,
+          isActive: true,
+          isSystem: true,
+          lifecycleStatusMapping: 'published',
+          name: createLocalizedText({ en: 'Live' }),
+          sortOrder: 1,
+        },
+      ]),
+      readArtistLifecycleFlow: vi.fn().mockResolvedValue({
+        homepagePolicyByStage: [
+          {
+            allowedTemplateIds: ['activeTalentHub', 'debutReveal'],
+            stageId: ARTIST_STAGE_ID,
+          },
+        ],
+        nodes: [
+          {
+            stageCode: 'live',
+            stageId: ARTIST_STAGE_ID,
+          },
+        ],
+        transitions: [],
+      }),
       findTenantCodeBySchema: vi.fn().mockResolvedValue(null),
     } as unknown as HomepageAdminRepository;
 
@@ -205,9 +326,17 @@ describe('PublicPresenceStudioService', () => {
       saveDraft: vi.fn(),
     } as unknown as PublicPresenceFoundationService;
 
+    publicPresenceAssetService = {
+      listAssets: vi.fn().mockResolvedValue([
+        createTemplateAssetEntry('activeTalentHub'),
+        createTemplateAssetEntry('debutReveal'),
+      ]),
+    } as unknown as PublicPresenceAssetService;
+
     service = new PublicPresenceStudioService(
       homepageAdminRepository,
       publicPresenceFoundationRepository,
+      publicPresenceAssetService,
       publicPresenceFoundationService,
     );
   });
@@ -220,6 +349,8 @@ describe('PublicPresenceStudioService', () => {
       displayName: 'Aki Rosenthal',
       homepagePath: 'aki-home',
       id: 'talent-1',
+      artistStageId: ARTIST_STAGE_ID,
+      lifecycleStatus: 'published',
       timezone: 'Asia/Tokyo',
     } as never);
     vi.mocked(
@@ -267,6 +398,8 @@ describe('PublicPresenceStudioService', () => {
       displayName: 'Aki Rosenthal',
       homepagePath: 'aki-home',
       id: 'talent-1',
+      artistStageId: ARTIST_STAGE_ID,
+      lifecycleStatus: 'published',
       timezone: 'Asia/Tokyo',
     } as never);
     vi.mocked(
@@ -297,7 +430,12 @@ describe('PublicPresenceStudioService', () => {
         templateId: 'activeTalentHub',
       }),
       context,
-      { expectedCurrentContentHash: null },
+      expect.objectContaining({
+        expectedCurrentContentHash: null,
+        templateAssetPin: expect.objectContaining({
+          assetId: TEMPLATE_FIXTURES.activeTalentHub.assetId,
+        }),
+      }),
     );
     expect(result.publicRoute).toMatchObject({
       canonicalPath: '/tenant_test/aki-rosenthal/homepage',
@@ -316,6 +454,8 @@ describe('PublicPresenceStudioService', () => {
       displayName: 'Sakura Kaze',
       homepagePath: 'sakura-home',
       id: 'talent-1',
+      artistStageId: ARTIST_STAGE_ID,
+      lifecycleStatus: 'published',
       timezone: 'Asia/Tokyo',
     } as never);
     vi.mocked(
@@ -367,7 +507,12 @@ describe('PublicPresenceStudioService', () => {
         templateId: 'debutReveal',
       }),
       context,
-      { expectedCurrentContentHash: null },
+      expect.objectContaining({
+        expectedCurrentContentHash: null,
+        templateAssetPin: expect.objectContaining({
+          assetId: TEMPLATE_FIXTURES.debutReveal.assetId,
+        }),
+      }),
     );
   });
 
@@ -379,6 +524,8 @@ describe('PublicPresenceStudioService', () => {
       displayName: 'Sakura Kaze',
       homepagePath: 'sakura-home',
       id: 'talent-1',
+      artistStageId: ARTIST_STAGE_ID,
+      lifecycleStatus: 'published',
       timezone: 'Asia/Tokyo',
     } as never);
     vi.mocked(

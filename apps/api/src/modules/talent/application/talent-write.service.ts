@@ -51,6 +51,18 @@ export class TalentWriteService {
       });
     }
 
+    const artistStage = await this.talentWriteRepository.findActiveArtistStage(
+      tenantSchema,
+      data.artistStageId,
+    );
+
+    if (!artistStage) {
+      throw new BadRequestException({
+        code: ErrorCodes.VALIDATION_FAILED,
+        message: 'Artist Stage not found or inactive',
+      });
+    }
+
     const existingByCode = await this.talentReadService.findByCode(
       data.code,
       tenantSchema,
@@ -94,6 +106,8 @@ export class TalentWriteService {
       {
         ...data,
         description: normalizeLocalizedText(data.description, data.name.en),
+        artistStageId: data.artistStageId,
+        lifecycleStatus: artistStage.lifecycleStatusMapping,
         path: buildTalentPath(data.code, subsidiaryPath),
         settings: buildTalentDefaultSettings(data.settings),
       },

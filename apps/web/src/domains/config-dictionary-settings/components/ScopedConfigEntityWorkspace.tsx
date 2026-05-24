@@ -265,6 +265,7 @@ const DEFAULT_COPY: ScopedConfigEntityWorkspaceCopy = {
 };
 
 const TENANT_GLOBAL_ENTITY_TYPES = new Set<ScopedConfigEntityType>([
+  'artist-stage',
   'membership-class',
   'membership-type',
   'membership-level',
@@ -721,6 +722,31 @@ function renderField(
             </option>
           ))}
         </select>
+      </label>
+    );
+  }
+
+  if (field.kind === 'select') {
+    return (
+      <label key={field.key} className="space-y-2">
+        <span className="text-sm font-semibold text-slate-900">
+          {field.label}
+          {field.required ? ' *' : ''}
+        </span>
+        <select
+          aria-label={field.label}
+          value={typeof value === 'string' ? value : ''}
+          onChange={(event) => onChange(field.key, event.target.value)}
+          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400"
+        >
+          <option value="">{field.placeholder ?? field.label}</option>
+          {(field.options ?? []).map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+        {field.description ? <p className="text-xs leading-5 text-slate-500">{field.description}</p> : null}
       </label>
     );
   }

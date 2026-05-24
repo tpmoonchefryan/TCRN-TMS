@@ -28,10 +28,12 @@ import {
   CONFIG_HAS_CODE,
   CONFIG_HAS_DESCRIPTION,
   CONFIG_HAS_EXTRA_DATA,
+  CONFIG_HAS_FORCE_USE_CONTROL,
   CONFIG_HAS_SORT_ORDER,
-  CONFIG_HAS_SYSTEM_CONTROL,
+  CONFIG_HAS_SYSTEM_FLAG,
   CONFIG_SCOPED_ENTITIES,
   CONFIG_TABLE_NAMES,
+  CONFIG_TENANT_ONLY_SCOPED_ENTITIES,
   ConfigEntityCreateInput,
   ConfigEntityType,
   ConfigEntityUpdateInput,
@@ -201,9 +203,16 @@ export class ConfigService {
     const hasSortOrder = CONFIG_HAS_SORT_ORDER.has(entityType);
     const hasDescription = CONFIG_HAS_DESCRIPTION.has(entityType);
     const hasExtraData = CONFIG_HAS_EXTRA_DATA.has(entityType);
-    const hasSystemControl = CONFIG_HAS_SYSTEM_CONTROL.has(entityType);
+    const hasSystemFlag = CONFIG_HAS_SYSTEM_FLAG.has(entityType);
+    const hasForceUseControl = CONFIG_HAS_FORCE_USE_CONTROL.has(entityType);
     const hasAudit = CONFIG_HAS_AUDIT.has(entityType);
     const normalizedName = normalizeLocalizedText(data.name, data.name?.en);
+
+    this.assertTenantOnlyScopedEntityOwner(
+      entityType,
+      data.ownerType ?? 'tenant',
+      data.ownerId ?? null,
+    );
 
     if (!normalizedName.en.trim()) {
       throw new BadRequestException('name.en is required');
@@ -256,10 +265,13 @@ export class ConfigService {
       params.push(this.stringifyJson(data.extraData ?? null));
     }
 
-    if (hasSystemControl) {
+    if (hasForceUseControl) {
       fields.push('is_force_use', 'is_system');
       values.push(`$${params.length + 1}`, 'false');
       params.push(data.isForceUse ?? false);
+    } else if (hasSystemFlag) {
+      fields.push('is_system');
+      values.push('false');
     }
 
     if (hasAudit) {
@@ -313,7 +325,7 @@ export class ConfigService {
 
     const hasDescription = CONFIG_HAS_DESCRIPTION.has(entityType);
     const hasExtraData = CONFIG_HAS_EXTRA_DATA.has(entityType);
-    const hasSystemControl = CONFIG_HAS_SYSTEM_CONTROL.has(entityType);
+    const hasForceUseControl = CONFIG_HAS_FORCE_USE_CONTROL.has(entityType);
     const hasSortOrder = CONFIG_HAS_SORT_ORDER.has(entityType);
     const hasAudit = CONFIG_HAS_AUDIT.has(entityType);
     const updates: string[] = [];
@@ -345,7 +357,7 @@ export class ConfigService {
       params.push(data.sortOrder);
     }
 
-    if (hasSystemControl && data.isForceUse !== undefined) {
+    if (hasForceUseControl && data.isForceUse !== undefined) {
       updates.push(`is_force_use = $${paramIndex++}`);
       params.push(data.isForceUse);
     }
@@ -490,6 +502,13 @@ export class ConfigService {
       });
     }
 
+    if (CONFIG_TENANT_ONLY_SCOPED_ENTITIES.has(entityType)) {
+      throw new BadRequestException({
+        code: 'CONFIG_TENANT_ONLY',
+        message: 'This config entity is tenant-owned and cannot be disabled in lower scopes',
+      });
+    }
+
     const current = await this.findById(entityType, id, tenantSchema);
     if (!current) {
       throw new NotFoundException({
@@ -540,6 +559,13 @@ export class ConfigService {
 
     if (!CONFIG_SCOPED_ENTITIES.has(entityType)) {
       return;
+    }
+
+    if (CONFIG_TENANT_ONLY_SCOPED_ENTITIES.has(entityType)) {
+      throw new BadRequestException({
+        code: 'CONFIG_TENANT_ONLY',
+        message: 'This config entity is tenant-owned and cannot be overridden in lower scopes',
+      });
     }
 
     await prisma.$executeRawUnsafe(
@@ -835,7 +861,8 @@ export class ConfigService {
     const hasSortOrder = CONFIG_HAS_SORT_ORDER.has(entityType);
     const hasDescription = CONFIG_HAS_DESCRIPTION.has(entityType);
     const hasExtraData = CONFIG_HAS_EXTRA_DATA.has(entityType);
-    const hasSystemControl = CONFIG_HAS_SYSTEM_CONTROL.has(entityType);
+    const hasSystemFlag = CONFIG_HAS_SYSTEM_FLAG.has(entityType);
+    const hasForceUseControl = CONFIG_HAS_FORCE_USE_CONTROL.has(entityType);
     const hasAudit = CONFIG_HAS_AUDIT.has(entityType);
     const extraFieldsSelect = extraFields.length > 0
       ? `, ${extraFields.map((field) => `${field} as "${this.snakeToCamel(field)}"`).join(', ')}`
@@ -850,7 +877,8 @@ export class ConfigService {
       hasExtraData ? 'extra_data as "extraData"' : 'NULL::jsonb as "extraData"',
       hasSortOrder ? 'sort_order as "sortOrder"' : '0 as "sortOrder"',
       'is_active as "isActive"',
-      hasSystemControl ? 'is_force_use as "isForceUse", is_system as "isSystem"' : 'false as "isForceUse", false as "isSystem"',
+      hasForceUseControl ? 'is_force_use as "isForceUse"' : 'false as "isForceUse"',
+      hasSystemFlag ? 'is_system as "isSystem"' : 'false as "isSystem"',
       'created_at as "createdAt"',
       'updated_at as "updatedAt"',
       hasAudit ? 'created_by as "createdBy", updated_by as "updatedBy"' : 'NULL as "createdBy", NULL as "updatedBy"',
@@ -971,6 +999,23 @@ export class ConfigService {
 
   private stringifyJson(input: Record<string, unknown> | null | undefined): string | null {
     return input ? JSON.stringify(input) : null;
+  }
+
+  private assertTenantOnlyScopedEntityOwner(
+    entityType: ConfigEntityType,
+    ownerType: OwnerType,
+    ownerId: string | null,
+  ): void {
+    if (!CONFIG_TENANT_ONLY_SCOPED_ENTITIES.has(entityType)) {
+      return;
+    }
+
+    if (ownerType !== 'tenant' || ownerId !== null) {
+      throw new BadRequestException({
+        code: 'CONFIG_TENANT_ONLY',
+        message: 'This config entity must stay tenant-owned',
+      });
+    }
   }
 
   private async getScopeChain(

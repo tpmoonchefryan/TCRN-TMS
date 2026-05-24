@@ -48,7 +48,7 @@ const getMethodPermissions = (methodName: string) =>
     | undefined;
 
 describe('TalentController lifecycle route contract', () => {
-  it('keeps the canonical talent lifecycle routes on publish/disable/re-enable', () => {
+  it('keeps the explicit artist-stage transition route and legacy compatibility lifecycle routes', () => {
     const controllerPath = Reflect.getMetadata(PATH_METADATA, TalentController);
     const routes = getControllerRoutes(TalentController);
 
@@ -59,6 +59,11 @@ describe('TalentController lifecycle route contract', () => {
           methodName: 'getPublishReadiness',
           requestMethod: RequestMethod.GET,
           path: ':talentId/publish-readiness',
+        },
+        {
+          methodName: 'transitionArtistStage',
+          requestMethod: RequestMethod.POST,
+          path: ':talentId/stage-transitions',
         },
         {
           methodName: 'publish',
@@ -172,6 +177,9 @@ describe('TalentController lifecycle route contract', () => {
     expect(getMethodPermissions('move')).toEqual([{ resource: 'talent', action: 'update' }]);
     expect(getMethodPermissions('getPublishReadiness')).toEqual([
       { resource: 'talent', action: 'read' },
+    ]);
+    expect(getMethodPermissions('transitionArtistStage')).toEqual([
+      { resource: 'talent', action: 'update' },
     ]);
     expect(getMethodPermissions('publish')).toEqual([{ resource: 'talent', action: 'update' }]);
     expect(getMethodPermissions('disable')).toEqual([{ resource: 'talent', action: 'update' }]);

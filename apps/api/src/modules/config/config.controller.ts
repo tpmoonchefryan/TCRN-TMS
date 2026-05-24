@@ -198,6 +198,23 @@ class CreateConfigDto {
   @IsString()
   color?: string;
 
+  @ApiPropertyOptional({
+    description: 'Artist Stage lifecycle mapping',
+    enum: ['draft', 'published', 'disabled'],
+    example: 'draft',
+  })
+  @IsOptional()
+  @IsEnum(['draft', 'published', 'disabled'])
+  lifecycleStatusMapping?: 'draft' | 'published' | 'disabled';
+
+  @ApiPropertyOptional({
+    description: 'Homepage policy key used by tenant lifecycle flow',
+    example: 'debut-policy',
+  })
+  @IsOptional()
+  @IsString()
+  homepagePolicyKey?: string;
+
   @ApiPropertyOptional({ description: 'Active status', example: true })
   @IsOptional()
   @IsBoolean()

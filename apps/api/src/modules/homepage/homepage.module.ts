@@ -13,7 +13,7 @@ import { HomepageAdminService } from './application/homepage-admin.service';
 import { HomepageSchedulerApplicationService } from './application/homepage-scheduler.service';
 import { HomepageVersionApplicationService } from './application/homepage-version.service';
 import { PublicPresenceFoundationService } from './application/public-presence-foundation.service';
-import { PublicPresenceAuthoringService } from './application/public-presence-authoring.service';
+import { PublicPresenceAssetService } from './application/public-presence-asset.service';
 import { PublicPresenceStudioService } from './application/public-presence-studio.service';
 import { PublicPresenceWorkflowService } from './application/public-presence-workflow.service';
 import {
@@ -22,14 +22,15 @@ import {
   HomepageController,
   InternalDomainController,
   PublicHomepageController,
+  PublicPresenceAssetController,
   PublicPresenceController,
 } from './controllers';
 import { HomepageAdminRepository } from './infrastructure/homepage-admin.repository';
 import { HomepageSchedulerRepository } from './infrastructure/homepage-scheduler.repository';
 import { HomepageVersionRepository } from './infrastructure/homepage-version.repository';
 import { PublicHomepageReadRepository } from './infrastructure/public-homepage-read.repository';
+import { PublicPresenceAssetRepository } from './infrastructure/public-presence-asset.repository';
 import { PublicPresenceFoundationRepository } from './infrastructure/public-presence-foundation.repository';
-import { PublicPresenceAuthoringRepository } from './infrastructure/public-presence-authoring.repository';
 import {
   CdnPurgeService,
   DomainLookupService,
@@ -48,6 +49,7 @@ import {
     CalendarController,
     HomepageController,
     PublicHomepageController,
+    PublicPresenceAssetController,
     PublicPresenceController,
     DomainLookupController,
     InternalDomainController,
@@ -63,11 +65,11 @@ import {
     HomepageVersionRepository,
     HomepageVersionApplicationService,
     PublicHomepageReadRepository,
-    PublicPresenceAuthoringRepository,
+    PublicPresenceAssetRepository,
     PublicPresenceFoundationRepository,
     PublicHomepageService,
     PublicHomepageProjectionService,
-    PublicPresenceAuthoringService,
+    PublicPresenceAssetService,
     PublicPresenceFoundationService,
     PublicPresenceStudioService,
     PublicPresenceWorkflowService,

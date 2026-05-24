@@ -12,6 +12,7 @@ interface OrganizationStructureCopy {
     noPayload: string;
     loadTreeError: string;
     loadProfileStoresError: string;
+    loadArtistStagesError: string;
     createError: string;
     createSubsidiaryError: string;
     loadTalentDetailError: string;
@@ -67,6 +68,7 @@ interface OrganizationStructureCopy {
     legalNameLabel: string;
     homepagePathLabel: string;
     profileStoreLabel: string;
+    artistStageLabel: string;
     timezoneLabel: string;
     talentCodePlaceholder: string;
     displayNamePlaceholder: string;
@@ -74,6 +76,7 @@ interface OrganizationStructureCopy {
     homepagePathPlaceholder: string;
     timezonePlaceholder: string;
     noProfileStores: string;
+    noArtistStages: string;
     createPending: string;
     submit: string;
     subsidiaryRootTitle: string;
@@ -114,6 +117,7 @@ interface OrganizationStructureCopy {
     displayName: string;
     legalName: string;
     profileStore: string;
+    artistStage: string;
     homepagePath: string;
     subsidiaryCode: string;
     subsidiaryName: string;
@@ -154,6 +158,7 @@ const copyByLocale: Record<SupportedUiLocale, OrganizationStructureCopy> = {
       noPayload: 'No organization payload was returned.',
       loadTreeError: 'Failed to load organization tree.',
       loadProfileStoresError: 'Failed to load profile stores.',
+      loadArtistStagesError: 'Failed to load artist stages.',
       createError: 'Failed to create talent from the organization page.',
       createSubsidiaryError: 'Failed to create subsidiary from the organization page.',
       loadTalentDetailError: 'Failed to load talent details for the lifecycle action.',
@@ -209,6 +214,7 @@ const copyByLocale: Record<SupportedUiLocale, OrganizationStructureCopy> = {
       legalNameLabel: 'Legal / English name',
       homepagePathLabel: 'Homepage path',
       profileStoreLabel: 'Profile store',
+      artistStageLabel: 'Artist stage',
       timezoneLabel: 'Timezone',
       talentCodePlaceholder: 'SORA',
       displayNamePlaceholder: 'Sora',
@@ -216,6 +222,7 @@ const copyByLocale: Record<SupportedUiLocale, OrganizationStructureCopy> = {
       homepagePathPlaceholder: 'sora',
       timezonePlaceholder: 'Asia/Shanghai',
       noProfileStores: 'No profile stores are available yet. Add one before creating the first talent.',
+      noArtistStages: 'No active artist stages are available yet. Add one in tenant settings before creating a talent.',
       createPending: 'Creating…',
       submit: 'Create talent',
       subsidiaryRootTitle: 'Create top-level subsidiary',
@@ -256,6 +263,7 @@ const copyByLocale: Record<SupportedUiLocale, OrganizationStructureCopy> = {
       displayName: 'Display name is required.',
       legalName: 'Legal / English name is required.',
       profileStore: 'Select a profile store before creating a talent.',
+      artistStage: 'Select an artist stage before creating a talent.',
       homepagePath: 'Homepage path must use lowercase letters, numbers, and hyphens only.',
       subsidiaryCode: 'Subsidiary code must be 3-32 characters using only A-Z, 0-9, and _.',
       subsidiaryName: 'Subsidiary name is required.',
@@ -294,6 +302,7 @@ const copyByLocale: Record<SupportedUiLocale, OrganizationStructureCopy> = {
       noPayload: '未返回组织结构数据。',
       loadTreeError: '加载组织结构失败。',
       loadProfileStoresError: '加载档案库失败。',
+      loadArtistStagesError: '加载艺人阶段失败。',
       createError: '无法在组织结构页创建艺人。',
       createSubsidiaryError: '无法在组织结构页创建分目录。',
       loadTalentDetailError: '加载艺人详情失败，无法执行生命周期操作。',
@@ -349,6 +358,7 @@ const copyByLocale: Record<SupportedUiLocale, OrganizationStructureCopy> = {
       legalNameLabel: '法务 / 英文名称',
       homepagePathLabel: '主页路径',
       profileStoreLabel: '档案库',
+      artistStageLabel: '艺人阶段',
       timezoneLabel: '时区',
       talentCodePlaceholder: 'SORA',
       displayNamePlaceholder: '时乃空',
@@ -356,6 +366,7 @@ const copyByLocale: Record<SupportedUiLocale, OrganizationStructureCopy> = {
       homepagePathPlaceholder: 'sora',
       timezonePlaceholder: 'Asia/Shanghai',
       noProfileStores: '当前还没有可用档案库。请先准备档案库，再创建第一个艺人。',
+      noArtistStages: '当前还没有可用艺人阶段。请先在租户设置中配置艺人阶段，再创建艺人。',
       createPending: '创建中…',
       submit: '创建艺人',
       subsidiaryRootTitle: '创建顶层分目录',
@@ -396,6 +407,7 @@ const copyByLocale: Record<SupportedUiLocale, OrganizationStructureCopy> = {
       displayName: '显示名称不能为空。',
       legalName: '法务 / 英文名称不能为空。',
       profileStore: '创建艺人前必须先选择档案库。',
+      artistStage: '创建艺人前必须先选择艺人阶段。',
       homepagePath: '主页路径只能使用小写字母、数字和连字符。',
       subsidiaryCode: '分目录代码必须为 3-32 位，且只能使用 A-Z、0-9 与 _。',
       subsidiaryName: '分目录名称不能为空。',
@@ -434,6 +446,7 @@ const copyByLocale: Record<SupportedUiLocale, OrganizationStructureCopy> = {
       noPayload: '未返回组织结构数据。',
       loadTreeError: '加载组织结构失败。',
       loadProfileStoresError: '加载档案库失败。',
+      loadArtistStagesError: '載入藝人階段失敗。',
       createError: '无法在组织结构页创建艺人。',
       createSubsidiaryError: '无法在组织结构页创建分目录。',
       loadTalentDetailError: '加载艺人详情失败，无法执行生命周期操作。',
@@ -489,6 +502,7 @@ const copyByLocale: Record<SupportedUiLocale, OrganizationStructureCopy> = {
       legalNameLabel: '法务 / 英文名称',
       homepagePathLabel: '主页路径',
       profileStoreLabel: '档案库',
+      artistStageLabel: '藝人階段',
       timezoneLabel: '时区',
       talentCodePlaceholder: 'SORA',
       displayNamePlaceholder: '时乃空',
@@ -496,6 +510,7 @@ const copyByLocale: Record<SupportedUiLocale, OrganizationStructureCopy> = {
       homepagePathPlaceholder: 'sora',
       timezonePlaceholder: 'Asia/Shanghai',
       noProfileStores: '当前还没有可用档案库。请先准备档案库，再创建第一个艺人。',
+      noArtistStages: '目前還沒有可用藝人階段。請先在租戶設定中配置藝人階段，再建立藝人。',
       createPending: '创建中…',
       submit: '创建艺人',
       subsidiaryRootTitle: '创建顶层分目录',
@@ -536,6 +551,7 @@ const copyByLocale: Record<SupportedUiLocale, OrganizationStructureCopy> = {
       displayName: '显示名称不能为空。',
       legalName: '法务 / 英文名称不能为空。',
       profileStore: '创建艺人前必须先选择档案库。',
+      artistStage: '建立藝人前必須先選擇藝人階段。',
       homepagePath: '主页路径只能使用小写字母、数字和连字符。',
       subsidiaryCode: '分目录代码必须为 3-32 位，且只能使用 A-Z、0-9 与 _。',
       subsidiaryName: '分目录名称不能为空。',
@@ -574,6 +590,7 @@ const copyByLocale: Record<SupportedUiLocale, OrganizationStructureCopy> = {
       noPayload: '組織データが返されませんでした。',
       loadTreeError: '組織ツリーの読み込みに失敗しました。',
       loadProfileStoresError: 'プロフィールストアの読み込みに失敗しました。',
+      loadArtistStagesError: 'アーティスト段階の読み込みに失敗しました。',
       createError: '組織画面からタレントを作成できませんでした。',
       createSubsidiaryError: '組織画面から配下スコープを作成できませんでした。',
       loadTalentDetailError: 'ライフサイクル操作のためのタレント詳細を読み込めませんでした。',
@@ -629,6 +646,7 @@ const copyByLocale: Record<SupportedUiLocale, OrganizationStructureCopy> = {
       legalNameLabel: '法務 / 英語名',
       homepagePathLabel: 'ホームページパス',
       profileStoreLabel: 'プロフィールストア',
+      artistStageLabel: 'アーティスト段階',
       timezoneLabel: 'タイムゾーン',
       talentCodePlaceholder: 'SORA',
       displayNamePlaceholder: 'Sora',
@@ -636,6 +654,7 @@ const copyByLocale: Record<SupportedUiLocale, OrganizationStructureCopy> = {
       homepagePathPlaceholder: 'sora',
       timezonePlaceholder: 'Asia/Tokyo',
       noProfileStores: '利用可能なプロフィールストアがまだありません。最初のタレントを作成する前に準備してください。',
+      noArtistStages: '有効なアーティスト段階がまだありません。タレントを作成する前にテナント設定で追加してください。',
       createPending: '作成中…',
       submit: 'タレントを作成',
       subsidiaryRootTitle: 'トップレベルの配下スコープを作成',
@@ -676,6 +695,7 @@ const copyByLocale: Record<SupportedUiLocale, OrganizationStructureCopy> = {
       displayName: '表示名は必須です。',
       legalName: '法務 / 英語名は必須です。',
       profileStore: 'タレント作成前にプロフィールストアを選択してください。',
+      artistStage: 'タレント作成前にアーティスト段階を選択してください。',
       homepagePath: 'ホームページパスには小文字、数字、ハイフンのみ使用できます。',
       subsidiaryCode: '配下スコープコードは 3〜32 文字で、A-Z、0-9、_ のみ使用できます。',
       subsidiaryName: '配下スコープ名は必須です。',
@@ -714,6 +734,7 @@ const copyByLocale: Record<SupportedUiLocale, OrganizationStructureCopy> = {
       noPayload: 'No organization payload was returned.',
       loadTreeError: 'Failed to load organization tree.',
       loadProfileStoresError: 'Failed to load profile stores.',
+      loadArtistStagesError: 'Failed to load artist stages.',
       createError: 'Failed to create talent from the organization page.',
       createSubsidiaryError: 'Failed to create subsidiary from the organization page.',
       loadTalentDetailError: 'Failed to load talent details for the lifecycle action.',
@@ -769,6 +790,7 @@ const copyByLocale: Record<SupportedUiLocale, OrganizationStructureCopy> = {
       legalNameLabel: 'Legal / English name',
       homepagePathLabel: 'Homepage path',
       profileStoreLabel: 'Profile store',
+      artistStageLabel: 'Artist stage',
       timezoneLabel: 'Timezone',
       talentCodePlaceholder: 'SORA',
       displayNamePlaceholder: 'Sora',
@@ -776,6 +798,7 @@ const copyByLocale: Record<SupportedUiLocale, OrganizationStructureCopy> = {
       homepagePathPlaceholder: 'sora',
       timezonePlaceholder: 'Asia/Shanghai',
       noProfileStores: 'No profile stores are available yet. Add one before creating the first talent.',
+      noArtistStages: 'No active artist stages are available yet. Add one in tenant settings before creating a talent.',
       createPending: 'Creating…',
       submit: 'Create talent',
       subsidiaryRootTitle: 'Create top-level subsidiary',
@@ -816,6 +839,7 @@ const copyByLocale: Record<SupportedUiLocale, OrganizationStructureCopy> = {
       displayName: 'Display name is required.',
       legalName: 'Legal / English name is required.',
       profileStore: 'Select a profile store before creating a talent.',
+      artistStage: 'Select an artist stage before creating a talent.',
       homepagePath: 'Homepage path must use lowercase letters, numbers, and hyphens only.',
       subsidiaryCode: 'Subsidiary code must be 3-32 characters using only A-Z, 0-9, and _.',
       subsidiaryName: 'Subsidiary name is required.',
@@ -854,6 +878,7 @@ const copyByLocale: Record<SupportedUiLocale, OrganizationStructureCopy> = {
       noPayload: 'No organization payload was returned.',
       loadTreeError: 'Failed to load organization tree.',
       loadProfileStoresError: 'Failed to load profile stores.',
+      loadArtistStagesError: 'Failed to load artist stages.',
       createError: 'Failed to create talent from the organization page.',
       createSubsidiaryError: 'Failed to create subsidiary from the organization page.',
       loadTalentDetailError: 'Failed to load talent details for the lifecycle action.',
@@ -909,6 +934,7 @@ const copyByLocale: Record<SupportedUiLocale, OrganizationStructureCopy> = {
       legalNameLabel: 'Legal / English name',
       homepagePathLabel: 'Homepage path',
       profileStoreLabel: 'Profile store',
+      artistStageLabel: 'Artist stage',
       timezoneLabel: 'Timezone',
       talentCodePlaceholder: 'SORA',
       displayNamePlaceholder: 'Sora',
@@ -916,6 +942,7 @@ const copyByLocale: Record<SupportedUiLocale, OrganizationStructureCopy> = {
       homepagePathPlaceholder: 'sora',
       timezonePlaceholder: 'Asia/Shanghai',
       noProfileStores: 'No profile stores are available yet. Add one before creating the first talent.',
+      noArtistStages: 'No active artist stages are available yet. Add one in tenant settings before creating a talent.',
       createPending: 'Creating…',
       submit: 'Create talent',
       subsidiaryRootTitle: 'Create top-level subsidiary',
@@ -956,6 +983,7 @@ const copyByLocale: Record<SupportedUiLocale, OrganizationStructureCopy> = {
       displayName: 'Display name is required.',
       legalName: 'Legal / English name is required.',
       profileStore: 'Select a profile store before creating a talent.',
+      artistStage: 'Select an artist stage before creating a talent.',
       homepagePath: 'Homepage path must use lowercase letters, numbers, and hyphens only.',
       subsidiaryCode: 'Subsidiary code must be 3-32 characters using only A-Z, 0-9, and _.',
       subsidiaryName: 'Subsidiary name is required.',

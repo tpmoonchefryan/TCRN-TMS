@@ -23,6 +23,12 @@ interface TalentRecord {
   version: number;
 }
 
+interface ArtistStageCatalogRecord {
+  code: string;
+  id: string;
+  isActive: boolean;
+}
+
 @Injectable()
 export class SettingsRepository {
   async findTenantBySchema(tenantSchema: string): Promise<TenantRecord | null> {
@@ -211,5 +217,26 @@ export class SettingsRepository {
         )
       `,
     );
+  }
+
+  async listArtistStageCatalog(
+    tenantSchema: string,
+  ): Promise<ArtistStageCatalogRecord[]> {
+    try {
+      return await prisma.$queryRawUnsafe<ArtistStageCatalogRecord[]>(
+        `
+          SELECT
+            id,
+            code,
+            is_active as "isActive"
+          FROM "${tenantSchema}".artist_stage
+          WHERE owner_type = 'tenant'
+            AND owner_id IS NULL
+          ORDER BY sort_order ASC, code ASC
+        `,
+      );
+    } catch {
+      return [];
+    }
   }
 }

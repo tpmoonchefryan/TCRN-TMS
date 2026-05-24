@@ -45,6 +45,7 @@ export interface OrganizationTreeOptions {
 export interface CreateOrganizationTalentInput {
   subsidiaryId?: string | null;
   profileStoreId: string;
+  artistStageId: string;
   code: string;
   name: LocalizedText;
   displayName: string;
@@ -54,6 +55,7 @@ export interface CreateOrganizationTalentInput {
 export interface OrganizationTalentCreateResponse {
   id: string;
   subsidiaryId: string | null;
+  artistStageId: string;
   code: string;
   path: string;
   name: LocalizedText;
@@ -72,6 +74,7 @@ export interface OrganizationTalentCreateResponse {
 
 export interface OrganizationTalentLifecycleResponse {
   id: string;
+  artistStageId: string;
   lifecycleStatus: 'draft' | 'published' | 'disabled';
   publishedAt: string | null;
   publishedBy: string | null;

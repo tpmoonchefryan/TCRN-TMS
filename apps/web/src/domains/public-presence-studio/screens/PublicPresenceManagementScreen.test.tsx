@@ -339,4 +339,23 @@ describe('PublicPresenceManagementScreen', () => {
       commandStrip.compareDocumentPosition(helpPanel) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
   });
+
+  it('falls back legacy homepage surface requests into the management workbench', async () => {
+    render(
+      <PublicPresenceManagementScreen
+        surface="templates"
+        talentId="talent-1"
+        tenantId="tenant-1"
+      />,
+    );
+
+    expect(await screen.findByTestId('homepage-surface-fallback-notice')).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'Template Center now opens through asset management and focused IDE flows.',
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByTestId('homepage-surface-menu')).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Homepage Management' })).toBeInTheDocument();
+  });
 });

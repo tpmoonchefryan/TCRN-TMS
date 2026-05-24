@@ -1,10 +1,15 @@
-import { DEFAULT_THEME, type PublicPresenceDocument } from '@tcrn/shared';
+import {
+  createPublicPresenceValidationArtifact,
+  DEFAULT_THEME,
+  type PublicPresenceDocument,
+} from '@tcrn/shared';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { PublicHomepageData, PublicHomepageTalentRecord } from '../domain/public-homepage-read.policy';
 import { HomepageAdminRepository } from '../infrastructure/homepage-admin.repository';
 import { PublicHomepageReadRepository } from '../infrastructure/public-homepage-read.repository';
 import { PublicPresenceFoundationRepository } from '../infrastructure/public-presence-foundation.repository';
+import { buildPublicPresenceSeedRuntimeAuthorityForTests } from '../testing/public-presence-seed-runtime-authority';
 import { PublicHomepageService } from './public-homepage.service';
 import { PublicHomepageProjectionService } from './public-homepage-projection.service';
 
@@ -71,6 +76,41 @@ const liveDocument: PublicPresenceDocument = {
   ],
 };
 
+function createValidationSnapshotRecord(
+  document: PublicPresenceDocument,
+  validationMode: 'draft' | 'publish' = 'publish',
+  id: string = 'snapshot-1',
+) {
+  const artifact = createPublicPresenceValidationArtifact(document, {
+    mode: validationMode,
+    runtimeAuthority: buildPublicPresenceSeedRuntimeAuthorityForTests(document.templateId),
+  });
+
+  return {
+    acknowledgementIds: artifact.snapshot.acknowledgementIds,
+    blockerCount: artifact.snapshot.issueCounts.blocker,
+    blockerIds: artifact.snapshot.blockerIds,
+    blocksAiPatch: false,
+    blocksPublish: false,
+    blocksVisualEdit: false,
+    createdAt: new Date('2026-05-15T10:00:00.000Z'),
+    createdBy: 'user-1',
+    fatalCount: artifact.snapshot.issueCounts.fatal,
+    id,
+    infoCount: artifact.snapshot.issueCounts.info,
+    issueCounts: artifact.snapshot.issueCounts,
+    portalId: 'portal-1',
+    projectionHash: artifact.snapshot.projectionHash,
+    registryVersion: artifact.snapshot.templateRegistryVersion,
+    safetyPolicyVersion: artifact.snapshot.safetyPolicyVersion,
+    snapshot: artifact.snapshot as unknown as Record<string, unknown>,
+    validationMode: artifact.snapshot.validationMode,
+    validationState: 'validEditable',
+    versionId: 'live-1',
+    warningCount: artifact.snapshot.issueCounts.warning,
+  };
+}
+
 describe('PublicHomepageProjectionService', () => {
   function createService() {
     const publicHomepageService = {
@@ -88,6 +128,7 @@ describe('PublicHomepageProjectionService', () => {
     const publicPresenceFoundationRepository = {
       findPortalByTalentId: vi.fn().mockResolvedValue(null),
       findDocumentVersionById: vi.fn().mockResolvedValue(null),
+      findValidationSnapshotById: vi.fn().mockResolvedValue(null),
     } as unknown as PublicPresenceFoundationRepository;
 
     const homepageAdminRepository = {
@@ -158,6 +199,7 @@ describe('PublicHomepageProjectionService', () => {
       versionNumber: 2,
       documentSchemaVersion: '1.0',
       templateId: 'debutReveal',
+      templateAssetPin: null,
       document: liveDocument as unknown as Record<string, unknown>,
       documentState: 'published',
       contentHashAlgorithm: 'sha256',
@@ -170,6 +212,9 @@ describe('PublicHomepageProjectionService', () => {
       updatedAt: new Date('2026-05-15T10:00:00.000Z'),
       createdBy: 'user-1',
     });
+    vi.mocked(publicPresenceFoundationRepository.findValidationSnapshotById).mockResolvedValue(
+      createValidationSnapshotRecord(liveDocument, 'publish'),
+    );
 
     const projection = await service.getPublishedHomepageProjectionOrThrow('tokino-sora');
 
@@ -199,6 +244,8 @@ describe('PublicHomepageProjectionService', () => {
       homepagePath: 'tokino-sora',
       customDomain: null,
       customDomainVerified: false,
+      artistStageId: 'artist-stage-live',
+      lifecycleStatus: 'published',
       timezone: 'Asia/Tokyo',
     });
     vi.mocked(homepageAdminRepository.findTenantCodeBySchema).mockResolvedValue(
@@ -222,6 +269,7 @@ describe('PublicHomepageProjectionService', () => {
       versionNumber: 3,
       documentSchemaVersion: '1.0',
       templateId: 'debutReveal',
+      templateAssetPin: null,
       document: liveDocument as unknown as Record<string, unknown>,
       documentState: 'draft',
       contentHashAlgorithm: 'sha256',
@@ -234,6 +282,9 @@ describe('PublicHomepageProjectionService', () => {
       updatedAt: new Date('2026-05-15T10:00:00.000Z'),
       createdBy: 'user-1',
     });
+    vi.mocked(publicPresenceFoundationRepository.findValidationSnapshotById).mockResolvedValue(
+      createValidationSnapshotRecord(liveDocument, 'draft', 'snapshot-2'),
+    );
 
     const projection = await service.getDraftPreviewProjectionOrThrow(
       'talent-1',
@@ -265,6 +316,8 @@ describe('PublicHomepageProjectionService', () => {
       homepagePath: 'sakura-home',
       customDomain: null,
       customDomainVerified: false,
+      artistStageId: 'artist-stage-live',
+      lifecycleStatus: 'published',
       timezone: 'Asia/Tokyo',
     });
     vi.mocked(homepageAdminRepository.findTenantCodeBySchema).mockResolvedValue(
@@ -288,6 +341,7 @@ describe('PublicHomepageProjectionService', () => {
       versionNumber: 15,
       documentSchemaVersion: '1.0',
       templateId: 'debutReveal',
+      templateAssetPin: null,
       document: {
         schemaVersion: '1.0',
         templateId: 'debutReveal',
@@ -326,6 +380,51 @@ describe('PublicHomepageProjectionService', () => {
       updatedAt: new Date('2026-05-15T10:00:00.000Z'),
       createdBy: 'user-1',
     });
+    vi.mocked(publicPresenceFoundationRepository.findValidationSnapshotById).mockResolvedValue(
+      createValidationSnapshotRecord(
+        {
+          schemaVersion: '1.0',
+          templateId: 'debutReveal',
+          metadata: {
+            title: 'Sakura Ch.',
+          },
+          sections: [
+            {
+              id: 'firstEncounter-1',
+              kind: 'firstEncounter',
+              fields: {
+                headline: {
+                  provenance: 'publicPresence',
+                  value: 'Countdown updates, reveal moments, and launch links for fans.',
+                },
+                displayName: {
+                  provenance: 'publicPresence',
+                  value: 'Sakura Ch.',
+                },
+              },
+              phaseVisibility: 'always',
+            },
+            {
+              id: 'countdownReveal-2',
+              kind: 'countdownReveal',
+              fields: {
+                phase: {
+                  provenance: 'publicPresence',
+                  value: 'teaser',
+                },
+                timezone: {
+                  provenance: 'publicPresence',
+                  value: 'UTC',
+                },
+              },
+              phaseVisibility: 'teaser',
+            },
+          ],
+        },
+        'draft',
+        'snapshot-raw',
+      ),
+    );
 
     const projection = await service.getDraftPreviewProjectionOrThrow(
       'talent-1',

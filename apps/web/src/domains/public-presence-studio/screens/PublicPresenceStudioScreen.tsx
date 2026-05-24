@@ -15,7 +15,6 @@ import type {
 } from '@tcrn/shared';
 import {
   DEFAULT_THEME,
-  PUBLIC_PRESENCE_COMPONENT_DEFINITIONS,
   PUBLIC_PRESENCE_FAN_ACTION_SLOTS,
   PUBLIC_PRESENCE_NOTE_KINDS,
   normalizeTheme,
@@ -24,7 +23,6 @@ import {
   AlertCircle,
   ArrowLeftRight,
   Eye,
-  FileCode2,
   Layers3,
   Monitor,
   RefreshCcw,
@@ -63,13 +61,14 @@ import {
   bootstrapPublicPresenceWorkspace,
   cancelPublicPresenceSchedule,
   createPublicPresenceRollbackDraft,
-  type PublicPresenceAuthoringDraftResponse,
+  type PublicPresenceStudioComponentSummary,
+  type PublicPresenceStudioHomepagePolicySummary,
   type PublicPresenceStudioReleaseDependency,
   type PublicPresenceStudioStageSectionSummary,
+  type PublicPresenceStudioTemplateAssetSummary,
   type PublicPresenceStudioTemplateSummary,
   type PublicPresenceStudioWorkspaceResponse,
   publishPublicPresenceNow,
-  readPublicPresenceAuthoringDraft,
   readPublicPresenceDraftPreview,
   readPublicPresenceWorkspace,
   requestPublicPresenceChanges,
@@ -100,12 +99,6 @@ import {
   type PublicPresenceStudioCopy,
   usePublicPresenceStudioCopy,
 } from '@/domains/public-presence-studio/screens/public-presence-studio.copy';
-import {
-  buildComponentStarterBlueprint,
-  buildTemplateStarterBlueprint,
-  readComponentStarterBlueprint,
-  readTemplateStarterBlueprint,
-} from '@/domains/public-presence-studio/screens/public-presence-authoring-blueprint';
 import { useOverlayFocusManager } from '@/domains/public-presence-studio/screens/public-presence-studio-overlay';
 import { withPublicPresenceRouteTimeout } from '@/domains/public-presence-studio/screens/public-presence-studio.loading';
 import {
@@ -114,9 +107,8 @@ import {
   parseEnumSearchParam,
 } from '@/domains/public-presence-studio/screens/public-presence-studio-url-state';
 import {
-  buildPublicPresenceHomepageSurfacePath,
-  buildPublicPresenceAdvancedIdePath,
   buildPublicPresenceStudioPreviewPath,
+  buildTalentSettingsPath,
   buildTalentWorkspaceSectionPath,
 } from '@/platform/routing/workspace-paths';
 import { pickLocaleText } from '@/platform/runtime/locale/locale-text';
@@ -431,19 +423,18 @@ function buildEmptySectionDraft(
   };
 }
 
-function buildDefaultComponentForType(type: HomepageComponentType): PublicPresenceComponentNode {
-  const definition = PUBLIC_PRESENCE_COMPONENT_DEFINITIONS[type];
+function buildDefaultComponentForType(
+  type: HomepageComponentType,
+  componentDefinitions: Map<HomepageComponentType, PublicPresenceStudioComponentSummary>,
+): PublicPresenceComponentNode {
+  const definition = componentDefinitions.get(type);
 
   return {
     id: `${type.toLowerCase()}-${Date.now()}`,
-    props: structuredClone(definition.defaultProps),
+    props: structuredClone(definition?.defaultProps ?? {}),
     type,
     visible: true,
   };
-}
-
-function isHomepageComponentType(value: unknown): value is HomepageComponentType {
-  return typeof value === 'string' && value in PUBLIC_PRESENCE_COMPONENT_DEFINITIONS;
 }
 
 function reorderDocumentSectionsForStarter(
@@ -487,146 +478,6 @@ function reorderDocumentSectionsForStarter(
   return {
     ...document,
     sections: orderedSections,
-  };
-}
-
-function buildCustomHomepageDraftFromAuthoring(params: {
-  componentDraft: PublicPresenceAuthoringDraftResponse | null;
-  document: PublicPresenceDocument;
-  locale: SupportedUiLocale;
-  stageSections: PublicPresenceStudioStageSectionSummary[];
-  templateDraft: PublicPresenceAuthoringDraftResponse;
-}) {
-  const {
-    componentDraft,
-    document,
-    locale,
-    stageSections,
-    templateDraft,
-  } = params;
-  const templateBlueprintFallback = buildTemplateStarterBlueprint(
-    document.templateId,
-    locale,
-  );
-  const parsedTemplateBlueprint = readTemplateStarterBlueprint(templateDraft.sourceBundle);
-  const templateBlueprint = {
-    ...templateBlueprintFallback,
-    ...parsedTemplateBlueprint,
-    linkedComponentDraftKeys:
-      parsedTemplateBlueprint?.linkedComponentDraftKeys?.length
-        ? parsedTemplateBlueprint.linkedComponentDraftKeys
-        : templateBlueprintFallback.linkedComponentDraftKeys,
-    sectionOrder:
-      parsedTemplateBlueprint?.sectionOrder?.length
-        ? parsedTemplateBlueprint.sectionOrder
-        : templateBlueprintFallback.sectionOrder,
-  };
-
-  let nextDocument = reorderDocumentSectionsForStarter(
-    document,
-    stageSections,
-    templateBlueprint.sectionOrder,
-  );
-
-  nextDocument = {
-    ...nextDocument,
-    personaKit: {
-      ...nextDocument.personaKit,
-      campaignLabel: templateBlueprint.campaignLabel,
-      tagline: templateBlueprint.heroIntro,
-    },
-  };
-  nextDocument = buildSectionDocument(
-    nextDocument,
-    'firstEncounter',
-    'headline',
-    templateBlueprint.heroHeadline,
-  );
-  nextDocument = buildSectionDocument(
-    nextDocument,
-    'firstEncounter',
-    'intro',
-    templateBlueprint.heroIntro,
-  );
-
-  if (!componentDraft) {
-    return nextDocument;
-  }
-
-  const parsedComponentBlueprint = readComponentStarterBlueprint(componentDraft.sourceBundle);
-  const componentType = isHomepageComponentType(parsedComponentBlueprint?.componentType)
-    ? parsedComponentBlueprint.componentType
-    : isHomepageComponentType(componentDraft.subjectKey)
-      ? componentDraft.subjectKey
-      : null;
-
-  if (!componentType) {
-    return nextDocument;
-  }
-
-  const componentBlueprintFallback = buildComponentStarterBlueprint(componentType, locale);
-  const componentBlueprint = {
-    ...componentBlueprintFallback,
-    ...parsedComponentBlueprint,
-    preferredSectionKind:
-      parsedComponentBlueprint?.preferredSectionKind
-      ?? componentBlueprintFallback.preferredSectionKind,
-    props: parsedComponentBlueprint?.props ?? componentBlueprintFallback.props,
-  };
-  const stageSectionByKind = new Map(stageSections.map((section) => [section.kind, section]));
-  const preferredSectionCandidates = [
-    componentBlueprint.preferredSectionKind,
-    ...templateBlueprint.sectionOrder,
-    ...stageSections.map((section) => section.kind),
-  ].filter((value): value is string => Boolean(value));
-  const targetSectionKind = preferredSectionCandidates.find((sectionKind) =>
-    stageSectionByKind.get(sectionKind)?.allowedComponents.includes(componentType),
-  );
-
-  if (!targetSectionKind) {
-    return nextDocument;
-  }
-
-  const targetSectionDefinition = stageSectionByKind.get(targetSectionKind);
-
-  if (!targetSectionDefinition) {
-    return nextDocument;
-  }
-
-  if (!nextDocument.sections.some((section) => section.kind === targetSectionKind)) {
-    nextDocument = {
-      ...nextDocument,
-      sections: [
-        ...nextDocument.sections,
-        buildEmptySectionDraft(targetSectionDefinition, nextDocument.sections.length),
-      ],
-    };
-  }
-
-  return {
-    ...nextDocument,
-    sections: nextDocument.sections.map((section) => {
-      if (section.kind !== targetSectionKind) {
-        return section;
-      }
-
-      const existingComponents = Array.isArray(section.components) ? [...section.components] : [];
-
-      if (existingComponents.some((component) => component.type === componentType)) {
-        return section;
-      }
-
-      const starterComponent = buildDefaultComponentForType(componentType);
-      starterComponent.props = {
-        ...starterComponent.props,
-        ...componentBlueprint.props,
-      };
-
-      return {
-        ...section,
-        components: [...existingComponents, starterComponent],
-      };
-    }),
   };
 }
 
@@ -888,6 +739,96 @@ function getIssueSummaryCopy(
   );
 }
 
+function getHomepagePolicyBlockReasonCopy(
+  locale: string,
+  reason: PublicPresenceStudioHomepagePolicySummary['blockedReasons'][number],
+) {
+  switch (reason.code) {
+    case 'artistStageUnavailable':
+      return pickLocaleText(locale, {
+        en: 'The current Artist Stage is no longer available in tenant settings.',
+        zh_HANS: '当前 Artist Stage 已不再出现在租户设置中。',
+        zh_HANT: '目前 Artist Stage 已不再出現在租戶設定中。',
+        ja: '現在の Artist Stage はテナント設定で利用できなくなっています。',
+        ko: '현재 Artist Stage가 더 이상 테넌트 설정에 없습니다.',
+        fr: 'L’Artist Stage actuel n’est plus disponible dans les réglages du tenant.',
+      });
+    case 'artistLifecycleFlowInvalid':
+      return pickLocaleText(locale, {
+        en: 'Fix the tenant Artist Lifecycle Flow before using homepage workbench actions.',
+        zh_HANS: '请先修复租户 Artist Lifecycle Flow，再使用主页工作台动作。',
+        zh_HANT: '請先修復租戶 Artist Lifecycle Flow，再使用主頁工作台動作。',
+        ja: 'ホームページ作業台を使う前に、テナントの Artist Lifecycle Flow を修正してください。',
+        ko: '홈페이지 워크벤치를 사용하기 전에 테넌트 Artist Lifecycle Flow를 먼저 수정하세요.',
+        fr: 'Corrigez d’abord l’Artist Lifecycle Flow du tenant avant d’utiliser le workbench homepage.',
+      });
+    case 'homepagePolicyMissing':
+      return pickLocaleText(locale, {
+        en: 'The current Artist Stage does not allow homepage work yet.',
+        zh_HANS: '当前 Artist Stage 还没有开放主页工作。',
+        zh_HANT: '目前 Artist Stage 還沒有開放主頁工作。',
+        ja: '現在の Artist Stage ではまだホームページ作業を許可していません。',
+        ko: '현재 Artist Stage에서는 아직 홈페이지 작업이 허용되지 않습니다.',
+        fr: 'L’Artist Stage actuel n’autorise pas encore le travail homepage.',
+      });
+    case 'noAllowedTemplateAssets':
+      return pickLocaleText(locale, {
+        en: 'No validated template asset is currently available for this stage and scope.',
+        zh_HANS: '当前阶段与作用域下还没有可用的已验证模板资产。',
+        zh_HANT: '目前階段與作用域下還沒有可用的已驗證模板資產。',
+        ja: 'この段階とスコープで使える検証済みテンプレート資産がまだありません。',
+        ko: '현재 단계와 범위에서 사용할 수 있는 검증된 템플릿 자산이 아직 없습니다.',
+        fr: 'Aucun template asset validé n’est disponible pour ce stage et cette portée.',
+      });
+  }
+}
+
+function getTemplateAssetBlockedReasonCopy(
+  locale: string,
+  blockedReasonCode: PublicPresenceStudioTemplateAssetSummary['blockedReasonCode'],
+) {
+  switch (blockedReasonCode) {
+    case 'homepagePolicyMissing':
+      return pickLocaleText(locale, {
+        en: 'This stage does not allow homepage work yet.',
+        zh_HANS: '当前阶段还没有开放主页工作。',
+        zh_HANT: '目前階段還沒有開放主頁工作。',
+        ja: 'この段階ではまだホームページ作業を許可していません。',
+        ko: '이 단계에서는 아직 홈페이지 작업이 허용되지 않습니다.',
+        fr: 'Ce stage n’autorise pas encore le travail homepage.',
+      });
+    case 'noCurrentRevision':
+      return pickLocaleText(locale, {
+        en: 'Save a current asset revision before using this template asset.',
+        zh_HANS: '请先保存当前资产 revision，再使用这个模板资产。',
+        zh_HANT: '請先儲存目前資產 revision，再使用這個模板資產。',
+        ja: 'このテンプレート資産を使う前に、現在の asset revision を保存してください。',
+        ko: '이 템플릿 자산을 사용하기 전에 현재 asset revision을 먼저 저장하세요.',
+        fr: 'Enregistrez d’abord une révision courante avant d’utiliser ce template asset.',
+      });
+    case 'notAllowedInCurrentStage':
+      return pickLocaleText(locale, {
+        en: 'This template asset sits outside the current Artist Stage policy.',
+        zh_HANS: '这个模板资产不在当前 Artist Stage 策略范围内。',
+        zh_HANT: '這個模板資產不在目前 Artist Stage 策略範圍內。',
+        ja: 'このテンプレート資産は現在の Artist Stage ポリシー対象外です。',
+        ko: '이 템플릿 자산은 현재 Artist Stage 정책 범위를 벗어납니다.',
+        fr: 'Ce template asset est en dehors de la politique du stage actuel.',
+      });
+    case 'validationRequired':
+      return pickLocaleText(locale, {
+        en: 'Validate the current asset revision before using it in Studio.',
+        zh_HANS: '请先验证当前资产 revision，再在 Studio 中使用。',
+        zh_HANT: '請先驗證目前資產 revision，再在 Studio 中使用。',
+        ja: 'Studio で使う前に、現在の asset revision を検証してください。',
+        ko: 'Studio에서 사용하기 전에 현재 asset revision을 먼저 검증하세요.',
+        fr: 'Validez d’abord la révision courante avant de l’utiliser dans le Studio.',
+      });
+    default:
+      return null;
+  }
+}
+
 function extractClipboardPlainText(dataTransfer: DataTransfer | null | undefined) {
   if (!dataTransfer) {
     return '';
@@ -949,71 +890,129 @@ function handlePlainTextPaste(
 
 function EmptyWorkspaceState({
   copy,
+  homepagePolicy,
   locale,
   onBootstrap,
   pendingTemplateId,
-  templates,
+  templateAssets,
 }: Readonly<{
   copy: PublicPresenceStudioCopy;
+  homepagePolicy: PublicPresenceStudioHomepagePolicySummary;
   locale: string;
-  onBootstrap: (templateId: string) => void;
+  onBootstrap: (templateAssetId: string) => void;
   pendingTemplateId: string | null;
-  templates: PublicPresenceStudioTemplateSummary[];
+  templateAssets: PublicPresenceStudioTemplateAssetSummary[];
 }>) {
+  const selectableTemplateAssets = templateAssets.filter((asset) => asset.isSelectable);
+
   return (
     <div className="space-y-6">
       <PublicPresenceStateView
         actions={
-          <div className="flex flex-wrap items-center justify-center gap-3">
-            {templates.map((template) => (
-              <button
-                key={template.templateId}
-                type="button"
-                onClick={() => onBootstrap(template.templateId)}
-                disabled={pendingTemplateId !== null}
-                className="inline-flex items-center gap-2 rounded-full border border-rose-200 bg-white px-4 py-2 text-sm font-semibold text-rose-700 transition hover:border-rose-300 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {pendingTemplateId === template.templateId ? (
-                  <RefreshCcw className="h-4 w-4 animate-spin" aria-hidden="true" />
-                ) : (
-                  <Sparkles className="h-4 w-4" aria-hidden="true" />
-                )}
-                {copy.emptyWorkspace.startPrefix} {getPublicPresenceTemplateLabel(locale, template)}
-              </button>
-            ))}
-          </div>
+          selectableTemplateAssets.length ? (
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              {selectableTemplateAssets.map((templateAsset) => (
+                <button
+                  key={templateAsset.assetId}
+                  type="button"
+                  onClick={() => onBootstrap(templateAsset.assetId)}
+                  disabled={pendingTemplateId !== null}
+                  className="inline-flex items-center gap-2 rounded-full border border-rose-200 bg-white px-4 py-2 text-sm font-semibold text-rose-700 transition hover:border-rose-300 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {pendingTemplateId === templateAsset.assetId ? (
+                    <RefreshCcw className="h-4 w-4 animate-spin" aria-hidden="true" />
+                  ) : (
+                    <Sparkles className="h-4 w-4" aria-hidden="true" />
+                  )}
+                  {copy.emptyWorkspace.startPrefix}{' '}
+                  {pickLocaleText(locale, templateAsset.assetName)}
+                </button>
+              ))}
+            </div>
+          ) : null
         }
         description={copy.state.initializeDescription}
         icon={<Sparkles />}
         title={copy.state.initializeTitle}
         tone="info"
       />
+      {homepagePolicy.status === 'blocked' ? (
+        <PublicPresenceSurface className="space-y-3 p-4" variant="inset">
+          <div className="space-y-2">
+            <h2 className="text-base font-semibold text-slate-950">
+              {pickLocaleText(locale, {
+                en: 'Homepage work is waiting on stage policy',
+                zh_HANS: '主页工作正在等待阶段策略开放',
+                zh_HANT: '主頁工作正在等待階段策略開放',
+                ja: 'ホームページ作業はステージポリシー待ちです',
+                ko: '홈페이지 작업은 stage policy 확인이 필요합니다',
+                fr: 'Le travail homepage attend la politique de stage',
+              })}
+            </h2>
+            <p className="text-sm leading-6 text-slate-600">
+              {pickLocaleText(locale, {
+                en: 'You can keep existing live history, but starting a new Studio draft is blocked until the current Artist Stage is cleared for homepage work.',
+                zh_HANS: '现有线上历史会保留，但在当前 Artist Stage 获准主页工作前，不能开始新的 Studio 草稿。',
+                zh_HANT: '現有線上歷史會保留，但在目前 Artist Stage 獲准主頁工作前，不能開始新的 Studio 草稿。',
+                ja: '既存の公開履歴は保持されますが、現在の Artist Stage でホームページ作業が許可されるまでは新しい Studio 下書きを開始できません。',
+                ko: '기존 라이브 기록은 유지되지만 현재 Artist Stage에서 홈페이지 작업이 허용되기 전까지는 새 Studio 초안을 시작할 수 없습니다.',
+                fr: 'L’historique live reste disponible, mais un nouveau brouillon Studio est bloqué tant que l’Artist Stage actuel n’autorise pas le travail homepage.',
+              })}
+            </p>
+          </div>
+          <div className="space-y-2">
+            {homepagePolicy.blockedReasons.map((reason) => (
+              <div
+                key={reason.code}
+                className="rounded-2xl border border-amber-200 bg-amber-50 px-3 py-3 text-sm text-amber-900"
+              >
+                {getHomepagePolicyBlockReasonCopy(locale, reason)}
+              </div>
+            ))}
+          </div>
+        </PublicPresenceSurface>
+      ) : null}
       <div className="grid gap-4 lg:grid-cols-2">
-        {templates.map((template) => (
-          <PublicPresenceSurface key={template.templateId} className="space-y-3" interactive>
+        {templateAssets.map((templateAsset) => (
+          <PublicPresenceSurface
+            key={templateAsset.assetId}
+            className="space-y-3"
+            interactive={templateAsset.isSelectable}
+          >
             <div className="flex flex-wrap items-center gap-3">
-              <PublicPresenceBadge tone="rose">
-                {getPublicPresenceTemplateLabel(locale, template)}
+              <PublicPresenceBadge tone={templateAsset.isSelectable ? 'rose' : 'slate'}>
+                {pickLocaleText(locale, templateAsset.assetName)}
               </PublicPresenceBadge>
               <PublicPresenceBadge tone="slate" variant="outline">
-                {template.requiredSections.length} {copy.common.requiredSectionsSuffix}
+                {templateAsset.requiredSections.length} {copy.common.requiredSectionsSuffix}
+              </PublicPresenceBadge>
+              <PublicPresenceBadge tone="slate" variant="outline">
+                {getPublicPresenceTemplateLabel(locale, templateAsset)}
               </PublicPresenceBadge>
             </div>
             <div className="space-y-2">
               <h2 className="text-lg font-semibold text-slate-950">
-                {getPublicPresenceTemplateLabel(locale, template)}
+                {pickLocaleText(locale, templateAsset.assetName)}
               </h2>
               <p className="text-sm leading-6 text-slate-600">
-                {getPublicPresenceTemplateUseCase(locale, template)}
+                {pickLocaleText(locale, templateAsset.assetDescription)}
               </p>
             </div>
             <p className="text-xs uppercase tracking-[0.18em] text-slate-500">
               {copy.emptyWorkspace.defaultOrderPrefix}:{' '}
-              {template.defaultSectionOrder
+              {templateAsset.defaultSectionOrder
                 .map((sectionKind) =>
                   getPublicPresenceStageSectionLabel(locale, { kind: sectionKind }))
                 .join(' / ')}
             </p>
+            <p className="text-sm leading-6 text-slate-600">
+              {getPublicPresenceTemplateUseCase(locale, templateAsset)}
+            </p>
+            {templateAsset.blockedReasonCode ? (
+              <p className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm leading-6 text-slate-600">
+                {getTemplateAssetBlockedReasonCopy(locale, templateAsset.blockedReasonCode)}
+              </p>
+            ) : null}
           </PublicPresenceSurface>
         ))}
       </div>
@@ -1338,9 +1337,6 @@ function PublicPresenceStudioScreenInner({
   const [mobilePreviewToolsOpen, setMobilePreviewToolsOpen] = useState(false);
   const [previewFocus, setPreviewFocus] = useState(false);
   const [previewViewport, setPreviewViewport] = useState<StudioViewportMode>('desktop');
-  const [customDraftBootstrapState, setCustomDraftBootstrapState] = useState<
-    'idle' | 'running' | 'done'
-  >('idle');
   const [isDesktopWorkbench, setIsDesktopWorkbench] = useState(
     () => (typeof window !== 'undefined' ? window.innerWidth >= 1280 : true),
   );
@@ -1383,12 +1379,10 @@ function PublicPresenceStudioScreenInner({
       hasLeftPanelQuery: searchParams.has('leftPanel'),
       leftDrawerMode: leftDrawerValue,
       mobileSheet: mobileSheetValue,
-      componentDraftKey: searchParams.get('componentDraftKey'),
       previewFocus: previewFocusValue,
       previewPhase: previewPhaseValue,
       previewViewport: previewViewportValue,
       stagePanel: stagePanelValue,
-      templateDraftKey: searchParams.get('templateDraftKey'),
       templateId: searchParams.get('templateId'),
     };
   }, [searchKey, searchParams]);
@@ -1453,153 +1447,6 @@ function PublicPresenceStudioScreenInner({
       cancelled = true;
     };
   }, [copy.state.loadWorkspaceError, request, selectedTemplateId, talentId]);
-
-  useEffect(() => {
-    setCustomDraftBootstrapState('idle');
-  }, [queryState.componentDraftKey, queryState.templateDraftKey]);
-
-  useEffect(() => {
-    if (
-      loading
-      || !workspace
-      || workspace.draftVersion
-      || !queryState.templateDraftKey
-      || customDraftBootstrapState !== 'idle'
-    ) {
-      return;
-    }
-
-    let cancelled = false;
-
-    const bootstrapCustomHomepageDraft = async () => {
-      setCustomDraftBootstrapState('running');
-      setNotice(null);
-
-      try {
-        const templateDraft = await readPublicPresenceAuthoringDraft(
-          request,
-          talentId,
-          'template',
-          queryState.templateDraftKey,
-        );
-
-        if (!templateDraft) {
-          throw new Error(
-            pickLocaleText(locale, {
-              en: 'The selected template draft could not be found.',
-              zh_HANS: '找不到你选择的模板草稿。',
-              zh_HANT: '找不到你選擇的模板草稿。',
-              ja: '選択したテンプレート草稿が見つかりませんでした。',
-              ko: '선택한 템플릿 초안을 찾을 수 없습니다.',
-              fr: 'Impossible de retrouver le brouillon de template sélectionné.',
-            }),
-          );
-        }
-
-        const fallbackTemplateId = selectedTemplateId === 'debutReveal'
-          ? 'debutReveal'
-          : 'activeTalentHub';
-        const templateBlueprint = readTemplateStarterBlueprint(templateDraft.sourceBundle);
-        const bootstrapTemplateId = templateBlueprint?.baseTemplateId === 'debutReveal'
-          ? 'debutReveal'
-          : fallbackTemplateId;
-        const linkedComponentDraftKey = queryState.componentDraftKey?.trim()
-          || templateBlueprint?.linkedComponentDraftKeys?.[0]
-          || (queryState.templateDraftKey === 'new' ? 'new' : null);
-        const componentDraft = linkedComponentDraftKey
-          ? await readPublicPresenceAuthoringDraft(
-              request,
-              talentId,
-              'component',
-              linkedComponentDraftKey,
-            ).catch(() => null)
-          : null;
-        const bootstrapResult = await bootstrapPublicPresenceWorkspace(
-          request,
-          talentId,
-          bootstrapTemplateId,
-        );
-        const starterDocument = bootstrapResult.draftVersion?.document;
-
-        if (!starterDocument) {
-          throw new Error(copy.notices.bootstrapError);
-        }
-
-        const nextDocument = buildCustomHomepageDraftFromAuthoring({
-          componentDraft,
-          document: starterDocument,
-          locale,
-          stageSections: bootstrapResult.stageSections,
-          templateDraft,
-        });
-        const savedResult = await savePublicPresenceWorkspaceDraft(request, talentId, {
-          document: nextDocument,
-          expectedCurrentContentHash: bootstrapResult.draftVersion?.contentHash ?? null,
-        });
-
-        if (cancelled) {
-          return;
-        }
-
-        setWorkspace(savedResult);
-        setEditorDocument(savedResult.draftVersion?.document ?? null);
-        setSelectedTemplateId(savedResult.selectedTemplateId);
-        setNotice({
-          message: pickLocaleText(locale, {
-            en: 'Custom homepage starter is ready in Studio.',
-            zh_HANS: '自定义主页起稿已经在 Studio 中就绪。',
-            zh_HANT: '自訂主頁起稿已經在 Studio 中就緒。',
-            ja: 'カスタムホームページ下書きが Studio に準備できました。',
-            ko: '커스텀 홈페이지 스타터가 Studio에 준비되었습니다.',
-            fr: 'Le starter de homepage personnalisé est prêt dans le Studio.',
-          }),
-          persistent: false,
-          tone: 'success',
-        });
-      } catch (reason) {
-        if (cancelled) {
-          return;
-        }
-
-        setNotice({
-          message: getErrorMessage(
-            reason,
-            pickLocaleText(locale, {
-              en: 'Unable to create the homepage starter from this template draft.',
-              zh_HANS: '暂时无法从这个模板草稿创建主页起稿。',
-              zh_HANT: '暫時無法從這個模板草稿建立主頁起稿。',
-              ja: 'このテンプレート草稿からホームページ下書きを作成できませんでした。',
-              ko: '이 템플릿 초안으로 홈페이지 스타터를 만들 수 없습니다.',
-              fr: 'Impossible de créer le starter de homepage depuis ce brouillon de template.',
-            }),
-          ),
-          persistent: true,
-          tone: 'error',
-        });
-      } finally {
-        if (!cancelled) {
-          setCustomDraftBootstrapState('done');
-        }
-      }
-    };
-
-    void bootstrapCustomHomepageDraft();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [
-    copy.notices.bootstrapError,
-    customDraftBootstrapState,
-    loading,
-    locale,
-    queryState.componentDraftKey,
-    queryState.templateDraftKey,
-    request,
-    selectedTemplateId,
-    talentId,
-    workspace,
-  ]);
 
   useEffect(() => {
     if (!workspace?.draftVersion) {
@@ -1698,15 +1545,19 @@ function PublicPresenceStudioScreenInner({
     }
   };
 
-  const handleBootstrap = async (templateId: string) => {
-    setPendingTemplateId(templateId);
+  const handleBootstrap = async (input: {
+    templateAssetId?: string | null;
+    templateId?: string | null;
+  }) => {
+    const pendingKey = input.templateAssetId ?? input.templateId ?? null;
+    setPendingTemplateId(pendingKey);
     setNotice(null);
 
     try {
       const result = await bootstrapPublicPresenceWorkspace(
         request,
         talentId,
-        templateId,
+        input,
       );
       applyWorkspace(result);
       setNotice({
@@ -1755,8 +1606,30 @@ function PublicPresenceStudioScreenInner({
     }
   };
 
-  const currentTemplate = workspace?.templates.find(
-    (template) => template.templateId === (workspace?.selectedTemplateId ?? selectedTemplateId),
+  const workspaceHomepagePolicy = workspace?.homepagePolicy ?? {
+    allowedTemplateIds: [],
+    blockedReasons: [],
+    status: 'ready' as const,
+  };
+  const workspaceComponentDefinitions = workspace?.componentDefinitions ?? [];
+  const componentDefinitionsByType = useMemo(
+    () => new Map(
+      workspaceComponentDefinitions.map((definition) => [
+        definition.componentType,
+        definition,
+      ] as const),
+    ),
+    [workspaceComponentDefinitions],
+  );
+  const workspaceTemplateAssets = workspace?.templateAssets ?? [];
+  const workspaceTemplates = workspace?.templates ?? [];
+  const workspaceWorkflowEvents = workspace?.workflowEvents ?? [];
+  const workspaceSelectedTemplateId = workspace?.selectedTemplateId ?? selectedTemplateId;
+  const currentTemplate = workspaceTemplates.find(
+    (template) => template.templateId === workspaceSelectedTemplateId,
+  ) ?? null;
+  const currentTemplateAsset = workspaceTemplateAssets.find(
+    (asset) => asset.assetId === workspace?.selectedTemplateAssetId,
   ) ?? null;
   const persistTemplateQuery = searchParams.has('templateId') || selectedTemplateId !== 'activeTalentHub';
   const currentSnapshot = workspace?.draftVersion?.validationSnapshot ?? null;
@@ -1787,6 +1660,8 @@ function PublicPresenceStudioScreenInner({
   );
   const hasBlockingReleaseIssues =
     currentReleaseIssueCounts.fatal > 0 || currentReleaseIssueCounts.blocker > 0;
+  const hasHomepagePolicyPublishBlockers = workspaceHomepagePolicy.status === 'blocked';
+  const hasPublishBlockers = hasBlockingReleaseIssues || hasHomepagePolicyPublishBlockers;
   const canRunDirectPublishPath = ['draft', 'changesRequested', 'inReview', 'approved', 'scheduled'].includes(
     currentDocumentState,
   );
@@ -1804,7 +1679,7 @@ function PublicPresenceStudioScreenInner({
       request,
       talentId,
       currentDraftHash,
-      workspace.selectedTemplateId,
+      workspaceSelectedTemplateId,
     );
   };
 
@@ -1848,7 +1723,30 @@ function PublicPresenceStudioScreenInner({
     setNotice(null);
 
     if (dependency.nextAction === 'startActiveTalentHubDraft') {
-      await handleBootstrap('activeTalentHub');
+      const activeHubAsset = workspaceTemplateAssets.find(
+        (asset) => asset.templateId === 'activeTalentHub' && asset.isSelectable,
+      );
+
+      if (!activeHubAsset) {
+        setNotice({
+          message: pickLocaleText(locale, {
+            en: 'No allowed always-on hub template asset is ready for this stage yet.',
+            zh_HANS: '当前阶段还没有可用的常驻主页模板资产。',
+            zh_HANT: '目前階段還沒有可用的常駐首頁模板資產。',
+            ja: 'この段階で使える常設ハブのテンプレート資産がまだありません。',
+            ko: '이 단계에서 사용할 수 있는 상시 허브 템플릿 자산이 아직 없습니다.',
+            fr: 'Aucun template asset de hub permanent n’est encore prêt pour ce stage.',
+          }),
+          persistent: true,
+          tone: 'error',
+        });
+        return;
+      }
+
+      await handleBootstrap({
+        templateAssetId: activeHubAsset.assetId,
+        templateId: activeHubAsset.templateId,
+      });
     } else {
       setSelectedTemplateId('activeTalentHub');
     }
@@ -2025,19 +1923,9 @@ function PublicPresenceStudioScreenInner({
     talentId,
     workspace?.selectedTemplateId ?? selectedTemplateId,
   );
-  const advancedIdeHref = buildPublicPresenceAdvancedIdePath(
-    tenantId,
-    talentId,
-    {
-      mode: 'page-source',
-      templateId: workspace?.selectedTemplateId ?? selectedTemplateId,
-    },
-  );
-  const templateCenterHref = buildPublicPresenceHomepageSurfacePath(
-    tenantId,
-    talentId,
-    'templates',
-  );
+  const assetInventoryHref = buildTalentSettingsPath(tenantId, talentId, {
+    section: 'config-entities',
+  });
   const previewTheme = useMemo(
     () => normalizeTheme(previewProjection?.appearance.theme || DEFAULT_THEME),
     [previewProjection],
@@ -2138,7 +2026,10 @@ function PublicPresenceStudioScreenInner({
 
     if (section.allowedComponents.length === 1) {
       nextSection.components = [
-        buildDefaultComponentForType(section.allowedComponents[0] as HomepageComponentType),
+        buildDefaultComponentForType(
+          section.allowedComponents[0] as HomepageComponentType,
+          componentDefinitionsByType,
+        ),
       ];
     }
 
@@ -2592,7 +2483,7 @@ function PublicPresenceStudioScreenInner({
     const component = getFirstComponent();
 
     if (section.kind === 'officialChannels') {
-      const definition = PUBLIC_PRESENCE_COMPONENT_DEFINITIONS.SocialLinks;
+      const definition = componentDefinitionsByType.get('SocialLinks');
       const platforms = component?.type === 'SocialLinks' && Array.isArray(component.props.platforms)
         ? (component.props.platforms as Array<Record<string, unknown>>)
         : [];
@@ -2622,7 +2513,7 @@ function PublicPresenceStudioScreenInner({
                   entry.kind === section.kind
                     ? {
                         ...entry,
-                        components: [buildDefaultComponentForType('SocialLinks')],
+                        components: [buildDefaultComponentForType('SocialLinks', componentDefinitionsByType)],
                       }
                     : entry
                 ));
@@ -2640,8 +2531,8 @@ function PublicPresenceStudioScreenInner({
         );
       }
 
-      const layoutField = definition.fieldDefinitions.find((field) => field.fieldKey === 'layout');
-      const styleField = definition.fieldDefinitions.find((field) => field.fieldKey === 'style');
+      const layoutField = definition?.fieldDefinitions.find((field) => field.fieldKey === 'layout');
+      const styleField = definition?.fieldDefinitions.find((field) => field.fieldKey === 'style');
 
       return (
         <div className="space-y-4">
@@ -2771,8 +2662,8 @@ function PublicPresenceStudioScreenInner({
     }
 
     if (section.kind === 'currentLaunchAction') {
-      const linkDefinition = PUBLIC_PRESENCE_COMPONENT_DEFINITIONS.LinkButton;
-      const liveDefinition = PUBLIC_PRESENCE_COMPONENT_DEFINITIONS.LiveStatus;
+      const linkDefinition = componentDefinitionsByType.get('LinkButton');
+      const liveDefinition = componentDefinitionsByType.get('LiveStatus');
       const activeDefinition = component?.type === 'LiveStatus' ? liveDefinition : linkDefinition;
 
       if (!component) {
@@ -2799,7 +2690,7 @@ function PublicPresenceStudioScreenInner({
                   entry.kind === section.kind
                     ? {
                         ...entry,
-                        components: [buildDefaultComponentForType('LinkButton')],
+                        components: [buildDefaultComponentForType('LinkButton', componentDefinitionsByType)],
                       }
                     : entry
                 ));
@@ -2836,14 +2727,14 @@ function PublicPresenceStudioScreenInner({
                 onChange={(value) => setComponentPropValue(section.kind, 0, 'label', value)}
                 placeholder={getPublicPresenceFieldPlaceholder(locale, 'label')}
                 value={String(component.props.label ?? '')}
-                footer={renderFieldFooter(section.kind, 'label', activeDefinition.fieldDefinitions.find((field) => field.fieldKey === 'label'))}
+                footer={renderFieldFooter(section.kind, 'label', activeDefinition?.fieldDefinitions.find((field) => field.fieldKey === 'label'))}
               />
               <ControlledTextInput
                 label={getPublicPresenceFieldLabel(locale, 'url')}
                 onChange={(value) => setComponentPropValue(section.kind, 0, 'url', value)}
                 placeholder={copy.stageSections.urlPlaceholder}
                 value={String(component.props.url ?? '')}
-                footer={renderFieldFooter(section.kind, 'url', activeDefinition.fieldDefinitions.find((field) => field.fieldKey === 'url'))}
+                footer={renderFieldFooter(section.kind, 'url', activeDefinition?.fieldDefinitions.find((field) => field.fieldKey === 'url'))}
               />
             </div>
           ) : null}
@@ -2920,7 +2811,7 @@ function PublicPresenceStudioScreenInner({
                   entry.kind === section.kind
                     ? {
                         ...entry,
-                        components: [buildDefaultComponentForType('Schedule')],
+                        components: [buildDefaultComponentForType('Schedule', componentDefinitionsByType)],
                       }
                     : entry
                 ));
@@ -3056,7 +2947,7 @@ function PublicPresenceStudioScreenInner({
     }
 
     if (section.kind === 'fanInteraction') {
-      const definition = PUBLIC_PRESENCE_COMPONENT_DEFINITIONS.MarshmallowWidget;
+      const definition = componentDefinitionsByType.get('MarshmallowWidget');
 
       if (!component || component.type !== 'MarshmallowWidget') {
         return (
@@ -3082,7 +2973,7 @@ function PublicPresenceStudioScreenInner({
                   entry.kind === section.kind
                     ? {
                         ...entry,
-                        components: [buildDefaultComponentForType('MarshmallowWidget')],
+                        components: [buildDefaultComponentForType('MarshmallowWidget', componentDefinitionsByType)],
                       }
                     : entry
                 ));
@@ -3102,7 +2993,7 @@ function PublicPresenceStudioScreenInner({
 
       return (
         <div className="space-y-4">
-          {definition.fieldDefinitions.map((field) => {
+          {(definition?.fieldDefinitions ?? []).map((field) => {
             const fieldValue = component.props[field.fieldKey];
             if (field.valueType === 'boolean') {
               return (
@@ -3133,8 +3024,8 @@ function PublicPresenceStudioScreenInner({
 
     if (section.kind === 'teaserRevealMedia') {
       const definition = component?.type === 'ImageGallery'
-        ? PUBLIC_PRESENCE_COMPONENT_DEFINITIONS.ImageGallery
-        : PUBLIC_PRESENCE_COMPONENT_DEFINITIONS.VideoEmbed;
+        ? componentDefinitionsByType.get('ImageGallery')
+        : componentDefinitionsByType.get('VideoEmbed');
 
       if (!component) {
         return (
@@ -3160,7 +3051,7 @@ function PublicPresenceStudioScreenInner({
                   entry.kind === section.kind
                     ? {
                         ...entry,
-                        components: [buildDefaultComponentForType('ImageGallery')],
+                        components: [buildDefaultComponentForType('ImageGallery', componentDefinitionsByType)],
                       }
                     : entry
                 ));
@@ -3234,7 +3125,7 @@ function PublicPresenceStudioScreenInner({
             </>
           ) : null}
           {component.type === 'VideoEmbed'
-            ? definition.fieldDefinitions.map((field) => (
+            ? (definition?.fieldDefinitions ?? []).map((field) => (
                 <ControlledTextInput
                   key={field.fieldKey}
                   disabled={!field.visualEditable}
@@ -3296,7 +3187,7 @@ function PublicPresenceStudioScreenInner({
                       ...entry,
                       components: [
                         ...(entry.components ?? []),
-                        buildDefaultComponentForType('LinkButton'),
+                        buildDefaultComponentForType('LinkButton', componentDefinitionsByType),
                       ],
                     }
                   : entry
@@ -3671,6 +3562,18 @@ function PublicPresenceStudioScreenInner({
             {copy.reviewPublish.unsavedChangesHint}
           </div>
         ) : null}
+        {workspaceHomepagePolicy.status === 'blocked' ? (
+          <div className="space-y-2">
+            {workspaceHomepagePolicy.blockedReasons.map((reason) => (
+              <div
+                key={reason.code}
+                className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800"
+              >
+                {getHomepagePolicyBlockReasonCopy(locale, reason)}
+              </div>
+            ))}
+          </div>
+        ) : null}
         <div className="flex flex-wrap gap-2">
           {([
             [copy.reviewPublish.fatalLabel, currentReleaseIssueCounts.fatal, 'error'],
@@ -3746,6 +3649,57 @@ function PublicPresenceStudioScreenInner({
         ) : (
           <p className="text-sm leading-6 text-slate-600">{copy.reviewPublish.noIssues}</p>
         )}
+        {currentTemplateAsset ? (
+          <div className="rounded-2xl border border-slate-200 bg-white px-4 py-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <PublicPresenceBadge tone="slate" variant="outline">
+                {pickLocaleText(locale, {
+                  en: 'Pinned template asset',
+                  zh_HANS: '已固定模板资产',
+                  zh_HANT: '已固定模板資產',
+                  ja: '固定済みテンプレート資産',
+                  ko: '고정된 템플릿 자산',
+                  fr: 'Template asset épinglé',
+                })}
+              </PublicPresenceBadge>
+              <PublicPresenceBadge tone="slate" variant="outline">
+                {pickLocaleText(locale, currentTemplateAsset.assetName)}
+              </PublicPresenceBadge>
+            </div>
+            <p className="mt-3 text-sm leading-6 text-slate-600">
+              {pickLocaleText(locale, {
+                en: 'Draft and publish actions stay tied to this asset revision until a new homepage draft consumes another revision.',
+                zh_HANS: '当前草稿与发布动作都会固定使用这个资产 revision，直到新的主页草稿消费了别的 revision。',
+                zh_HANT: '目前草稿與發佈動作都會固定使用這個資產 revision，直到新的主頁草稿消費了別的 revision。',
+                ja: '新しいホームページ下書きが別の revision を取り込むまで、下書きと公開操作はこの asset revision に固定されます。',
+                ko: '새 홈페이지 초안이 다른 revision을 소비하기 전까지 드래프트와 공개 작업은 이 asset revision에 고정됩니다.',
+                fr: 'Le brouillon et la publication restent liés à cette révision tant qu’un nouveau brouillon homepage ne consomme pas une autre révision.',
+              })}
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-600">
+              <code className="rounded-full bg-slate-100 px-3 py-1">
+                {pickLocaleText(locale, {
+                  en: 'Revision',
+                  zh_HANS: 'Revision',
+                  zh_HANT: 'Revision',
+                  ja: 'Revision',
+                  ko: 'Revision',
+                  fr: 'Revision',
+                })} #{currentTemplateAsset.currentRevisionNumber ?? '-'}
+              </code>
+              <code className="rounded-full bg-slate-100 px-3 py-1">
+                {pickLocaleText(locale, {
+                  en: 'Source hash',
+                  zh_HANS: 'Source hash',
+                  zh_HANT: 'Source hash',
+                  ja: 'Source hash',
+                  ko: 'Source hash',
+                  fr: 'Source hash',
+                })} {currentTemplateAsset.currentRevisionSourceHash ?? '-'}
+              </code>
+            </div>
+          </div>
+        ) : null}
       </PublicPresenceSurface>
 
       <PublicPresenceSurface className="space-y-4" variant="inset">
@@ -3805,7 +3759,7 @@ function PublicPresenceStudioScreenInner({
             }}
             disabled={
               isWorkflowActionDisabled
-              || hasBlockingReleaseIssues
+              || hasPublishBlockers
               || !['inReview', 'changesRequested'].includes(currentDocumentState)
             }
             className="rounded-full border border-emerald-200 bg-white px-4 py-2 text-sm font-semibold text-emerald-700 transition hover:border-emerald-300 hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-60"
@@ -3827,7 +3781,7 @@ function PublicPresenceStudioScreenInner({
                 () => runDirectPublishPath(),
               );
             }}
-            disabled={isWorkflowActionDisabled || hasBlockingReleaseIssues || !canRunDirectPublishPath}
+            disabled={isWorkflowActionDisabled || hasPublishBlockers || !canRunDirectPublishPath}
             className="rounded-full border border-rose-200 bg-white px-4 py-2 text-sm font-semibold text-rose-700 transition hover:border-rose-300 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {workflowAction === 'publish'
@@ -3918,7 +3872,7 @@ function PublicPresenceStudioScreenInner({
             }}
             disabled={
               isWorkflowActionDisabled
-              || hasBlockingReleaseIssues
+              || hasPublishBlockers
               || !['approved', 'scheduled'].includes(currentDocumentState)
             }
             className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
@@ -4010,9 +3964,9 @@ function PublicPresenceStudioScreenInner({
           </button>
         </div>
         {showReviewHistory ? (
-          workspace?.workflowEvents.length ? (
+          workspaceWorkflowEvents.length ? (
             <div className="grid gap-3">
-              {workspace.workflowEvents.map((event) => (
+              {workspaceWorkflowEvents.map((event) => (
                 <PublicPresenceSurface key={event.id} className="space-y-2" variant="inset">
                   <div className="flex flex-wrap items-center gap-2">
                     <PublicPresenceBadge tone="slate">
@@ -4191,6 +4145,8 @@ function PublicPresenceStudioScreenInner({
     locale,
     currentReleaseIssueCounts,
   );
+  const legacyStarterQueryActive = searchParams.has('templateDraftKey')
+    || searchParams.has('componentDraftKey');
   const showLeftDrawer = !previewFocus && leftDrawerOpen && !stagePanel;
   const showRightDrawer = !previewFocus && Boolean(stagePanel);
   const leftDrawerOverlay = useOverlayFocusManager({
@@ -4384,12 +4340,13 @@ function PublicPresenceStudioScreenInner({
       <PublicPresenceShell decorationDensity="calm" width="xl">
         <EmptyWorkspaceState
           copy={copy}
+          homepagePolicy={workspaceHomepagePolicy}
           locale={locale}
-          onBootstrap={(templateId) => {
-            void handleBootstrap(templateId);
+          onBootstrap={(templateAssetId) => {
+            void handleBootstrap({ templateAssetId });
           }}
           pendingTemplateId={pendingTemplateId}
-          templates={workspace.templates}
+          templateAssets={workspaceTemplateAssets}
         />
       </PublicPresenceShell>
     );
@@ -4476,14 +4433,35 @@ function PublicPresenceStudioScreenInner({
                 </span>
               </Link>
               <Link
-                href={templateCenterHref}
-                aria-label={getHomepageSurfaceLabel(locale, 'templates')}
-                title={getHomepageSurfaceLabel(locale, 'templates')}
+                href={assetInventoryHref}
+                aria-label={pickLocaleText(locale, {
+                  en: 'Manage homepage assets',
+                  zh_HANS: '管理主页资产',
+                  zh_HANT: '管理主頁資產',
+                  ja: 'ホームページ資産を管理',
+                  ko: '홈페이지 자산 관리',
+                  fr: 'Gérer les assets de homepage',
+                })}
+                title={pickLocaleText(locale, {
+                  en: 'Manage homepage assets',
+                  zh_HANS: '管理主页资产',
+                  zh_HANT: '管理主頁資產',
+                  ja: 'ホームページ資産を管理',
+                  ko: '홈페이지 자산 관리',
+                  fr: 'Gérer les assets de homepage',
+                })}
                 className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 min-[1400px]:h-auto min-[1400px]:w-auto min-[1400px]:gap-2 min-[1400px]:px-3 min-[1400px]:py-2"
               >
                 <Layers3 className="h-4 w-4" aria-hidden="true" />
                 <span className="hidden min-[1400px]:inline">
-                  {getHomepageSurfaceLabel(locale, 'templates')}
+                  {pickLocaleText(locale, {
+                    en: 'Manage assets',
+                    zh_HANS: '管理资产',
+                    zh_HANT: '管理資產',
+                    ja: '資産を管理',
+                    ko: '자산 관리',
+                    fr: 'Gérer les assets',
+                  })}
                 </span>
               </Link>
             </div>
@@ -4700,18 +4678,18 @@ function PublicPresenceStudioScreenInner({
                 <ArrowLeftRight className="h-4 w-4" aria-hidden="true" />
               </Link>
               <Link
-                href={templateCenterHref}
+                href={assetInventoryHref}
                 className="inline-flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
               >
-                <span>{getHomepageSurfaceLabel(locale, 'templates')}</span>
+                <span>{pickLocaleText(locale, {
+                  en: 'Manage assets',
+                  zh_HANS: '管理资产',
+                  zh_HANT: '管理資產',
+                  ja: '資産を管理',
+                  ko: '자산 관리',
+                  fr: 'Gérer les assets',
+                })}</span>
                 <Layers3 className="h-4 w-4" aria-hidden="true" />
-              </Link>
-              <Link
-                href={advancedIdeHref}
-                className="inline-flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
-              >
-                <span>{copy.advanced.title}</span>
-                <FileCode2 className="h-4 w-4" aria-hidden="true" />
               </Link>
               <Link
                 href={previewHref}
@@ -4737,6 +4715,36 @@ function PublicPresenceStudioScreenInner({
             onDismiss={() => setNotice(null)}
             tone={notice.tone}
           />
+        ) : null}
+
+        {legacyStarterQueryActive ? (
+          <PublicPresenceSurface
+            className="border-sky-200 bg-sky-50 px-4 py-3 text-sky-900"
+            data-testid="studio-legacy-starter-notice"
+          >
+            <div className="flex flex-wrap items-start gap-3">
+              <PublicPresenceBadge tone="info" variant="outline">
+                {pickLocaleText(locale, {
+                  en: 'Compatibility path',
+                  zh_HANS: '兼容路径',
+                  zh_HANT: '相容路徑',
+                  ja: '互換パス',
+                  ko: '호환 경로',
+                  fr: 'Parcours de compatibilite',
+                })}
+              </PublicPresenceBadge>
+              <p className="min-w-0 flex-1 text-sm leading-6">
+                {pickLocaleText(locale, {
+                  en: 'Legacy template/component draft query parameters are no longer used to bootstrap the homepage. Continue from the scoped asset workspace when you need a new template or component authoring flow.',
+                  zh_HANS: '旧版模板或组件草稿查询参数不再用于初始化主页。如需新的模板或组件创作流程，请改从当前范围的资产工作面继续。',
+                  zh_HANT: '舊版模板或元件草稿查詢參數不再用於初始化主頁。如需新的模板或元件創作流程，請改從目前範圍的資產工作面繼續。',
+                  ja: '旧テンプレート/コンポーネント草稿クエリは、もうホームページ初期化には使いません。新しい制作フローが必要な場合は、このスコープの資産ワークスペースから続けてください。',
+                  ko: '레거시 템플릿/컴포넌트 드래프트 쿼리는 더 이상 홈페이지 부트스트랩에 사용되지 않습니다. 새 제작 흐름이 필요하면 현재 범위의 자산 워크스페이스에서 이어가세요.',
+                  fr: 'Les anciens parametres de brouillon template/composant ne servent plus a initialiser la homepage. Pour un nouveau flux d’authoring, reprenez depuis le workspace asset de cette portee.',
+                })}
+              </p>
+            </div>
+          </PublicPresenceSurface>
         ) : null}
 
         <div className={`grid min-h-[calc(100vh-4.75rem)] gap-2 ${workbenchGridClass}`}>
@@ -4789,14 +4797,6 @@ function PublicPresenceStudioScreenInner({
                   </button>
                 );
               })}
-              <Link
-                href={advancedIdeHref}
-                aria-label={copy.advanced.title}
-                className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
-                title={copy.advanced.title}
-              >
-                <FileCode2 className="h-4 w-4" aria-hidden="true" />
-              </Link>
             </PublicPresenceSurface>
           ) : null}
 

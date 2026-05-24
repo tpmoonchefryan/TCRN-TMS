@@ -1,10 +1,13 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import { Injectable } from '@nestjs/common';
+import type { ArtistLifecycleFlow } from '@tcrn/shared';
 
 import { DatabaseService } from '../../database';
+import { normalizeStoredArtistLifecycleFlow } from '../../settings/domain/settings.policy';
 import type {
   HomepageAdminRecord,
+  HomepageAdminArtistStageRecord,
   HomepageAdminTalentRecord,
   HomepageAdminVersionRecord,
   HomepageDraftPointerRecord,
@@ -26,7 +29,7 @@ export class HomepageAdminRepository {
     const prisma = this.databaseService.getPrisma();
     const talents = await prisma.$queryRawUnsafe<HomepageAdminTalentRecord[]>(
       `
-        SELECT id, code, display_name as "displayName",
+        SELECT id, artist_stage_id as "artistStageId", code, lifecycle_status as "lifecycleStatus", display_name as "displayName",
                homepage_path as "homepagePath",
                custom_domain as "customDomain", custom_domain_verified as "customDomainVerified"
                , timezone
@@ -266,6 +269,47 @@ export class HomepageAdminRepository {
     });
 
     return tenants[0]?.code ?? null;
+  }
+
+  async listArtistStages(
+    schema: string,
+  ): Promise<HomepageAdminArtistStageRecord[]> {
+    const prisma = this.databaseService.getPrisma();
+
+    return prisma.$queryRawUnsafe<HomepageAdminArtistStageRecord[]>(
+      `
+        SELECT
+          id,
+          code,
+          name,
+          description,
+          lifecycle_status_mapping as "lifecycleStatusMapping",
+          homepage_policy_key as "homepagePolicyKey",
+          is_active as "isActive",
+          is_system as "isSystem",
+          sort_order as "sortOrder"
+        FROM "${schema}".artist_stage
+        WHERE owner_type = 'tenant'
+          AND owner_id IS NULL
+        ORDER BY sort_order ASC, code ASC
+      `,
+    );
+  }
+
+  async readArtistLifecycleFlow(
+    schema: string,
+  ): Promise<ArtistLifecycleFlow> {
+    const prisma = this.databaseService.getPrisma();
+    const rows = await prisma.$queryRawUnsafe<Array<{ settings: Record<string, unknown> | null }>>(
+      `
+        SELECT settings
+        FROM public.tenant
+        WHERE schema_name = $1
+      `,
+      schema,
+    );
+
+    return normalizeStoredArtistLifecycleFlow(rows[0]?.settings?.artistLifecycleFlow);
   }
 
   async publishHomepageVersion(params: {

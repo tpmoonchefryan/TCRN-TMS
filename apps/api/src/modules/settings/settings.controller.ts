@@ -9,6 +9,7 @@ import {
   Patch,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiProperty, ApiResponse, ApiTags } from '@nestjs/swagger';
+import type { ArtistLifecycleFlow } from '@tcrn/shared';
 import { Type } from 'class-transformer';
 import { IsIn, IsInt, IsObject, IsOptional, IsString, Min } from 'class-validator';
 
@@ -67,6 +68,16 @@ export class UpdateTenantTurnstileSettingsDto {
   secretKey?: string | null;
 }
 
+export class UpdateArtistLifecycleFlowDto {
+  @ApiProperty({
+    description: 'Tenant-owned artist lifecycle flow and homepage policy payload.',
+    type: 'object',
+    additionalProperties: true,
+  })
+  @IsObject()
+  flow: ArtistLifecycleFlow;
+}
+
 const SETTINGS_DATA_SCHEMA = {
   type: 'object',
   properties: {
@@ -87,7 +98,6 @@ const SETTINGS_DATA_SCHEMA = {
       example: {
         defaultLanguage: 'ja',
         timezone: 'Asia/Tokyo',
-        allowCustomHomepage: true,
       },
     },
     overrides: {
@@ -167,12 +177,10 @@ const SETTINGS_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(SETTINGS_DATA_SCHEMA
   settings: {
     defaultLanguage: 'ja',
     timezone: 'Asia/Tokyo',
-    allowCustomHomepage: true,
   },
   overrides: ['timezone'],
   inheritedFrom: {
     defaultLanguage: 'tenant',
-    allowCustomHomepage: 'default',
   },
   version: 2,
 });
@@ -234,6 +242,73 @@ const TURNSTILE_SETTINGS_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
     runtimeBypass: false,
     ready: true,
     secretKeyMasked: '********',
+  },
+);
+
+const ARTIST_LIFECYCLE_FLOW_DATA_SCHEMA = {
+  type: 'object',
+  properties: {
+    scopeType: {
+      type: 'string',
+      enum: ['tenant', 'subsidiary', 'talent'],
+      example: 'tenant',
+    },
+    scopeId: {
+      type: 'string',
+      format: 'uuid',
+      nullable: true,
+      example: null,
+    },
+    inheritedFrom: {
+      type: 'string',
+      enum: ['tenant', 'default'],
+      example: 'tenant',
+    },
+    writable: {
+      type: 'boolean',
+      example: true,
+    },
+    version: {
+      type: 'integer',
+      example: 1,
+    },
+    flow: {
+      type: 'object',
+      additionalProperties: true,
+    },
+    validationIssues: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          path: {
+            type: 'array',
+            items: { type: 'string' },
+          },
+          message: { type: 'string' },
+        },
+        required: ['path', 'message'],
+      },
+      example: [],
+    },
+  },
+  required: ['scopeType', 'scopeId', 'inheritedFrom', 'writable', 'version', 'flow', 'validationIssues'],
+} as const;
+
+const ARTIST_LIFECYCLE_FLOW_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
+  ARTIST_LIFECYCLE_FLOW_DATA_SCHEMA,
+  {
+    scopeType: 'tenant',
+    scopeId: null,
+    inheritedFrom: 'tenant',
+    writable: true,
+    version: 1,
+    flow: {
+      nodes: [],
+      transitions: [],
+      homepagePolicyByStage: [],
+    },
+    validationIssues: [],
   },
 );
 
@@ -312,6 +387,42 @@ export class SettingsController {
     );
 
     return success(this.formatSettingsResponse(settings));
+  }
+
+  @Get('organization/settings/artist-lifecycle-flow')
+  @RequirePermissions({ resource: 'settings', action: 'read' })
+  @ApiOperation({ summary: 'Get tenant artist lifecycle flow settings' })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns tenant-owned artist lifecycle flow and homepage policy settings',
+    schema: ARTIST_LIFECYCLE_FLOW_SUCCESS_SCHEMA,
+  })
+  async getTenantArtistLifecycleFlow(
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return success(await this.settingsService.getArtistLifecycleFlow(
+      user.tenantSchema,
+      'tenant',
+      null,
+    ));
+  }
+
+  @Patch('organization/settings/artist-lifecycle-flow')
+  @RequirePermissions({ resource: 'settings', action: 'update' })
+  @ApiOperation({ summary: 'Update tenant artist lifecycle flow settings' })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns updated tenant artist lifecycle flow and homepage policy settings',
+    schema: ARTIST_LIFECYCLE_FLOW_SUCCESS_SCHEMA,
+  })
+  async updateTenantArtistLifecycleFlow(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: UpdateArtistLifecycleFlowDto,
+  ) {
+    return success(await this.settingsService.updateArtistLifecycleFlow(
+      user.tenantSchema,
+      dto.flow,
+    ));
   }
 
   @Get('organization/settings/turnstile')
@@ -396,6 +507,30 @@ export class SettingsController {
     );
 
     return success(this.formatSettingsResponse(settings));
+  }
+
+  @Get('subsidiaries/:subsidiaryId/settings/artist-lifecycle-flow')
+  @RequirePermissions({ resource: 'settings', action: 'read' })
+  @ApiOperation({ summary: 'Get effective subsidiary artist lifecycle flow settings' })
+  @ApiParam({
+    name: 'subsidiaryId',
+    description: 'Subsidiary identifier',
+    schema: { type: 'string', format: 'uuid' },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns the effective tenant-owned artist lifecycle flow for a subsidiary scope',
+    schema: ARTIST_LIFECYCLE_FLOW_SUCCESS_SCHEMA,
+  })
+  async getSubsidiaryArtistLifecycleFlow(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('subsidiaryId', ParseUUIDPipe) subsidiaryId: string,
+  ) {
+    return success(await this.settingsService.getArtistLifecycleFlow(
+      user.tenantSchema,
+      'subsidiary',
+      subsidiaryId,
+    ));
   }
 
   /**
@@ -533,6 +668,30 @@ export class SettingsController {
     );
 
     return success(this.formatSettingsResponse(settings));
+  }
+
+  @Get('talents/:talentId/settings/artist-lifecycle-flow')
+  @RequirePermissions({ resource: 'settings', action: 'read' })
+  @ApiOperation({ summary: 'Get effective talent artist lifecycle flow settings' })
+  @ApiParam({
+    name: 'talentId',
+    description: 'Talent identifier',
+    schema: { type: 'string', format: 'uuid' },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns the effective tenant-owned artist lifecycle flow for a talent scope',
+    schema: ARTIST_LIFECYCLE_FLOW_SUCCESS_SCHEMA,
+  })
+  async getTalentArtistLifecycleFlow(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('talentId', ParseUUIDPipe) talentId: string,
+  ) {
+    return success(await this.settingsService.getArtistLifecycleFlow(
+      user.tenantSchema,
+      'talent',
+      talentId,
+    ));
   }
 
   /**

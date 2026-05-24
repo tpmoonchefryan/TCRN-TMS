@@ -1,6 +1,12 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
 import { Injectable } from '@nestjs/common';
+import {
+  PublicPresenceAssetRevisionPinSchema,
+  PublicPresenceAssetSnapshotSchema,
+  type PublicPresenceAssetRevisionPin,
+  type PublicPresenceAssetSnapshot,
+} from '@tcrn/shared';
 
 import { DatabaseService } from '../../database';
 import type {
@@ -15,6 +21,56 @@ import type {
   PublicPresenceWorkflowEventRecord,
   UpdatePublicPresenceDocumentWorkflowStateInput,
 } from '../domain/public-presence-foundation.policy';
+
+interface TemplateAssetPinRow {
+  templateAssetId: string | null;
+  templateAssetRevisionId: string | null;
+  templateAssetSourceHash: string | null;
+  templateAssetSnapshot: Record<string, unknown> | null;
+}
+
+type DocumentVersionRow = Omit<
+  PublicPresenceDocumentVersionRecord,
+  'templateAssetPin'
+> & TemplateAssetPinRow;
+
+function parseTemplateAssetPin(
+  row: TemplateAssetPinRow,
+): PublicPresenceAssetRevisionPin | null {
+  if (
+    !row.templateAssetId
+    || !row.templateAssetRevisionId
+    || !row.templateAssetSourceHash
+  ) {
+    return null;
+  }
+
+  const snapshot: PublicPresenceAssetSnapshot | null = row.templateAssetSnapshot
+    ? (PublicPresenceAssetSnapshotSchema.parse(
+        row.templateAssetSnapshot,
+      ) as PublicPresenceAssetSnapshot)
+    : null;
+
+  return PublicPresenceAssetRevisionPinSchema.parse({
+    assetId: row.templateAssetId,
+    assetRevisionId: row.templateAssetRevisionId,
+    snapshot,
+    sourceHash: row.templateAssetSourceHash,
+  }) as PublicPresenceAssetRevisionPin;
+}
+
+function toDocumentVersionRecord(
+  row: DocumentVersionRow | null | undefined,
+): PublicPresenceDocumentVersionRecord | null {
+  if (!row) {
+    return null;
+  }
+
+  return {
+    ...row,
+    templateAssetPin: parseTemplateAssetPin(row),
+  };
+}
 
 @Injectable()
 export class PublicPresenceFoundationRepository {
@@ -91,7 +147,7 @@ export class PublicPresenceFoundationRepository {
     portalId: string,
   ): Promise<PublicPresenceDocumentVersionRecord | null> {
     const prisma = this.databaseService.getPrisma();
-    const versions = await prisma.$queryRawUnsafe<PublicPresenceDocumentVersionRecord[]>(
+    const versions = await prisma.$queryRawUnsafe<DocumentVersionRow[]>(
       `
         SELECT
           v.id,
@@ -99,6 +155,10 @@ export class PublicPresenceFoundationRepository {
           v.version_number as "versionNumber",
           v.document_schema_version as "documentSchemaVersion",
           v.template_id as "templateId",
+          v.template_asset_id as "templateAssetId",
+          v.template_asset_revision_id as "templateAssetRevisionId",
+          v.template_asset_source_hash as "templateAssetSourceHash",
+          v.template_asset_snapshot as "templateAssetSnapshot",
           v.document,
           v.document_state as "documentState",
           v.content_hash_algorithm as "contentHashAlgorithm",
@@ -118,7 +178,7 @@ export class PublicPresenceFoundationRepository {
       portalId,
     );
 
-    return versions[0] ?? null;
+    return toDocumentVersionRecord(versions[0]);
   }
 
   async findLatestVersionByTemplate(
@@ -128,7 +188,7 @@ export class PublicPresenceFoundationRepository {
     states?: string[],
   ): Promise<PublicPresenceDocumentVersionRecord | null> {
     const prisma = this.databaseService.getPrisma();
-    const rows = await prisma.$queryRawUnsafe<PublicPresenceDocumentVersionRecord[]>(
+    const rows = await prisma.$queryRawUnsafe<DocumentVersionRow[]>(
       `
         SELECT
           id,
@@ -136,6 +196,10 @@ export class PublicPresenceFoundationRepository {
           version_number as "versionNumber",
           document_schema_version as "documentSchemaVersion",
           template_id as "templateId",
+          template_asset_id as "templateAssetId",
+          template_asset_revision_id as "templateAssetRevisionId",
+          template_asset_source_hash as "templateAssetSourceHash",
+          template_asset_snapshot as "templateAssetSnapshot",
           document,
           document_state as "documentState",
           content_hash_algorithm as "contentHashAlgorithm",
@@ -159,7 +223,7 @@ export class PublicPresenceFoundationRepository {
       states ?? null,
     );
 
-    return rows[0] ?? null;
+    return toDocumentVersionRecord(rows[0]);
   }
 
   async findLatestVersionsByPortal(
@@ -168,7 +232,7 @@ export class PublicPresenceFoundationRepository {
   ): Promise<PublicPresenceDocumentVersionRecord[]> {
     const prisma = this.databaseService.getPrisma();
 
-    return prisma.$queryRawUnsafe<PublicPresenceDocumentVersionRecord[]>(
+    const rows = await prisma.$queryRawUnsafe<DocumentVersionRow[]>(
       `
         WITH ranked_versions AS (
           SELECT
@@ -177,6 +241,10 @@ export class PublicPresenceFoundationRepository {
             version_number as "versionNumber",
             document_schema_version as "documentSchemaVersion",
             template_id as "templateId",
+            template_asset_id as "templateAssetId",
+            template_asset_revision_id as "templateAssetRevisionId",
+            template_asset_source_hash as "templateAssetSourceHash",
+            template_asset_snapshot as "templateAssetSnapshot",
             document,
             document_state as "documentState",
             content_hash_algorithm as "contentHashAlgorithm",
@@ -201,6 +269,10 @@ export class PublicPresenceFoundationRepository {
           "versionNumber",
           "documentSchemaVersion",
           "templateId",
+          "templateAssetId",
+          "templateAssetRevisionId",
+          "templateAssetSourceHash",
+          "templateAssetSnapshot",
           document,
           "documentState",
           "contentHashAlgorithm",
@@ -218,6 +290,10 @@ export class PublicPresenceFoundationRepository {
       `,
       portalId,
     );
+
+    return rows
+      .map((row) => toDocumentVersionRecord(row))
+      .filter((row): row is PublicPresenceDocumentVersionRecord => Boolean(row));
   }
 
   async findDocumentVersionById(
@@ -225,7 +301,7 @@ export class PublicPresenceFoundationRepository {
     versionId: string,
   ): Promise<PublicPresenceDocumentVersionRecord | null> {
     const prisma = this.databaseService.getPrisma();
-    const versions = await prisma.$queryRawUnsafe<PublicPresenceDocumentVersionRecord[]>(
+    const versions = await prisma.$queryRawUnsafe<DocumentVersionRow[]>(
       `
         SELECT
           id,
@@ -233,6 +309,10 @@ export class PublicPresenceFoundationRepository {
           version_number as "versionNumber",
           document_schema_version as "documentSchemaVersion",
           template_id as "templateId",
+          template_asset_id as "templateAssetId",
+          template_asset_revision_id as "templateAssetRevisionId",
+          template_asset_source_hash as "templateAssetSourceHash",
+          template_asset_snapshot as "templateAssetSnapshot",
           document,
           document_state as "documentState",
           content_hash_algorithm as "contentHashAlgorithm",
@@ -250,7 +330,7 @@ export class PublicPresenceFoundationRepository {
       versionId,
     );
 
-    return versions[0] ?? null;
+    return toDocumentVersionRecord(versions[0]);
   }
 
   async createDraftVersionAndAssign(
@@ -290,6 +370,10 @@ export class PublicPresenceFoundationRepository {
           snapshotCreatedAt: Date;
           snapshotCreatedBy: string | null;
           templateId: string;
+          templateAssetId: string | null;
+          templateAssetRevisionId: string | null;
+          templateAssetSourceHash: string | null;
+          templateAssetSnapshot: Record<string, unknown> | null;
           validationMode: string;
           validationSnapshotId: string;
           validationState: string;
@@ -312,6 +396,10 @@ export class PublicPresenceFoundationRepository {
               version_number,
               document_schema_version,
               template_id,
+              template_asset_id,
+              template_asset_revision_id,
+              template_asset_source_hash,
+              template_asset_snapshot,
               document,
               document_state,
               content_hash_algorithm,
@@ -327,13 +415,17 @@ export class PublicPresenceFoundationRepository {
               $2,
               $3,
               $4,
-              $5::jsonb,
-              'draft',
-              $6,
+              $5::uuid,
+              $6::uuid,
               $7,
+              $8::jsonb,
+              $9::jsonb,
+              'draft',
+              $10,
+              $11,
               now(),
               now(),
-              $8::uuid
+              $12::uuid
             )
           RETURNING
             id as "versionId",
@@ -341,6 +433,10 @@ export class PublicPresenceFoundationRepository {
             version_number as "versionNumber",
             document_schema_version as "documentSchemaVersion",
             template_id as "templateId",
+            template_asset_id as "templateAssetId",
+            template_asset_revision_id as "templateAssetRevisionId",
+            template_asset_source_hash as "templateAssetSourceHash",
+            template_asset_snapshot as "templateAssetSnapshot",
             document,
             document_state as "documentState",
             content_hash_algorithm as "contentHashAlgorithm",
@@ -382,24 +478,24 @@ export class PublicPresenceFoundationRepository {
             gen_random_uuid(),
             $1::uuid,
             inserted_version."versionId",
-            $9,
-            $10,
-            $11,
-            $12,
             $13,
             $14,
-            $15::jsonb,
-            $16::jsonb,
-            $17::jsonb,
+            $15,
+            $16,
+            $17,
             $18,
-            $19,
-            $20,
-            $21,
+            $19::jsonb,
+            $20::jsonb,
+            $21::jsonb,
             $22,
             $23,
-            $24::jsonb,
+            $24,
+            $25,
+            $26,
+            $27,
+            $28::jsonb,
             now(),
-            $8::uuid
+            $12::uuid
           FROM inserted_version
           RETURNING
             id as "validationSnapshotId",
@@ -437,10 +533,10 @@ export class PublicPresenceFoundationRepository {
           SET
             draft_version_id = (SELECT "versionId" FROM inserted_version),
             latest_version_number = $2,
-            latest_validation_state = $10,
+            latest_validation_state = $14,
             last_validated_at = now(),
             updated_at = now(),
-            updated_by = $8::uuid,
+            updated_by = $12::uuid,
             version = version + 1
           WHERE id = $1::uuid
           RETURNING id
@@ -474,7 +570,7 @@ export class PublicPresenceFoundationRepository {
               (SELECT "validationSnapshotId" FROM inserted_snapshot)
             ),
             now(),
-            $8::uuid
+            $12::uuid
           FROM inserted_version
         )
         SELECT
@@ -483,6 +579,10 @@ export class PublicPresenceFoundationRepository {
           inserted_version."versionNumber",
           inserted_version."documentSchemaVersion",
           inserted_version."templateId",
+          inserted_version."templateAssetId",
+          inserted_version."templateAssetRevisionId",
+          inserted_version."templateAssetSourceHash",
+          inserted_version."templateAssetSnapshot",
           inserted_version.document,
           inserted_version."documentState",
           inserted_version."contentHashAlgorithm",
@@ -521,6 +621,10 @@ export class PublicPresenceFoundationRepository {
       input.versionNumber,
       input.document.schemaVersion,
       input.document.templateId,
+      input.templateAssetPin?.assetId ?? null,
+      input.templateAssetPin?.assetRevisionId ?? null,
+      input.templateAssetPin?.sourceHash ?? null,
+      JSON.stringify(input.templateAssetPin?.snapshot ?? null),
       JSON.stringify(input.document),
       input.contentHashAlgorithm,
       input.contentHash,
@@ -546,24 +650,28 @@ export class PublicPresenceFoundationRepository {
     const row = rows[0];
 
     return {
-      version: {
-        id: row.versionId,
-        portalId: row.portalId,
-        versionNumber: row.versionNumber,
-        documentSchemaVersion: row.documentSchemaVersion,
-        templateId: row.templateId,
-        document: row.document,
-        documentState: row.documentState,
-        contentHashAlgorithm: row.contentHashAlgorithm,
+      version: toDocumentVersionRecord({
         contentHash: row.contentHash,
+        contentHashAlgorithm: row.contentHashAlgorithm,
+        createdAt: row.versionCreatedAt,
+        createdBy: row.versionCreatedBy,
+        document: row.document,
+        documentSchemaVersion: row.documentSchemaVersion,
+        documentState: row.documentState,
+        id: row.versionId,
         lastValidationSnapshotId: row.lastValidationSnapshotId,
-        scheduledFor: row.scheduledFor,
+        portalId: row.portalId,
         publishedAt: row.publishedAt,
         publishedBy: row.publishedBy,
-        createdAt: row.versionCreatedAt,
+        scheduledFor: row.scheduledFor,
+        templateAssetId: row.templateAssetId,
+        templateAssetRevisionId: row.templateAssetRevisionId,
+        templateAssetSnapshot: row.templateAssetSnapshot,
+        templateAssetSourceHash: row.templateAssetSourceHash,
+        templateId: row.templateId,
         updatedAt: row.versionUpdatedAt,
-        createdBy: row.versionCreatedBy,
-      },
+        versionNumber: row.versionNumber,
+      })!,
       validationSnapshot: {
         id: row.validationSnapshotId,
         portalId: row.portalId,
@@ -856,7 +964,7 @@ export class PublicPresenceFoundationRepository {
     input: UpdatePublicPresenceDocumentWorkflowStateInput,
   ): Promise<PublicPresenceDocumentVersionRecord> {
     const prisma = this.databaseService.getPrisma();
-    const rows = await prisma.$queryRawUnsafe<PublicPresenceDocumentVersionRecord[]>(
+    const rows = await prisma.$queryRawUnsafe<DocumentVersionRow[]>(
       `
         WITH previous_version AS (
           SELECT document_state as "fromDocumentState"
@@ -878,6 +986,10 @@ export class PublicPresenceFoundationRepository {
             version_number as "versionNumber",
             document_schema_version as "documentSchemaVersion",
             template_id as "templateId",
+            template_asset_id as "templateAssetId",
+            template_asset_revision_id as "templateAssetRevisionId",
+            template_asset_source_hash as "templateAssetSourceHash",
+            template_asset_snapshot as "templateAssetSnapshot",
             document,
             document_state as "documentState",
             content_hash_algorithm as "contentHashAlgorithm",
@@ -933,7 +1045,7 @@ export class PublicPresenceFoundationRepository {
       JSON.stringify(input.payload ?? {}),
     );
 
-    return rows[0];
+    return toDocumentVersionRecord(rows[0])!;
   }
 
   async publishVersionAndAssignLive(
@@ -941,7 +1053,7 @@ export class PublicPresenceFoundationRepository {
     input: UpdatePublicPresenceDocumentWorkflowStateInput,
   ): Promise<PublicPresenceDocumentVersionRecord> {
     const prisma = this.databaseService.getPrisma();
-    const rows = await prisma.$queryRawUnsafe<PublicPresenceDocumentVersionRecord[]>(
+    const rows = await prisma.$queryRawUnsafe<DocumentVersionRow[]>(
       `
         WITH current_portal AS (
           SELECT
@@ -980,6 +1092,10 @@ export class PublicPresenceFoundationRepository {
             version_number as "versionNumber",
             document_schema_version as "documentSchemaVersion",
             template_id as "templateId",
+            template_asset_id as "templateAssetId",
+            template_asset_revision_id as "templateAssetRevisionId",
+            template_asset_source_hash as "templateAssetSourceHash",
+            template_asset_snapshot as "templateAssetSnapshot",
             document,
             document_state as "documentState",
             content_hash_algorithm as "contentHashAlgorithm",
@@ -1044,7 +1160,7 @@ export class PublicPresenceFoundationRepository {
       JSON.stringify(input.payload ?? {}),
     );
 
-    return rows[0];
+    return toDocumentVersionRecord(rows[0])!;
   }
 
   async createDocumentFromSourceAndAssignDraft(
@@ -1052,7 +1168,7 @@ export class PublicPresenceFoundationRepository {
     input: CreatePublicPresenceDocumentFromSourceInput,
   ): Promise<PublicPresenceDocumentVersionRecord> {
     const prisma = this.databaseService.getPrisma();
-    const rows = await prisma.$queryRawUnsafe<PublicPresenceDocumentVersionRecord[]>(
+    const rows = await prisma.$queryRawUnsafe<DocumentVersionRow[]>(
       `
         WITH inserted_version AS (
           INSERT INTO "${schema}".public_presence_document_version
@@ -1062,6 +1178,10 @@ export class PublicPresenceFoundationRepository {
               version_number,
               document_schema_version,
               template_id,
+              template_asset_id,
+              template_asset_revision_id,
+              template_asset_source_hash,
+              template_asset_snapshot,
               document,
               document_state,
               content_hash_algorithm,
@@ -1077,13 +1197,17 @@ export class PublicPresenceFoundationRepository {
               $2,
               $3,
               $4,
-              $5::jsonb,
-              $6,
+              $5::uuid,
+              $6::uuid,
               $7,
-              $8,
+              $8::jsonb,
+              $9::jsonb,
+              $10,
+              $11,
+              $12,
               now(),
               now(),
-              $9::uuid
+              $13::uuid
             )
           RETURNING
             id,
@@ -1091,6 +1215,10 @@ export class PublicPresenceFoundationRepository {
             version_number as "versionNumber",
             document_schema_version as "documentSchemaVersion",
             template_id as "templateId",
+            template_asset_id as "templateAssetId",
+            template_asset_revision_id as "templateAssetRevisionId",
+            template_asset_source_hash as "templateAssetSourceHash",
+            template_asset_snapshot as "templateAssetSnapshot",
             document,
             document_state as "documentState",
             content_hash_algorithm as "contentHashAlgorithm",
@@ -1109,7 +1237,7 @@ export class PublicPresenceFoundationRepository {
             draft_version_id = (SELECT id FROM inserted_version),
             latest_version_number = $2,
             updated_at = now(),
-            updated_by = $9::uuid,
+            updated_by = $13::uuid,
             version = version + 1
           WHERE id = $1::uuid
           RETURNING id
@@ -1135,12 +1263,12 @@ export class PublicPresenceFoundationRepository {
             (SELECT id FROM inserted_version),
             'rollbackDraftCreated',
             NULL,
-            $6,
-            $7,
-            $8,
-            $10::jsonb,
+            $10,
+            $11,
+            $12,
+            $14::jsonb,
             now(),
-            $9::uuid
+            $13::uuid
         )
         SELECT *
         FROM inserted_version
@@ -1149,6 +1277,10 @@ export class PublicPresenceFoundationRepository {
       input.versionNumber,
       input.document.schemaVersion,
       input.templateId,
+      input.templateAssetPin?.assetId ?? null,
+      input.templateAssetPin?.assetRevisionId ?? null,
+      input.templateAssetPin?.sourceHash ?? null,
+      JSON.stringify(input.templateAssetPin?.snapshot ?? null),
       JSON.stringify(input.document),
       input.documentState,
       input.contentHashAlgorithm,
@@ -1160,7 +1292,7 @@ export class PublicPresenceFoundationRepository {
       }),
     );
 
-    return rows[0];
+    return toDocumentVersionRecord(rows[0])!;
   }
 
   async findDueScheduledVersions(

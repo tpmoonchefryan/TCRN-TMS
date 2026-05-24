@@ -4,6 +4,7 @@ import type {
   HomepageComponentType,
   ThemeConfig,
 } from '../types/homepage/schema';
+import type { PublicPresenceAssetRevisionPin } from './assets';
 
 export const PUBLIC_PRESENCE_DOCUMENT_SCHEMA_VERSION = '1.0' as const;
 export const PUBLIC_PRESENCE_REGISTRY_VERSION = '1.0.0' as const;
@@ -507,6 +508,7 @@ export interface PublicPresenceValidationSnapshot {
   fallbackDecisions: PublicPresenceFallbackDecision[];
   acknowledgementIds: string[];
   projectionHash: string | null;
+  templateAssetPin?: PublicPresenceAssetRevisionPin | null;
 }
 
 export interface PublicPresenceProjectedAction {
@@ -718,6 +720,7 @@ export interface PublicPresenceProjection {
   documentVersionId: string | null;
   contentHash: string;
   validationSnapshotId: string | null;
+  templateAssetPin?: PublicPresenceAssetRevisionPin | null;
   registryVersion: string;
   safetyPolicyVersion: string;
   projectionHash: string;

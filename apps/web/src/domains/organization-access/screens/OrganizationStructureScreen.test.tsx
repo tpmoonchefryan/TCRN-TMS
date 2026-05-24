@@ -62,6 +62,36 @@ const profileStoresResponse = {
   },
 };
 
+const artistStageListPath =
+  '/api/v1/configuration-entity/artist-stage?scopeType=tenant&includeInherited=true&includeDisabled=false&includeInactive=false&ownerOnly=false&page=1&pageSize=100&sort=sortOrder';
+
+const artistStagesResponse = [
+  {
+    id: 'stage-draft',
+    ownerType: 'tenant',
+    ownerId: null,
+    code: 'PRE_DEBUT',
+    name: localizedFixture('Pre-Debut'),
+    localizedName: 'Pre-Debut',
+    description: null,
+    localizedDescription: null,
+    sortOrder: 0,
+    isActive: true,
+    isForceUse: false,
+    isSystem: false,
+    isInherited: false,
+    isDisabledHere: false,
+    canDisable: false,
+    extraData: null,
+    color: '#F97316',
+    lifecycleStatusMapping: 'draft',
+    homepagePolicyKey: 'debut-reveal',
+    createdAt: '2026-04-17T00:00:00.000Z',
+    updatedAt: '2026-04-17T00:00:00.000Z',
+    version: 1,
+  },
+];
+
 const manageableLifecycleMaintenance = { canManage: true } as const;
 const unavailableLifecycleMaintenance = { canManage: false } as const;
 
@@ -84,6 +114,10 @@ describe('OrganizationStructureScreen', () => {
     mockRequest.mockImplementation((path: string) => {
       if (path === '/api/v1/profile-stores?page=1&pageSize=20') {
         return Promise.resolve(profileStoresResponse);
+      }
+
+      if (path === artistStageListPath) {
+        return Promise.resolve(artistStagesResponse);
       }
 
       if (path === '/api/v1/organization/tree?includeInactive=false') {
@@ -401,6 +435,10 @@ describe('OrganizationStructureScreen', () => {
         return Promise.resolve(profileStoresResponse);
       }
 
+      if (path === artistStageListPath) {
+        return Promise.resolve(artistStagesResponse);
+      }
+
       if (path === '/api/v1/organization/tree?includeInactive=false') {
         treeCalls += 1;
 
@@ -439,6 +477,7 @@ describe('OrganizationStructureScreen', () => {
         return Promise.resolve({
           id: 'talent-4',
           subsidiaryId: null,
+          artistStageId: 'stage-draft',
           code: 'MIO',
           path: '/MIO/',
           name: localizedFixture('Ookami Mio'),
@@ -487,6 +526,7 @@ describe('OrganizationStructureScreen', () => {
       expect(createPayload).toEqual({
         subsidiaryId: null,
         profileStoreId: 'store-1',
+        artistStageId: 'stage-draft',
         code: 'MIO',
         displayName: 'Mio',
         name: localizedFixture('Ookami Mio'),
@@ -527,6 +567,10 @@ describe('OrganizationStructureScreen', () => {
         return Promise.resolve(profileStoresResponse);
       }
 
+      if (path === artistStageListPath) {
+        return Promise.resolve(artistStagesResponse);
+      }
+
       if (path === '/api/v1/organization/tree?includeInactive=false') {
         treeCalls += 1;
 
@@ -541,6 +585,7 @@ describe('OrganizationStructureScreen', () => {
         return Promise.resolve({
           id: 'talent-5',
           subsidiaryId: null,
+          artistStageId: 'stage-draft',
           code: 'SUZU',
           path: '/SUZU/',
           name: localizedFixture('Suzu'),
@@ -606,6 +651,37 @@ describe('OrganizationStructureScreen', () => {
       'href',
       '/studio/public-presence/tenant-1/talent-5',
     );
+  });
+
+  it('blocks talent creation when no active artist stages are available', async () => {
+    mockRequest.mockImplementation((path: string) => {
+      if (path === '/api/v1/profile-stores?page=1&pageSize=20') {
+        return Promise.resolve(profileStoresResponse);
+      }
+
+      if (path === artistStageListPath) {
+        return Promise.resolve([]);
+      }
+
+      if (path === '/api/v1/organization/tree?includeInactive=false') {
+        return Promise.resolve({
+          tenantId: 'tenant-1',
+          subsidiaries: [],
+          directTalents: [],
+        });
+      }
+
+      throw new Error(`Unexpected request: ${path}`);
+    });
+
+    render(<OrganizationStructureScreen tenantId="tenant-1" />);
+
+    expect(await screen.findByRole('heading', { name: 'Tenant Alpha' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Create talent' }));
+
+    expect(await screen.findByText('No active artist stages are available yet. Add one in tenant settings before creating a talent.')).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: 'Create talent' })[1]).toBeDisabled();
   });
 
   it('can disable and re-enable a talent when inactive workspaces are shown', async () => {

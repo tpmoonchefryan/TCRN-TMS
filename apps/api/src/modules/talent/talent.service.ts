@@ -6,7 +6,10 @@ import { CustomerArchiveAccessService } from '../customer/application/customer-a
 import { CustomerArchiveRepository } from '../customer/infrastructure/customer-archive.repository';
 import { DatabaseService } from '../database';
 import { TalentCustomDomainService } from './application/talent-custom-domain.service';
-import { TalentLifecycleService } from './application/talent-lifecycle.service';
+import {
+  TalentLifecycleService,
+  type TalentStageTransitionInput,
+} from './application/talent-lifecycle.service';
 import { TalentReadService } from './application/talent-read.service';
 import { TalentWriteService } from './application/talent-write.service';
 import type { CustomDomainOwnerType, CustomDomainSslMode, TalentCustomDomainBindingListOptions } from './domain/talent-custom-domain.policy';
@@ -210,6 +213,20 @@ export class TalentService {
       id,
       tenantSchema,
       version,
+      userId,
+    );
+  }
+
+  async transitionArtistStage(
+    id: string,
+    tenantSchema: string,
+    input: TalentStageTransitionInput,
+    userId: string,
+  ): Promise<TalentData> {
+    return this.talentLifecycleService.transitionArtistStage(
+      id,
+      tenantSchema,
+      input,
       userId,
     );
   }

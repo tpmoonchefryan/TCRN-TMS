@@ -280,6 +280,14 @@ describe('TenantSettingsScreen', () => {
         };
       }
 
+      if (path === '/api/v1/public-presence/assets?assetKind=template&scopeType=tenant') {
+        return [];
+      }
+
+      if (path === '/api/v1/public-presence/assets?assetKind=component&scopeType=tenant') {
+        return [];
+      }
+
       if (path === '/api/v1/organization/settings' && init?.method === 'PATCH') {
         return {
           scopeType: 'tenant',
@@ -314,9 +322,10 @@ describe('TenantSettingsScreen', () => {
     expect(await screen.findByRole('button', { name: /Profile Store profile-store/i })).toBeInTheDocument();
     expect(
       screen.getByText(
-        'Maintain tenant-owned configuration families, including Profile Store, in one scoped workspace inherited by subsidiary and talent scopes.',
+        'Maintain tenant-owned configuration families here, then manage homepage template and component assets in the dedicated inventory below.',
       ),
     ).toBeInTheDocument();
+    expect(await screen.findByText('Homepage Assets')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /New profile store/i })).not.toBeInTheDocument();
     expect(mockRequest).not.toHaveBeenCalledWith(expect.stringContaining('/api/v1/profile-stores'));
 
@@ -336,7 +345,7 @@ describe('TenantSettingsScreen', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'System Dictionary' }));
     expect((await screen.findAllByText('Customer Status')).length).toBeGreaterThan(0);
-    expect(await screen.findByText('Active customer')).toBeInTheDocument();
+    expect((await screen.findAllByText('Active customer')).length).toBeGreaterThan(0);
 
     fireEvent.click(screen.getByRole('button', { name: 'Settings' }));
     expect(screen.getByRole('navigation', { name: 'Settings categories' })).toBeInTheDocument();
@@ -397,7 +406,6 @@ describe('TenantSettingsScreen', () => {
               customerImportEnabled: true,
               maxImportRows: 25000,
               totpRequiredForAll: false,
-              allowCustomHomepage: true,
               allowMarshmallow: true,
               passwordPolicy: {
                 minLength: 12,

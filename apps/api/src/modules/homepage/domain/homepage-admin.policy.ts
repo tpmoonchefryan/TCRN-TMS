@@ -1,5 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
+import type { LocalizedText } from '@tcrn/shared';
 import { buildSharedHomepageUrl } from '@tcrn/shared';
 import * as crypto from 'crypto';
 
@@ -12,12 +13,26 @@ import type {
 
 export interface HomepageAdminTalentRecord {
   id: string;
+  artistStageId: string;
   code: string;
+  lifecycleStatus: 'draft' | 'published' | 'disabled';
   displayName: string;
   homepagePath: string | null;
   customDomain: string | null;
   customDomainVerified: boolean;
   timezone: string | null;
+}
+
+export interface HomepageAdminArtistStageRecord {
+  id: string;
+  code: string;
+  name: LocalizedText;
+  description: LocalizedText;
+  lifecycleStatusMapping: 'draft' | 'published' | 'disabled';
+  homepagePolicyKey: string | null;
+  isActive: boolean;
+  isSystem: boolean;
+  sortOrder: number;
 }
 
 export interface HomepageAdminRecord {

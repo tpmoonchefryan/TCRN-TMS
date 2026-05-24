@@ -33,12 +33,12 @@ import {
   RequirePublishedTalentAccess,
 } from '../../../common/decorators';
 import { PublicHomepageProjectionService } from '../application/public-homepage-projection.service';
-import { PublicPresenceAuthoringService } from '../application/public-presence-authoring.service';
 import { PublicPresenceStudioService } from '../application/public-presence-studio.service';
 import { PublicPresenceWorkflowService } from '../application/public-presence-workflow.service';
 
 interface BootstrapPublicPresenceDraftDto {
-  templateId: string;
+  templateAssetId?: string | null;
+  templateId?: string | null;
 }
 
 interface SavePublicPresenceDraftDto {
@@ -63,25 +63,6 @@ interface PublicPresenceRollbackDraftDto {
   sourceVersionId?: string | null;
 }
 
-interface PublicPresenceAuthoringValidationSummaryDto {
-  issueCount?: number;
-  passCount?: number;
-  warnCount?: number;
-}
-
-interface PublicPresenceAuthoringFileDto {
-  contents: string;
-  kind: string;
-  language: string;
-  path: string;
-}
-
-interface PublicPresenceAuthoringDraftDto {
-  sourceBundle: PublicPresenceAuthoringFileDto[];
-  subjectKey?: string | null;
-  validationSummary?: PublicPresenceAuthoringValidationSummaryDto | null;
-}
-
 const PUBLIC_PRESENCE_WORKSPACE_SCHEMA = {
   type: 'object',
   additionalProperties: true,
@@ -101,7 +82,6 @@ export class PublicPresenceController {
     private readonly publicPresenceStudioService: PublicPresenceStudioService,
     private readonly publicHomepageProjectionService: PublicHomepageProjectionService,
     private readonly publicPresenceWorkflowService: PublicPresenceWorkflowService,
-    private readonly publicPresenceAuthoringService: PublicPresenceAuthoringService,
   ) {}
 
   @Get()
@@ -186,7 +166,7 @@ export class PublicPresenceController {
   ) {
     return this.publicPresenceStudioService.bootstrapDraft(
       talentId,
-      dto.templateId,
+      dto.templateAssetId?.trim() || dto.templateId?.trim() || '',
       this.buildContext(user, req),
     );
   }
@@ -368,158 +348,6 @@ export class PublicPresenceController {
     return this.publicPresenceStudioService.getWorkspace(
       talentId,
       user.tenantSchema,
-    );
-  }
-
-  @Get('authoring/templates')
-  @RequirePermissions({ resource: 'public_presence.document', action: 'read' })
-  async listTemplateAuthoringDrafts(
-    @Param('talentId', ParseUUIDPipe) talentId: string,
-    @CurrentUser() user: AuthenticatedUser,
-  ) {
-    return this.publicPresenceAuthoringService.listDrafts(
-      'template',
-      talentId,
-      user.tenantSchema,
-    );
-  }
-
-  @Get('authoring/templates/current')
-  @RequirePermissions({ resource: 'public_presence.document', action: 'read' })
-  async getCurrentTemplateAuthoringDraft(
-    @Param('talentId', ParseUUIDPipe) talentId: string,
-    @CurrentUser() user: AuthenticatedUser,
-    @Query('subjectKey') subjectKey?: string,
-  ) {
-    return this.publicPresenceAuthoringService.getCurrentDraft(
-      'template',
-      talentId,
-      user.tenantSchema,
-      subjectKey,
-    );
-  }
-
-  @Put('authoring/templates/current')
-  @RequirePermissions({ resource: 'public_presence.document', action: 'write' })
-  async saveCurrentTemplateAuthoringDraft(
-    @Param('talentId', ParseUUIDPipe) talentId: string,
-    @Body() dto: PublicPresenceAuthoringDraftDto,
-    @CurrentUser() user: AuthenticatedUser,
-    @Req() req: Request,
-  ) {
-    return this.publicPresenceAuthoringService.saveDraft(
-      'template',
-      talentId,
-      this.buildContext(user, req),
-      dto,
-    );
-  }
-
-  @Post('authoring/templates/current/validate')
-  @RequirePermissions({ resource: 'public_presence.document', action: 'write' })
-  async validateCurrentTemplateAuthoringDraft(
-    @Param('talentId', ParseUUIDPipe) talentId: string,
-    @Body() dto: PublicPresenceAuthoringDraftDto,
-    @CurrentUser() user: AuthenticatedUser,
-    @Req() req: Request,
-  ) {
-    return this.publicPresenceAuthoringService.validateDraft(
-      'template',
-      talentId,
-      this.buildContext(user, req),
-      dto,
-    );
-  }
-
-  @Post('authoring/templates/current/submit')
-  @RequirePermissions({ resource: 'public_presence.document', action: 'write' })
-  async submitCurrentTemplateAuthoringDraft(
-    @Param('talentId', ParseUUIDPipe) talentId: string,
-    @Body() dto: PublicPresenceAuthoringDraftDto,
-    @CurrentUser() user: AuthenticatedUser,
-    @Req() req: Request,
-  ) {
-    return this.publicPresenceAuthoringService.submitDraft(
-      'template',
-      talentId,
-      this.buildContext(user, req),
-      dto,
-    );
-  }
-
-  @Get('authoring/components')
-  @RequirePermissions({ resource: 'public_presence.document', action: 'read' })
-  async listComponentAuthoringDrafts(
-    @Param('talentId', ParseUUIDPipe) talentId: string,
-    @CurrentUser() user: AuthenticatedUser,
-  ) {
-    return this.publicPresenceAuthoringService.listDrafts(
-      'component',
-      talentId,
-      user.tenantSchema,
-    );
-  }
-
-  @Get('authoring/components/current')
-  @RequirePermissions({ resource: 'public_presence.document', action: 'read' })
-  async getCurrentComponentAuthoringDraft(
-    @Param('talentId', ParseUUIDPipe) talentId: string,
-    @CurrentUser() user: AuthenticatedUser,
-    @Query('subjectKey') subjectKey?: string,
-  ) {
-    return this.publicPresenceAuthoringService.getCurrentDraft(
-      'component',
-      talentId,
-      user.tenantSchema,
-      subjectKey,
-    );
-  }
-
-  @Put('authoring/components/current')
-  @RequirePermissions({ resource: 'public_presence.document', action: 'write' })
-  async saveCurrentComponentAuthoringDraft(
-    @Param('talentId', ParseUUIDPipe) talentId: string,
-    @Body() dto: PublicPresenceAuthoringDraftDto,
-    @CurrentUser() user: AuthenticatedUser,
-    @Req() req: Request,
-  ) {
-    return this.publicPresenceAuthoringService.saveDraft(
-      'component',
-      talentId,
-      this.buildContext(user, req),
-      dto,
-    );
-  }
-
-  @Post('authoring/components/current/validate')
-  @RequirePermissions({ resource: 'public_presence.document', action: 'write' })
-  async validateCurrentComponentAuthoringDraft(
-    @Param('talentId', ParseUUIDPipe) talentId: string,
-    @Body() dto: PublicPresenceAuthoringDraftDto,
-    @CurrentUser() user: AuthenticatedUser,
-    @Req() req: Request,
-  ) {
-    return this.publicPresenceAuthoringService.validateDraft(
-      'component',
-      talentId,
-      this.buildContext(user, req),
-      dto,
-    );
-  }
-
-  @Post('authoring/components/current/submit')
-  @RequirePermissions({ resource: 'public_presence.document', action: 'write' })
-  async submitCurrentComponentAuthoringDraft(
-    @Param('talentId', ParseUUIDPipe) talentId: string,
-    @Body() dto: PublicPresenceAuthoringDraftDto,
-    @CurrentUser() user: AuthenticatedUser,
-    @Req() req: Request,
-  ) {
-    return this.publicPresenceAuthoringService.submitDraft(
-      'component',
-      talentId,
-      this.buildContext(user, req),
-      dto,
     );
   }
 

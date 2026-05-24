@@ -11,6 +11,7 @@ import {
   calculatePublicPresenceContentHash,
   derivePublicPresenceValidationState,
 } from './public-presence-foundation.policy';
+import { buildPublicPresenceSeedRuntimeAuthorityForTests } from '../testing/public-presence-seed-runtime-authority';
 
 const safeDocument: PublicPresenceDocument = {
   schemaVersion: '1.0',
@@ -58,6 +59,9 @@ const safeDocument: PublicPresenceDocument = {
   },
 };
 
+const activeHubRuntimeAuthority =
+  buildPublicPresenceSeedRuntimeAuthorityForTests('activeTalentHub');
+
 describe('public presence foundation policy', () => {
   it('builds a stable canonical hash regardless of object key order', () => {
     const reorderedDocument: PublicPresenceDocument = {
@@ -97,6 +101,7 @@ describe('public presence foundation policy', () => {
   it('derives the persisted validation state from the strongest issue state', () => {
     const safeArtifact = createPublicPresenceValidationArtifact(safeDocument, {
       mode: 'draft',
+      runtimeAuthority: activeHubRuntimeAuthority,
     });
     const unsafeArtifact = createPublicPresenceValidationArtifact(
       {
@@ -119,7 +124,10 @@ describe('public presence foundation policy', () => {
           },
         ],
       },
-      { mode: 'draft' },
+      {
+        mode: 'draft',
+        runtimeAuthority: activeHubRuntimeAuthority,
+      },
     );
 
     expect(derivePublicPresenceValidationState(safeArtifact.snapshot)).toBe(

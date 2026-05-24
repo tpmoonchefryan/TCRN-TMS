@@ -7,12 +7,9 @@ import {
   PublicPresenceValidationSnapshotSchema,
 } from '../schemas/public-presence';
 import {
-  PUBLIC_PRESENCE_COMPONENT_DEFINITIONS,
-  PUBLIC_PRESENCE_REGISTRY_METADATA,
   PUBLIC_PRESENCE_SAFETY_POLICY,
-  PUBLIC_PRESENCE_STAGE_SECTION_DEFINITIONS,
-  PUBLIC_PRESENCE_TEMPLATE_DEFINITIONS,
 } from './registry';
+import type { PublicPresenceAssetRuntimeAuthority } from './assets';
 import type {
   PublicPresenceComponentNode,
   PublicPresenceDocument,
@@ -58,9 +55,11 @@ export interface PublicPresenceValidationArtifact {
 
 interface ValidationOptions {
   mode?: PublicPresenceValidationMode;
+  runtimeAuthority?: PublicPresenceAssetRuntimeAuthority | null;
 }
 
 interface ValidationRuntimeState {
+  authority: PublicPresenceAssetRuntimeAuthority;
   issues: PublicPresenceValidationIssue[];
   fallbackDecisions: PublicPresenceFallbackDecision[];
   templateId: PublicPresenceTemplateId;
@@ -155,8 +154,8 @@ function pushIssue(
       componentId: input.componentId,
       fieldKey: input.fieldKey,
     }),
-    registryVersion: PUBLIC_PRESENCE_REGISTRY_METADATA.registryVersion,
-    policyVersion: PUBLIC_PRESENCE_REGISTRY_METADATA.safetyPolicyVersion,
+    registryVersion: runtime.authority.registryVersion,
+    policyVersion: runtime.authority.safetyPolicyVersion,
   });
 }
 
@@ -517,10 +516,7 @@ function validateSectionFields(
   sectionIndex: number,
   runtime: ValidationRuntimeState,
 ) {
-  const definition =
-    PUBLIC_PRESENCE_STAGE_SECTION_DEFINITIONS[
-      section.kind as keyof typeof PUBLIC_PRESENCE_STAGE_SECTION_DEFINITIONS
-    ];
+  const definition = runtime.authority.stageSections[section.kind];
   const fields = section.fields ?? {};
 
   if (!definition) {
@@ -671,9 +667,7 @@ function validateComponent(
   runtime: ValidationRuntimeState,
 ): PublicPresenceNormalizedComponent {
   const definition =
-    PUBLIC_PRESENCE_COMPONENT_DEFINITIONS[
-      component.type as keyof typeof PUBLIC_PRESENCE_COMPONENT_DEFINITIONS
-    ];
+    runtime.authority.components[component.type];
 
   if (!definition) {
     pushIssue(runtime, {
@@ -989,11 +983,8 @@ function validateSection(
   runtime: ValidationRuntimeState,
 ) {
   const definition =
-    PUBLIC_PRESENCE_STAGE_SECTION_DEFINITIONS[
-      section.kind as keyof typeof PUBLIC_PRESENCE_STAGE_SECTION_DEFINITIONS
-    ];
-  const templateDefinition =
-    PUBLIC_PRESENCE_TEMPLATE_DEFINITIONS[runtime.templateId];
+    runtime.authority.stageSections[section.kind];
+  const templateDefinition = runtime.authority.template;
 
   if (!definition) {
     pushIssue(runtime, {
@@ -1052,7 +1043,7 @@ function validateSection(
     const allowedComponentTypes = new Set(definition.allowedComponents);
     components.forEach((component, componentIndex) => {
       if (
-        component.type in PUBLIC_PRESENCE_COMPONENT_DEFINITIONS
+        Boolean(runtime.authority.components[component.type])
         && allowedComponentTypes.size > 0
         && !allowedComponentTypes.has(component.type)
       ) {
@@ -1103,13 +1094,22 @@ export function createPublicPresenceValidationArtifact(
   options: ValidationOptions = {},
 ): PublicPresenceValidationArtifact {
   const document = PublicPresenceDocumentSchema.parse(input);
+  const runtimeAuthority = options.runtimeAuthority;
+
+  if (!runtimeAuthority) {
+    throw new Error(
+      `Public Presence runtime authority is required to validate template '${document.templateId}'. ` +
+        'Use scoped asset source bundles or a stored validation snapshot instead of static registry fallbacks.',
+    );
+  }
+
   const runtime: ValidationRuntimeState = {
+    authority: runtimeAuthority,
     issues: [],
     fallbackDecisions: [],
     templateId: document.templateId,
   };
-  const templateDefinition =
-    PUBLIC_PRESENCE_TEMPLATE_DEFINITIONS[document.templateId];
+  const templateDefinition = runtimeAuthority.template;
 
   for (const requiredSection of templateDefinition.requiredSections) {
     if (!document.sections.some((section) => section.kind === requiredSection)) {
@@ -1168,9 +1168,9 @@ export function createPublicPresenceValidationArtifact(
     validationMode: options.mode ?? DEFAULT_VALIDATION_MODE,
     documentSchemaVersion: document.schemaVersion,
     templateId: document.templateId,
-    templateRegistryVersion: PUBLIC_PRESENCE_REGISTRY_METADATA.registryVersion,
-    componentRegistryVersion: PUBLIC_PRESENCE_REGISTRY_METADATA.registryVersion,
-    safetyPolicyVersion: PUBLIC_PRESENCE_REGISTRY_METADATA.safetyPolicyVersion,
+    templateRegistryVersion: runtimeAuthority.registryVersion,
+    componentRegistryVersion: runtimeAuthority.registryVersion,
+    safetyPolicyVersion: runtimeAuthority.safetyPolicyVersion,
     issueCounts,
     blockerIds: runtime.issues
       .filter((issue) => issue.blocksPublish)

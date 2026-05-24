@@ -5,16 +5,19 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ConfigService } from './config.service';
 import {
   type BaseConfigEntity,
+  type ConfigEntityWithMeta,
   type ConfigEntityType,
 } from './config.types';
 
 vi.mock('@tcrn/database', () => ({
   prisma: {
+    $executeRawUnsafe: vi.fn(),
     $queryRawUnsafe: vi.fn(),
   },
 }));
 
 const mockPrisma = prisma as unknown as {
+  $executeRawUnsafe: ReturnType<typeof vi.fn>;
   $queryRawUnsafe: ReturnType<typeof vi.fn>;
 };
 
@@ -72,6 +75,7 @@ describe('ConfigService LocalizedText contract', () => {
   const testableService = service as unknown as TestableConfigService;
 
   beforeEach(() => {
+    mockPrisma.$executeRawUnsafe.mockReset();
     mockPrisma.$queryRawUnsafe.mockReset();
   });
 
@@ -139,5 +143,43 @@ describe('ConfigService LocalizedText contract', () => {
     expect(decorated.description?.ko).toBe('거래 가능');
     expect(decorated.localizedName).toBe('活躍');
     expect(decorated.localizedDescription).toBe('可以交易');
+  });
+
+  it('rejects non-tenant artist-stage creation attempts', async () => {
+    await expect(service.create(
+      'artist-stage',
+      'tenant_test',
+      {
+        code: 'PRE_DEBUT',
+        name: localized('Pre-Debut'),
+        ownerType: 'subsidiary',
+        ownerId: '550e8400-e29b-41d4-a716-446655440000',
+      },
+      '00000000-0000-0000-0000-000000000001',
+    )).rejects.toThrow('tenant-owned');
+
+    expect(mockPrisma.$queryRawUnsafe).not.toHaveBeenCalled();
+  });
+
+  it('rejects lower-scope disable overrides for artist-stage entities', async () => {
+    vi.spyOn(service, 'findById').mockResolvedValue(
+      createBaseEntity({
+        id: 'artist-stage-1',
+        ownerType: 'tenant',
+        ownerId: null,
+        code: 'PRE_DEBUT',
+      }) as ConfigEntityWithMeta,
+    );
+
+    await expect(service.disableInScope(
+      'artist-stage',
+      'artist-stage-1',
+      'tenant_test',
+      'subsidiary',
+      '550e8400-e29b-41d4-a716-446655440000',
+      '00000000-0000-0000-0000-000000000001',
+    )).rejects.toThrow('tenant-owned');
+
+    expect(mockPrisma.$executeRawUnsafe).not.toHaveBeenCalled();
   });
 });

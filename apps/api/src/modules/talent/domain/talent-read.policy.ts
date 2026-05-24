@@ -13,6 +13,7 @@ export interface TalentData {
   id: string;
   subsidiaryId: string | null;
   profileStoreId: string | null;
+  artistStageId: string;
   code: string;
   path: string;
   name: LocalizedText;
@@ -91,6 +92,7 @@ export const TALENT_SELECT_FIELDS = `
   id,
   subsidiary_id as "subsidiaryId",
   profile_store_id as "profileStoreId",
+  artist_stage_id as "artistStageId",
   code,
   path,
   name,

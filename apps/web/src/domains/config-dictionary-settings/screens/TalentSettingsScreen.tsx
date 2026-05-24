@@ -41,6 +41,7 @@ import {
   listDictionaryTypes,
 } from '@/domains/config-dictionary-settings/api/system-dictionary.api';
 import { DictionaryExplorerPanel } from '@/domains/config-dictionary-settings/components/DictionaryExplorerPanel';
+import { PublicPresenceAssetWorkspace } from '@/domains/config-dictionary-settings/components/PublicPresenceAssetWorkspace';
 import { ScopedConfigEntityWorkspace } from '@/domains/config-dictionary-settings/components/ScopedConfigEntityWorkspace';
 import { SettingsCategoryWorkbench } from '@/domains/config-dictionary-settings/components/SettingsCategoryWorkbench';
 import {
@@ -1864,26 +1865,54 @@ export function TalentSettingsScreen({
         ) : null}
 
         {displayedSectionId === 'config-entities' ? (
-          <GlassSurface className="p-6">
-            <FormSection
-              title={common.configEntities}
-              description={text(
-                'Review and edit configuration records that apply to this talent.',
-                '查看并编辑当前作用于该艺人的配置记录。',
-                'このタレントに適用される設定レコードを確認・編集します。',
-              )}
-            >
-              <ScopedConfigEntityWorkspace
-                request={request}
-                requestEnvelope={requestEnvelope}
-                scopeType="talent"
-                scopeId={talentId}
-                locale={locale}
-                copy={scopedConfigCopy}
-                catalog={localizedConfigEntityCatalog}
-              />
-            </FormSection>
-          </GlassSurface>
+          <div className="space-y-6">
+            <GlassSurface className="p-6">
+              <FormSection
+                title={common.configEntities}
+                description={text(
+                  'Review and edit configuration records that apply to this talent, then manage local homepage assets from the scoped inventory below.',
+                  '查看并编辑当前作用于该艺人的配置记录，再在下方范围清单中管理本地主页资产。',
+                  'このタレントに適用される設定レコードを確認・編集し、その下のスコープ別インベントリでローカルのホームページ資産を管理します。',
+                )}
+              >
+                <ScopedConfigEntityWorkspace
+                  request={request}
+                  requestEnvelope={requestEnvelope}
+                  scopeType="talent"
+                  scopeId={talentId}
+                  locale={locale}
+                  copy={scopedConfigCopy}
+                  catalog={localizedConfigEntityCatalog}
+                />
+              </FormSection>
+            </GlassSurface>
+
+            <GlassSurface className="p-6">
+              <FormSection
+                title={text({
+                  en: 'Homepage Assets',
+                  zh_HANS: '主页资产',
+                  zh_HANT: '主頁資產',
+                  ja: 'ホームページ資産',
+                  ko: '홈페이지 자산',
+                  fr: 'Assets de homepage',
+                })}
+                description={text(
+                  'Inspect inherited homepage assets, duplicate them into this talent when you need a local variation, and reopen the matching asset IDE from the resulting record.',
+                  '查看继承主页资产；当你需要艺人本地版本时，将其复制到当前艺人范围，并从生成的记录重新打开对应 IDE。',
+                  '継承されたホームページ資産を確認し、このタレント向けのローカル差分が必要なときは複製して、生成されたレコードから対応する IDE を開き直します。',
+                )}
+              >
+                <PublicPresenceAssetWorkspace
+                  locale={locale}
+                  request={request}
+                  scopeId={talentId}
+                  scopeType="talent"
+                  tenantId={tenantId}
+                />
+              </FormSection>
+            </GlassSurface>
+          </div>
         ) : null}
 
         {displayedSectionId === 'settings' ? (

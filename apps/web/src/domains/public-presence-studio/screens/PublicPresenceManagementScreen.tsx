@@ -31,7 +31,6 @@ import {
   getPublicPresenceTemplateUseCase,
   getPublicPresenceWorkflowEventLabel,
 } from '@/domains/public-presence-studio/screens/public-presence-studio.copy';
-import { HomepageSurfaceMenu } from '@/domains/public-presence-studio/screens/public-presence-studio.catalog';
 import {
   PublicPresenceBadge,
   PublicPresenceShell,
@@ -41,7 +40,6 @@ import {
 import { ApiRequestError } from '@/platform/http/api';
 import {
   buildPublicPresenceStudioEditorPath,
-  buildPublicPresenceHomepageSurfacePath,
   buildPublicPresenceStudioPreviewPath,
   buildTalentSettingsPath,
 } from '@/platform/routing/workspace-paths';
@@ -55,6 +53,7 @@ interface NoticeState {
   tone: 'error' | 'info';
 }
 
+type LegacyHomepageSurface = 'components' | 'templates';
 type BadgeTone = 'error' | 'info' | 'success' | 'warning' | 'slate';
 
 function getErrorMessage(reason: unknown, fallback: string) {
@@ -114,6 +113,31 @@ function getLatestWorkflowEvent(
   return workspace.workflowEvents
     .filter((event) => (event.versionId ? relatedIds.has(event.versionId) : false))
     .sort((left, right) => right.occurredAt.localeCompare(left.occurredAt))[0] ?? null;
+}
+
+function getLegacySurfaceFallbackHeading(
+  locale: string,
+  surface: LegacyHomepageSurface,
+) {
+  if (surface === 'templates') {
+    return pickLocaleText(locale, {
+      en: 'Template Center now opens through asset management and focused IDE flows.',
+      zh_HANS: '模板中心现已并入资产管理与聚焦 IDE 流程。',
+      zh_HANT: '模板中心現已併入資產管理與聚焦 IDE 流程。',
+      ja: 'Template Center はアセット管理と集中 IDE フローへ統合されました。',
+      ko: 'Template Center 는 자산 관리와 집중형 IDE 흐름으로 통합되었습니다.',
+      fr: 'Le centre de templates passe désormais par la gestion d’assets et les flux IDE ciblés.',
+    });
+  }
+
+  return pickLocaleText(locale, {
+    en: 'Component Store now opens through asset management and focused IDE flows.',
+    zh_HANS: '组件中心现已并入资产管理与聚焦 IDE 流程。',
+    zh_HANT: '元件中心現已併入資產管理與聚焦 IDE 流程。',
+    ja: 'Component Store はアセット管理と集中 IDE フローへ統合されました。',
+    ko: 'Component Store 는 자산 관리와 집중형 IDE 흐름으로 통합되었습니다.',
+    fr: 'Le store de composants passe désormais par la gestion d’assets et les flux IDE ciblés.',
+  });
 }
 
 function ManagementActionLink({
@@ -240,9 +264,11 @@ function VersionStatusBadges({
 }
 
 export function PublicPresenceManagementScreen({
+  surface,
   talentId,
   tenantId,
 }: Readonly<{
+  surface?: string;
   talentId: string;
   tenantId: string;
 }>) {
@@ -251,6 +277,9 @@ export function PublicPresenceManagementScreen({
   const [workspace, setWorkspace] = useState<PublicPresenceStudioWorkspaceResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState<NoticeState | null>(null);
+  const requestedLegacySurface: LegacyHomepageSurface | null = surface === 'templates' || surface === 'components'
+    ? surface
+    : null;
 
   useEffect(() => {
     let cancelled = false;
@@ -656,7 +685,41 @@ export function PublicPresenceManagementScreen({
           </div>
         ) : null}
 
-        <HomepageSurfaceMenu activeSurface="management" talentId={talentId} tenantId={tenantId} />
+        {requestedLegacySurface ? (
+          <PublicPresenceSurface
+            className="border-sky-200 bg-sky-50 text-sky-900"
+            data-testid="homepage-surface-fallback-notice"
+            variant="inset"
+          >
+            <div className="flex flex-wrap items-start gap-3">
+              <PublicPresenceBadge tone="info" variant="outline">
+                {pickLocaleText(locale, {
+                  en: 'Homepage workbench',
+                  zh_HANS: '主页工作面',
+                  zh_HANT: '主頁工作面',
+                  ja: 'ホームページ作業面',
+                  ko: '홈페이지 워크벤치',
+                  fr: 'Atelier homepage',
+                })}
+              </PublicPresenceBadge>
+              <div className="min-w-0 flex-1 space-y-1">
+                <p className="text-sm font-semibold">
+                  {getLegacySurfaceFallbackHeading(locale, requestedLegacySurface)}
+                </p>
+                <p className="text-sm leading-6 text-sky-900/90">
+                  {pickLocaleText(locale, {
+                    en: 'Template and component catalogs are no longer first-step homepage tabs. Continue from this management workspace, then open the asset inventory or full-screen IDE only when the task calls for it.',
+                    zh_HANS: '模板中心和组件中心不再作为主页的一线标签。请从这个管理工作面继续，需要时再进入资产清单或全屏 IDE。',
+                    zh_HANT: '模板中心和元件中心不再作為主頁的一線標籤。請從這個管理工作面繼續，需要時再進入資產清單或全螢幕 IDE。',
+                    ja: 'テンプレートセンターとコンポーネントストアは、ホームページの第一タブではなくなりました。この管理ワークベンチから続行し、必要な時だけアセット一覧や全画面 IDE を開いてください。',
+                    ko: '템플릿 센터와 컴포넌트 스토어는 더 이상 홈페이지의 1차 탭이 아닙니다. 이 관리 워크벤치에서 계속 진행하고, 필요할 때만 자산 목록이나 전체 화면 IDE를 여세요.',
+                    fr: 'Le centre de templates et le store de composants ne sont plus des onglets de premier niveau. Continuez depuis cet espace de gestion, puis ouvrez l’inventaire des assets ou l’IDE plein écran seulement si nécessaire.',
+                  })}
+                </p>
+              </div>
+            </div>
+          </PublicPresenceSurface>
+        ) : null}
 
         <PublicPresenceSurface
           className="space-y-2"
@@ -1393,22 +1456,18 @@ export function PublicPresenceManagementScreen({
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
                     <ManagementActionLink
-                      href={buildPublicPresenceHomepageSurfacePath(
-                        tenantId,
-                        talentId,
-                        'templates',
-                      )}
+                      href={buildTalentSettingsPath(tenantId, talentId, {
+                        section: 'config-entities',
+                      })}
                       icon={<LayoutTemplate className="h-4 w-4" aria-hidden="true" />}
-                      label={getHomepageSurfaceLabel(locale, 'templates')}
-                    />
-                    <ManagementActionLink
-                      href={buildPublicPresenceHomepageSurfacePath(
-                        tenantId,
-                        talentId,
-                        'components',
-                      )}
-                      icon={<Sparkles className="h-4 w-4" aria-hidden="true" />}
-                      label={getHomepageSurfaceLabel(locale, 'components')}
+                      label={pickLocaleText(locale, {
+                        en: 'Manage homepage assets',
+                        zh_HANS: '管理主页资产',
+                        zh_HANT: '管理主頁資產',
+                        ja: 'ホームページ資産を管理',
+                        ko: '홈페이지 자산 관리',
+                        fr: 'Gérer les assets de homepage',
+                      })}
                     />
                     {pageVersion.templateId === 'debutReveal' ? (
                       <ManagementActionLink

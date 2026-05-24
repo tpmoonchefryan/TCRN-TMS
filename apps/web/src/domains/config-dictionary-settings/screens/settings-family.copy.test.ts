@@ -8,10 +8,15 @@ describe('settings family copy', () => {
     const frenchCatalog = getLocalizedConfigEntityCatalog('fr');
 
     expect(koreanCatalog['profile-store'].label).toBe('프로필 저장소');
+    expect(koreanCatalog['artist-stage'].label).toBe('아티스트 단계');
     expect(koreanCatalog['customer-status'].label).toBe('고객 상태');
     expect(koreanCatalog['customer-status'].fields.find((field) => field.key === 'color')?.label).toBe('배지 색상');
+    expect(koreanCatalog['artist-stage'].fields.find((field) => field.key === 'lifecycleStatusMapping')?.label).toBe(
+      '수명주기 매핑',
+    );
 
     expect(frenchCatalog['profile-store'].label).toBe('Archive client');
+    expect(frenchCatalog['artist-stage'].label).toBe('Etape artiste');
     expect(frenchCatalog['membership-type'].label).toBe('Type d adhesion');
     expect(frenchCatalog['membership-type'].fields.find((field) => field.key === 'externalControl')?.label).toBe(
       'Controle externe',

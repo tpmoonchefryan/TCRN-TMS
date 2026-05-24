@@ -2,6 +2,7 @@ import type { ScopedConfigEntityType } from '@/domains/config-dictionary-setting
 
 export type ConfigEntityFieldKind =
   | 'text'
+  | 'select'
   | 'textarea'
   | 'number'
   | 'boolean'
@@ -17,6 +18,10 @@ export interface ConfigEntityFieldDefinition {
   required?: boolean;
   placeholder?: string;
   description?: string;
+  options?: Array<{
+    label: string;
+    value: string;
+  }>;
 }
 
 export interface ConfigEntityCatalogEntry {
@@ -33,6 +38,7 @@ export const CONFIG_ENTITY_ORDER: ScopedConfigEntityType[] = [
   'customer-status',
   'address-type',
   'channel-category',
+  'artist-stage',
   'communication-type',
   'reason-category',
   'inactivation-reason',
@@ -75,6 +81,37 @@ export const CONFIG_ENTITY_CATALOG: Record<ScopedConfigEntityType, ConfigEntityC
     label: 'Channel Category',
     description: 'Top-level channel groups for communication methods.',
     fields: [],
+  },
+  'artist-stage': {
+    type: 'artist-stage',
+    label: 'Artist Stage',
+    description: 'Tenant-owned artist stages used by talent creation and lifecycle flow routing.',
+    fields: [
+      {
+        key: 'color',
+        label: 'Badge color',
+        kind: 'color',
+        placeholder: '#4f46e5',
+      },
+      {
+        key: 'lifecycleStatusMapping',
+        label: 'Lifecycle mapping',
+        kind: 'select',
+        required: true,
+        options: [
+          { label: 'Draft', value: 'draft' },
+          { label: 'Published', value: 'published' },
+          { label: 'Disabled', value: 'disabled' },
+        ],
+      },
+      {
+        key: 'homepagePolicyKey',
+        label: 'Homepage policy key',
+        kind: 'text',
+        placeholder: 'active-talent-hub',
+        description: 'Reference key used by tenant lifecycle policy to decide homepage availability.',
+      },
+    ],
   },
   'communication-type': {
     type: 'communication-type',

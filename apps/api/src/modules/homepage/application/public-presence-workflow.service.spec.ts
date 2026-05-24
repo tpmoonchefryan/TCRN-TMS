@@ -1,4 +1,14 @@
-import type { PublicPresenceDocument, RequestContext } from '@tcrn/shared';
+import {
+  buildBlankPublicPresenceAssetSourceBundle,
+  buildPublicPresenceComponentAssetManifest,
+  buildPublicPresenceTemplateAssetManifest,
+  getPublicPresenceComponentSeedText,
+  getPublicPresenceTemplateSeedText,
+  type PublicPresenceAssetListEntry,
+  type PublicPresenceAssetRevisionPin,
+  type PublicPresenceDocument,
+  type RequestContext,
+} from '@tcrn/shared';
 import { describe, expect, it, vi } from 'vitest';
 
 import type {
@@ -9,6 +19,8 @@ import { HomepageAdminRepository } from '../infrastructure/homepage-admin.reposi
 import { PublicPresenceFoundationRepository } from '../infrastructure/public-presence-foundation.repository';
 import { CdnPurgeService } from '../services/cdn-purge.service';
 import { TalentService } from '../../talent/talent.service';
+import { PublicPresenceAssetService } from './public-presence-asset.service';
+import { PublicPresenceStudioService } from './public-presence-studio.service';
 import { PublicPresenceWorkflowService } from './public-presence-workflow.service';
 
 const activeHubDocument: PublicPresenceDocument = {
@@ -110,6 +122,22 @@ const debutRevealDocument: PublicPresenceDocument = {
   ],
 };
 
+const TALENT_OWNER_ID = '66666666-6666-4666-8666-666666666661';
+const TEMPLATE_FIXTURES = {
+  activeTalentHub: {
+    assetId: '66666666-6666-4666-8666-666666666662',
+    revisionId: '66666666-6666-4666-8666-666666666663',
+  },
+  debutReveal: {
+    assetId: '66666666-6666-4666-8666-666666666664',
+    revisionId: '66666666-6666-4666-8666-666666666665',
+  },
+} as const;
+const SOCIAL_LINKS_FIXTURE = {
+  assetId: '66666666-6666-4666-8666-666666666666',
+  revisionId: '66666666-6666-4666-8666-666666666667',
+} as const;
+
 function createPortalRecord(): PublicPresencePortalRecord {
   return {
     createdAt: new Date('2026-05-15T12:00:00.000Z'),
@@ -129,12 +157,43 @@ function createVersionRecord(
   state: string = 'draft',
   templateId: 'activeTalentHub' | 'debutReveal' = 'activeTalentHub',
 ): PublicPresenceDocumentVersionRecord {
+  const templateText = getPublicPresenceTemplateSeedText(templateId);
+  const templateManifest = buildPublicPresenceTemplateAssetManifest(templateId, {
+    assetCode: `${templateId}-code`,
+    assetId: TEMPLATE_FIXTURES[templateId].assetId,
+    assetRevisionId: TEMPLATE_FIXTURES[templateId].revisionId,
+    description: templateText.description,
+    name: templateText.name,
+    ownerId: TALENT_OWNER_ID,
+    ownerType: 'talent',
+  });
+  const templateAssetPin = {
+    assetId: TEMPLATE_FIXTURES[templateId].assetId,
+    assetRevisionId: TEMPLATE_FIXTURES[templateId].revisionId,
+    snapshot: {
+      assetId: TEMPLATE_FIXTURES[templateId].assetId,
+      assetRevisionId: TEMPLATE_FIXTURES[templateId].revisionId,
+      manifest: templateManifest,
+      revisionNumber: 1,
+      sourceBundle: buildBlankPublicPresenceAssetSourceBundle({
+        assetCode: `${templateId}-code`,
+        assetKind: 'template',
+        manifest: templateManifest,
+        name: templateText.name,
+        templateId,
+      }),
+      sourceHash: 'a'.repeat(64),
+    },
+    sourceHash: 'a'.repeat(64),
+  } satisfies PublicPresenceAssetRevisionPin;
+
   return {
     id: templateId === 'debutReveal' ? 'debut-version-1' : 'draft-version-1',
     portalId: 'portal-1',
     versionNumber: 1,
     documentSchemaVersion: '1.0',
     templateId,
+    templateAssetPin,
     document: (
       templateId === 'debutReveal' ? debutRevealDocument : activeHubDocument
     ) as unknown as Record<string, unknown>,
@@ -148,6 +207,73 @@ function createVersionRecord(
     createdAt: new Date('2026-05-15T12:00:00.000Z'),
     updatedAt: new Date('2026-05-15T12:05:00.000Z'),
     createdBy: 'user-1',
+  };
+}
+
+function createComponentAssetEntry(
+  componentType: 'SocialLinks',
+): PublicPresenceAssetListEntry {
+  const text = getPublicPresenceComponentSeedText(componentType);
+  const manifest = buildPublicPresenceComponentAssetManifest(componentType, {
+    assetCode: `${componentType.toLowerCase()}-code`,
+    assetId: SOCIAL_LINKS_FIXTURE.assetId,
+    assetRevisionId: SOCIAL_LINKS_FIXTURE.revisionId,
+    description: text.description,
+    name: text.name,
+    ownerId: TALENT_OWNER_ID,
+    ownerType: 'talent',
+  });
+
+  return {
+    asset: {
+      assetKind: 'component',
+      code: `${componentType.toLowerCase()}-code`,
+      componentType,
+      createdAt: '2026-05-15T12:00:00.000Z',
+      currentRevisionId: SOCIAL_LINKS_FIXTURE.revisionId,
+      description: text.description,
+      id: SOCIAL_LINKS_FIXTURE.assetId,
+      isSystem: false,
+      name: text.name,
+      ownerId: TALENT_OWNER_ID,
+      ownerType: 'talent',
+      status: 'active',
+      templateId: null,
+      updatedAt: '2026-05-15T12:05:00.000Z',
+      version: 1,
+    },
+    canEdit: true,
+    currentRevision: {
+      artifactStatus: 'active',
+      assetId: SOCIAL_LINKS_FIXTURE.assetId,
+      createdAt: '2026-05-15T12:00:00.000Z',
+      createdBy: 'user-1',
+      id: SOCIAL_LINKS_FIXTURE.revisionId,
+      lastValidatedAt: '2026-05-15T12:05:00.000Z',
+      manifest,
+      revisionNumber: 1,
+      runtimeContractVersion: '1.0.0',
+      sourceBundle: buildBlankPublicPresenceAssetSourceBundle({
+        assetCode: `${componentType.toLowerCase()}-code`,
+        assetKind: 'component',
+        componentType,
+        manifest,
+        name: text.name,
+      }),
+      sourceHash: 'a'.repeat(64),
+      submittedAt: '2026-05-15T12:05:00.000Z',
+      validationState: 'ready',
+      validationSummary: {
+        issueCount: 0,
+        passCount: 1,
+        warnCount: 0,
+      },
+    },
+    isInherited: false,
+    scope: {
+      scopeId: 'talent-1',
+      scopeType: 'talent',
+    },
   };
 }
 
@@ -187,6 +313,39 @@ describe('PublicPresenceWorkflowService', () => {
       findDueScheduledVersions: vi.fn().mockResolvedValue([]),
     } as unknown as PublicPresenceFoundationRepository;
 
+    const publicPresenceStudioService = {
+      getWorkspace: vi.fn().mockImplementation(
+        async (
+          _talentId: string,
+          _tenantSchema: string,
+          templateId: string | null | undefined,
+        ) => ({
+          homepagePolicy: {
+            allowedTemplateIds: ['activeTalentHub', 'debutReveal'],
+            blockedReasons: [],
+            status: 'ready',
+          },
+          templateAssets: [
+            {
+              assetId: TEMPLATE_FIXTURES.activeTalentHub.assetId,
+              isSelectable: true,
+              templateId: 'activeTalentHub',
+            },
+            {
+              assetId: TEMPLATE_FIXTURES.debutReveal.assetId,
+              isSelectable: true,
+              templateId: 'debutReveal',
+            },
+          ],
+          selectedTemplateId: templateId ?? 'activeTalentHub',
+        }),
+      ),
+    } as unknown as PublicPresenceStudioService;
+
+    const publicPresenceAssetService = {
+      listAssets: vi.fn().mockResolvedValue([createComponentAssetEntry('SocialLinks')]),
+    } as unknown as PublicPresenceAssetService;
+
     const cdnPurgeService = {
       purgeHomepage: vi.fn().mockResolvedValue(undefined),
     } as unknown as CdnPurgeService;
@@ -204,11 +363,15 @@ describe('PublicPresenceWorkflowService', () => {
       service: new PublicPresenceWorkflowService(
         homepageAdminRepository,
         publicPresenceFoundationRepository,
+        publicPresenceStudioService,
+        publicPresenceAssetService,
         cdnPurgeService,
         talentService,
       ),
       homepageAdminRepository,
       publicPresenceFoundationRepository,
+      publicPresenceStudioService,
+      publicPresenceAssetService,
       cdnPurgeService,
       talentService,
     };
