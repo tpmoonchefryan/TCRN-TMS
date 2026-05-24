@@ -41,9 +41,10 @@
   "devDependencies": {
     "@tcrn/eslint-config": "workspace:*",
     "@types/node": "22.15.27",
-    "eslint": "9.35.0",
-    "tsup": "8.5.0",
+    "eslint": "9.39.4",
+    "tsup": "8.5.1",
     "typescript": "5.9.3",
+    "vite": "7.3.3",
     "vitest": "4.1.7",
     "vitest-mock-extended": "3.1.0"
   },
