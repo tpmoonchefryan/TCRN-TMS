@@ -1,22 +1,19 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 import { UnauthorizedException } from '@nestjs/common';
-import { authenticator } from 'otplib';
+import { generateSecret, generateURI, verifySync } from 'otplib';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { TotpService } from '../totp.service';
 
 // Mock external dependencies
 vi.mock('otplib', () => ({
-  authenticator: {
-    options: {},
-    generateSecret: vi.fn().mockReturnValue('JBSWY3DPEHPK3PXP'),
-    keyuri: vi
-      .fn()
-      .mockReturnValue(
-        'otpauth://totp/TCRN%20TMS:test@example.com?secret=JBSWY3DPEHPK3PXP&issuer=TCRN%20TMS'
-      ),
-    verify: vi.fn().mockReturnValue(true),
-  },
+  generateSecret: vi.fn().mockReturnValue('JBSWY3DPEHPK3PXP'),
+  generateURI: vi
+    .fn()
+    .mockReturnValue(
+      'otpauth://totp/TCRN%20TMS:test@example.com?secret=JBSWY3DPEHPK3PXP&issuer=TCRN%20TMS'
+    ),
+  verifySync: vi.fn().mockReturnValue({ valid: true }),
 }));
 
 vi.mock('qrcode', () => ({
@@ -40,7 +37,7 @@ describe('TotpService', () => {
       const secret = service.generateSecret();
 
       expect(secret).toBe('JBSWY3DPEHPK3PXP');
-      expect(authenticator.generateSecret).toHaveBeenCalledWith(20);
+      expect(generateSecret).toHaveBeenCalledWith({ length: 20 });
     });
   });
 
@@ -58,11 +55,13 @@ describe('TotpService', () => {
     it('should use provided secret if given', async () => {
       const _result = await service.generateSetupInfo('test@example.com', 'CUSTOM_SECRET');
 
-      expect(authenticator.keyuri).toHaveBeenCalledWith(
-        'test@example.com',
-        'TCRN TMS',
-        'CUSTOM_SECRET'
-      );
+      expect(generateURI).toHaveBeenCalledWith({
+        strategy: 'totp',
+        issuer: 'TCRN TMS',
+        label: 'test@example.com',
+        secret: 'CUSTOM_SECRET',
+        period: 30,
+      });
     });
   });
 
@@ -71,11 +70,17 @@ describe('TotpService', () => {
       const result = service.verify('123456', 'secret');
 
       expect(result).toBe(true);
-      expect(authenticator.verify).toHaveBeenCalledWith({ token: '123456', secret: 'secret' });
+      expect(verifySync).toHaveBeenCalledWith({
+        strategy: 'totp',
+        token: '123456',
+        secret: 'secret',
+        period: 30,
+        epochTolerance: 1,
+      });
     });
 
     it('should return false for invalid code', () => {
-      (authenticator.verify as ReturnType<typeof vi.fn>).mockReturnValue(false);
+      vi.mocked(verifySync).mockReturnValue({ valid: false } as ReturnType<typeof verifySync>);
 
       const result = service.verify('000000', 'secret');
 
@@ -83,7 +88,7 @@ describe('TotpService', () => {
     });
 
     it('should return false when verification throws', () => {
-      (authenticator.verify as ReturnType<typeof vi.fn>).mockImplementation(() => {
+      vi.mocked(verifySync).mockImplementation(() => {
         throw new Error('Invalid');
       });
 

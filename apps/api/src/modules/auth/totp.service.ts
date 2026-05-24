@@ -2,7 +2,11 @@
 import { createHash, randomBytes } from 'crypto';
 
 import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { authenticator } from 'otplib';
+import {
+  generateSecret as generateOtpSecret,
+  generateURI,
+  verifySync as verifyOtpSync,
+} from 'otplib';
 import * as QRCode from 'qrcode';
 
 import { ErrorCodes } from '@tcrn/shared';
@@ -26,20 +30,13 @@ export interface TotpSetupInfo {
 export class TotpService {
   private readonly issuer = 'TCRN TMS';
   private readonly window = 1; // Allow 1 window before/after for clock drift
-
-  constructor() {
-    // Configure authenticator
-    authenticator.options = {
-      window: this.window,
-      step: 30, // 30 second time step
-    };
-  }
+  private readonly step = 30; // 30 second time step
 
   /**
    * Generate a new TOTP secret
    */
   generateSecret(): string {
-    return authenticator.generateSecret(20); // 160 bits
+    return generateOtpSecret({ length: 20 }); // 160 bits
   }
 
   /**
@@ -47,7 +44,13 @@ export class TotpService {
    */
   async generateSetupInfo(email: string, secret?: string): Promise<TotpSetupInfo> {
     const totpSecret = secret || this.generateSecret();
-    const otpauthUrl = authenticator.keyuri(email, this.issuer, totpSecret);
+    const otpauthUrl = generateURI({
+      strategy: 'totp',
+      issuer: this.issuer,
+      label: email,
+      secret: totpSecret,
+      period: this.step,
+    });
 
     // Generate QR code as data URL
     const qrCode = await QRCode.toDataURL(otpauthUrl, {
@@ -73,7 +76,15 @@ export class TotpService {
    */
   verify(code: string, secret: string): boolean {
     try {
-      return authenticator.verify({ token: code, secret });
+      const result = verifyOtpSync({
+        strategy: 'totp',
+        token: code,
+        secret,
+        period: this.step,
+        epochTolerance: this.window,
+      });
+
+      return result.valid;
     } catch {
       return false;
     }
