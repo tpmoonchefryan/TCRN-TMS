@@ -24,3 +24,7 @@ retired-browser-tests/
 
 # Prisma migrations
 packages/database/prisma/migrations
+
+# High-risk database operations are outside this proof-repair thread.
+packages/database/prisma/seeds
+packages/database/scripts
