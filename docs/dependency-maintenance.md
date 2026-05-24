@@ -12,6 +12,9 @@ This project treats dependency maintenance as a staged safety workflow, not a bu
 ## Registry And Commands
 
 - Use the configured package registry for normal installs.
+- The runtime baseline is Node.js 24 LTS and pnpm 11.3.x. Keep root `package.json`, GitHub Actions `setup-node`, pnpm action versions, and runtime Dockerfiles aligned when this baseline changes.
+- pnpm build-script approvals live in `pnpm-workspace.yaml` under `allowBuilds`. Add new approvals only after reviewing the package and keep telemetry-only scripts denied.
+- If pnpm supply-chain policy rejects a very recent release during install, prefer a cooled latest-compatible version or record a hold instead of disabling the policy for normal verification.
 - For audit evidence, use npmjs explicitly:
   - `pnpm audit --registry=https://registry.npmjs.org --prod --json`
   - `pnpm audit --registry=https://registry.npmjs.org --json`

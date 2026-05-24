@@ -2,12 +2,12 @@
 # TCRN TMS Worker Application Dockerfile
 
 # Build stage
-FROM node:20-alpine AS builder
+FROM node:24-alpine AS builder
 
 WORKDIR /app
 
 # Install pnpm (using npm for reliability, corepack can fail with HTTP 503)
-RUN npm install -g pnpm@9.15.4
+RUN npm install -g pnpm@11.3.0
 
 # Copy workspace configuration
 COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
@@ -50,7 +50,7 @@ RUN pnpm --filter @tcrn/shared build && \
     pnpm --filter @tcrn/worker build
 
 # Production stage
-FROM node:20-alpine AS runner
+FROM node:24-alpine AS runner
 
 WORKDIR /app
 
