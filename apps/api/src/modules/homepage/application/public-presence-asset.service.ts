@@ -14,6 +14,7 @@ import {
   getPublicPresenceSystemAssetSeeds,
   getPublicPresenceTemplateSeedText,
   buildPublicPresenceTemplateAssetManifest,
+  resolvePublicPresenceTemplateTypeCode,
   type HomepageComponentType,
   type LocalizedText,
   type PublicPresenceAssetDetail,
@@ -26,6 +27,7 @@ import {
   type PublicPresenceAssetValidationSummary,
   type PublicPresenceSourceBundleFile,
   type PublicPresenceTemplateId,
+  type PublicPresenceTemplateTypeCode,
   type RequestContext,
 } from '@tcrn/shared';
 
@@ -70,6 +72,7 @@ interface CreateAssetInput {
   scopeType?: PublicPresenceAssetScopeType;
   sourceBundle?: unknown;
   templateId?: PublicPresenceTemplateId | null;
+  templateTypeCode?: PublicPresenceTemplateTypeCode | null;
 }
 
 interface SaveAssetRevisionInput {
@@ -231,6 +234,8 @@ export class PublicPresenceAssetService {
         sourceHash,
         status: 'draft',
         templateId: hydratedManifest.assetKind === 'template' ? hydratedManifest.templateId : null,
+        templateTypeCode:
+          hydratedManifest.assetKind === 'template' ? hydratedManifest.templateTypeCode : null,
         validationState: draftSummary.validationState,
         validationSummary: draftSummary.validationSummary,
       }
@@ -328,6 +333,7 @@ export class PublicPresenceAssetService {
         }),
         status: 'draft',
         templateId: sourceAsset.templateId,
+        templateTypeCode: sourceAsset.templateTypeCode,
         validationState: validation.validationState,
         validationSummary: validation.validationSummary,
       }
@@ -446,6 +452,9 @@ export class PublicPresenceAssetService {
         ownerId: null,
         ownerType: 'system',
         templateId: seed.templateId ?? null,
+        templateTypeCode: seed.templateId
+          ? resolvePublicPresenceTemplateTypeCode(seed.templateId)
+          : null,
       });
     }
   }
@@ -582,6 +591,18 @@ export class PublicPresenceAssetService {
         throw new BadRequestException({
           code: ErrorCodes.VALIDATION_FAILED,
           message: 'Template asset manifest templateId does not match the requested templateId.',
+        });
+      }
+
+      if (
+        input.templateTypeCode &&
+        manifest.assetKind === 'template' &&
+        manifest.templateTypeCode !== input.templateTypeCode
+      ) {
+        throw new BadRequestException({
+          code: ErrorCodes.VALIDATION_FAILED,
+          message:
+            'Template asset manifest templateTypeCode does not match the requested templateTypeCode.',
         });
       }
 
@@ -819,6 +840,7 @@ export class PublicPresenceAssetService {
       ownerType: asset.ownerType,
       status: asset.status,
       templateId: asset.templateId as PublicPresenceTemplateId | null,
+      templateTypeCode: asset.templateTypeCode as PublicPresenceTemplateTypeCode | null,
       updatedAt: asset.updatedAt.toISOString(),
       version: asset.version,
     };

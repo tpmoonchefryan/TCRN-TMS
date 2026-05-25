@@ -1988,10 +1988,10 @@ export function OrganizationStructureScreen({
                     const artistStageName =
                       pickFirstNonEmptyString([artistStage.localizedName, artistStage.code]) ??
                       artistStage.code;
-                    const lifecycleLabel = getOrganizationLifecycleLabel(
-                      artistStage.lifecycleStatusMapping ?? 'draft',
-                      locale
-                    );
+		    const lifecycleLabel = getOrganizationLifecycleLabel(
+		      artistStage.artistStatusCode ?? 'draft',
+		      locale
+		    );
 
                     return (
                       <option key={artistStage.id} value={artistStage.id}>

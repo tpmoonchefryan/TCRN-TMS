@@ -132,15 +132,45 @@ const DICTIONARY_TYPES: DictionaryType[] = [
     ko: 'Job Statuses',
     fr: 'Job Statuses',
   }), sortOrder: 10 },
-  { code: 'log_severities', name: createLocalizedText({
-    en: 'Log Severities',
-    zh_HANS: '日志级别',
-    zh_HANT: '日志级别',
-    ja: 'ログ重要度',
-    ko: 'Log Severities',
-    fr: 'Log Severities',
-  }), sortOrder: 11 },
-];
+	  { code: 'log_severities', name: createLocalizedText({
+	    en: 'Log Severities',
+	    zh_HANS: '日志级别',
+	    zh_HANT: '日志级别',
+	    ja: 'ログ重要度',
+	    ko: 'Log Severities',
+	    fr: 'Log Severities',
+	  }), sortOrder: 11 },
+	  { code: 'artist-status', name: createLocalizedText({
+	    en: 'Artist Status',
+	    zh_HANS: '艺人状态',
+	    zh_HANT: '藝人狀態',
+	    ja: 'アーティストステータス',
+	    ko: 'Artist Status',
+	    fr: 'Artist Status',
+	  }), description: createLocalizedText({
+	    en: 'System status dictionary referenced by Artist Stage.',
+	    zh_HANS: 'Artist Stage 引用的系统状态字典。',
+	    zh_HANT: 'Artist Stage 引用的系統狀態字典。',
+	    ja: 'Artist Stage が参照するシステムステータス辞書です。',
+	    ko: 'System status dictionary referenced by Artist Stage.',
+	    fr: 'System status dictionary referenced by Artist Stage.',
+	  }), sortOrder: 120 },
+	  { code: 'homepage-template-type', name: createLocalizedText({
+	    en: 'Homepage Template Type',
+	    zh_HANS: '主页模板类型',
+	    zh_HANT: '主頁模板類型',
+	    ja: 'ホームページテンプレートタイプ',
+	    ko: 'Homepage Template Type',
+	    fr: 'Homepage Template Type',
+	  }), description: createLocalizedText({
+	    en: 'System template type dictionary used by Public Presence Studio policy.',
+	    zh_HANS: 'Public Presence Studio 策略使用的系统模板类型字典。',
+	    zh_HANT: 'Public Presence Studio 策略使用的系統模板類型字典。',
+	    ja: 'Public Presence Studio ポリシーで使うシステムテンプレートタイプ辞書です。',
+	    ko: 'System template type dictionary used by Public Presence Studio policy.',
+	    fr: 'System template type dictionary used by Public Presence Studio policy.',
+	  }), sortOrder: 121 },
+	];
 
 // ISO 3166-1 alpha-2 Countries (Full list)
 const COUNTRIES: DictionaryItem[] = [
@@ -5794,8 +5824,139 @@ const TIMEZONES: DictionaryItem[] = [
       ko: 'Fatal',
       fr: 'Fatal',
     }), sortOrder: 5 },
+	  ];
+
+  const ARTIST_STATUS: DictionaryItem[] = [
+    {
+      code: 'draft',
+      name: createLocalizedText({
+        en: 'Draft',
+        zh_HANS: '草稿',
+        zh_HANT: '草稿',
+        ja: '下書き',
+        ko: 'Draft',
+        fr: 'Draft',
+      }),
+      description: createLocalizedText({
+        en: 'Talent is not publicly visible.',
+        zh_HANS: '艺人暂不公开展示。',
+        zh_HANT: '藝人暫不公開展示。',
+        ja: 'タレントは公開表示されません。',
+        ko: 'Talent is not publicly visible.',
+        fr: 'Talent is not publicly visible.',
+      }),
+      extraData: { derivedLifecycleStatus: 'draft' },
+      sortOrder: 10,
+    },
+    {
+      code: 'published',
+      name: createLocalizedText({
+        en: 'Published',
+        zh_HANS: '已发布',
+        zh_HANT: '已發佈',
+        ja: '公開済み',
+        ko: 'Published',
+        fr: 'Published',
+      }),
+      description: createLocalizedText({
+        en: 'Talent is eligible for public fan page publishing.',
+        zh_HANS: '艺人可用于粉丝公开页发布。',
+        zh_HANT: '藝人可用於粉絲公開頁發佈。',
+        ja: 'タレントは公開ファンページ公開の対象です。',
+        ko: 'Talent is eligible for public fan page publishing.',
+        fr: 'Talent is eligible for public fan page publishing.',
+      }),
+      extraData: { derivedLifecycleStatus: 'published' },
+      sortOrder: 20,
+    },
+    {
+      code: 'disabled',
+      name: createLocalizedText({
+        en: 'Disabled',
+        zh_HANS: '停用',
+        zh_HANT: '停用',
+        ja: '無効',
+        ko: 'Disabled',
+        fr: 'Disabled',
+      }),
+      description: createLocalizedText({
+        en: 'Talent is disabled for public publishing.',
+        zh_HANS: '艺人停用公开发布。',
+        zh_HANT: '藝人停用公開發佈。',
+        ja: 'タレントは公開発行から無効化されています。',
+        ko: 'Talent is disabled for public publishing.',
+        fr: 'Talent is disabled for public publishing.',
+      }),
+      extraData: { derivedLifecycleStatus: 'disabled' },
+      sortOrder: 30,
+    },
   ];
-  
+
+  const HOMEPAGE_TEMPLATE_TYPES: DictionaryItem[] = [
+    {
+      code: 'pending-reveal',
+      name: createLocalizedText({
+        en: 'Pending Reveal',
+        zh_HANS: '待揭晓',
+        zh_HANT: '待揭曉',
+        ja: '公開待ち',
+        ko: 'Pending Reveal',
+        fr: 'Pending Reveal',
+      }),
+      description: createLocalizedText({
+        en: 'Reveal and countdown-oriented homepage templates.',
+        zh_HANS: '面向揭晓与倒计时的主页模板。',
+        zh_HANT: '面向揭曉與倒計時的主頁模板。',
+        ja: '公開・カウントダウン向けホームページテンプレートです。',
+        ko: 'Reveal and countdown-oriented homepage templates.',
+        fr: 'Reveal and countdown-oriented homepage templates.',
+      }),
+      extraData: { defaultTemplateId: 'debutReveal' },
+      sortOrder: 10,
+    },
+    {
+      code: 'operating',
+      name: createLocalizedText({
+        en: 'Operating',
+        zh_HANS: '运营中',
+        zh_HANT: '營運中',
+        ja: '運用中',
+        ko: 'Operating',
+        fr: 'Operating',
+      }),
+      description: createLocalizedText({
+        en: 'Always-on public homepage templates.',
+        zh_HANS: '常驻公开主页模板。',
+        zh_HANT: '常駐公開主頁模板。',
+        ja: '常設公開ホームページテンプレートです。',
+        ko: 'Always-on public homepage templates.',
+        fr: 'Always-on public homepage templates.',
+      }),
+      extraData: { defaultTemplateId: 'activeTalentHub' },
+      sortOrder: 20,
+    },
+    {
+      code: 'graduated',
+      name: createLocalizedText({
+        en: 'Graduated',
+        zh_HANS: '已毕业',
+        zh_HANT: '已畢業',
+        ja: '卒業済み',
+        ko: 'Graduated',
+        fr: 'Graduated',
+      }),
+      description: createLocalizedText({
+        en: 'Archive or post-graduation homepage templates.',
+        zh_HANS: '归档或毕业后的主页模板。',
+        zh_HANT: '歸檔或畢業後的主頁模板。',
+        ja: 'アーカイブまたは卒業後のホームページテンプレートです。',
+        ko: 'Archive or post-graduation homepage templates.',
+        fr: 'Archive or post-graduation homepage templates.',
+      }),
+      sortOrder: 30,
+    },
+  ];
+
   // Dictionary Items Mapping
   const DICTIONARY_ITEMS: Record<string, DictionaryItem[]> = {
     countries: COUNTRIES,
@@ -5806,10 +5967,12 @@ const TIMEZONES: DictionaryItem[] = [
     profile_types: PROFILE_TYPES,
     social_platforms: SOCIAL_PLATFORMS,
     adapter_types: ADAPTER_TYPES,
-    webhook_events: WEBHOOK_EVENTS,
-    job_statuses: JOB_STATUSES,
-    log_severities: LOG_SEVERITIES,
-  };
+	    webhook_events: WEBHOOK_EVENTS,
+	    job_statuses: JOB_STATUSES,
+	    log_severities: LOG_SEVERITIES,
+	    'artist-status': ARTIST_STATUS,
+	    'homepage-template-type': HOMEPAGE_TEMPLATE_TYPES,
+	  };
 
 /**
  * Seed system dictionaries to public schema

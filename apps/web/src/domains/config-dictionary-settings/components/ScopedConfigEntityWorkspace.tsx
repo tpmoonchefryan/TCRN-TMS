@@ -37,6 +37,7 @@ import {
   type ConfigEntityFieldDefinition,
   DEFAULT_CONFIG_ENTITY_TYPE,
 } from '@/domains/config-dictionary-settings/components/config-entity-catalog';
+import { PublicPresenceAssetWorkspace } from '@/domains/config-dictionary-settings/components/PublicPresenceAssetWorkspace';
 import { type ApiPaginationMeta, ApiRequestError } from '@/platform/http/api';
 import { formatLocaleDateTime, pickLocaleText } from '@/platform/runtime/locale/locale-text';
 import {
@@ -61,6 +62,7 @@ interface ScopedConfigEntityWorkspaceProps {
   requestEnvelope: RequestEnvelopeFn;
   scopeType: ConfigEntityScopeType;
   scopeId?: string;
+  tenantId?: string;
   locale?: SupportedUiLocale;
   copy?: ScopedConfigEntityWorkspaceCopy;
   catalog?: Record<ScopedConfigEntityType, ConfigEntityCatalogEntry>;
@@ -280,9 +282,29 @@ const TENANT_GLOBAL_ENTITY_TYPES = new Set<ScopedConfigEntityType>([
   'profile-store',
 ]);
 const CUSTOM_DOMAIN_ENTITY_TYPE: ScopedConfigEntityType = 'custom-domain';
+const PUBLIC_PRESENCE_ASSET_ENTITY_TYPES = new Set<ScopedConfigEntityType>([
+  'homepage-template-asset',
+  'homepage-component-asset',
+]);
 
 function isTenantGlobalEntityType(entityType: ScopedConfigEntityType) {
   return TENANT_GLOBAL_ENTITY_TYPES.has(entityType);
+}
+
+function isPublicPresenceAssetEntityType(entityType: ScopedConfigEntityType) {
+  return PUBLIC_PRESENCE_ASSET_ENTITY_TYPES.has(entityType);
+}
+
+function resolvePublicPresenceAssetFamily(entityType: ScopedConfigEntityType) {
+  if (entityType === 'homepage-template-asset') {
+    return 'template' as const;
+  }
+
+  if (entityType === 'homepage-component-asset') {
+    return 'component' as const;
+  }
+
+  return null;
 }
 
 function resolveScopedConfigEntityType(
@@ -847,6 +869,7 @@ export function ScopedConfigEntityWorkspace({
   requestEnvelope,
   scopeType,
   scopeId,
+  tenantId,
   locale = 'en',
   copy = DEFAULT_COPY,
   catalog = CONFIG_ENTITY_CATALOG,
@@ -898,6 +921,7 @@ export function ScopedConfigEntityWorkspace({
   const [confirmPending, setConfirmPending] = useState(false);
 
   const selectedEntry = catalog[selectedType];
+  const selectedAssetFamily = resolvePublicPresenceAssetFamily(selectedType);
   const supportsLocalScopeOnly = !isTenantGlobalEntityType(selectedType);
   const canManageSelectedTypeInCurrentScope =
     !isTenantGlobalEntityType(selectedType) || scopeType === 'tenant';
@@ -1175,7 +1199,10 @@ export function ScopedConfigEntityWorkspace({
     let cancelled = false;
 
     async function loadRecords() {
-      if (selectedType === CUSTOM_DOMAIN_ENTITY_TYPE) {
+      if (
+        selectedType === CUSTOM_DOMAIN_ENTITY_TYPE ||
+        isPublicPresenceAssetEntityType(selectedType)
+      ) {
         recordsTypeRef.current = selectedType;
         setRecords([]);
         setPagination(buildPaginationMeta(0, page, pageSize));
@@ -1722,7 +1749,7 @@ export function ScopedConfigEntityWorkspace({
                 {selectedEntry.description}
               </p>
             </div>
-            {canManageSelectedTypeInCurrentScope ? (
+            {selectedAssetFamily ? null : canManageSelectedTypeInCurrentScope ? (
               <button
                 type="button"
                 onClick={beginCreate}
@@ -1743,9 +1770,20 @@ export function ScopedConfigEntityWorkspace({
                 })}
               </span>
             )}
-          </div>
+	          </div>
 
-          {notice ? (
+	          {selectedAssetFamily ? (
+	            <PublicPresenceAssetWorkspace
+	              families={[selectedAssetFamily]}
+	              locale={locale}
+	              request={request}
+	              scopeId={scopeId ?? null}
+	              scopeType={scopeType}
+	              tenantId={tenantId ?? ''}
+	            />
+	          ) : (
+	            <>
+	          {notice ? (
             <div
               className={`rounded-2xl border px-4 py-3 text-sm font-medium ${
                 notice.tone === 'success'
@@ -2036,11 +2074,13 @@ export function ScopedConfigEntityWorkspace({
                 }}
                 isLoading={loading}
                 className="rounded-2xl border border-slate-200 bg-slate-50/80"
-              />
-            </>
-          )}
-        </div>
-      </div>
+	              />
+	            </>
+	          )}
+	            </>
+	          )}
+	        </div>
+	      </div>
 
       <ActionDrawer
         open={editorMode !== 'closed'}

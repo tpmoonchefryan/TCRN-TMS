@@ -125,9 +125,8 @@ export interface ConsentFields {
 }
 
 export interface ArtistStageFields {
+  artistStatusCode: 'draft' | 'published' | 'disabled';
   color: string | null;
-  homepagePolicyKey: string | null;
-  lifecycleStatusMapping: 'draft' | 'published' | 'disabled';
 }
 
 export interface ConsumerFields {
@@ -176,7 +175,7 @@ export const CONFIG_TABLE_NAMES: Record<ConfigEntityType, string> = {
 // Extra fields for each entity type
 export const CONFIG_EXTRA_FIELDS: Record<ConfigEntityType, string[]> = {
   'channel-category': [],
-  'artist-stage': ['color', 'lifecycle_status_mapping', 'homepage_policy_key'],
+  'artist-stage': ['color', 'artist_status_code'],
   'social-platform': ['display_name', 'icon_url', 'base_url', 'profile_url_template', 'color'],
   'business-segment': [],
   'communication-type': ['channel_category_id'],

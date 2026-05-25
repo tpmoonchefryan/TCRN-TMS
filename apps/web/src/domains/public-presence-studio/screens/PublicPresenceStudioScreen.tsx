@@ -1578,11 +1578,11 @@ function PublicPresenceStudioScreenInner({
     }
   };
 
-  const workspaceHomepagePolicy = workspace?.homepagePolicy ?? {
-    allowedTemplateIds: [],
-    blockedReasons: [],
-    status: 'ready' as const,
-  };
+	  const workspaceHomepagePolicy = workspace?.homepagePolicy ?? {
+	    allowedTemplateTypeCodes: [],
+	    blockedReasons: [],
+	    status: 'ready' as const,
+	  };
   const workspaceComponentDefinitions = workspace?.componentDefinitions ?? [];
   const componentDefinitionsByType = useMemo(
     () =>
@@ -4569,18 +4569,18 @@ function PublicPresenceStudioScreenInner({
               </Link>
               <Link
                 href={assetInventoryHref}
-                aria-label={pickLocaleText(locale, {
-                  en: 'Manage homepage assets',
-                  zh_HANS: '管理主页资产',
-                  zh_HANT: '管理主頁資產',
+	                aria-label={pickLocaleText(locale, {
+	                  en: 'Manage template/component assets',
+	                  zh_HANS: '管理主页模板/组件资产',
+	                  zh_HANT: '管理主頁模板/元件資產',
                   ja: 'ホームページ資産を管理',
                   ko: '홈페이지 자산 관리',
                   fr: 'Gérer les assets de homepage',
                 })}
-                title={pickLocaleText(locale, {
-                  en: 'Manage homepage assets',
-                  zh_HANS: '管理主页资产',
-                  zh_HANT: '管理主頁資產',
+	                title={pickLocaleText(locale, {
+	                  en: 'Manage template/component assets',
+	                  zh_HANS: '管理主页模板/组件资产',
+	                  zh_HANT: '管理主頁模板/元件資產',
                   ja: 'ホームページ資産を管理',
                   ko: '홈페이지 자산 관리',
                   fr: 'Gérer les assets de homepage',

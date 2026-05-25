@@ -24,12 +24,11 @@ export interface HomepageAdminTalentRecord {
 }
 
 export interface HomepageAdminArtistStageRecord {
+  artistStatusCode: 'draft' | 'published' | 'disabled';
   id: string;
   code: string;
   name: LocalizedText;
   description: LocalizedText;
-  lifecycleStatusMapping: 'draft' | 'published' | 'disabled';
-  homepagePolicyKey: string | null;
   isActive: boolean;
   isSystem: boolean;
   sortOrder: number;

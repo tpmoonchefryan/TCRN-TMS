@@ -59,19 +59,19 @@ const HOMEPAGE_SURFACE_LABELS = {
     'ホームページ管理',
     '홈페이지 관리',
     'Gestion de la page d’accueil'
-  ),
-  templates: buildSupportedLocaleText(
-    'Template Center',
-    '模板中心',
-    '模板中心',
+	  ),
+	  templates: buildSupportedLocaleText(
+	    'Template Asset Records',
+	    '模板中心',
+	    '模板中心',
     'テンプレートセンター',
     '템플릿 센터',
     'Centre des templates'
-  ),
-  components: buildSupportedLocaleText(
-    'Component Store',
-    '组件商店',
-    '元件商店',
+	  ),
+	  components: buildSupportedLocaleText(
+	    'Component Asset Records',
+	    '组件商店',
+	    '元件商店',
     'コンポーネントストア',
     '컴포넌트 스토어',
     'Store des composants'

@@ -18,6 +18,7 @@ export interface ConfigEntityFieldDefinition {
   required?: boolean;
   placeholder?: string;
   description?: string;
+  dictionaryCode?: string;
   options?: Array<{
     label: string;
     value: string;
@@ -39,6 +40,8 @@ export const CONFIG_ENTITY_ORDER: ScopedConfigEntityType[] = [
   'address-type',
   'channel-category',
   'artist-stage',
+  'homepage-template-asset',
+  'homepage-component-asset',
   'communication-type',
   'reason-category',
   'inactivation-reason',
@@ -94,25 +97,32 @@ export const CONFIG_ENTITY_CATALOG: Record<ScopedConfigEntityType, ConfigEntityC
         placeholder: '#4f46e5',
       },
       {
-        key: 'lifecycleStatusMapping',
-        label: 'Lifecycle mapping',
+        key: 'artistStatusCode',
+        label: 'Artist Status',
         kind: 'select',
         required: true,
+        dictionaryCode: 'artist-status',
         options: [
           { label: 'Draft', value: 'draft' },
           { label: 'Published', value: 'published' },
           { label: 'Disabled', value: 'disabled' },
         ],
       },
-      {
-        key: 'homepagePolicyKey',
-        label: 'Homepage policy key',
-        kind: 'text',
-        placeholder: 'active-talent-hub',
-        description:
-          'Reference key used by tenant lifecycle policy to decide homepage availability.',
-      },
     ],
+  },
+  'homepage-template-asset': {
+    type: 'homepage-template-asset',
+    label: 'Homepage Template Asset',
+    description:
+      'Template assets available to Public Presence Studio for the selected scope.',
+    fields: [],
+  },
+  'homepage-component-asset': {
+    type: 'homepage-component-asset',
+    label: 'Homepage Component Asset',
+    description:
+      'Component assets available to Public Presence Studio for the selected scope.',
+    fields: [],
   },
   'communication-type': {
     type: 'communication-type',

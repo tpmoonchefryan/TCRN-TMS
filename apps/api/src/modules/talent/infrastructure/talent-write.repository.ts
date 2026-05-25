@@ -41,23 +41,23 @@ export class TalentWriteRepository {
   async findActiveArtistStage(
     tenantSchema: string,
     artistStageId: string
-  ): Promise<{
-    code: string;
-    id: string;
-    lifecycleStatusMapping: TalentLifecycleStatus;
-  } | null> {
-    const stages = await prisma.$queryRawUnsafe<
-      Array<{
-        code: string;
-        id: string;
-        lifecycleStatusMapping: TalentLifecycleStatus;
-      }>
-    >(
-      `SELECT
-         id,
-         code,
-         lifecycle_status_mapping as "lifecycleStatusMapping"
-       FROM "${tenantSchema}".artist_stage
+	  ): Promise<{
+	    artistStatusCode: TalentLifecycleStatus;
+	    code: string;
+	    id: string;
+	  } | null> {
+	    const stages = await prisma.$queryRawUnsafe<
+	      Array<{
+	        artistStatusCode: TalentLifecycleStatus;
+	        code: string;
+	        id: string;
+	      }>
+	    >(
+	      `SELECT
+	         id,
+	         code,
+	         artist_status_code as "artistStatusCode"
+	       FROM "${tenantSchema}".artist_stage
        WHERE id = $1::uuid
          AND owner_type = 'tenant'
          AND owner_id IS NULL
@@ -108,7 +108,7 @@ export class TalentWriteRepository {
          created_at, updated_at, created_by, updated_by, version)
        VALUES
         (gen_random_uuid(), $1::uuid, $2::uuid, $3::uuid, $4, $5, $6::jsonb, $7::jsonb, $8, $9::jsonb, $10, $11, $12,
-         $13, $14, CASE WHEN $14 = 'published' THEN now() ELSE NULL END, CASE WHEN $14 = 'published' THEN $15::uuid ELSE NULL END, $16::jsonb, now(), now(), $15::uuid, $15::uuid, 1)
+         $13, $14::varchar, CASE WHEN $14::varchar = 'published' THEN now() ELSE NULL END, CASE WHEN $14::varchar = 'published' THEN $15::uuid ELSE NULL END, $16::jsonb, now(), now(), $15::uuid, $15::uuid, 1)
        RETURNING
          ${TALENT_SELECT_FIELDS}`,
       data.subsidiaryId || null,

@@ -115,25 +115,25 @@ function getLatestWorkflowEvent(
 }
 
 function getLegacySurfaceFallbackHeading(locale: string, surface: LegacyHomepageSurface) {
-  if (surface === 'templates') {
-    return pickLocaleText(locale, {
-      en: 'Template Center now opens through asset management and focused IDE flows.',
-      zh_HANS: '模板中心现已并入资产管理与聚焦 IDE 流程。',
-      zh_HANT: '模板中心現已併入資產管理與聚焦 IDE 流程。',
-      ja: 'Template Center はアセット管理と集中 IDE フローへ統合されました。',
-      ko: 'Template Center 는 자산 관리와 집중형 IDE 흐름으로 통합되었습니다.',
-      fr: 'Le centre de templates passe désormais par la gestion d’assets et les flux IDE ciblés.',
-    });
-  }
+	  if (surface === 'templates') {
+	    return pickLocaleText(locale, {
+	      en: 'Template asset records now open through Entity Management and focused IDE flows.',
+	      zh_HANS: '模板中心现已并入资产管理与聚焦 IDE 流程。',
+	      zh_HANT: '模板中心現已併入資產管理與聚焦 IDE 流程。',
+	      ja: 'テンプレート資産レコードはアセット管理と集中 IDE フローへ統合されました。',
+	      ko: '템플릿 자산 레코드는 자산 관리와 집중형 IDE 흐름으로 통합되었습니다.',
+	      fr: 'Le centre de templates passe désormais par la gestion d’assets et les flux IDE ciblés.',
+	    });
+	  }
 
-  return pickLocaleText(locale, {
-    en: 'Component Store now opens through asset management and focused IDE flows.',
-    zh_HANS: '组件中心现已并入资产管理与聚焦 IDE 流程。',
-    zh_HANT: '元件中心現已併入資產管理與聚焦 IDE 流程。',
-    ja: 'Component Store はアセット管理と集中 IDE フローへ統合されました。',
-    ko: 'Component Store 는 자산 관리와 집중형 IDE 흐름으로 통합되었습니다.',
-    fr: 'Le store de composants passe désormais par la gestion d’assets et les flux IDE ciblés.',
-  });
+	  return pickLocaleText(locale, {
+	    en: 'Component asset records now open through Entity Management and focused IDE flows.',
+	    zh_HANS: '组件中心现已并入资产管理与聚焦 IDE 流程。',
+	    zh_HANT: '元件中心現已併入資產管理與聚焦 IDE 流程。',
+	    ja: 'コンポーネント資産レコードはアセット管理と集中 IDE フローへ統合されました。',
+	    ko: '컴포넌트 자산 레코드는 자산 관리와 집중형 IDE 흐름으로 통합되었습니다.',
+	    fr: 'Le store de composants passe désormais par la gestion d’assets et les flux IDE ciblés.',
+	  });
 }
 
 function ManagementActionLink({
@@ -1493,10 +1493,10 @@ export function PublicPresenceManagementScreen({
                         section: 'config-entities',
                       })}
                       icon={<LayoutTemplate className="h-4 w-4" aria-hidden="true" />}
-                      label={pickLocaleText(locale, {
-                        en: 'Manage homepage assets',
-                        zh_HANS: '管理主页资产',
-                        zh_HANT: '管理主頁資產',
+	                      label={pickLocaleText(locale, {
+	                        en: 'Manage template/component assets',
+	                        zh_HANS: '管理主页模板/组件资产',
+	                        zh_HANT: '管理主頁模板/元件資產',
                         ja: 'ホームページ資産を管理',
                         ko: '홈페이지 자산 관리',
                         fr: 'Gérer les assets de homepage',

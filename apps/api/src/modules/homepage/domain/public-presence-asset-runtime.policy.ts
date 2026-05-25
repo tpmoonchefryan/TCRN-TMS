@@ -13,6 +13,8 @@ import {
   type PublicPresenceTemplateSourceManifest,
 } from '@tcrn/shared';
 
+import { normalizeTemplateManifestTypeCode } from './public-presence-asset.policy';
+
 type SourceBundleCarrier = {
   sourceBundle: PublicPresenceSourceBundleFile[];
 };
@@ -43,7 +45,7 @@ export function parsePublicPresenceAssetSourceManifest(
   sourceBundle: readonly PublicPresenceSourceBundleFile[] | null | undefined
 ): PublicPresenceAssetSourceManifest | null {
   const parsed = PublicPresenceAssetSourceManifestSchema.safeParse(
-    parseSourceManifestJson(sourceBundle)
+    normalizeTemplateManifestTypeCode(parseSourceManifestJson(sourceBundle))
   );
 
   return parsed.success ? (parsed.data as PublicPresenceAssetSourceManifest) : null;

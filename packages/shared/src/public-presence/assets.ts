@@ -16,7 +16,31 @@ import type {
 
 export const PUBLIC_PRESENCE_ASSET_RUNTIME_VERSION = '1.0.0' as const;
 
-export const ARTIST_STAGE_LIFECYCLE_MAPPINGS = ['draft', 'published', 'disabled'] as const;
+export const ARTIST_STATUS_DICTIONARY_CODE = 'artist-status' as const;
+
+export const HOMEPAGE_TEMPLATE_TYPE_DICTIONARY_CODE = 'homepage-template-type' as const;
+
+export const ARTIST_STATUS_CODES = ['draft', 'published', 'disabled'] as const;
+
+export const PUBLIC_PRESENCE_TEMPLATE_TYPE_CODES = [
+  'pending-reveal',
+  'operating',
+  'graduated',
+] as const;
+
+export const PUBLIC_PRESENCE_TEMPLATE_TYPE_BY_TEMPLATE_ID: Record<
+  PublicPresenceTemplateId,
+  PublicPresenceTemplateTypeCode
+> = {
+  activeTalentHub: 'operating',
+  debutReveal: 'pending-reveal',
+};
+
+export function resolvePublicPresenceTemplateTypeCode(
+  templateId: PublicPresenceTemplateId
+): PublicPresenceTemplateTypeCode {
+  return PUBLIC_PRESENCE_TEMPLATE_TYPE_BY_TEMPLATE_ID[templateId];
+}
 
 export const PUBLIC_PRESENCE_ASSET_KINDS = ['template', 'component'] as const;
 
@@ -49,7 +73,12 @@ export const PUBLIC_PRESENCE_SOURCE_BUNDLE_FILE_KINDS = [
   'test',
 ] as const;
 
-export type ArtistStageLifecycleMapping = (typeof ARTIST_STAGE_LIFECYCLE_MAPPINGS)[number];
+export type ArtistStatusCode = (typeof ARTIST_STATUS_CODES)[number];
+
+export type ArtistStageLifecycleMapping = ArtistStatusCode;
+
+export type PublicPresenceTemplateTypeCode =
+  (typeof PUBLIC_PRESENCE_TEMPLATE_TYPE_CODES)[number];
 
 export type PublicPresenceAssetKind = (typeof PUBLIC_PRESENCE_ASSET_KINDS)[number];
 
@@ -70,11 +99,10 @@ export interface ArtistStageRecord {
   color: string | null;
   createdAt: string;
   description: LocalizedText;
-  homepagePolicyKey: string | null;
+  artistStatusCode: ArtistStatusCode;
   id: string;
   isActive: boolean;
   isSystem: boolean;
-  lifecycleStatusMapping: ArtistStageLifecycleMapping;
   name: LocalizedText;
   ownerId: string | null;
   ownerType: 'tenant';
@@ -97,7 +125,7 @@ export interface ArtistLifecycleFlowTransition {
 }
 
 export interface ArtistLifecycleHomepagePolicy {
-  allowedTemplateIds: PublicPresenceTemplateId[];
+  allowedTemplateTypeCodes: PublicPresenceTemplateTypeCode[];
   stageId: string;
 }
 
@@ -137,6 +165,7 @@ export interface PublicPresenceTemplateAssetManifest extends PublicPresenceAsset
   recommendedSections: string[];
   requiredSections: string[];
   templateId: PublicPresenceTemplateId;
+  templateTypeCode: PublicPresenceTemplateTypeCode;
   useCase: string;
   validationRules: string[];
 }
@@ -209,6 +238,7 @@ export interface PublicPresenceAssetRecord {
   ownerType: PublicPresenceAssetOwnerType;
   status: PublicPresenceAssetStatus;
   templateId: PublicPresenceTemplateId | null;
+  templateTypeCode: PublicPresenceTemplateTypeCode | null;
   updatedAt: string;
   version: number;
 }

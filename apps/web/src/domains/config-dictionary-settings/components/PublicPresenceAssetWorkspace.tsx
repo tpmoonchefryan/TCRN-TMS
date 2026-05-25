@@ -611,8 +611,8 @@ export function PublicPresenceAssetWorkspace({
         setLoadError(
           pickLocaleText(locale, {
             en: 'Unable to load homepage assets for this scope.',
-            zh_HANS: '无法加载当前范围的主页资产。',
-            zh_HANT: '無法載入目前範圍的主頁資產。',
+            zh_HANS: '无法加载当前范围的主页模板/组件资产。',
+            zh_HANT: '無法載入目前範圍的主頁模板/元件資產。',
             ja: 'このスコープのホームページ資産を読み込めませんでした。',
             ko: '이 범위의 홈페이지 자산을 불러오지 못했습니다.',
             fr: 'Impossible de charger les assets de homepage pour cette portée.',
@@ -710,8 +710,8 @@ export function PublicPresenceAssetWorkspace({
       setLoadError(
         pickLocaleText(locale, {
           en: 'Unable to refresh homepage assets for this scope.',
-          zh_HANS: '无法刷新当前范围的主页资产。',
-          zh_HANT: '無法重新整理目前範圍的主頁資產。',
+          zh_HANS: '无法刷新当前范围的主页模板/组件资产。',
+          zh_HANT: '無法重新整理目前範圍的主頁模板/元件資產。',
           ja: 'このスコープのホームページ資産を更新できませんでした。',
           ko: '이 범위의 홈페이지 자산을 새로 고치지 못했습니다.',
           fr: 'Impossible d’actualiser les assets de homepage pour cette portée.',
@@ -787,8 +787,8 @@ export function PublicPresenceAssetWorkspace({
       setNotice({
         message: pickLocaleText(locale, {
           en: 'Unable to create a homepage asset in this scope.',
-          zh_HANS: '无法在当前范围创建主页资产。',
-          zh_HANT: '無法在目前範圍建立主頁資產。',
+          zh_HANS: '无法在当前范围创建主页模板/组件资产。',
+          zh_HANT: '無法在目前範圍建立主頁模板/元件資產。',
           ja: 'このスコープにホームページ資産を作成できませんでした。',
           ko: '현재 범위에 홈페이지 자산을 만들지 못했습니다.',
           fr: 'Impossible de créer un asset de homepage dans cette portée.',

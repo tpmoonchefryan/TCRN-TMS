@@ -6,6 +6,7 @@ import type {
   PublicPresenceProjection,
   PublicPresenceAssetRevisionPin,
   PublicPresenceTemplateId,
+  PublicPresenceTemplateTypeCode,
   PublicPresenceValidationSnapshot,
 } from '@tcrn/shared';
 
@@ -100,10 +101,9 @@ export interface PublicPresenceStudioVersionSummary {
 }
 
 export interface PublicPresenceStudioArtistStageSummary {
+  artistStatusCode: string;
   code: string;
-  homepagePolicyKey: string | null;
   id: string;
-  lifecycleStatusMapping: string;
   name: LocalizedText;
 }
 
@@ -117,7 +117,7 @@ export interface PublicPresenceStudioPolicyBlockReason {
 }
 
 export interface PublicPresenceStudioHomepagePolicySummary {
-  allowedTemplateIds: PublicPresenceTemplateId[];
+  allowedTemplateTypeCodes: PublicPresenceTemplateTypeCode[];
   blockedReasons: PublicPresenceStudioPolicyBlockReason[];
   status: 'blocked' | 'ready';
 }
@@ -148,6 +148,7 @@ export interface PublicPresenceStudioTemplateAssetSummary {
   recommendedSections: string[];
   requiredSections: string[];
   templateId: PublicPresenceTemplateId;
+  templateTypeCode: PublicPresenceTemplateTypeCode;
   useCase: string;
 }
 

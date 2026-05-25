@@ -2,7 +2,7 @@
 import { z } from 'zod';
 
 import {
-  ARTIST_STAGE_LIFECYCLE_MAPPINGS,
+  ARTIST_STATUS_CODES,
   PUBLIC_PRESENCE_ASSET_KINDS,
   PUBLIC_PRESENCE_ASSET_OWNER_TYPES,
   PUBLIC_PRESENCE_ASSET_RUNTIME_VERSION,
@@ -10,6 +10,7 @@ import {
   PUBLIC_PRESENCE_ASSET_SCOPE_TYPES,
   PUBLIC_PRESENCE_ASSET_VALIDATION_STATES,
   PUBLIC_PRESENCE_SOURCE_BUNDLE_FILE_KINDS,
+  PUBLIC_PRESENCE_TEMPLATE_TYPE_CODES,
   type ArtistStageRecord,
 } from '../../public-presence/assets';
 import {
@@ -32,6 +33,7 @@ const AssetStatusSchema = z.enum(PUBLIC_PRESENCE_ASSET_STATUSES);
 const SourceBundleFileKindSchema = z.enum(PUBLIC_PRESENCE_SOURCE_BUNDLE_FILE_KINDS);
 const TemplateIdSchema = z.enum(PUBLIC_PRESENCE_TEMPLATE_IDS);
 const ComponentTypeSchema = z.enum(HOMEPAGE_COMPONENT_TYPES);
+const TemplateTypeCodeSchema = z.enum(PUBLIC_PRESENCE_TEMPLATE_TYPE_CODES);
 const StageSectionKindSchema = z.enum(PUBLIC_PRESENCE_STAGE_SECTION_KINDS);
 const FieldValueTypeSchema = z.enum(PUBLIC_PRESENCE_FIELD_VALUE_TYPES);
 const FieldProvenanceSchema = z.enum(PUBLIC_PRESENCE_FIELD_PROVENANCES);
@@ -47,7 +49,9 @@ export interface ArtistLifecycleFlowStageCatalogEntry {
   isActive: boolean;
 }
 
-export const ArtistStageLifecycleMappingSchema = z.enum(ARTIST_STAGE_LIFECYCLE_MAPPINGS);
+export const ArtistStatusCodeSchema = z.enum(ARTIST_STATUS_CODES);
+
+export const ArtistStageLifecycleMappingSchema = ArtistStatusCodeSchema;
 
 export const PublicPresenceAssetKindSchema = z.enum(PUBLIC_PRESENCE_ASSET_KINDS);
 
@@ -76,11 +80,10 @@ export const ArtistStageRecordSchema = z
     color: z.string().trim().min(1).max(16).nullable(),
     createdAt: IsoDateTimeSchema,
     description: LocalizedTextSchema,
-    homepagePolicyKey: z.string().trim().min(1).max(64).nullable(),
+    artistStatusCode: ArtistStatusCodeSchema,
     id: UUIDSchema,
     isActive: z.boolean(),
     isSystem: z.boolean(),
-    lifecycleStatusMapping: ArtistStageLifecycleMappingSchema,
     name: LocalizedTextSchema,
     ownerId: UUIDSchema.nullable(),
     ownerType: z.literal('tenant'),
@@ -109,7 +112,7 @@ export const ArtistLifecycleFlowTransitionSchema = z
 
 export const ArtistLifecycleHomepagePolicySchema = z
   .object({
-    allowedTemplateIds: z.array(TemplateIdSchema),
+    allowedTemplateTypeCodes: z.array(TemplateTypeCodeSchema),
     stageId: UUIDSchema,
   })
   .strict();
@@ -206,16 +209,16 @@ export function createArtistLifecycleFlowSchema(options?: {
       }
       policyStageIds.add(policy.stageId);
 
-      const templateIds = new Set<string>();
-      for (const [templateIndex, templateId] of policy.allowedTemplateIds.entries()) {
-        if (templateIds.has(templateId)) {
+      const templateTypeCodes = new Set<string>();
+      for (const [templateIndex, templateTypeCode] of policy.allowedTemplateTypeCodes.entries()) {
+        if (templateTypeCodes.has(templateTypeCode)) {
           context.addIssue({
             code: z.ZodIssueCode.custom,
-            message: 'Duplicate allowed template id is not allowed',
-            path: ['homepagePolicyByStage', index, 'allowedTemplateIds', templateIndex],
+            message: 'Duplicate allowed homepage template type code is not allowed',
+            path: ['homepagePolicyByStage', index, 'allowedTemplateTypeCodes', templateIndex],
           });
         }
-        templateIds.add(templateId);
+        templateTypeCodes.add(templateTypeCode);
       }
     }
 
@@ -305,6 +308,7 @@ export const PublicPresenceTemplateAssetManifestSchema =
     recommendedSections: z.array(StageSectionKindSchema),
     requiredSections: z.array(StageSectionKindSchema),
     templateId: TemplateIdSchema,
+    templateTypeCode: TemplateTypeCodeSchema,
     useCase: z.string().trim().min(1).max(255),
     validationRules: z.array(z.string().trim().min(1).max(255)),
   }).strict();
@@ -481,6 +485,7 @@ export const CreatePublicPresenceAssetSchema = z.discriminatedUnion('assetKind',
       name: PublicPresenceAssetOptionalNameSchema,
       sourceBundle: PublicPresenceAssetOptionalSourceBundleSchema,
       templateId: TemplateIdSchema,
+      templateTypeCode: TemplateTypeCodeSchema.optional(),
     })
     .strict()
     .superRefine((value, context) => {
@@ -489,6 +494,19 @@ export const CreatePublicPresenceAssetSchema = z.discriminatedUnion('assetKind',
           code: z.ZodIssueCode.custom,
           message: 'Template asset manifest templateId must match the requested templateId.',
           path: ['manifest', 'templateId'],
+        });
+      }
+
+      if (
+        value.templateTypeCode &&
+        value.manifest &&
+        value.manifest.templateTypeCode !== value.templateTypeCode
+      ) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          message:
+            'Template asset manifest templateTypeCode must match the requested templateTypeCode.',
+          path: ['manifest', 'templateTypeCode'],
         });
       }
     }),
@@ -547,6 +565,7 @@ export const PublicPresenceAssetRecordSchema = z
     ownerType: PublicPresenceAssetOwnerTypeSchema,
     status: AssetStatusSchema,
     templateId: TemplateIdSchema.nullable(),
+    templateTypeCode: TemplateTypeCodeSchema.nullable(),
     updatedAt: IsoDateTimeSchema,
     version: z.number().int().min(1),
   })

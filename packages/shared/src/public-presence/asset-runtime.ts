@@ -3,6 +3,7 @@ import { createLocalizedText, type LocalizedText } from '../constants/locale';
 import { HOMEPAGE_COMPONENT_TYPES, type HomepageComponentType } from '../types/homepage/schema';
 import {
   PUBLIC_PRESENCE_ASSET_RUNTIME_VERSION,
+  PUBLIC_PRESENCE_TEMPLATE_TYPE_BY_TEMPLATE_ID,
   type PublicPresenceAssetManifest,
   type PublicPresenceAssetOwnerType,
   type PublicPresenceAssetRuntimeAuthority,
@@ -271,6 +272,7 @@ export function buildPublicPresenceTemplateAssetManifest(
     requiredSections: [...definition.requiredSections],
     runtimeContractVersion: PUBLIC_PRESENCE_ASSET_RUNTIME_VERSION,
     templateId: definition.templateId,
+    templateTypeCode: PUBLIC_PRESENCE_TEMPLATE_TYPE_BY_TEMPLATE_ID[definition.templateId],
     useCase: definition.useCase,
     validationRules: [...definition.validationRules],
   };

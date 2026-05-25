@@ -9,10 +9,10 @@ import { TALENT_SELECT_FIELDS, type TalentData } from '../domain/talent-read.pol
 import type { TalentLifecycleStatus } from '../domain/talent-read.policy';
 
 export interface ArtistStageLifecycleCatalogRecord {
+  artistStatusCode: TalentLifecycleStatus;
   code: string;
   id: string;
   isActive: boolean;
-  lifecycleStatusMapping: TalentLifecycleStatus;
 }
 
 @Injectable()
@@ -20,11 +20,11 @@ export class TalentLifecycleRepository {
   async listArtistStages(tenantSchema: string): Promise<ArtistStageLifecycleCatalogRecord[]> {
     return prisma.$queryRawUnsafe<ArtistStageLifecycleCatalogRecord[]>(
       `SELECT
-         id,
-         code,
-         is_active as "isActive",
-         lifecycle_status_mapping as "lifecycleStatusMapping"
-       FROM "${tenantSchema}".artist_stage
+	         id,
+	         code,
+	         is_active as "isActive",
+	         artist_status_code as "artistStatusCode"
+	       FROM "${tenantSchema}".artist_stage
        WHERE owner_type = 'tenant'
          AND owner_id IS NULL
        ORDER BY sort_order ASC, code ASC`

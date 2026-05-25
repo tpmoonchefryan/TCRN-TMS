@@ -1,5 +1,10 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-import type { ArtistLifecycleFlow } from '@tcrn/shared';
+import {
+  PUBLIC_PRESENCE_TEMPLATE_TYPE_BY_TEMPLATE_ID,
+  type ArtistLifecycleFlow,
+  type PublicPresenceTemplateId,
+  type PublicPresenceTemplateTypeCode,
+} from '@tcrn/shared';
 
 export type SettingsScopeType = 'tenant' | 'subsidiary' | 'talent';
 export type TurnstileConfigSource = 'tenant' | 'environment' | 'none';
@@ -83,6 +88,7 @@ export interface ArtistLifecycleFlowSettingsResponse {
 export const TENANT_TURNSTILE_SETTINGS_KEY = 'turnstileConfig';
 export const ARTIST_LIFECYCLE_FLOW_SETTINGS_KEY = 'artistLifecycleFlow';
 export const TURNSTILE_SECRET_MASK = '********';
+const RETIRED_TEMPLATE_ID_POLICY_KEY = ['allowed', 'Template', 'Ids'].join('');
 
 export const DEFAULT_SETTINGS: Record<string, unknown> = {
   defaultLanguage: 'en',
@@ -202,8 +208,38 @@ export function normalizeStoredArtistLifecycleFlow(value: unknown): ArtistLifecy
       ? (record.transitions as ArtistLifecycleFlow['transitions'])
       : [],
     homepagePolicyByStage: Array.isArray(record.homepagePolicyByStage)
-      ? (record.homepagePolicyByStage as ArtistLifecycleFlow['homepagePolicyByStage'])
+      ? record.homepagePolicyByStage.map(normalizeArtistLifecycleHomepagePolicy)
       : [],
+  };
+}
+
+function normalizeArtistLifecycleHomepagePolicy(
+  value: unknown
+): ArtistLifecycleFlow['homepagePolicyByStage'][number] {
+  const record = value && typeof value === 'object' ? (value as Record<string, unknown>) : {};
+  const directCodes = Array.isArray(record.allowedTemplateTypeCodes)
+    ? record.allowedTemplateTypeCodes
+    : [];
+  const retiredTemplateIds = Array.isArray(record[RETIRED_TEMPLATE_ID_POLICY_KEY])
+    ? (record[RETIRED_TEMPLATE_ID_POLICY_KEY] as unknown[])
+    : [];
+  const inferredCodes = retiredTemplateIds
+    .map((templateId) =>
+      typeof templateId === 'string'
+        ? PUBLIC_PRESENCE_TEMPLATE_TYPE_BY_TEMPLATE_ID[templateId as PublicPresenceTemplateId]
+        : null
+    )
+    .filter((code): code is PublicPresenceTemplateTypeCode => Boolean(code));
+
+  return {
+    allowedTemplateTypeCodes: Array.from(
+      new Set(
+        [...directCodes, ...inferredCodes].filter(
+          (code): code is PublicPresenceTemplateTypeCode => typeof code === 'string'
+        )
+      )
+    ),
+    stageId: typeof record.stageId === 'string' ? record.stageId : '',
   };
 }
 

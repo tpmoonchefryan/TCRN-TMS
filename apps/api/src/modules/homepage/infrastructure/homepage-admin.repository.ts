@@ -275,12 +275,11 @@ export class HomepageAdminRepository {
       `
         SELECT
           id,
-          code,
-          name,
-          description,
-          lifecycle_status_mapping as "lifecycleStatusMapping",
-          homepage_policy_key as "homepagePolicyKey",
-          is_active as "isActive",
+	          code,
+	          name,
+	          description,
+	          artist_status_code as "artistStatusCode",
+	          is_active as "isActive",
           is_system as "isSystem",
           sort_order as "sortOrder"
         FROM "${schema}".artist_stage

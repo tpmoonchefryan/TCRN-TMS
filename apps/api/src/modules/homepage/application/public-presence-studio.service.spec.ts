@@ -225,9 +225,10 @@ function createTemplateAssetEntry(
       name: createLocalizedText({ en: label }),
       ownerId: TALENT_OWNER_ID,
       ownerType: 'talent',
-      status: 'active',
-      templateId,
-      updatedAt: '2026-05-15T12:05:00.000Z',
+	      status: 'active',
+	      templateId,
+	      templateTypeCode: manifest.templateTypeCode,
+	      updatedAt: '2026-05-15T12:05:00.000Z',
       version: 1,
     },
     canEdit: true,
@@ -286,11 +287,10 @@ describe('PublicPresenceStudioService', () => {
         {
           code: 'live',
           description: createLocalizedText({ en: 'Live stage' }),
-          homepagePolicyKey: 'live-policy',
+          artistStatusCode: 'published',
           id: ARTIST_STAGE_ID,
           isActive: true,
           isSystem: true,
-          lifecycleStatusMapping: 'published',
           name: createLocalizedText({ en: 'Live' }),
           sortOrder: 1,
         },
@@ -298,7 +298,7 @@ describe('PublicPresenceStudioService', () => {
       readArtistLifecycleFlow: vi.fn().mockResolvedValue({
         homepagePolicyByStage: [
           {
-            allowedTemplateIds: ['activeTalentHub', 'debutReveal'],
+            allowedTemplateTypeCodes: ['operating', 'pending-reveal'],
             stageId: ARTIST_STAGE_ID,
           },
         ],

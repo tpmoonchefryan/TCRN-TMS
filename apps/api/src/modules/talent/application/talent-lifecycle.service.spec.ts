@@ -52,25 +52,25 @@ describe('TalentLifecycleService', () => {
       id: stageDraftId,
       code: 'PRE_DEBUT',
       isActive: true,
-      lifecycleStatusMapping: 'draft' as const,
+      artistStatusCode: 'draft' as const,
     },
     {
       id: stagePublishedId,
       code: 'ACTIVE',
       isActive: true,
-      lifecycleStatusMapping: 'published' as const,
+      artistStatusCode: 'published' as const,
     },
     {
       id: stageDisabledId,
       code: 'SUSPENDED',
       isActive: true,
-      lifecycleStatusMapping: 'disabled' as const,
+      artistStatusCode: 'disabled' as const,
     },
     {
       id: stagePublishedAltId,
       code: 'LIVE_EVENT',
       isActive: true,
-      lifecycleStatusMapping: 'published' as const,
+      artistStatusCode: 'published' as const,
     },
   ];
 

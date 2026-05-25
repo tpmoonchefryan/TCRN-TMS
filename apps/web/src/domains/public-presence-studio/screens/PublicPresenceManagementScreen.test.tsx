@@ -352,7 +352,9 @@ describe('PublicPresenceManagementScreen', () => {
 
     expect(await screen.findByTestId('homepage-surface-fallback-notice')).toBeInTheDocument();
     expect(
-      screen.getByText('Template Center now opens through asset management and focused IDE flows.')
+      screen.getByText(
+        'Template asset records now open through Entity Management and focused IDE flows.'
+      )
     ).toBeInTheDocument();
     expect(screen.queryByTestId('homepage-surface-menu')).not.toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Homepage Management' })).toBeInTheDocument();

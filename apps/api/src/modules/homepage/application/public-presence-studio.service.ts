@@ -26,10 +26,12 @@ import {
   type PublicPresenceStageSectionKind,
   type PublicPresenceTemplateDefinition,
   type PublicPresenceTemplateId,
+  type PublicPresenceTemplateTypeCode,
   PublicPresenceTemplateIdSchema,
   type PublicPresenceValidationSnapshot,
   PublicPresenceValidationSnapshotSchema,
   type RequestContext,
+  resolvePublicPresenceTemplateTypeCode,
 } from '@tcrn/shared';
 
 import {
@@ -143,10 +145,9 @@ export interface PublicPresenceStudioVersionSummary {
 }
 
 export interface PublicPresenceStudioArtistStageSummary {
+  artistStatusCode: string;
   code: string;
-  homepagePolicyKey: string | null;
   id: string;
-  lifecycleStatusMapping: string;
   name: LocalizedText;
 }
 
@@ -160,7 +161,7 @@ export interface PublicPresenceStudioPolicyBlockReason {
 }
 
 export interface PublicPresenceStudioHomepagePolicySummary {
-  allowedTemplateIds: PublicPresenceTemplateId[];
+  allowedTemplateTypeCodes: PublicPresenceTemplateTypeCode[];
   blockedReasons: PublicPresenceStudioPolicyBlockReason[];
   status: 'blocked' | 'ready';
 }
@@ -191,6 +192,7 @@ export interface PublicPresenceStudioTemplateAssetSummary {
   recommendedSections: string[];
   requiredSections: string[];
   templateId: PublicPresenceTemplateId;
+  templateTypeCode: PublicPresenceTemplateTypeCode;
   useCase: string;
 }
 
@@ -401,10 +403,9 @@ function buildStarterDocument(
 
 function serializeArtistStage(
   stage: {
+    artistStatusCode: string;
     code: string;
-    homepagePolicyKey: string | null;
     id: string;
-    lifecycleStatusMapping: string;
     name: LocalizedText;
   } | null
 ): PublicPresenceStudioArtistStageSummary | null {
@@ -413,10 +414,9 @@ function serializeArtistStage(
   }
 
   return {
+    artistStatusCode: stage.artistStatusCode,
     code: stage.code,
-    homepagePolicyKey: stage.homepagePolicyKey,
     id: stage.id,
-    lifecycleStatusMapping: stage.lifecycleStatusMapping,
     name: stage.name,
   };
 }
@@ -430,11 +430,15 @@ function readTemplateAssetManifest(
     return null;
   }
 
-  return manifest;
+  return {
+    ...manifest,
+    templateTypeCode:
+      manifest.templateTypeCode ?? resolvePublicPresenceTemplateTypeCode(manifest.templateId),
+  };
 }
 
 function serializeTemplateAssetSummary(input: {
-  allowedTemplateIds: PublicPresenceTemplateId[];
+  allowedTemplateTypeCodes: PublicPresenceTemplateTypeCode[];
   homepagePolicyBlocked: boolean;
   visibleAsset: PublicPresenceAssetListEntry;
 }): PublicPresenceStudioTemplateAssetSummary | null {
@@ -446,7 +450,7 @@ function serializeTemplateAssetSummary(input: {
     blockedReasonCode = 'noCurrentRevision';
   } else if (input.homepagePolicyBlocked) {
     blockedReasonCode = 'homepagePolicyMissing';
-  } else if (!input.allowedTemplateIds.includes(manifest.templateId)) {
+  } else if (!input.allowedTemplateTypeCodes.includes(manifest.templateTypeCode)) {
     blockedReasonCode = 'notAllowedInCurrentStage';
   } else if (currentRevision.validationState === 'unvalidated') {
     blockedReasonCode = 'validationRequired';
@@ -477,6 +481,7 @@ function serializeTemplateAssetSummary(input: {
     recommendedSections: [...manifest.recommendedSections],
     requiredSections: [...manifest.requiredSections],
     templateId: manifest.templateId,
+    templateTypeCode: manifest.templateTypeCode,
     useCase: manifest.useCase,
   };
 }
@@ -925,14 +930,13 @@ export class PublicPresenceStudioService {
     let normalizedFlow: ArtistLifecycleFlow | null = null;
 
     try {
-      normalizedFlow = createArtistLifecycleFlowSchema({
-        stageCatalog: stageCatalog.map((stage) => ({
-          code: stage.code,
-          id: stage.id,
-          isActive: stage.isActive,
-          lifecycleStatusMapping: stage.lifecycleStatusMapping,
-        })),
-      }).parse(flowRecord);
+	      normalizedFlow = createArtistLifecycleFlowSchema({
+	        stageCatalog: stageCatalog.map((stage) => ({
+	          code: stage.code,
+	          id: stage.id,
+	          isActive: stage.isActive,
+	        })),
+	      }).parse(flowRecord);
     } catch {
       blockedReasons.push({
         code: 'artistLifecycleFlowInvalid',
@@ -940,14 +944,14 @@ export class PublicPresenceStudioService {
       });
     }
 
-    const allowedTemplateIds =
-      currentStage && normalizedFlow
-        ? (normalizedFlow.homepagePolicyByStage.find((policy) => policy.stageId === currentStage.id)
-            ?.allowedTemplateIds ?? [])
-        : [];
+	    const allowedTemplateTypeCodes =
+	      currentStage && normalizedFlow
+	        ? (normalizedFlow.homepagePolicyByStage.find((policy) => policy.stageId === currentStage.id)
+	            ?.allowedTemplateTypeCodes ?? [])
+	        : [];
 
-    if (currentStage && normalizedFlow && allowedTemplateIds.length === 0) {
-      blockedReasons.push({
+	    if (currentStage && normalizedFlow && allowedTemplateTypeCodes.length === 0) {
+	      blockedReasons.push({
         code: 'homepagePolicyMissing',
         messageKey: 'publicPresence.policy.homepagePolicyMissing',
       });
@@ -956,10 +960,10 @@ export class PublicPresenceStudioService {
     const homepagePolicyBlocked = blockedReasons.length > 0;
     const templateAssets = visibleTemplateAssets
       .map((asset) =>
-        serializeTemplateAssetSummary({
-          allowedTemplateIds,
-          homepagePolicyBlocked,
-          visibleAsset: asset,
+	        serializeTemplateAssetSummary({
+	          allowedTemplateTypeCodes,
+	          homepagePolicyBlocked,
+	          visibleAsset: asset,
         })
       )
       .filter((asset): asset is PublicPresenceStudioTemplateAssetSummary => Boolean(asset));
@@ -972,10 +976,10 @@ export class PublicPresenceStudioService {
     }
 
     return {
-      currentStage,
-      homepagePolicy: {
-        allowedTemplateIds,
-        blockedReasons,
+	      currentStage,
+	      homepagePolicy: {
+	        allowedTemplateTypeCodes,
+	        blockedReasons,
         status: blockedReasons.length > 0 ? 'blocked' : 'ready',
       } satisfies PublicPresenceStudioHomepagePolicySummary,
       talent,

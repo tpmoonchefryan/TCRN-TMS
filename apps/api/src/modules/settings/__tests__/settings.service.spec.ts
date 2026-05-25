@@ -389,7 +389,9 @@ describe('SettingsApplicationService', () => {
 
       expect(response.writable).toBe(false);
       expect(response.inheritedFrom).toBe('tenant');
-      expect(response.flow.homepagePolicyByStage[0]?.allowedTemplateIds).toEqual(['debutReveal']);
+      expect(response.flow.homepagePolicyByStage[0]?.allowedTemplateTypeCodes).toEqual([
+        'pending-reveal',
+      ]);
       expect(response.validationIssues).toEqual([]);
     });
 

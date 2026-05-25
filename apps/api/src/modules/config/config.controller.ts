@@ -236,21 +236,13 @@ class CreateConfigDto {
   color?: string;
 
   @ApiPropertyOptional({
-    description: 'Artist Stage lifecycle mapping',
+    description: 'Artist Status dictionary item code for Artist Stage',
     enum: ['draft', 'published', 'disabled'],
     example: 'draft',
   })
   @IsOptional()
   @IsEnum(['draft', 'published', 'disabled'])
-  lifecycleStatusMapping?: 'draft' | 'published' | 'disabled';
-
-  @ApiPropertyOptional({
-    description: 'Homepage policy key used by tenant lifecycle flow',
-    example: 'debut-policy',
-  })
-  @IsOptional()
-  @IsString()
-  homepagePolicyKey?: string;
+  artistStatusCode?: 'draft' | 'published' | 'disabled';
 
   @ApiPropertyOptional({ description: 'Active status', example: true })
   @IsOptional()
@@ -402,6 +394,15 @@ class UpdateConfigDto {
   @IsOptional()
   @IsString()
   color?: string;
+
+  @ApiPropertyOptional({
+    description: 'Artist Status dictionary item code for Artist Stage',
+    enum: ['draft', 'published', 'disabled'],
+    example: 'draft',
+  })
+  @IsOptional()
+  @IsEnum(['draft', 'published', 'disabled'])
+  artistStatusCode?: 'draft' | 'published' | 'disabled';
 
   @ApiPropertyOptional({ description: 'Base URL for platform', example: 'https://twitter.com' })
   @IsOptional()

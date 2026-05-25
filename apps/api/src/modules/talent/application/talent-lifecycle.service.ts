@@ -211,7 +211,7 @@ export class TalentLifecycleService {
     userId: string,
     targetStage: ArtistStageLifecycleCatalogRecord
   ) {
-    if (targetStage.lifecycleStatusMapping === 'published') {
+    if (targetStage.artistStatusCode === 'published') {
       const readiness = await this.getPublishReadiness(talent.id, tenantSchema);
       this.assertPublishReadiness(readiness);
     }
@@ -220,9 +220,9 @@ export class TalentLifecycleService {
       talent.id,
       tenantSchema,
       userId,
-      targetStage.id,
-      targetStage.lifecycleStatusMapping
-    );
+	      targetStage.id,
+	      targetStage.artistStatusCode
+	    );
   }
 
   private async loadArtistLifecycleContext(
@@ -277,9 +277,9 @@ export class TalentLifecycleService {
       )
       .filter(
         (stage) =>
-          stage.targetStage.isActive &&
-          stage.targetStage.lifecycleStatusMapping === targetLifecycleStatus
-      );
+	          stage.targetStage.isActive &&
+	          stage.targetStage.artistStatusCode === targetLifecycleStatus
+	      );
 
     if (candidateTransitions.length === 0) {
       throw new ConflictException({

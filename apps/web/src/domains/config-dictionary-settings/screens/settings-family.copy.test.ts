@@ -14,9 +14,9 @@ describe('settings family copy', () => {
       koreanCatalog['customer-status'].fields.find((field) => field.key === 'color')?.label
     ).toBe('배지 색상');
     expect(
-      koreanCatalog['artist-stage'].fields.find((field) => field.key === 'lifecycleStatusMapping')
+      koreanCatalog['artist-stage'].fields.find((field) => field.key === 'artistStatusCode')
         ?.label
-    ).toBe('수명주기 매핑');
+    ).toBe('Artist Status');
 
     expect(frenchCatalog['profile-store'].label).toBe('Archive client');
     expect(frenchCatalog['artist-stage'].label).toBe('Etape artiste');

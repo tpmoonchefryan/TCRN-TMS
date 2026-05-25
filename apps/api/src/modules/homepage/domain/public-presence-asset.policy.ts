@@ -12,12 +12,14 @@ import {
   PublicPresenceAssetScopeTypeSchema,
   PUBLIC_PRESENCE_ASSET_RUNTIME_VERSION,
   PublicPresenceSourceBundleFileSchema,
+  resolvePublicPresenceTemplateTypeCode,
   type PublicPresenceAssetKind,
   type PublicPresenceAssetManifest,
   type PublicPresenceAssetScopeContext,
   type PublicPresenceAssetScopeType,
   type PublicPresenceAssetValidationState,
   type PublicPresenceSourceBundleFile,
+  type PublicPresenceTemplateId,
 } from '@tcrn/shared';
 
 export interface PublicPresenceAssetValidationSummary {
@@ -113,7 +115,9 @@ export function normalizePublicPresenceAssetDescription(
 }
 
 export function parsePublicPresenceAssetManifest(manifest: unknown): PublicPresenceAssetManifest {
-  const parsed = PublicPresenceAssetManifestSchema.safeParse(manifest);
+  const parsed = PublicPresenceAssetManifestSchema.safeParse(
+    normalizeTemplateManifestTypeCode(manifest)
+  );
 
   if (!parsed.success) {
     throw new BadRequestException({
@@ -124,6 +128,25 @@ export function parsePublicPresenceAssetManifest(manifest: unknown): PublicPrese
   }
 
   return parsed.data;
+}
+
+export function normalizeTemplateManifestTypeCode(manifest: unknown): unknown {
+  if (
+    manifest &&
+    typeof manifest === 'object' &&
+    (manifest as { assetKind?: unknown }).assetKind === 'template' &&
+    typeof (manifest as { templateId?: unknown }).templateId === 'string' &&
+    typeof (manifest as { templateTypeCode?: unknown }).templateTypeCode !== 'string'
+  ) {
+    return {
+      ...manifest,
+      templateTypeCode: resolvePublicPresenceTemplateTypeCode(
+        (manifest as { templateId: PublicPresenceTemplateId }).templateId
+      ),
+    };
+  }
+
+  return manifest;
 }
 
 export function parsePublicPresenceSourceBundle(

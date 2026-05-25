@@ -153,10 +153,12 @@ export type ScopedConfigEntityType =
   | 'inactivation-reason'
   | 'membership-class'
   | 'membership-type'
-  | 'membership-level'
-  | 'profile-store'
-  | 'consent'
-  | 'custom-domain';
+	  | 'membership-level'
+	  | 'profile-store'
+	  | 'consent'
+	  | 'homepage-template-asset'
+	  | 'homepage-component-asset'
+	  | 'custom-domain';
 
 export interface ConfigEntityRecord {
   id: string;
@@ -178,10 +180,9 @@ export interface ConfigEntityRecord {
   createdAt: string;
   updatedAt: string;
   version: number;
-  contentMarkdown?: LocalizedText | null;
-  color?: string | null;
-  lifecycleStatusMapping?: 'draft' | 'published' | 'disabled' | null;
-  homepagePolicyKey?: string | null;
+	  contentMarkdown?: LocalizedText | null;
+	  color?: string | null;
+	  artistStatusCode?: 'draft' | 'published' | 'disabled' | null;
   channelCategoryId?: string | null;
   reasonCategoryId?: string | null;
   consentVersion?: string | null;
@@ -217,11 +218,10 @@ export interface CreateConfigEntityInput {
   name: LocalizedText;
   description?: PartialLocalizedText | null;
   sortOrder?: number;
-  ownerType?: ConfigEntityScopeType;
-  ownerId?: string;
-  color?: string;
-  lifecycleStatusMapping?: 'draft' | 'published' | 'disabled';
-  homepagePolicyKey?: string;
+	  ownerType?: ConfigEntityScopeType;
+	  ownerId?: string;
+	  color?: string;
+	  artistStatusCode?: 'draft' | 'published' | 'disabled';
   channelCategoryId?: string;
   reasonCategoryId?: string;
   membershipClassId?: string;

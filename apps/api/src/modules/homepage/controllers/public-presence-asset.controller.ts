@@ -13,6 +13,7 @@ import {
   PublicPresenceAssetScopeQuerySchema,
   type PublicPresenceAssetScopeType,
   type PublicPresenceTemplateId,
+  type PublicPresenceTemplateTypeCode,
   UpdatePublicPresenceAssetRevisionSchema,
 } from '@tcrn/shared';
 import type { RequestContext } from '@tcrn/shared';
@@ -36,6 +37,7 @@ interface CreatePublicPresenceAssetDto {
   name?: Partial<LocalizedText> | null;
   sourceBundle?: unknown;
   templateId?: PublicPresenceTemplateId | null;
+  templateTypeCode?: PublicPresenceTemplateTypeCode | null;
 }
 
 interface UpdatePublicPresenceAssetRevisionDto {

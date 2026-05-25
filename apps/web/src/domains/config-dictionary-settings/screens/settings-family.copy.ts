@@ -1283,17 +1283,13 @@ const CONFIG_FIELD_COPY: Record<SupportedUiLocale, ConfigFieldCopyMap> &
   en: {},
   zh_HANS: {
     color: { label: '徽标颜色' },
-    lifecycleStatusMapping: {
-      label: '生命周期映射',
+    artistStatusCode: {
+      label: '艺人状态',
       options: [
         { value: 'draft', label: '草稿' },
         { value: 'published', label: '已发布' },
         { value: 'disabled', label: '已停用' },
       ],
-    },
-    homepagePolicyKey: {
-      label: '主页策略键',
-      description: '供租户生命周期策略判定主页可用性使用的引用键。',
     },
     channelCategoryId: { label: '渠道类别' },
     reasonCategoryId: { label: '原因分类' },
@@ -1312,17 +1308,13 @@ const CONFIG_FIELD_COPY: Record<SupportedUiLocale, ConfigFieldCopyMap> &
   },
   zh_HANT: {
     color: { label: '徽標顏色' },
-    lifecycleStatusMapping: {
-      label: '生命週期映射',
+    artistStatusCode: {
+      label: '藝人狀態',
       options: [
         { value: 'draft', label: '草稿' },
         { value: 'published', label: '已發布' },
         { value: 'disabled', label: '已停用' },
       ],
-    },
-    homepagePolicyKey: {
-      label: '主頁策略鍵',
-      description: '供租戶生命週期策略判定主頁可用性使用的參照鍵。',
     },
     channelCategoryId: { label: '渠道類別' },
     reasonCategoryId: { label: '原因分類' },
@@ -1341,17 +1333,13 @@ const CONFIG_FIELD_COPY: Record<SupportedUiLocale, ConfigFieldCopyMap> &
   },
   ja: {
     color: { label: 'バッジ色' },
-    lifecycleStatusMapping: {
-      label: 'ライフサイクル対応',
+    artistStatusCode: {
+      label: 'アーティストステータス',
       options: [
         { value: 'draft', label: '下書き' },
         { value: 'published', label: '公開済み' },
         { value: 'disabled', label: '無効' },
       ],
-    },
-    homepagePolicyKey: {
-      label: 'ホームページポリシーキー',
-      description: 'テナントのライフサイクルポリシーが公開可否を判定するための参照キーです。',
     },
     channelCategoryId: { label: 'チャネルカテゴリ' },
     reasonCategoryId: { label: '理由カテゴリ' },
@@ -1376,17 +1364,13 @@ const CONFIG_FIELD_COPY: Record<SupportedUiLocale, ConfigFieldCopyMap> &
   },
   ko: {
     color: { label: '배지 색상' },
-    lifecycleStatusMapping: {
-      label: '수명주기 매핑',
+    artistStatusCode: {
+      label: 'Artist Status',
       options: [
         { value: 'draft', label: '초안' },
         { value: 'published', label: '게시됨' },
         { value: 'disabled', label: '중지됨' },
       ],
-    },
-    homepagePolicyKey: {
-      label: '홈페이지 정책 키',
-      description: '테넌트 수명주기 정책이 홈페이지 가용성을 판단할 때 쓰는 참조 키입니다.',
     },
     channelCategoryId: { label: '채널 카테고리' },
     reasonCategoryId: { label: '사유 카테고리' },
@@ -1411,18 +1395,13 @@ const CONFIG_FIELD_COPY: Record<SupportedUiLocale, ConfigFieldCopyMap> &
   },
   fr: {
     color: { label: 'Couleur du badge' },
-    lifecycleStatusMapping: {
-      label: 'Mappage du cycle de vie',
+    artistStatusCode: {
+      label: 'Artist Status',
       options: [
         { value: 'draft', label: 'Brouillon' },
         { value: 'published', label: 'Publie' },
         { value: 'disabled', label: 'Desactive' },
       ],
-    },
-    homepagePolicyKey: {
-      label: 'Cle de politique homepage',
-      description:
-        'Cle de reference utilisee par la politique de cycle de vie du tenant pour decider de la disponibilite homepage.',
     },
     channelCategoryId: { label: 'Categorie de canal' },
     reasonCategoryId: { label: 'Categorie de motif' },

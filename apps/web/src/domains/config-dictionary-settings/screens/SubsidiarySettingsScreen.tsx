@@ -21,7 +21,6 @@ import {
   listDictionaryTypes,
 } from '@/domains/config-dictionary-settings/api/system-dictionary.api';
 import { DictionaryExplorerPanel } from '@/domains/config-dictionary-settings/components/DictionaryExplorerPanel';
-import { PublicPresenceAssetWorkspace } from '@/domains/config-dictionary-settings/components/PublicPresenceAssetWorkspace';
 import { ScopedConfigEntityWorkspace } from '@/domains/config-dictionary-settings/components/ScopedConfigEntityWorkspace';
 import { SettingsCategoryWorkbench } from '@/domains/config-dictionary-settings/components/SettingsCategoryWorkbench';
 import {
@@ -782,17 +781,17 @@ export function SubsidiarySettingsScreen({
             <div className="space-y-6">
               <GlassSurface className="p-6">
                 <FormSection
-                  title={common.configEntities}
-                  description={text({
-                    en: 'Manage configuration entities available in this subsidiary, then work with inherited and local homepage assets in the dedicated inventory below.',
-                    zh_HANS:
-                      '先管理当前分目录可用的配置实体，再在下方专用清单里处理继承与本地主页资产。',
-                    zh_HANT:
-                      '先管理目前分目錄可用的配置實體，再在下方專用清單裡處理繼承與本地主頁資產。',
-                    ja: 'この配下スコープで利用できる設定エンティティを管理し、その下の専用インベントリで継承資産とローカルのホームページ資産を扱います。',
-                    ko: '이 하위 조직에서 사용할 구성 엔티티를 관리한 뒤, 아래 전용 인벤토리에서 상속 및 로컬 홈페이지 자산을 다룹니다.',
-                    fr: 'Gérez les entités de configuration de ce périmètre, puis les assets de homepage hérités et locaux dans l’inventaire dédié ci-dessous.',
-                  })}
+	                  title={common.configEntities}
+	                  description={text({
+	                    en: 'Manage configuration entities, inherited homepage template assets, and local component assets from the same subsidiary catalog.',
+	                    zh_HANS:
+	                      '在同一分目录目录中管理配置实体、继承主页模板资产与本地组件资产。',
+	                    zh_HANT:
+	                      '在同一分目錄目錄中管理配置實體、繼承主頁模板資產與本地元件資產。',
+	                    ja: 'この配下スコープの設定エンティティ、継承ホームページテンプレート資産、ローカルコンポーネント資産を同じカタログで管理します。',
+	                    ko: '이 하위 조직 카탈로그에서 구성 엔티티, 상속 홈페이지 템플릿 자산, 로컬 컴포넌트 자산을 함께 관리합니다.',
+	                    fr: 'Gérez les entités de configuration, les assets template de homepage hérités et les composants locaux dans le même catalogue de périmètre.',
+	                  })}
                 >
                   <div className="grid gap-4 xl:grid-cols-3">
                     <FieldRow
@@ -847,47 +846,17 @@ export function SubsidiarySettingsScreen({
 
                   <ScopedConfigEntityWorkspace
                     request={request}
-                    requestEnvelope={requestEnvelope}
-                    scopeType="subsidiary"
-                    scopeId={subsidiaryId}
-                    locale={locale}
-                    copy={scopedConfigCopy}
-                    catalog={localizedConfigEntityCatalog}
-                  />
-                </FormSection>
-              </GlassSurface>
-
-              <GlassSurface className="p-6">
-                <FormSection
-                  title={text({
-                    en: 'Homepage Assets',
-                    zh_HANS: '主页资产',
-                    zh_HANT: '主頁資產',
-                    ja: 'ホームページ資産',
-                    ko: '홈페이지 자산',
-                    fr: 'Assets de homepage',
-                  })}
-                  description={text({
-                    en: 'Inspect inherited assets, duplicate protected ones into this subsidiary, and open the scoped IDE from the resulting asset record.',
-                    zh_HANS:
-                      '查看继承资产，把受保护资产复制到当前分目录，并从生成后的资产记录进入对应 IDE。',
-                    zh_HANT:
-                      '查看繼承資產，把受保護資產複製到目前分目錄，並從產生後的資產記錄進入對應 IDE。',
-                    ja: '継承資産を確認し、保護された資産をこの配下スコープへ複製して、生成された資産レコードから対象 IDE を開きます。',
-                    ko: '상속 자산을 확인하고 보호된 자산을 현재 하위 조직으로 복제한 뒤, 생성된 자산 레코드에서 해당 IDE를 엽니다.',
-                    fr: 'Inspectez les assets hérités, dupliquez ici ceux qui sont protégés, puis ouvrez l’IDE ciblé depuis le record obtenu.',
-                  })}
-                >
-                  <PublicPresenceAssetWorkspace
-                    locale={locale}
-                    request={request}
-                    scopeId={subsidiaryId}
-                    scopeType="subsidiary"
-                    tenantId={tenantId}
-                  />
-                </FormSection>
-              </GlassSurface>
-            </div>
+	                    requestEnvelope={requestEnvelope}
+	                    scopeType="subsidiary"
+	                    scopeId={subsidiaryId}
+	                    tenantId={tenantId}
+	                    locale={locale}
+	                    copy={scopedConfigCopy}
+	                    catalog={localizedConfigEntityCatalog}
+	                  />
+	                </FormSection>
+	              </GlassSurface>
+	            </div>
           ) : null}
 
           {displayedSectionId === 'settings' ? (

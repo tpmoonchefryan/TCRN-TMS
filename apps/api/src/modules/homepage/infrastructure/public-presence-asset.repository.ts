@@ -28,6 +28,7 @@ export interface PublicPresenceAssetRow {
   ownerType: PublicPresenceAssetOwnerType;
   status: PublicPresenceAssetStatus;
   templateId: string | null;
+  templateTypeCode: string | null;
   updatedAt: Date;
   version: number;
 }
@@ -67,6 +68,7 @@ const ASSET_SELECT = `
   name,
   description,
   template_id as "templateId",
+  template_type_code as "templateTypeCode",
   component_type as "componentType",
   status,
   is_system as "isSystem",
@@ -351,6 +353,7 @@ export class PublicPresenceAssetRepository {
       sourceHash: string;
       status: PublicPresenceAssetStatus;
       templateId: string | null;
+      templateTypeCode?: string | null;
       validationState: PublicPresenceAssetValidationState;
       validationSummary: {
         issueCount: number;
@@ -372,6 +375,7 @@ export class PublicPresenceAssetRepository {
               name,
               description,
               template_id,
+              template_type_code,
               component_type,
               status,
               is_system,
@@ -390,9 +394,10 @@ export class PublicPresenceAssetRepository {
               $7::text,
               $8::text,
               $9::text,
-              $10::boolean,
-              $11::uuid,
-              $11::uuid,
+              $10::text,
+              $11::boolean,
+              $12::uuid,
+              $12::uuid,
               1
             )
             RETURNING id
@@ -404,6 +409,8 @@ export class PublicPresenceAssetRepository {
           JSON.stringify(input.name),
           JSON.stringify(input.description),
           input.templateId,
+          input.templateTypeCode ??
+            (input.manifest.assetKind === 'template' ? input.manifest.templateTypeCode : null),
           input.componentType,
           input.status,
           input.ownerType === 'system',

@@ -35,7 +35,7 @@ describe('TalentWriteService', () => {
     vi.mocked(mockRepository.findActiveArtistStage).mockResolvedValue({
       id: 'stage-1',
       code: 'PRE_DEBUT',
-      lifecycleStatusMapping: 'draft',
+      artistStatusCode: 'draft',
     } as never);
     vi.mocked(mockReadService.findByCode).mockResolvedValue(null);
     vi.mocked(mockReadService.findByHomepagePath).mockResolvedValue(null);
@@ -119,7 +119,7 @@ describe('TalentWriteService', () => {
     vi.mocked(mockRepository.findActiveArtistStage).mockResolvedValue({
       id: 'stage-1',
       code: 'PRE_DEBUT',
-      lifecycleStatusMapping: 'draft',
+      artistStatusCode: 'draft',
     } as never);
     vi.mocked(mockReadService.findByCode).mockResolvedValue(null);
     vi.mocked(mockReadService.findByHomepagePath).mockResolvedValue(null);
