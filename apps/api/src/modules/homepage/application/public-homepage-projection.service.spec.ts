@@ -1,10 +1,14 @@
-import { describe, expect, it, vi } from 'vitest';
-
+import { BadRequestException } from '@nestjs/common';
 import {
+  buildBlankPublicPresenceAssetSourceBundle,
+  buildPublicPresenceTemplateAssetManifest,
   createPublicPresenceValidationArtifact,
   DEFAULT_THEME,
+  getPublicPresenceTemplateSeedText,
+  type PublicPresenceAssetRevisionPin,
   type PublicPresenceDocument,
 } from '@tcrn/shared';
+import { describe, expect, it, vi } from 'vitest';
 
 import type {
   PublicHomepageData,
@@ -14,8 +18,9 @@ import { HomepageAdminRepository } from '../infrastructure/homepage-admin.reposi
 import { PublicHomepageReadRepository } from '../infrastructure/public-homepage-read.repository';
 import { PublicPresenceFoundationRepository } from '../infrastructure/public-presence-foundation.repository';
 import { buildPublicPresenceSeedRuntimeAuthorityForTests } from '../testing/public-presence-seed-runtime-authority';
-import { PublicHomepageProjectionService } from './public-homepage-projection.service';
 import { PublicHomepageService } from './public-homepage.service';
+import { PublicHomepageProjectionService } from './public-homepage-projection.service';
+import { PublicPresenceStudioService } from './public-presence-studio.service';
 
 const baseHomepageData: PublicHomepageData = {
   talent: {
@@ -80,6 +85,49 @@ const liveDocument: PublicPresenceDocument = {
   ],
 };
 
+function createTemplateAssetPin(
+  templateId: 'activeTalentHub' | 'debutReveal'
+): PublicPresenceAssetRevisionPin {
+  const assetId =
+    templateId === 'activeTalentHub'
+      ? '66666666-6666-4666-8666-666666666662'
+      : '66666666-6666-4666-8666-666666666664';
+  const assetRevisionId =
+    templateId === 'activeTalentHub'
+      ? '66666666-6666-4666-8666-666666666663'
+      : '66666666-6666-4666-8666-666666666665';
+  const text = getPublicPresenceTemplateSeedText(templateId);
+  const manifest = buildPublicPresenceTemplateAssetManifest(templateId, {
+    assetCode: `${templateId}-code`,
+    assetId,
+    assetRevisionId,
+    description: text.description,
+    name: text.name,
+    ownerId: 'talent-1',
+    ownerType: 'talent',
+  });
+
+  return {
+    assetId,
+    assetRevisionId,
+    snapshot: {
+      assetId,
+      assetRevisionId,
+      manifest,
+      revisionNumber: 1,
+      sourceBundle: buildBlankPublicPresenceAssetSourceBundle({
+        assetCode: `${templateId}-code`,
+        assetKind: 'template',
+        manifest,
+        name: text.name,
+        templateId,
+      }),
+      sourceHash: 'a'.repeat(64),
+    },
+    sourceHash: 'a'.repeat(64),
+  };
+}
+
 function createValidationSnapshotRecord(
   document: PublicPresenceDocument,
   validationMode: 'draft' | 'publish' = 'publish',
@@ -132,6 +180,7 @@ describe('PublicHomepageProjectionService', () => {
     const publicPresenceFoundationRepository = {
       findPortalByTalentId: vi.fn().mockResolvedValue(null),
       findDocumentVersionById: vi.fn().mockResolvedValue(null),
+      findLatestVersionByTemplate: vi.fn().mockResolvedValue(null),
       findValidationSnapshotById: vi.fn().mockResolvedValue(null),
     } as unknown as PublicPresenceFoundationRepository;
 
@@ -139,18 +188,36 @@ describe('PublicHomepageProjectionService', () => {
       findTalentById: vi.fn(),
       findTenantCodeBySchema: vi.fn(),
     } as unknown as HomepageAdminRepository;
+    const publicPresenceStudioService = {
+      getWorkspace: vi.fn().mockResolvedValue({
+        homepagePolicy: {
+          allowedTemplateTypeCodes: ['pending-reveal'],
+          blockedReasons: [],
+          status: 'ready',
+        },
+        templateAssets: [
+          {
+            assetId: 'template-asset-1',
+            isSelectable: true,
+            templateId: 'debutReveal',
+          },
+        ],
+      }),
+    } as unknown as PublicPresenceStudioService;
 
     return {
       service: new PublicHomepageProjectionService(
         publicHomepageService,
         publicHomepageReadRepository,
         publicPresenceFoundationRepository,
-        homepageAdminRepository
+        homepageAdminRepository,
+        publicPresenceStudioService
       ),
       publicHomepageService,
       publicHomepageReadRepository,
       publicPresenceFoundationRepository,
       homepageAdminRepository,
+      publicPresenceStudioService,
     };
   }
 
@@ -229,8 +296,12 @@ describe('PublicHomepageProjectionService', () => {
   });
 
   it('builds draft preview projections for the Studio route with optional phase overrides', async () => {
-    const { service, homepageAdminRepository, publicPresenceFoundationRepository } =
-      createService();
+    const {
+      service,
+      homepageAdminRepository,
+      publicPresenceFoundationRepository,
+      publicPresenceStudioService,
+    } = createService();
 
     vi.mocked(homepageAdminRepository.findTalentById).mockResolvedValue({
       id: 'talent-1',
@@ -256,13 +327,27 @@ describe('PublicHomepageProjectionService', () => {
       updatedAt: new Date('2026-05-15T10:00:00.000Z'),
       version: 1,
     });
+    vi.mocked(publicPresenceStudioService.getWorkspace).mockResolvedValue({
+      homepagePolicy: {
+        allowedTemplateTypeCodes: ['pending-reveal'],
+        blockedReasons: [],
+        status: 'ready',
+      },
+      templateAssets: [
+        {
+          assetId: 'template-asset-1',
+          isSelectable: false,
+          templateId: 'debutReveal',
+        },
+      ],
+    } as Awaited<ReturnType<PublicPresenceStudioService['getWorkspace']>>);
     vi.mocked(publicPresenceFoundationRepository.findDocumentVersionById).mockResolvedValue({
       id: 'draft-1',
       portalId: 'portal-1',
       versionNumber: 3,
       documentSchemaVersion: '1.0',
       templateId: 'debutReveal',
-      templateAssetPin: null,
+      templateAssetPin: createTemplateAssetPin('debutReveal'),
       document: liveDocument as unknown as Record<string, unknown>,
       documentState: 'draft',
       contentHashAlgorithm: 'sha256',
@@ -293,6 +378,103 @@ describe('PublicHomepageProjectionService', () => {
     });
     expect(projection.resolvedRevealPhase).toBe('revealed');
     expect(projection.metadata.title).toBe('Sora reveal');
+  });
+
+  it('blocks draft preview projections when Artist Stage homepage policy blocks the template', async () => {
+    const {
+      service,
+      homepageAdminRepository,
+      publicPresenceFoundationRepository,
+      publicPresenceStudioService,
+    } = createService();
+
+    vi.mocked(homepageAdminRepository.findTalentById).mockResolvedValue({
+      id: 'talent-1',
+      code: 'sora',
+      displayName: 'Tokino Sora',
+      homepagePath: 'tokino-sora',
+      customDomain: null,
+      customDomainVerified: false,
+      artistStageId: 'artist-stage-draft',
+      lifecycleStatus: 'draft',
+      timezone: 'Asia/Tokyo',
+    });
+    vi.mocked(publicPresenceFoundationRepository.findPortalByTalentId).mockResolvedValue({
+      id: 'portal-1',
+      talentId: 'talent-1',
+      draftVersionId: 'draft-1',
+      liveVersionId: null,
+      latestVersionNumber: 1,
+      latestValidationState: 'validEditable',
+      lastValidatedAt: new Date('2026-05-15T10:00:00.000Z'),
+      createdAt: new Date('2026-05-15T08:00:00.000Z'),
+      updatedAt: new Date('2026-05-15T10:00:00.000Z'),
+      version: 1,
+    });
+    vi.mocked(publicPresenceFoundationRepository.findDocumentVersionById).mockResolvedValue({
+      id: 'draft-1',
+      portalId: 'portal-1',
+      versionNumber: 1,
+      documentSchemaVersion: '1.0',
+      templateId: 'activeTalentHub',
+      templateAssetPin: {
+        assetId: 'template-asset-1',
+        assetRevisionId: 'template-revision-1',
+        snapshot: null,
+        sourceHash: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+      },
+      document: {
+        ...liveDocument,
+        templateId: 'activeTalentHub',
+      } as unknown as Record<string, unknown>,
+      documentState: 'draft',
+      contentHashAlgorithm: 'sha256',
+      contentHash: 'draft-hash',
+      lastValidationSnapshotId: 'snapshot-2',
+      scheduledFor: null,
+      publishedAt: null,
+      publishedBy: null,
+      createdAt: new Date('2026-05-15T09:00:00.000Z'),
+      updatedAt: new Date('2026-05-15T10:00:00.000Z'),
+      createdBy: 'user-1',
+    });
+    vi.mocked(publicPresenceStudioService.getWorkspace).mockResolvedValue({
+      homepagePolicy: {
+        allowedTemplateTypeCodes: ['graduated'],
+        blockedReasons: [
+          {
+            code: 'noAllowedTemplateAssets',
+            messageKey: 'publicPresence.policy.noAllowedTemplateAssets',
+          },
+        ],
+        status: 'blocked',
+      },
+      templateAssets: [
+        {
+          assetId: 'template-asset-1',
+          isSelectable: false,
+          templateId: 'activeTalentHub',
+        },
+      ],
+    } as Awaited<ReturnType<PublicPresenceStudioService['getWorkspace']>>);
+
+    let caught: unknown;
+
+    try {
+      await service.getDraftPreviewProjectionOrThrow('talent-1', 'tenant_alpha', 'current');
+    } catch (error) {
+      caught = error;
+    }
+
+    expect(caught).toBeInstanceOf(BadRequestException);
+    expect((caught as BadRequestException).getResponse()).toMatchObject({
+      message: expect.stringMatching(/Artist Stage policy does not allow/i),
+    });
+    expect(publicPresenceStudioService.getWorkspace).toHaveBeenCalledWith(
+      'talent-1',
+      'tenant_alpha',
+      'activeTalentHub'
+    );
   });
 
   it('uses the talent display name when an existing debut draft still stores raw internal identity copy', async () => {

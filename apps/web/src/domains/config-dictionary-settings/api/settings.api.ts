@@ -1,6 +1,7 @@
 import {
-  normalizeSupportedUiLocale,
+  type ArtistLifecycleFlow,
   type LocalizedText,
+  normalizeSupportedUiLocale,
   type PartialLocalizedText,
   type PublicPresenceTemplateTypeCode,
   type SupportedUiLocale,
@@ -371,6 +372,23 @@ export interface UpdateSettingsInput {
   version: number;
 }
 
+export interface ArtistLifecycleFlowSettingsResponse {
+  scopeType: ConfigEntityScopeType;
+  scopeId: string | null;
+  inheritedFrom: 'tenant' | 'default';
+  writable: boolean;
+  version: number;
+  flow: ArtistLifecycleFlow;
+  validationIssues: Array<{
+    path: string[];
+    message: string;
+  }>;
+}
+
+export interface UpdateArtistLifecycleFlowInput {
+  flow: ArtistLifecycleFlow;
+}
+
 export interface ProfileStoreListOptions {
   page?: number;
   pageSize?: number;
@@ -573,6 +591,22 @@ export function readTenantSettings(request: RequestFn) {
 export function updateTenantSettings(request: RequestFn, input: UpdateSettingsInput) {
   return request<ScopeSettingsResponse>(
     '/api/v1/organization/settings',
+    buildJsonRequestInit('PATCH', input)
+  );
+}
+
+export function readTenantArtistLifecycleFlow(request: RequestFn) {
+  return request<ArtistLifecycleFlowSettingsResponse>(
+    '/api/v1/organization/settings/artist-lifecycle-flow'
+  );
+}
+
+export function updateTenantArtistLifecycleFlow(
+  request: RequestFn,
+  input: UpdateArtistLifecycleFlowInput
+) {
+  return request<ArtistLifecycleFlowSettingsResponse>(
+    '/api/v1/organization/settings/artist-lifecycle-flow',
     buildJsonRequestInit('PATCH', input)
   );
 }
@@ -839,6 +873,12 @@ export function readSubsidiarySettings(request: RequestFn, subsidiaryId: string)
   return request<ScopeSettingsResponse>(`/api/v1/subsidiaries/${subsidiaryId}/settings`);
 }
 
+export function readSubsidiaryArtistLifecycleFlow(request: RequestFn, subsidiaryId: string) {
+  return request<ArtistLifecycleFlowSettingsResponse>(
+    `/api/v1/subsidiaries/${subsidiaryId}/settings/artist-lifecycle-flow`
+  );
+}
+
 export function updateSubsidiarySettings(
   request: RequestFn,
   subsidiaryId: string,
@@ -856,6 +896,12 @@ export function readTalentDetail(request: RequestFn, talentId: string) {
 
 export function readTalentSettings(request: RequestFn, talentId: string) {
   return request<ScopeSettingsResponse>(`/api/v1/talents/${talentId}/settings`);
+}
+
+export function readTalentArtistLifecycleFlow(request: RequestFn, talentId: string) {
+  return request<ArtistLifecycleFlowSettingsResponse>(
+    `/api/v1/talents/${talentId}/settings/artist-lifecycle-flow`
+  );
 }
 
 export function updateTalentSettings(

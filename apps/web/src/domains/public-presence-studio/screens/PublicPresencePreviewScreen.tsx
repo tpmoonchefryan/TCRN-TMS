@@ -1,5 +1,7 @@
 'use client';
 
+import type { PublicPresencePhaseVisibility, PublicPresenceProjection } from '@tcrn/shared';
+import { DEFAULT_THEME, normalizeTheme } from '@tcrn/shared';
 import {
   ArrowLeft,
   Eye,
@@ -14,12 +16,9 @@ import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useId, useMemo, useState } from 'react';
 
-import type { PublicPresencePhaseVisibility, PublicPresenceProjection } from '@tcrn/shared';
-import { DEFAULT_THEME, normalizeTheme } from '@tcrn/shared';
-
+import { preloadPublicHomepageProjectionMedia } from '@/domains/public-homepage/components/public-homepage-projection-media';
 import { PublicHomepageProjectionRenderer } from '@/domains/public-homepage/components/PublicHomepageProjectionRenderer';
 import { getHomepageCanvasStyle } from '@/domains/public-homepage/components/PublicHomepageRenderer';
-import { preloadPublicHomepageProjectionMedia } from '@/domains/public-homepage/components/public-homepage-projection-media';
 import {
   PublicPresenceBadge,
   PublicPresenceShell,
@@ -32,12 +31,6 @@ import {
   readPublicPresenceDraftPreview,
   readPublicPresenceWorkspace,
 } from '@/domains/public-presence-studio/api/public-presence-studio.api';
-import { useOverlayFocusManager } from '@/domains/public-presence-studio/screens/public-presence-studio-overlay';
-import {
-  mergeUrlSearchParams,
-  parseBooleanSearchParam,
-  parseEnumSearchParam,
-} from '@/domains/public-presence-studio/screens/public-presence-studio-url-state';
 import {
   getPublicPresencePreviewPhaseLabel,
   getPublicPresenceStageSectionLabel,
@@ -47,11 +40,17 @@ import {
   usePublicPresenceStudioCopy,
 } from '@/domains/public-presence-studio/screens/public-presence-studio.copy';
 import { withPublicPresenceRouteTimeout } from '@/domains/public-presence-studio/screens/public-presence-studio.loading';
+import { useOverlayFocusManager } from '@/domains/public-presence-studio/screens/public-presence-studio-overlay';
+import {
+  mergeUrlSearchParams,
+  parseBooleanSearchParam,
+  parseEnumSearchParam,
+} from '@/domains/public-presence-studio/screens/public-presence-studio-url-state';
 import { ApiRequestError } from '@/platform/http/api';
 import {
   buildPublicPresenceStudioEditorPath,
-  mergePathSearchParams,
   buildTalentWorkspaceSectionPath,
+  mergePathSearchParams,
 } from '@/platform/routing/workspace-paths';
 import { pickLocaleText } from '@/platform/runtime/locale/locale-text';
 import { useSession } from '@/platform/runtime/session/session-provider';
@@ -154,6 +153,27 @@ function resolveCurrentTemplate(
   );
 }
 
+function getHomepagePolicyBlockedState(locale: string) {
+  return {
+    description: pickLocaleText(locale, {
+      en: 'The current Artist Stage policy does not allow this Homepage Template Type in Fan Preview.',
+      zh_HANS: '当前 Artist Stage 策略不允许此 Homepage Template Type 进入粉丝预览。',
+      zh_HANT: '目前 Artist Stage 策略不允許此 Homepage Template Type 進入粉絲預覽。',
+      ja: '現在の Artist Stage ポリシーでは、この Homepage Template Type をファンプレビューで表示できません。',
+      ko: '현재 Artist Stage 정책은 이 Homepage Template Type의 팬 미리보기를 허용하지 않습니다.',
+      fr: 'La politique Artist Stage actuelle n’autorise pas ce Homepage Template Type dans le Fan Preview.',
+    }),
+    title: pickLocaleText(locale, {
+      en: 'Fan preview blocked by Artist Stage policy',
+      zh_HANS: '粉丝预览已被 Artist Stage 策略阻止',
+      zh_HANT: '粉絲預覽已被 Artist Stage 策略阻止',
+      ja: 'Artist Stage ポリシーによりファンプレビューがブロックされています',
+      ko: 'Artist Stage 정책이 팬 미리보기를 차단했습니다',
+      fr: 'Fan Preview bloqué par la politique Artist Stage',
+    }),
+  };
+}
+
 export function PublicPresencePreviewScreen({
   initialTemplateId,
   talentId,
@@ -252,7 +272,7 @@ export function PublicPresencePreviewScreen({
   }, [copy.state.loadWorkspaceError, request, selectedTemplateId, talentId]);
 
   useEffect(() => {
-    if (!workspace?.draftVersion) {
+    if (!workspace?.draftVersion || workspace.homepagePolicy.status !== 'ready') {
       setPreviewProjection(null);
       setSelectedPreviewSectionId(null);
       return;
@@ -317,6 +337,7 @@ export function PublicPresencePreviewScreen({
     selectedTemplateId,
     talentId,
     workspace?.draftVersion,
+    workspace?.homepagePolicy.status,
     workspace?.selectedTemplateId,
   ]);
 
@@ -353,6 +374,8 @@ export function PublicPresencePreviewScreen({
 
   const templateVersions = workspace?.pageVersions ?? [];
   const currentTemplate = resolveCurrentTemplate(workspace, selectedTemplateId);
+  const homepagePolicyBlocked = workspace?.homepagePolicy.status === 'blocked';
+  const homepagePolicyBlockedState = getHomepagePolicyBlockedState(locale);
   const mobilePreviewToolsOverlay = useOverlayFocusManager({
     onClose: () => setMobilePreviewToolsOpen(false),
     open: mobilePreviewToolsOpen,
@@ -883,7 +906,16 @@ export function PublicPresencePreviewScreen({
           />
         ) : null}
 
-        {!workspace.draftVersion ? (
+        {homepagePolicyBlocked ? (
+          <PublicPresenceStateView
+            data-testid="preview-homepage-policy-blocked"
+            description={homepagePolicyBlockedState.description}
+            title={homepagePolicyBlockedState.title}
+            tone="warning"
+          />
+        ) : null}
+
+        {!homepagePolicyBlocked && !workspace.draftVersion ? (
           <PublicPresenceStateView
             description={copy.state.previewWaitingDescription}
             title={copy.state.previewWaitingTitle}
@@ -891,7 +923,7 @@ export function PublicPresencePreviewScreen({
           />
         ) : null}
 
-        {workspace.draftVersion && !previewError ? (
+        {workspace.draftVersion && !previewError && !homepagePolicyBlocked ? (
           <div className="relative">
             <PublicPresenceSurface
               className="relative flex min-h-[calc(100vh-4.75rem)] flex-col border border-slate-200/80 bg-white/95 p-0 sm:p-0 lg:p-0"

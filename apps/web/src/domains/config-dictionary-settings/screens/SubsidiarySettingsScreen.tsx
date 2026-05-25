@@ -20,6 +20,7 @@ import {
   type DictionaryTypeSummary,
   listDictionaryTypes,
 } from '@/domains/config-dictionary-settings/api/system-dictionary.api';
+import { ArtistLifecycleFlowWorkspace } from '@/domains/config-dictionary-settings/components/ArtistLifecycleFlowWorkspace';
 import { DictionaryExplorerPanel } from '@/domains/config-dictionary-settings/components/DictionaryExplorerPanel';
 import { ScopedConfigEntityWorkspace } from '@/domains/config-dictionary-settings/components/ScopedConfigEntityWorkspace';
 import { SettingsCategoryWorkbench } from '@/domains/config-dictionary-settings/components/SettingsCategoryWorkbench';
@@ -48,6 +49,7 @@ interface AsyncPanelState<T> {
 }
 
 type SubsidiarySettingsSection = 'details' | 'config-entities' | 'settings' | 'dictionary';
+type SubsidiarySettingsCategory = 'defaults' | 'lifecycle-flow';
 
 const SUBSIDIARY_SETTINGS_SECTIONS: readonly SubsidiarySettingsSection[] = [
   'details',
@@ -183,6 +185,8 @@ export function SubsidiarySettingsScreen({
   const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isDefaultsDrawerOpen, setIsDefaultsDrawerOpen] = useState(false);
+  const [activeSettingsCategory, setActiveSettingsCategory] =
+    useState<SubsidiarySettingsCategory>('defaults');
 
   useEffect(() => {
     setActiveSectionId((current) => (current === urlSection ? current : urlSection));
@@ -871,40 +875,74 @@ export function SubsidiarySettingsScreen({
                     fr: 'Consultez les valeurs par defaut du perimetre avant d ouvrir l edition.',
                   })}
                   actions={
-                    <button
-                      type="button"
-                      onClick={() => setIsDefaultsDrawerOpen(true)}
-                      className="rounded-xl bg-slate-950 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
-                    >
-                      {text({
-                        en: 'Edit defaults',
-                        zh_HANS: '编辑默认值',
-                        zh_HANT: '編輯預設值',
-                        ja: '既定値を編集',
-                        ko: '기본값 편집',
-                        fr: 'Modifier les valeurs par defaut',
-                      })}
-                    </button>
+                    activeSettingsCategory === 'defaults' ? (
+                      <button
+                        type="button"
+                        onClick={() => setIsDefaultsDrawerOpen(true)}
+                        className="rounded-xl bg-slate-950 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
+                      >
+                        {text({
+                          en: 'Edit defaults',
+                          zh_HANS: '编辑默认值',
+                          zh_HANT: '編輯預設值',
+                          ja: '既定値を編集',
+                          ko: '기본값 편집',
+                          fr: 'Modifier les valeurs par defaut',
+                        })}
+                      </button>
+                    ) : null
                   }
                 >
                   <SettingsCategoryWorkbench
                     ariaLabel={common.settingsCategoriesAriaLabel}
-                    categories={[{ id: 'defaults', label: common.defaultsCategory }]}
-                    activeCategoryId="defaults"
+                    categories={[
+                      { id: 'defaults', label: common.defaultsCategory },
+                      {
+                        id: 'lifecycle-flow',
+                        label: text({
+                          en: 'Artist Lifecycle Flow',
+                          zh_HANS: 'Artist Lifecycle Flow',
+                          zh_HANT: 'Artist Lifecycle Flow',
+                          ja: 'Artist Lifecycle Flow',
+                          ko: 'Artist Lifecycle Flow',
+                          fr: 'Artist Lifecycle Flow',
+                        }),
+                      },
+                    ]}
+                    activeCategoryId={activeSettingsCategory}
+                    onCategoryChange={(categoryId) => {
+                      setActiveSettingsCategory(
+                        categoryId === 'lifecycle-flow' ? 'lifecycle-flow' : 'defaults'
+                      );
+                    }}
                   >
-                    <SettingsDefaultsSummaryGrid
-                      draft={initialDraft}
-                      getSourceHint={(key) =>
-                        formatSourceHint(settings.inheritedFrom[key], overrideSet.has(key))
-                      }
-                      text={text}
-                    />
+                    {activeSettingsCategory === 'defaults' ? (
+                      <>
+                        <SettingsDefaultsSummaryGrid
+                          draft={initialDraft}
+                          getSourceHint={(key) =>
+                            formatSourceHint(settings.inheritedFrom[key], overrideSet.has(key))
+                          }
+                          text={text}
+                        />
 
-                    {!isDefaultsDrawerOpen && saveError ? (
-                      <p className="text-sm font-medium text-red-600">{saveError}</p>
+                        {!isDefaultsDrawerOpen && saveError ? (
+                          <p className="text-sm font-medium text-red-600">{saveError}</p>
+                        ) : null}
+                        {!isDefaultsDrawerOpen && saveSuccess ? (
+                          <p className="text-sm font-medium text-emerald-700">{saveSuccess}</p>
+                        ) : null}
+                      </>
                     ) : null}
-                    {!isDefaultsDrawerOpen && saveSuccess ? (
-                      <p className="text-sm font-medium text-emerald-700">{saveSuccess}</p>
+
+                    {activeSettingsCategory === 'lifecycle-flow' ? (
+                      <ArtistLifecycleFlowWorkspace
+                        request={request}
+                        requestEnvelope={requestEnvelope}
+                        scopeType="subsidiary"
+                        scopeId={subsidiaryId}
+                        locale={locale}
+                      />
                     ) : null}
                   </SettingsCategoryWorkbench>
                 </FormSection>

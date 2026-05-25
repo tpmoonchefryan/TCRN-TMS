@@ -1,15 +1,14 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 import {
   buildBlankPublicPresenceAssetSourceBundle,
   buildPublicPresenceTemplateAssetManifest,
-  createPublicPresenceValidationArtifact,
   createLocalizedText,
+  createPublicPresenceValidationArtifact,
   getPublicPresenceTemplateSeedText,
-  type PublicPresenceDocument,
   type PublicPresenceAssetListEntry,
+  type PublicPresenceDocument,
   type RequestContext,
 } from '@tcrn/shared';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type {
   PublicPresenceDocumentVersionRecord,
@@ -383,7 +382,10 @@ describe('PublicPresenceStudioService', () => {
     });
     expect(result.draftVersion?.document.templateId).toBe('activeTalentHub');
     expect(result.draftVersion?.validationSnapshot?.issueCounts.fatal).toBe(0);
-    expect(result.homepagePolicy.allowedTemplateTypeCodes).toEqual(['operating']);
+    expect(result.homepagePolicy.allowedTemplateTypeCodes).toEqual([
+      'operating',
+      'pending-reveal',
+    ]);
     expect(result.releaseReadiness).toEqual({
       blockingDependencyCount: 0,
       dependencies: [],
@@ -395,6 +397,47 @@ describe('PublicPresenceStudioService', () => {
       expect.arrayContaining(['firstEncounter', 'fanActions', 'agencyNotes'])
     );
     expect(result.workflowEvents).toEqual([]);
+  });
+
+  it('uses Flow homepage policy before Artist Stage template type fallback', async () => {
+    vi.mocked(homepageAdminRepository.findTalentById).mockResolvedValue({
+      code: 'aki-rosenthal',
+      customDomain: null,
+      customDomainVerified: false,
+      displayName: 'Aki Rosenthal',
+      homepagePath: 'aki-home',
+      id: 'talent-1',
+      artistStageId: ARTIST_STAGE_ID,
+      lifecycleStatus: 'published',
+      timezone: 'Asia/Tokyo',
+    } as never);
+    vi.mocked(homepageAdminRepository.readArtistLifecycleFlow).mockResolvedValue({
+      homepagePolicyByStage: [
+        {
+          allowedTemplateTypeCodes: ['graduated'],
+          stageId: ARTIST_STAGE_ID,
+        },
+      ],
+      nodes: [
+        {
+          stageCode: 'live',
+          stageId: ARTIST_STAGE_ID,
+        },
+      ],
+      transitions: [],
+    });
+    vi.mocked(publicPresenceFoundationRepository.findPortalByTalentId).mockResolvedValue(null);
+
+    const result = await service.getWorkspace('talent-1', 'tenant_test');
+
+    expect(result.homepagePolicy).toMatchObject({
+      allowedTemplateTypeCodes: ['graduated'],
+      status: 'blocked',
+    });
+    expect(result.homepagePolicy.blockedReasons).toEqual([
+      expect.objectContaining({ code: 'noAllowedTemplateAssets' }),
+    ]);
+    expect(result.templateAssets.every((asset) => !asset.isSelectable)).toBe(true);
   });
 
   it('bootstraps a starter draft when no workspace exists yet', async () => {

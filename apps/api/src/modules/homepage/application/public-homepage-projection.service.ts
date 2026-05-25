@@ -1,14 +1,14 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) - PolyForm Noncommercial License
-import { Injectable, NotFoundException } from '@nestjs/common';
-
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import {
   ErrorCodes,
   PublicPresenceDocumentSchema,
-  PublicPresenceValidationSnapshotSchema,
   type PublicPresencePhaseVisibility,
-  type PublicPresencePublicProjection,
   type PublicPresenceProjection,
+  type PublicPresencePublicProjection,
   type PublicPresenceValidationSnapshot,
+  PublicPresenceValidationSnapshotSchema,
+  resolvePublicPresenceTemplateTypeCode,
 } from '@tcrn/shared';
 
 import type { PublicHomepageTalentRecord } from '../domain/public-homepage-read.policy';
@@ -21,6 +21,7 @@ import { HomepageAdminRepository } from '../infrastructure/homepage-admin.reposi
 import { PublicHomepageReadRepository } from '../infrastructure/public-homepage-read.repository';
 import { PublicPresenceFoundationRepository } from '../infrastructure/public-presence-foundation.repository';
 import { PublicHomepageService } from './public-homepage.service';
+import { PublicPresenceStudioService } from './public-presence-studio.service';
 
 @Injectable()
 export class PublicHomepageProjectionService {
@@ -28,7 +29,8 @@ export class PublicHomepageProjectionService {
     private readonly publicHomepageService: PublicHomepageService,
     private readonly publicHomepageReadRepository: PublicHomepageReadRepository,
     private readonly publicPresenceFoundationRepository: PublicPresenceFoundationRepository,
-    private readonly homepageAdminRepository: HomepageAdminRepository
+    private readonly homepageAdminRepository: HomepageAdminRepository,
+    private readonly publicPresenceStudioService: PublicPresenceStudioService
   ) {}
 
   async getPublishedHomepageProjectionOrThrow(path: string): Promise<PublicPresenceProjection> {
@@ -146,6 +148,67 @@ export class PublicHomepageProjectionService {
         code: ErrorCodes.RES_NOT_FOUND,
         message: 'Public Presence version not found',
       });
+    }
+
+    const workspace = await this.publicPresenceStudioService.getWorkspace(
+      talentId,
+      tenantSchema,
+      version.templateId
+    );
+
+    if (workspace.homepagePolicy.status !== 'ready') {
+      throw new BadRequestException({
+        code: ErrorCodes.VALIDATION_FAILED,
+        details: {
+          homepagePolicy: workspace.homepagePolicy,
+          templateId: version.templateId,
+        },
+        message:
+          'Fan preview is blocked because the current Artist Stage policy does not allow this template.',
+      });
+    }
+
+    const pinnedTemplateAssetId = version.templateAssetPin?.assetId ?? null;
+    const pinnedTemplateManifest = version.templateAssetPin?.snapshot?.manifest;
+    const pinnedTemplateTypeCode =
+      pinnedTemplateManifest?.assetKind === 'template'
+        ? (pinnedTemplateManifest.templateTypeCode ??
+          resolvePublicPresenceTemplateTypeCode(pinnedTemplateManifest.templateId))
+        : null;
+
+    if (
+      pinnedTemplateTypeCode &&
+      !workspace.homepagePolicy.allowedTemplateTypeCodes.includes(pinnedTemplateTypeCode)
+    ) {
+      throw new BadRequestException({
+        code: ErrorCodes.VALIDATION_FAILED,
+        details: {
+          homepagePolicy: workspace.homepagePolicy,
+          templateAssetId: pinnedTemplateAssetId,
+          templateId: version.templateId,
+        },
+        message:
+          'Fan preview is blocked because the selected template asset is outside the current Artist Stage policy.',
+      });
+    }
+
+    if (!pinnedTemplateTypeCode) {
+      const selectedTemplateAsset = workspace.templateAssets.find(
+        (asset) => asset.templateId === version.templateId && asset.isSelectable
+      );
+
+      if (!selectedTemplateAsset) {
+        throw new BadRequestException({
+          code: ErrorCodes.VALIDATION_FAILED,
+          details: {
+            homepagePolicy: workspace.homepagePolicy,
+            templateAssetId: pinnedTemplateAssetId,
+            templateId: version.templateId,
+          },
+          message:
+            'Fan preview is blocked because the selected template asset is outside the current Artist Stage policy.',
+        });
+      }
     }
 
     const tenantCode =

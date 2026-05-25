@@ -54,6 +54,13 @@ vi.mock('@/domains/public-homepage/components/PublicHomepageProjectionRenderer',
 
 function buildWorkspace() {
   return {
+    currentArtistStage: {
+      artistStatusCode: 'active',
+      code: 'active',
+      homepageTemplateTypeCode: 'operating',
+      id: 'artist-stage-active',
+      name: { en: 'Active' },
+    },
     draftVersion: {
       contentHash: 'hash-1',
       contentHashAlgorithm: 'sha256',
@@ -77,6 +84,12 @@ function buildWorkspace() {
       updatedAt: '2026-05-15T12:05:00.000Z',
       validationSnapshot: null,
       versionNumber: 1,
+    },
+    effectiveLifecycleStatus: 'published',
+    homepagePolicy: {
+      allowedTemplateTypeCodes: ['operating'],
+      blockedReasons: [],
+      status: 'ready',
     },
     liveVersion: null,
     pageVersions: [
@@ -117,8 +130,39 @@ function buildWorkspace() {
       talentCode: 'aki',
       tenantCode: 'tenant-1',
     },
+    releaseReadiness: {
+      blockingDependencyCount: 0,
+      dependencies: [],
+    },
+    selectedTemplateAssetId: 'template-asset-1',
     selectedTemplateId: 'activeTalentHub',
     stageSections: [],
+    templateAssets: [
+      {
+        assetCode: 'active-talent-hub',
+        assetDescription: { en: 'Active talent hub template' },
+        assetId: 'template-asset-1',
+        assetName: { en: 'Active Talent Hub' },
+        blockedReasonCode: null,
+        canEdit: false,
+        currentRevisionId: 'template-revision-1',
+        currentRevisionNumber: 1,
+        currentRevisionSourceHash: 'hash-1',
+        currentRevisionStatus: 'published',
+        currentRevisionValidationState: 'valid',
+        defaultSectionOrder: ['firstEncounter'],
+        isSelectable: true,
+        isSystem: true,
+        label: 'Active Talent Hub',
+        optionalSections: [],
+        ownerType: 'system',
+        recommendedSections: ['officialChannels'],
+        requiredSections: ['firstEncounter'],
+        templateId: 'activeTalentHub',
+        templateTypeCode: 'operating',
+        useCase: 'Always-on official public presence for an active talent.',
+      },
+    ],
     templates: [
       {
         defaultSectionOrder: ['firstEncounter'],
@@ -395,5 +439,53 @@ describe('PublicPresencePreviewScreen', () => {
       screen.getByRole('button', { name: '2. Social links: Official Channels' })
     ).toBeInTheDocument();
     expect(screen.getByText('Section 1')).toBeInTheDocument();
+  });
+
+  it('shows the Artist Stage policy block before the saved-draft waiting state', async () => {
+    mockRequest.mockImplementation(async (path: string) => {
+      if (isWorkspaceRequest(path)) {
+        const baseWorkspace = buildWorkspace();
+
+        return {
+          ...baseWorkspace,
+          draftVersion: null,
+          homepagePolicy: {
+            allowedTemplateTypeCodes: ['graduated'],
+            blockedReasons: [
+              {
+                code: 'noAllowedTemplateAssets',
+                messageKey: 'publicPresence.policy.noAllowedTemplateAssets',
+              },
+            ],
+            status: 'blocked',
+          },
+          pageVersions: [],
+          templateAssets: [
+            {
+              ...baseWorkspace.templateAssets[0],
+              blockedReasonCode: 'notAllowedInCurrentStage',
+              isSelectable: false,
+              templateTypeCode: 'operating',
+            },
+          ],
+        };
+      }
+
+      if (isPreviewRequest(path)) {
+        throw new Error('Policy-blocked preview must not call the draft preview API.');
+      }
+
+      throw new Error(`Unhandled request: ${path}`);
+    });
+
+    render(<PublicPresencePreviewScreen talentId="talent-1" tenantId="tenant-1" />);
+
+    expect(await screen.findByTestId('preview-homepage-policy-blocked')).toHaveTextContent(
+      'Fan preview blocked by Artist Stage policy'
+    );
+    expect(screen.queryByText('Fan preview is waiting for a saved draft')).not.toBeInTheDocument();
+    expect(
+      mockRequest.mock.calls.some(([path]) => typeof path === 'string' && isPreviewRequest(path))
+    ).toBe(false);
   });
 });

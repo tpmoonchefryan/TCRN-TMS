@@ -112,9 +112,11 @@ export async function seedUatOrganization(
 
   // Level 1: Headquarters
   const hqResult = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
-    `INSERT INTO "${corpSchema}".subsidiary (id, parent_id, code, path, depth, name, sort_order, is_active, created_at, updated_at, created_by, updated_by, version)
-     VALUES (gen_random_uuid(), NULL, 'HQ', '/HQ/', 0, $1::jsonb, 1, true, now(), now(), $2::uuid, $2::uuid, 1)
-     ON CONFLICT (code) DO UPDATE SET name = EXCLUDED.name
+    `INSERT INTO "${corpSchema}".subsidiary (id, parent_id, code, path, depth, name, description, sort_order, is_active, created_at, updated_at, created_by, updated_by, version)
+     VALUES (gen_random_uuid(), NULL, 'HQ', '/HQ/', 0, $1::jsonb, $2::jsonb, 1, true, now(), now(), $3::uuid, $3::uuid, 1)
+     ON CONFLICT (code) DO UPDATE SET
+       name = EXCLUDED.name,
+       description = EXCLUDED.description
      RETURNING id`,
     JSON.stringify(createLocalizedText({
       en: 'Headquarters',
@@ -124,17 +126,27 @@ export async function seedUatOrganization(
       ko: 'Headquarters',
       fr: 'Headquarters',
     })),
+    JSON.stringify(createLocalizedText({
+      en: 'UAT corporate headquarters for acceptance coverage.',
+      zh_HANS: '用于验收覆盖的 UAT 企业总部。',
+      zh_HANT: '用於驗收覆蓋的 UAT 企業總部。',
+      ja: '受け入れ検証用の UAT 企業本部です。',
+      ko: 'UAT corporate headquarters for acceptance coverage.',
+      fr: 'Siege UAT pour la couverture d acceptation.',
+    })),
     systemUserId
   );
   subsidiaries['HQ'] = hqResult[0].id;
 
   // Level 2: Business Units under HQ
   const buResults = await prisma.$queryRawUnsafe<Array<{ id: string; code: string }>>(
-    `INSERT INTO "${corpSchema}".subsidiary (id, parent_id, code, path, depth, name, sort_order, is_active, created_at, updated_at, created_by, updated_by, version)
+    `INSERT INTO "${corpSchema}".subsidiary (id, parent_id, code, path, depth, name, description, sort_order, is_active, created_at, updated_at, created_by, updated_by, version)
      VALUES 
-       (gen_random_uuid(), $1::uuid, 'BU_GAMING', '/HQ/BU_GAMING/', 1, $2::jsonb, 1, true, now(), now(), $4::uuid, $4::uuid, 1),
-       (gen_random_uuid(), $1::uuid, 'BU_MUSIC', '/HQ/BU_MUSIC/', 1, $3::jsonb, 2, true, now(), now(), $4::uuid, $4::uuid, 1)
-     ON CONFLICT (code) DO UPDATE SET name = EXCLUDED.name
+       (gen_random_uuid(), $1::uuid, 'BU_GAMING', '/HQ/BU_GAMING/', 1, $2::jsonb, $3::jsonb, 1, true, now(), now(), $6::uuid, $6::uuid, 1),
+       (gen_random_uuid(), $1::uuid, 'BU_MUSIC', '/HQ/BU_MUSIC/', 1, $4::jsonb, $5::jsonb, 2, true, now(), now(), $6::uuid, $6::uuid, 1)
+     ON CONFLICT (code) DO UPDATE SET
+       name = EXCLUDED.name,
+       description = EXCLUDED.description
      RETURNING id, code`,
     subsidiaries['HQ'],
     JSON.stringify(createLocalizedText({
@@ -146,12 +158,28 @@ export async function seedUatOrganization(
       fr: 'Gaming Division',
     })),
     JSON.stringify(createLocalizedText({
+      en: 'UAT gaming business unit for subsidiary-scoped acceptance paths.',
+      zh_HANS: '用于分公司范围验收路径的 UAT 游戏事业部。',
+      zh_HANT: '用於分公司範圍驗收路徑的 UAT 遊戲事業部。',
+      ja: '子会社スコープ受け入れ経路用の UAT ゲーム事業部です。',
+      ko: 'UAT gaming business unit for subsidiary-scoped acceptance paths.',
+      fr: 'Division jeux UAT pour les parcours d acceptation au perimetre filiale.',
+    })),
+    JSON.stringify(createLocalizedText({
       en: 'Music Division',
       zh_HANS: '音乐事业部',
       zh_HANT: '音乐事业部',
       ja: '音楽事業部',
       ko: 'Music Division',
       fr: 'Music Division',
+    })),
+    JSON.stringify(createLocalizedText({
+      en: 'UAT music business unit for cross-branch acceptance coverage.',
+      zh_HANS: '用于跨分支验收覆盖的 UAT 音乐事业部。',
+      zh_HANT: '用於跨分支驗收覆蓋的 UAT 音樂事業部。',
+      ja: '複数部門の受け入れ検証用の UAT 音楽事業部です。',
+      ko: 'UAT music business unit for cross-branch acceptance coverage.',
+      fr: 'Division musique UAT pour la couverture d acceptation multi-branches.',
     })),
     systemUserId
   );
@@ -161,11 +189,13 @@ export async function seedUatOrganization(
 
   // Level 3: Studios under Gaming Division
   const studioResults = await prisma.$queryRawUnsafe<Array<{ id: string; code: string }>>(
-    `INSERT INTO "${corpSchema}".subsidiary (id, parent_id, code, path, depth, name, sort_order, is_active, created_at, updated_at, created_by, updated_by, version)
+    `INSERT INTO "${corpSchema}".subsidiary (id, parent_id, code, path, depth, name, description, sort_order, is_active, created_at, updated_at, created_by, updated_by, version)
      VALUES 
-       (gen_random_uuid(), $1::uuid, 'STUDIO_A', '/HQ/BU_GAMING/STUDIO_A/', 2, $2::jsonb, 1, true, now(), now(), $4::uuid, $4::uuid, 1),
-       (gen_random_uuid(), $1::uuid, 'STUDIO_B', '/HQ/BU_GAMING/STUDIO_B/', 2, $3::jsonb, 2, true, now(), now(), $4::uuid, $4::uuid, 1)
-     ON CONFLICT (code) DO UPDATE SET name = EXCLUDED.name
+       (gen_random_uuid(), $1::uuid, 'STUDIO_A', '/HQ/BU_GAMING/STUDIO_A/', 2, $2::jsonb, $3::jsonb, 1, true, now(), now(), $6::uuid, $6::uuid, 1),
+       (gen_random_uuid(), $1::uuid, 'STUDIO_B', '/HQ/BU_GAMING/STUDIO_B/', 2, $4::jsonb, $5::jsonb, 2, true, now(), now(), $6::uuid, $6::uuid, 1)
+     ON CONFLICT (code) DO UPDATE SET
+       name = EXCLUDED.name,
+       description = EXCLUDED.description
      RETURNING id, code`,
     subsidiaries['BU_GAMING'],
     JSON.stringify(createLocalizedText({
@@ -177,12 +207,28 @@ export async function seedUatOrganization(
       fr: 'Studio Alpha',
     })),
     JSON.stringify(createLocalizedText({
+      en: 'UAT studio branch for published public presence fixtures.',
+      zh_HANS: '用于已发布 Public Presence fixture 的 UAT 工作室分支。',
+      zh_HANT: '用於已發布 Public Presence fixture 的 UAT 工作室分支。',
+      ja: '公開済み Public Presence フィクスチャ用の UAT スタジオ部門です。',
+      ko: 'UAT studio branch for published public presence fixtures.',
+      fr: 'Branche studio UAT pour les fixtures Public Presence publiees.',
+    })),
+    JSON.stringify(createLocalizedText({
       en: 'Studio Beta',
       zh_HANS: '贝塔工作室',
       zh_HANT: '贝塔工作室',
       ja: 'スタジオベータ',
       ko: 'Studio Beta',
       fr: 'Studio Beta',
+    })),
+    JSON.stringify(createLocalizedText({
+      en: 'UAT studio branch for draft lifecycle acceptance fixtures.',
+      zh_HANS: '用于草稿生命周期验收 fixture 的 UAT 工作室分支。',
+      zh_HANT: '用於草稿生命週期驗收 fixture 的 UAT 工作室分支。',
+      ja: 'ドラフトライフサイクル検証用の UAT スタジオ部門です。',
+      ko: 'UAT studio branch for draft lifecycle acceptance fixtures.',
+      fr: 'Branche studio UAT pour les fixtures de cycle brouillon.',
     })),
     systemUserId
   );
@@ -201,6 +247,13 @@ export async function seedUatOrganization(
       ja: 'さくら',
       ko: 'Sakura',
       fr: 'Sakura',
+    }), description: createLocalizedText({
+      en: 'Canonical published UAT talent for Public Presence acceptance.',
+      zh_HANS: '用于 Public Presence 验收的标准已发布 UAT 艺人。',
+      zh_HANT: '用於 Public Presence 驗收的標準已發布 UAT 藝人。',
+      ja: 'Public Presence 受け入れ検証用の標準公開済み UAT タレントです。',
+      ko: 'Canonical published UAT talent for Public Presence acceptance.',
+      fr: 'Talent UAT publie canonique pour l acceptation Public Presence.',
     }), artistStageId: corpArtistStageIds.published, displayName: 'Sakura Ch.', lifecycleStatus: 'published', subsidiaryId: subsidiaries['STUDIO_A'], path: 'sakura-ch' },
     { code: 'TALENT_LUNA', name: createLocalizedText({
       en: 'Luna',
@@ -209,6 +262,13 @@ export async function seedUatOrganization(
       ja: 'ルナ',
       ko: 'Luna',
       fr: 'Luna',
+    }), description: createLocalizedText({
+      en: 'Secondary published UAT talent for organization and homepage coverage.',
+      zh_HANS: '用于组织与主页覆盖的第二个已发布 UAT 艺人。',
+      zh_HANT: '用於組織與主頁覆蓋的第二個已發布 UAT 藝人。',
+      ja: '組織とホームページ検証用の二つ目の公開済み UAT タレントです。',
+      ko: 'Secondary published UAT talent for organization and homepage coverage.',
+      fr: 'Second talent UAT publie pour la couverture organisation et page accueil.',
     }), artistStageId: corpArtistStageIds.published, displayName: 'Luna Gaming', lifecycleStatus: 'published', subsidiaryId: subsidiaries['STUDIO_A'], path: 'luna-gaming' },
     { code: 'TALENT_HANA', name: createLocalizedText({
       en: 'Hana',
@@ -217,6 +277,13 @@ export async function seedUatOrganization(
       ja: 'はな',
       ko: 'Hana',
       fr: 'Hana',
+    }), description: createLocalizedText({
+      en: 'Draft UAT talent for lifecycle transition acceptance coverage.',
+      zh_HANS: '用于生命周期流转验收覆盖的草稿 UAT 艺人。',
+      zh_HANT: '用於生命週期流轉驗收覆蓋的草稿 UAT 藝人。',
+      ja: 'ライフサイクル遷移の受け入れ検証用ドラフト UAT タレントです。',
+      ko: 'Draft UAT talent for lifecycle transition acceptance coverage.',
+      fr: 'Talent UAT brouillon pour la couverture d acceptation du cycle.',
     }), artistStageId: corpArtistStageIds.draft, displayName: 'Hana Live', lifecycleStatus: 'draft', subsidiaryId: subsidiaries['STUDIO_B'], path: 'hana-live' },
     { code: 'TALENT_MELODY', name: createLocalizedText({
       en: 'Melody',
@@ -225,18 +292,26 @@ export async function seedUatOrganization(
       ja: 'メロディ',
       ko: 'Melody',
       fr: 'Melody',
+    }), description: createLocalizedText({
+      en: 'Published UAT talent in the music division for cross-subsidiary coverage.',
+      zh_HANS: '音乐事业部中用于跨分公司覆盖的已发布 UAT 艺人。',
+      zh_HANT: '音樂事業部中用於跨分公司覆蓋的已發布 UAT 藝人。',
+      ja: '部門横断検証用の音楽事業部の公開済み UAT タレントです。',
+      ko: 'Published UAT talent in the music division for cross-subsidiary coverage.',
+      fr: 'Talent UAT publie dans la division musique pour la couverture multi-filiale.',
     }), artistStageId: corpArtistStageIds.published, displayName: 'Melody Music', lifecycleStatus: 'published', subsidiaryId: subsidiaries['BU_MUSIC'], path: 'melody-music' },
   ];
 
   for (const talent of corpTalents) {
     const result = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
-      `INSERT INTO "${corpSchema}".talent (id, subsidiary_id, profile_store_id, artist_stage_id, code, path, name, display_name, homepage_path, timezone, is_active, lifecycle_status, published_at, published_by, settings, created_at, updated_at, created_by, updated_by, version)
-       VALUES (gen_random_uuid(), $1::uuid, $2::uuid, $3::uuid, $4, $5, $6::jsonb, $7, $8, 'Asia/Tokyo', true, $9::text, CASE WHEN $9::text = 'published' THEN now() ELSE NULL END, CASE WHEN $9::text = 'published' THEN $10::uuid ELSE NULL END, '{}'::jsonb, now(), now(), $10::uuid, $10::uuid, 1)
+      `INSERT INTO "${corpSchema}".talent (id, subsidiary_id, profile_store_id, artist_stage_id, code, path, name, description, display_name, homepage_path, timezone, is_active, lifecycle_status, published_at, published_by, settings, created_at, updated_at, created_by, updated_by, version)
+       VALUES (gen_random_uuid(), $1::uuid, $2::uuid, $3::uuid, $4, $5, $6::jsonb, $7::jsonb, $8, $9, 'Asia/Tokyo', true, $10::text, CASE WHEN $10::text = 'published' THEN now() ELSE NULL END, CASE WHEN $10::text = 'published' THEN $11::uuid ELSE NULL END, '{}'::jsonb, now(), now(), $11::uuid, $11::uuid, 1)
        ON CONFLICT (code) DO UPDATE SET
          subsidiary_id = EXCLUDED.subsidiary_id,
          profile_store_id = EXCLUDED.profile_store_id,
          artist_stage_id = EXCLUDED.artist_stage_id,
          name = EXCLUDED.name,
+         description = EXCLUDED.description,
          display_name = EXCLUDED.display_name,
          homepage_path = EXCLUDED.homepage_path,
          lifecycle_status = EXCLUDED.lifecycle_status,
@@ -251,6 +326,7 @@ export async function seedUatOrganization(
       talent.code,
       `/${talent.code}/`,
       JSON.stringify(talent.name),
+      JSON.stringify(talent.description),
       talent.displayName,
       talent.path,
       talent.lifecycleStatus,
@@ -284,6 +360,14 @@ export async function seedUatOrganization(
       ko: 'Solo Star',
       fr: 'Solo Star',
     }),
+    description: createLocalizedText({
+      en: 'Published solo UAT talent for tenant-root acceptance coverage.',
+      zh_HANS: '用于租户根范围验收覆盖的已发布独立 UAT 艺人。',
+      zh_HANT: '用於租戶根範圍驗收覆蓋的已發布獨立 UAT 藝人。',
+      ja: 'テナントルート検証用の公開済みソロ UAT タレントです。',
+      ko: 'Published solo UAT talent for tenant-root acceptance coverage.',
+      fr: 'Talent solo UAT publie pour la couverture d acceptation racine tenant.',
+    }),
     displayName: 'Solo Star Channel',
     artistStageId: soloArtistStageIds.published,
     lifecycleStatus: 'published',
@@ -291,12 +375,13 @@ export async function seedUatOrganization(
   };
 
   const soloResult = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
-    `INSERT INTO "${soloSchema}".talent (id, subsidiary_id, profile_store_id, artist_stage_id, code, path, name, display_name, homepage_path, timezone, is_active, lifecycle_status, published_at, published_by, settings, created_at, updated_at, created_by, updated_by, version)
-     VALUES (gen_random_uuid(), NULL, $1::uuid, $2::uuid, $3, $4, $5::jsonb, $6, $7, 'Asia/Shanghai', true, $8::text, CASE WHEN $8::text = 'published' THEN now() ELSE NULL END, CASE WHEN $8::text = 'published' THEN $9::uuid ELSE NULL END, '{}'::jsonb, now(), now(), $9::uuid, $9::uuid, 1)
+    `INSERT INTO "${soloSchema}".talent (id, subsidiary_id, profile_store_id, artist_stage_id, code, path, name, description, display_name, homepage_path, timezone, is_active, lifecycle_status, published_at, published_by, settings, created_at, updated_at, created_by, updated_by, version)
+     VALUES (gen_random_uuid(), NULL, $1::uuid, $2::uuid, $3, $4, $5::jsonb, $6::jsonb, $7, $8, 'Asia/Shanghai', true, $9::text, CASE WHEN $9::text = 'published' THEN now() ELSE NULL END, CASE WHEN $9::text = 'published' THEN $10::uuid ELSE NULL END, '{}'::jsonb, now(), now(), $10::uuid, $10::uuid, 1)
      ON CONFLICT (code) DO UPDATE SET
        profile_store_id = EXCLUDED.profile_store_id,
        artist_stage_id = EXCLUDED.artist_stage_id,
        name = EXCLUDED.name,
+       description = EXCLUDED.description,
        display_name = EXCLUDED.display_name,
        homepage_path = EXCLUDED.homepage_path,
        lifecycle_status = EXCLUDED.lifecycle_status,
@@ -310,6 +395,7 @@ export async function seedUatOrganization(
     soloTalent.code,
     `/${soloTalent.code}/`,
     JSON.stringify(soloTalent.name),
+    JSON.stringify(soloTalent.description),
     soloTalent.displayName,
     soloTalent.path,
     soloTalent.lifecycleStatus,
@@ -328,6 +414,14 @@ export async function seedUatOrganization(
       ko: 'Indie Creator',
       fr: 'Indie Creator',
     }),
+    description: createLocalizedText({
+      en: 'Draft solo UAT talent for tenant-root lifecycle coverage.',
+      zh_HANS: '用于租户根生命周期覆盖的草稿独立 UAT 艺人。',
+      zh_HANT: '用於租戶根生命週期覆蓋的草稿獨立 UAT 藝人。',
+      ja: 'テナントルートのライフサイクル検証用ドラフトソロ UAT タレントです。',
+      ko: 'Draft solo UAT talent for tenant-root lifecycle coverage.',
+      fr: 'Talent solo UAT brouillon pour la couverture du cycle racine tenant.',
+    }),
     displayName: 'Indie Creative',
     artistStageId: soloArtistStageIds.draft,
     lifecycleStatus: 'draft',
@@ -335,12 +429,13 @@ export async function seedUatOrganization(
   };
 
   const soloResult2 = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
-    `INSERT INTO "${soloSchema}".talent (id, subsidiary_id, profile_store_id, artist_stage_id, code, path, name, display_name, homepage_path, timezone, is_active, lifecycle_status, published_at, published_by, settings, created_at, updated_at, created_by, updated_by, version)
-     VALUES (gen_random_uuid(), NULL, $1::uuid, $2::uuid, $3, $4, $5::jsonb, $6, $7, 'Asia/Shanghai', true, $8::text, CASE WHEN $8::text = 'published' THEN now() ELSE NULL END, CASE WHEN $8::text = 'published' THEN $9::uuid ELSE NULL END, '{}'::jsonb, now(), now(), $9::uuid, $9::uuid, 1)
+    `INSERT INTO "${soloSchema}".talent (id, subsidiary_id, profile_store_id, artist_stage_id, code, path, name, description, display_name, homepage_path, timezone, is_active, lifecycle_status, published_at, published_by, settings, created_at, updated_at, created_by, updated_by, version)
+     VALUES (gen_random_uuid(), NULL, $1::uuid, $2::uuid, $3, $4, $5::jsonb, $6::jsonb, $7, $8, 'Asia/Shanghai', true, $9::text, CASE WHEN $9::text = 'published' THEN now() ELSE NULL END, CASE WHEN $9::text = 'published' THEN $10::uuid ELSE NULL END, '{}'::jsonb, now(), now(), $10::uuid, $10::uuid, 1)
      ON CONFLICT (code) DO UPDATE SET
        profile_store_id = EXCLUDED.profile_store_id,
        artist_stage_id = EXCLUDED.artist_stage_id,
        name = EXCLUDED.name,
+       description = EXCLUDED.description,
        display_name = EXCLUDED.display_name,
        homepage_path = EXCLUDED.homepage_path,
        lifecycle_status = EXCLUDED.lifecycle_status,
@@ -354,6 +449,7 @@ export async function seedUatOrganization(
     soloTalent2.code,
     `/${soloTalent2.code}/`,
     JSON.stringify(soloTalent2.name),
+    JSON.stringify(soloTalent2.description),
     soloTalent2.displayName,
     soloTalent2.path,
     soloTalent2.lifecycleStatus,

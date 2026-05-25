@@ -24,6 +24,7 @@ import {
   type DictionaryTypeSummary,
   listDictionaryTypes,
 } from '@/domains/config-dictionary-settings/api/system-dictionary.api';
+import { ArtistLifecycleFlowWorkspace } from '@/domains/config-dictionary-settings/components/ArtistLifecycleFlowWorkspace';
 import { DictionaryExplorerPanel } from '@/domains/config-dictionary-settings/components/DictionaryExplorerPanel';
 import { ScopedConfigEntityWorkspace } from '@/domains/config-dictionary-settings/components/ScopedConfigEntityWorkspace';
 import { SettingsCategoryWorkbench } from '@/domains/config-dictionary-settings/components/SettingsCategoryWorkbench';
@@ -62,7 +63,7 @@ interface AsyncPanelState<T> {
 }
 
 type TenantSettingsSection = 'details' | 'config-entities' | 'settings' | 'dictionary';
-type TenantSettingsCategory = 'defaults' | 'email' | 'captcha';
+type TenantSettingsCategory = 'defaults' | 'email' | 'captcha' | 'lifecycle-flow';
 
 const TENANT_SETTINGS_SECTIONS: readonly TenantSettingsSection[] = [
   'details',
@@ -497,7 +498,9 @@ export function TenantSettingsScreen({
 
   function handleSettingsCategoryChange(categoryId: string) {
     const nextCategoryId =
-      categoryId === 'email' || categoryId === 'captcha' ? categoryId : 'defaults';
+      categoryId === 'email' || categoryId === 'captcha' || categoryId === 'lifecycle-flow'
+        ? categoryId
+        : 'defaults';
     setActiveSettingsCategory(nextCategoryId);
 
     if (nextCategoryId === 'email' && !emailPanel.data && !emailPanel.loading) {
@@ -823,6 +826,17 @@ export function TenantSettingsScreen({
                   ariaLabel={common.settingsCategoriesAriaLabel}
                   categories={[
                     { id: 'defaults', label: common.defaultsCategory },
+                    {
+                      id: 'lifecycle-flow',
+                      label: text({
+                        en: 'Artist Lifecycle Flow',
+                        zh_HANS: 'Artist Lifecycle Flow',
+                        zh_HANT: 'Artist Lifecycle Flow',
+                        ja: 'Artist Lifecycle Flow',
+                        ko: 'Artist Lifecycle Flow',
+                        fr: 'Artist Lifecycle Flow',
+                      }),
+                    },
                     { id: 'email', label: text('Email', '邮件', 'メール') },
                     { id: 'captcha', label: text('CAPTCHA', '验证码', 'CAPTCHA') },
                   ]}
@@ -846,6 +860,15 @@ export function TenantSettingsScreen({
                         <p className="text-sm font-medium text-emerald-700">{saveSuccess}</p>
                       ) : null}
                     </>
+                  ) : null}
+
+                  {activeSettingsCategory === 'lifecycle-flow' ? (
+                    <ArtistLifecycleFlowWorkspace
+                      request={request}
+                      requestEnvelope={requestEnvelope}
+                      scopeType="tenant"
+                      locale={locale}
+                    />
                   ) : null}
 
                   {activeSettingsCategory === 'email' ? (

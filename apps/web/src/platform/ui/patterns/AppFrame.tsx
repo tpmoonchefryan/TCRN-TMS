@@ -65,7 +65,7 @@ export const AppFrame: React.FC<AppFrameProps> = ({
     >
       <a
         href="#app-main-content"
-        className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:rounded-full focus:bg-slate-950 focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-white focus:shadow-lg focus:ring-2 focus:ring-indigo-400 focus:outline-none"
+        className="pointer-events-none fixed top-4 left-4 z-[100] rounded-full bg-slate-950 px-4 py-2 text-sm font-semibold whitespace-nowrap text-white opacity-0 shadow-lg ring-2 ring-indigo-400 outline-none transition-opacity focus:pointer-events-auto focus:opacity-100"
       >
         {skipToMainLabel}
       </a>

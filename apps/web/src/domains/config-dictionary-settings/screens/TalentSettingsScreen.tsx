@@ -1,10 +1,5 @@
 'use client';
 
-import { UserRound } from 'lucide-react';
-import Link from 'next/link';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { startTransition, useEffect, useRef, useState } from 'react';
-
 import {
   buildSharedHomepagePath,
   buildSharedMarshmallowPath,
@@ -12,6 +7,10 @@ import {
   FIXED_CUSTOM_DOMAIN_MARSHMALLOW_PATH,
   type SupportedUiLocale,
 } from '@tcrn/shared';
+import { UserRound } from 'lucide-react';
+import Link from 'next/link';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { startTransition, useEffect, useRef, useState } from 'react';
 
 import {
   readTalentCustomDomainConfig,
@@ -41,6 +40,7 @@ import {
   type DictionaryTypeSummary,
   listDictionaryTypes,
 } from '@/domains/config-dictionary-settings/api/system-dictionary.api';
+import { ArtistLifecycleFlowWorkspace } from '@/domains/config-dictionary-settings/components/ArtistLifecycleFlowWorkspace';
 import { DictionaryExplorerPanel } from '@/domains/config-dictionary-settings/components/DictionaryExplorerPanel';
 import { ScopedConfigEntityWorkspace } from '@/domains/config-dictionary-settings/components/ScopedConfigEntityWorkspace';
 import { SettingsCategoryWorkbench } from '@/domains/config-dictionary-settings/components/SettingsCategoryWorkbench';
@@ -112,6 +112,8 @@ const TALENT_SETTINGS_FOCUS_VALUES: readonly TalentSettingsFocus[] = [
   'homepage-routing',
   'marshmallow-routing',
 ];
+
+type TalentSettingsCategory = 'defaults-routes' | 'lifecycle-flow';
 
 function getErrorMessage(reason: unknown, fallback: string) {
   return reason instanceof ApiRequestError ? reason.message : fallback;
@@ -561,6 +563,8 @@ export function TalentSettingsScreen({
   );
   const [lifecyclePending, setLifecyclePending] = useState(false);
   const [isSettingsDrawerOpen, setIsSettingsDrawerOpen] = useState(false);
+  const [activeSettingsCategory, setActiveSettingsCategory] =
+    useState<TalentSettingsCategory>('defaults-routes');
   const homepageRoutingRef = useRef<HTMLDivElement | null>(null);
   const marshmallowRoutingRef = useRef<HTMLDivElement | null>(null);
   const customDomainSslModeOptions = [
@@ -2160,99 +2164,133 @@ export function TalentSettingsScreen({
                     '設定ワークフローを開く前に、タレント既定値と公開ルートを確認します。'
                   )}
                   actions={
-                    <div className="flex flex-wrap items-center gap-3">
-                      <button
-                        type="button"
-                        onClick={() => setIsSettingsDrawerOpen(true)}
-                        className="rounded-xl bg-slate-950 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
-                      >
-                        {text('Edit defaults', '编辑默认值', '既定値を編集')}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setIsSettingsDrawerOpen(true)}
-                        className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
-                      >
-                        {text('Configure routes', '配置公开路由', '公開ルートを設定')}
-                      </button>
-                    </div>
+                    activeSettingsCategory === 'defaults-routes' ? (
+                      <div className="flex flex-wrap items-center gap-3">
+                        <button
+                          type="button"
+                          onClick={() => setIsSettingsDrawerOpen(true)}
+                          className="rounded-xl bg-slate-950 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
+                        >
+                          {text('Edit defaults', '编辑默认值', '既定値を編集')}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setIsSettingsDrawerOpen(true)}
+                          className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
+                        >
+                          {text('Configure routes', '配置公开路由', '公開ルートを設定')}
+                        </button>
+                      </div>
+                    ) : null
                   }
                 >
                   <SettingsCategoryWorkbench
                     ariaLabel={common.settingsCategoriesAriaLabel}
                     categories={[
                       { id: 'defaults-routes', label: common.defaultsAndRoutesCategory },
+                      {
+                        id: 'lifecycle-flow',
+                        label: text(
+                          'Artist Lifecycle Flow',
+                          'Artist Lifecycle Flow',
+                          'Artist Lifecycle Flow'
+                        ),
+                      },
                     ]}
-                    activeCategoryId="defaults-routes"
+                    activeCategoryId={activeSettingsCategory}
+                    onCategoryChange={(categoryId) => {
+                      setActiveSettingsCategory(
+                        categoryId === 'lifecycle-flow' ? 'lifecycle-flow' : 'defaults-routes'
+                      );
+                    }}
                   >
-                    <SettingsDefaultsSummaryGrid
-                      draft={initialDraft}
-                      getSourceHint={(key) =>
-                        inheritedSourceLabel(
-                          settings.inheritedFrom[key],
-                          talentOverrideLabel,
-                          overrideSet.has(key)
-                        )
-                      }
-                      text={text}
-                    />
+                    {activeSettingsCategory === 'defaults-routes' ? (
+                      <>
+                        <SettingsDefaultsSummaryGrid
+                          draft={initialDraft}
+                          getSourceHint={(key) =>
+                            inheritedSourceLabel(
+                              settings.inheritedFrom[key],
+                              talentOverrideLabel,
+                              overrideSet.has(key)
+                            )
+                          }
+                          text={text}
+                        />
 
-                    <div className="grid gap-4 xl:grid-cols-3">
-                      <FieldRow
-                        label={text(
-                          'Current Homepage URL',
-                          '当前主页 URL',
-                          '現在のホームページ URL'
-                        )}
-                        value={sharedHomepageUrl}
-                        valueClassName="font-mono text-sm leading-7"
-                      />
-                      <FieldRow
-                        label={text('Custom Domain', '自定义域名', 'カスタムドメイン')}
-                        value={customDomainPanel.data?.customDomain || common.notConfigured}
-                        valueClassName="font-mono text-sm leading-7"
-                      />
-                      <FieldRow
-                        label={text(
-                          'Public Marshmallow Route',
-                          '公开棉花糖路由',
-                          '公開マシュマロルート'
-                        )}
-                        value={formatBoolean(
-                          marshmallowPanel.data?.isEnabled ??
-                            detail.externalPagesDomain.marshmallow?.isEnabled,
-                          common.active,
-                          common.inactive
-                        )}
-                      />
-                      <FieldRow
-                        label={text('Inherited CAPTCHA', '继承验证码状态', '継承 CAPTCHA')}
-                        value={formatTurnstileReadiness(marshmallowPanel.data?.turnstile, text)}
-                        hint={formatTurnstileHint(marshmallowPanel.data?.turnstile, text)}
-                      />
-                      <FieldRow
-                        label={text('Profile Store', '档案库', 'プロフィールストア')}
-                        value={
-                          detail.profileStore
-                            ? resolveProfileStoreName(detail, locale)
-                            : text('Unbound', '未绑定', '未紐付け')
-                        }
-                      />
-                    </div>
+                        <div className="grid gap-4 xl:grid-cols-3">
+                          <FieldRow
+                            label={text(
+                              'Current Homepage URL',
+                              '当前主页 URL',
+                              '現在のホームページ URL'
+                            )}
+                            value={sharedHomepageUrl}
+                            valueClassName="font-mono text-sm leading-7"
+                          />
+                          <FieldRow
+                            label={text('Custom Domain', '自定义域名', 'カスタムドメイン')}
+                            value={customDomainPanel.data?.customDomain || common.notConfigured}
+                            valueClassName="font-mono text-sm leading-7"
+                          />
+                          <FieldRow
+                            label={text(
+                              'Public Marshmallow Route',
+                              '公开棉花糖路由',
+                              '公開マシュマロルート'
+                            )}
+                            value={formatBoolean(
+                              marshmallowPanel.data?.isEnabled ??
+                                detail.externalPagesDomain.marshmallow?.isEnabled,
+                              common.active,
+                              common.inactive
+                            )}
+                          />
+                          <FieldRow
+                            label={text('Inherited CAPTCHA', '继承验证码状态', '継承 CAPTCHA')}
+                            value={formatTurnstileReadiness(
+                              marshmallowPanel.data?.turnstile,
+                              text
+                            )}
+                            hint={formatTurnstileHint(marshmallowPanel.data?.turnstile, text)}
+                          />
+                          <FieldRow
+                            label={text('Profile Store', '档案库', 'プロフィールストア')}
+                            value={
+                              detail.profileStore
+                                ? resolveProfileStoreName(detail, locale)
+                                : text('Unbound', '未绑定', '未紐付け')
+                            }
+                          />
+                        </div>
 
-                    {!isSettingsDrawerOpen && saveError ? (
-                      <p className="text-sm font-medium text-red-600">{saveError}</p>
+                        {!isSettingsDrawerOpen && saveError ? (
+                          <p className="text-sm font-medium text-red-600">{saveError}</p>
+                        ) : null}
+                        {!isSettingsDrawerOpen && saveSuccess ? (
+                          <p className="text-sm font-medium text-emerald-700">{saveSuccess}</p>
+                        ) : null}
+                        {!isSettingsDrawerOpen && marshmallowSaveError ? (
+                          <p className="text-sm font-medium text-red-600">
+                            {marshmallowSaveError}
+                          </p>
+                        ) : null}
+                        {!isSettingsDrawerOpen && marshmallowSaveSuccess ? (
+                          <p className="text-sm font-medium text-emerald-700">
+                            {marshmallowSaveSuccess}
+                          </p>
+                        ) : null}
+                      </>
                     ) : null}
-                    {!isSettingsDrawerOpen && saveSuccess ? (
-                      <p className="text-sm font-medium text-emerald-700">{saveSuccess}</p>
-                    ) : null}
-                    {!isSettingsDrawerOpen && marshmallowSaveError ? (
-                      <p className="text-sm font-medium text-red-600">{marshmallowSaveError}</p>
-                    ) : null}
-                    {!isSettingsDrawerOpen && marshmallowSaveSuccess ? (
-                      <p className="text-sm font-medium text-emerald-700">
-                        {marshmallowSaveSuccess}
-                      </p>
+
+                    {activeSettingsCategory === 'lifecycle-flow' ? (
+                      <ArtistLifecycleFlowWorkspace
+                        request={request}
+                        requestEnvelope={requestEnvelope}
+                        scopeType="talent"
+                        scopeId={talentId}
+                        locale={locale}
+                      />
                     ) : null}
                   </SettingsCategoryWorkbench>
                 </FormSection>

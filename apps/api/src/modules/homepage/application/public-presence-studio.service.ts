@@ -5,18 +5,16 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-
 import {
+  type ArtistLifecycleFlow,
   createArtistLifecycleFlowSchema,
   ErrorCodes,
-  PUBLIC_PRESENCE_DOCUMENT_SCHEMA_VERSION,
-  type ArtistLifecycleFlow,
   type HomepageComponentType,
   type LocalizedText,
+  PUBLIC_PRESENCE_DOCUMENT_SCHEMA_VERSION,
   type PublicPresenceAssetListEntry,
   type PublicPresenceAssetRevisionPin,
   type PublicPresenceComponentDefinition,
-  type PublicPresenceTemplateAssetManifest,
   type PublicPresenceDocument,
   PublicPresenceDocumentSchema,
   type PublicPresenceFieldProvenance,
@@ -24,10 +22,10 @@ import {
   type PublicPresencePhaseVisibility,
   type PublicPresenceStageSectionDefinition,
   type PublicPresenceStageSectionKind,
-  type PublicPresenceTemplateDefinition,
+  type PublicPresenceTemplateAssetManifest,
   type PublicPresenceTemplateId,
-  type PublicPresenceTemplateTypeCode,
   PublicPresenceTemplateIdSchema,
+  type PublicPresenceTemplateTypeCode,
   type PublicPresenceValidationSnapshot,
   PublicPresenceValidationSnapshotSchema,
   type RequestContext,
@@ -945,14 +943,15 @@ export class PublicPresenceStudioService {
       flowFallbackInvalid = true;
     }
 
-    const fallbackAllowedTemplateTypeCodes =
+    const flowAllowedTemplateTypeCodes =
       currentStage && normalizedFlow
         ? (normalizedFlow.homepagePolicyByStage.find((policy) => policy.stageId === currentStage.id)
             ?.allowedTemplateTypeCodes ?? [])
         : [];
-    const allowedTemplateTypeCodes = currentStage?.homepageTemplateTypeCode
-      ? [currentStage.homepageTemplateTypeCode]
-      : fallbackAllowedTemplateTypeCodes;
+    const allowedTemplateTypeCodes =
+      flowFallbackInvalid && currentStage?.homepageTemplateTypeCode
+        ? [currentStage.homepageTemplateTypeCode]
+        : flowAllowedTemplateTypeCodes;
 
     if (currentStage && !currentStage.homepageTemplateTypeCode && flowFallbackInvalid) {
       blockedReasons.push({

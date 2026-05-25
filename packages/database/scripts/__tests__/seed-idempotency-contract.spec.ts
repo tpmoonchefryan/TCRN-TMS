@@ -50,4 +50,12 @@ describe('seed idempotency contract', () => {
     assert.match(uatOrgSeed, /resolveUatArtistStageIds/);
     assert.match(uatOrgSeed, /ON CONFLICT \(code\) DO UPDATE SET[\s\S]+artist_stage_id = EXCLUDED\.artist_stage_id/);
   });
+
+  it('creates UAT organization fixtures with LocalizedText descriptions', () => {
+    const uatOrgSeed = readSeedFile('21-uat-organization.ts');
+
+    assert.match(uatOrgSeed, /subsidiary \(id, parent_id, code, path, depth, name, description,/);
+    assert.match(uatOrgSeed, /talent \(id, subsidiary_id, profile_store_id, artist_stage_id, code, path, name, description,/);
+    assert.match(uatOrgSeed, /description = EXCLUDED\.description/);
+  });
 });
