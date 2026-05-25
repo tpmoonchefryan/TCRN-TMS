@@ -291,12 +291,14 @@ async function getSeedSignatures(schemaName: string, tableName: string): Promise
     public_presence_asset: `
       SELECT asset_kind || ':' || owner_type || ':' || COALESCE(owner_id::text, '') || ':' || code || ':' || status || ':' || COALESCE(template_type_code, '') || ':' || COALESCE(component_type, '') AS sig
       FROM "${schemaName}".public_presence_asset
+      WHERE owner_type = 'system'
       ORDER BY sig
     `,
     public_presence_asset_revision: `
       SELECT asset.code || ':' || revision.revision_number::text || ':' || revision.source_hash || ':' || revision.runtime_contract_version || ':' || revision.artifact_status || ':' || revision.validation_state AS sig
       FROM "${schemaName}".public_presence_asset_revision revision
       JOIN "${schemaName}".public_presence_asset asset ON asset.id = revision.asset_id
+      WHERE asset.owner_type = 'system'
       ORDER BY sig
     `,
     blocklist_entry: `

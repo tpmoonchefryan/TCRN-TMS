@@ -92,6 +92,7 @@ describe('Public Presence seed contract', () => {
     const baseSeed = readDatabaseFile('prisma', 'seeds', 'index.ts');
     const assetSeed = readDatabaseFile('prisma', 'seeds', '09-public-presence-assets.ts');
     const templateBootstrap = readDatabaseFile('src', 'platform', 'tenancy', 'template-bootstrap.ts');
+    const templateParity = readDatabaseFile('scripts', 'verify-tenant-template-parity.ts');
 
     assert.match(baseSeed, /seedPublicPresenceSystemAssets/);
     assert.match(assetSeed, /getPublicPresenceSystemAssetSeeds/);
@@ -101,6 +102,8 @@ describe('Public Presence seed contract', () => {
     assert.match(templateBootstrap, /'artist_stage'/);
     assert.match(templateBootstrap, /'public_presence_asset'/);
     assert.match(templateBootstrap, /'public_presence_asset_revision'/);
+    assert.match(templateParity, /WHERE owner_type = 'system'/);
+    assert.match(templateParity, /WHERE asset\.owner_type = 'system'/);
   });
 
   it('keeps shared test tenant fixtures on Artist Status instead of retired lifecycle mapping', () => {
