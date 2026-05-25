@@ -27,6 +27,8 @@
     "infra:up:observability": "docker compose --env-file .env.local --profile observability up -d loki tempo",
     "infra:ps": "docker compose --env-file .env.local ps",
     "infra:down": "docker compose --env-file .env.local down",
+    "local:reset:dry-run": "node scripts/reset-local-dev-baseline.mjs --dry-run",
+    "local:reset": "node scripts/reset-local-dev-baseline.mjs",
     "build": "turbo build",
     "lint": "turbo lint",
     "lint:fix": "turbo lint:fix",
