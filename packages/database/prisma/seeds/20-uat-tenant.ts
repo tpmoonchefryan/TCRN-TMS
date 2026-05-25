@@ -2,6 +2,12 @@
 // UAT Test Tenants - Creates test tenants for user acceptance testing
 
 import { PrismaClient, Tenant } from '../../src/generated/prisma/client';
+import {
+  alignTenantTemplateConstraintNames,
+  alignTenantTemplateIndexNames,
+  copyTenantTemplateForeignKeys,
+  copyTenantTemplateSeedData,
+} from '../../src/platform/tenancy/template-bootstrap';
 
 export interface UatTenantResult {
   corpTenant: Tenant;
@@ -67,12 +73,13 @@ async function ensureTenantSchema(prisma: PrismaClient, schemaName: string): Pro
     schemaName
   );
 
+  const tables = await prisma.$queryRawUnsafe<Array<{ tablename: string }>>(
+    `SELECT tablename FROM pg_tables WHERE schemaname = 'tenant_template' ORDER BY tablename`
+  );
+  const tableNames = tables.map(({ tablename }) => tablename);
+
   if (!tableExists[0]?.exists) {
     console.log(`    → Copying tables from tenant_template to ${schemaName}...`);
-    
-    const tables = await prisma.$queryRawUnsafe<Array<{ tablename: string }>>(
-      `SELECT tablename FROM pg_tables WHERE schemaname = 'tenant_template' ORDER BY tablename`
-    );
 
     for (const { tablename } of tables) {
       try {
@@ -86,6 +93,11 @@ async function ensureTenantSchema(prisma: PrismaClient, schemaName: string): Pro
     }
     console.log(`    ✓ Created ${tables.length} tables in ${schemaName}`);
   }
+
+  await copyTenantTemplateSeedData(prisma, schemaName, tableNames);
+  await copyTenantTemplateForeignKeys(prisma, schemaName, tableNames);
+  await alignTenantTemplateConstraintNames(prisma, schemaName, tableNames);
+  await alignTenantTemplateIndexNames(prisma, schemaName, tableNames);
 }
 
 export async function seedUatTenants(prisma: PrismaClient): Promise<UatTenantResult> {

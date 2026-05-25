@@ -1,6 +1,8 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 // UAT Marshmallow Messages - Creates marshmallow config and messages for testing
 
+import { createHash } from 'node:crypto';
+
 import { PrismaClient } from '../../src/generated/prisma/client';
 import { UatTenantResult } from './20-uat-tenant';
 import { UatOrganizationResult } from './21-uat-organization';
@@ -39,6 +41,24 @@ const SAMPLE_MESSAGES = {
     'I will give you 1000 followers if you follow me',
   ],
 };
+
+const UAT_MESSAGE_BASE_TIME = Date.UTC(2026, 4, 1, 12, 0, 0);
+
+function deterministicNumber(key: string, modulo: number): number {
+  const hex = createHash('sha256').update(key).digest('hex').slice(0, 8);
+
+  return Number.parseInt(hex, 16) % modulo;
+}
+
+function deterministicTimestamp(key: string): string {
+  const offsetMinutes = deterministicNumber(key, 7 * 24 * 60);
+
+  return new Date(UAT_MESSAGE_BASE_TIME - offsetMinutes * 60 * 1000).toISOString();
+}
+
+function deterministicFingerprint(key: string): string {
+  return createHash('sha256').update(`uat-marshmallow:${key}`).digest('hex');
+}
 
 export async function seedUatMarshmallow(
   prisma: PrismaClient,
@@ -81,6 +101,11 @@ export async function seedUatMarshmallow(
     );
     const configId = configResult[0].id;
 
+    await prisma.$executeRawUnsafe(
+      `DELETE FROM "${corpSchema}".marshmallow_message WHERE talent_id = $1::uuid`,
+      talentId,
+    );
+
     // Create messages with different statuses
     const messagesToCreate = [
       // Pending messages (to be reviewed)
@@ -108,9 +133,18 @@ export async function seedUatMarshmallow(
       })),
     ];
 
-    for (const msg of messagesToCreate) {
-      const createdAt = new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000);
-      const reactionCounts = { '❤️': Math.floor(Math.random() * 10), '👍': Math.floor(Math.random() * 5) };
+    for (const [index, msg] of messagesToCreate.entries()) {
+      const messageKey = `${corpSchema}:${talentCode}:${index}:${msg.status}`;
+      const createdAt = deterministicTimestamp(messageKey);
+      const moderatedAt =
+        msg.status !== 'pending' ? deterministicTimestamp(`${messageKey}:moderated`) : null;
+      const repliedAt = (msg as { reply?: string }).reply
+        ? deterministicTimestamp(`${messageKey}:replied`)
+        : null;
+      const reactionCounts = {
+        '❤️': deterministicNumber(`${messageKey}:heart`, 10),
+        '👍': deterministicNumber(`${messageKey}:thumb`, 5),
+      };
       const moderatedBy = msg.status !== 'pending' ? systemUserId : null;
       const repliedBy = (msg as { reply?: string }).reply ? systemUserId : null;
       
@@ -125,16 +159,17 @@ export async function seedUatMarshmallow(
          VALUES (gen_random_uuid(), $1::uuid, $2::uuid, $3, $4, $5, $6,
                  $7, $8::timestamptz, ${moderatedBy ? `'${moderatedBy}'::uuid` : 'NULL'}, $9, $10, false,
                  $11, $12::timestamptz, ${repliedBy ? `'${repliedBy}'::uuid` : 'NULL'}, $13::jsonb, '192.168.1.1'::inet,
-                 md5(random()::text), ARRAY[]::varchar[], $14::timestamptz)`,
+                 $14, ARRAY[]::varchar[], $15::timestamptz)`,
         configId, talentId, msg.content, msg.senderName, msg.isAnonymous, msg.status,
         (msg as { rejectionReason?: string }).rejectionReason || null,
-        msg.status !== 'pending' ? new Date().toISOString() : null,
+        moderatedAt,
         false, // is_read: approved messages should default to unread
-        Math.random() > 0.7,
+        deterministicNumber(`${messageKey}:starred`, 10) > 7,
         (msg as { reply?: string }).reply || null,
-        (msg as { reply?: string }).reply ? new Date().toISOString() : null,
+        repliedAt,
         JSON.stringify(reactionCounts),
-        createdAt.toISOString()
+        deterministicFingerprint(messageKey),
+        createdAt
       );
     }
   }
@@ -173,6 +208,11 @@ export async function seedUatMarshmallow(
     );
     const configId = configResult[0].id;
 
+    await prisma.$executeRawUnsafe(
+      `DELETE FROM "${soloSchema}".marshmallow_message WHERE talent_id = $1::uuid`,
+      talentId,
+    );
+
     // Create fewer messages for solo creator
     const soloMessages = [
       { status: 'pending', content: '加油！一直支持你！', isAnonymous: true },
@@ -182,8 +222,14 @@ export async function seedUatMarshmallow(
       { status: 'rejected', content: '关注我的频道获取免费礼物', isAnonymous: true, rejectionReason: 'spam' },
     ];
 
-    for (const msg of soloMessages) {
-      const reactionCounts = { '❤️': Math.floor(Math.random() * 5) };
+    for (const [index, msg] of soloMessages.entries()) {
+      const messageKey = `${soloSchema}:${talentCode}:${index}:${msg.status}`;
+      const moderatedAt =
+        msg.status !== 'pending' ? deterministicTimestamp(`${messageKey}:moderated`) : null;
+      const repliedAt = (msg as { reply?: string }).reply
+        ? deterministicTimestamp(`${messageKey}:replied`)
+        : null;
+      const reactionCounts = { '❤️': deterministicNumber(`${messageKey}:heart`, 5) };
       const moderatedBy = msg.status !== 'pending' ? systemUserId : null;
       const repliedBy = (msg as { reply?: string }).reply ? systemUserId : null;
       
@@ -197,14 +243,16 @@ export async function seedUatMarshmallow(
          VALUES (gen_random_uuid(), $1::uuid, $2::uuid, $3, $4, $5, $6,
                  $7, $8::timestamptz, ${moderatedBy ? `'${moderatedBy}'::uuid` : 'NULL'}, $9, false, false,
                  $10, $11::timestamptz, ${repliedBy ? `'${repliedBy}'::uuid` : 'NULL'}, $12::jsonb, '192.168.1.1'::inet,
-                 md5(random()::text), ARRAY[]::varchar[], now())`,
+                 $13, ARRAY[]::varchar[], $14::timestamptz)`,
         configId, talentId, msg.content, (msg as { senderName?: string }).senderName || null, msg.isAnonymous, msg.status,
         (msg as { rejectionReason?: string }).rejectionReason || null,
-        msg.status !== 'pending' ? new Date().toISOString() : null,
+        moderatedAt,
         false, // is_read: approved messages should default to unread
         (msg as { reply?: string }).reply || null,
-        (msg as { reply?: string }).reply ? new Date().toISOString() : null,
-        JSON.stringify(reactionCounts)
+        repliedAt,
+        JSON.stringify(reactionCounts),
+        deterministicFingerprint(messageKey),
+        deterministicTimestamp(messageKey)
       );
     }
   }

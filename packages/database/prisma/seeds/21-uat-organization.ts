@@ -12,6 +12,44 @@ export interface UatOrganizationResult {
   talents: Record<string, string>;
 }
 
+type UatArtistStageKey = 'draft' | 'published' | 'disabled';
+
+async function resolveUatArtistStageIds(
+  prisma: PrismaClient,
+  schema: string,
+): Promise<Record<UatArtistStageKey, string>> {
+  const rows = await prisma.$queryRawUnsafe<Array<{ artistStatusCode: UatArtistStageKey; id: string }>>(
+    `
+      SELECT id, artist_status_code as "artistStatusCode"
+      FROM "${schema}".artist_stage
+      WHERE owner_type = 'tenant'
+        AND owner_id IS NULL
+        AND is_active = true
+        AND artist_status_code IN ('draft', 'published', 'disabled')
+      ORDER BY sort_order ASC, created_at ASC
+    `,
+  );
+  const byStatus = new Map<UatArtistStageKey, string>();
+
+  for (const row of rows) {
+    if (!byStatus.has(row.artistStatusCode)) {
+      byStatus.set(row.artistStatusCode, row.id);
+    }
+  }
+
+  for (const status of ['draft', 'published', 'disabled'] as const) {
+    if (!byStatus.has(status)) {
+      throw new Error(`Missing active ${status} artist stage in ${schema}. Run base seed first.`);
+    }
+  }
+
+  return {
+    disabled: byStatus.get('disabled')!,
+    draft: byStatus.get('draft')!,
+    published: byStatus.get('published')!,
+  };
+}
+
 async function upsertTenantDefaultProfileStore(
   prisma: PrismaClient,
   schema: string,
@@ -64,6 +102,7 @@ export async function seedUatOrganization(
   // UAT_CORP: Enterprise with nested subsidiaries
   // ==========================================================================
   const corpSchema = uatTenants.corpSchemaName;
+  const corpArtistStageIds = await resolveUatArtistStageIds(prisma, corpSchema);
 
   const corpProfileStoreId = await upsertTenantDefaultProfileStore(
     prisma,
@@ -162,7 +201,7 @@ export async function seedUatOrganization(
       ja: 'さくら',
       ko: 'Sakura',
       fr: 'Sakura',
-    }), displayName: 'Sakura Ch.', subsidiaryId: subsidiaries['STUDIO_A'], path: 'sakura-ch' },
+    }), artistStageId: corpArtistStageIds.published, displayName: 'Sakura Ch.', lifecycleStatus: 'published', subsidiaryId: subsidiaries['STUDIO_A'], path: 'sakura-ch' },
     { code: 'TALENT_LUNA', name: createLocalizedText({
       en: 'Luna',
       zh_HANS: '露娜',
@@ -170,7 +209,7 @@ export async function seedUatOrganization(
       ja: 'ルナ',
       ko: 'Luna',
       fr: 'Luna',
-    }), displayName: 'Luna Gaming', subsidiaryId: subsidiaries['STUDIO_A'], path: 'luna-gaming' },
+    }), artistStageId: corpArtistStageIds.published, displayName: 'Luna Gaming', lifecycleStatus: 'published', subsidiaryId: subsidiaries['STUDIO_A'], path: 'luna-gaming' },
     { code: 'TALENT_HANA', name: createLocalizedText({
       en: 'Hana',
       zh_HANS: '花',
@@ -178,7 +217,7 @@ export async function seedUatOrganization(
       ja: 'はな',
       ko: 'Hana',
       fr: 'Hana',
-    }), displayName: 'Hana Live', subsidiaryId: subsidiaries['STUDIO_B'], path: 'hana-live' },
+    }), artistStageId: corpArtistStageIds.draft, displayName: 'Hana Live', lifecycleStatus: 'draft', subsidiaryId: subsidiaries['STUDIO_B'], path: 'hana-live' },
     { code: 'TALENT_MELODY', name: createLocalizedText({
       en: 'Melody',
       zh_HANS: '旋律',
@@ -186,16 +225,36 @@ export async function seedUatOrganization(
       ja: 'メロディ',
       ko: 'Melody',
       fr: 'Melody',
-    }), displayName: 'Melody Music', subsidiaryId: subsidiaries['BU_MUSIC'], path: 'melody-music' },
+    }), artistStageId: corpArtistStageIds.published, displayName: 'Melody Music', lifecycleStatus: 'published', subsidiaryId: subsidiaries['BU_MUSIC'], path: 'melody-music' },
   ];
 
   for (const talent of corpTalents) {
     const result = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
-      `INSERT INTO "${corpSchema}".talent (id, subsidiary_id, profile_store_id, code, path, name, display_name, homepage_path, timezone, is_active, settings, created_at, updated_at, created_by, updated_by, version)
-       VALUES (gen_random_uuid(), $1::uuid, $2::uuid, $3, $4, $5::jsonb, $6, $7, 'Asia/Tokyo', true, '{}'::jsonb, now(), now(), $8::uuid, $8::uuid, 1)
-       ON CONFLICT (code) DO UPDATE SET name = EXCLUDED.name
+      `INSERT INTO "${corpSchema}".talent (id, subsidiary_id, profile_store_id, artist_stage_id, code, path, name, display_name, homepage_path, timezone, is_active, lifecycle_status, published_at, published_by, settings, created_at, updated_at, created_by, updated_by, version)
+       VALUES (gen_random_uuid(), $1::uuid, $2::uuid, $3::uuid, $4, $5, $6::jsonb, $7, $8, 'Asia/Tokyo', true, $9, CASE WHEN $9 = 'published' THEN now() ELSE NULL END, CASE WHEN $9 = 'published' THEN $10::uuid ELSE NULL END, '{}'::jsonb, now(), now(), $10::uuid, $10::uuid, 1)
+       ON CONFLICT (code) DO UPDATE SET
+         subsidiary_id = EXCLUDED.subsidiary_id,
+         profile_store_id = EXCLUDED.profile_store_id,
+         artist_stage_id = EXCLUDED.artist_stage_id,
+         name = EXCLUDED.name,
+         display_name = EXCLUDED.display_name,
+         homepage_path = EXCLUDED.homepage_path,
+         lifecycle_status = EXCLUDED.lifecycle_status,
+         published_at = EXCLUDED.published_at,
+         published_by = EXCLUDED.published_by,
+         updated_at = now(),
+         updated_by = EXCLUDED.updated_by
        RETURNING id`,
-      talent.subsidiaryId, corpProfileStoreId, talent.code, `/${talent.code}/`, JSON.stringify(talent.name), talent.displayName, talent.path, systemUserId
+      talent.subsidiaryId,
+      corpProfileStoreId,
+      talent.artistStageId,
+      talent.code,
+      `/${talent.code}/`,
+      JSON.stringify(talent.name),
+      talent.displayName,
+      talent.path,
+      talent.lifecycleStatus,
+      systemUserId
     );
     talents[talent.code] = result[0].id;
   }
@@ -206,6 +265,7 @@ export async function seedUatOrganization(
   // UAT_SOLO: Single creator setup
   // ==========================================================================
   const soloSchema = uatTenants.soloSchemaName;
+  const soloArtistStageIds = await resolveUatArtistStageIds(prisma, soloSchema);
 
   const soloProfileStoreId = await upsertTenantDefaultProfileStore(
     prisma,
@@ -225,15 +285,35 @@ export async function seedUatOrganization(
       fr: 'Solo Star',
     }),
     displayName: 'Solo Star Channel',
+    artistStageId: soloArtistStageIds.published,
+    lifecycleStatus: 'published',
     path: 'solo-star',
   };
 
   const soloResult = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
-    `INSERT INTO "${soloSchema}".talent (id, subsidiary_id, profile_store_id, code, path, name, display_name, homepage_path, timezone, is_active, settings, created_at, updated_at, created_by, updated_by, version)
-     VALUES (gen_random_uuid(), NULL, $1::uuid, $2, $3, $4::jsonb, $5, $6, 'Asia/Shanghai', true, '{}'::jsonb, now(), now(), $7::uuid, $7::uuid, 1)
-     ON CONFLICT (code) DO UPDATE SET name = EXCLUDED.name
+    `INSERT INTO "${soloSchema}".talent (id, subsidiary_id, profile_store_id, artist_stage_id, code, path, name, display_name, homepage_path, timezone, is_active, lifecycle_status, published_at, published_by, settings, created_at, updated_at, created_by, updated_by, version)
+     VALUES (gen_random_uuid(), NULL, $1::uuid, $2::uuid, $3, $4, $5::jsonb, $6, $7, 'Asia/Shanghai', true, $8, CASE WHEN $8 = 'published' THEN now() ELSE NULL END, CASE WHEN $8 = 'published' THEN $9::uuid ELSE NULL END, '{}'::jsonb, now(), now(), $9::uuid, $9::uuid, 1)
+     ON CONFLICT (code) DO UPDATE SET
+       profile_store_id = EXCLUDED.profile_store_id,
+       artist_stage_id = EXCLUDED.artist_stage_id,
+       name = EXCLUDED.name,
+       display_name = EXCLUDED.display_name,
+       homepage_path = EXCLUDED.homepage_path,
+       lifecycle_status = EXCLUDED.lifecycle_status,
+       published_at = EXCLUDED.published_at,
+       published_by = EXCLUDED.published_by,
+       updated_at = now(),
+       updated_by = EXCLUDED.updated_by
      RETURNING id`,
-    soloProfileStoreId, soloTalent.code, `/${soloTalent.code}/`, JSON.stringify(soloTalent.name), soloTalent.displayName, soloTalent.path, systemUserId
+    soloProfileStoreId,
+    soloTalent.artistStageId,
+    soloTalent.code,
+    `/${soloTalent.code}/`,
+    JSON.stringify(soloTalent.name),
+    soloTalent.displayName,
+    soloTalent.path,
+    soloTalent.lifecycleStatus,
+    systemUserId
   );
   talents[soloTalent.code] = soloResult[0].id;
 
@@ -249,15 +329,35 @@ export async function seedUatOrganization(
       fr: 'Indie Creator',
     }),
     displayName: 'Indie Creative',
+    artistStageId: soloArtistStageIds.draft,
+    lifecycleStatus: 'draft',
     path: 'indie-creator',
   };
 
   const soloResult2 = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
-    `INSERT INTO "${soloSchema}".talent (id, subsidiary_id, profile_store_id, code, path, name, display_name, homepage_path, timezone, is_active, settings, created_at, updated_at, created_by, updated_by, version)
-     VALUES (gen_random_uuid(), NULL, $1::uuid, $2, $3, $4::jsonb, $5, $6, 'Asia/Shanghai', true, '{}'::jsonb, now(), now(), $7::uuid, $7::uuid, 1)
-     ON CONFLICT (code) DO UPDATE SET name = EXCLUDED.name
+    `INSERT INTO "${soloSchema}".talent (id, subsidiary_id, profile_store_id, artist_stage_id, code, path, name, display_name, homepage_path, timezone, is_active, lifecycle_status, published_at, published_by, settings, created_at, updated_at, created_by, updated_by, version)
+     VALUES (gen_random_uuid(), NULL, $1::uuid, $2::uuid, $3, $4, $5::jsonb, $6, $7, 'Asia/Shanghai', true, $8, CASE WHEN $8 = 'published' THEN now() ELSE NULL END, CASE WHEN $8 = 'published' THEN $9::uuid ELSE NULL END, '{}'::jsonb, now(), now(), $9::uuid, $9::uuid, 1)
+     ON CONFLICT (code) DO UPDATE SET
+       profile_store_id = EXCLUDED.profile_store_id,
+       artist_stage_id = EXCLUDED.artist_stage_id,
+       name = EXCLUDED.name,
+       display_name = EXCLUDED.display_name,
+       homepage_path = EXCLUDED.homepage_path,
+       lifecycle_status = EXCLUDED.lifecycle_status,
+       published_at = EXCLUDED.published_at,
+       published_by = EXCLUDED.published_by,
+       updated_at = now(),
+       updated_by = EXCLUDED.updated_by
      RETURNING id`,
-    soloProfileStoreId, soloTalent2.code, `/${soloTalent2.code}/`, JSON.stringify(soloTalent2.name), soloTalent2.displayName, soloTalent2.path, systemUserId
+    soloProfileStoreId,
+    soloTalent2.artistStageId,
+    soloTalent2.code,
+    `/${soloTalent2.code}/`,
+    JSON.stringify(soloTalent2.name),
+    soloTalent2.displayName,
+    soloTalent2.path,
+    soloTalent2.lifecycleStatus,
+    systemUserId
   );
   talents[soloTalent2.code] = soloResult2[0].id;
 

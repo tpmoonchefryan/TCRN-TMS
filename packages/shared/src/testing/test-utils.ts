@@ -996,9 +996,9 @@ export async function createTestTalentInTenant(
       WHERE owner_type = 'tenant'
         AND owner_id IS NULL
         AND is_active = true
-        AND lifecycle_status_mapping = $1
+        AND artist_status_code = $1
       ORDER BY
-        CASE WHEN code = $1 THEN 0 ELSE 1 END,
+        CASE WHEN artist_status_code = $1 THEN 0 ELSE 1 END,
         sort_order ASC,
         created_at ASC
       LIMIT 1

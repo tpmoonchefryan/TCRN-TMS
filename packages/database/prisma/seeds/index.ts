@@ -13,6 +13,7 @@ import { seedBlocklistEntries } from './06-blocklist';
 import { seedExternalBlocklistPatterns } from './06b-external-blocklist';
 import { seedSystemDictionary } from './07-system-dictionary';
 import { seedEmailTemplates } from './08-email-templates';
+import { seedPublicPresenceSystemAssets } from './09-public-presence-assets';
 import { seedPiiConfig } from './10-pii-config';
 
 const prisma = new PrismaClient();
@@ -47,12 +48,16 @@ async function main() {
     console.log('\n📌 Phase 4: System Dictionaries');
     await seedSystemDictionary(prisma);
 
-    // Phase 5: PII Configuration
-    console.log('\n📌 Phase 5: PII Configuration');
+    // Phase 5: Public Presence system configuration entities and assets
+    console.log('\n📌 Phase 5: Public Presence System Assets');
+    await seedPublicPresenceSystemAssets(prisma);
+
+    // Phase 6: PII Configuration
+    console.log('\n📌 Phase 6: PII Configuration');
     await seedPiiConfig(prisma);
 
-    // Phase 6: Email Templates (public schema)
-    console.log('\n📌 Phase 6: Email Templates');
+    // Phase 7: Email Templates (public schema)
+    console.log('\n📌 Phase 7: Email Templates');
     await seedEmailTemplates();
 
     console.log('\n✅ Clean seeding completed successfully!');

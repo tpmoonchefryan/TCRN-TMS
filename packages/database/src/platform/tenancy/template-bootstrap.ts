@@ -9,6 +9,9 @@ export const TENANT_TEMPLATE_DIRECT_COPY_TABLES = [
   'role_policy',
   'pii_service_config',
   'profile_store',
+  'artist_stage',
+  'public_presence_asset',
+  'public_presence_asset_revision',
   'blocklist_entry',
   'external_blocklist_pattern',
 ] as const;

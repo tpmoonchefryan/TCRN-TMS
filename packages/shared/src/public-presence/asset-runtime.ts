@@ -174,8 +174,15 @@ const COMPONENT_LOCALIZED_NAMES = {
 } as const satisfies Record<HomepageComponentType, LocalizedText>;
 
 function getComponentSeedDescription(componentType: HomepageComponentType): LocalizedText {
+  const componentName = COMPONENT_LOCALIZED_NAMES[componentType];
+
   return createLocalizedText({
-    en: `System starter component for ${COMPONENT_LOCALIZED_NAMES[componentType].en.toLowerCase()} rendering.`,
+    en: `System starter component for ${componentName.en.toLowerCase()} rendering.`,
+    zh_HANS: `${componentName.zh_HANS} 系统起始组件。`,
+    zh_HANT: `${componentName.zh_HANT} 系統起始元件。`,
+    ja: `${componentName.ja} のシステムスターターコンポーネントです。`,
+    ko: `${componentName.ko} 시스템 스타터 컴포넌트입니다.`,
+    fr: `Composant systeme de depart pour ${componentName.fr.toLowerCase()}.`,
   });
 }
 
