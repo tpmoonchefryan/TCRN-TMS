@@ -257,6 +257,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: [classify-changes]
     if: needs.classify-changes.outputs.should_run_cd == 'true'
+    env:
+      DATABASE_URL: postgresql://tcrn:tcrn@localhost:5432/tcrn?schema=public
     steps:
       - name: Checkout
         uses: actions/checkout@v6.0.2

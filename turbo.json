@@ -5,7 +5,7 @@
     "build": {
       "dependsOn": ["^build"],
       "outputs": [".next/**", "!.next/cache/**", "dist/**"],
-      "env": ["NODE_ENV"]
+      "env": ["DATABASE_URL", "NODE_ENV"]
     },
     "dev": {
       "dependsOn": ["^build"],
@@ -35,7 +35,8 @@
       "env": ["NODE_ENV"]
     },
     "db:generate": {
-      "cache": false
+      "cache": false,
+      "env": ["DATABASE_URL"]
     },
     "db:push": {
       "cache": false

@@ -18,6 +18,8 @@ on:
 jobs:
   isolation-test:
     runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgresql://test:test@localhost:5432/tcrn_test
 
     services:
       postgres:
