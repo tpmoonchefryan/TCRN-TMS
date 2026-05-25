@@ -1,7 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 // UAT Customer Profiles - Creates customer profiles with platform identities
 
-import { PrismaClient } from '../../src/generated/prisma/client';
+import { PrismaClient } from '../../src/platform/prisma/client';
 import { UatTenantResult } from './20-uat-tenant';
 import { UatOrganizationResult } from './21-uat-organization';
 import { getTenantSocialPlatformMap } from './_tenant-social-platforms';

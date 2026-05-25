@@ -338,6 +338,7 @@ describe('parseApplyMigrationsCliArgs', () => {
     assert.deepEqual(parseApplyMigrationsCliArgs(['--', '--fail-on-drift-watch-skips']), {
       failOnDriftWatchSkips: true,
       printSchemaSkipDetails: false,
+      skipTemplate: false,
     });
   });
 
@@ -345,6 +346,7 @@ describe('parseApplyMigrationsCliArgs', () => {
     assert.deepEqual(parseApplyMigrationsCliArgs(['--print-schema-skip-details']), {
       failOnDriftWatchSkips: false,
       printSchemaSkipDetails: true,
+      skipTemplate: false,
     });
 
     assert.deepEqual(
@@ -356,14 +358,24 @@ describe('parseApplyMigrationsCliArgs', () => {
       {
         failOnDriftWatchSkips: true,
         printSchemaSkipDetails: true,
+        skipTemplate: false,
       }
     );
+  });
+
+  it('accepts the tenant_template skip flag for fresh reset replay', () => {
+    assert.deepEqual(parseApplyMigrationsCliArgs(['--skip-template']), {
+      failOnDriftWatchSkips: false,
+      printSchemaSkipDetails: false,
+      skipTemplate: true,
+    });
   });
 
   it('keeps defaults disabled when no flags are provided', () => {
     assert.deepEqual(parseApplyMigrationsCliArgs([]), {
       failOnDriftWatchSkips: false,
       printSchemaSkipDetails: false,
+      skipTemplate: false,
     });
   });
 

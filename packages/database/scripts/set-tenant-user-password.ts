@@ -5,10 +5,12 @@
 
 import argon2 from 'argon2';
 
+import { PrismaClient } from '../src/platform/prisma/client';
 import { loadRepoEnvFiles } from './load-repo-env';
-import { disconnectPrisma, prisma } from '../src/platform/prisma/client';
 
 loadRepoEnvFiles(import.meta.url);
+
+const prisma = new PrismaClient();
 
 interface CliOptions {
   schema: string;
@@ -154,5 +156,5 @@ main()
     process.exitCode = 1;
   })
   .finally(async () => {
-    await disconnectPrisma();
+    await prisma.$disconnect();
   });

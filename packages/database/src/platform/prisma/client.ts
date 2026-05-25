@@ -57,4 +57,5 @@ export async function checkDatabaseConnection(): Promise<boolean> {
   }
 }
 
+export type * from '../../generated/prisma/client';
 export { Prisma } from '../../generated/prisma/client';

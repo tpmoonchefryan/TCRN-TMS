@@ -1,7 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 // Main seed orchestrator
 
-import { PrismaClient } from '../../src/generated/prisma/client';
+import { PrismaClient } from '../../src/platform/prisma/client';
 import { seedAcAdminUser, seedAcTenant } from './00-ac-tenant';
 import { seedGlobalConfig } from './01-global-config';
 import { seedSocialPlatforms } from './02-social-platforms';
@@ -15,6 +15,9 @@ import { seedSystemDictionary } from './07-system-dictionary';
 import { seedEmailTemplates } from './08-email-templates';
 import { seedPublicPresenceSystemAssets } from './09-public-presence-assets';
 import { seedPiiConfig } from './10-pii-config';
+import { loadRepoEnvFiles } from '../../scripts/load-repo-env';
+
+loadRepoEnvFiles(import.meta.url);
 
 const prisma = new PrismaClient();
 
@@ -58,7 +61,7 @@ async function main() {
 
     // Phase 7: Email Templates (public schema)
     console.log('\n📌 Phase 7: Email Templates');
-    await seedEmailTemplates();
+    await seedEmailTemplates(prisma);
 
     console.log('\n✅ Clean seeding completed successfully!');
     console.log('ℹ️  Only AC tenant and system data created. No test tenants.');

@@ -4,9 +4,22 @@ import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+function resolveRepoRoot(moduleUrl: string): string {
+  let currentDir = path.dirname(fileURLToPath(moduleUrl));
+
+  while (currentDir !== path.dirname(currentDir)) {
+    if (existsSync(path.join(currentDir, 'pnpm-workspace.yaml'))) {
+      return currentDir;
+    }
+
+    currentDir = path.dirname(currentDir);
+  }
+
+  throw new Error(`Unable to resolve repo root for ${moduleUrl}`);
+}
+
 export function loadRepoEnvFiles(moduleUrl: string): string[] {
-  const scriptDir = path.dirname(fileURLToPath(moduleUrl));
-  const repoRoot = path.resolve(scriptDir, '..', '..', '..');
+  const repoRoot = resolveRepoRoot(moduleUrl);
   const loadedPaths: string[] = [];
 
   for (const envFile of ['.env.local', '.env']) {

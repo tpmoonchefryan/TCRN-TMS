@@ -1,14 +1,16 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 // Script to create a new tenant schema by copying from tenant_template
 
-import { PrismaClient } from '../src/generated/prisma/client';
-
+import { PrismaClient } from '../src/platform/prisma/client';
 import {
   alignTenantTemplateConstraintNames,
   alignTenantTemplateIndexNames,
   copyTenantTemplateForeignKeys,
   copyTenantTemplateSeedData,
 } from '../src/platform/tenancy/template-bootstrap';
+import { loadRepoEnvFiles } from './load-repo-env';
+
+loadRepoEnvFiles(import.meta.url);
 
 const prisma = new PrismaClient();
 

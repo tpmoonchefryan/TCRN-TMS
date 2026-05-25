@@ -1,7 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 // System Dictionary Seed Data - Full ISO standard data
 
-import { PrismaClient } from '../../src/generated/prisma/client';
+import { PrismaClient } from '../../src/platform/prisma/client';
 
 import { createLocalizedText, type LocalizedText } from '../../../shared/src/constants/locale';
 

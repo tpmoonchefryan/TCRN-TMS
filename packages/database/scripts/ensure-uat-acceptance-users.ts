@@ -7,16 +7,12 @@
 import type { UatTenantResult } from '../prisma/seeds/20-uat-tenant';
 import type { UatOrganizationResult } from '../prisma/seeds/21-uat-organization';
 import { seedUatUsers } from '../prisma/seeds/22-uat-users';
+import { PrismaClient } from '../src/platform/prisma/client';
 import { loadRepoEnvFiles } from './load-repo-env';
-import { disconnectPrisma, prisma } from '../src/platform/prisma/client';
 
 loadRepoEnvFiles(import.meta.url);
 
-interface PublicTenantRow {
-  id: string;
-  code: string;
-  schemaName: string;
-}
+const prisma = new PrismaClient();
 
 interface ScopedRow {
   id: string;
@@ -34,15 +30,10 @@ function requireRow<T>(
   throw new Error(message);
 }
 
-async function getTenant(code: string): Promise<PublicTenantRow> {
+async function getTenant(code: string): Promise<UatTenantResult['corpTenant']> {
   return requireRow(
     await prisma.tenant.findUnique({
       where: { code },
-      select: {
-        id: true,
-        code: true,
-        schemaName: true,
-      },
     }),
     `Tenant ${code} was not found. Run pnpm --filter @tcrn/database db:seed:uat.`,
   );
@@ -120,5 +111,5 @@ main()
     process.exitCode = 1;
   })
   .finally(async () => {
-    await disconnectPrisma();
+    await prisma.$disconnect();
   });

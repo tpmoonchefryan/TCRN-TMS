@@ -4,15 +4,15 @@ import { join } from 'node:path';
 import { describe, it } from 'node:test';
 
 import {
+  SUPPORTED_UI_LOCALES,
+} from '../../../shared/src/constants/locale';
+import {
   ARTIST_STATUS_CODES,
   ARTIST_STATUS_DICTIONARY_CODE,
   HOMEPAGE_TEMPLATE_TYPE_DICTIONARY_CODE,
   PUBLIC_PRESENCE_ASSET_RUNTIME_VERSION,
   PUBLIC_PRESENCE_TEMPLATE_TYPE_CODES,
 } from '../../../shared/src/public-presence';
-import {
-  SUPPORTED_UI_LOCALES,
-} from '../../../shared/src/constants/locale';
 import { getPublicPresenceSystemAssetSeeds } from '../../../shared/src/public-presence/asset-runtime';
 
 const DATABASE_ROOT = process.cwd();
@@ -69,13 +69,14 @@ describe('Public Presence seed contract', () => {
       assertLocalizedText(`${seed.code}.name`, seed.name);
       assertLocalizedText(`${seed.code}.description`, seed.description);
       assert.equal(seed.manifest.runtimeContractVersion, PUBLIC_PRESENCE_ASSET_RUNTIME_VERSION);
+      assert.equal(seed.manifest.assetKind, seed.assetKind);
       assert.ok(seed.sourceBundle.length > 0, `${seed.code} must have a source bundle`);
       assert.ok(
         seed.sourceBundle.every((file) => file.contents.trim().length > 0),
         `${seed.code} source files must not be empty`,
       );
 
-      if (seed.assetKind === 'template') {
+      if (seed.manifest.assetKind === 'template') {
         assert.ok(seed.templateId, `${seed.code} template seed must expose templateId`);
         assert.ok(
           PUBLIC_PRESENCE_TEMPLATE_TYPE_CODES.includes(seed.manifest.templateTypeCode),

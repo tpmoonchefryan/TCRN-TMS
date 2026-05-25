@@ -3,7 +3,7 @@
 
 import { createHash, randomUUID } from 'node:crypto';
 
-import { PrismaClient } from '../../src/generated/prisma/client';
+import { PrismaClient } from '../../src/platform/prisma/client';
 
 import { createLocalizedText, type LocalizedText } from '../../../shared/src/constants/locale';
 import {

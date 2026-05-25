@@ -10,14 +10,18 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { PrismaClient } from '../src/generated/prisma/client';
-
+import { PrismaClient } from '../src/platform/prisma/client';
+import { loadRepoEnvFiles } from './load-repo-env';
 import {
   type CliOptions as PlannerCliOptions,
   type HistoricalRoleNormalizationPlan,
   type HistoricalRoleNormalizationPlanSummary,
   planHistoricalRoleNormalization,
 } from './plan-historical-role-normalization';
+
+loadRepoEnvFiles(import.meta.url);
+
+type PrismaQueryRunner = Pick<PrismaClient, '$queryRawUnsafe'>;
 
 export interface CliOptions {
   schemas: string[];
@@ -124,6 +128,7 @@ function toPlannerOptions(options: CliOptions): PlannerCliOptions {
     schemas: options.schemas,
     roles: options.roles,
     json: false,
+    markdown: false,
   };
 }
 
@@ -213,7 +218,7 @@ function assertApplyAllowed(summary: HistoricalRoleRetirementSummary): void {
 }
 
 async function countRows(
-  prisma: PrismaClient,
+  prisma: PrismaQueryRunner,
   schemaName: string,
   tableName: 'delegated_admin' | 'role_policy' | 'user_role',
   roleId: string,
@@ -237,7 +242,7 @@ async function countRows(
 }
 
 async function retireRole(
-  prisma: PrismaClient,
+  prisma: PrismaQueryRunner,
   schemaName: string,
   rolePlan: HistoricalRoleNormalizationPlan,
 ): Promise<AppliedHistoricalRoleRetirement> {

@@ -1,7 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 // UAT Homepage Configuration - Creates homepage configs and versions for testing
 
-import { PrismaClient } from '../../src/generated/prisma/client';
+import { PrismaClient } from '../../src/platform/prisma/client';
 import { UAT_HOMEPAGE_FIXTURES } from '../../src/domains/homepage/uat-homepage-fixtures';
 import { UatTenantResult } from './20-uat-tenant';
 import { UatOrganizationResult } from './21-uat-organization';

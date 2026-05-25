@@ -11,9 +11,9 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { PrismaClient } from '../src/generated/prisma/client';
 import Redis from 'ioredis';
 
+import { PrismaClient } from '../src/platform/prisma/client';
 import {
   auditLegacyRbac,
   formatCanonicalLabel,
@@ -24,6 +24,7 @@ import {
   assertHistoricalRoleExclusionsSafe,
   validateHistoricalRoleExclusions,
 } from './historical-role-exclusions';
+import { loadRepoEnvFiles } from './load-repo-env';
 import {
   calculateEffectivePermissions,
   getScopeChain,
@@ -33,6 +34,8 @@ import {
   REDIS_URL,
   type ScopeDescriptor,
 } from './refresh-permission-snapshots';
+
+loadRepoEnvFiles(import.meta.url);
 
 export interface CliOptions {
   schemas: string[];

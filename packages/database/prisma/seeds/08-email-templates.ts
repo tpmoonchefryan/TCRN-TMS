@@ -1,10 +1,9 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 
-import { PrismaClient } from '../../src/generated/prisma/client';
+import { PrismaClient } from '../../src/platform/prisma/client';
 
 import { createLocalizedText } from '../../../shared/src/constants/locale';
-
-const prisma = new PrismaClient();
+import { loadRepoEnvFiles } from '../../scripts/load-repo-env';
 
 const emailTemplates = [
   // System Templates
@@ -1067,7 +1066,7 @@ TCRN TMS - Talent CRM Network`,
   },
 ];
 
-export async function seedEmailTemplates() {
+export async function seedEmailTemplates(prisma: PrismaClient) {
   console.log('Seeding email templates...');
 
   for (const template of emailTemplates) {
@@ -1091,7 +1090,9 @@ export async function seedEmailTemplates() {
 
 // Run if executed directly
 if (require.main === module) {
-  seedEmailTemplates()
+  loadRepoEnvFiles(import.meta.url);
+  const prisma = new PrismaClient();
+  seedEmailTemplates(prisma)
     .then(() => prisma.$disconnect())
     .catch((e) => {
       console.error(e);

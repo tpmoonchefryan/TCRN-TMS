@@ -3,8 +3,7 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 
-import { PrismaClient } from '../src/generated/prisma/client';
-
+import { PrismaClient } from '../src/platform/prisma/client';
 import {
   type ApplyMigrationsCliOptions,
   countTenantMigrationSkips,
@@ -29,7 +28,7 @@ const prisma = new PrismaClient();
 /**
  * Get all tenant schemas (including tenant_template)
  */
-async function getAllTenantSchemas(): Promise<string[]> {
+async function getAllTenantSchemas(options: ApplyMigrationsCliOptions): Promise<string[]> {
   const schemas = await prisma.$queryRaw<Array<{ schema_name: string }>>`
     SELECT schema_name 
     FROM information_schema.schemata 
@@ -38,7 +37,9 @@ async function getAllTenantSchemas(): Promise<string[]> {
       CASE WHEN schema_name = 'tenant_template' THEN 0 ELSE 1 END,
       schema_name
   `;
-  return schemas.map((s) => s.schema_name);
+  return schemas
+    .map((s) => s.schema_name)
+    .filter((schemaName) => !(options.skipTemplate && schemaName === 'tenant_template'));
 }
 
 /**
@@ -73,8 +74,11 @@ async function applyMigrations(options: ApplyMigrationsCliOptions) {
   console.log('🔄 Applying SQL migrations to all tenant schemas...\n');
 
   // Get all tenant schemas
-  const schemas = await getAllTenantSchemas();
+  const schemas = await getAllTenantSchemas(options);
   console.log(`Found ${schemas.length} tenant schema(s): ${schemas.join(', ')}\n`);
+  if (options.skipTemplate) {
+    console.log('Skipped tenant_template by request; public Prisma migrations own the template schema.\n');
+  }
 
   const migrationsDir = path.join(__dirname, '../prisma/migrations');
 

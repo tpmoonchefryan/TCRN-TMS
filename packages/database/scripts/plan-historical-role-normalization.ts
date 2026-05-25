@@ -9,7 +9,7 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { PrismaClient } from '../src/generated/prisma/client';
+import { PrismaClient } from '../src/platform/prisma/client';
 
 import { RBAC_ROLE_TEMPLATES } from '@tcrn/shared';
 
@@ -22,6 +22,9 @@ import {
   type ResourceGrantEntry,
   type SchemaLegacyAudit,
 } from './audit-legacy-rbac';
+import { loadRepoEnvFiles } from './load-repo-env';
+
+loadRepoEnvFiles(import.meta.url);
 
 const DEFAULT_ROLE_CODES = HISTORICAL_ROLE_CODES.filter((roleCode) => roleCode !== 'TENANT_ADMIN');
 

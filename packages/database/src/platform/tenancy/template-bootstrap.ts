@@ -94,7 +94,7 @@ async function getSchemaConstraints(
       SELECT
         rel.relname AS "tableName",
         con.conname AS "constraintName",
-        con.contype AS "constraintType",
+        con.contype::text AS "constraintType",
         pg_get_constraintdef(con.oid) AS definition
       FROM pg_constraint con
       JOIN pg_class rel ON rel.oid = con.conrelid

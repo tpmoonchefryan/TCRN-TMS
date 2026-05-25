@@ -30,6 +30,10 @@ describe('reset-local-dev-baseline guard contract', () => {
       'tcrn-nats-data',
     ]);
     assert.equal(plan.commands.some((command) => command.includes('down -v')), false);
+    assert.ok(
+      plan.commands.indexOf('pnpm --filter @tcrn/database db:migrate:deploy') <
+        plan.commands.indexOf('pnpm --filter @tcrn/database db:apply-migrations -- --skip-template'),
+    );
     assert.ok(plan.refusedShortcuts.some((entry) => entry.command === 'pnpm db:reset'));
     validatePlanCommands(plan);
   });

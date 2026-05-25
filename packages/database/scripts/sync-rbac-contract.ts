@@ -4,14 +4,13 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { PrismaClient } from '../src/generated/prisma/client';
-
 import {
   RBAC_POLICY_DEFINITIONS,
   RBAC_RESOURCES,
   RBAC_ROLE_PERMISSION_ENTRIES,
   RBAC_ROLE_TEMPLATES,
 } from '../prisma/seeds/_rbac-contract';
+import { PrismaClient } from '../src/platform/prisma/client';
 import { loadRepoEnvFiles } from './load-repo-env';
 
 loadRepoEnvFiles(import.meta.url);

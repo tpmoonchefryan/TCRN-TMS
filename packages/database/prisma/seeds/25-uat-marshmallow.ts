@@ -3,7 +3,7 @@
 
 import { createHash } from 'node:crypto';
 
-import { PrismaClient } from '../../src/generated/prisma/client';
+import { PrismaClient } from '../../src/platform/prisma/client';
 import { UatTenantResult } from './20-uat-tenant';
 import { UatOrganizationResult } from './21-uat-organization';
 

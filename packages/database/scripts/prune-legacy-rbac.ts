@@ -8,8 +8,7 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { PrismaClient } from '../src/generated/prisma/client';
-
+import { PrismaClient } from '../src/platform/prisma/client';
 import {
   auditLegacyRbac,
   formatCanonicalLabel,
@@ -21,7 +20,12 @@ import {
   assertHistoricalRoleExclusionsSafe,
   validateHistoricalRoleExclusions,
 } from './historical-role-exclusions';
+import { loadRepoEnvFiles } from './load-repo-env';
 import { verifyLegacyPruneRuntime } from './verify-legacy-prune-runtime';
+
+loadRepoEnvFiles(import.meta.url);
+
+type PrismaQueryRunner = Pick<PrismaClient, '$queryRawUnsafe'>;
 
 export interface CliOptions {
   schemas: string[];
@@ -370,7 +374,7 @@ function assertApplyAllowed(summary: PrunePlanSummary): void {
 }
 
 async function applyPruneTarget(
-  prisma: PrismaClient,
+  prisma: PrismaQueryRunner,
   schemaName: string,
   legacyCode: string
 ): Promise<ApplyDeleteCounts> {

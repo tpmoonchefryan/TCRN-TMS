@@ -141,7 +141,8 @@ export function buildResetPlan(options, env = process.env) {
     'docker compose --env-file .env.local down --remove-orphans',
     `docker volume rm ${volumes.join(' ')}`,
     'pnpm infra:up',
-    'pnpm --filter @tcrn/database db:apply-migrations',
+    'pnpm --filter @tcrn/database db:migrate:deploy',
+    'pnpm --filter @tcrn/database db:apply-migrations -- --skip-template',
     'pnpm --filter @tcrn/database db:sync-schemas',
     'pnpm --filter @tcrn/database db:seed',
   ];
@@ -359,7 +360,10 @@ async function main() {
   run('docker', ['compose', '--env-file', '.env.local', 'down', '--remove-orphans'], { stdio: 'inherit' });
   run('docker', ['volume', 'rm', ...plan.volumes], { stdio: 'inherit' });
   run('pnpm', ['infra:up'], { stdio: 'inherit' });
-  run('pnpm', ['--filter', '@tcrn/database', 'db:apply-migrations'], { stdio: 'inherit' });
+  run('pnpm', ['--filter', '@tcrn/database', 'db:migrate:deploy'], { stdio: 'inherit' });
+  run('pnpm', ['--filter', '@tcrn/database', 'db:apply-migrations', '--', '--skip-template'], {
+    stdio: 'inherit',
+  });
   run('pnpm', ['--filter', '@tcrn/database', 'db:sync-schemas'], { stdio: 'inherit' });
   run('pnpm', ['--filter', '@tcrn/database', 'db:seed'], { stdio: 'inherit' });
   if (plan.includeUat) {

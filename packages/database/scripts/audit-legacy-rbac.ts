@@ -4,9 +4,11 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { PrismaClient } from '../src/generated/prisma/client';
-
+import { PrismaClient } from '../src/platform/prisma/client';
+import { loadRepoEnvFiles } from './load-repo-env';
 import { getSchemaSyncFailureReason } from './sync-rbac-contract';
+
+loadRepoEnvFiles(import.meta.url);
 
 export interface CliOptions {
   schemas: string[];

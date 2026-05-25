@@ -9,14 +9,18 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { PrismaClient } from '../src/generated/prisma/client';
-
+import { PrismaClient } from '../src/platform/prisma/client';
+import { loadRepoEnvFiles } from './load-repo-env';
 import {
   type CliOptions as PlannerCliOptions,
   type NormalizationPlanSummary,
   type PlannedNormalizationGroup,
   planTenantScopeNormalization,
 } from './plan-tenant-scope-normalization';
+
+loadRepoEnvFiles(import.meta.url);
+
+type PrismaQueryRunner = Pick<PrismaClient, '$queryRawUnsafe'>;
 
 export interface CliOptions {
   schemas: string[];
@@ -199,7 +203,7 @@ function getAssignmentScopeId(
 }
 
 async function updateKeeperToNull(
-  prisma: PrismaClient,
+  prisma: PrismaQueryRunner,
   schemaName: string,
   group: PlannedNormalizationGroup,
 ): Promise<number> {
@@ -246,7 +250,7 @@ async function updateKeeperToNull(
 }
 
 async function deleteDuplicateAssignments(
-  prisma: PrismaClient,
+  prisma: PrismaQueryRunner,
   schemaName: string,
   group: PlannedNormalizationGroup,
 ): Promise<number> {

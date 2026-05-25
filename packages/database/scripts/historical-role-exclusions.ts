@@ -1,8 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 // Validation helper for explicit historical-role exclusions used by legacy-prune staging.
 
-import { PrismaClient } from '../src/generated/prisma/client';
-
+import { PrismaClient } from '../src/platform/prisma/client';
 import {
   type HistoricalRoleNormalizationPlan,
   type HistoricalRoleNormalizationPlanSummary,
@@ -46,6 +45,7 @@ export async function validateHistoricalRoleExclusions(
     schemas: options.schemas,
     roles: options.roles,
     json: false,
+    markdown: false,
   });
 
   const allowed: HistoricalRoleExclusionValidationSummary['allowed'] = [];

@@ -2,7 +2,10 @@
 // Script to synchronize all tenant schemas with tenant_template
 // This ensures all tenant schemas have the same columns as tenant_template
 
-import { PrismaClient } from '../src/generated/prisma/client';
+import { PrismaClient } from '../src/platform/prisma/client';
+import { loadRepoEnvFiles } from './load-repo-env';
+
+loadRepoEnvFiles(import.meta.url);
 
 const prisma = new PrismaClient();
 

@@ -7,10 +7,12 @@ import {
   buildUatPrivateFixtureRoutes,
   UAT_PRIVATE_ROUTE_FIXTURE,
 } from '../src/domains/acceptance/uat-private-route-fixtures';
+import { PrismaClient } from '../src/platform/prisma/client';
 import { loadRepoEnvFiles } from './load-repo-env';
-import { disconnectPrisma, prisma } from '../src/platform/prisma/client';
 
 loadRepoEnvFiles(import.meta.url);
+
+const prisma = new PrismaClient();
 
 interface TenantLookupRow {
   id: string;
@@ -180,5 +182,5 @@ main()
     process.exitCode = 1;
   })
   .finally(async () => {
-    await disconnectPrisma();
+    await prisma.$disconnect();
   });

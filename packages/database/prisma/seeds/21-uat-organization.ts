@@ -1,7 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 // UAT Organization Structure - Creates subsidiaries and talents for testing
 
-import { PrismaClient } from '../../src/generated/prisma/client';
+import { PrismaClient } from '../../src/platform/prisma/client';
 
 import { createLocalizedText } from '../../../shared/src/constants/locale';
 
@@ -231,7 +231,7 @@ export async function seedUatOrganization(
   for (const talent of corpTalents) {
     const result = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
       `INSERT INTO "${corpSchema}".talent (id, subsidiary_id, profile_store_id, artist_stage_id, code, path, name, display_name, homepage_path, timezone, is_active, lifecycle_status, published_at, published_by, settings, created_at, updated_at, created_by, updated_by, version)
-       VALUES (gen_random_uuid(), $1::uuid, $2::uuid, $3::uuid, $4, $5, $6::jsonb, $7, $8, 'Asia/Tokyo', true, $9, CASE WHEN $9 = 'published' THEN now() ELSE NULL END, CASE WHEN $9 = 'published' THEN $10::uuid ELSE NULL END, '{}'::jsonb, now(), now(), $10::uuid, $10::uuid, 1)
+       VALUES (gen_random_uuid(), $1::uuid, $2::uuid, $3::uuid, $4, $5, $6::jsonb, $7, $8, 'Asia/Tokyo', true, $9::text, CASE WHEN $9::text = 'published' THEN now() ELSE NULL END, CASE WHEN $9::text = 'published' THEN $10::uuid ELSE NULL END, '{}'::jsonb, now(), now(), $10::uuid, $10::uuid, 1)
        ON CONFLICT (code) DO UPDATE SET
          subsidiary_id = EXCLUDED.subsidiary_id,
          profile_store_id = EXCLUDED.profile_store_id,
@@ -292,7 +292,7 @@ export async function seedUatOrganization(
 
   const soloResult = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
     `INSERT INTO "${soloSchema}".talent (id, subsidiary_id, profile_store_id, artist_stage_id, code, path, name, display_name, homepage_path, timezone, is_active, lifecycle_status, published_at, published_by, settings, created_at, updated_at, created_by, updated_by, version)
-     VALUES (gen_random_uuid(), NULL, $1::uuid, $2::uuid, $3, $4, $5::jsonb, $6, $7, 'Asia/Shanghai', true, $8, CASE WHEN $8 = 'published' THEN now() ELSE NULL END, CASE WHEN $8 = 'published' THEN $9::uuid ELSE NULL END, '{}'::jsonb, now(), now(), $9::uuid, $9::uuid, 1)
+     VALUES (gen_random_uuid(), NULL, $1::uuid, $2::uuid, $3, $4, $5::jsonb, $6, $7, 'Asia/Shanghai', true, $8::text, CASE WHEN $8::text = 'published' THEN now() ELSE NULL END, CASE WHEN $8::text = 'published' THEN $9::uuid ELSE NULL END, '{}'::jsonb, now(), now(), $9::uuid, $9::uuid, 1)
      ON CONFLICT (code) DO UPDATE SET
        profile_store_id = EXCLUDED.profile_store_id,
        artist_stage_id = EXCLUDED.artist_stage_id,
@@ -336,7 +336,7 @@ export async function seedUatOrganization(
 
   const soloResult2 = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
     `INSERT INTO "${soloSchema}".talent (id, subsidiary_id, profile_store_id, artist_stage_id, code, path, name, display_name, homepage_path, timezone, is_active, lifecycle_status, published_at, published_by, settings, created_at, updated_at, created_by, updated_by, version)
-     VALUES (gen_random_uuid(), NULL, $1::uuid, $2::uuid, $3, $4, $5::jsonb, $6, $7, 'Asia/Shanghai', true, $8, CASE WHEN $8 = 'published' THEN now() ELSE NULL END, CASE WHEN $8 = 'published' THEN $9::uuid ELSE NULL END, '{}'::jsonb, now(), now(), $9::uuid, $9::uuid, 1)
+     VALUES (gen_random_uuid(), NULL, $1::uuid, $2::uuid, $3, $4, $5::jsonb, $6, $7, 'Asia/Shanghai', true, $8::text, CASE WHEN $8::text = 'published' THEN now() ELSE NULL END, CASE WHEN $8::text = 'published' THEN $9::uuid ELSE NULL END, '{}'::jsonb, now(), now(), $9::uuid, $9::uuid, 1)
      ON CONFLICT (code) DO UPDATE SET
        profile_store_id = EXCLUDED.profile_store_id,
        artist_stage_id = EXCLUDED.artist_stage_id,
