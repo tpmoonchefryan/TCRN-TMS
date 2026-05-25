@@ -2,7 +2,7 @@
 # TCRN TMS Worker Application Dockerfile
 
 # Build stage
-FROM node:24-alpine AS builder
+FROM node:24-alpine@sha256:2bdb65ed1dab192432bc31c95f94155ca5ad7fc1392fb7eb7526ab682fa5bf14 AS builder
 
 WORKDIR /app
 
@@ -23,6 +23,7 @@ COPY packages/eslint-config/package.json ./packages/eslint-config/
 COPY packages/shared/tsconfig.json ./packages/shared/
 COPY packages/shared/tsup.config.ts ./packages/shared/
 COPY packages/database/tsconfig.json ./packages/database/
+COPY packages/database/prisma.config.ts ./packages/database/prisma.config.ts
 
 # Install all dependencies (skip husky)
 ENV HUSKY=0
@@ -44,13 +45,15 @@ COPY apps/worker/tsup.config.ts ./apps/worker/tsup.config.ts
 # Build packages
 ARG NODE_ENV=production
 ENV NODE_ENV=${NODE_ENV}
+ARG DATABASE_URL=postgresql://tcrn:tcrn@localhost:5432/tcrn?schema=public
+ENV DATABASE_URL=${DATABASE_URL}
 
 RUN pnpm --filter @tcrn/shared build && \
     pnpm --filter @tcrn/database build && \
     pnpm --filter @tcrn/worker build
 
 # Production stage
-FROM node:24-alpine AS runner
+FROM node:24-alpine@sha256:2bdb65ed1dab192432bc31c95f94155ca5ad7fc1392fb7eb7526ab682fa5bf14 AS runner
 
 WORKDIR /app
 

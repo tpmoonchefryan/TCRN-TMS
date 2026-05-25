@@ -45,13 +45,13 @@ jobs:
           --health-retries 5
 
     steps:
-      - uses: actions/checkout@v4.3.1
+      - uses: actions/checkout@v6.0.2
 
-      - uses: pnpm/action-setup@v4.4.0
+      - uses: pnpm/action-setup@v6.0.8
         with:
           version: 11.3.0
 
-      - uses: actions/setup-node@v4.4.0
+      - uses: actions/setup-node@v6.4.0
         with:
           node-version: '24'
           cache: 'pnpm'
@@ -81,7 +81,7 @@ jobs:
 
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v4.6.2
+        uses: actions/upload-artifact@v7.0.1
         with:
           name: isolation-test-results
           path: |
