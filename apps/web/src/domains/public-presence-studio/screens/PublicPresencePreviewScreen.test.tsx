@@ -333,10 +333,12 @@ describe('PublicPresencePreviewScreen', () => {
     await screen.findByTestId('preview-canvas-stage');
     fireEvent.click(screen.getAllByRole('button', { name: 'Mobile' })[0]);
 
-    expect(screen.getByTestId('mock-public-preview')).toHaveAttribute(
-      'data-responsive-mode',
-      'mobile'
-    );
+    await waitFor(() => {
+      expect(screen.getByTestId('mock-public-preview')).toHaveAttribute(
+        'data-responsive-mode',
+        'mobile'
+      );
+    });
     expect(currentSearch).toContain('viewport=mobile');
   });
 
