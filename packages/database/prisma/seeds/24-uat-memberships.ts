@@ -1,7 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 // UAT Membership Records - Creates membership records for testing
 
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '../../src/generated/prisma/client';
 import { UatTenantResult } from './20-uat-tenant';
 import { UatCustomersResult } from './23-uat-customers';
 import { getTenantSocialPlatformMap } from './_tenant-social-platforms';

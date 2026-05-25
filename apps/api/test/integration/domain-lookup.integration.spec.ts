@@ -41,16 +41,16 @@ describe('Domain Lookup Integration Tests', () => {
     await prisma.$executeRawUnsafe(
       `
         UPDATE "${tenantFixture.schemaName}".talent
-        SET custom_domain = $2,
+        SET custom_domain = $2::text,
             custom_domain_verified = true,
-            marshmallow_path = $3,
-            lifecycle_status = $4,
+            marshmallow_path = $3::text,
+            lifecycle_status = $4::text,
             published_at = CASE
-              WHEN $4 IN ('published', 'disabled') THEN COALESCE(published_at, NOW())
+              WHEN $4::text IN ('published', 'disabled') THEN COALESCE(published_at, NOW())
               ELSE NULL
             END,
             published_by = CASE
-              WHEN $4 IN ('published', 'disabled') THEN $5::uuid
+              WHEN $4::text IN ('published', 'disabled') THEN $5::uuid
               ELSE NULL
             END,
             updated_at = NOW()

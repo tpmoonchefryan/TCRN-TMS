@@ -1,7 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 // Main seed orchestrator
 
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '../../src/generated/prisma/client';
 import { seedAcAdminUser, seedAcTenant } from './00-ac-tenant';
 import { seedGlobalConfig } from './01-global-config';
 import { seedSocialPlatforms } from './02-social-platforms';

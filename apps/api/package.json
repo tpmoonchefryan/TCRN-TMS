@@ -37,7 +37,6 @@
     "@opentelemetry/sdk-node": "0.218.0",
     "@opentelemetry/sdk-trace-base": "2.7.1",
     "@opentelemetry/semantic-conventions": "1.41.1",
-    "@prisma/client": "6.14.0",
     "@tcrn/database": "workspace:*",
     "@tcrn/shared": "workspace:*",
     "@types/mime-types": "^3.0.1",

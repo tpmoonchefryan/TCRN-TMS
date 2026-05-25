@@ -1,5 +1,13 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-import { PrismaClient } from '@prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
+
+import { PrismaClient as GeneratedPrismaClient } from '../../generated/prisma/client';
+
+type GeneratedPrismaClientOptions = ConstructorParameters<typeof GeneratedPrismaClient>[0];
+type AdapterPrismaClientOptions = Extract<GeneratedPrismaClientOptions, { adapter: unknown }>;
+type PrismaClientOptions = Omit<AdapterPrismaClientOptions, 'adapter'> & {
+  adapter?: AdapterPrismaClientOptions['adapter'];
+};
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
@@ -10,10 +18,25 @@ function shouldLogPrismaQueries() {
   return flag === '1' || flag === 'true' || flag === 'yes' || flag === 'on';
 }
 
-const createPrismaClient = () =>
-  new PrismaClient({
-    log: shouldLogPrismaQueries() ? ['query', 'error', 'warn'] : ['error', 'warn'],
+function createPrismaPgAdapter() {
+  return new PrismaPg({
+    connectionString: process.env.DATABASE_URL ?? '',
   });
+}
+
+export class PrismaClient extends GeneratedPrismaClient {
+  constructor(options: PrismaClientOptions = {}) {
+    const { adapter, log, ...rest } = options;
+
+    super({
+      ...rest,
+      adapter: adapter ?? createPrismaPgAdapter(),
+      log: log ?? (shouldLogPrismaQueries() ? ['query', 'error', 'warn'] : ['error', 'warn']),
+    });
+  }
+}
+
+export const createPrismaClient = (options: PrismaClientOptions = {}) => new PrismaClient(options);
 
 export const prisma = globalForPrisma.prisma ?? createPrismaClient();
 
@@ -34,4 +57,4 @@ export async function checkDatabaseConnection(): Promise<boolean> {
   }
 }
 
-export { Prisma, PrismaClient } from '@prisma/client';
+export { Prisma } from '../../generated/prisma/client';

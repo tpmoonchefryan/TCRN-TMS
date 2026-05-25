@@ -1,5 +1,5 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-import type { PrismaClient } from '@prisma/client';
+import type { PrismaClient } from '../../generated/prisma/client';
 
 export const TENANT_TEMPLATE_DIRECT_COPY_TABLES = [
   'resource',

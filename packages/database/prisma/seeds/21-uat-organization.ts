@@ -1,7 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 // UAT Organization Structure - Creates subsidiaries and talents for testing
 
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '../../src/generated/prisma/client';
 
 import { createLocalizedText } from '../../../shared/src/constants/locale';
 

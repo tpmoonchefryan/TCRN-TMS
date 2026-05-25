@@ -1,7 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 import type { INestApplication } from '@nestjs/common';
 import { Test, type TestingModule } from '@nestjs/testing';
-import type { PrismaClient } from '@prisma/client';
+import type { PrismaClient } from '@tcrn/database';
 import 'reflect-metadata';
 import request from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -41,7 +41,7 @@ describe('Public Presence asset duplicate integration', () => {
       { bootstrapTestApp },
     ] = await Promise.all([
       import('../../src/app.module'),
-      import('@prisma/client'),
+      import('@tcrn/database'),
       import('../../src/modules/auth/token.service'),
       import('../../src/modules/homepage/infrastructure/public-presence-asset.repository'),
       import('../../src/testing/bootstrap-test-app'),

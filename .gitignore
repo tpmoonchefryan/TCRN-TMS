@@ -66,6 +66,7 @@ test-results
 # Prisma
 packages/database/prisma/*.db
 packages/database/prisma/*.db-journal
+packages/database/src/generated/prisma/
 
 # Docker
 *.pem

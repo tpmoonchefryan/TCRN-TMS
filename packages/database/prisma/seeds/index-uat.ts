@@ -1,7 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 // UAT seed orchestrator - Seeds UAT test data on top of base data
 
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '../../src/generated/prisma/client';
 import { seedUatTenants } from './20-uat-tenant';
 import { seedUatOrganization } from './21-uat-organization';
 import { seedUatUsers } from './22-uat-users';

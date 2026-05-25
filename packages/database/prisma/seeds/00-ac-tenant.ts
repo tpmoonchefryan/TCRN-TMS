@@ -1,7 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 // AC (Admin Console) tenant seed data
 
-import { PrismaClient, Tenant } from '@prisma/client';
+import { PrismaClient, Tenant } from '../../src/generated/prisma/client';
 
 export interface AcTenantResult {
   tenant: Tenant;

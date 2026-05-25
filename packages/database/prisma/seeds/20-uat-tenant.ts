@@ -1,7 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 // UAT Test Tenants - Creates test tenants for user acceptance testing
 
-import { PrismaClient, Tenant } from '@prisma/client';
+import { PrismaClient, Tenant } from '../../src/generated/prisma/client';
 
 export interface UatTenantResult {
   corpTenant: Tenant;

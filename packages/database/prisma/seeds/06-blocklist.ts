@@ -5,7 +5,7 @@
 // - Chinese: Sensitive-lexicon (MIT) https://github.com/konsheng/Sensitive-lexicon
 // - Japanese: inappropriate-words-ja (MIT) https://github.com/MosasoM/inappropriate-words-ja
 
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '../../src/generated/prisma/client';
 
 import { createLocalizedText, type LocalizedText } from '../../../shared/src/constants/locale';
 

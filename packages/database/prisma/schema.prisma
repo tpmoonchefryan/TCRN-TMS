@@ -3,12 +3,13 @@
 // Based on PRD v0.19 and 02-数据库设计与ORM.md
 
 generator client {
-  provider = "prisma-client-js"
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "cjs"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
   schemas  = ["public", "tenant_template"]
 }
 

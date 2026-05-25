@@ -51,13 +51,13 @@ describe('Marshmallow Integration Tests', () => {
     await prisma.$executeRawUnsafe(
       `
         UPDATE "${tenantFixture.schemaName}".talent
-        SET lifecycle_status = $2,
+        SET lifecycle_status = $2::text,
             published_at = CASE
-              WHEN $2 IN ('published', 'disabled') THEN COALESCE(published_at, NOW())
+              WHEN $2::text IN ('published', 'disabled') THEN COALESCE(published_at, NOW())
               ELSE NULL
             END,
             published_by = CASE
-              WHEN $2 IN ('published', 'disabled') THEN $3::uuid
+              WHEN $2::text IN ('published', 'disabled') THEN $3::uuid
               ELSE NULL
             END,
             updated_at = NOW()
