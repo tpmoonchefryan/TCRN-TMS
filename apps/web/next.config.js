@@ -4,6 +4,7 @@ const apiOrigin = process.env.TMS_API_ORIGIN || 'http://localhost:4000';
 const nextConfig = {
   output: 'standalone',
   reactStrictMode: true,
+  allowedDevOrigins: ['127.0.0.1'],
   transpilePackages: ['@tcrn/shared'],
   async rewrites() {
     return [

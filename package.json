@@ -20,7 +20,9 @@
     "pnpm": ">=11.3.0 <12"
   },
   "scripts": {
-    "dev": "turbo dev",
+    "dev": "pnpm dev:check && pnpm dev:prepare && turbo dev",
+    "dev:check": "node scripts/check-node-runtime.mjs",
+    "dev:prepare": "pnpm --filter @tcrn/shared build && pnpm --filter @tcrn/database build",
     "infra:up": "docker compose --env-file .env.local up -d postgres redis minio nats",
     "infra:up:observability": "docker compose --env-file .env.local --profile observability up -d loki tempo",
     "infra:ps": "docker compose --env-file .env.local ps",
