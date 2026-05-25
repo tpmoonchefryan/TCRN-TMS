@@ -1,6 +1,6 @@
 'use client';
 
-import { Eye, LayoutTemplate, Package2 } from 'lucide-react';
+import { LayoutTemplate, Package2 } from 'lucide-react';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 
@@ -11,10 +11,7 @@ import {
   PublicPresenceSurface,
 } from '@/domains/public-presence';
 import { getHomepageSurfaceLabel } from '@/domains/public-presence-studio/screens/public-presence-studio.copy';
-import {
-  buildPublicPresenceStudioEditorPath,
-  buildTalentSettingsPath,
-} from '@/platform/routing/workspace-paths';
+import { buildTalentSettingsPath } from '@/platform/routing/workspace-paths';
 import { useUiLocale } from '@/platform/runtime/locale/locale-provider';
 import { pickLocaleText } from '@/platform/runtime/locale/locale-text';
 import { useSession } from '@/platform/runtime/session/session-provider';
@@ -42,88 +39,6 @@ function SurfaceCommandLink({
       {icon}
       {label}
     </Link>
-  );
-}
-
-function CatalogCompatibilityNotice({
-  href,
-  kind,
-}: Readonly<{
-  href: string;
-  kind: 'component' | 'template';
-}>) {
-  const { locale } = useUiLocale();
-  const heading =
-    kind === 'template'
-      ? pickLocaleText(locale, {
-          en: 'Template asset records now open as a compatibility stop, not a homepage tab.',
-          zh_HANS: '模板中心现在是兼容入口，不再是主页一级标签。',
-          zh_HANT: '模板中心現在是相容入口，不再是主頁一級標籤。',
-          ja: 'テンプレート資産レコードは互換用の入口であり、ホームページの第一タブではありません。',
-          ko: '템플릿 자산 레코드는 호환용 진입점이며 더 이상 홈페이지 1차 탭이 아닙니다.',
-          fr: 'Le centre de templates est désormais un point de compatibilité, plus un onglet homepage.',
-        })
-      : pickLocaleText(locale, {
-          en: 'Component asset records now open as a compatibility stop, not a homepage tab.',
-          zh_HANS: '组件中心现在是兼容入口，不再是主页一级标签。',
-          zh_HANT: '元件中心現在是相容入口，不再是主頁一級標籤。',
-          ja: 'コンポーネント資産レコードは互換用の入口であり、ホームページの第一タブではありません。',
-          ko: '컴포넌트 자산 레코드는 호환용 진입점이며 더 이상 홈페이지 1차 탭이 아닙니다.',
-          fr: 'Le store de composants est désormais un point de compatibilité, plus un onglet homepage.',
-        });
-  const body =
-    kind === 'template'
-      ? pickLocaleText(locale, {
-          en: 'Use Homepage Management for everyday routing and release work, then open Template IDE only when you need focused asset authoring.',
-          zh_HANS: '日常路由与发布工作请使用主页管理；只有在需要聚焦资产创作时再进入模板 IDE。',
-          zh_HANT: '日常路由與發佈工作請使用主頁管理；只有在需要聚焦資產創作時再進入模板 IDE。',
-          ja: '日常のルーティングと公開作業は Homepage Management で進め、アセット制作に集中したい時だけ Template IDE を開いてください。',
-          ko: '일상적인 라우팅과 공개 작업은 Homepage Management 에서 진행하고, 자산 제작에 집중해야 할 때만 Template IDE 를 여세요.',
-          fr: 'Utilisez Homepage Management pour le routage et la publication au quotidien, puis ouvrez le Template IDE seulement quand un travail d’asset ciblé est nécessaire.',
-        })
-      : pickLocaleText(locale, {
-          en: 'Use Homepage Management for everyday routing and release work, then open Component IDE only when you need focused asset authoring.',
-          zh_HANS: '日常路由与发布工作请使用主页管理；只有在需要聚焦资产创作时再进入组件 IDE。',
-          zh_HANT: '日常路由與發佈工作請使用主頁管理；只有在需要聚焦資產創作時再進入元件 IDE。',
-          ja: '日常のルーティングと公開作業は Homepage Management で進め、アセット制作に集中したい時だけ Component IDE を開いてください。',
-          ko: '일상적인 라우팅과 공개 작업은 Homepage Management 에서 진행하고, 자산 제작에 집중해야 할 때만 Component IDE 를 여세요.',
-          fr: 'Utilisez Homepage Management pour le routage et la publication au quotidien, puis ouvrez le Component IDE seulement quand un travail d’asset ciblé est nécessaire.',
-        });
-
-  return (
-    <PublicPresenceSurface
-      className="border-sky-200 bg-sky-50 px-4 py-3 text-sky-900"
-      data-testid="catalog-compatibility-notice"
-    >
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0 flex-1 space-y-1">
-          <PublicPresenceBadge tone="info" variant="outline">
-            {pickLocaleText(locale, {
-              en: 'Compatibility path',
-              zh_HANS: '兼容路径',
-              zh_HANT: '相容路徑',
-              ja: '互換パス',
-              ko: '호환 경로',
-              fr: 'Parcours de compatibilité',
-            })}
-          </PublicPresenceBadge>
-          <p className="text-sm font-semibold">{heading}</p>
-          <p className="text-sm leading-6 text-sky-900/90">{body}</p>
-        </div>
-        <SurfaceCommandLink
-          href={href}
-          icon={<Eye className="h-4 w-4" aria-hidden="true" />}
-          label={pickLocaleText(locale, {
-            en: 'Open Homepage Management',
-            zh_HANS: '打开主页管理',
-            zh_HANT: '打開主頁管理',
-            ja: 'Homepage Management を開く',
-            ko: 'Homepage Management 열기',
-            fr: 'Ouvrir Homepage Management',
-          })}
-        />
-      </div>
-    </PublicPresenceSurface>
   );
 }
 
@@ -183,10 +98,6 @@ export function LegacyTemplateCenterCompatibilityScreen({
   return (
     <PublicPresenceShell decorationDensity="calm">
       <div className="space-y-4">
-        <CatalogCompatibilityNotice
-          href={buildPublicPresenceStudioEditorPath(tenantId, talentId)}
-          kind="template"
-        />
         <CompatibilityTopbar
           body={pickLocaleText(locale, {
             en: 'Registered homepage template assets now live in the scoped asset workspace for this talent.',
@@ -226,10 +137,6 @@ export function LegacyComponentStoreCompatibilityScreen({
   return (
     <PublicPresenceShell decorationDensity="calm">
       <div className="space-y-4">
-        <CatalogCompatibilityNotice
-          href={buildPublicPresenceStudioEditorPath(tenantId, talentId)}
-          kind="component"
-        />
         <CompatibilityTopbar
           body={pickLocaleText(locale, {
             en: 'Registered homepage component assets now live in the scoped asset workspace for this talent.',

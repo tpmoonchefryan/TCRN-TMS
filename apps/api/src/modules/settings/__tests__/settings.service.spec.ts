@@ -4,8 +4,8 @@ import type { ConfigService } from '@nestjs/config';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { SettingsApplicationService } from '../application/settings-application.service';
-import type { SettingsSecretCryptoService } from '../infrastructure/settings-secret-crypto.service';
 import { SettingsRepository } from '../infrastructure/settings.repository';
+import type { SettingsSecretCryptoService } from '../infrastructure/settings-secret-crypto.service';
 
 describe('SettingsApplicationService', () => {
   let service: SettingsApplicationService;
@@ -371,7 +371,7 @@ describe('SettingsApplicationService', () => {
             homepagePolicyByStage: [
               {
                 stageId: '11111111-1111-4111-8111-111111111111',
-                allowedTemplateIds: ['debutReveal'],
+                allowedTemplateTypeCodes: ['pending-reveal'],
               },
             ],
           },

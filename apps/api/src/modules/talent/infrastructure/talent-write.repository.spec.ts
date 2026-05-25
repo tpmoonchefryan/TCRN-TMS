@@ -1,7 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 import { prisma } from '@tcrn/database';
 import { createLocalizedText } from '@tcrn/shared';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { TalentWriteRepository } from './talent-write.repository';
 
@@ -84,7 +83,7 @@ describe('TalentWriteRepository create', () => {
     const [sql, ...params] = mockPrisma.$queryRawUnsafe.mock.calls[0];
 
     expect(String(sql)).toContain(
-      "CASE WHEN $14 = 'published' THEN $15::uuid ELSE NULL END, $16::jsonb"
+      "CASE WHEN $14::varchar = 'published' THEN $15::uuid ELSE NULL END, $16::jsonb"
     );
     expect(String(sql)).toContain('created_by, updated_by');
     expect(params[14]).toBe('44444444-4444-4444-8444-444444444444');

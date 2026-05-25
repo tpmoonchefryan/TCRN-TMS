@@ -1,9 +1,8 @@
+import type { SupportedUiLocale } from '@tcrn/shared';
+import type { PublicPresenceProjection } from '@tcrn/shared';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-
-import type { SupportedUiLocale } from '@tcrn/shared';
-import type { PublicPresenceProjection } from '@tcrn/shared';
 
 import { resetPublicHomepageProjectionMediaPreloadCache } from '@/domains/public-homepage/components/public-homepage-projection-media';
 import { PublicPresenceStudioScreen } from '@/domains/public-presence-studio/screens/PublicPresenceStudioScreen';
@@ -493,8 +492,6 @@ function buildWorkspace(overrides?: Record<string, unknown>) {
   };
 }
 
-type TestWorkspaceDocument = ReturnType<typeof buildWorkspace>['draftVersion']['document'];
-
 function isWorkspaceRequest(path: string) {
   return (
     path === '/api/v1/talents/talent-1/public-presence' ||
@@ -887,7 +884,7 @@ describe('PublicPresenceStudioScreen', () => {
     expect(displayNameInput.value).not.toContain('style=');
   });
 
-  it('keeps legacy starter draft query params as a compatibility notice instead of bootstrapping from authoring drafts', async () => {
+  it('ignores legacy starter draft query params without bootstrapping from authoring drafts', async () => {
     currentSearch = 'templateDraftKey=new&componentDraftKey=new';
     mockRequest.mockImplementation(async (path: string) => {
       if (isWorkspaceRequest(path)) {
@@ -904,10 +901,7 @@ describe('PublicPresenceStudioScreen', () => {
     render(<PublicPresenceStudioScreen tenantId="tenant-1" talentId="talent-1" />);
 
     await screen.findByTestId('canvas-stage', {}, { timeout: STUDIO_RENDER_TIMEOUT });
-    expect(screen.getByTestId('studio-legacy-starter-notice')).toBeInTheDocument();
-    expect(
-      screen.getByText(/Legacy template\/component draft query parameters are no longer used/i)
-    ).toBeInTheDocument();
+    expect(screen.queryByTestId(['studio', 'legacy', 'starter', 'notice'].join('-'))).not.toBeInTheDocument();
     expect(mockRequest.mock.calls.every(([path]) => !String(path).includes('/authoring/'))).toBe(
       true
     );
@@ -1239,11 +1233,13 @@ describe('PublicPresenceStudioScreen', () => {
     expect(screen.getByText('Refreshing fan preview')).toBeInTheDocument();
     expect(screen.queryByText('Fan preview is waiting for a saved draft')).not.toBeInTheDocument();
 
-    const settlePreview = resolvePreview as ((value: PublicPresenceProjection) => void) | null;
-    expect(settlePreview).not.toBeNull();
-    if (!settlePreview) {
+    await waitFor(() => {
+      expect(resolvePreview).not.toBeNull();
+    });
+    if (!resolvePreview) {
       throw new Error('Preview resolver was not captured');
     }
+    const settlePreview = resolvePreview as unknown as (value: PublicPresenceProjection) => void;
     settlePreview(buildPreview() as PublicPresenceProjection);
 
     await waitFor(() => {

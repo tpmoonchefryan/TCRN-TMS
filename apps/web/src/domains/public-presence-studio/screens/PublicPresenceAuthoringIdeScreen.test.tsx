@@ -434,7 +434,7 @@ describe('PublicPresenceAuthoringIdeScreen', () => {
     );
   }, 15_000);
 
-  it('marks legacy non-asset template authoring as a compatibility entry', async () => {
+  it('keeps legacy non-asset template authoring local without compatibility notice chrome', async () => {
     render(
       <PublicPresenceAuthoringIdeScreen
         target="template"
@@ -444,15 +444,10 @@ describe('PublicPresenceAuthoringIdeScreen', () => {
       />
     );
 
-    expect(await screen.findByTestId('legacy-authoring-compatibility-notice')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Open asset workspace' })).toHaveAttribute(
-      'href',
-      '/tenant/tenant-1/talent/talent-1/settings?section=config-entities'
-    );
-    expect(screen.getByRole('link', { name: 'Open Homepage Management' })).toHaveAttribute(
-      'href',
-      '/tenant/tenant-1/talent/talent-1/homepage'
-    );
+    expect(await screen.findByTestId('ide-workbench')).toBeInTheDocument();
+    expect(
+      screen.queryByTestId(['legacy', 'authoring', 'compatibility', 'notice'].join('-'))
+    ).not.toBeInTheDocument();
   });
 
   it('loads and saves asset-scoped template revisions through the asset endpoints', async () => {
@@ -926,7 +921,7 @@ describe('PublicPresenceAuthoringIdeScreen', () => {
       />
     );
 
-    const editor = await screen.findByRole('textbox', { name: 'src/index.html' });
+    await screen.findByRole('textbox', { name: 'src/index.html' });
 
     const replacement = '<main class="fan-page"><h1>Advanced textarea fallback marker</h1></main>';
     const saveButton = screen.getByRole('button', { name: 'Save draft' });
@@ -972,7 +967,10 @@ describe('PublicPresenceAuthoringIdeScreen', () => {
     const editor = screen.getByRole('textbox', { name: 'src/template.tsx' });
 
     expect(viewLines).not.toBeNull();
-    fireEvent.mouseDown(viewLines!);
+    if (!viewLines) {
+      throw new Error('Monaco view lines were not rendered');
+    }
+    fireEvent.mouseDown(viewLines);
     expect(document.activeElement).toBe(editor);
 
     fireEvent.change(editor, {

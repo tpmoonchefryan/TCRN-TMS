@@ -1,5 +1,24 @@
 'use client';
 
+import type {
+  HomepageComponentType,
+  PublicPresenceComponentNode,
+  PublicPresenceDocument,
+  PublicPresenceFieldDefinition,
+  PublicPresenceFieldProvenance,
+  PublicPresenceFieldValue,
+  PublicPresencePhaseVisibility,
+  PublicPresenceProjection,
+  PublicPresenceValidationIssue,
+  PublicPresenceValidationSnapshot,
+  SupportedUiLocale,
+} from '@tcrn/shared';
+import {
+  DEFAULT_THEME,
+  normalizeTheme,
+  PUBLIC_PRESENCE_FAN_ACTION_SLOTS,
+  PUBLIC_PRESENCE_NOTE_KINDS,
+} from '@tcrn/shared';
 import {
   AlertCircle,
   ArrowLeftRight,
@@ -28,29 +47,9 @@ import {
   useState,
 } from 'react';
 
-import type {
-  HomepageComponentType,
-  PublicPresenceComponentNode,
-  PublicPresenceDocument,
-  PublicPresenceFieldDefinition,
-  PublicPresenceFieldProvenance,
-  PublicPresenceFieldValue,
-  PublicPresencePhaseVisibility,
-  PublicPresenceProjection,
-  PublicPresenceValidationIssue,
-  PublicPresenceValidationSnapshot,
-  SupportedUiLocale,
-} from '@tcrn/shared';
-import {
-  DEFAULT_THEME,
-  PUBLIC_PRESENCE_FAN_ACTION_SLOTS,
-  PUBLIC_PRESENCE_NOTE_KINDS,
-  normalizeTheme,
-} from '@tcrn/shared';
-
+import { preloadPublicHomepageProjectionMedia } from '@/domains/public-homepage/components/public-homepage-projection-media';
 import { PublicHomepageProjectionRenderer } from '@/domains/public-homepage/components/PublicHomepageProjectionRenderer';
 import { getHomepageCanvasStyle } from '@/domains/public-homepage/components/PublicHomepageRenderer';
-import { preloadPublicHomepageProjectionMedia } from '@/domains/public-homepage/components/public-homepage-projection-media';
 import {
   PublicPresenceBadge,
   PublicPresenceShell,
@@ -77,17 +76,10 @@ import {
   schedulePublicPresencePublish,
   submitPublicPresenceForReview,
 } from '@/domains/public-presence-studio/api/public-presence-studio.api';
-import { useOverlayFocusManager } from '@/domains/public-presence-studio/screens/public-presence-studio-overlay';
-import {
-  mergeUrlSearchParams,
-  parseBooleanSearchParam,
-  parseEnumSearchParam,
-} from '@/domains/public-presence-studio/screens/public-presence-studio-url-state';
 import {
   formatPublicPresenceStudioDateTime,
   formatPublicPresenceStudioValidationSummary,
   getHomepageSurfaceActionLabel,
-  getHomepageSurfaceLabel,
   getPublicPresenceDocumentStateLabel,
   getPublicPresenceEditabilityStateLabel,
   getPublicPresenceFanActionSlotLabel,
@@ -107,6 +99,12 @@ import {
   usePublicPresenceStudioCopy,
 } from '@/domains/public-presence-studio/screens/public-presence-studio.copy';
 import { withPublicPresenceRouteTimeout } from '@/domains/public-presence-studio/screens/public-presence-studio.loading';
+import { useOverlayFocusManager } from '@/domains/public-presence-studio/screens/public-presence-studio-overlay';
+import {
+  mergeUrlSearchParams,
+  parseBooleanSearchParam,
+  parseEnumSearchParam,
+} from '@/domains/public-presence-studio/screens/public-presence-studio-url-state';
 import {
   buildPublicPresenceStudioPreviewPath,
   buildTalentSettingsPath,
@@ -223,26 +221,8 @@ function NoticeToast({
   );
 }
 
-function toPrettyJson(value: unknown) {
-  return JSON.stringify(value, null, 2);
-}
-
 function formatDateTime(locale: string, value: string | null) {
   return formatPublicPresenceStudioDateTime(locale, value);
-}
-
-function resolveWorkspacePublicPath(
-  previewProjection: PublicPresenceProjection | null,
-  workspace: PublicPresenceStudioWorkspaceResponse | null,
-  fallback: string
-) {
-  return (
-    previewProjection?.route?.canonicalPath ||
-    workspace?.publicRoute?.canonicalPath ||
-    workspace?.liveVersion?.document.metadata?.canonicalPath ||
-    workspace?.draftVersion?.document.metadata?.canonicalPath ||
-    fallback
-  );
 }
 
 function readFieldEntry(
@@ -425,50 +405,6 @@ function buildDefaultComponentForType(
   };
 }
 
-function reorderDocumentSectionsForStarter(
-  document: PublicPresenceDocument,
-  stageSections: PublicPresenceStudioStageSectionSummary[],
-  sectionOrder: readonly string[]
-) {
-  if (sectionOrder.length === 0) {
-    return document;
-  }
-
-  const sectionByKind = new Map(document.sections.map((section) => [section.kind, section]));
-  const stageSectionByKind = new Map(stageSections.map((section) => [section.kind, section]));
-  const orderedSections: PublicPresenceDocument['sections'] = [];
-  const seenKinds = new Set<string>();
-
-  sectionOrder.forEach((sectionKind) => {
-    const existingSection = sectionByKind.get(sectionKind);
-    const stageSection = stageSectionByKind.get(sectionKind);
-
-    if (existingSection) {
-      orderedSections.push(existingSection);
-      seenKinds.add(sectionKind);
-      return;
-    }
-
-    if (!stageSection) {
-      return;
-    }
-
-    orderedSections.push(buildEmptySectionDraft(stageSection, orderedSections.length));
-    seenKinds.add(sectionKind);
-  });
-
-  document.sections.forEach((section) => {
-    if (!seenKinds.has(section.kind)) {
-      orderedSections.push(section);
-    }
-  });
-
-  return {
-    ...document,
-    sections: orderedSections,
-  };
-}
-
 function resolveFieldEditability(
   definition: Pick<PublicPresenceFieldDefinition, 'sourceOnly' | 'visualEditable'> | undefined,
   canEditVisually: boolean
@@ -540,24 +476,6 @@ function getIssueTone(issues: PublicPresenceValidationIssue[]) {
   }
 
   return 'success' as const;
-}
-
-function getValidationTone(
-  snapshot: PublicPresenceValidationSnapshot | null
-): 'success' | 'warning' | 'error' | 'info' {
-  if (!snapshot) {
-    return 'info';
-  }
-
-  if (snapshot.issueCounts.fatal > 0 || snapshot.issueCounts.blocker > 0) {
-    return 'error';
-  }
-
-  if (snapshot.issueCounts.warning > 0) {
-    return 'warning';
-  }
-
-  return 'success';
 }
 
 function getValidationToneFromCounts(
@@ -4277,8 +4195,6 @@ function PublicPresenceStudioScreenInner({
     locale,
     currentReleaseIssueCounts
   );
-  const legacyStarterQueryActive =
-    searchParams.has('templateDraftKey') || searchParams.has('componentDraftKey');
   const showLeftDrawer = !previewFocus && leftDrawerOpen && !stagePanel;
   const showRightDrawer = !previewFocus && Boolean(stagePanel);
   const leftDrawerOverlay = useOverlayFocusManager({
@@ -4858,38 +4774,6 @@ function PublicPresenceStudioScreenInner({
             onDismiss={() => setNotice(null)}
             tone={notice.tone}
           />
-        ) : null}
-
-        {legacyStarterQueryActive ? (
-          <PublicPresenceSurface
-            className="border-sky-200 bg-sky-50 px-4 py-3 text-sky-900"
-            data-testid="studio-legacy-starter-notice"
-          >
-            <div className="flex flex-wrap items-start gap-3">
-              <PublicPresenceBadge tone="info" variant="outline">
-                {pickLocaleText(locale, {
-                  en: 'Compatibility path',
-                  zh_HANS: '兼容路径',
-                  zh_HANT: '相容路徑',
-                  ja: '互換パス',
-                  ko: '호환 경로',
-                  fr: 'Parcours de compatibilite',
-                })}
-              </PublicPresenceBadge>
-              <p className="min-w-0 flex-1 text-sm leading-6">
-                {pickLocaleText(locale, {
-                  en: 'Legacy template/component draft query parameters are no longer used to bootstrap the homepage. Continue from the scoped asset workspace when you need a new template or component authoring flow.',
-                  zh_HANS:
-                    '旧版模板或组件草稿查询参数不再用于初始化主页。如需新的模板或组件创作流程，请改从当前范围的资产工作面继续。',
-                  zh_HANT:
-                    '舊版模板或元件草稿查詢參數不再用於初始化主頁。如需新的模板或元件創作流程，請改從目前範圍的資產工作面繼續。',
-                  ja: '旧テンプレート/コンポーネント草稿クエリは、もうホームページ初期化には使いません。新しい制作フローが必要な場合は、このスコープの資産ワークスペースから続けてください。',
-                  ko: '레거시 템플릿/컴포넌트 드래프트 쿼리는 더 이상 홈페이지 부트스트랩에 사용되지 않습니다. 새 제작 흐름이 필요하면 현재 범위의 자산 워크스페이스에서 이어가세요.',
-                  fr: 'Les anciens parametres de brouillon template/composant ne servent plus a initialiser la homepage. Pour un nouveau flux d’authoring, reprenez depuis le workspace asset de cette portee.',
-                })}
-              </p>
-            </div>
-          </PublicPresenceSurface>
         ) : null}
 
         <div className={`grid min-h-[calc(100vh-4.75rem)] gap-2 ${workbenchGridClass}`}>

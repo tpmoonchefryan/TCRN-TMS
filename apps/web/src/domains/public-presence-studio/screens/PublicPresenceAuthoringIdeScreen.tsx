@@ -1,6 +1,22 @@
 'use client';
 
 import {
+  buildPublicPresenceComponentSourceManifest,
+  buildPublicPresenceTemplateSourceManifest,
+  type HomepageComponentType,
+  PUBLIC_PRESENCE_SAFETY_POLICY,
+  type PublicPresenceAssetDetail,
+  type PublicPresenceAssetScopeType,
+  type PublicPresenceDocument,
+  type PublicPresencePhaseVisibility,
+  type PublicPresenceProjection,
+  type PublicPresencePublicProjection,
+  type PublicPresenceSourceBundleFile,
+  type PublicPresenceTemplateId,
+  type SupportedUiLocale,
+  ThemePreset,
+} from '@tcrn/shared';
+import {
   AlertCircle,
   CheckCircle2,
   ChevronLeft,
@@ -25,23 +41,6 @@ import {
   useState,
 } from 'react';
 
-import {
-  PUBLIC_PRESENCE_SAFETY_POLICY,
-  ThemePreset,
-  buildPublicPresenceComponentSourceManifest,
-  buildPublicPresenceTemplateSourceManifest,
-  type HomepageComponentType,
-  type PublicPresenceAssetDetail,
-  type PublicPresenceAssetScopeType,
-  type PublicPresenceDocument,
-  type PublicPresencePhaseVisibility,
-  type PublicPresenceProjection,
-  type PublicPresencePublicProjection,
-  type PublicPresenceSourceBundleFile,
-  type PublicPresenceTemplateId,
-  type SupportedUiLocale,
-} from '@tcrn/shared';
-
 import { PublicHomepageProjectionRenderer } from '@/domains/public-homepage/components/PublicHomepageProjectionRenderer';
 import {
   PublicPresenceBadge,
@@ -54,29 +53,29 @@ import {
   validatePublicPresenceAssetDraft,
 } from '@/domains/public-presence-studio/api/public-presence-assets.api';
 import {
+  type PublicPresenceStudioWorkspaceResponse,
   readPublicPresenceDraftPreview,
   readPublicPresenceWorkspace,
   savePublicPresenceWorkspaceDraft,
-  type PublicPresenceStudioWorkspaceResponse,
 } from '@/domains/public-presence-studio/api/public-presence-studio.api';
 import {
   buildComponentAuthoringManifest,
   buildTemplateAuthoringManifest,
 } from '@/domains/public-presence-studio/screens/public-presence-authoring-blueprint';
-import { useOverlayFocusManager } from '@/domains/public-presence-studio/screens/public-presence-studio-overlay';
 import {
   getHomepageSurfaceActionLabel,
   getPublicPresencePreviewPhaseLabel,
   getPublicPresenceTemplateLabel,
 } from '@/domains/public-presence-studio/screens/public-presence-studio.copy';
+import { useOverlayFocusManager } from '@/domains/public-presence-studio/screens/public-presence-studio-overlay';
 import {
   buildPublicPresenceAssetIdePath,
-  buildPublicPresenceStudioEditorPath,
   buildPublicPresenceHomepageSurfacePath,
+  buildPublicPresenceStudioEditorPath,
   buildPublicPresenceStudioPreviewPath,
   buildSubsidiarySettingsPath,
-  buildTenantSettingsPath,
   buildTalentSettingsPath,
+  buildTenantSettingsPath,
 } from '@/platform/routing/workspace-paths';
 import { useUiLocale } from '@/platform/runtime/locale/locale-provider';
 import { formatLocaleDateTime, pickLocaleText } from '@/platform/runtime/locale/locale-text';
@@ -117,12 +116,6 @@ interface VirtualFile {
 interface ValidationItem {
   level: 'pass' | 'warn';
   message: string;
-}
-
-interface AuthoringValidationSummary {
-  issueCount: number;
-  passCount: number;
-  warnCount: number;
 }
 
 interface WorkspaceEntry {
@@ -174,19 +167,6 @@ function normalizeSourceBundleFiles(
     language: file.language,
     path: file.path,
   }));
-}
-
-function buildAuthoringValidationSummary(
-  validationItems: readonly ValidationItem[]
-): AuthoringValidationSummary {
-  const warnCount = validationItems.filter((item) => item.level === 'warn').length;
-  const passCount = validationItems.filter((item) => item.level === 'pass').length;
-
-  return {
-    issueCount: warnCount,
-    passCount,
-    warnCount,
-  };
 }
 
 const CUSTOM_HTML_URL_BYPASS_PATTERN =
@@ -1237,26 +1217,6 @@ function getVirtualFileKindLabel(locale: string, kind: VirtualFile['kind']) {
   }
 }
 
-function resolveVirtualFileGroupId(file: VirtualFile): VirtualFileGroupId {
-  if (file.path.startsWith('tests/')) {
-    return 'tests';
-  }
-
-  if (file.path.endsWith('.css') || file.path.includes('/styles')) {
-    return 'styles';
-  }
-
-  if (file.kind === 'schema' || file.kind === 'fixture' || file.path.endsWith('.json')) {
-    return 'sidecars';
-  }
-
-  if (file.kind === 'doc' || file.path.startsWith('docs/') || file.path.startsWith('safety/')) {
-    return 'docs';
-  }
-
-  return 'source';
-}
-
 function getVirtualFileGroupLabel(locale: string, groupId: VirtualFileGroupId) {
   switch (groupId) {
     case 'source':
@@ -1394,38 +1354,6 @@ function getAdvancedModeLabel(locale: string, mode: AdvancedPageMode) {
         ja: 'ページソース',
         ko: '페이지 소스',
         fr: 'Source de page',
-      });
-  }
-}
-
-function getAdvancedModeDescription(locale: string, mode: AdvancedPageMode) {
-  switch (mode) {
-    case 'custom-html':
-      return pickLocaleText(locale, {
-        en: 'Compose a source-owned fan page with safe HTML and CSS only.',
-        zh_HANS: '用安全 HTML 与 CSS 编排 source-owned 粉丝页。',
-        zh_HANT: '用安全 HTML 與 CSS 編排 source-owned 粉絲頁。',
-        ja: '安全な HTML と CSS だけで source-owned のファンページを組み立てます。',
-        ko: '안전한 HTML과 CSS만으로 source-owned 팬 페이지를 구성합니다.',
-        fr: 'Composez une page fan source-owned avec uniquement du HTML et du CSS sûrs.',
-      });
-    case 'registry-snippets':
-      return pickLocaleText(locale, {
-        en: 'Assemble approved template slots and registered homepage blocks.',
-        zh_HANS: '组合已批准的模板槽位与已注册主页模块。',
-        zh_HANT: '組合已批准的模板槽位與已註冊主頁模組。',
-        ja: '承認済みテンプレートのスロットと登録済みホームページブロックを組み合わせます。',
-        ko: '승인된 템플릿 슬롯과 등록된 홈페이지 블록을 조합합니다.',
-        fr: 'Assemblez des slots de template approuvés et des blocs de homepage enregistrés.',
-      });
-    default:
-      return pickLocaleText(locale, {
-        en: 'Repair the structured page document when Visual Studio needs schema-level help.',
-        zh_HANS: '当可视化工作台需要结构级修复时，在这里处理页面源稿。',
-        zh_HANT: '當視覺工作台需要結構級修復時，在這裡處理頁面源稿。',
-        ja: 'Visual Studio だけでは直せない構造レベルの調整をここで行います。',
-        ko: '비주얼 스튜디오만으로 어려운 구조 수준 수정을 여기서 진행합니다.',
-        fr: 'Réparez ici le document structuré quand le studio visuel a besoin d’une aide au niveau schéma.',
       });
   }
 }
@@ -1652,9 +1580,6 @@ function buildAdvancedPreviewProjection(
   }
 
   if (mode === 'registry-snippets') {
-    const snippetContents = readVirtualFileContents(files, 'src/snippets.tsx');
-    const inserted = [...snippetContents.matchAll(/id:\s*'([^']+)'/g)].map((match) => match[1]);
-
     return {
       ...baseProjection,
       metadata: {
@@ -1709,7 +1634,7 @@ function buildValidationItems(
   fixtureMode: FixtureMode,
   viewport: PreviewViewport,
   previewPhase: PublicPresencePhaseVisibility
-) {
+): ValidationItem[] {
   return [
     {
       level: 'pass',
@@ -1958,7 +1883,7 @@ export function PublicPresenceAuthoringIdeScreen({
   const [resolvedComponentType, setResolvedComponentType] = useState<HomepageComponentType>(
     (componentType ?? 'SocialLinks') as HomepageComponentType
   );
-  const [assetDetail, setAssetDetail] = useState<PublicPresenceAssetDetail | null>(null);
+  const [, setAssetDetail] = useState<PublicPresenceAssetDetail | null>(null);
   const [assetLabel, setAssetLabel] = useState<string | null>(null);
   const effectiveTemplateId = resolvedTemplateId;
   const effectiveComponentType = resolvedComponentType;
@@ -1975,6 +1900,10 @@ export function PublicPresenceAuthoringIdeScreen({
           : buildAdvancedFiles(selectedAdvancedMode, effectiveTemplateId, locale),
     [effectiveComponentType, effectiveTemplateId, locale, selectedAdvancedMode, target]
   );
+  const initialVisibleWorkspaceFiles = useMemo(
+    () => getVisibleWorkspaceFiles(initialFiles),
+    [initialFiles]
+  );
   const [advancedWorkspace, setAdvancedWorkspace] =
     useState<PublicPresenceStudioWorkspaceResponse | null>(null);
   const [advancedWorkspaceError, setAdvancedWorkspaceError] = useState<string | null>(null);
@@ -1985,18 +1914,16 @@ export function PublicPresenceAuthoringIdeScreen({
   const [persistedFiles, setPersistedFiles] = useState<VirtualFile[]>(initialFiles);
   const [activePath, setActivePath] = useState(initialFiles[0]?.path ?? '');
   const [openTabs, setOpenTabs] = useState<string[]>(
-    getVisibleWorkspaceFiles(initialFiles)
-      .slice(0, 1)
-      .map((file) => file.path)
+    initialVisibleWorkspaceFiles.slice(0, 1).map((file) => file.path)
   );
   const [selectedWorkspaceEntry, setSelectedWorkspaceEntry] = useState<{
     kind: WorkspaceEntryKind;
     path: string;
   } | null>(
-    getVisibleWorkspaceFiles(initialFiles)[0]
+    initialVisibleWorkspaceFiles[0]
       ? {
           kind: 'file',
-          path: getVisibleWorkspaceFiles(initialFiles)[0]!.path,
+          path: initialVisibleWorkspaceFiles[0].path,
         }
       : null
   );
@@ -2232,16 +2159,13 @@ export function PublicPresenceAuthoringIdeScreen({
     setFiles(initialFiles);
     setPersistedFiles(initialFiles);
     setActivePath(initialFiles[0]?.path ?? '');
-    setOpenTabs(
-      getVisibleWorkspaceFiles(initialFiles)
-        .slice(0, 1)
-        .map((file) => file.path)
-    );
+    const visibleInitialFiles = getVisibleWorkspaceFiles(initialFiles);
+    setOpenTabs(visibleInitialFiles.slice(0, 1).map((file) => file.path));
     setSelectedWorkspaceEntry(
-      getVisibleWorkspaceFiles(initialFiles)[0]
+      visibleInitialFiles[0]
         ? {
             kind: 'file',
-            path: getVisibleWorkspaceFiles(initialFiles)[0]!.path,
+            path: visibleInitialFiles[0].path,
           }
         : null
     );
@@ -2349,11 +2273,12 @@ export function PublicPresenceAuthoringIdeScreen({
                 .slice(0, 1)
                 .map((file) => file.path)
             );
+            const firstVisibleFile = getVisibleWorkspaceFiles(nextFiles)[0];
             setSelectedWorkspaceEntry(
-              getVisibleWorkspaceFiles(nextFiles)[0]
+              firstVisibleFile
                 ? {
                     kind: 'file',
-                    path: getVisibleWorkspaceFiles(nextFiles)[0]!.path,
+                    path: firstVisibleFile.path,
                   }
                 : null
             );
@@ -2638,11 +2563,12 @@ export function PublicPresenceAuthoringIdeScreen({
       const retainedTabs = current.filter((path) => nextVisiblePaths.includes(path));
       return retainedTabs.length > 0 ? retainedTabs : nextVisiblePaths.slice(0, 1);
     });
+    const firstVisibleFile = getVisibleWorkspaceFiles(nextFiles)[0];
     setSelectedWorkspaceEntry(
-      getVisibleWorkspaceFiles(nextFiles)[0]
+      firstVisibleFile
         ? {
             kind: 'file',
-            path: getVisibleWorkspaceFiles(nextFiles)[0]!.path,
+            path: firstVisibleFile.path,
           }
         : null
     );
@@ -2662,9 +2588,6 @@ export function PublicPresenceAuthoringIdeScreen({
     : null;
   const legacyCompatibilityEntry =
     !isAssetMode && (target === 'template' || target === 'component');
-  const legacyCompatibilitySettingsHref = legacyCompatibilityEntry
-    ? buildTalentSettingsPath(tenantId, resolvedTalentId, { section: 'config-entities' })
-    : null;
 
   const exitHref = isAssetMode
     ? (assetSettingsHref ?? buildTenantSettingsPath(tenantId, 'config-entities'))
@@ -2878,12 +2801,27 @@ export function PublicPresenceAuthoringIdeScreen({
       return;
     }
 
-    const nextFiles =
-      workspaceCommand === 'new-file'
-        ? createWorkspaceFile(files, nextPath)
-        : workspaceCommand === 'new-folder'
-          ? createWorkspaceFolder(files, nextPath)
-          : renameWorkspaceEntry(files, selectedWorkspaceEntry!, nextPath);
+    let nextFiles: VirtualFile[];
+    if (workspaceCommand === 'new-file') {
+      nextFiles = createWorkspaceFile(files, nextPath);
+    } else if (workspaceCommand === 'new-folder') {
+      nextFiles = createWorkspaceFolder(files, nextPath);
+    } else {
+      if (!selectedWorkspaceEntry) {
+        setWorkspaceCommandError(
+          pickLocaleText(locale, {
+            en: 'Select an entry before renaming.',
+            zh_HANS: '请先选择一个条目再重命名。',
+            zh_HANT: '請先選擇一個項目再重新命名。',
+            ja: '名前を変更する前に項目を選択してください。',
+            ko: '이름을 바꾸기 전에 항목을 선택하세요.',
+            fr: 'Sélectionnez une entrée avant de la renommer.',
+          })
+        );
+        return;
+      }
+      nextFiles = renameWorkspaceEntry(files, selectedWorkspaceEntry, nextPath);
+    }
 
     setFiles(nextFiles);
     setWorkspaceCommand(null);
@@ -3534,88 +3472,6 @@ export function PublicPresenceAuthoringIdeScreen({
         data-workbench-shell="true"
         ref={workbenchShellRef}
       >
-        {legacyCompatibilityEntry && legacyCompatibilitySettingsHref ? (
-          <PublicPresenceSurface
-            className="border-sky-200 bg-sky-50 px-3 py-3 text-sky-900"
-            data-testid="legacy-authoring-compatibility-notice"
-          >
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div className="min-w-0 flex-1 space-y-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <PublicPresenceBadge tone="info" variant="outline">
-                    {pickLocaleText(locale, {
-                      en: 'Compatibility authoring entry',
-                      zh_HANS: '兼容创作入口',
-                      zh_HANT: '相容創作入口',
-                      ja: '互換用オーサリング入口',
-                      ko: '호환용 제작 진입점',
-                      fr: 'Entrée d’authoring de compatibilité',
-                    })}
-                  </PublicPresenceBadge>
-                </div>
-                <p className="text-sm font-semibold">
-                  {target === 'template'
-                    ? pickLocaleText(locale, {
-                        en: 'This template IDE route is kept for compatibility review, not as the primary asset workflow.',
-                        zh_HANS: '这个模板 IDE 路由目前仅作为兼容审阅入口，不再是主资产工作流。',
-                        zh_HANT: '這個模板 IDE 路由目前僅作為相容審閱入口，不再是主資產工作流。',
-                        ja: 'この Template IDE ルートは互換レビュー用であり、主アセットワークフローではありません。',
-                        ko: '이 Template IDE 라우트는 호환 검토용이며 더 이상 주 자산 워크플로가 아닙니다.',
-                        fr: 'Cette route Template IDE est conservée pour la revue de compatibilité, plus comme workflow asset principal.',
-                      })
-                    : pickLocaleText(locale, {
-                        en: 'This component IDE route is kept for compatibility review, not as the primary asset workflow.',
-                        zh_HANS: '这个组件 IDE 路由目前仅作为兼容审阅入口，不再是主资产工作流。',
-                        zh_HANT: '這個元件 IDE 路由目前僅作為相容審閱入口，不再是主資產工作流。',
-                        ja: 'この Component IDE ルートは互換レビュー用であり、主アセットワークフローではありません。',
-                        ko: '이 Component IDE 라우트는 호환 검토용이며 더 이상 주 자산 워크플로가 아닙니다.',
-                        fr: 'Cette route Component IDE est conservée pour la revue de compatibilité, plus comme workflow asset principal.',
-                      })}
-                </p>
-                <p className="text-sm leading-6 text-sky-900/90">
-                  {pickLocaleText(locale, {
-                    en: 'Start new homepage asset work from Configuration Entity Management, then return here only when you need to inspect a legacy draft path.',
-                    zh_HANS:
-                      '新的主页模板/组件资产工作请从配置实体管理开始；只有在需要检查旧草稿路径时才回到这里。',
-                    zh_HANT:
-                      '新的主頁模板/元件資產工作請從配置實體管理開始；只有在需要檢查舊草稿路徑時才回到這裡。',
-                    ja: '新しいホームページ資産作業は Configuration Entity Management から始め、旧ドラフト経路を確認する必要がある時だけここへ戻ってください。',
-                    ko: '새 홈페이지 자산 작업은 Configuration Entity Management 에서 시작하고, 레거시 드래프트 경로를 확인해야 할 때만 여기로 돌아오세요.',
-                    fr: 'Commencez le nouveau travail asset homepage depuis Configuration Entity Management, puis revenez ici seulement pour vérifier un ancien chemin de brouillon.',
-                  })}
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <Link
-                  href={legacyCompatibilitySettingsHref}
-                  className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
-                >
-                  {pickLocaleText(locale, {
-                    en: 'Open asset workspace',
-                    zh_HANS: '打开资产工作面',
-                    zh_HANT: '打開資產工作面',
-                    ja: '資産ワークスペースを開く',
-                    ko: '자산 워크스페이스 열기',
-                    fr: 'Ouvrir l’espace asset',
-                  })}
-                </Link>
-                <Link
-                  href={exitHref}
-                  className="inline-flex items-center gap-2 rounded-full border border-sky-200 bg-white px-3 py-2 text-sm font-semibold text-sky-800 transition hover:border-sky-300 hover:bg-sky-100"
-                >
-                  {pickLocaleText(locale, {
-                    en: 'Open Homepage Management',
-                    zh_HANS: '打开主页管理',
-                    zh_HANT: '打開主頁管理',
-                    ja: 'Homepage Management を開く',
-                    ko: 'Homepage Management 열기',
-                    fr: 'Ouvrir Homepage Management',
-                  })}
-                </Link>
-              </div>
-            </div>
-          </PublicPresenceSurface>
-        ) : null}
         <PublicPresenceSurface
           className="sticky top-2 z-20 px-3 py-2 shadow-sm backdrop-blur sm:px-3 sm:py-2 lg:px-3 lg:py-2"
           data-overlay-scope="true"

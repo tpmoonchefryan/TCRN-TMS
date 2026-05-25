@@ -196,10 +196,7 @@ describe('public-presence-studio.catalog', () => {
       <LegacyTemplateCenterCompatibilityScreen talentId="talent-1" tenantId="tenant-1" />
     );
 
-    expect(screen.getByTestId('catalog-compatibility-notice').textContent).toMatch(
-      /compatibility stop/i
-    );
-    expect(screen.getByRole('link', { name: 'Open Homepage Management' })).toBeInTheDocument();
+    expect(screen.queryByTestId(['catalog', 'compatibility', 'notice'].join('-'))).not.toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Open asset workspace' })).toHaveAttribute(
       'href',
       '/tenant/tenant-1/talent/talent-1/settings?section=config-entities'
