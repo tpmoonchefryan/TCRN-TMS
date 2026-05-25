@@ -4,8 +4,8 @@ import type { ConfigService } from '@nestjs/config';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { SettingsApplicationService } from '../application/settings-application.service';
-import { SettingsRepository } from '../infrastructure/settings.repository';
 import type { SettingsSecretCryptoService } from '../infrastructure/settings-secret-crypto.service';
+import { SettingsRepository } from '../infrastructure/settings.repository';
 
 describe('SettingsApplicationService', () => {
   let service: SettingsApplicationService;

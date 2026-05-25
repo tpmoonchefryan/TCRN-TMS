@@ -1,8 +1,9 @@
-import type { SupportedUiLocale } from '@tcrn/shared';
-import type { PublicPresenceProjection } from '@tcrn/shared';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import type { SupportedUiLocale } from '@tcrn/shared';
+import type { PublicPresenceProjection } from '@tcrn/shared';
 
 import { resetPublicHomepageProjectionMediaPreloadCache } from '@/domains/public-homepage/components/public-homepage-projection-media';
 import { PublicPresenceStudioScreen } from '@/domains/public-presence-studio/screens/PublicPresenceStudioScreen';
@@ -901,7 +902,9 @@ describe('PublicPresenceStudioScreen', () => {
     render(<PublicPresenceStudioScreen tenantId="tenant-1" talentId="talent-1" />);
 
     await screen.findByTestId('canvas-stage', {}, { timeout: STUDIO_RENDER_TIMEOUT });
-    expect(screen.queryByTestId(['studio', 'legacy', 'starter', 'notice'].join('-'))).not.toBeInTheDocument();
+    expect(
+      screen.queryByTestId(['studio', 'legacy', 'starter', 'notice'].join('-'))
+    ).not.toBeInTheDocument();
     expect(mockRequest.mock.calls.every(([path]) => !String(path).includes('/authoring/'))).toBe(
       true
     );

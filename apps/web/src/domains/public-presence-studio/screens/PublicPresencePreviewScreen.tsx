@@ -1,7 +1,5 @@
 'use client';
 
-import type { PublicPresencePhaseVisibility, PublicPresenceProjection } from '@tcrn/shared';
-import { DEFAULT_THEME, normalizeTheme } from '@tcrn/shared';
 import {
   ArrowLeft,
   Eye,
@@ -16,9 +14,12 @@ import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useId, useMemo, useState } from 'react';
 
-import { preloadPublicHomepageProjectionMedia } from '@/domains/public-homepage/components/public-homepage-projection-media';
+import type { PublicPresencePhaseVisibility, PublicPresenceProjection } from '@tcrn/shared';
+import { DEFAULT_THEME, normalizeTheme } from '@tcrn/shared';
+
 import { PublicHomepageProjectionRenderer } from '@/domains/public-homepage/components/PublicHomepageProjectionRenderer';
 import { getHomepageCanvasStyle } from '@/domains/public-homepage/components/PublicHomepageRenderer';
+import { preloadPublicHomepageProjectionMedia } from '@/domains/public-homepage/components/public-homepage-projection-media';
 import {
   PublicPresenceBadge,
   PublicPresenceShell,
@@ -31,6 +32,12 @@ import {
   readPublicPresenceDraftPreview,
   readPublicPresenceWorkspace,
 } from '@/domains/public-presence-studio/api/public-presence-studio.api';
+import { useOverlayFocusManager } from '@/domains/public-presence-studio/screens/public-presence-studio-overlay';
+import {
+  mergeUrlSearchParams,
+  parseBooleanSearchParam,
+  parseEnumSearchParam,
+} from '@/domains/public-presence-studio/screens/public-presence-studio-url-state';
 import {
   getPublicPresencePreviewPhaseLabel,
   getPublicPresenceStageSectionLabel,
@@ -40,12 +47,6 @@ import {
   usePublicPresenceStudioCopy,
 } from '@/domains/public-presence-studio/screens/public-presence-studio.copy';
 import { withPublicPresenceRouteTimeout } from '@/domains/public-presence-studio/screens/public-presence-studio.loading';
-import { useOverlayFocusManager } from '@/domains/public-presence-studio/screens/public-presence-studio-overlay';
-import {
-  mergeUrlSearchParams,
-  parseBooleanSearchParam,
-  parseEnumSearchParam,
-} from '@/domains/public-presence-studio/screens/public-presence-studio-url-state';
 import { ApiRequestError } from '@/platform/http/api';
 import {
   buildPublicPresenceStudioEditorPath,

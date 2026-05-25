@@ -1,13 +1,14 @@
 'use client';
 
+import { ArrowRight, RefreshCcw, Save } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+
 import {
   type ArtistLifecycleFlow,
   PUBLIC_PRESENCE_TEMPLATE_TYPE_CODES,
   type PublicPresenceTemplateTypeCode,
   type SupportedUiLocale,
 } from '@tcrn/shared';
-import { ArrowRight, RefreshCcw, Save } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
 
 import {
   type ArtistLifecycleFlowSettingsResponse,
@@ -43,7 +44,10 @@ interface NoticeState {
   message: string;
 }
 
-const TEMPLATE_TYPE_LABELS: Record<PublicPresenceTemplateTypeCode, Record<SupportedUiLocale, string>> = {
+const TEMPLATE_TYPE_LABELS: Record<
+  PublicPresenceTemplateTypeCode,
+  Record<SupportedUiLocale, string>
+> = {
   'pending-reveal': {
     en: 'Pending Reveal',
     zh_HANS: '待揭晓',
@@ -107,10 +111,7 @@ function normalizePolicyCodes(value: unknown): PublicPresenceTemplateTypeCode[] 
   );
 }
 
-function buildDraft(
-  flow: ArtistLifecycleFlow,
-  stages: ConfigEntityRecord[]
-): FlowDraft {
+function buildDraft(flow: ArtistLifecycleFlow, stages: ConfigEntityRecord[]): FlowDraft {
   const policyByStage: FlowDraft['policyByStage'] = {};
 
   for (const stage of stages) {
@@ -193,10 +194,7 @@ export function ArtistLifecycleFlowWorkspace({
   const [loadError, setLoadError] = useState<string | null>(null);
   const [notice, setNotice] = useState<NoticeState | null>(null);
 
-  const activeStages = useMemo(
-    () => stages.filter((stage) => stage.isActive),
-    [stages]
-  );
+  const activeStages = useMemo(() => stages.filter((stage) => stage.isActive), [stages]);
   const writable = flowState?.writable === true && scopeType === 'tenant';
 
   async function loadWorkspace() {

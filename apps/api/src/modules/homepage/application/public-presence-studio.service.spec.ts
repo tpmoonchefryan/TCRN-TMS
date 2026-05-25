@@ -1,3 +1,5 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import {
   buildBlankPublicPresenceAssetSourceBundle,
   buildPublicPresenceTemplateAssetManifest,
@@ -8,7 +10,6 @@ import {
   type PublicPresenceDocument,
   type RequestContext,
 } from '@tcrn/shared';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type {
   PublicPresenceDocumentVersionRecord,
@@ -382,10 +383,7 @@ describe('PublicPresenceStudioService', () => {
     });
     expect(result.draftVersion?.document.templateId).toBe('activeTalentHub');
     expect(result.draftVersion?.validationSnapshot?.issueCounts.fatal).toBe(0);
-    expect(result.homepagePolicy.allowedTemplateTypeCodes).toEqual([
-      'operating',
-      'pending-reveal',
-    ]);
+    expect(result.homepagePolicy.allowedTemplateTypeCodes).toEqual(['operating', 'pending-reveal']);
     expect(result.releaseReadiness).toEqual({
       blockingDependencyCount: 0,
       dependencies: [],

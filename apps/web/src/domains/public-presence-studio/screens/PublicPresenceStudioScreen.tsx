@@ -1,24 +1,5 @@
 'use client';
 
-import type {
-  HomepageComponentType,
-  PublicPresenceComponentNode,
-  PublicPresenceDocument,
-  PublicPresenceFieldDefinition,
-  PublicPresenceFieldProvenance,
-  PublicPresenceFieldValue,
-  PublicPresencePhaseVisibility,
-  PublicPresenceProjection,
-  PublicPresenceValidationIssue,
-  PublicPresenceValidationSnapshot,
-  SupportedUiLocale,
-} from '@tcrn/shared';
-import {
-  DEFAULT_THEME,
-  normalizeTheme,
-  PUBLIC_PRESENCE_FAN_ACTION_SLOTS,
-  PUBLIC_PRESENCE_NOTE_KINDS,
-} from '@tcrn/shared';
 import {
   AlertCircle,
   ArrowLeftRight,
@@ -47,9 +28,29 @@ import {
   useState,
 } from 'react';
 
-import { preloadPublicHomepageProjectionMedia } from '@/domains/public-homepage/components/public-homepage-projection-media';
+import type {
+  HomepageComponentType,
+  PublicPresenceComponentNode,
+  PublicPresenceDocument,
+  PublicPresenceFieldDefinition,
+  PublicPresenceFieldProvenance,
+  PublicPresenceFieldValue,
+  PublicPresencePhaseVisibility,
+  PublicPresenceProjection,
+  PublicPresenceValidationIssue,
+  PublicPresenceValidationSnapshot,
+  SupportedUiLocale,
+} from '@tcrn/shared';
+import {
+  DEFAULT_THEME,
+  normalizeTheme,
+  PUBLIC_PRESENCE_FAN_ACTION_SLOTS,
+  PUBLIC_PRESENCE_NOTE_KINDS,
+} from '@tcrn/shared';
+
 import { PublicHomepageProjectionRenderer } from '@/domains/public-homepage/components/PublicHomepageProjectionRenderer';
 import { getHomepageCanvasStyle } from '@/domains/public-homepage/components/PublicHomepageRenderer';
+import { preloadPublicHomepageProjectionMedia } from '@/domains/public-homepage/components/public-homepage-projection-media';
 import {
   PublicPresenceBadge,
   PublicPresenceShell,
@@ -76,6 +77,12 @@ import {
   schedulePublicPresencePublish,
   submitPublicPresenceForReview,
 } from '@/domains/public-presence-studio/api/public-presence-studio.api';
+import { useOverlayFocusManager } from '@/domains/public-presence-studio/screens/public-presence-studio-overlay';
+import {
+  mergeUrlSearchParams,
+  parseBooleanSearchParam,
+  parseEnumSearchParam,
+} from '@/domains/public-presence-studio/screens/public-presence-studio-url-state';
 import {
   formatPublicPresenceStudioDateTime,
   formatPublicPresenceStudioValidationSummary,
@@ -99,12 +106,6 @@ import {
   usePublicPresenceStudioCopy,
 } from '@/domains/public-presence-studio/screens/public-presence-studio.copy';
 import { withPublicPresenceRouteTimeout } from '@/domains/public-presence-studio/screens/public-presence-studio.loading';
-import { useOverlayFocusManager } from '@/domains/public-presence-studio/screens/public-presence-studio-overlay';
-import {
-  mergeUrlSearchParams,
-  parseBooleanSearchParam,
-  parseEnumSearchParam,
-} from '@/domains/public-presence-studio/screens/public-presence-studio-url-state';
 import {
   buildPublicPresenceStudioPreviewPath,
   buildTalentSettingsPath,

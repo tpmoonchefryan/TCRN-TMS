@@ -1,22 +1,6 @@
 'use client';
 
 import {
-  buildPublicPresenceComponentSourceManifest,
-  buildPublicPresenceTemplateSourceManifest,
-  type HomepageComponentType,
-  PUBLIC_PRESENCE_SAFETY_POLICY,
-  type PublicPresenceAssetDetail,
-  type PublicPresenceAssetScopeType,
-  type PublicPresenceDocument,
-  type PublicPresencePhaseVisibility,
-  type PublicPresenceProjection,
-  type PublicPresencePublicProjection,
-  type PublicPresenceSourceBundleFile,
-  type PublicPresenceTemplateId,
-  type SupportedUiLocale,
-  ThemePreset,
-} from '@tcrn/shared';
-import {
   AlertCircle,
   CheckCircle2,
   ChevronLeft,
@@ -41,6 +25,23 @@ import {
   useState,
 } from 'react';
 
+import {
+  buildPublicPresenceComponentSourceManifest,
+  buildPublicPresenceTemplateSourceManifest,
+  type HomepageComponentType,
+  PUBLIC_PRESENCE_SAFETY_POLICY,
+  type PublicPresenceAssetDetail,
+  type PublicPresenceAssetScopeType,
+  type PublicPresenceDocument,
+  type PublicPresencePhaseVisibility,
+  type PublicPresenceProjection,
+  type PublicPresencePublicProjection,
+  type PublicPresenceSourceBundleFile,
+  type PublicPresenceTemplateId,
+  type SupportedUiLocale,
+  ThemePreset,
+} from '@tcrn/shared';
+
 import { PublicHomepageProjectionRenderer } from '@/domains/public-homepage/components/PublicHomepageProjectionRenderer';
 import {
   PublicPresenceBadge,
@@ -62,12 +63,12 @@ import {
   buildComponentAuthoringManifest,
   buildTemplateAuthoringManifest,
 } from '@/domains/public-presence-studio/screens/public-presence-authoring-blueprint';
+import { useOverlayFocusManager } from '@/domains/public-presence-studio/screens/public-presence-studio-overlay';
 import {
   getHomepageSurfaceActionLabel,
   getPublicPresencePreviewPhaseLabel,
   getPublicPresenceTemplateLabel,
 } from '@/domains/public-presence-studio/screens/public-presence-studio.copy';
-import { useOverlayFocusManager } from '@/domains/public-presence-studio/screens/public-presence-studio-overlay';
 import {
   buildPublicPresenceAssetIdePath,
   buildPublicPresenceHomepageSurfacePath,

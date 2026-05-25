@@ -1,4 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
+import { describe, expect, it, vi } from 'vitest';
+
 import {
   buildBlankPublicPresenceAssetSourceBundle,
   buildPublicPresenceTemplateAssetManifest,
@@ -8,7 +10,6 @@ import {
   type PublicPresenceAssetRevisionPin,
   type PublicPresenceDocument,
 } from '@tcrn/shared';
-import { describe, expect, it, vi } from 'vitest';
 
 import type {
   PublicHomepageData,
@@ -18,8 +19,8 @@ import { HomepageAdminRepository } from '../infrastructure/homepage-admin.reposi
 import { PublicHomepageReadRepository } from '../infrastructure/public-homepage-read.repository';
 import { PublicPresenceFoundationRepository } from '../infrastructure/public-presence-foundation.repository';
 import { buildPublicPresenceSeedRuntimeAuthorityForTests } from '../testing/public-presence-seed-runtime-authority';
-import { PublicHomepageService } from './public-homepage.service';
 import { PublicHomepageProjectionService } from './public-homepage-projection.service';
+import { PublicHomepageService } from './public-homepage.service';
 import { PublicPresenceStudioService } from './public-presence-studio.service';
 
 const baseHomepageData: PublicHomepageData = {

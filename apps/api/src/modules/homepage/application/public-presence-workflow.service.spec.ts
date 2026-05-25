@@ -1,3 +1,5 @@
+import { describe, expect, it, vi } from 'vitest';
+
 import {
   buildBlankPublicPresenceAssetSourceBundle,
   buildPublicPresenceComponentAssetManifest,
@@ -9,7 +11,6 @@ import {
   type PublicPresenceDocument,
   type RequestContext,
 } from '@tcrn/shared';
-import { describe, expect, it, vi } from 'vitest';
 
 import { TalentService } from '../../talent/talent.service';
 import type {

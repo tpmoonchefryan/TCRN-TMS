@@ -5,6 +5,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+
 import {
   type ArtistLifecycleFlow,
   createArtistLifecycleFlowSchema,

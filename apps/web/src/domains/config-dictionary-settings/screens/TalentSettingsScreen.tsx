@@ -1,5 +1,10 @@
 'use client';
 
+import { UserRound } from 'lucide-react';
+import Link from 'next/link';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { startTransition, useEffect, useRef, useState } from 'react';
+
 import {
   buildSharedHomepagePath,
   buildSharedMarshmallowPath,
@@ -7,10 +12,6 @@ import {
   FIXED_CUSTOM_DOMAIN_MARSHMALLOW_PATH,
   type SupportedUiLocale,
 } from '@tcrn/shared';
-import { UserRound } from 'lucide-react';
-import Link from 'next/link';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { startTransition, useEffect, useRef, useState } from 'react';
 
 import {
   readTalentCustomDomainConfig,
@@ -2248,10 +2249,7 @@ export function TalentSettingsScreen({
                           />
                           <FieldRow
                             label={text('Inherited CAPTCHA', '继承验证码状态', '継承 CAPTCHA')}
-                            value={formatTurnstileReadiness(
-                              marshmallowPanel.data?.turnstile,
-                              text
-                            )}
+                            value={formatTurnstileReadiness(marshmallowPanel.data?.turnstile, text)}
                             hint={formatTurnstileHint(marshmallowPanel.data?.turnstile, text)}
                           />
                           <FieldRow
@@ -2271,9 +2269,7 @@ export function TalentSettingsScreen({
                           <p className="text-sm font-medium text-emerald-700">{saveSuccess}</p>
                         ) : null}
                         {!isSettingsDrawerOpen && marshmallowSaveError ? (
-                          <p className="text-sm font-medium text-red-600">
-                            {marshmallowSaveError}
-                          </p>
+                          <p className="text-sm font-medium text-red-600">{marshmallowSaveError}</p>
                         ) : null}
                         {!isSettingsDrawerOpen && marshmallowSaveSuccess ? (
                           <p className="text-sm font-medium text-emerald-700">
