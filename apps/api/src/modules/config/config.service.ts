@@ -327,11 +327,7 @@ export class ConfigService {
         message: 'Data has been modified. Please refresh and try again.',
       });
     }
-    this.assertArtistStageHomepageTemplateType(
-      entityType,
-      data.homepageTemplateTypeCode,
-      false
-    );
+    this.assertArtistStageHomepageTemplateType(entityType, data.homepageTemplateTypeCode, false);
 
     const hasDescription = CONFIG_HAS_DESCRIPTION.has(entityType);
     const hasExtraData = CONFIG_HAS_EXTRA_DATA.has(entityType);

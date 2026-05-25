@@ -16,33 +16,27 @@ describe('settings family copy', () => {
       koreanCatalog['customer-status'].fields.find((field) => field.key === 'color')?.label
     ).toBe('배지 색상');
     expect(
-      koreanCatalog['artist-stage'].fields.find((field) => field.key === 'artistStatusCode')
-        ?.label
+      koreanCatalog['artist-stage'].fields.find((field) => field.key === 'artistStatusCode')?.label
     ).toBe('아티스트 상태');
     expect(
-      koreanCatalog['artist-stage'].fields.find(
-        (field) => field.key === 'homepageTemplateTypeCode'
-      )?.label
+      koreanCatalog['artist-stage'].fields.find((field) => field.key === 'homepageTemplateTypeCode')
+        ?.label
     ).toBe('홈페이지 템플릿 유형');
 
     expect(frenchCatalog['profile-store'].label).toBe('Archive client');
     expect(frenchCatalog['artist-stage'].label).toBe('Etape artiste');
-    expect(frenchCatalog['homepage-template-asset'].label).toBe(
-      'Asset modele de page d accueil'
-    );
+    expect(frenchCatalog['homepage-template-asset'].label).toBe('Asset modele de page d accueil');
     expect(frenchCatalog['membership-type'].label).toBe('Type d adhesion');
     expect(
       frenchCatalog['membership-type'].fields.find((field) => field.key === 'externalControl')
         ?.label
     ).toBe('Controle externe');
     expect(
-      frenchCatalog['artist-stage'].fields.find((field) => field.key === 'artistStatusCode')
-        ?.label
+      frenchCatalog['artist-stage'].fields.find((field) => field.key === 'artistStatusCode')?.label
     ).toBe('Statut artiste');
     expect(
-      frenchCatalog['artist-stage'].fields.find(
-        (field) => field.key === 'homepageTemplateTypeCode'
-      )?.label
+      frenchCatalog['artist-stage'].fields.find((field) => field.key === 'homepageTemplateTypeCode')
+        ?.label
     ).toBe('Type de modele de page d accueil');
   });
 });

@@ -90,10 +90,10 @@ export class TalentWriteService {
       tenantSchema,
       {
         ...data,
-	        description: normalizeLocalizedText(data.description, data.name.en),
-	        artistStageId: data.artistStageId,
-	        lifecycleStatus: artistStage.artistStatusCode,
-	        path: buildTalentPath(data.code, subsidiaryPath),
+        description: normalizeLocalizedText(data.description, data.name.en),
+        artistStageId: data.artistStageId,
+        lifecycleStatus: artistStage.artistStatusCode,
+        path: buildTalentPath(data.code, subsidiaryPath),
         settings: buildTalentDefaultSettings(data.settings),
       },
       userId

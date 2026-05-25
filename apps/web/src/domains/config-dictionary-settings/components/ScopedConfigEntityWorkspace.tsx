@@ -23,6 +23,7 @@ import {
   type UpdateConfigEntityInput,
 } from '@/domains/config-dictionary-settings/api/settings.api';
 import { CustomDomainConfigEntityWorkspace } from '@/domains/config-dictionary-settings/components/CustomDomainConfigEntityWorkspace';
+import { PublicPresenceAssetWorkspace } from '@/domains/config-dictionary-settings/components/PublicPresenceAssetWorkspace';
 import {
   buildLocalizedTextPayload,
   countLocaleValues,
@@ -37,7 +38,6 @@ import {
   type ConfigEntityFieldDefinition,
   DEFAULT_CONFIG_ENTITY_TYPE,
 } from '@/domains/config-dictionary-settings/components/config-entity-catalog';
-import { PublicPresenceAssetWorkspace } from '@/domains/config-dictionary-settings/components/PublicPresenceAssetWorkspace';
 import { type ApiPaginationMeta, ApiRequestError } from '@/platform/http/api';
 import { formatLocaleDateTime, pickLocaleText } from '@/platform/runtime/locale/locale-text';
 import {
@@ -1770,317 +1770,333 @@ export function ScopedConfigEntityWorkspace({
                 })}
               </span>
             )}
-	          </div>
-
-	          {selectedAssetFamily ? (
-	            <PublicPresenceAssetWorkspace
-	              families={[selectedAssetFamily]}
-	              locale={locale}
-	              request={request}
-	              scopeId={scopeId ?? null}
-	              scopeType={scopeType}
-	              tenantId={tenantId ?? ''}
-	            />
-	          ) : (
-	            <>
-	          {notice ? (
-            <div
-              className={`rounded-2xl border px-4 py-3 text-sm font-medium ${
-                notice.tone === 'success'
-                  ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
-                  : 'border-rose-200 bg-rose-50 text-rose-800'
-              }`}
-            >
-              {notice.message}
-            </div>
-          ) : null}
-
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <div className="rounded-2xl border border-slate-200 bg-white/85 px-4 py-4 shadow-sm">
-              <p className="text-xs font-semibold tracking-[0.18em] text-slate-500 uppercase">
-                {resolvedCopy.visibleRecordsLabel}
-              </p>
-              <p className="mt-2 text-2xl font-semibold text-slate-950">{records.length}</p>
-            </div>
-            <div className="rounded-2xl border border-slate-200 bg-white/85 px-4 py-4 shadow-sm">
-              <p className="text-xs font-semibold tracking-[0.18em] text-slate-500 uppercase">
-                {resolvedCopy.activeLabel}
-              </p>
-              <p className="mt-2 text-2xl font-semibold text-slate-950">{activeCount}</p>
-            </div>
-            <div className="rounded-2xl border border-slate-200 bg-white/85 px-4 py-4 shadow-sm">
-              <p className="text-xs font-semibold tracking-[0.18em] text-slate-500 uppercase">
-                {resolvedCopy.inheritedLabel}
-              </p>
-              <p className="mt-2 text-2xl font-semibold text-slate-950">{inheritedCount}</p>
-            </div>
-            <div className="rounded-2xl border border-slate-200 bg-white/85 px-4 py-4 shadow-sm">
-              <p className="text-xs font-semibold tracking-[0.18em] text-slate-500 uppercase">
-                {resolvedCopy.disabledHereLabel}
-              </p>
-              <p className="mt-2 text-2xl font-semibold text-slate-950">{disabledHereCount}</p>
-            </div>
           </div>
 
-          <div className="rounded-2xl border border-slate-200 bg-white/85 p-4 shadow-sm">
-            <div className="flex flex-wrap items-center gap-3">
-              <label className="relative block min-w-[18rem] flex-1">
-                <span className="sr-only">{resolvedCopy.searchLabel}</span>
-                <input
-                  aria-label={resolvedCopy.searchAriaLabel}
-                  type="search"
-                  value={search}
-                  onChange={(event) =>
-                    applyScopedConfigQueryState({ page: 1, search: event.target.value })
-                  }
-                  placeholder={resolvedCopy.searchPlaceholder(selectedEntry.label)}
-                  className="w-full rounded-xl border border-slate-300 bg-white/85 py-2.5 pr-3 pl-4 text-sm text-slate-900 shadow-sm transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200 focus:outline-none"
-                />
-              </label>
-
-              <button
-                type="button"
-                onClick={refreshWorkspace}
-                className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
-                aria-label={resolvedCopy.refreshAriaLabel}
-              >
-                <RefreshCcw className="h-4 w-4" />
-              </button>
-
-              {supportsLocalScopeOnly ? (
-                <label className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm">
-                  <input
-                    aria-label={resolvedCopy.currentScopeOnlyAriaLabel}
-                    type="checkbox"
-                    checked={currentScopeOnly}
-                    onChange={(event) =>
-                      applyScopedConfigQueryState({
-                        currentScopeOnly: event.target.checked,
-                        page: 1,
-                      })
-                    }
-                    className="h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-500"
-                  />
-                  {resolvedCopy.currentScopeOnlyLabel}
-                </label>
-              ) : null}
-
-              <label className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm">
-                <input
-                  aria-label={resolvedCopy.includeInactiveAriaLabel}
-                  type="checkbox"
-                  checked={includeInactive}
-                  onChange={(event) =>
-                    applyScopedConfigQueryState({ includeInactive: event.target.checked, page: 1 })
-                  }
-                  className="h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-500"
-                />
-                {resolvedCopy.includeInactiveLabel}
-              </label>
-            </div>
-
-            <div
-              className={`mt-3 grid gap-3 ${supportsLocalScopeOnly || inheritedOnlyNotice ? 'lg:grid-cols-2' : ''}`}
-            >
-              {supportsLocalScopeOnly ? (
-                <p className="rounded-xl border border-slate-200 bg-slate-50/80 px-3 py-3 text-sm leading-6 text-slate-600">
-                  {resolvedCopy.currentScopeOnlyDescription(resolvedCopy.scopeTypeLabel(scopeType))}
-                </p>
-              ) : null}
-              <p className="rounded-xl border border-slate-200 bg-slate-50/80 px-3 py-3 text-sm leading-6 text-slate-600">
-                {resolvedCopy.includeInactiveDescription}
-              </p>
-              {inheritedOnlyNotice ? (
-                <p className="rounded-xl border border-slate-200 bg-slate-50/80 px-3 py-3 text-sm leading-6 text-slate-600">
-                  {inheritedOnlyNotice}
-                </p>
-              ) : null}
-            </div>
-          </div>
-
-          {error ? (
-            <StateView
-              status="error"
-              title={resolvedCopy.unavailableTitle}
-              description={error}
-              action={
-                <button
-                  type="button"
-                  onClick={refreshWorkspace}
-                  className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
-                >
-                  {resolvedCopy.retryLabel}
-                </button>
-              }
+          {selectedAssetFamily ? (
+            <PublicPresenceAssetWorkspace
+              families={[selectedAssetFamily]}
+              locale={locale}
+              request={request}
+              scopeId={scopeId ?? null}
+              scopeType={scopeType}
+              tenantId={tenantId ?? ''}
             />
           ) : (
             <>
-              <TableShell
-                ariaLabel={resolvedCopy.visibleRecordsLabel}
-                columns={[
-                  resolvedCopy.codeColumn,
-                  resolvedCopy.nameColumn,
-                  resolvedCopy.scopeStateColumn,
-                  resolvedCopy.statusColumn,
-                  resolvedCopy.actionsColumn,
-                ]}
-                dataLength={records.length}
-                isLoading={loading}
-                isEmpty={!loading && records.length === 0}
-                emptyTitle={resolvedCopy.emptyTitle(selectedEntry.label)}
-                emptyDescription={
-                  !canManageSelectedTypeInCurrentScope
-                    ? (inheritedOnlyNotice ??
-                      resolvedCopy.emptyFilteredDescription(selectedEntry.label))
-                    : effectiveCurrentScopeOnly
-                      ? resolvedCopy.emptyOwnedDescription(
-                          selectedEntry.label,
-                          resolvedCopy.scopeTypeLabel(scopeType)
-                        )
-                      : resolvedCopy.emptyFilteredDescription(selectedEntry.label)
-                }
-                emptyAction={
-                  canManageSelectedTypeInCurrentScope ? (
+              {notice ? (
+                <div
+                  className={`rounded-2xl border px-4 py-3 text-sm font-medium ${
+                    notice.tone === 'success'
+                      ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
+                      : 'border-rose-200 bg-rose-50 text-rose-800'
+                  }`}
+                >
+                  {notice.message}
+                </div>
+              ) : null}
+
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                <div className="rounded-2xl border border-slate-200 bg-white/85 px-4 py-4 shadow-sm">
+                  <p className="text-xs font-semibold tracking-[0.18em] text-slate-500 uppercase">
+                    {resolvedCopy.visibleRecordsLabel}
+                  </p>
+                  <p className="mt-2 text-2xl font-semibold text-slate-950">{records.length}</p>
+                </div>
+                <div className="rounded-2xl border border-slate-200 bg-white/85 px-4 py-4 shadow-sm">
+                  <p className="text-xs font-semibold tracking-[0.18em] text-slate-500 uppercase">
+                    {resolvedCopy.activeLabel}
+                  </p>
+                  <p className="mt-2 text-2xl font-semibold text-slate-950">{activeCount}</p>
+                </div>
+                <div className="rounded-2xl border border-slate-200 bg-white/85 px-4 py-4 shadow-sm">
+                  <p className="text-xs font-semibold tracking-[0.18em] text-slate-500 uppercase">
+                    {resolvedCopy.inheritedLabel}
+                  </p>
+                  <p className="mt-2 text-2xl font-semibold text-slate-950">{inheritedCount}</p>
+                </div>
+                <div className="rounded-2xl border border-slate-200 bg-white/85 px-4 py-4 shadow-sm">
+                  <p className="text-xs font-semibold tracking-[0.18em] text-slate-500 uppercase">
+                    {resolvedCopy.disabledHereLabel}
+                  </p>
+                  <p className="mt-2 text-2xl font-semibold text-slate-950">{disabledHereCount}</p>
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-slate-200 bg-white/85 p-4 shadow-sm">
+                <div className="flex flex-wrap items-center gap-3">
+                  <label className="relative block min-w-[18rem] flex-1">
+                    <span className="sr-only">{resolvedCopy.searchLabel}</span>
+                    <input
+                      aria-label={resolvedCopy.searchAriaLabel}
+                      type="search"
+                      value={search}
+                      onChange={(event) =>
+                        applyScopedConfigQueryState({ page: 1, search: event.target.value })
+                      }
+                      placeholder={resolvedCopy.searchPlaceholder(selectedEntry.label)}
+                      className="w-full rounded-xl border border-slate-300 bg-white/85 py-2.5 pr-3 pl-4 text-sm text-slate-900 shadow-sm transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200 focus:outline-none"
+                    />
+                  </label>
+
+                  <button
+                    type="button"
+                    onClick={refreshWorkspace}
+                    className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+                    aria-label={resolvedCopy.refreshAriaLabel}
+                  >
+                    <RefreshCcw className="h-4 w-4" />
+                  </button>
+
+                  {supportsLocalScopeOnly ? (
+                    <label className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm">
+                      <input
+                        aria-label={resolvedCopy.currentScopeOnlyAriaLabel}
+                        type="checkbox"
+                        checked={currentScopeOnly}
+                        onChange={(event) =>
+                          applyScopedConfigQueryState({
+                            currentScopeOnly: event.target.checked,
+                            page: 1,
+                          })
+                        }
+                        className="h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-500"
+                      />
+                      {resolvedCopy.currentScopeOnlyLabel}
+                    </label>
+                  ) : null}
+
+                  <label className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm">
+                    <input
+                      aria-label={resolvedCopy.includeInactiveAriaLabel}
+                      type="checkbox"
+                      checked={includeInactive}
+                      onChange={(event) =>
+                        applyScopedConfigQueryState({
+                          includeInactive: event.target.checked,
+                          page: 1,
+                        })
+                      }
+                      className="h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-500"
+                    />
+                    {resolvedCopy.includeInactiveLabel}
+                  </label>
+                </div>
+
+                <div
+                  className={`mt-3 grid gap-3 ${supportsLocalScopeOnly || inheritedOnlyNotice ? 'lg:grid-cols-2' : ''}`}
+                >
+                  {supportsLocalScopeOnly ? (
+                    <p className="rounded-xl border border-slate-200 bg-slate-50/80 px-3 py-3 text-sm leading-6 text-slate-600">
+                      {resolvedCopy.currentScopeOnlyDescription(
+                        resolvedCopy.scopeTypeLabel(scopeType)
+                      )}
+                    </p>
+                  ) : null}
+                  <p className="rounded-xl border border-slate-200 bg-slate-50/80 px-3 py-3 text-sm leading-6 text-slate-600">
+                    {resolvedCopy.includeInactiveDescription}
+                  </p>
+                  {inheritedOnlyNotice ? (
+                    <p className="rounded-xl border border-slate-200 bg-slate-50/80 px-3 py-3 text-sm leading-6 text-slate-600">
+                      {inheritedOnlyNotice}
+                    </p>
+                  ) : null}
+                </div>
+              </div>
+
+              {error ? (
+                <StateView
+                  status="error"
+                  title={resolvedCopy.unavailableTitle}
+                  description={error}
+                  action={
                     <button
                       type="button"
-                      onClick={beginCreate}
+                      onClick={refreshWorkspace}
                       className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
                     >
-                      {resolvedCopy.emptyActionLabel}
+                      {resolvedCopy.retryLabel}
                     </button>
-                  ) : undefined
-                }
-              >
-                {records.map((entity) => {
-                  const entityIsInherited = isEntityInheritedInScope(
-                    entity,
-                    scopeType,
-                    selectedType
-                  );
-                  const canEditOwnedRecord =
-                    canManageSelectedTypeInCurrentScope && !entityIsInherited;
-                  const canToggleInheritedRecord =
-                    entityIsInherited &&
-                    entity.canDisable &&
-                    scopeType !== 'tenant' &&
-                    !isTenantGlobalEntityType(selectedType);
+                  }
+                />
+              ) : (
+                <>
+                  <TableShell
+                    ariaLabel={resolvedCopy.visibleRecordsLabel}
+                    columns={[
+                      resolvedCopy.codeColumn,
+                      resolvedCopy.nameColumn,
+                      resolvedCopy.scopeStateColumn,
+                      resolvedCopy.statusColumn,
+                      resolvedCopy.actionsColumn,
+                    ]}
+                    dataLength={records.length}
+                    isLoading={loading}
+                    isEmpty={!loading && records.length === 0}
+                    emptyTitle={resolvedCopy.emptyTitle(selectedEntry.label)}
+                    emptyDescription={
+                      !canManageSelectedTypeInCurrentScope
+                        ? (inheritedOnlyNotice ??
+                          resolvedCopy.emptyFilteredDescription(selectedEntry.label))
+                        : effectiveCurrentScopeOnly
+                          ? resolvedCopy.emptyOwnedDescription(
+                              selectedEntry.label,
+                              resolvedCopy.scopeTypeLabel(scopeType)
+                            )
+                          : resolvedCopy.emptyFilteredDescription(selectedEntry.label)
+                    }
+                    emptyAction={
+                      canManageSelectedTypeInCurrentScope ? (
+                        <button
+                          type="button"
+                          onClick={beginCreate}
+                          className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
+                        >
+                          {resolvedCopy.emptyActionLabel}
+                        </button>
+                      ) : undefined
+                    }
+                  >
+                    {records.map((entity) => {
+                      const entityIsInherited = isEntityInheritedInScope(
+                        entity,
+                        scopeType,
+                        selectedType
+                      );
+                      const canEditOwnedRecord =
+                        canManageSelectedTypeInCurrentScope && !entityIsInherited;
+                      const canToggleInheritedRecord =
+                        entityIsInherited &&
+                        entity.canDisable &&
+                        scopeType !== 'tenant' &&
+                        !isTenantGlobalEntityType(selectedType);
 
-                  return (
-                    <tr key={entity.id} className={!entity.isActive ? 'bg-slate-50/80' : undefined}>
-                      <td className="px-6 py-4 align-top">
-                        <div className="space-y-2">
-                          <p className="font-mono text-sm font-semibold text-slate-950">
-                            {entity.code || resolvedCopy.noCodeLabel}
-                          </p>
-                          <p className="text-xs leading-5 text-slate-500">
-                            {resolvedCopy.createdAtLabel(formatDateTime(locale, entity.createdAt))}
-                          </p>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 align-top">
-                        <div className="space-y-2">
-                          <p className="text-sm font-semibold text-slate-950">
-                            {entity.localizedName}
-                          </p>
-                          {entity.localizedDescription ? (
-                            <p className="text-sm leading-6 text-slate-600">
-                              {entity.localizedDescription}
-                            </p>
-                          ) : null}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 align-top">
-                        {renderScopeSummary(locale, entity, resolvedCopy, scopeType, selectedType)}
-                      </td>
-                      <td className="px-6 py-4 align-top">
-                        <div className="space-y-2">
-                          <span
-                            className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold tracking-[0.16em] whitespace-nowrap uppercase ${
-                              entity.isActive
-                                ? 'bg-emerald-100 text-emerald-700'
-                                : 'bg-slate-200 text-slate-700'
-                            }`}
-                          >
-                            {entity.isActive
-                              ? resolvedCopy.activeStatus
-                              : resolvedCopy.inactiveStatus}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 align-top">
-                        <div className="flex flex-wrap justify-end gap-2">
-                          {canEditOwnedRecord ? (
-                            <>
-                              <button
-                                type="button"
-                                onClick={() => beginEdit(entity)}
-                                className="rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold tracking-[0.16em] text-slate-700 uppercase transition hover:border-slate-300 hover:bg-slate-50"
-                                aria-label={`${resolvedCopy.editLabel} ${entity.code ?? entity.localizedName}`}
-                              >
-                                {resolvedCopy.editLabel}
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => queueToggle(entity)}
-                                disabled={entity.isSystem}
-                                className="rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold tracking-[0.16em] text-slate-700 uppercase transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-                                aria-label={`${entity.isActive ? resolvedCopy.deactivateLabel : resolvedCopy.reactivateLabel} ${entity.code ?? entity.localizedName}`}
+                      return (
+                        <tr
+                          key={entity.id}
+                          className={!entity.isActive ? 'bg-slate-50/80' : undefined}
+                        >
+                          <td className="px-6 py-4 align-top">
+                            <div className="space-y-2">
+                              <p className="font-mono text-sm font-semibold text-slate-950">
+                                {entity.code || resolvedCopy.noCodeLabel}
+                              </p>
+                              <p className="text-xs leading-5 text-slate-500">
+                                {resolvedCopy.createdAtLabel(
+                                  formatDateTime(locale, entity.createdAt)
+                                )}
+                              </p>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 align-top">
+                            <div className="space-y-2">
+                              <p className="text-sm font-semibold text-slate-950">
+                                {entity.localizedName}
+                              </p>
+                              {entity.localizedDescription ? (
+                                <p className="text-sm leading-6 text-slate-600">
+                                  {entity.localizedDescription}
+                                </p>
+                              ) : null}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 align-top">
+                            {renderScopeSummary(
+                              locale,
+                              entity,
+                              resolvedCopy,
+                              scopeType,
+                              selectedType
+                            )}
+                          </td>
+                          <td className="px-6 py-4 align-top">
+                            <div className="space-y-2">
+                              <span
+                                className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold tracking-[0.16em] whitespace-nowrap uppercase ${
+                                  entity.isActive
+                                    ? 'bg-emerald-100 text-emerald-700'
+                                    : 'bg-slate-200 text-slate-700'
+                                }`}
                               >
                                 {entity.isActive
-                                  ? resolvedCopy.deactivateLabel
-                                  : resolvedCopy.reactivateLabel}
-                              </button>
-                            </>
-                          ) : canToggleInheritedRecord ? (
-                            <button
-                              type="button"
-                              onClick={() => queueToggle(entity)}
-                              className="rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold tracking-[0.16em] text-slate-700 uppercase transition hover:border-slate-300 hover:bg-slate-50"
-                              aria-label={`${entity.isDisabledHere ? resolvedCopy.enableHereLabel : resolvedCopy.disableHereLabel} ${entity.code ?? entity.localizedName}`}
-                            >
-                              {entity.isDisabledHere
-                                ? resolvedCopy.enableHereLabel
-                                : resolvedCopy.disableHereLabel}
-                            </button>
-                          ) : (
-                            <span className="rounded-full bg-slate-100 px-3 py-2 text-xs font-semibold tracking-[0.16em] whitespace-nowrap text-slate-500 uppercase">
-                              {resolvedCopy.inheritedPill}
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </TableShell>
+                                  ? resolvedCopy.activeStatus
+                                  : resolvedCopy.inactiveStatus}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 align-top">
+                            <div className="flex flex-wrap justify-end gap-2">
+                              {canEditOwnedRecord ? (
+                                <>
+                                  <button
+                                    type="button"
+                                    onClick={() => beginEdit(entity)}
+                                    className="rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold tracking-[0.16em] text-slate-700 uppercase transition hover:border-slate-300 hover:bg-slate-50"
+                                    aria-label={`${resolvedCopy.editLabel} ${entity.code ?? entity.localizedName}`}
+                                  >
+                                    {resolvedCopy.editLabel}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => queueToggle(entity)}
+                                    disabled={entity.isSystem}
+                                    className="rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold tracking-[0.16em] text-slate-700 uppercase transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                    aria-label={`${entity.isActive ? resolvedCopy.deactivateLabel : resolvedCopy.reactivateLabel} ${entity.code ?? entity.localizedName}`}
+                                  >
+                                    {entity.isActive
+                                      ? resolvedCopy.deactivateLabel
+                                      : resolvedCopy.reactivateLabel}
+                                  </button>
+                                </>
+                              ) : canToggleInheritedRecord ? (
+                                <button
+                                  type="button"
+                                  onClick={() => queueToggle(entity)}
+                                  className="rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold tracking-[0.16em] text-slate-700 uppercase transition hover:border-slate-300 hover:bg-slate-50"
+                                  aria-label={`${entity.isDisabledHere ? resolvedCopy.enableHereLabel : resolvedCopy.disableHereLabel} ${entity.code ?? entity.localizedName}`}
+                                >
+                                  {entity.isDisabledHere
+                                    ? resolvedCopy.enableHereLabel
+                                    : resolvedCopy.disableHereLabel}
+                                </button>
+                              ) : (
+                                <span className="rounded-full bg-slate-100 px-3 py-2 text-xs font-semibold tracking-[0.16em] whitespace-nowrap text-slate-500 uppercase">
+                                  {resolvedCopy.inheritedPill}
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </TableShell>
 
-              <PaginationFooter
-                pagination={pagination}
-                itemCount={records.length}
-                labels={{
-                  pageLabel: paginationCopy.page,
-                  rangeLabel: paginationCopy.range,
-                  rowsPerPageLabel: paginationCopy.pageSize,
-                  pageSizeAriaLabel: paginationCopy.pageSize,
-                  previousLabel: paginationCopy.previous,
-                  nextLabel: paginationCopy.next,
-                }}
-                onPageChange={(nextPage) => applyScopedConfigQueryState({ page: nextPage })}
-                onPageSizeChange={(nextPageSize) => {
-                  applyScopedConfigQueryState({
-                    page: 1,
-                    pageSize: nextPageSize as PageSizeOption,
-                  });
-                }}
-                isLoading={loading}
-                className="rounded-2xl border border-slate-200 bg-slate-50/80"
-	              />
-	            </>
-	          )}
-	            </>
-	          )}
-	        </div>
-	      </div>
+                  <PaginationFooter
+                    pagination={pagination}
+                    itemCount={records.length}
+                    labels={{
+                      pageLabel: paginationCopy.page,
+                      rangeLabel: paginationCopy.range,
+                      rowsPerPageLabel: paginationCopy.pageSize,
+                      pageSizeAriaLabel: paginationCopy.pageSize,
+                      previousLabel: paginationCopy.previous,
+                      nextLabel: paginationCopy.next,
+                    }}
+                    onPageChange={(nextPage) => applyScopedConfigQueryState({ page: nextPage })}
+                    onPageSizeChange={(nextPageSize) => {
+                      applyScopedConfigQueryState({
+                        page: 1,
+                        pageSize: nextPageSize as PageSizeOption,
+                      });
+                    }}
+                    isLoading={loading}
+                    className="rounded-2xl border border-slate-200 bg-slate-50/80"
+                  />
+                </>
+              )}
+            </>
+          )}
+        </div>
+      </div>
 
       <ActionDrawer
         open={editorMode !== 'closed'}

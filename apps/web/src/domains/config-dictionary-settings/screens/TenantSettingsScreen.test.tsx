@@ -333,12 +333,12 @@ describe('TenantSettingsScreen', () => {
       await screen.findByRole('button', { name: /Profile Store profile-store/i })
     ).toBeInTheDocument();
     expect(
-	      screen.getByText(
-	        'Maintain tenant-owned configuration families, homepage template assets, and homepage component assets in one catalog.'
-	      )
-	    ).toBeInTheDocument();
-	    expect(screen.getByRole('button', { name: /Homepage Template Asset/i })).toBeInTheDocument();
-	    expect(screen.getByRole('button', { name: /Homepage Component Asset/i })).toBeInTheDocument();
+      screen.getByText(
+        'Maintain tenant-owned configuration families, homepage template assets, and homepage component assets in one catalog.'
+      )
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Homepage Template Asset/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Homepage Component Asset/i })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /New profile store/i })).not.toBeInTheDocument();
     expect(mockRequest).not.toHaveBeenCalledWith(expect.stringContaining('/api/v1/profile-stores'));
 

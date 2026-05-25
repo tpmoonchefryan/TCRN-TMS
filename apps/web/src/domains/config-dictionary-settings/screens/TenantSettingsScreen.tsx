@@ -760,30 +760,28 @@ export function TenantSettingsScreen({
             <div className="space-y-6">
               <GlassSurface className="p-6">
                 <FormSection
-	                  title={common.configEntities}
-	                  description={text({
-	                    en: 'Maintain tenant-owned configuration families, homepage template assets, and homepage component assets in one catalog.',
-	                    zh_HANS:
-	                      '在同一目录中维护租户自有配置实体、主页模板资产与主页组件资产。',
-	                    zh_HANT:
-	                      '在同一目錄中維護租戶自有配置實體、主頁模板資產與主頁元件資產。',
-	                    ja: 'テナント所有の設定エンティティ、ホームページテンプレート資産、コンポーネント資産を同じカタログで管理します。',
-	                    ko: '테넌트 소유 구성 엔티티, 홈페이지 템플릿 자산, 컴포넌트 자산을 하나의 카탈로그에서 관리합니다.',
-	                    fr: 'Gérez les familles de configuration du tenant ainsi que les assets template et composant de homepage dans un même catalogue.',
-	                  })}
-	                >
-	                  <ScopedConfigEntityWorkspace
-	                    request={request}
-	                    requestEnvelope={requestEnvelope}
-	                    scopeType="tenant"
-	                    tenantId={tenantId}
-	                    locale={locale}
-	                    copy={scopedConfigCopy}
-	                    catalog={localizedConfigEntityCatalog}
-	                  />
-	                </FormSection>
-	              </GlassSurface>
-	            </div>
+                  title={common.configEntities}
+                  description={text({
+                    en: 'Maintain tenant-owned configuration families, homepage template assets, and homepage component assets in one catalog.',
+                    zh_HANS: '在同一目录中维护租户自有配置实体、主页模板资产与主页组件资产。',
+                    zh_HANT: '在同一目錄中維護租戶自有配置實體、主頁模板資產與主頁元件資產。',
+                    ja: 'テナント所有の設定エンティティ、ホームページテンプレート資産、コンポーネント資産を同じカタログで管理します。',
+                    ko: '테넌트 소유 구성 엔티티, 홈페이지 템플릿 자산, 컴포넌트 자산을 하나의 카탈로그에서 관리합니다.',
+                    fr: 'Gérez les familles de configuration du tenant ainsi que les assets template et composant de homepage dans un même catalogue.',
+                  })}
+                >
+                  <ScopedConfigEntityWorkspace
+                    request={request}
+                    requestEnvelope={requestEnvelope}
+                    scopeType="tenant"
+                    tenantId={tenantId}
+                    locale={locale}
+                    copy={scopedConfigCopy}
+                    catalog={localizedConfigEntityCatalog}
+                  />
+                </FormSection>
+              </GlassSurface>
+            </div>
           ) : null}
 
           {displayedSectionId === 'settings' ? (

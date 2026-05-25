@@ -2127,26 +2127,26 @@ export function TalentSettingsScreen({
             <div className="space-y-6">
               <GlassSurface className="p-6">
                 <FormSection
-	                  title={common.configEntities}
-	                  description={text(
-	                    'Review configuration records and manage talent-scoped homepage template/component assets in the same catalog.',
-	                    '在同一目录中查看配置记录并管理艺人范围的主页模板/组件资产。',
-	                    'このタレントに適用される設定レコードとタレントスコープのホームページテンプレート/コンポーネント資産を同じカタログで管理します。'
-	                  )}
+                  title={common.configEntities}
+                  description={text(
+                    'Review configuration records and manage talent-scoped homepage template/component assets in the same catalog.',
+                    '在同一目录中查看配置记录并管理艺人范围的主页模板/组件资产。',
+                    'このタレントに適用される設定レコードとタレントスコープのホームページテンプレート/コンポーネント資産を同じカタログで管理します。'
+                  )}
                 >
                   <ScopedConfigEntityWorkspace
                     request={request}
-	                    requestEnvelope={requestEnvelope}
-	                    scopeType="talent"
-	                    scopeId={talentId}
-	                    tenantId={tenantId}
-	                    locale={locale}
-	                    copy={scopedConfigCopy}
-	                    catalog={localizedConfigEntityCatalog}
-	                  />
-	                </FormSection>
-	              </GlassSurface>
-	            </div>
+                    requestEnvelope={requestEnvelope}
+                    scopeType="talent"
+                    scopeId={talentId}
+                    tenantId={tenantId}
+                    locale={locale}
+                    copy={scopedConfigCopy}
+                    catalog={localizedConfigEntityCatalog}
+                  />
+                </FormSection>
+              </GlassSurface>
+            </div>
           ) : null}
 
           {displayedSectionId === 'settings' ? (

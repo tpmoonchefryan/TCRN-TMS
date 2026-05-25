@@ -55,22 +55,22 @@ function CatalogCompatibilityNotice({
   const { locale } = useUiLocale();
   const heading =
     kind === 'template'
-	      ? pickLocaleText(locale, {
-	          en: 'Template asset records now open as a compatibility stop, not a homepage tab.',
-	          zh_HANS: '模板中心现在是兼容入口，不再是主页一级标签。',
-	          zh_HANT: '模板中心現在是相容入口，不再是主頁一級標籤。',
-	          ja: 'テンプレート資産レコードは互換用の入口であり、ホームページの第一タブではありません。',
-	          ko: '템플릿 자산 레코드는 호환용 진입점이며 더 이상 홈페이지 1차 탭이 아닙니다.',
-	          fr: 'Le centre de templates est désormais un point de compatibilité, plus un onglet homepage.',
-	        })
-	      : pickLocaleText(locale, {
-	          en: 'Component asset records now open as a compatibility stop, not a homepage tab.',
-	          zh_HANS: '组件中心现在是兼容入口，不再是主页一级标签。',
-	          zh_HANT: '元件中心現在是相容入口，不再是主頁一級標籤。',
-	          ja: 'コンポーネント資産レコードは互換用の入口であり、ホームページの第一タブではありません。',
-	          ko: '컴포넌트 자산 레코드는 호환용 진입점이며 더 이상 홈페이지 1차 탭이 아닙니다.',
-	          fr: 'Le store de composants est désormais un point de compatibilité, plus un onglet homepage.',
-	        });
+      ? pickLocaleText(locale, {
+          en: 'Template asset records now open as a compatibility stop, not a homepage tab.',
+          zh_HANS: '模板中心现在是兼容入口，不再是主页一级标签。',
+          zh_HANT: '模板中心現在是相容入口，不再是主頁一級標籤。',
+          ja: 'テンプレート資産レコードは互換用の入口であり、ホームページの第一タブではありません。',
+          ko: '템플릿 자산 레코드는 호환용 진입점이며 더 이상 홈페이지 1차 탭이 아닙니다.',
+          fr: 'Le centre de templates est désormais un point de compatibilité, plus un onglet homepage.',
+        })
+      : pickLocaleText(locale, {
+          en: 'Component asset records now open as a compatibility stop, not a homepage tab.',
+          zh_HANS: '组件中心现在是兼容入口，不再是主页一级标签。',
+          zh_HANT: '元件中心現在是相容入口，不再是主頁一級標籤。',
+          ja: 'コンポーネント資産レコードは互換用の入口であり、ホームページの第一タブではありません。',
+          ko: '컴포넌트 자산 레코드는 호환용 진입점이며 더 이상 홈페이지 1차 탭이 아닙니다.',
+          fr: 'Le store de composants est désormais un point de compatibilité, plus un onglet homepage.',
+        });
   const body =
     kind === 'template'
       ? pickLocaleText(locale, {

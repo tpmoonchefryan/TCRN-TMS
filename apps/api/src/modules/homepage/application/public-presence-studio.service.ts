@@ -947,9 +947,8 @@ export class PublicPresenceStudioService {
 
     const fallbackAllowedTemplateTypeCodes =
       currentStage && normalizedFlow
-        ? (normalizedFlow.homepagePolicyByStage.find(
-            (policy) => policy.stageId === currentStage.id
-          )?.allowedTemplateTypeCodes ?? [])
+        ? (normalizedFlow.homepagePolicyByStage.find((policy) => policy.stageId === currentStage.id)
+            ?.allowedTemplateTypeCodes ?? [])
         : [];
     const allowedTemplateTypeCodes = currentStage?.homepageTemplateTypeCode
       ? [currentStage.homepageTemplateTypeCode]
@@ -972,10 +971,10 @@ export class PublicPresenceStudioService {
     const homepagePolicyBlocked = blockedReasons.length > 0;
     const templateAssets = visibleTemplateAssets
       .map((asset) =>
-	        serializeTemplateAssetSummary({
-	          allowedTemplateTypeCodes,
-	          homepagePolicyBlocked,
-	          visibleAsset: asset,
+        serializeTemplateAssetSummary({
+          allowedTemplateTypeCodes,
+          homepagePolicyBlocked,
+          visibleAsset: asset,
         })
       )
       .filter((asset): asset is PublicPresenceStudioTemplateAssetSummary => Boolean(asset));
@@ -988,10 +987,10 @@ export class PublicPresenceStudioService {
     }
 
     return {
-	      currentStage,
-	      homepagePolicy: {
-	        allowedTemplateTypeCodes,
-	        blockedReasons,
+      currentStage,
+      homepagePolicy: {
+        allowedTemplateTypeCodes,
+        blockedReasons,
         status: blockedReasons.length > 0 ? 'blocked' : 'ready',
       } satisfies PublicPresenceStudioHomepagePolicySummary,
       talent,

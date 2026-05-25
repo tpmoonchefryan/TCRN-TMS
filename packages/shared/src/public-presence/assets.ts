@@ -77,8 +77,7 @@ export type ArtistStatusCode = (typeof ARTIST_STATUS_CODES)[number];
 
 export type ArtistStageLifecycleMapping = ArtistStatusCode;
 
-export type PublicPresenceTemplateTypeCode =
-  (typeof PUBLIC_PRESENCE_TEMPLATE_TYPE_CODES)[number];
+export type PublicPresenceTemplateTypeCode = (typeof PUBLIC_PRESENCE_TEMPLATE_TYPE_CODES)[number];
 
 export type PublicPresenceAssetKind = (typeof PUBLIC_PRESENCE_ASSET_KINDS)[number];
 

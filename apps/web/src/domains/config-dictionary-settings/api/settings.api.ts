@@ -154,12 +154,12 @@ export type ScopedConfigEntityType =
   | 'inactivation-reason'
   | 'membership-class'
   | 'membership-type'
-	  | 'membership-level'
-	  | 'profile-store'
-	  | 'consent'
-	  | 'homepage-template-asset'
-	  | 'homepage-component-asset'
-	  | 'custom-domain';
+  | 'membership-level'
+  | 'profile-store'
+  | 'consent'
+  | 'homepage-template-asset'
+  | 'homepage-component-asset'
+  | 'custom-domain';
 
 export interface ConfigEntityRecord {
   id: string;

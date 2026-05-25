@@ -781,17 +781,15 @@ export function SubsidiarySettingsScreen({
             <div className="space-y-6">
               <GlassSurface className="p-6">
                 <FormSection
-	                  title={common.configEntities}
-	                  description={text({
-	                    en: 'Manage configuration entities, inherited homepage template assets, and local component assets from the same subsidiary catalog.',
-	                    zh_HANS:
-	                      '在同一分目录目录中管理配置实体、继承主页模板资产与本地组件资产。',
-	                    zh_HANT:
-	                      '在同一分目錄目錄中管理配置實體、繼承主頁模板資產與本地元件資產。',
-	                    ja: 'この配下スコープの設定エンティティ、継承ホームページテンプレート資産、ローカルコンポーネント資産を同じカタログで管理します。',
-	                    ko: '이 하위 조직 카탈로그에서 구성 엔티티, 상속 홈페이지 템플릿 자산, 로컬 컴포넌트 자산을 함께 관리합니다.',
-	                    fr: 'Gérez les entités de configuration, les assets template de homepage hérités et les composants locaux dans le même catalogue de périmètre.',
-	                  })}
+                  title={common.configEntities}
+                  description={text({
+                    en: 'Manage configuration entities, inherited homepage template assets, and local component assets from the same subsidiary catalog.',
+                    zh_HANS: '在同一分目录目录中管理配置实体、继承主页模板资产与本地组件资产。',
+                    zh_HANT: '在同一分目錄目錄中管理配置實體、繼承主頁模板資產與本地元件資產。',
+                    ja: 'この配下スコープの設定エンティティ、継承ホームページテンプレート資産、ローカルコンポーネント資産を同じカタログで管理します。',
+                    ko: '이 하위 조직 카탈로그에서 구성 엔티티, 상속 홈페이지 템플릿 자산, 로컬 컴포넌트 자산을 함께 관리합니다.',
+                    fr: 'Gérez les entités de configuration, les assets template de homepage hérités et les composants locaux dans le même catalogue de périmètre.',
+                  })}
                 >
                   <div className="grid gap-4 xl:grid-cols-3">
                     <FieldRow
@@ -846,17 +844,17 @@ export function SubsidiarySettingsScreen({
 
                   <ScopedConfigEntityWorkspace
                     request={request}
-	                    requestEnvelope={requestEnvelope}
-	                    scopeType="subsidiary"
-	                    scopeId={subsidiaryId}
-	                    tenantId={tenantId}
-	                    locale={locale}
-	                    copy={scopedConfigCopy}
-	                    catalog={localizedConfigEntityCatalog}
-	                  />
-	                </FormSection>
-	              </GlassSurface>
-	            </div>
+                    requestEnvelope={requestEnvelope}
+                    scopeType="subsidiary"
+                    scopeId={subsidiaryId}
+                    tenantId={tenantId}
+                    locale={locale}
+                    copy={scopedConfigCopy}
+                    catalog={localizedConfigEntityCatalog}
+                  />
+                </FormSection>
+              </GlassSurface>
+            </div>
           ) : null}
 
           {displayedSectionId === 'settings' ? (

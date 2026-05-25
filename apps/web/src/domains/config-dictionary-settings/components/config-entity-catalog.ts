@@ -125,15 +125,13 @@ export const CONFIG_ENTITY_CATALOG: Record<ScopedConfigEntityType, ConfigEntityC
   'homepage-template-asset': {
     type: 'homepage-template-asset',
     label: 'Homepage Template Asset',
-    description:
-      'Template assets available to Public Presence Studio for the selected scope.',
+    description: 'Template assets available to Public Presence Studio for the selected scope.',
     fields: [],
   },
   'homepage-component-asset': {
     type: 'homepage-component-asset',
     label: 'Homepage Component Asset',
-    description:
-      'Component assets available to Public Presence Studio for the selected scope.',
+    description: 'Component assets available to Public Presence Studio for the selected scope.',
     fields: [],
   },
   'communication-type': {

@@ -220,9 +220,9 @@ export class TalentLifecycleService {
       talent.id,
       tenantSchema,
       userId,
-	      targetStage.id,
-	      targetStage.artistStatusCode
-	    );
+      targetStage.id,
+      targetStage.artistStatusCode
+    );
   }
 
   private async loadArtistLifecycleContext(
@@ -277,9 +277,8 @@ export class TalentLifecycleService {
       )
       .filter(
         (stage) =>
-	          stage.targetStage.isActive &&
-	          stage.targetStage.artistStatusCode === targetLifecycleStatus
-	      );
+          stage.targetStage.isActive && stage.targetStage.artistStatusCode === targetLifecycleStatus
+      );
 
     if (candidateTransitions.length === 0) {
       throw new ConflictException({

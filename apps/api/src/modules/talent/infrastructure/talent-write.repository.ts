@@ -41,19 +41,19 @@ export class TalentWriteRepository {
   async findActiveArtistStage(
     tenantSchema: string,
     artistStageId: string
-	  ): Promise<{
-	    artistStatusCode: TalentLifecycleStatus;
-	    code: string;
-	    id: string;
-	  } | null> {
-	    const stages = await prisma.$queryRawUnsafe<
-	      Array<{
-	        artistStatusCode: TalentLifecycleStatus;
-	        code: string;
-	        id: string;
-	      }>
-	    >(
-	      `SELECT
+  ): Promise<{
+    artistStatusCode: TalentLifecycleStatus;
+    code: string;
+    id: string;
+  } | null> {
+    const stages = await prisma.$queryRawUnsafe<
+      Array<{
+        artistStatusCode: TalentLifecycleStatus;
+        code: string;
+        id: string;
+      }>
+    >(
+      `SELECT
 	         id,
 	         code,
 	         artist_status_code as "artistStatusCode"

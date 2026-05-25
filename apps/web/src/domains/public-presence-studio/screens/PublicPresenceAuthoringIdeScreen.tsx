@@ -3574,11 +3574,11 @@ export function PublicPresenceAuthoringIdeScreen({
                 </p>
                 <p className="text-sm leading-6 text-sky-900/90">
                   {pickLocaleText(locale, {
-	                    en: 'Start new homepage asset work from Configuration Entity Management, then return here only when you need to inspect a legacy draft path.',
-	                    zh_HANS:
-	                      '新的主页模板/组件资产工作请从配置实体管理开始；只有在需要检查旧草稿路径时才回到这里。',
-	                    zh_HANT:
-	                      '新的主頁模板/元件資產工作請從配置實體管理開始；只有在需要檢查舊草稿路徑時才回到這裡。',
+                    en: 'Start new homepage asset work from Configuration Entity Management, then return here only when you need to inspect a legacy draft path.',
+                    zh_HANS:
+                      '新的主页模板/组件资产工作请从配置实体管理开始；只有在需要检查旧草稿路径时才回到这里。',
+                    zh_HANT:
+                      '新的主頁模板/元件資產工作請從配置實體管理開始；只有在需要檢查舊草稿路徑時才回到這裡。',
                     ja: '新しいホームページ資産作業は Configuration Entity Management から始め、旧ドラフト経路を確認する必要がある時だけここへ戻ってください。',
                     ko: '새 홈페이지 자산 작업은 Configuration Entity Management 에서 시작하고, 레거시 드래프트 경로를 확인해야 할 때만 여기로 돌아오세요.',
                     fr: 'Commencez le nouveau travail asset homepage depuis Configuration Entity Management, puis revenez ici seulement pour vérifier un ancien chemin de brouillon.',

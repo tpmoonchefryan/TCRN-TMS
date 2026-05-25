@@ -1271,7 +1271,8 @@ const CONFIG_ENTITY_COPY: Record<SupportedUiLocale, ConfigEntityCopyMap> &
     },
     'homepage-template-asset': {
       label: 'Asset modele de page d accueil',
-      description: 'Assets modele disponibles pour Public Presence Studio dans le perimetre actuel.',
+      description:
+        'Assets modele disponibles pour Public Presence Studio dans le perimetre actuel.',
     },
     'homepage-component-asset': {
       label: 'Asset composant de page d accueil',
