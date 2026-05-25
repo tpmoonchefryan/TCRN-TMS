@@ -103,6 +103,7 @@ export interface PublicPresenceStudioVersionSummary {
 export interface PublicPresenceStudioArtistStageSummary {
   artistStatusCode: string;
   code: string;
+  homepageTemplateTypeCode: PublicPresenceTemplateTypeCode;
   id: string;
   name: LocalizedText;
 }

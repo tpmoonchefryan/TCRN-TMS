@@ -100,6 +100,7 @@ export interface ArtistStageRecord {
   createdAt: string;
   description: LocalizedText;
   artistStatusCode: ArtistStatusCode;
+  homepageTemplateTypeCode: PublicPresenceTemplateTypeCode;
   id: string;
   isActive: boolean;
   isSystem: boolean;

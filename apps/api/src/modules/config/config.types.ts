@@ -3,7 +3,11 @@
  * Config Entity Types and Interfaces
  * NOTE: All entity types use singular form (e.g., 'customer-status' not 'customer-statuses')
  */
-import type { LocalizedText, PartialLocalizedText } from '@tcrn/shared';
+import type {
+  LocalizedText,
+  PartialLocalizedText,
+  PublicPresenceTemplateTypeCode,
+} from '@tcrn/shared';
 
 export type OwnerType = 'tenant' | 'subsidiary' | 'talent';
 
@@ -127,6 +131,7 @@ export interface ConsentFields {
 export interface ArtistStageFields {
   artistStatusCode: 'draft' | 'published' | 'disabled';
   color: string | null;
+  homepageTemplateTypeCode: PublicPresenceTemplateTypeCode;
 }
 
 export interface ConsumerFields {
@@ -175,7 +180,7 @@ export const CONFIG_TABLE_NAMES: Record<ConfigEntityType, string> = {
 // Extra fields for each entity type
 export const CONFIG_EXTRA_FIELDS: Record<ConfigEntityType, string[]> = {
   'channel-category': [],
-  'artist-stage': ['color', 'artist_status_code'],
+  'artist-stage': ['color', 'artist_status_code', 'homepage_template_type_code'],
   'social-platform': ['display_name', 'icon_url', 'base_url', 'profile_url_template', 'color'],
   'business-segment': [],
   'communication-type': ['channel_category_id'],

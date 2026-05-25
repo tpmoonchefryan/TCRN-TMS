@@ -2,6 +2,7 @@ import {
   normalizeSupportedUiLocale,
   type LocalizedText,
   type PartialLocalizedText,
+  type PublicPresenceTemplateTypeCode,
   type SupportedUiLocale,
 } from '@tcrn/shared';
 
@@ -180,9 +181,10 @@ export interface ConfigEntityRecord {
   createdAt: string;
   updatedAt: string;
   version: number;
-	  contentMarkdown?: LocalizedText | null;
-	  color?: string | null;
-	  artistStatusCode?: 'draft' | 'published' | 'disabled' | null;
+  contentMarkdown?: LocalizedText | null;
+  color?: string | null;
+  artistStatusCode?: 'draft' | 'published' | 'disabled' | null;
+  homepageTemplateTypeCode?: PublicPresenceTemplateTypeCode | null;
   channelCategoryId?: string | null;
   reasonCategoryId?: string | null;
   consentVersion?: string | null;
@@ -218,10 +220,11 @@ export interface CreateConfigEntityInput {
   name: LocalizedText;
   description?: PartialLocalizedText | null;
   sortOrder?: number;
-	  ownerType?: ConfigEntityScopeType;
-	  ownerId?: string;
-	  color?: string;
-	  artistStatusCode?: 'draft' | 'published' | 'disabled';
+  ownerType?: ConfigEntityScopeType;
+  ownerId?: string;
+  color?: string;
+  artistStatusCode?: 'draft' | 'published' | 'disabled';
+  homepageTemplateTypeCode?: PublicPresenceTemplateTypeCode;
   channelCategoryId?: string;
   reasonCategoryId?: string;
   membershipClassId?: string;

@@ -266,6 +266,22 @@ function createTemplateAssetEntry(
   };
 }
 
+function createArtistStageRecord(
+  homepageTemplateTypeCode: 'operating' | 'pending-reveal' = 'operating'
+) {
+  return {
+    code: 'live',
+    description: createLocalizedText({ en: 'Live stage' }),
+    artistStatusCode: 'published',
+    homepageTemplateTypeCode,
+    id: ARTIST_STAGE_ID,
+    isActive: true,
+    isSystem: true,
+    name: createLocalizedText({ en: 'Live' }),
+    sortOrder: 1,
+  };
+}
+
 describe('PublicPresenceStudioService', () => {
   let homepageAdminRepository: HomepageAdminRepository;
   let publicPresenceFoundationRepository: PublicPresenceFoundationRepository;
@@ -283,18 +299,7 @@ describe('PublicPresenceStudioService', () => {
   beforeEach(() => {
     homepageAdminRepository = {
       findTalentById: vi.fn(),
-      listArtistStages: vi.fn().mockResolvedValue([
-        {
-          code: 'live',
-          description: createLocalizedText({ en: 'Live stage' }),
-          artistStatusCode: 'published',
-          id: ARTIST_STAGE_ID,
-          isActive: true,
-          isSystem: true,
-          name: createLocalizedText({ en: 'Live' }),
-          sortOrder: 1,
-        },
-      ]),
+      listArtistStages: vi.fn().mockResolvedValue([createArtistStageRecord()]),
       readArtistLifecycleFlow: vi.fn().mockResolvedValue({
         homepagePolicyByStage: [
           {
@@ -378,6 +383,7 @@ describe('PublicPresenceStudioService', () => {
     });
     expect(result.draftVersion?.document.templateId).toBe('activeTalentHub');
     expect(result.draftVersion?.validationSnapshot?.issueCounts.fatal).toBe(0);
+    expect(result.homepagePolicy.allowedTemplateTypeCodes).toEqual(['operating']);
     expect(result.releaseReadiness).toEqual({
       blockingDependencyCount: 0,
       dependencies: [],
@@ -440,6 +446,9 @@ describe('PublicPresenceStudioService', () => {
   });
 
   it('builds creator-readable debut defaults instead of raw talent-code copy', async () => {
+    vi.mocked(homepageAdminRepository.listArtistStages).mockResolvedValue([
+      createArtistStageRecord('pending-reveal'),
+    ] as never);
     vi.mocked(homepageAdminRepository.findTalentById).mockResolvedValue({
       code: 'talent_sakura',
       customDomain: null,
@@ -506,6 +515,9 @@ describe('PublicPresenceStudioService', () => {
   });
 
   it('surfaces the Debut auto-switch dependency before release when the Active Hub target is not approved yet', async () => {
+    vi.mocked(homepageAdminRepository.listArtistStages).mockResolvedValue([
+      createArtistStageRecord('pending-reveal'),
+    ] as never);
     vi.mocked(homepageAdminRepository.findTalentById).mockResolvedValue({
       code: 'sakura-kaze',
       customDomain: null,

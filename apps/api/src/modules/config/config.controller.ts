@@ -244,6 +244,15 @@ class CreateConfigDto {
   @IsEnum(['draft', 'published', 'disabled'])
   artistStatusCode?: 'draft' | 'published' | 'disabled';
 
+  @ApiPropertyOptional({
+    description: 'Homepage Template Type dictionary item code for Artist Stage',
+    enum: ['pending-reveal', 'operating', 'graduated'],
+    example: 'operating',
+  })
+  @IsOptional()
+  @IsEnum(['pending-reveal', 'operating', 'graduated'])
+  homepageTemplateTypeCode?: 'pending-reveal' | 'operating' | 'graduated';
+
   @ApiPropertyOptional({ description: 'Active status', example: true })
   @IsOptional()
   @IsBoolean()
@@ -403,6 +412,15 @@ class UpdateConfigDto {
   @IsOptional()
   @IsEnum(['draft', 'published', 'disabled'])
   artistStatusCode?: 'draft' | 'published' | 'disabled';
+
+  @ApiPropertyOptional({
+    description: 'Homepage Template Type dictionary item code for Artist Stage',
+    enum: ['pending-reveal', 'operating', 'graduated'],
+    example: 'operating',
+  })
+  @IsOptional()
+  @IsEnum(['pending-reveal', 'operating', 'graduated'])
+  homepageTemplateTypeCode?: 'pending-reveal' | 'operating' | 'graduated';
 
   @ApiPropertyOptional({ description: 'Base URL for platform', example: 'https://twitter.com' })
   @IsOptional()

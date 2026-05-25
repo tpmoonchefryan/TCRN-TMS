@@ -162,6 +162,53 @@ describe('ConfigService LocalizedText contract', () => {
     expect(mockPrisma.$queryRawUnsafe).not.toHaveBeenCalled();
   });
 
+  it('requires homepage template type when creating artist stages', async () => {
+    await expect(
+      service.create(
+        'artist-stage',
+        'tenant_test',
+        {
+          code: 'PRE_DEBUT',
+          name: localized('Pre-Debut'),
+          ownerType: 'tenant',
+          ownerId: null,
+        },
+        '00000000-0000-0000-0000-000000000001'
+      )
+    ).rejects.toThrow('Homepage Template Type');
+
+    expect(mockPrisma.$queryRawUnsafe).not.toHaveBeenCalled();
+  });
+
+  it('persists artist stage homepage template type as the config entity source of truth', async () => {
+    mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([]).mockResolvedValueOnce([
+      createBaseEntity({
+        artistStatusCode: 'published',
+        code: 'ACTIVE',
+        homepageTemplateTypeCode: 'operating',
+      } as Partial<BaseConfigEntity>),
+    ]);
+
+    await service.create(
+      'artist-stage',
+      'tenant_test',
+      {
+        artistStatusCode: 'published',
+        code: 'ACTIVE',
+        homepageTemplateTypeCode: 'operating',
+        name: localized('Active'),
+      },
+      '00000000-0000-0000-0000-000000000001'
+    );
+
+    const insertSql = String(mockPrisma.$queryRawUnsafe.mock.calls[1][0]);
+    const insertParams = mockPrisma.$queryRawUnsafe.mock.calls[1].slice(1);
+
+    expect(insertSql).toContain('artist_status_code');
+    expect(insertSql).toContain('homepage_template_type_code');
+    expect(insertParams).toContain('operating');
+  });
+
   it('rejects lower-scope disable overrides for artist-stage entities', async () => {
     vi.spyOn(service, 'findById').mockResolvedValue(
       createBaseEntity({

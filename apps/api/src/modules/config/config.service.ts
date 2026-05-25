@@ -12,6 +12,7 @@ import {
   mergeLocalizedText,
   normalizeLocalizedText,
   pickLocalizedText,
+  PUBLIC_PRESENCE_TEMPLATE_TYPE_CODES,
   type LocalizedText,
 } from '@tcrn/shared';
 
@@ -218,6 +219,7 @@ export class ConfigService {
     if (!normalizedName.en.trim()) {
       throw new BadRequestException('name.en is required');
     }
+    this.assertArtistStageHomepageTemplateType(entityType, data.homepageTemplateTypeCode, true);
 
     if (hasCode && data.code) {
       const existing = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
@@ -325,6 +327,11 @@ export class ConfigService {
         message: 'Data has been modified. Please refresh and try again.',
       });
     }
+    this.assertArtistStageHomepageTemplateType(
+      entityType,
+      data.homepageTemplateTypeCode,
+      false
+    );
 
     const hasDescription = CONFIG_HAS_DESCRIPTION.has(entityType);
     const hasExtraData = CONFIG_HAS_EXTRA_DATA.has(entityType);
@@ -1045,6 +1052,36 @@ export class ConfigService {
       throw new BadRequestException({
         code: 'CONFIG_TENANT_ONLY',
         message: 'This config entity must stay tenant-owned',
+      });
+    }
+  }
+
+  private assertArtistStageHomepageTemplateType(
+    entityType: ConfigEntityType,
+    value: unknown,
+    required: boolean
+  ): void {
+    if (entityType !== 'artist-stage') {
+      return;
+    }
+
+    if (value === undefined) {
+      if (!required) {
+        return;
+      }
+    }
+
+    if (value === undefined || value === null || value === '') {
+      throw new BadRequestException({
+        code: 'CONFIG_ARTIST_STAGE_TEMPLATE_TYPE_REQUIRED',
+        message: 'Artist Stage requires a Homepage Template Type.',
+      });
+    }
+
+    if (!(PUBLIC_PRESENCE_TEMPLATE_TYPE_CODES as readonly string[]).includes(String(value))) {
+      throw new BadRequestException({
+        code: 'CONFIG_ARTIST_STAGE_TEMPLATE_TYPE_INVALID',
+        message: 'Artist Stage Homepage Template Type is not supported.',
       });
     }
   }

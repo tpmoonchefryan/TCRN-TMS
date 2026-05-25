@@ -279,6 +279,7 @@ export class HomepageAdminRepository {
 	          name,
 	          description,
 	          artist_status_code as "artistStatusCode",
+	          homepage_template_type_code as "homepageTemplateTypeCode",
 	          is_active as "isActive",
           is_system as "isSystem",
           sort_order as "sortOrder"

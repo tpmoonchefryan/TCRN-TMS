@@ -108,6 +108,18 @@ export const CONFIG_ENTITY_CATALOG: Record<ScopedConfigEntityType, ConfigEntityC
           { label: 'Disabled', value: 'disabled' },
         ],
       },
+      {
+        key: 'homepageTemplateTypeCode',
+        label: 'Homepage Template Type',
+        kind: 'select',
+        required: true,
+        dictionaryCode: 'homepage-template-type',
+        options: [
+          { label: 'Pending Reveal', value: 'pending-reveal' },
+          { label: 'Operating', value: 'operating' },
+          { label: 'Graduated', value: 'graduated' },
+        ],
+      },
     ],
   },
   'homepage-template-asset': {

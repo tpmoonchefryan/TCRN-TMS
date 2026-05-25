@@ -147,6 +147,7 @@ export interface PublicPresenceStudioVersionSummary {
 export interface PublicPresenceStudioArtistStageSummary {
   artistStatusCode: string;
   code: string;
+  homepageTemplateTypeCode: PublicPresenceTemplateTypeCode;
   id: string;
   name: LocalizedText;
 }
@@ -405,6 +406,7 @@ function serializeArtistStage(
   stage: {
     artistStatusCode: string;
     code: string;
+    homepageTemplateTypeCode: PublicPresenceTemplateTypeCode;
     id: string;
     name: LocalizedText;
   } | null
@@ -416,6 +418,7 @@ function serializeArtistStage(
   return {
     artistStatusCode: stage.artistStatusCode,
     code: stage.code,
+    homepageTemplateTypeCode: stage.homepageTemplateTypeCode,
     id: stage.id,
     name: stage.name,
   };
@@ -928,30 +931,39 @@ export class PublicPresenceStudioService {
     }
 
     let normalizedFlow: ArtistLifecycleFlow | null = null;
+    let flowFallbackInvalid = false;
 
     try {
-	      normalizedFlow = createArtistLifecycleFlowSchema({
-	        stageCatalog: stageCatalog.map((stage) => ({
-	          code: stage.code,
-	          id: stage.id,
-	          isActive: stage.isActive,
-	        })),
-	      }).parse(flowRecord);
+      normalizedFlow = createArtistLifecycleFlowSchema({
+        stageCatalog: stageCatalog.map((stage) => ({
+          code: stage.code,
+          id: stage.id,
+          isActive: stage.isActive,
+        })),
+      }).parse(flowRecord);
     } catch {
+      flowFallbackInvalid = true;
+    }
+
+    const fallbackAllowedTemplateTypeCodes =
+      currentStage && normalizedFlow
+        ? (normalizedFlow.homepagePolicyByStage.find(
+            (policy) => policy.stageId === currentStage.id
+          )?.allowedTemplateTypeCodes ?? [])
+        : [];
+    const allowedTemplateTypeCodes = currentStage?.homepageTemplateTypeCode
+      ? [currentStage.homepageTemplateTypeCode]
+      : fallbackAllowedTemplateTypeCodes;
+
+    if (currentStage && !currentStage.homepageTemplateTypeCode && flowFallbackInvalid) {
       blockedReasons.push({
         code: 'artistLifecycleFlowInvalid',
         messageKey: 'publicPresence.policy.artistLifecycleFlowInvalid',
       });
     }
 
-	    const allowedTemplateTypeCodes =
-	      currentStage && normalizedFlow
-	        ? (normalizedFlow.homepagePolicyByStage.find((policy) => policy.stageId === currentStage.id)
-	            ?.allowedTemplateTypeCodes ?? [])
-	        : [];
-
-	    if (currentStage && normalizedFlow && allowedTemplateTypeCodes.length === 0) {
-	      blockedReasons.push({
+    if (currentStage && !flowFallbackInvalid && allowedTemplateTypeCodes.length === 0) {
+      blockedReasons.push({
         code: 'homepagePolicyMissing',
         messageKey: 'publicPresence.policy.homepagePolicyMissing',
       });

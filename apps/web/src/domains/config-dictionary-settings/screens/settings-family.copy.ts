@@ -1055,6 +1055,14 @@ const CONFIG_ENTITY_COPY: Record<SupportedUiLocale, ConfigEntityCopyMap> &
       label: '艺人阶段',
       description: '租户拥有的艺人阶段目录，用于艺人创建与生命周期流转。',
     },
+    'homepage-template-asset': {
+      label: '主页模板资产',
+      description: '可供 Public Presence Studio 在当前范围使用的主页模板资产。',
+    },
+    'homepage-component-asset': {
+      label: '主页组件资产',
+      description: '可供 Public Presence Studio 在当前范围使用的主页组件资产。',
+    },
     'communication-type': { label: '沟通方式', description: '下游客户联系流程继承的沟通方式。' },
     'reason-category': { label: '原因分类', description: '客户停用原因与运营选择使用的顶层分类。' },
     'inactivation-reason': { label: '停用原因', description: '挂在原因分类下的具体客户停用原因。' },
@@ -1082,6 +1090,14 @@ const CONFIG_ENTITY_COPY: Record<SupportedUiLocale, ConfigEntityCopyMap> &
     'artist-stage': {
       label: '藝人階段',
       description: '租戶擁有的藝人階段目錄，用於藝人建立與生命週期流轉。',
+    },
+    'homepage-template-asset': {
+      label: '主頁模板資產',
+      description: '可供 Public Presence Studio 在目前範圍使用的主頁模板資產。',
+    },
+    'homepage-component-asset': {
+      label: '主頁組件資產',
+      description: '可供 Public Presence Studio 在目前範圍使用的主頁組件資產。',
     },
     'communication-type': { label: '溝通方式', description: '下游客戶聯絡流程繼承的溝通方式。' },
     'reason-category': { label: '原因分類', description: '客戶停用原因與營運選擇使用的頂層分類。' },
@@ -1120,6 +1136,14 @@ const CONFIG_ENTITY_COPY: Record<SupportedUiLocale, ConfigEntityCopyMap> &
       label: 'アーティスト段階',
       description:
         'タレント作成とライフサイクル遷移に使う、テナント所有のアーティスト段階カタログです。',
+    },
+    'homepage-template-asset': {
+      label: 'ホームページテンプレート資産',
+      description: '現在のスコープで Public Presence Studio が利用できるテンプレート資産です。',
+    },
+    'homepage-component-asset': {
+      label: 'ホームページコンポーネント資産',
+      description: '現在のスコープで Public Presence Studio が利用できるコンポーネント資産です。',
     },
     'communication-type': {
       label: 'コミュニケーション種別',
@@ -1176,6 +1200,14 @@ const CONFIG_ENTITY_COPY: Record<SupportedUiLocale, ConfigEntityCopyMap> &
     'artist-stage': {
       label: '아티스트 단계',
       description: '탤런트 생성과 수명주기 흐름에 쓰는 테넌트 소유 아티스트 단계 카탈로그입니다.',
+    },
+    'homepage-template-asset': {
+      label: '홈페이지 템플릿 자산',
+      description: '현재 범위에서 Public Presence Studio가 사용할 수 있는 템플릿 자산입니다.',
+    },
+    'homepage-component-asset': {
+      label: '홈페이지 컴포넌트 자산',
+      description: '현재 범위에서 Public Presence Studio가 사용할 수 있는 컴포넌트 자산입니다.',
     },
     'communication-type': {
       label: '연락 방식',
@@ -1237,6 +1269,15 @@ const CONFIG_ENTITY_COPY: Record<SupportedUiLocale, ConfigEntityCopyMap> &
       description:
         'Catalogue d etapes artiste gere par le tenant pour la creation et les transitions de cycle de vie.',
     },
+    'homepage-template-asset': {
+      label: 'Asset modele de page d accueil',
+      description: 'Assets modele disponibles pour Public Presence Studio dans le perimetre actuel.',
+    },
+    'homepage-component-asset': {
+      label: 'Asset composant de page d accueil',
+      description:
+        'Assets composant disponibles pour Public Presence Studio dans le perimetre actuel.',
+    },
     'communication-type': {
       label: 'Mode de contact',
       description: 'Methode de contact utilisee par les flux client aval.',
@@ -1291,6 +1332,14 @@ const CONFIG_FIELD_COPY: Record<SupportedUiLocale, ConfigFieldCopyMap> &
         { value: 'disabled', label: '已停用' },
       ],
     },
+    homepageTemplateTypeCode: {
+      label: '主页模板类型',
+      options: [
+        { value: 'pending-reveal', label: '待揭晓' },
+        { value: 'operating', label: '运营中' },
+        { value: 'graduated', label: '已毕业' },
+      ],
+    },
     channelCategoryId: { label: '渠道类别' },
     reasonCategoryId: { label: '原因分类' },
     membershipClassId: { label: '会员类别' },
@@ -1304,7 +1353,7 @@ const CONFIG_FIELD_COPY: Record<SupportedUiLocale, ConfigFieldCopyMap> &
     expiresAt: { label: '失效时间' },
     contentUrl: { label: '托管内容 URL' },
     isRequired: { label: '需运营确认', description: '控制相关流程是否必须先确认这份协议。' },
-    contentMarkdownBase: { label: 'Content base value' },
+    contentMarkdownBase: { label: '内容基础值' },
   },
   zh_HANT: {
     color: { label: '徽標顏色' },
@@ -1314,6 +1363,14 @@ const CONFIG_FIELD_COPY: Record<SupportedUiLocale, ConfigFieldCopyMap> &
         { value: 'draft', label: '草稿' },
         { value: 'published', label: '已發布' },
         { value: 'disabled', label: '已停用' },
+      ],
+    },
+    homepageTemplateTypeCode: {
+      label: '主頁模板類型',
+      options: [
+        { value: 'pending-reveal', label: '待揭曉' },
+        { value: 'operating', label: '營運中' },
+        { value: 'graduated', label: '已畢業' },
       ],
     },
     channelCategoryId: { label: '渠道類別' },
@@ -1329,7 +1386,7 @@ const CONFIG_FIELD_COPY: Record<SupportedUiLocale, ConfigFieldCopyMap> &
     expiresAt: { label: '失效時間' },
     contentUrl: { label: '託管內容 URL' },
     isRequired: { label: '需營運確認', description: '控制相關流程是否必須先確認這份協議。' },
-    contentMarkdownBase: { label: 'Content base value' },
+    contentMarkdownBase: { label: '內容基礎值' },
   },
   ja: {
     color: { label: 'バッジ色' },
@@ -1339,6 +1396,14 @@ const CONFIG_FIELD_COPY: Record<SupportedUiLocale, ConfigFieldCopyMap> &
         { value: 'draft', label: '下書き' },
         { value: 'published', label: '公開済み' },
         { value: 'disabled', label: '無効' },
+      ],
+    },
+    homepageTemplateTypeCode: {
+      label: 'ホームページテンプレートタイプ',
+      options: [
+        { value: 'pending-reveal', label: '公開待ち' },
+        { value: 'operating', label: '運用中' },
+        { value: 'graduated', label: '卒業済み' },
       ],
     },
     channelCategoryId: { label: 'チャネルカテゴリ' },
@@ -1360,16 +1425,24 @@ const CONFIG_FIELD_COPY: Record<SupportedUiLocale, ConfigFieldCopyMap> &
       label: '続行前に必須',
       description: '関連ワークフローを続ける前にこの同意確認が必要かを制御します。',
     },
-    contentMarkdownBase: { label: 'Content base value' },
+    contentMarkdownBase: { label: 'コンテンツ基準値' },
   },
   ko: {
     color: { label: '배지 색상' },
     artistStatusCode: {
-      label: 'Artist Status',
+      label: '아티스트 상태',
       options: [
         { value: 'draft', label: '초안' },
         { value: 'published', label: '게시됨' },
         { value: 'disabled', label: '중지됨' },
+      ],
+    },
+    homepageTemplateTypeCode: {
+      label: '홈페이지 템플릿 유형',
+      options: [
+        { value: 'pending-reveal', label: '공개 대기' },
+        { value: 'operating', label: '운영 중' },
+        { value: 'graduated', label: '졸업' },
       ],
     },
     channelCategoryId: { label: '채널 카테고리' },
@@ -1391,16 +1464,24 @@ const CONFIG_FIELD_COPY: Record<SupportedUiLocale, ConfigFieldCopyMap> &
       label: '진행 전 필수',
       description: '관련 흐름을 계속하기 전에 이 동의 확인이 필요한지 제어합니다.',
     },
-    contentMarkdownBase: { label: 'Content base value' },
+    contentMarkdownBase: { label: '콘텐츠 기본값' },
   },
   fr: {
     color: { label: 'Couleur du badge' },
     artistStatusCode: {
-      label: 'Artist Status',
+      label: 'Statut artiste',
       options: [
         { value: 'draft', label: 'Brouillon' },
         { value: 'published', label: 'Publie' },
         { value: 'disabled', label: 'Desactive' },
+      ],
+    },
+    homepageTemplateTypeCode: {
+      label: 'Type de modele de page d accueil',
+      options: [
+        { value: 'pending-reveal', label: 'En attente de revelation' },
+        { value: 'operating', label: 'En exploitation' },
+        { value: 'graduated', label: 'Diplome' },
       ],
     },
     channelCategoryId: { label: 'Categorie de canal' },
@@ -1423,7 +1504,7 @@ const CONFIG_FIELD_COPY: Record<SupportedUiLocale, ConfigFieldCopyMap> &
       description:
         'Controle si ce consentement doit etre confirme avant de poursuivre le flux associe.',
     },
-    contentMarkdownBase: { label: 'Content base value' },
+    contentMarkdownBase: { label: 'Valeur de base du contenu' },
   },
 };
 

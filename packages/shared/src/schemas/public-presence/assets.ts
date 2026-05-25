@@ -81,6 +81,7 @@ export const ArtistStageRecordSchema = z
     createdAt: IsoDateTimeSchema,
     description: LocalizedTextSchema,
     artistStatusCode: ArtistStatusCodeSchema,
+    homepageTemplateTypeCode: TemplateTypeCodeSchema,
     id: UUIDSchema,
     isActive: z.boolean(),
     isSystem: z.boolean(),

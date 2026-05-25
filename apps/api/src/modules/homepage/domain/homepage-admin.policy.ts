@@ -1,7 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 import * as crypto from 'crypto';
 
-import type { LocalizedText } from '@tcrn/shared';
+import type { LocalizedText, PublicPresenceTemplateTypeCode } from '@tcrn/shared';
 import { buildSharedHomepageUrl } from '@tcrn/shared';
 
 import type {
@@ -25,6 +25,7 @@ export interface HomepageAdminTalentRecord {
 
 export interface HomepageAdminArtistStageRecord {
   artistStatusCode: 'draft' | 'published' | 'disabled';
+  homepageTemplateTypeCode: PublicPresenceTemplateTypeCode;
   id: string;
   code: string;
   name: LocalizedText;

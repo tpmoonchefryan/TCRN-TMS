@@ -695,22 +695,23 @@ model PlatformIdentityHistory {
 }
 
 model ArtistStage {
-  id                     String   @id @default(uuid()) @db.Uuid
-  ownerType              String   @default("tenant") @map("owner_type") @db.VarChar(16)
-  ownerId                String?  @map("owner_id") @db.Uuid
-  code                   String   @db.VarChar(32)
-  name                   Json     @db.JsonB
-  description            Json     @default("{\"en\":\"\",\"zh_HANS\":\"\",\"zh_HANT\":\"\",\"ja\":\"\",\"ko\":\"\",\"fr\":\"\"}") @db.JsonB
-  sortOrder              Int      @default(0) @map("sort_order")
-  isActive               Boolean  @default(true) @map("is_active")
-  isSystem               Boolean  @default(false) @map("is_system")
-  color                  String?  @db.VarChar(16)
-  artistStatusCode       String   @default("draft") @map("artist_status_code") @db.VarChar(64)
-  createdAt              DateTime @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt              DateTime @updatedAt @map("updated_at") @db.Timestamptz
-  createdBy              String?  @map("created_by") @db.Uuid
-  updatedBy              String?  @map("updated_by") @db.Uuid
-  version                Int      @default(1)
+  id                       String   @id @default(uuid()) @db.Uuid
+  ownerType                String   @default("tenant") @map("owner_type") @db.VarChar(16)
+  ownerId                  String?  @map("owner_id") @db.Uuid
+  code                     String   @db.VarChar(32)
+  name                     Json     @db.JsonB
+  description              Json     @default("{\"en\":\"\",\"zh_HANS\":\"\",\"zh_HANT\":\"\",\"ja\":\"\",\"ko\":\"\",\"fr\":\"\"}") @db.JsonB
+  sortOrder                Int      @default(0) @map("sort_order")
+  isActive                 Boolean  @default(true) @map("is_active")
+  isSystem                 Boolean  @default(false) @map("is_system")
+  color                    String?  @db.VarChar(16)
+  artistStatusCode         String   @default("draft") @map("artist_status_code") @db.VarChar(64)
+  homepageTemplateTypeCode String   @map("homepage_template_type_code") @db.VarChar(64)
+  createdAt                DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt                DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  createdBy                String?  @map("created_by") @db.Uuid
+  updatedBy                String?  @map("updated_by") @db.Uuid
+  version                  Int      @default(1)
 
   @@unique([ownerType, ownerId, code])
   @@index([ownerType, ownerId])

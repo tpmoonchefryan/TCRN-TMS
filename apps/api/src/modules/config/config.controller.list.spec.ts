@@ -73,8 +73,8 @@ describe('ConfigController artist-stage list path', () => {
           updatedBy: null,
           version: 1,
           color: '#f59e0b',
-          lifecycleStatusMapping: 'draft',
-          homepagePolicyKey: 'debut-policy',
+          artistStatusCode: 'draft',
+          homepageTemplateTypeCode: 'pending-reveal',
         },
       ])
       .mockResolvedValueOnce([]);
@@ -123,8 +123,8 @@ describe('ConfigController artist-stage list path', () => {
           code: 'PRE_DEBUT',
           isForceUse: false,
           isSystem: true,
-          lifecycleStatusMapping: 'draft',
-          homepagePolicyKey: 'debut-policy',
+          artistStatusCode: 'draft',
+          homepageTemplateTypeCode: 'pending-reveal',
         }),
       ],
       meta: {
@@ -139,6 +139,7 @@ describe('ConfigController artist-stage list path', () => {
 
     expect(listSql).toContain('is_system as "isSystem"');
     expect(listSql).toContain('false as "isForceUse"');
+    expect(listSql).toContain('homepage_template_type_code as "homepageTemplateTypeCode"');
     expect(listSql).not.toContain('is_force_use as "isForceUse"');
   });
 });
