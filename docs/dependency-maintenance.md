@@ -15,6 +15,7 @@ This project treats dependency maintenance as a staged safety workflow, not a bu
 - The runtime baseline is Node.js 24 LTS and pnpm 11.3.x. Keep root `package.json`, GitHub Actions `setup-node`, pnpm action versions, and runtime Dockerfiles aligned when this baseline changes.
 - Runtime Dockerfiles should pin the selected Node tag with a verified manifest digest. Current baseline: `node:24-alpine@sha256:2bdb65ed1dab192432bc31c95f94155ca5ad7fc1392fb7eb7526ab682fa5bf14`.
 - MinIO should use an explicit release tag with a verified manifest digest, not `latest`. Current local dependency baseline: `minio/minio:RELEASE.2025-09-07T16-13-09Z@sha256:14cea493d9a34af32f524e538b8346cf79f3321eff8e708c1e2960462bd8936e`.
+- Redis should use a Redis 8 Alpine tag with a verified manifest digest. Current local dependency baseline: `redis:8.6.3-alpine@sha256:d146f83b1e0f02fc27c26a50cee39338c736674c5959db84363e6ae3cd9e02d2`.
 - pnpm build-script approvals live in `pnpm-workspace.yaml` under `allowBuilds`. Add new approvals only after reviewing the package and keep telemetry-only scripts denied.
 - If pnpm supply-chain policy rejects a very recent release during install, prefer a cooled latest-compatible version or record a hold instead of disabling the policy for normal verification.
 - For audit evidence, use npmjs explicitly:

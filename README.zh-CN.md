@@ -289,7 +289,7 @@ Loki 集成支持跨所有日志的全文搜索。
 | **契约 / Schema** | Zod            | 4.x    |
 |                   | Prisma ORM     | 6.14.0 |
 | **数据库**        | PostgreSQL     | 16     |
-|                   | Redis          | 7      |
+|                   | Redis          | 8.6.3  |
 | **存储**          | MinIO          | Latest |
 | **消息**          | NATS JetStream | 2      |
 | **可观测性**      | OpenTelemetry  | -      |
@@ -319,7 +319,7 @@ Loki 集成支持跨所有日志的全文搜索。
 - pnpm 9.15.4+
 - Docker 和 Docker Compose
 - PostgreSQL 16+（或使用 Docker）
-- Redis 7+（或使用 Docker）
+- Redis 8+（或使用 Docker）
 
 ### 开发环境配置
 

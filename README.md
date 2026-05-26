@@ -289,7 +289,7 @@ End-to-end type-safe validation with Zod remains active in the shared/backend la
 | **Contracts / Schema** | Zod            | 4.x     |
 |                        | Prisma ORM     | 6.14.0  |
 | **Database**           | PostgreSQL     | 16      |
-|                        | Redis          | 7       |
+|                        | Redis          | 8.6.3   |
 | **Storage**            | MinIO          | Latest  |
 | **Messaging**          | NATS JetStream | 2       |
 | **Observability**      | OpenTelemetry  | -       |
@@ -319,7 +319,7 @@ Current runtime status for the infrastructure above:
 - pnpm 9.15.4+
 - Docker & Docker Compose
 - PostgreSQL 16+ (or use Docker)
-- Redis 7+ (or use Docker)
+- Redis 8+ (or use Docker)
 
 ### Development Setup
 

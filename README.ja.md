@@ -289,7 +289,7 @@ Zod による型安全 validation は、現在も shared/backend 層で有効で
 | **契約 / Schema**      | Zod            | 4.x        |
 |                        | Prisma ORM     | 6.14.0     |
 | **データベース**       | PostgreSQL     | 16         |
-|                        | Redis          | 7          |
+|                        | Redis          | 8.6.3      |
 | **ストレージ**         | MinIO          | Latest     |
 | **メッセージング**     | NATS JetStream | 2          |
 | **オブザーバビリティ** | OpenTelemetry  | -          |
@@ -319,7 +319,7 @@ Zod による型安全 validation は、現在も shared/backend 層で有効で
 - pnpm 9.15.4+
 - Docker & Docker Compose
 - PostgreSQL 16+（またはDockerを使用）
-- Redis 7+（またはDockerを使用）
+- Redis 8+（またはDockerを使用）
 
 ### 開発環境セットアップ
 
