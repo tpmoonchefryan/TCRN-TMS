@@ -26,6 +26,7 @@ export interface UserInfo {
   passwordExpiresAt: string | null;
   tenant: {
     id: string;
+    code?: string;
     name: string;
     tier: string;
     schemaName: string;
@@ -45,6 +46,12 @@ export interface LoginResult {
   user?: UserInfo;
   sessionToken?: string;
   reason?: string;
+}
+
+export interface CompleteLoginOptions {
+  authMethod?: 'password' | 'password_reset' | 'recovery_code' | 'totp' | 'sso';
+  enforcePreSessionPosture?: boolean;
+  requirePermissionSnapshot?: boolean;
 }
 
 /**
@@ -69,6 +76,7 @@ interface RawSystemUser {
 
 interface EnrichedSystemUser extends RawSystemUser {
   tenant_id: string;
+  tenant_code: string;
   tenant_name: string;
   tenant_tier: string;
   tenant_schema: string;
@@ -134,6 +142,7 @@ export class AuthService {
       user = {
         ...users[0],
         tenant_id: tenant.id,
+        tenant_code: tenant.code,
         tenant_name: tenant.name,
         tenant_tier: tenant.tier,
         tenant_schema: tenant.schemaName,
@@ -259,13 +268,75 @@ export class AuthService {
       force_reset: boolean;
       password_changed_at: Date | null;
       tenant_id: string;
+      tenant_code?: string;
       tenant_name: string;
       tenant_tier: string;
     },
     tenantSchema: string,
     ipAddress: string,
-    userAgent?: string
+    userAgent?: string,
+    options: CompleteLoginOptions = {}
   ): Promise<LoginResult> {
+    if (options.enforcePreSessionPosture) {
+      const lockStatus = await this.sessionService.isUserLocked(user.id, tenantSchema);
+      if (lockStatus.isLocked) {
+        await this.sessionService.logSecurityEvent(
+          tenantSchema,
+          'LOGIN_FAILED_LOCKED',
+          user.id,
+          { username: user.username, authMethod: options.authMethod || 'password' },
+          ipAddress,
+          userAgent
+        );
+        throw new UnauthorizedException({
+          code: ErrorCodes.AUTH_ACCOUNT_LOCKED,
+          message: 'Account is locked. Please try again later.',
+          details: { lockedUntil: lockStatus.lockedUntil },
+        });
+      }
+
+      if (user.force_reset || this.passwordService.isPasswordExpired(user.password_changed_at)) {
+        await this.sessionService.logSecurityEvent(
+          tenantSchema,
+          'SSO_LOGIN_BLOCKED_PASSWORD_RESET_REQUIRED',
+          user.id,
+          {
+            username: user.username,
+            reason: user.force_reset ? 'ADMIN_REQUIRED' : 'PASSWORD_EXPIRED',
+          },
+          ipAddress,
+          userAgent
+        );
+        throw new UnauthorizedException({
+          code: ErrorCodes.AUTH_PASSWORD_RESET_REQUIRED,
+          message: 'Password reset is required before SSO can issue a TCRN session',
+        });
+      }
+
+      if (user.is_totp_enabled) {
+        const { token, expiresIn } = this.tokenService.generateTotpSessionToken({
+          sub: user.id,
+          tid: user.tenant_id,
+          tsc: tenantSchema,
+        });
+
+        await this.sessionService.logSecurityEvent(
+          tenantSchema,
+          'SSO_LOGIN_TOTP_REQUIRED',
+          user.id,
+          { username: user.username },
+          ipAddress,
+          userAgent
+        );
+
+        return {
+          type: 'totp_required',
+          sessionToken: token,
+          expiresIn,
+        };
+      }
+    }
+
     // Track successful login
     await this.sessionService.trackLoginAttempt(user.id, tenantSchema, true, ipAddress);
 
@@ -273,8 +344,13 @@ export class AuthService {
     try {
       await this.permissionSnapshotService.refreshUserSnapshots(tenantSchema, user.id);
     } catch (error) {
-      // Log but don't fail login if permission refresh fails
       this.logger.warn(`Failed to refresh permission snapshots for user ${user.id}`, error);
+      if (options.requirePermissionSnapshot) {
+        throw new ForbiddenException({
+          code: ErrorCodes.PERM_ACCESS_DENIED,
+          message: 'Permission snapshot refresh failed; session was not issued',
+        });
+      }
     }
 
     // Generate access token
@@ -295,7 +371,7 @@ export class AuthService {
       tenantSchema,
       'LOGIN_SUCCESS',
       user.id,
-      { username: user.username },
+      { username: user.username, authMethod: options.authMethod || 'password' },
       ipAddress,
       userAgent
     );
@@ -324,6 +400,7 @@ export class AuthService {
         passwordExpiresAt,
         tenant: {
           id: user.tenant_id,
+          ...(user.tenant_code ? { code: user.tenant_code } : {}),
           name: user.tenant_name,
           tier: user.tenant_tier,
           schemaName: tenantSchema,
@@ -420,6 +497,7 @@ export class AuthService {
       {
         ...user,
         tenant_id: tenant.id,
+        tenant_code: tenant.code,
         tenant_name: tenant.name,
         tenant_tier: tenant.tier,
       },
@@ -564,6 +642,7 @@ export class AuthService {
       {
         ...users[0],
         tenant_id: tenant.id,
+        tenant_code: tenant.code,
         tenant_name: tenant.name,
         tenant_tier: tenant.tier,
       },
@@ -632,6 +711,7 @@ export class AuthService {
       {
         ...users[0],
         tenant_id: tenant.id,
+        tenant_code: tenant.code,
         tenant_name: tenant.name,
         tenant_tier: tenant.tier,
       },

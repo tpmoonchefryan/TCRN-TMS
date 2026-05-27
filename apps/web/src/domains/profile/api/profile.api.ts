@@ -64,6 +64,43 @@ export interface UserSessionRecord {
   isCurrent: boolean;
 }
 
+export interface SsoAccountLinkRecord {
+  id: string;
+  providerId: string;
+  providerCode: string;
+  providerIssuer: string;
+  email: string | null;
+  displayName: string | null;
+  linkedAt: string;
+  lastLoginAt: string | null;
+  revokedAt: string | null;
+}
+
+export interface SsoAccountLinkProviderRecord {
+  id: string;
+  code: string;
+  displayName: Record<string, string>;
+  providerType: 'oidc';
+  ownerScope: 'tenant_product' | 'ac_platform' | 'external_tool_readiness';
+  enabled: boolean;
+}
+
+export interface StartSsoAccountLinkResult {
+  authorizationUrl: string;
+  stateExpiresIn: number;
+  provider: SsoAccountLinkProviderRecord;
+}
+
+export interface ExternalToolSsoReadinessRecord {
+  toolCode: string;
+  status: 'blocked' | 'ready' | 'not_applicable';
+  requiredByPhase: string | null;
+  providerId: string | null;
+  failClosed: boolean;
+  evidence: Record<string, unknown>;
+  updatedAt: string;
+}
+
 function buildJsonRequestInit(method: 'POST' | 'PATCH', payload?: unknown): RequestInit {
   return {
     method,
@@ -136,6 +173,44 @@ export async function revokeUserSession(request: RequestFn, sessionId: string) {
   return request<{ message: string }>(`/api/v1/users/me/sessions/${sessionId}`, {
     method: 'DELETE',
   });
+}
+
+export async function listSsoAccountLinks(request: RequestFn) {
+  return request<SsoAccountLinkRecord[]>('/api/v1/auth/sso/account-links');
+}
+
+export async function listSsoAccountLinkProviders(request: RequestFn) {
+  return request<SsoAccountLinkProviderRecord[]>('/api/v1/auth/sso/account-link-providers');
+}
+
+export async function startSsoAccountLink(
+  request: RequestFn,
+  payload: { providerCode: string; next?: string | null }
+) {
+  return request<StartSsoAccountLinkResult>(
+    '/api/v1/auth/sso/account-links/start',
+    buildJsonRequestInit('POST', payload)
+  );
+}
+
+export async function completeSsoAccountLink(request: RequestFn, result: string) {
+  return request<SsoAccountLinkRecord>(
+    '/api/v1/auth/sso/account-links/complete',
+    buildJsonRequestInit('POST', { result })
+  );
+}
+
+export async function revokeSsoAccountLink(request: RequestFn, linkId: string) {
+  return request<{ revoked: boolean; revokedSessionCount: number }>(
+    `/api/v1/auth/sso/account-links/${linkId}`,
+    {
+    method: 'DELETE',
+    }
+  );
+}
+
+export async function listExternalToolSsoReadiness(request: RequestFn) {
+  return request<ExternalToolSsoReadinessRecord[]>('/api/v1/auth/sso/external-tools/readiness');
 }
 
 export async function uploadCurrentAvatar(request: RequestFn, file: File) {

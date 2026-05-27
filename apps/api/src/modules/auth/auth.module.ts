@@ -11,6 +11,7 @@ import { AuthController, UserController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { PasswordService } from './password.service';
 import { SessionService } from './session.service';
+import { SsoService } from './sso.service';
 import { TokenService } from './token.service';
 import { TotpService } from './totp.service';
 
@@ -39,8 +40,16 @@ import { TotpService } from './totp.service';
     TotpService,
     TokenService,
     SessionService,
+    SsoService,
     AuthRateLimiterGuard,
   ],
-  exports: [AuthService, PasswordService, TotpService, TokenService, AuthRateLimiterGuard],
+  exports: [
+    AuthService,
+    PasswordService,
+    TotpService,
+    TokenService,
+    SsoService,
+    AuthRateLimiterGuard,
+  ],
 })
 export class AuthModule {}

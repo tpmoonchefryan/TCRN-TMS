@@ -2,7 +2,15 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { BROWSER_PUBLIC_CONSUMER_CODE, BROWSER_PUBLIC_CONSUMER_HEADER } from '@tcrn/shared';
 
-import { getCurrentUser, login, logout, refreshAccessToken } from './auth.api';
+import {
+  exchangeSsoResult,
+  getCurrentUser,
+  listSsoProviders,
+  login,
+  logout,
+  refreshAccessToken,
+  startSsoLogin,
+} from './auth.api';
 
 function buildFetchResponse(data: unknown) {
   return {
@@ -141,6 +149,78 @@ describe('auth api', () => {
     const headers = new Headers(fetchSpy.mock.calls[0]?.[1]?.headers);
     expect(headers.get(BROWSER_PUBLIC_CONSUMER_HEADER)).toBe(BROWSER_PUBLIC_CONSUMER_CODE);
     expect(refreshed.accessToken).toBe('refreshed');
+  });
+
+  it('supports SSO provider discovery, start, and opaque result exchange', async () => {
+    const fetchSpy = vi
+      .fn()
+      .mockResolvedValueOnce(
+        buildFetchResponse([
+          {
+            id: 'provider-1',
+            code: 'mock-sso',
+            displayName: { en: 'Mock SSO' },
+            providerType: 'oidc',
+            ownerScope: 'tenant_product',
+            enabled: true,
+          },
+        ])
+      )
+      .mockResolvedValueOnce(
+        buildFetchResponse({
+          authorizationUrl: 'https://idp.example.test/start',
+          stateExpiresIn: 300,
+          provider: {
+            id: 'provider-1',
+            code: 'mock-sso',
+            displayName: { en: 'Mock SSO' },
+            providerType: 'oidc',
+            ownerScope: 'tenant_product',
+            enabled: true,
+          },
+        })
+      )
+      .mockResolvedValueOnce(
+        buildFetchResponse({
+          accessToken: 'sso-access',
+          tokenType: 'Bearer',
+          expiresIn: 900,
+          user: {
+            id: 'user-1',
+            username: 'alice',
+            email: 'alice@example.com',
+            displayName: 'Alice',
+            avatarUrl: null,
+            preferredLanguage: 'en',
+            totpEnabled: false,
+            forceReset: false,
+            passwordExpiresAt: null,
+            tenant: {
+              id: 'tenant-1',
+              code: 'UAT',
+              name: 'Tenant',
+              tier: 'standard',
+              schemaName: 'tenant_demo',
+            },
+          },
+        })
+      );
+    vi.stubGlobal('fetch', fetchSpy);
+
+    await expect(listSsoProviders('UAT')).resolves.toHaveLength(1);
+    await expect(
+      startSsoLogin({ tenantCode: 'UAT', providerCode: 'mock-sso', next: '/tenant/tenant-1' })
+    ).resolves.toMatchObject({ authorizationUrl: 'https://idp.example.test/start' });
+    await expect(exchangeSsoResult('ssox_opaque')).resolves.toMatchObject({
+      accessToken: 'sso-access',
+      user: { tenant: { code: 'UAT' } },
+    });
+
+    expect(fetchSpy.mock.calls[0]?.[0]).toBe('/api/v1/auth/sso/providers?tenantCode=UAT');
+    expect(fetchSpy.mock.calls[1]?.[0]).toBe('/api/v1/auth/sso/start');
+    expect(fetchSpy.mock.calls[2]?.[0]).toBe('/api/v1/auth/sso/exchange');
+    expect(String(fetchSpy.mock.calls[2]?.[1]?.body)).not.toContain('access_token');
+    expect(String(fetchSpy.mock.calls[2]?.[1]?.body)).not.toContain('id_token');
   });
 
   it('sends the public consumer code when reading the current user profile', async () => {

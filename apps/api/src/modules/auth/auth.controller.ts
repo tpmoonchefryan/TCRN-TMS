@@ -10,6 +10,7 @@ import {
   HttpCode,
   HttpStatus,
   Logger,
+  Optional,
   Param,
   Patch,
   Post,
@@ -35,7 +36,7 @@ import { Request, Response } from 'express';
 import { prisma } from '@tcrn/database';
 import { ErrorCodes } from '@tcrn/shared';
 
-import { Public } from '../../common/decorators';
+import { Public, RequirePermissions } from '../../common/decorators';
 import { AuthenticatedUser, CurrentUser } from '../../common/decorators/current-user.decorator';
 import { AuthRateLimiterGuard } from '../../common/guards/auth-rate-limiter.guard';
 import { success } from '../../common/response.util';
@@ -48,14 +49,21 @@ import {
   LoginDto,
   RecoveryCodeVerifyDto,
   RefreshTokenDto,
+  SsoAccountLinkCompleteDto,
   RegenerateRecoveryCodesDto,
+  SsoExchangeDto,
+  StartSsoAccountLinkDto,
+  StartSsoLoginDto,
   TotpDisableDto,
   TotpEnableDto,
   TotpVerifyDto,
+  UpdateExternalToolSsoReadinessDto,
   UpdateUserProfileDto,
+  UpsertSsoProviderDto,
 } from './dto/auth.dto';
 import { PasswordService } from './password.service';
 import { SessionService } from './session.service';
+import { SsoService, type SsoAuditContext } from './sso.service';
 import { TokenService } from './token.service';
 import { TotpService } from './totp.service';
 
@@ -106,6 +114,11 @@ const AUTH_TOTP_ALREADY_ENABLED_SCHEMA = createAuthErrorEnvelopeSchema(
 
 const REFRESH_TOKEN_COOKIE_PATH = '/api/v1';
 
+function readHeader(req: Request, name: string) {
+  const value = req.get(name);
+  return value && value.trim() ? value.trim() : null;
+}
+
 @ApiTags('Auth')
 @Controller('auth')
 @UseGuards(AuthRateLimiterGuard)
@@ -118,7 +131,8 @@ export class AuthController {
     private readonly totpService: TotpService,
     private readonly tokenService: TokenService,
     private readonly sessionService: SessionService,
-    private readonly emailService: EmailService
+    private readonly emailService: EmailService,
+    @Optional() private readonly ssoService?: SsoService
   ) {}
 
   private setRefreshTokenCookie(res: Response, refreshToken: string, expiresAt: Date) {
@@ -141,6 +155,332 @@ export class AuthController {
     }
 
     this.setRefreshTokenCookie(res, result.refreshToken, result.refreshTokenExpiresAt);
+  }
+
+  private requireSsoService() {
+    if (!this.ssoService) {
+      throw new Error('SSO service is not available');
+    }
+    return this.ssoService;
+  }
+
+  @Public()
+  @Get('sso/providers')
+  @ApiOperation({
+    summary: 'List available TMS SSO providers',
+    description:
+      'Returns enabled tenant/platform SSO providers without client secrets or protocol tokens.',
+  })
+  async listSsoProviders(@Query('tenantCode') tenantCode: string) {
+    return success(await this.requireSsoService().listProviders(tenantCode));
+  }
+
+  @Public()
+  @Post('sso/start')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Start TMS SSO login',
+    description:
+      'Creates a short-lived Redis SSO login state and returns the provider authorization URL.',
+  })
+  @ApiBody({ type: StartSsoLoginDto })
+  async startSsoLogin(@Body() dto: StartSsoLoginDto) {
+    return success(await this.requireSsoService().startLogin(dto));
+  }
+
+  @Public()
+  @Get('sso/callback/:providerCode')
+  @ApiOperation({
+    summary: 'TMS SSO callback',
+    description:
+      'Consumes provider callback data and redirects with a one-time opaque result code only.',
+  })
+  async handleSsoCallback(
+    @Param('providerCode') providerCode: string,
+    @Query() query: Record<string, unknown>,
+    @Res() res: Response
+  ) {
+    const redirectUrl = await this.requireSsoService().handleCallback(providerCode, query);
+    return res.redirect(302, redirectUrl);
+  }
+
+  @Public()
+  @Post('sso/exchange')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Exchange SSO result for TCRN session',
+    description:
+      'Exchanges a one-time SSO result code for the normal TCRN access token and HTTP-only refresh cookie.',
+  })
+  @ApiBody({ type: SsoExchangeDto })
+  async exchangeSsoResult(
+    @Body() dto: SsoExchangeDto,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response
+  ) {
+    const ipAddress = req.ip || req.socket.remoteAddress || '';
+    const userAgent = req.get('user-agent');
+    const result = await this.requireSsoService().exchangeResult(dto.result, ipAddress, userAgent);
+
+    if (result.type === 'success') {
+      this.applyRefreshTokenCookie(res, result);
+
+      return success({
+        accessToken: result.accessToken,
+        tokenType: result.tokenType,
+        expiresIn: result.expiresIn,
+        user: result.user,
+      });
+    }
+
+    if (result.type === 'totp_required') {
+      return success({
+        totpRequired: true,
+        sessionToken: result.sessionToken,
+        expiresIn: result.expiresIn,
+      });
+    }
+
+    if (result.type === 'password_reset_required') {
+      return success({
+        passwordResetRequired: true,
+        sessionToken: result.sessionToken,
+        expiresIn: result.expiresIn,
+        reason: result.reason,
+      });
+    }
+
+    return result;
+  }
+
+  @Get('sso/account-links')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'List current user SSO account links' })
+  async listSsoAccountLinks(@CurrentUser() user: AuthenticatedUser) {
+    return success(await this.requireSsoService().listAccountLinks(user.tenantSchema, user.id));
+  }
+
+  @Get('sso/account-link-providers')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'List SSO providers available for current-user account linking' })
+  async listSsoAccountLinkProviders(@CurrentUser() user: AuthenticatedUser) {
+    return success(await this.requireSsoService().listAccountLinkProviders(user.tenantId));
+  }
+
+  @Post('sso/account-links/start')
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Start current-user SSO account-link flow',
+    description:
+      'Creates server-side SSO state for linking an external subject to the current TCRN account.',
+  })
+  @ApiBody({ type: StartSsoAccountLinkDto })
+  async startSsoAccountLink(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: StartSsoAccountLinkDto
+  ) {
+    return success(
+      await this.requireSsoService().startAccountLink({
+        actorTenantId: user.tenantId,
+        userId: user.id,
+        providerCode: dto.providerCode,
+        next: dto.next,
+      })
+    );
+  }
+
+  @Post('sso/account-links/complete')
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Complete current-user SSO account-link flow',
+    description:
+      'Consumes a one-time opaque account-link result and links only the current TCRN user.',
+  })
+  @ApiBody({ type: SsoAccountLinkCompleteDto })
+  async completeSsoAccountLink(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: SsoAccountLinkCompleteDto,
+    @Req() req: Request
+  ) {
+    return success(
+      await this.requireSsoService().completeAccountLink(
+        user.tenantSchema,
+        user.id,
+        user.tenantId,
+        dto.result,
+        this.buildSsoAuditContext(req)
+      )
+    );
+  }
+
+  @Delete('sso/account-links/:linkId')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Revoke current user SSO account link' })
+  async revokeSsoAccountLink(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('linkId') linkId: string,
+    @Req() req: Request
+  ) {
+    return success(
+      await this.requireSsoService().revokeAccountLink(
+        user.tenantSchema,
+        user.id,
+        linkId,
+        this.buildSsoAuditContext(req)
+      )
+    );
+  }
+
+  @Get('sso/admin/providers')
+  @ApiBearerAuth()
+  @RequirePermissions({ resource: 'tenant.manage', action: 'read' })
+  @ApiOperation({
+    summary: 'List managed SSO provider configurations',
+    description:
+      'Returns tenant/AC-owned provider configuration with secret references redacted to configured status.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Managed SSO provider configurations with client secret references redacted.',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: true },
+        data: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              id: { type: 'string', format: 'uuid' },
+              tenantId: { type: 'string', format: 'uuid' },
+              code: { type: 'string', example: 'google-workspace' },
+              displayName: {
+                type: 'object',
+                additionalProperties: { type: 'string' },
+              },
+              providerType: { type: 'string', enum: ['oidc'] },
+              ownerScope: {
+                type: 'string',
+                enum: ['tenant_product', 'ac_platform', 'external_tool_readiness'],
+              },
+              issuerUrl: { type: 'string', nullable: true },
+              authorizationUrl: { type: 'string', nullable: true },
+              tokenUrl: { type: 'string', nullable: true },
+              userinfoUrl: { type: 'string', nullable: true },
+              jwksUrl: { type: 'string', nullable: true },
+              clientId: { type: 'string', nullable: true },
+              clientSecretConfigured: { type: 'boolean', example: true },
+              redirectUri: { type: 'string', nullable: true },
+              scopes: { type: 'array', items: { type: 'string' } },
+              claimMappingPolicy: { type: 'object' },
+              enabled: { type: 'boolean' },
+            },
+          },
+        },
+      },
+    },
+  })
+  async listManagedSsoProviders(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query('ownerScope') ownerScope?: string
+  ) {
+    return success(await this.requireSsoService().listManagedProviders(user.tenantId, ownerScope));
+  }
+
+  @Patch('sso/admin/providers/:providerCode')
+  @ApiBearerAuth()
+  @RequirePermissions({ resource: 'tenant.manage', action: 'update' })
+  @ApiOperation({
+    summary: 'Create or update a managed SSO provider',
+    description:
+      'Stores only provider metadata and env: secret references. Raw client secrets are never accepted.',
+  })
+  @ApiBody({ type: UpsertSsoProviderDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Managed SSO provider configuration with secret reference redacted.',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: true },
+        data: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', format: 'uuid' },
+            tenantId: { type: 'string', format: 'uuid' },
+            code: { type: 'string', example: 'google-workspace' },
+            providerType: { type: 'string', enum: ['oidc'] },
+            ownerScope: {
+              type: 'string',
+              enum: ['tenant_product', 'ac_platform', 'external_tool_readiness'],
+            },
+            clientSecretConfigured: { type: 'boolean', example: true },
+            enabled: { type: 'boolean' },
+          },
+        },
+      },
+    },
+  })
+  async upsertManagedSsoProvider(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('providerCode') providerCode: string,
+    @Body() dto: UpsertSsoProviderDto,
+    @Req() req: Request
+  ) {
+    return success(
+      await this.requireSsoService().upsertManagedProvider(
+        user.tenantId,
+        user.id,
+        {
+          ...dto,
+          code: providerCode,
+        },
+        this.buildSsoAuditContext(req)
+      )
+    );
+  }
+
+  @Get('sso/external-tools/readiness')
+  @ApiBearerAuth()
+  @RequirePermissions({ resource: 'tenant.manage', action: 'read' })
+  @ApiOperation({ summary: 'List external-tool SSO readiness states' })
+  async listExternalToolSsoReadiness(@CurrentUser() user: AuthenticatedUser) {
+    return success(await this.requireSsoService().listExternalToolReadiness(user.tenantId));
+  }
+
+  @Patch('sso/external-tools/readiness/:toolCode')
+  @ApiBearerAuth()
+  @RequirePermissions({ resource: 'tenant.manage', action: 'update' })
+  @ApiOperation({ summary: 'Update external-tool SSO readiness state' })
+  @ApiBody({ type: UpdateExternalToolSsoReadinessDto })
+  async updateExternalToolSsoReadiness(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('toolCode') toolCode: string,
+    @Body() dto: UpdateExternalToolSsoReadinessDto,
+    @Req() req: Request
+  ) {
+    return success(
+      await this.requireSsoService().upsertExternalToolReadiness(
+        user.tenantId,
+        user.id,
+        {
+          ...dto,
+          toolCode,
+        },
+        this.buildSsoAuditContext(req)
+      )
+    );
+  }
+
+  private buildSsoAuditContext(req: Request): SsoAuditContext {
+    return {
+      requestId: readHeader(req, 'x-request-id') ?? readHeader(req, 'x-correlation-id'),
+      traceId: readHeader(req, 'traceparent'),
+      ipAddress: req.ip || req.socket.remoteAddress || null,
+      userAgent: req.get('user-agent') ?? null,
+    };
   }
 
   /**
@@ -886,55 +1226,20 @@ This only logs out the current device. Use /logout-all to logout all devices.`,
   }
   /**
    * GET /api/v1/auth/oauth/authorize
-   * OAuth2 Implicit Flow authorize endpoint for Swagger UI
-   * Automatically issues access token if user has valid refresh token cookie
+   * Retired OAuth2 implicit flow endpoint.
    */
   @Public()
   @Get('oauth/authorize')
-  @ApiOperation({ summary: 'OAuth2 Authorize Endpoint (Internal)' })
-  async authorize(
-    @Query('response_type') responseType: string,
-    @Query('client_id') clientId: string,
-    @Query('redirect_uri') redirectUri: string,
-    @Query('state') state: string,
-    @Req() req: Request,
-    @Res() res: Response
-  ) {
-    // Only support implicit flow for Swagger
-    // Swagger sends response_type=token
-
-    const refreshToken = req.cookies?.refresh_token;
-
-    if (!refreshToken) {
-      // If not logged in, we cannot auto-authorize
-      // In a full OAuth provider we would show a login page here
-      // But for this internal tool, we just return 401 or redirect with error
-      throw new UnauthorizedException('Please log in to the main application first');
-    }
-
-    // Get tenant context
-    // Middleware should have parsed the tenant from cookie/header if possible,
-    // otherwise fallback to template or error out in service
-    const tenantSchema = req.tenantContext?.schemaName || 'tenant_template';
-
-    try {
-      const result = await this.authService.refreshAccessToken(refreshToken, tenantSchema);
-
-      // Implicit flow returns token in fragment
-      const params = new URLSearchParams();
-      params.append('access_token', result.accessToken);
-      params.append('token_type', 'Bearer');
-      params.append('expires_in', result.expiresIn.toString());
-      if (state) {
-        params.append('state', state);
-      }
-
-      const redirectUrl = `${redirectUri}#${params.toString()}`;
-      return res.redirect(redirectUrl);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      throw new UnauthorizedException('Failed to authorize: ' + message);
-    }
+  @ApiOperation({
+    summary: 'OAuth2 implicit authorize endpoint retired',
+    description:
+      'Implicit URL-token issuance is disabled. Use password login or SSO exchange to create a TCRN session.',
+  })
+  async authorize() {
+    throw new BadRequestException({
+      code: ErrorCodes.AUTH_TOKEN_INVALID,
+      message: 'OAuth2 implicit authorize flow is retired; URL token issuance is disabled',
+    });
   }
 }
 

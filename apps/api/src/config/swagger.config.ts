@@ -109,18 +109,6 @@ export function buildSwaggerConfig(
       },
       'JWT-auth'
     )
-    .addOAuth2(
-      {
-        type: 'oauth2',
-        flows: {
-          implicit: {
-            authorizationUrl: 'http://localhost:4000/api/v1/auth/oauth/authorize',
-            scopes: {},
-          },
-        },
-      },
-      'OAuth2'
-    )
     .addServer('http://localhost:4000', 'Development Server')
     .addServer('https://api.staging.tcrn.dev', 'Staging Server')
     .addServer('https://api.tcrn.dev', 'Production Server');

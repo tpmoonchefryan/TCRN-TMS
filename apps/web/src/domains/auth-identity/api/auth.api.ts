@@ -10,6 +10,7 @@ import { readApiData, withBrowserPublicConsumerHeaders } from '@/platform/http/a
 
 export interface AuthTenantInfo {
   id: string;
+  code?: string;
   name: string;
   tier: string;
   schemaName: string;
@@ -39,6 +40,21 @@ export type LoginFlowResult =
   | { kind: 'authenticated'; data: AuthenticatedSessionResult }
   | { kind: 'totp_required'; sessionToken: string; expiresIn: number }
   | { kind: 'password_reset_required'; sessionToken: string; expiresIn: number; reason: string };
+
+export interface SsoProviderDiscovery {
+  id: string;
+  code: string;
+  displayName: Record<string, string>;
+  providerType: 'oidc';
+  ownerScope: 'tenant_product' | 'ac_platform' | 'external_tool_readiness';
+  enabled: boolean;
+}
+
+export interface StartSsoLoginResult {
+  authorizationUrl: string;
+  stateExpiresIn: number;
+  provider: SsoProviderDiscovery;
+}
 
 export interface CurrentUserProfile {
   id: string;
@@ -134,6 +150,49 @@ export async function login(input: LoginInput): Promise<LoginFlowResult> {
 
   const data = await readApiData<Record<string, unknown>>(response);
   return mapLoginFlow(data);
+}
+
+export async function listSsoProviders(tenantCode: string): Promise<SsoProviderDiscovery[]> {
+  const params = new URLSearchParams({ tenantCode });
+  const response = await fetch(`/api/v1/auth/sso/providers?${params.toString()}`, {
+    method: 'GET',
+    credentials: 'include',
+    headers: withBrowserPublicConsumerHeaders(),
+  });
+
+  return readApiData<SsoProviderDiscovery[]>(response);
+}
+
+export async function startSsoLogin(input: {
+  tenantCode: string;
+  providerCode: string;
+  next?: string | null;
+}): Promise<StartSsoLoginResult> {
+  const response = await fetch('/api/v1/auth/sso/start', {
+    method: 'POST',
+    credentials: 'include',
+    headers: withBrowserPublicConsumerHeaders({
+      'Content-Type': 'application/json',
+    }),
+    body: JSON.stringify(input),
+  });
+
+  return readApiData<StartSsoLoginResult>(response);
+}
+
+export async function exchangeSsoResult(result: string): Promise<AuthenticatedSessionResult> {
+  const response = await fetch('/api/v1/auth/sso/exchange', {
+    method: 'POST',
+    credentials: 'include',
+    headers: withBrowserPublicConsumerHeaders({
+      'Content-Type': 'application/json',
+    }),
+    body: JSON.stringify({ result }),
+  });
+
+  return normalizeAuthenticatedSessionResult(
+    await readApiData<AuthenticatedSessionResult>(response)
+  );
 }
 
 export async function verifyTotp(

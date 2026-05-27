@@ -1,6 +1,6 @@
 'use client';
 
-import { Building2 } from 'lucide-react';
+import { Building2, CircleCheck, Pencil, Plus, Power, Save, SearchCheck, X } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { startTransition, useEffect, useState } from 'react';
@@ -9,6 +9,8 @@ import {
   buildTenantSettingsDraft,
   buildTenantSettingsUpdatePayload,
   isTenantSettingsDraftDirty,
+  listManagedSsoProviders,
+  type ManagedSsoProvider,
   readTenantSenderDomains,
   readTenantSettings,
   readTenantTurnstileSettings,
@@ -19,6 +21,8 @@ import {
   updateTenantSenderDomains,
   updateTenantSettings,
   updateTenantTurnstileSettings,
+  upsertManagedSsoProvider,
+  type UpsertManagedSsoProviderInput,
 } from '@/domains/config-dictionary-settings/api/settings.api';
 import {
   type DictionaryTypeSummary,
@@ -63,7 +67,25 @@ interface AsyncPanelState<T> {
 }
 
 type TenantSettingsSection = 'details' | 'config-entities' | 'settings' | 'dictionary';
-type TenantSettingsCategory = 'defaults' | 'email' | 'captcha' | 'lifecycle-flow';
+type TenantSettingsCategory = 'defaults' | 'email' | 'captcha' | 'lifecycle-flow' | 'sso';
+type TenantSsoSecretMode = 'keep' | 'replace' | 'clear';
+
+interface TenantSsoProviderDraft {
+  code: string;
+  displayNameEn: string;
+  displayNameZhHans: string;
+  issuerUrl: string;
+  authorizationUrl: string;
+  tokenUrl: string;
+  userinfoUrl: string;
+  jwksUrl: string;
+  clientId: string;
+  clientSecretRef: string;
+  redirectUri: string;
+  scopes: string;
+  isEnabled: boolean;
+  secretMode: TenantSsoSecretMode;
+}
 
 const TENANT_SETTINGS_SECTIONS: readonly TenantSettingsSection[] = [
   'details',
@@ -152,6 +174,101 @@ function SectionEntryLink({
   );
 }
 
+function buildEmptyTenantSsoDraft(): TenantSsoProviderDraft {
+  return {
+    code: '',
+    displayNameEn: '',
+    displayNameZhHans: '',
+    issuerUrl: '',
+    authorizationUrl: '',
+    tokenUrl: '',
+    userinfoUrl: '',
+    jwksUrl: '',
+    clientId: '',
+    clientSecretRef: '',
+    redirectUri: '',
+    scopes: 'openid profile email',
+    isEnabled: true,
+    secretMode: 'replace',
+  };
+}
+
+function buildTenantSsoDraftFromProvider(provider: ManagedSsoProvider): TenantSsoProviderDraft {
+  return {
+    code: provider.code,
+    displayNameEn: provider.displayName.en || provider.code,
+    displayNameZhHans: provider.displayName.zh_HANS || provider.displayName.en || provider.code,
+    issuerUrl: provider.issuerUrl ?? '',
+    authorizationUrl: provider.authorizationUrl ?? '',
+    tokenUrl: provider.tokenUrl ?? '',
+    userinfoUrl: provider.userinfoUrl ?? '',
+    jwksUrl: provider.jwksUrl ?? '',
+    clientId: provider.clientId ?? '',
+    clientSecretRef: '',
+    redirectUri: provider.redirectUri ?? '',
+    scopes: provider.scopes.join(' '),
+    isEnabled: provider.enabled,
+    secretMode: 'keep',
+  };
+}
+
+function normalizeTenantSsoCode(value: string) {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9-]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+function splitTenantSsoScopes(value: string) {
+  return value
+    .split(/[\s,]+/)
+    .map((scope) => scope.trim())
+    .filter(Boolean);
+}
+
+function buildTenantSsoPayload(draft: TenantSsoProviderDraft): UpsertManagedSsoProviderInput {
+  const code = normalizeTenantSsoCode(draft.code);
+  const displayNameEn = draft.displayNameEn.trim() || code;
+  const displayNameZhHans = draft.displayNameZhHans.trim() || displayNameEn;
+  const payload: UpsertManagedSsoProviderInput = {
+    code,
+    displayName: {
+      en: displayNameEn,
+      zh_HANS: displayNameZhHans,
+      zh_HANT: displayNameZhHans,
+      ja: displayNameEn,
+      ko: displayNameEn,
+      fr: displayNameEn,
+    },
+    providerType: 'oidc',
+    ownerScope: 'tenant_product',
+    issuerUrl: draft.issuerUrl.trim() || null,
+    authorizationUrl: draft.authorizationUrl.trim() || null,
+    tokenUrl: draft.tokenUrl.trim() || null,
+    userinfoUrl: draft.userinfoUrl.trim() || null,
+    jwksUrl: draft.jwksUrl.trim() || null,
+    clientId: draft.clientId.trim() || null,
+    redirectUri: draft.redirectUri.trim() || null,
+    scopes: splitTenantSsoScopes(draft.scopes),
+    claimMappingPolicy: {
+      subject: 'sub',
+      email: 'email',
+      displayName: 'name',
+      emailVerified: 'email_verified',
+    },
+    isEnabled: draft.isEnabled,
+  };
+
+  if (draft.secretMode === 'replace') {
+    payload.clientSecretRef = draft.clientSecretRef.trim() || null;
+  } else if (draft.secretMode === 'clear') {
+    payload.clientSecretRef = null;
+  }
+
+  return payload;
+}
+
 export function TenantSettingsScreen({
   tenantId,
 }: Readonly<{
@@ -216,6 +333,19 @@ export function TenantSettingsScreen({
   const [turnstileSaveError, setTurnstileSaveError] = useState<string | null>(null);
   const [turnstileSaveSuccess, setTurnstileSaveSuccess] = useState<string | null>(null);
   const [isTurnstileSaving, setIsTurnstileSaving] = useState(false);
+  const [ssoProviderPanel, setSsoProviderPanel] = useState<AsyncPanelState<ManagedSsoProvider[]>>({
+    data: null,
+    error: null,
+    loading: false,
+  });
+  const [ssoEditorMode, setSsoEditorMode] = useState<'create' | 'edit' | null>(null);
+  const [ssoDraft, setSsoDraft] = useState<TenantSsoProviderDraft>(() =>
+    buildEmptyTenantSsoDraft()
+  );
+  const [ssoSaveError, setSsoSaveError] = useState<string | null>(null);
+  const [ssoSaveSuccess, setSsoSaveSuccess] = useState<string | null>(null);
+  const [ssoDiscoveryStatus, setSsoDiscoveryStatus] = useState<string | null>(null);
+  const [isSsoSaving, setIsSsoSaving] = useState(false);
 
   useEffect(() => {
     setActiveSectionId((current) => (current === urlSection ? current : urlSection));
@@ -496,9 +626,229 @@ export function TenantSettingsScreen({
     }
   }
 
+  async function loadTenantSsoProviders() {
+    if (ssoProviderPanel.loading) {
+      return;
+    }
+
+    setSsoProviderPanel((current) => ({ ...current, loading: true, error: null }));
+    setSsoSaveError(null);
+    setSsoSaveSuccess(null);
+    setSsoDiscoveryStatus(null);
+
+    try {
+      const response = await listManagedSsoProviders(request, 'tenant_product');
+      setSsoProviderPanel({
+        data: response,
+        error: null,
+        loading: false,
+      });
+    } catch (reason) {
+      setSsoProviderPanel({
+        data: null,
+        error: getErrorMessage(
+          reason,
+          text({
+            en: 'Failed to load SSO providers.',
+            zh_HANS: '加载 SSO 提供方失败。',
+            zh_HANT: '載入 SSO 提供者失敗。',
+            ja: 'SSO プロバイダーを読み込めません。',
+            ko: 'SSO 공급자를 불러오지 못했습니다.',
+            fr: 'Impossible de charger les fournisseurs SSO.',
+          })
+        ),
+        loading: false,
+      });
+    }
+  }
+
+  function openCreateSsoProviderEditor() {
+    setSsoEditorMode('create');
+    setSsoDraft(buildEmptyTenantSsoDraft());
+    setSsoSaveError(null);
+    setSsoSaveSuccess(null);
+    setSsoDiscoveryStatus(null);
+  }
+
+  function openEditSsoProviderEditor(provider: ManagedSsoProvider) {
+    setSsoEditorMode('edit');
+    setSsoDraft(buildTenantSsoDraftFromProvider(provider));
+    setSsoSaveError(null);
+    setSsoSaveSuccess(null);
+    setSsoDiscoveryStatus(null);
+  }
+
+  function closeSsoProviderEditor() {
+    setSsoEditorMode(null);
+    setSsoDraft(buildEmptyTenantSsoDraft());
+    setSsoSaveError(null);
+    setSsoDiscoveryStatus(null);
+  }
+
+  function validateSsoDraft(draftToValidate: TenantSsoProviderDraft) {
+    const code = normalizeTenantSsoCode(draftToValidate.code);
+    if (!code) {
+      return text({
+        en: 'Provider code is required.',
+        zh_HANS: '需要填写提供方代码。',
+        zh_HANT: '需要填寫提供者代碼。',
+        ja: 'プロバイダーコードは必須です。',
+        ko: '공급자 코드가 필요합니다.',
+        fr: 'Le code du fournisseur est requis.',
+      });
+    }
+
+    if (!draftToValidate.displayNameEn.trim()) {
+      return text({
+        en: 'English display name is required.',
+        zh_HANS: '需要填写英文显示名称。',
+        zh_HANT: '需要填寫英文顯示名稱。',
+        ja: '英語の表示名は必須です。',
+        ko: '영문 표시 이름이 필요합니다.',
+        fr: 'Le nom anglais est requis.',
+      });
+    }
+
+    if (!draftToValidate.issuerUrl.trim()) {
+      return text({
+        en: 'OIDC issuer URL is required.',
+        zh_HANS: '需要填写 OIDC Issuer URL。',
+        zh_HANT: '需要填寫 OIDC Issuer URL。',
+        ja: 'OIDC Issuer URL は必須です。',
+        ko: 'OIDC Issuer URL이 필요합니다.',
+        fr: "L'URL issuer OIDC est requise.",
+      });
+    }
+
+    if (!draftToValidate.clientId.trim()) {
+      return text({
+        en: 'Client ID is required.',
+        zh_HANS: '需要填写 Client ID。',
+        zh_HANT: '需要填寫 Client ID。',
+        ja: 'Client ID は必須です。',
+        ko: 'Client ID가 필요합니다.',
+        fr: 'Le Client ID est requis.',
+      });
+    }
+
+    if (
+      draftToValidate.secretMode === 'replace' &&
+      draftToValidate.clientSecretRef.trim() &&
+      !draftToValidate.clientSecretRef.trim().startsWith('env:')
+    ) {
+      return text({
+        en: 'Client Secret must be stored as an env: reference.',
+        zh_HANS: 'Client Secret 必须使用 env: 引用保存。',
+        zh_HANT: 'Client Secret 必須使用 env: 參照儲存。',
+        ja: 'Client Secret は env: 参照で保存する必要があります。',
+        ko: 'Client Secret은 env: 참조로 저장해야 합니다.',
+        fr: 'Le Client Secret doit être enregistré sous forme de référence env:.',
+      });
+    }
+
+    return null;
+  }
+
+  function handleSsoDiscoveryCheck() {
+    const validationError = validateSsoDraft(ssoDraft);
+    if (validationError) {
+      setSsoDiscoveryStatus(null);
+      setSsoSaveError(validationError);
+      return;
+    }
+
+    setSsoSaveError(null);
+    setSsoDiscoveryStatus(
+      text({
+        en: 'Discovery fields are ready to save. The server keeps runtime protocol validation authoritative.',
+        zh_HANS: '发现配置字段已可保存；运行时协议校验仍由服务端作为权威。',
+        zh_HANT: '發現設定欄位已可儲存；執行時協定校驗仍由服務端作為權威。',
+        ja: 'ディスカバリー項目は保存可能です。実行時のプロトコル検証はサーバーが権威を持ちます。',
+        ko: '디스커버리 필드를 저장할 수 있습니다. 런타임 프로토콜 검증은 서버가 권한을 유지합니다.',
+        fr: 'Les champs de découverte sont prêts à être enregistrés. La validation protocolaire reste côté serveur.',
+      })
+    );
+  }
+
+  async function saveSsoProviderDraft(nextDraft = ssoDraft) {
+    if (isSsoSaving) {
+      return;
+    }
+
+    const validationError = validateSsoDraft(nextDraft);
+    if (validationError) {
+      setSsoSaveError(validationError);
+      setSsoSaveSuccess(null);
+      return;
+    }
+
+    setIsSsoSaving(true);
+    setSsoSaveError(null);
+    setSsoSaveSuccess(null);
+
+    try {
+      const providerCode = normalizeTenantSsoCode(nextDraft.code);
+      const savedProvider = await upsertManagedSsoProvider(
+        request,
+        providerCode,
+        buildTenantSsoPayload(nextDraft)
+      );
+      setSsoProviderPanel((current) => {
+        const currentData = current.data ?? [];
+        const nextData = currentData.some((provider) => provider.id === savedProvider.id)
+          ? currentData.map((provider) =>
+              provider.id === savedProvider.id ? savedProvider : provider
+            )
+          : [...currentData, savedProvider];
+
+        return { data: nextData, error: null, loading: false };
+      });
+      setSsoDraft(buildTenantSsoDraftFromProvider(savedProvider));
+      setSsoEditorMode(null);
+      setSsoSaveSuccess(
+        text({
+          en: 'Tenant SSO provider saved.',
+          zh_HANS: '租户 SSO 提供方已保存。',
+          zh_HANT: '租戶 SSO 提供者已儲存。',
+          ja: 'テナント SSO プロバイダーを保存しました。',
+          ko: '테넌트 SSO 공급자가 저장되었습니다.',
+          fr: 'Le fournisseur SSO tenant a été enregistré.',
+        })
+      );
+    } catch (reason) {
+      setSsoSaveError(
+        getErrorMessage(
+          reason,
+          text({
+            en: 'Failed to save tenant SSO provider.',
+            zh_HANS: '保存租户 SSO 提供方失败。',
+            zh_HANT: '儲存租戶 SSO 提供者失敗。',
+            ja: 'テナント SSO プロバイダーを保存できません。',
+            ko: '테넌트 SSO 공급자를 저장하지 못했습니다.',
+            fr: "Impossible d'enregistrer le fournisseur SSO tenant.",
+          })
+        )
+      );
+    } finally {
+      setIsSsoSaving(false);
+    }
+  }
+
+  async function toggleSsoProvider(provider: ManagedSsoProvider) {
+    const draftFromProvider = {
+      ...buildTenantSsoDraftFromProvider(provider),
+      isEnabled: !provider.enabled,
+      secretMode: 'keep' as const,
+    };
+    await saveSsoProviderDraft(draftFromProvider);
+  }
+
   function handleSettingsCategoryChange(categoryId: string) {
     const nextCategoryId =
-      categoryId === 'email' || categoryId === 'captcha' || categoryId === 'lifecycle-flow'
+      categoryId === 'email' ||
+      categoryId === 'captcha' ||
+      categoryId === 'lifecycle-flow' ||
+      categoryId === 'sso'
         ? categoryId
         : 'defaults';
     setActiveSettingsCategory(nextCategoryId);
@@ -509,6 +859,10 @@ export function TenantSettingsScreen({
 
     if (nextCategoryId === 'captcha' && !turnstilePanel.data && !turnstilePanel.loading) {
       void loadTenantTurnstileSettings();
+    }
+
+    if (nextCategoryId === 'sso' && !ssoProviderPanel.data && !ssoProviderPanel.loading) {
+      void loadTenantSsoProviders();
     }
   }
 
@@ -804,11 +1158,20 @@ export function TenantSettingsScreen({
                           '管理租户级 Cloudflare Turnstile 密钥与公开验证码就绪状态。',
                           '公開 CAPTCHA 用のテナント Cloudflare Turnstile キーと準備状況を管理します。'
                         )
-                      : text(
-                          'Review tenant defaults before opening the edit workflow.',
-                          '先查看租户默认值，再进入编辑流程。',
-                          '編集ワークフローを開く前にテナント既定値を確認します。'
-                        )
+                      : activeSettingsCategory === 'sso'
+                        ? text({
+                            en: 'Manage tenant product SSO provider metadata without exposing secrets.',
+                            zh_HANS: '管理租户产品 SSO 提供方元数据，不暴露密钥。',
+                            zh_HANT: '管理租戶產品 SSO 提供者中繼資料，不暴露密鑰。',
+                            ja: 'シークレットを表示せずにテナント製品 SSO プロバイダーのメタデータを管理します。',
+                            ko: '비밀 값을 노출하지 않고 테넌트 제품 SSO 공급자 메타데이터를 관리합니다.',
+                            fr: 'Gérez les métadonnées SSO produit du tenant sans exposer de secrets.',
+                          })
+                        : text(
+                            'Review tenant defaults before opening the edit workflow.',
+                            '先查看租户默认值，再进入编辑流程。',
+                            '編集ワークフローを開く前にテナント既定値を確認します。'
+                          )
                 }
                 actions={
                   activeSettingsCategory === 'defaults' ? (
@@ -838,6 +1201,17 @@ export function TenantSettingsScreen({
                       }),
                     },
                     { id: 'email', label: text('Email', '邮件', 'メール') },
+                    {
+                      id: 'sso',
+                      label: text({
+                        en: 'Single Sign-On',
+                        zh_HANS: '单点登录',
+                        zh_HANT: '單點登入',
+                        ja: 'シングルサインオン',
+                        ko: '싱글 사인온',
+                        fr: 'SSO',
+                      }),
+                    },
                     { id: 'captcha', label: text('CAPTCHA', '验证码', 'CAPTCHA') },
                   ]}
                   activeCategoryId={activeSettingsCategory}
@@ -894,6 +1268,523 @@ export function TenantSettingsScreen({
                         text={text}
                       />
                     )
+                  ) : null}
+
+                  {activeSettingsCategory === 'sso' ? (
+                    <div className="space-y-5">
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div className="space-y-1">
+                          <p className="text-sm font-semibold text-slate-950">
+                            {text({
+                              en: 'Tenant inbound TMS SSO',
+                              zh_HANS: '租户入站 TMS SSO',
+                              zh_HANT: '租戶入站 TMS SSO',
+                              ja: 'テナント受信 TMS SSO',
+                              ko: '테넌트 인바운드 TMS SSO',
+                              fr: 'SSO TMS entrant du tenant',
+                            })}
+                          </p>
+                          <p className="text-sm leading-6 text-slate-600">
+                            {text({
+                              en: 'Only tenant_product providers are editable here; platform and external-tool SSO stay on AC surfaces.',
+                              zh_HANS:
+                                '此处只能编辑 tenant_product 提供方；平台与外部工具 SSO 保留在 AC 界面。',
+                              zh_HANT:
+                                '此處只能編輯 tenant_product 提供者；平台與外部工具 SSO 保留在 AC 介面。',
+                              ja: 'ここで編集できるのは tenant_product プロバイダーのみです。プラットフォームと外部ツール SSO は AC 画面に残ります。',
+                              ko: '여기서는 tenant_product 공급자만 편집합니다. 플랫폼 및 외부 도구 SSO는 AC 화면에 남습니다.',
+                              fr: 'Seuls les fournisseurs tenant_product sont modifiables ici; le SSO plateforme et outils externes reste côté AC.',
+                            })}
+                          </p>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => void loadTenantSsoProviders()}
+                            disabled={ssoProviderPanel.loading}
+                            className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            <SearchCheck className="h-4 w-4" aria-hidden="true" />
+                            {text('Refresh', '刷新', '更新')}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={openCreateSsoProviderEditor}
+                            className="inline-flex items-center gap-2 rounded-xl bg-slate-950 px-3 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
+                          >
+                            <Plus className="h-4 w-4" aria-hidden="true" />
+                            {text('Add provider', '新增提供方', 'プロバイダーを追加')}
+                          </button>
+                        </div>
+                      </div>
+
+                      {ssoSaveError ? (
+                        <p role="alert" className="text-sm font-medium text-red-600">
+                          {ssoSaveError}
+                        </p>
+                      ) : null}
+                      {ssoSaveSuccess ? (
+                        <p className="text-sm font-medium text-emerald-700">{ssoSaveSuccess}</p>
+                      ) : null}
+
+                      {ssoEditorMode ? (
+                        <div className="rounded-2xl border border-slate-200 bg-white/90 px-4 py-4 shadow-sm">
+                          <div className="flex flex-wrap items-start justify-between gap-3">
+                            <div>
+                              <p className="text-sm font-semibold text-slate-950">
+                                {ssoEditorMode === 'create'
+                                  ? text({
+                                      en: 'Create tenant SSO provider',
+                                      zh_HANS: '创建租户 SSO 提供方',
+                                      zh_HANT: '建立租戶 SSO 提供者',
+                                      ja: 'テナント SSO プロバイダーを作成',
+                                      ko: '테넌트 SSO 공급자 만들기',
+                                      fr: 'Créer un fournisseur SSO tenant',
+                                    })
+                                  : text({
+                                      en: 'Edit tenant SSO provider',
+                                      zh_HANS: '编辑租户 SSO 提供方',
+                                      zh_HANT: '編輯租戶 SSO 提供者',
+                                      ja: 'テナント SSO プロバイダーを編集',
+                                      ko: '테넌트 SSO 공급자 편집',
+                                      fr: 'Modifier le fournisseur SSO tenant',
+                                    })}
+                              </p>
+                              <p className="mt-1 text-sm leading-6 text-slate-600">
+                                {text({
+                                  en: 'Secrets are saved only as env: references and are never displayed after save.',
+                                  zh_HANS: '密钥只会以 env: 引用保存，保存后不会回显。',
+                                  zh_HANT: '密鑰只會以 env: 參照儲存，儲存後不會回顯。',
+                                  ja: 'シークレットは env: 参照としてのみ保存され、保存後は表示されません。',
+                                  ko: '비밀 값은 env: 참조로만 저장되며 저장 후 표시되지 않습니다.',
+                                  fr: 'Les secrets sont enregistrés uniquement comme références env: et jamais réaffichés.',
+                                })}
+                              </p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={closeSsoProviderEditor}
+                              className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                            >
+                              <X className="h-4 w-4" aria-hidden="true" />
+                              {text('Cancel', '取消', 'キャンセル')}
+                            </button>
+                          </div>
+
+                          <div className="mt-4 grid gap-4 lg:grid-cols-2">
+                            <label className="space-y-2">
+                              <span className="text-sm font-semibold text-slate-900">
+                                {text('Provider code', '提供方代码', 'プロバイダーコード')}
+                              </span>
+                              <input
+                                aria-label={text(
+                                  'Provider code',
+                                  '提供方代码',
+                                  'プロバイダーコード'
+                                )}
+                                value={ssoDraft.code}
+                                disabled={ssoEditorMode === 'edit'}
+                                onChange={(event) =>
+                                  setSsoDraft({ ...ssoDraft, code: event.target.value })
+                                }
+                                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 font-mono text-sm text-slate-900 shadow-sm transition focus:border-indigo-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/40 disabled:bg-slate-100 disabled:text-slate-500"
+                                placeholder="google-workspace"
+                              />
+                            </label>
+                            <label className="space-y-2">
+                              <span className="text-sm font-semibold text-slate-900">
+                                {text('English display name', '英文显示名称', '英語表示名')}
+                              </span>
+                              <input
+                                aria-label={text(
+                                  'English display name',
+                                  '英文显示名称',
+                                  '英語表示名'
+                                )}
+                                value={ssoDraft.displayNameEn}
+                                onChange={(event) =>
+                                  setSsoDraft({ ...ssoDraft, displayNameEn: event.target.value })
+                                }
+                                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm transition focus:border-indigo-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/40"
+                                placeholder="Google Workspace"
+                              />
+                            </label>
+                            <label className="space-y-2">
+                              <span className="text-sm font-semibold text-slate-900">
+                                {text(
+                                  'Simplified Chinese display name',
+                                  '简体中文显示名称',
+                                  '簡体字中国語表示名'
+                                )}
+                              </span>
+                              <input
+                                aria-label={text(
+                                  'Simplified Chinese display name',
+                                  '简体中文显示名称',
+                                  '簡体字中国語表示名'
+                                )}
+                                value={ssoDraft.displayNameZhHans}
+                                onChange={(event) =>
+                                  setSsoDraft({
+                                    ...ssoDraft,
+                                    displayNameZhHans: event.target.value,
+                                  })
+                                }
+                                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm transition focus:border-indigo-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/40"
+                                placeholder="Google Workspace"
+                              />
+                            </label>
+                            <label className="space-y-2">
+                              <span className="text-sm font-semibold text-slate-900">
+                                {text('Enabled', '启用', '有効')}
+                              </span>
+                              <select
+                                aria-label={text('Enabled', '启用', '有効')}
+                                value={ssoDraft.isEnabled ? 'enabled' : 'disabled'}
+                                onChange={(event) =>
+                                  setSsoDraft({
+                                    ...ssoDraft,
+                                    isEnabled: event.target.value === 'enabled',
+                                  })
+                                }
+                                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm transition focus:border-indigo-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/40"
+                              >
+                                <option value="enabled">{text('Enabled', '已启用', '有効')}</option>
+                                <option value="disabled">
+                                  {text('Disabled', '已停用', '無効')}
+                                </option>
+                              </select>
+                            </label>
+                            <label className="space-y-2 lg:col-span-2">
+                              <span className="text-sm font-semibold text-slate-900">
+                                {text('OIDC issuer URL', 'OIDC Issuer URL', 'OIDC Issuer URL')}
+                              </span>
+                              <input
+                                aria-label={text(
+                                  'OIDC issuer URL',
+                                  'OIDC Issuer URL',
+                                  'OIDC Issuer URL'
+                                )}
+                                value={ssoDraft.issuerUrl}
+                                onChange={(event) =>
+                                  setSsoDraft({ ...ssoDraft, issuerUrl: event.target.value })
+                                }
+                                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 font-mono text-sm text-slate-900 shadow-sm transition focus:border-indigo-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/40"
+                                placeholder="https://idp.example.com"
+                              />
+                            </label>
+                            <label className="space-y-2">
+                              <span className="text-sm font-semibold text-slate-900">
+                                {text('Client ID', 'Client ID', 'Client ID')}
+                              </span>
+                              <input
+                                aria-label={text('Client ID', 'Client ID', 'Client ID')}
+                                value={ssoDraft.clientId}
+                                onChange={(event) =>
+                                  setSsoDraft({ ...ssoDraft, clientId: event.target.value })
+                                }
+                                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 font-mono text-sm text-slate-900 shadow-sm transition focus:border-indigo-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/40"
+                                placeholder="tcrn-web"
+                              />
+                            </label>
+                            <label className="space-y-2">
+                              <span className="text-sm font-semibold text-slate-900">
+                                {text('Redirect URI', 'Redirect URI', 'Redirect URI')}
+                              </span>
+                              <input
+                                aria-label={text('Redirect URI', 'Redirect URI', 'Redirect URI')}
+                                value={ssoDraft.redirectUri}
+                                onChange={(event) =>
+                                  setSsoDraft({ ...ssoDraft, redirectUri: event.target.value })
+                                }
+                                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 font-mono text-sm text-slate-900 shadow-sm transition focus:border-indigo-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/40"
+                                placeholder="https://app.example.com/api/v1/auth/sso/callback/google-workspace"
+                              />
+                            </label>
+                            <label className="space-y-2">
+                              <span className="text-sm font-semibold text-slate-900">
+                                {text('Scopes', 'Scopes', 'Scopes')}
+                              </span>
+                              <input
+                                aria-label={text('Scopes', 'Scopes', 'Scopes')}
+                                value={ssoDraft.scopes}
+                                onChange={(event) =>
+                                  setSsoDraft({ ...ssoDraft, scopes: event.target.value })
+                                }
+                                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 font-mono text-sm text-slate-900 shadow-sm transition focus:border-indigo-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/40"
+                              />
+                            </label>
+                            <label className="space-y-2">
+                              <span className="text-sm font-semibold text-slate-900">
+                                {text(
+                                  'Client Secret env reference',
+                                  'Client Secret 环境变量引用',
+                                  'Client Secret env 参照'
+                                )}
+                              </span>
+                              <input
+                                aria-label={text(
+                                  'Client Secret env reference',
+                                  'Client Secret 环境变量引用',
+                                  'Client Secret env 参照'
+                                )}
+                                value={ssoDraft.clientSecretRef}
+                                onChange={(event) =>
+                                  setSsoDraft({
+                                    ...ssoDraft,
+                                    clientSecretRef: event.target.value,
+                                    secretMode: event.target.value.trim()
+                                      ? 'replace'
+                                      : ssoDraft.secretMode,
+                                  })
+                                }
+                                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 font-mono text-sm text-slate-900 shadow-sm transition focus:border-indigo-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/40"
+                                placeholder="env:TCRN_GOOGLE_SSO_CLIENT_SECRET"
+                              />
+                            </label>
+                          </div>
+
+                          <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setSsoDraft({
+                                    ...ssoDraft,
+                                    clientSecretRef: '',
+                                    secretMode: 'keep',
+                                  })
+                                }
+                                className={`rounded-full px-3 py-1.5 text-sm font-medium ${
+                                  ssoDraft.secretMode === 'keep'
+                                    ? 'bg-slate-950 text-white'
+                                    : 'border border-slate-300 bg-white text-slate-700'
+                                }`}
+                              >
+                                {text('Keep secret', '保留密钥', 'シークレットを保持')}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setSsoDraft({ ...ssoDraft, secretMode: 'replace' })
+                                }
+                                className={`rounded-full px-3 py-1.5 text-sm font-medium ${
+                                  ssoDraft.secretMode === 'replace'
+                                    ? 'bg-slate-950 text-white'
+                                    : 'border border-slate-300 bg-white text-slate-700'
+                                }`}
+                              >
+                                {text('Replace secret', '替换密钥', 'シークレットを置換')}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setSsoDraft({
+                                    ...ssoDraft,
+                                    clientSecretRef: '',
+                                    secretMode: 'clear',
+                                  })
+                                }
+                                className={`rounded-full px-3 py-1.5 text-sm font-medium ${
+                                  ssoDraft.secretMode === 'clear'
+                                    ? 'bg-red-700 text-white'
+                                    : 'border border-red-200 bg-white text-red-700'
+                                }`}
+                              >
+                                {text('Clear secret', '清除密钥', 'シークレットを削除')}
+                              </button>
+                            </div>
+                            <p className="mt-2 text-xs leading-5 text-slate-500">
+                              {text({
+                                en: 'Keep preserves the existing redacted secret; replace accepts only env: references; clear removes the provider secret reference.',
+                                zh_HANS:
+                                  '保留会继续使用现有隐藏密钥；替换只接受 env: 引用；清除会移除提供方密钥引用。',
+                                zh_HANT:
+                                  '保留會繼續使用現有隱藏密鑰；替換只接受 env: 參照；清除會移除提供者密鑰參照。',
+                                ja: '保持は既存の非表示シークレットを維持します。置換は env: 参照のみ受け付け、削除は参照を消去します。',
+                                ko: '유지는 기존 숨김 비밀 값을 보존합니다. 교체는 env: 참조만 허용하며 삭제는 공급자 비밀 참조를 제거합니다.',
+                                fr: 'Conserver garde le secret masqué; remplacer accepte seulement les références env:; effacer supprime la référence.',
+                              })}
+                            </p>
+                          </div>
+
+                          {ssoDiscoveryStatus ? (
+                            <p className="mt-3 text-sm font-medium text-emerald-700">
+                              {ssoDiscoveryStatus}
+                            </p>
+                          ) : null}
+
+                          <div className="mt-4 flex flex-wrap justify-end gap-2">
+                            <button
+                              type="button"
+                              onClick={handleSsoDiscoveryCheck}
+                              className="inline-flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-700 transition hover:bg-emerald-100"
+                            >
+                              <CircleCheck className="h-4 w-4" aria-hidden="true" />
+                              {text('Check discovery', '检查发现配置', 'ディスカバリーを確認')}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => void saveSsoProviderDraft()}
+                              disabled={isSsoSaving}
+                              className="inline-flex items-center gap-2 rounded-xl bg-slate-950 px-3 py-2 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              <Save className="h-4 w-4" aria-hidden="true" />
+                              {isSsoSaving
+                                ? text('Saving provider', '正在保存提供方', '保存中')
+                                : text('Save provider', '保存提供方', 'プロバイダーを保存')}
+                            </button>
+                          </div>
+                        </div>
+                      ) : null}
+
+                      {ssoProviderPanel.loading ? (
+                        <p className="text-sm font-medium text-slate-500">
+                          {text({
+                            en: 'Loading SSO providers…',
+                            zh_HANS: '正在加载 SSO 提供方…',
+                            zh_HANT: '正在載入 SSO 提供者…',
+                            ja: 'SSO プロバイダーを読み込み中…',
+                            ko: 'SSO 공급자를 불러오는 중…',
+                            fr: 'Chargement des fournisseurs SSO…',
+                          })}
+                        </p>
+                      ) : ssoProviderPanel.error ? (
+                        <p className="text-sm font-medium text-red-600">
+                          {ssoProviderPanel.error}
+                        </p>
+                      ) : ssoProviderPanel.data && ssoProviderPanel.data.length > 0 ? (
+                        <div className="grid gap-4 lg:grid-cols-2">
+                          {ssoProviderPanel.data.map((provider) => {
+                            const displayName =
+                              provider.displayName[locale] ||
+                              provider.displayName.en ||
+                              provider.code;
+
+                            return (
+                              <div
+                                key={provider.id}
+                                className="min-w-0 rounded-2xl border border-slate-200 bg-white/80 px-4 py-4 shadow-sm"
+                              >
+                                <div className="flex flex-wrap items-center justify-between gap-3">
+                                  <div>
+                                    <p className="text-sm font-semibold text-slate-950">
+                                      {displayName}
+                                    </p>
+                                    <p className="mt-1 text-xs font-semibold tracking-[0.16em] text-slate-500 uppercase">
+                                      {provider.code}
+                                    </p>
+                                  </div>
+                                  <span
+                                    className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
+                                      provider.enabled
+                                        ? 'bg-emerald-50 text-emerald-700'
+                                        : 'bg-slate-100 text-slate-600'
+                                    }`}
+                                  >
+                                    {provider.enabled
+                                      ? text('Enabled', '已启用', '有効')
+                                      : text('Disabled', '已停用', '無効')}
+                                  </span>
+                                </div>
+                                <div className="mt-4 flex flex-wrap gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => openEditSsoProviderEditor(provider)}
+                                    className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                                  >
+                                    <Pencil className="h-4 w-4" aria-hidden="true" />
+                                    {text('Edit provider', '编辑提供方', 'プロバイダーを編集')}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => void toggleSsoProvider(provider)}
+                                    disabled={isSsoSaving}
+                                    className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                  >
+                                    <Power className="h-4 w-4" aria-hidden="true" />
+                                    {provider.enabled
+                                      ? text('Disable provider', '停用提供方', 'プロバイダーを無効化')
+                                      : text('Enable provider', '启用提供方', 'プロバイダーを有効化')}
+                                  </button>
+                                </div>
+                                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                                  <FieldRow
+                                    label={text('Provider Type', '提供方类型', 'プロバイダー種別')}
+                                    value={provider.providerType.toUpperCase()}
+                                    hint={text({
+                                      en: 'Login SSO metadata is separate from integration OAuth adapters.',
+                                      zh_HANS: '登录 SSO 元数据与集成 OAuth 适配器相互独立。',
+                                      zh_HANT: '登入 SSO 中繼資料與整合 OAuth 配接器相互獨立。',
+                                      ja: 'ログイン SSO メタデータは統合 OAuth アダプターとは分離されています。',
+                                      ko: '로그인 SSO 메타데이터는 통합 OAuth 어댑터와 분리됩니다.',
+                                      fr: 'Les métadonnées SSO de connexion sont séparées des adaptateurs OAuth d’intégration.',
+                                    })}
+                                  />
+                                  <FieldRow
+                                    label={text('Owner Scope', '归属范围', '所有スコープ')}
+                                    value={provider.ownerScope}
+                                    hint={text({
+                                      en: 'Tenant settings can manage tenant_product providers only.',
+                                      zh_HANS: '租户设置只能管理 tenant_product 提供方。',
+                                      zh_HANT: '租戶設定只能管理 tenant_product 提供者。',
+                                      ja: 'テナント設定で管理できるのは tenant_product プロバイダーだけです。',
+                                      ko: '테넌트 설정은 tenant_product 공급자만 관리할 수 있습니다.',
+                                      fr: 'Les paramètres tenant ne gèrent que les fournisseurs tenant_product.',
+                                    })}
+                                  />
+                                  <FieldRow
+                                    label={text('Issuer', 'Issuer', 'Issuer')}
+                                    value={provider.issuerUrl || common.notConfigured}
+                                  />
+                                  <FieldRow
+                                    label={text('Client ID', 'Client ID', 'Client ID')}
+                                    value={provider.clientId || common.notConfigured}
+                                  />
+                                  <FieldRow
+                                    label={text('Client Secret', 'Client Secret', 'Client Secret')}
+                                    value={
+                                      provider.clientSecretConfigured
+                                        ? text(
+                                            'Configured (redacted)',
+                                            '已配置（已隐藏）',
+                                            '設定済み（非表示）'
+                                          )
+                                        : common.notConfigured
+                                    }
+                                  />
+                                  <FieldRow
+                                    label={text('Redirect URI', 'Redirect URI', 'Redirect URI')}
+                                    value={provider.redirectUri || common.notConfigured}
+                                  />
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <SectionPlaceholder
+                          title={text({
+                            en: 'No tenant SSO provider configured',
+                            zh_HANS: '尚未配置租户 SSO 提供方',
+                            zh_HANT: '尚未設定租戶 SSO 提供者',
+                            ja: 'テナント SSO プロバイダーは未設定です',
+                            ko: '테넌트 SSO 공급자가 구성되지 않았습니다',
+                            fr: 'Aucun fournisseur SSO tenant configuré',
+                          })}
+                          description={text({
+                            en: 'Create an OIDC provider here to enable tenant inbound TMS SSO. Secrets stay redacted.',
+                            zh_HANS:
+                              '在此创建 OIDC 提供方以启用租户入站 TMS SSO。密钥始终隐藏。',
+                            zh_HANT:
+                              '在此建立 OIDC 提供者以啟用租戶入站 TMS SSO。密鑰始終隱藏。',
+                            ja: 'ここで OIDC プロバイダーを作成してテナント受信 TMS SSO を有効にします。シークレットは常に非表示です。',
+                            ko: '여기서 OIDC 공급자를 만들어 테넌트 인바운드 TMS SSO를 활성화합니다. 비밀 값은 항상 숨겨집니다.',
+                            fr: 'Créez ici un fournisseur OIDC pour activer le SSO TMS entrant du tenant. Les secrets restent masqués.',
+                          })}
+                        />
+                      )}
+                    </div>
                   ) : null}
 
                   {activeSettingsCategory === 'captcha' ? (

@@ -1,6 +1,17 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsNotEmpty, IsOptional, IsString, Length, Matches, MinLength } from 'class-validator';
+import {
+  IsArray,
+  IsBoolean,
+  IsIn,
+  IsNotEmpty,
+  IsObject,
+  IsOptional,
+  IsString,
+  Length,
+  Matches,
+  MinLength,
+} from 'class-validator';
 
 import { SUPPORTED_UI_LOCALES, type SupportedUiLocale } from '@tcrn/shared';
 
@@ -39,6 +50,254 @@ export class LoginDto {
   })
   @IsOptional()
   rememberMe?: boolean;
+}
+
+/**
+ * Public SSO provider discovery/start request.
+ */
+export class StartSsoLoginDto {
+  @ApiProperty({
+    description: 'Tenant code identifying the organization',
+    example: 'UAT_Corp',
+  })
+  @IsNotEmpty()
+  @IsString()
+  tenantCode: string;
+
+  @ApiProperty({
+    description: 'SSO provider code',
+    example: 'google-workspace',
+  })
+  @IsNotEmpty()
+  @IsString()
+  providerCode: string;
+
+  @ApiPropertyOptional({
+    description: 'Safe internal path to continue after SSO login',
+    example: '/tenant/tenant-123/organization',
+  })
+  @IsOptional()
+  @IsString()
+  next?: string;
+}
+
+/**
+ * Exchange the one-time SSO result code for a TCRN session.
+ */
+export class SsoExchangeDto {
+  @ApiProperty({
+    description: 'One-time opaque result code returned by the SSO callback',
+    example: 'ssox_4c8216f7a9d54f4e8b6c3c2d1a0f9e77',
+  })
+  @IsNotEmpty()
+  @IsString()
+  result: string;
+}
+
+/**
+ * Start an authenticated current-user account-link flow.
+ */
+export class StartSsoAccountLinkDto {
+  @ApiProperty({
+    description: 'SSO provider code to link to the current TCRN account',
+    example: 'google-workspace',
+  })
+  @IsNotEmpty()
+  @IsString()
+  providerCode: string;
+
+  @ApiPropertyOptional({
+    description: 'Safe internal path to return to after account linking',
+    example: '/tenant/tenant-123/profile/security',
+  })
+  @IsOptional()
+  @IsString()
+  next?: string;
+}
+
+/**
+ * Complete an authenticated current-user account-link flow.
+ */
+export class SsoAccountLinkCompleteDto {
+  @ApiProperty({
+    description: 'One-time opaque result code returned by the SSO account-link callback',
+    example: 'ssol_4c8216f7a9d54f4e8b6c3c2d1a0f9e77',
+  })
+  @IsNotEmpty()
+  @IsString()
+  result: string;
+}
+
+export class UpsertSsoProviderDto {
+  @ApiProperty({
+    description: 'SSO provider code scoped to the current tenant/AC owner',
+    example: 'google-workspace',
+  })
+  @IsNotEmpty()
+  @IsString()
+  code: string;
+
+  @ApiProperty({
+    description: 'Localized public-safe display name',
+    example: { en: 'Google Workspace', zh_HANS: 'Google Workspace' },
+  })
+  @IsObject()
+  displayName: Record<string, string>;
+
+  @ApiProperty({
+    description: 'SSO provider type. Mock providers are reserved for isolated test runtime fixtures.',
+    enum: ['oidc'],
+    example: 'oidc',
+  })
+  @IsString()
+  @IsIn(['oidc'])
+  providerType: 'oidc';
+
+  @ApiProperty({
+    description: 'Provider ownership lane',
+    enum: ['tenant_product', 'ac_platform', 'external_tool_readiness'],
+    example: 'tenant_product',
+  })
+  @IsString()
+  @IsIn(['tenant_product', 'ac_platform', 'external_tool_readiness'])
+  ownerScope: 'tenant_product' | 'ac_platform' | 'external_tool_readiness';
+
+  @ApiPropertyOptional({ description: 'OIDC issuer URL', example: 'https://idp.example.test' })
+  @IsOptional()
+  @IsString()
+  issuerUrl?: string | null;
+
+  @ApiPropertyOptional({
+    description: 'OIDC authorization endpoint override',
+    example: 'https://idp.example.test/oauth2/authorize',
+  })
+  @IsOptional()
+  @IsString()
+  authorizationUrl?: string | null;
+
+  @ApiPropertyOptional({
+    description: 'OIDC token endpoint override',
+    example: 'https://idp.example.test/oauth2/token',
+  })
+  @IsOptional()
+  @IsString()
+  tokenUrl?: string | null;
+
+  @ApiPropertyOptional({
+    description: 'OIDC userinfo endpoint override',
+    example: 'https://idp.example.test/oauth2/userinfo',
+  })
+  @IsOptional()
+  @IsString()
+  userinfoUrl?: string | null;
+
+  @ApiPropertyOptional({
+    description: 'OIDC JWKS endpoint override',
+    example: 'https://idp.example.test/.well-known/jwks.json',
+  })
+  @IsOptional()
+  @IsString()
+  jwksUrl?: string | null;
+
+  @ApiPropertyOptional({ description: 'OIDC client id', example: 'tcrn-local' })
+  @IsOptional()
+  @IsString()
+  clientId?: string | null;
+
+  @ApiPropertyOptional({
+    description:
+      'Secret reference. Only env:NAME references are accepted; raw secrets are forbidden.',
+    example: 'env:TCRN_TEST_SSO_CLIENT_SECRET',
+  })
+  @IsOptional()
+  @IsString()
+  clientSecretRef?: string | null;
+
+  @ApiPropertyOptional({
+    description: 'Provider callback URI registered with the IdP',
+    example: 'http://localhost:4000/api/v1/auth/sso/callback/google-workspace',
+  })
+  @IsOptional()
+  @IsString()
+  redirectUri?: string | null;
+
+  @ApiPropertyOptional({
+    description: 'OIDC scopes requested during login',
+    example: ['openid', 'profile', 'email'],
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  scopes?: string[];
+
+  @ApiPropertyOptional({
+    description: 'Non-authoritative claim mapping policy. It cannot grant TCRN RBAC.',
+    example: {
+      subject: 'sub',
+      email: 'email',
+      displayName: 'name',
+      emailVerified: 'email_verified',
+    },
+  })
+  @IsOptional()
+  @IsObject()
+  claimMappingPolicy?: Record<string, string>;
+
+  @ApiPropertyOptional({ description: 'Whether this provider is enabled', example: true })
+  @IsOptional()
+  @IsBoolean()
+  isEnabled?: boolean;
+}
+
+export class UpdateExternalToolSsoReadinessDto {
+  @ApiProperty({
+    description: 'External tool code',
+    example: 'swagger-editor',
+  })
+  @IsNotEmpty()
+  @IsString()
+  toolCode: string;
+
+  @ApiProperty({
+    description: 'Readiness status. Blocked means human deeplinks must fail closed.',
+    enum: ['blocked', 'ready', 'not_applicable'],
+    example: 'blocked',
+  })
+  @IsString()
+  @IsIn(['blocked', 'ready', 'not_applicable'])
+  status: 'blocked' | 'ready' | 'not_applicable';
+
+  @ApiPropertyOptional({
+    description: 'Phase or rollout that requires this readiness item',
+    example: 'phase-4',
+  })
+  @IsOptional()
+  @IsString()
+  requiredByPhase?: string | null;
+
+  @ApiPropertyOptional({
+    description: 'SSO provider id that satisfies the readiness item',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+  })
+  @IsOptional()
+  @IsString()
+  providerId?: string | null;
+
+  @ApiPropertyOptional({
+    description: 'Whether tool human entrypoints must fail closed until SSO is ready',
+    example: true,
+  })
+  @IsOptional()
+  @IsBoolean()
+  failClosed?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'Non-secret acceptance evidence metadata',
+    example: { source: 'phase-3-acceptance' },
+  })
+  @IsOptional()
+  @IsObject()
+  evidence?: Record<string, unknown>;
 }
 
 /**

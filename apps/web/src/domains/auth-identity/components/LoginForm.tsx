@@ -8,7 +8,10 @@ import {
   type AuthenticatedSessionResult,
   forceResetPassword,
   login,
+  listSsoProviders,
   readPostLoginOrganizationTree,
+  type SsoProviderDiscovery,
+  startSsoLogin,
   verifyTotp,
 } from '@/domains/auth-identity/api/auth.api';
 import type {
@@ -152,6 +155,15 @@ function buildPostLoginSelectorCopy(locale: string) {
   };
 }
 
+function pickSsoProviderDisplayName(locale: string, provider: SsoProviderDiscovery) {
+  return (
+    provider.displayName[locale] ||
+    provider.displayName.en ||
+    Object.values(provider.displayName)[0] ||
+    provider.code
+  );
+}
+
 export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -171,6 +183,8 @@ export function LoginForm() {
   const [newPasswordConfirm, setNewPasswordConfirm] = useState('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [ssoProviders, setSsoProviders] = useState<SsoProviderDiscovery[]>([]);
+  const [isLoadingSsoProviders, setIsLoadingSsoProviders] = useState(false);
   const [talentSelector, setTalentSelector] = useState<TalentSelectorState | null>(null);
   const talentSelectorRef = useRef<HTMLElement | null>(null);
   const firstTalentButtonRef = useRef<HTMLButtonElement | null>(null);
@@ -186,6 +200,45 @@ export function LoginForm() {
     initialFocusRef: firstTalentButtonRef,
     restoreFocus: true,
   });
+
+  useEffect(() => {
+    if (step !== 'credentials') {
+      setSsoProviders([]);
+      return undefined;
+    }
+
+    const tenantCode = credentials.tenantCode.trim();
+    if (!tenantCode) {
+      setSsoProviders([]);
+      return undefined;
+    }
+
+    let cancelled = false;
+    const timeoutId = window.setTimeout(() => {
+      setIsLoadingSsoProviders(true);
+      listSsoProviders(tenantCode)
+        .then((providers) => {
+          if (!cancelled) {
+            setSsoProviders(providers);
+          }
+        })
+        .catch(() => {
+          if (!cancelled) {
+            setSsoProviders([]);
+          }
+        })
+        .finally(() => {
+          if (!cancelled) {
+            setIsLoadingSsoProviders(false);
+          }
+        });
+    }, 250);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timeoutId);
+    };
+  }, [credentials.tenantCode, step]);
 
   useEffect(() => {
     if (!talentSelector) {
@@ -363,6 +416,27 @@ export function LoginForm() {
     }
   }
 
+  async function handleSsoStart(provider: SsoProviderDiscovery) {
+    setIsSubmitting(true);
+    setErrorMessage(null);
+
+    try {
+      const result = await startSsoLogin({
+        tenantCode: credentials.tenantCode.trim(),
+        providerCode: provider.code,
+        next: nextHref,
+      });
+      window.location.assign(result.authorizationUrl);
+    } catch (error) {
+      if (error instanceof ApiRequestError) {
+        setErrorMessage(error.message);
+      } else {
+        setErrorMessage(loginCopy.errorFallback);
+      }
+      setIsSubmitting(false);
+    }
+  }
+
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(148,163,184,0.18),_transparent_32%),linear-gradient(180deg,#f8fafc_0%,#eef2ff_52%,#f8fafc_100%)]">
       <div className="mx-auto flex w-full max-w-6xl justify-end px-6 pt-6">
@@ -468,6 +542,43 @@ export function LoginForm() {
                     required
                   />
                 </label>
+
+                {ssoProviders.length > 0 || isLoadingSsoProviders ? (
+                  <div className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
+                    <div className="flex items-center gap-2 text-sm font-semibold text-slate-700">
+                      <ShieldCheck aria-hidden="true" className="h-4 w-4 text-indigo-600" />
+                      <span>
+                        {pickLocaleText(locale, {
+                          en: 'Single sign-on',
+                          zh_HANS: '单点登录',
+                          zh_HANT: '單點登入',
+                          ja: 'シングルサインオン',
+                          ko: '싱글 사인온',
+                          fr: 'Authentification unique',
+                        })}
+                      </span>
+                    </div>
+                    <div className="grid gap-2">
+                      {ssoProviders.map((provider) => (
+                        <button
+                          key={provider.id}
+                          type="button"
+                          disabled={isSubmitting}
+                          onClick={() => void handleSsoStart(provider)}
+                          className="inline-flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-800 shadow-sm transition hover:border-indigo-300 hover:bg-indigo-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          <span className="truncate">
+                            {pickSsoProviderDisplayName(locale, provider)}
+                          </span>
+                          <ArrowRight aria-hidden="true" className="h-4 w-4 flex-none" />
+                        </button>
+                      ))}
+                      {isLoadingSsoProviders && ssoProviders.length === 0 ? (
+                        <div className="h-10 animate-pulse rounded-xl bg-white" />
+                      ) : null}
+                    </div>
+                  </div>
+                ) : null}
 
                 <label className="block space-y-2">
                   <span className="text-sm font-medium text-slate-700">

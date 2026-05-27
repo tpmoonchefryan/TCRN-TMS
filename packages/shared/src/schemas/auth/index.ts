@@ -22,6 +22,90 @@ export const LoginSchema = z.object({
 export type LoginInput = z.infer<typeof LoginSchema>;
 
 // ============================================================================
+// SSO Foundation Schemas
+// ============================================================================
+export const SsoProviderTypeSchema = z.enum(['oidc']);
+export const SsoOwnerScopeSchema = z.enum([
+  'tenant_product',
+  'ac_platform',
+  'external_tool_readiness',
+]);
+
+export const SsoProviderDiscoverySchema = z.object({
+  id: z.string().uuid(),
+  code: z.string().min(1),
+  displayName: z.record(z.string(), z.string()),
+  providerType: SsoProviderTypeSchema,
+  ownerScope: SsoOwnerScopeSchema,
+  enabled: z.boolean(),
+});
+
+export type SsoProviderDiscovery = z.infer<typeof SsoProviderDiscoverySchema>;
+
+export const StartSsoLoginSchema = z.object({
+  tenantCode: z.string().min(1, 'Tenant code is required'),
+  providerCode: z.string().min(1, 'SSO provider code is required'),
+  next: z.string().optional(),
+});
+
+export type StartSsoLoginInput = z.infer<typeof StartSsoLoginSchema>;
+
+export const StartSsoLoginResponseSchema = z.object({
+  authorizationUrl: z.string().url(),
+  stateExpiresIn: z.number().int().positive(),
+  provider: SsoProviderDiscoverySchema,
+});
+
+export type StartSsoLoginResponse = z.infer<typeof StartSsoLoginResponseSchema>;
+
+export const SsoExchangeSchema = z.object({
+  result: z.string().min(16, 'SSO result code is required'),
+});
+
+export type SsoExchangeInput = z.infer<typeof SsoExchangeSchema>;
+
+export const StartSsoAccountLinkSchema = z.object({
+  providerCode: z.string().min(1, 'SSO provider code is required'),
+  next: z.string().optional(),
+});
+
+export type StartSsoAccountLinkInput = z.infer<typeof StartSsoAccountLinkSchema>;
+
+export const SsoAccountLinkCompleteSchema = z.object({
+  result: z.string().min(16, 'SSO account-link result code is required'),
+});
+
+export type SsoAccountLinkCompleteInput = z.infer<typeof SsoAccountLinkCompleteSchema>;
+
+export const SsoAccountLinkSchema = z.object({
+  id: z.string().uuid(),
+  providerId: z.string().uuid(),
+  providerCode: z.string().min(1),
+  providerIssuer: z.string().min(1),
+  email: z.string().email().nullable(),
+  displayName: z.string().nullable(),
+  linkedAt: z.string(),
+  lastLoginAt: z.string().nullable(),
+  revokedAt: z.string().nullable(),
+});
+
+export type SsoAccountLink = z.infer<typeof SsoAccountLinkSchema>;
+
+export const PlatformExternalToolSsoReadinessSchema = z.object({
+  toolCode: z.string().min(1),
+  status: z.enum(['blocked', 'ready', 'not_applicable']),
+  requiredByPhase: z.string().nullable(),
+  providerId: z.string().uuid().nullable(),
+  failClosed: z.boolean(),
+  evidence: z.record(z.string(), z.unknown()),
+  updatedAt: z.string(),
+});
+
+export type PlatformExternalToolSsoReadiness = z.infer<
+  typeof PlatformExternalToolSsoReadinessSchema
+>;
+
+// ============================================================================
 // Forgot Password Schema
 // ============================================================================
 export const ForgotPasswordSchema = z.object({

@@ -366,6 +366,179 @@ const LEGACY_SETTINGS_TEXT_OVERRIDES: Partial<Record<string, SettingsFamilyLocal
     '보안 열기',
     'Ouvrir la securite'
   ),
+  Refresh: buildExactText('Refresh', '刷新', '重新整理', '更新', '새로고침', 'Actualiser'),
+  'Add provider': buildExactText(
+    'Add provider',
+    '新增提供方',
+    '新增提供者',
+    'プロバイダーを追加',
+    '공급자 추가',
+    'Ajouter un fournisseur'
+  ),
+  Cancel: buildExactText('Cancel', '取消', '取消', 'キャンセル', '취소', 'Annuler'),
+  'Provider code': buildExactText(
+    'Provider code',
+    '提供方代码',
+    '提供者代碼',
+    'プロバイダーコード',
+    '공급자 코드',
+    'Code fournisseur'
+  ),
+  'English display name': buildExactText(
+    'English display name',
+    '英文显示名称',
+    '英文顯示名稱',
+    '英語表示名',
+    '영문 표시 이름',
+    'Nom affiche en anglais'
+  ),
+  'Simplified Chinese display name': buildExactText(
+    'Simplified Chinese display name',
+    '简体中文显示名称',
+    '簡體中文顯示名稱',
+    '簡体字中国語表示名',
+    '간체 중국어 표시 이름',
+    'Nom affiche en chinois simplifie'
+  ),
+  Enabled: buildExactText('Enabled', '已启用', '已啟用', '有効', '활성화됨', 'Active'),
+  'OIDC issuer URL': buildExactText(
+    'OIDC issuer URL',
+    'OIDC issuer URL',
+    'OIDC issuer URL',
+    'OIDC issuer URL',
+    'OIDC issuer URL',
+    'URL emetteur OIDC'
+  ),
+  'Client ID': buildExactText(
+    'Client ID',
+    'Client ID',
+    'Client ID',
+    'Client ID',
+    'Client ID',
+    'ID client'
+  ),
+  'Redirect URI': buildExactText(
+    'Redirect URI',
+    'Redirect URI',
+    'Redirect URI',
+    'Redirect URI',
+    'Redirect URI',
+    'URI de redirection'
+  ),
+  Scopes: buildExactText('Scopes', 'Scopes', 'Scopes', 'Scopes', 'Scopes', 'Portees'),
+  'Client Secret env reference': buildExactText(
+    'Client Secret env reference',
+    'Client Secret 环境变量引用',
+    'Client Secret 環境變數參照',
+    'Client Secret env 参照',
+    'Client Secret env 참조',
+    'Reference env Client Secret'
+  ),
+  'Keep secret': buildExactText(
+    'Keep secret',
+    '保留密钥',
+    '保留密鑰',
+    'シークレットを保持',
+    '비밀 값 유지',
+    'Conserver le secret'
+  ),
+  'Replace secret': buildExactText(
+    'Replace secret',
+    '替换密钥',
+    '替換密鑰',
+    'シークレットを置換',
+    '비밀 값 교체',
+    'Remplacer le secret'
+  ),
+  'Clear secret': buildExactText(
+    'Clear secret',
+    '清除密钥',
+    '清除密鑰',
+    'シークレットを削除',
+    '비밀 값 지우기',
+    'Effacer le secret'
+  ),
+  'Check discovery': buildExactText(
+    'Check discovery',
+    '检查发现配置',
+    '檢查探索設定',
+    'ディスカバリーを確認',
+    '디스커버리 확인',
+    'Verifier la decouverte'
+  ),
+  'Saving provider': buildExactText(
+    'Saving provider',
+    '正在保存提供方',
+    '正在儲存提供者',
+    'プロバイダーを保存中',
+    '공급자 저장 중',
+    'Enregistrement du fournisseur'
+  ),
+  'Save provider': buildExactText(
+    'Save provider',
+    '保存提供方',
+    '儲存提供者',
+    'プロバイダーを保存',
+    '공급자 저장',
+    'Enregistrer le fournisseur'
+  ),
+  'Edit provider': buildExactText(
+    'Edit provider',
+    '编辑提供方',
+    '編輯提供者',
+    'プロバイダーを編集',
+    '공급자 편집',
+    'Modifier le fournisseur'
+  ),
+  'Disable provider': buildExactText(
+    'Disable provider',
+    '停用提供方',
+    '停用提供者',
+    'プロバイダーを無効化',
+    '공급자 비활성화',
+    'Desactiver le fournisseur'
+  ),
+  'Enable provider': buildExactText(
+    'Enable provider',
+    '启用提供方',
+    '啟用提供者',
+    'プロバイダーを有効化',
+    '공급자 활성화',
+    'Activer le fournisseur'
+  ),
+  'Provider Type': buildExactText(
+    'Provider Type',
+    '提供方类型',
+    '提供者類型',
+    'プロバイダー種別',
+    '공급자 유형',
+    'Type de fournisseur'
+  ),
+  'Owner Scope': buildExactText(
+    'Owner Scope',
+    '归属范围',
+    '歸屬範圍',
+    '所有スコープ',
+    '소유 범위',
+    'Perimetre proprietaire'
+  ),
+  Issuer: buildExactText('Issuer', 'Issuer', 'Issuer', 'Issuer', 'Issuer', 'Emetteur'),
+  'Client Secret': buildExactText(
+    'Client Secret',
+    'Client Secret',
+    'Client Secret',
+    'Client Secret',
+    'Client Secret',
+    'Secret client'
+  ),
+  'Configured (redacted)': buildExactText(
+    'Configured (redacted)',
+    '已配置（已隐藏）',
+    '已設定（已隱藏）',
+    '設定済み（非表示）',
+    '구성됨(숨김)',
+    'Configure (masque)'
+  ),
   'Default language': buildExactText(
     'Default language',
     '默认语言',

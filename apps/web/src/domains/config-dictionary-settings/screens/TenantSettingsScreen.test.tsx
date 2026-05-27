@@ -210,6 +210,62 @@ describe('TenantSettingsScreen', () => {
         };
       }
 
+      if (path === '/api/v1/auth/sso/admin/providers?ownerScope=tenant_product') {
+        return [
+          {
+            id: 'provider-1',
+            tenantId: 'tenant-1',
+            code: 'mock-sso',
+            displayName: localizedFixture('Mock SSO'),
+            providerType: 'oidc',
+            ownerScope: 'tenant_product',
+            issuerUrl: 'https://idp.test.tcrn.local/p3',
+            authorizationUrl: null,
+            tokenUrl: null,
+            userinfoUrl: null,
+            jwksUrl: null,
+            clientId: 'tcrn-local',
+            clientSecretConfigured: true,
+            redirectUri: 'http://localhost:4000/api/v1/auth/sso/callback/mock-sso',
+            scopes: ['openid', 'profile', 'email'],
+            claimMappingPolicy: {
+              subject: 'sub',
+              email: 'email',
+              displayName: 'name',
+              emailVerified: 'email_verified',
+            },
+            enabled: true,
+          },
+        ];
+      }
+
+      if (path === '/api/v1/auth/sso/admin/providers/mock-sso' && init?.method === 'PATCH') {
+        return {
+          id: 'provider-1',
+          tenantId: 'tenant-1',
+          code: 'mock-sso',
+          displayName: localizedFixture('Mock SSO Edited'),
+          providerType: 'oidc',
+          ownerScope: 'tenant_product',
+          issuerUrl: 'https://idp.test.tcrn.local/p3',
+          authorizationUrl: null,
+          tokenUrl: null,
+          userinfoUrl: null,
+          jwksUrl: null,
+          clientId: 'tcrn-local-edited',
+          clientSecretConfigured: true,
+          redirectUri: 'http://localhost:4000/api/v1/auth/sso/callback/mock-sso',
+          scopes: ['openid', 'profile', 'email'],
+          claimMappingPolicy: {
+            subject: 'sub',
+            email: 'email',
+            displayName: 'name',
+            emailVerified: 'email_verified',
+          },
+          enabled: true,
+        };
+      }
+
       if (path === '/api/v1/system-dictionary') {
         return [
           {
@@ -379,6 +435,43 @@ describe('TenantSettingsScreen', () => {
     expect(
       screen.queryByText(/Tencent Cloud Secret|Secret ID|Secret Key|provider credentials/i)
     ).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Single Sign-On' }));
+    expect(await screen.findByText('Mock SSO')).toBeInTheDocument();
+    expect(screen.getByText('mock-sso')).toBeInTheDocument();
+    expect(screen.getByText('Configured (redacted)')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Add provider' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Edit provider' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Disable provider' })).toBeInTheDocument();
+    expect(screen.queryByText('TEST_P3_SSO_SECRET')).not.toBeInTheDocument();
+    expect(mockRequest).toHaveBeenCalledWith(
+      '/api/v1/auth/sso/admin/providers?ownerScope=tenant_product'
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Edit provider' }));
+    expect(screen.getByLabelText('Provider code')).toHaveValue('mock-sso');
+    expect(screen.getByLabelText('Provider code')).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Keep secret' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Replace secret' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Clear secret' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Check discovery' }));
+    expect(await screen.findByText(/Discovery fields are ready to save/)).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('English display name'), {
+      target: { value: 'Mock SSO Edited' },
+    });
+    fireEvent.change(screen.getByLabelText('Client ID'), {
+      target: { value: 'tcrn-local-edited' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Save provider' }));
+    await waitFor(() => {
+      expect(mockRequest).toHaveBeenCalledWith(
+        '/api/v1/auth/sso/admin/providers/mock-sso',
+        expect.objectContaining({
+          method: 'PATCH',
+          body: expect.stringContaining('tcrn-local-edited'),
+        })
+      );
+    });
+    expect(await screen.findByText('Mock SSO Edited')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Email' }));
     fireEvent.change(screen.getByLabelText('Reply-to address'), {
       target: { value: 'help@alpha.example.com' },
     });

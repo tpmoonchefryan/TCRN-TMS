@@ -68,6 +68,47 @@ export interface UpdateTenantTurnstileSettingsPayload {
   secretKey?: string | null;
 }
 
+export type SsoProviderType = 'oidc';
+export type SsoOwnerScope = 'tenant_product' | 'ac_platform' | 'external_tool_readiness';
+
+export interface ManagedSsoProvider {
+  id: string;
+  tenantId: string;
+  code: string;
+  displayName: LocalizedText;
+  providerType: SsoProviderType;
+  ownerScope: SsoOwnerScope;
+  issuerUrl: string | null;
+  authorizationUrl: string | null;
+  tokenUrl: string | null;
+  userinfoUrl: string | null;
+  jwksUrl: string | null;
+  clientId: string | null;
+  clientSecretConfigured: boolean;
+  redirectUri: string | null;
+  scopes: string[];
+  claimMappingPolicy: Record<string, string>;
+  enabled: boolean;
+}
+
+export interface UpsertManagedSsoProviderInput {
+  code: string;
+  displayName: LocalizedText;
+  providerType: SsoProviderType;
+  ownerScope: SsoOwnerScope;
+  issuerUrl?: string | null;
+  authorizationUrl?: string | null;
+  tokenUrl?: string | null;
+  userinfoUrl?: string | null;
+  jwksUrl?: string | null;
+  clientId?: string | null;
+  clientSecretRef?: string | null;
+  redirectUri?: string | null;
+  scopes?: string[];
+  claimMappingPolicy?: Record<string, string>;
+  isEnabled?: boolean;
+}
+
 export type TalentLifecycleStatus = 'draft' | 'published' | 'disabled';
 
 export interface ProfileStoreListItem {
@@ -635,6 +676,29 @@ export function updateTenantTurnstileSettings(
 ) {
   return request<TenantTurnstileSettingsResponse>(
     '/api/v1/organization/settings/turnstile',
+    buildJsonRequestInit('PATCH', input)
+  );
+}
+
+export function listManagedSsoProviders(request: RequestFn, ownerScope?: SsoOwnerScope) {
+  const params = new URLSearchParams();
+  if (ownerScope) {
+    params.set('ownerScope', ownerScope);
+  }
+
+  const queryString = params.toString();
+  return request<ManagedSsoProvider[]>(
+    `/api/v1/auth/sso/admin/providers${queryString ? `?${queryString}` : ''}`
+  );
+}
+
+export function upsertManagedSsoProvider(
+  request: RequestFn,
+  providerCode: string,
+  input: UpsertManagedSsoProviderInput
+) {
+  return request<ManagedSsoProvider>(
+    `/api/v1/auth/sso/admin/providers/${encodeURIComponent(providerCode)}`,
     buildJsonRequestInit('PATCH', input)
   );
 }

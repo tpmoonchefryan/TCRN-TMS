@@ -1,6 +1,6 @@
 'use client';
 
-import { MonitorSmartphone, Trash2, UserRound } from 'lucide-react';
+import { Link2, Link2Off, MonitorSmartphone, ShieldCheck, Trash2, UserRound } from 'lucide-react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { startTransition, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
@@ -13,12 +13,20 @@ import {
   deleteCurrentAvatar,
   disableTotp,
   enableTotp,
+  type ExternalToolSsoReadinessRecord,
+  listSsoAccountLinkProviders,
+  listExternalToolSsoReadiness,
   listUserSessions,
+  listSsoAccountLinks,
   readCurrentProfile,
   regenerateRecoveryCodes,
   requestEmailChange,
+  revokeSsoAccountLink,
   revokeUserSession,
   setupTotp,
+  startSsoAccountLink,
+  type SsoAccountLinkRecord,
+  type SsoAccountLinkProviderRecord,
   type TotpSetupResponse,
   updateCurrentProfile,
   uploadCurrentAvatar,
@@ -259,6 +267,7 @@ export function ProfileScreen({
           fr: 'Tenant',
         });
   const isSecurityMode = mode === 'security';
+  const shouldLoadExternalToolReadiness = isSecurityMode && workspaceKind === 'ac';
   const headerTitle = isSecurityMode ? copy.header.securityTitle : copy.header.title;
   const headerDescription = isSecurityMode
     ? copy.header.securityDescription
@@ -270,6 +279,11 @@ export function ProfileScreen({
   const [profile, setProfile] = useState<CurrentProfile | null>(null);
   const [profileDraft, setProfileDraft] = useState<ProfileDraft | null>(null);
   const [sessions, setSessions] = useState<UserSessionRecord[]>([]);
+  const [ssoAccountLinks, setSsoAccountLinks] = useState<SsoAccountLinkRecord[]>([]);
+  const [ssoLinkProviders, setSsoLinkProviders] = useState<SsoAccountLinkProviderRecord[]>([]);
+  const [externalToolReadiness, setExternalToolReadiness] = useState<
+    ExternalToolSsoReadinessRecord[]
+  >([]);
   const [sessionsPage, setSessionsPage] = useState(urlSessionsPage);
   const [sessionsPageSize, setSessionsPageSize] = useState<PageSizeOption>(urlSessionsPageSize);
   const [loading, setLoading] = useState(true);
@@ -293,6 +307,7 @@ export function ProfileScreen({
   const [isEnablingTotp, setIsEnablingTotp] = useState(false);
   const [isDisablingTotp, setIsDisablingTotp] = useState(false);
   const [isRegeneratingRecoveryCodes, setIsRegeneratingRecoveryCodes] = useState(false);
+  const [isStartingSsoLink, setIsStartingSsoLink] = useState(false);
   const [securityDrawer, setSecurityDrawer] = useState<SecurityDrawer>(null);
 
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
@@ -418,9 +433,20 @@ export function ProfileScreen({
       setLoadError(null);
 
       try {
-        const [profileResult, sessionsResult] = await Promise.all([
+        const [
+          profileResult,
+          sessionsResult,
+          ssoLinksResult,
+          ssoLinkProvidersResult,
+          externalToolReadinessResult,
+        ] = await Promise.all([
           readCurrentProfile(request),
           listUserSessions(request),
+          isSecurityMode ? listSsoAccountLinks(request) : Promise.resolve([]),
+          isSecurityMode ? listSsoAccountLinkProviders(request) : Promise.resolve([]),
+          shouldLoadExternalToolReadiness
+            ? listExternalToolSsoReadiness(request)
+            : Promise.resolve([]),
         ]);
 
         if (cancelled) {
@@ -429,6 +455,9 @@ export function ProfileScreen({
 
         applyProfileState(profileResult);
         setSessions(sessionsResult);
+        setSsoAccountLinks(ssoLinksResult);
+        setSsoLinkProviders(ssoLinkProvidersResult);
+        setExternalToolReadiness(externalToolReadinessResult);
       } catch (reason) {
         if (!cancelled) {
           setLoadError(getErrorMessage(reason, copy.state.loadError));
@@ -445,7 +474,7 @@ export function ProfileScreen({
     return () => {
       cancelled = true;
     };
-  }, [applyProfileState, request]);
+  }, [applyProfileState, isSecurityMode, request, shouldLoadExternalToolReadiness]);
 
   const hasDirtyProfile = useMemo(() => {
     if (!profile || !profileDraft) {
@@ -530,6 +559,211 @@ export function ProfileScreen({
       fr: 'Suivant',
     }),
   };
+  const ssoCopy = {
+    title: pickLocaleText(locale, {
+      en: 'Single sign-on connections',
+      zh_HANS: '单点登录连接',
+      zh_HANT: '單點登入連線',
+      ja: 'シングルサインオン接続',
+      ko: '싱글 사인온 연결',
+      fr: 'Connexions SSO',
+    }),
+    description: pickLocaleText(locale, {
+      en: 'Review external identity providers linked to this TCRN account.',
+      zh_HANS: '查看已链接到此 TCRN 账号的外部身份提供方。',
+      zh_HANT: '檢視已連結到此 TCRN 帳號的外部身分提供者。',
+      ja: 'この TCRN アカウントにリンクされた外部 IdP を確認します。',
+      ko: '이 TCRN 계정에 연결된 외부 ID 공급자를 검토합니다.',
+      fr: 'Consultez les fournisseurs d’identite externes lies a ce compte TCRN.',
+    }),
+    emptyTitle: pickLocaleText(locale, {
+      en: 'No SSO connection linked',
+      zh_HANS: '尚未链接 SSO 连接',
+      zh_HANT: '尚未連結 SSO 連線',
+      ja: 'SSO 接続はまだリンクされていません',
+      ko: '연결된 SSO가 없습니다',
+      fr: 'Aucune connexion SSO liee',
+    }),
+    emptyDescription: pickLocaleText(locale, {
+      en: 'Linked providers will appear here after an approved SSO linking flow.',
+      zh_HANS: '经过批准的 SSO 链接流程完成后，提供方会显示在这里。',
+      zh_HANT: '核准的 SSO 連結流程完成後，提供者會顯示於此。',
+      ja: '承認された SSO リンクフローの完了後、プロバイダーがここに表示されます。',
+      ko: '승인된 SSO 연결 흐름이 완료되면 공급자가 여기에 표시됩니다.',
+      fr: 'Les fournisseurs lies apparaitront ici apres un flux de liaison SSO approuve.',
+    }),
+    linkProvider: pickLocaleText(locale, {
+      en: 'Link provider',
+      zh_HANS: '链接提供方',
+      zh_HANT: '連結提供者',
+      ja: 'プロバイダーをリンク',
+      ko: '공급자 연결',
+      fr: 'Lier le fournisseur',
+    }),
+    noLinkProviders: pickLocaleText(locale, {
+      en: 'No SSO provider is currently available for self-linking.',
+      zh_HANS: '当前没有可用于自助链接的 SSO 提供方。',
+      zh_HANT: '目前沒有可用於自助連結的 SSO 提供者。',
+      ja: '現在セルフリンクに使用できる SSO プロバイダーはありません。',
+      ko: '현재 셀프 연결에 사용할 수 있는 SSO 공급자가 없습니다.',
+      fr: 'Aucun fournisseur SSO n’est disponible pour la liaison en libre-service.',
+    }),
+    linkStartedError: pickLocaleText(locale, {
+      en: 'SSO account linking could not be started.',
+      zh_HANS: '无法启动 SSO 账号链接。',
+      zh_HANT: '無法啟動 SSO 帳號連結。',
+      ja: 'SSO アカウントリンクを開始できませんでした。',
+      ko: 'SSO 계정 연결을 시작할 수 없습니다.',
+      fr: 'La liaison du compte SSO n’a pas pu demarrer.',
+    }),
+    revoked: pickLocaleText(locale, {
+      en: 'Revoked',
+      zh_HANS: '已撤销',
+      zh_HANT: '已撤銷',
+      ja: '取り消し済み',
+      ko: '해지됨',
+      fr: 'Revoquee',
+    }),
+    active: pickLocaleText(locale, {
+      en: 'Linked',
+      zh_HANS: '已链接',
+      zh_HANT: '已連結',
+      ja: 'リンク済み',
+      ko: '연결됨',
+      fr: 'Liee',
+    }),
+    lastLogin: pickLocaleText(locale, {
+      en: 'Last SSO login',
+      zh_HANS: '最近 SSO 登录',
+      zh_HANT: '最近 SSO 登入',
+      ja: '最終 SSO ログイン',
+      ko: '마지막 SSO 로그인',
+      fr: 'Derniere connexion SSO',
+    }),
+    linkedAt: pickLocaleText(locale, {
+      en: 'Linked at',
+      zh_HANS: '链接时间',
+      zh_HANT: '連結時間',
+      ja: 'リンク日時',
+      ko: '연결 시각',
+      fr: 'Liee le',
+    }),
+    revoke: pickLocaleText(locale, {
+      en: 'Revoke connection',
+      zh_HANS: '撤销连接',
+      zh_HANT: '撤銷連線',
+      ja: '接続を取り消す',
+      ko: '연결 해지',
+      fr: 'Revoquer la connexion',
+    }),
+    revokeTitle: (provider: string) =>
+      pickLocaleText(locale, {
+        en: `Revoke ${provider} SSO connection?`,
+        zh_HANS: `撤销 ${provider} SSO 连接？`,
+        zh_HANT: `撤銷 ${provider} SSO 連線？`,
+        ja: `${provider} の SSO 接続を取り消しますか？`,
+        ko: `${provider} SSO 연결을 해지할까요?`,
+        fr: `Revoquer la connexion SSO ${provider} ?`,
+      }),
+    revokeDescription: pickLocaleText(locale, {
+      en: 'This prevents this external subject from signing in until it is linked again through an approved flow.',
+      zh_HANS: '这会阻止该外部主体继续登录，直到通过批准流程重新链接。',
+      zh_HANT: '這會阻止此外部主體繼續登入，直到透過核准流程重新連結。',
+      ja: '承認されたフローで再リンクされるまで、この外部サブジェクトはサインインできません。',
+      ko: '승인된 흐름으로 다시 연결될 때까지 이 외부 주체는 로그인할 수 없습니다.',
+      fr: 'Ce sujet externe ne pourra plus se connecter tant qu’il ne sera pas relie a nouveau par un flux approuve.',
+    }),
+    revokedSuccess: pickLocaleText(locale, {
+      en: 'SSO connection revoked.',
+      zh_HANS: 'SSO 连接已撤销。',
+      zh_HANT: 'SSO 連線已撤銷。',
+      ja: 'SSO 接続を取り消しました。',
+      ko: 'SSO 연결이 해지되었습니다.',
+      fr: 'Connexion SSO revoquee.',
+    }),
+    unavailable: pickLocaleText(locale, {
+      en: 'Not recorded',
+      zh_HANS: '未记录',
+      zh_HANT: '未記錄',
+      ja: '記録なし',
+      ko: '기록 없음',
+      fr: 'Non enregistre',
+    }),
+  };
+  const externalToolSsoCopy = {
+    title: pickLocaleText(locale, {
+      en: 'External-tool SSO readiness',
+      zh_HANS: '外部工具 SSO 就绪',
+      zh_HANT: '外部工具 SSO 就緒',
+      ja: '外部ツール SSO 準備状況',
+      ko: '외부 도구 SSO 준비 상태',
+      fr: 'Préparation SSO des outils externes',
+    }),
+    description: pickLocaleText(locale, {
+      en: 'AC-only projection for future human-facing tool entrypoints. Links fail closed until SSO is accepted.',
+      zh_HANS: '面向未来人工工具入口的 AC-only 投影。SSO 未验收前入口保持 fail-closed。',
+      zh_HANT: '面向未來人工工具入口的 AC-only 投影。SSO 未驗收前入口保持 fail-closed。',
+      ja: '将来の人間向けツール入口のための AC 専用投影です。SSO が承認されるまでリンクは fail-closed です。',
+      ko: '향후 사용자용 도구 진입점을 위한 AC 전용 투영입니다. SSO가 승인될 때까지 링크는 fail-closed 상태입니다.',
+      fr: 'Projection AC-only pour les futurs points d’entrée humains. Les liens restent fail-closed tant que le SSO n’est pas accepté.',
+    }),
+    emptyTitle: pickLocaleText(locale, {
+      en: 'No external-tool readiness records',
+      zh_HANS: '暂无外部工具就绪记录',
+      zh_HANT: '暫無外部工具就緒記錄',
+      ja: '外部ツール準備状況レコードはありません',
+      ko: '외부 도구 준비 상태 기록이 없습니다',
+      fr: 'Aucun état de préparation outil externe',
+    }),
+    emptyDescription: pickLocaleText(locale, {
+      en: 'The default posture is blocked and fail-closed until an AC operator records accepted SSO readiness.',
+      zh_HANS: '默认姿态为 blocked 且 fail-closed，直到 AC operator 记录已验收的 SSO 就绪状态。',
+      zh_HANT: '預設姿態為 blocked 且 fail-closed，直到 AC operator 記錄已驗收的 SSO 就緒狀態。',
+      ja: 'AC オペレーターが承認済み SSO 準備状況を記録するまで、既定姿勢は blocked かつ fail-closed です。',
+      ko: 'AC 운영자가 승인된 SSO 준비 상태를 기록할 때까지 기본 상태는 blocked 및 fail-closed입니다.',
+      fr: 'La posture par défaut est blocked et fail-closed jusqu’à ce qu’un opérateur AC enregistre une préparation SSO acceptée.',
+    }),
+    failClosed: pickLocaleText(locale, {
+      en: 'Fail closed',
+      zh_HANS: 'Fail closed',
+      zh_HANT: 'Fail closed',
+      ja: 'Fail closed',
+      ko: 'Fail closed',
+      fr: 'Fail closed',
+    }),
+    notFailClosed: pickLocaleText(locale, {
+      en: 'Not fail-closed',
+      zh_HANS: '未 fail-closed',
+      zh_HANT: '未 fail-closed',
+      ja: 'Fail closed ではありません',
+      ko: 'Fail-closed 아님',
+      fr: 'Non fail-closed',
+    }),
+    statusLabel: pickLocaleText(locale, {
+      en: 'Status',
+      zh_HANS: '状态',
+      zh_HANT: '狀態',
+      ja: 'ステータス',
+      ko: '상태',
+      fr: 'Statut',
+    }),
+    phaseLabel: pickLocaleText(locale, {
+      en: 'Required By',
+      zh_HANS: '要求阶段',
+      zh_HANT: '要求階段',
+      ja: '必要フェーズ',
+      ko: '필요 단계',
+      fr: 'Requis par',
+    }),
+    providerLabel: pickLocaleText(locale, {
+      en: 'Provider',
+      zh_HANS: '提供方',
+      zh_HANT: '提供者',
+      ja: 'プロバイダー',
+      ko: '공급자',
+      fr: 'Fournisseur',
+    }),
+  };
 
   async function refreshProfile() {
     const nextProfile = await readCurrentProfile(request);
@@ -539,6 +773,36 @@ export function ProfileScreen({
   async function refreshSessions() {
     const nextSessions = await listUserSessions(request);
     setSessions(nextSessions);
+  }
+
+  async function refreshSsoAccountLinks() {
+    if (!isSecurityMode) {
+      return;
+    }
+
+    const nextLinks = await listSsoAccountLinks(request);
+    setSsoAccountLinks(nextLinks);
+  }
+
+  async function handleStartSsoAccountLink(providerCode: string) {
+    setIsStartingSsoLink(true);
+    setNotice(null);
+
+    try {
+      const nextPath = `${pathname}${searchParams.toString() ? `?${searchParams.toString()}` : ''}`;
+      const result = await startSsoAccountLink(request, {
+        providerCode,
+        next: nextPath,
+      });
+
+      window.location.assign(result.authorizationUrl);
+    } catch (reason) {
+      setNotice({
+        tone: 'error',
+        message: getErrorMessage(reason, ssoCopy.linkStartedError),
+      });
+      setIsStartingSsoLink(false);
+    }
   }
 
   function resetSecurityDrawerDraft(drawer: Exclude<SecurityDrawer, null>) {
@@ -1169,6 +1433,205 @@ export function ProfileScreen({
               </div>
             </FormSection>
           </GlassSurface>
+
+          <GlassSurface className="p-6">
+            <FormSection title={ssoCopy.title} description={ssoCopy.description}>
+              <div className="mb-5 flex flex-wrap items-center gap-3">
+                {ssoLinkProviders.length > 0 ? (
+                  ssoLinkProviders.map((provider) => {
+                    const providerLabel =
+                      provider.displayName[locale] || provider.displayName.en || provider.code;
+                    const hasActiveLink = ssoAccountLinks.some(
+                      (link) => link.providerId === provider.id && !link.revokedAt
+                    );
+
+                    return (
+                      <button
+                        key={provider.id}
+                        type="button"
+                        disabled={isStartingSsoLink || hasActiveLink}
+                        onClick={() => void handleStartSsoAccountLink(provider.code)}
+                        className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        <Link2 className="h-4 w-4" aria-hidden="true" />
+                        <span>
+                          {ssoCopy.linkProvider}: {providerLabel}
+                        </span>
+                      </button>
+                    );
+                  })
+                ) : (
+                  <p className="text-sm text-slate-500">{ssoCopy.noLinkProviders}</p>
+                )}
+              </div>
+
+              {ssoAccountLinks.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-slate-300 bg-white/70 px-5 py-5">
+                  <div className="flex items-start gap-3">
+                    <ShieldCheck className="mt-0.5 h-5 w-5 text-slate-500" aria-hidden="true" />
+                    <div>
+                      <p className="text-sm font-semibold text-slate-950">{ssoCopy.emptyTitle}</p>
+                      <p className="mt-1 text-sm leading-6 text-slate-600">
+                        {ssoCopy.emptyDescription}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="grid gap-4 lg:grid-cols-2">
+                  {ssoAccountLinks.map((link) => {
+                    const providerLabel = link.providerCode;
+                    const isRevoked = Boolean(link.revokedAt);
+
+                    return (
+                      <div
+                        key={link.id}
+                        className="flex min-w-0 flex-col justify-between gap-5 rounded-2xl border border-slate-200 bg-white/85 px-5 py-5 shadow-sm"
+                      >
+                        <div className="min-w-0 space-y-3">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <p className="text-sm font-semibold break-words text-slate-950">
+                              {providerLabel}
+                            </p>
+                            <span
+                              className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
+                                isRevoked
+                                  ? 'bg-slate-100 text-slate-600'
+                                  : 'bg-emerald-50 text-emerald-700'
+                              }`}
+                            >
+                              {isRevoked ? ssoCopy.revoked : ssoCopy.active}
+                            </span>
+                          </div>
+                          <dl className="grid gap-2 text-sm text-slate-600">
+                            <div>
+                              <dt className="font-medium text-slate-800">{ssoCopy.linkedAt}</dt>
+                              <dd>
+                                {formatProfileDateTime(link.linkedAt, locale, ssoCopy.unavailable)}
+                              </dd>
+                            </div>
+                            <div>
+                              <dt className="font-medium text-slate-800">{ssoCopy.lastLogin}</dt>
+                              <dd>
+                                {formatProfileDateTime(
+                                  link.lastLoginAt,
+                                  locale,
+                                  ssoCopy.unavailable
+                                )}
+                              </dd>
+                            </div>
+                            {link.email || link.displayName ? (
+                              <div>
+                                <dt className="sr-only">SSO identity snapshot</dt>
+                                <dd className="break-words">
+                                  {[link.displayName, link.email].filter(Boolean).join(' / ')}
+                                </dd>
+                              </div>
+                            ) : null}
+                          </dl>
+                        </div>
+                        <button
+                          type="button"
+                          disabled={isRevoked}
+                          onClick={() =>
+                            setDialogState({
+                              title: ssoCopy.revokeTitle(providerLabel),
+                              description: ssoCopy.revokeDescription,
+                              confirmText: ssoCopy.revoke,
+                              onConfirm: async () => {
+                                await revokeSsoAccountLink(request, link.id);
+                                await refreshSsoAccountLinks();
+                                setNotice({
+                                  tone: 'success',
+                                  message: ssoCopy.revokedSuccess,
+                                });
+                              },
+                            })
+                          }
+                          className="inline-flex w-fit items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          <Link2Off className="h-4 w-4" aria-hidden="true" />
+                          {ssoCopy.revoke}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </FormSection>
+          </GlassSurface>
+
+          {shouldLoadExternalToolReadiness ? (
+            <GlassSurface className="p-6">
+              <FormSection
+                title={externalToolSsoCopy.title}
+                description={externalToolSsoCopy.description}
+              >
+                {externalToolReadiness.length === 0 ? (
+                  <div className="rounded-2xl border border-dashed border-slate-300 bg-white/70 px-5 py-5">
+                    <p className="text-sm font-semibold text-slate-950">
+                      {externalToolSsoCopy.emptyTitle}
+                    </p>
+                    <p className="mt-1 text-sm leading-6 text-slate-600">
+                      {externalToolSsoCopy.emptyDescription}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid gap-4 lg:grid-cols-2">
+                    {externalToolReadiness.map((item) => (
+                      <div
+                        key={item.toolCode}
+                        className="min-w-0 rounded-2xl border border-slate-200 bg-white/85 px-5 py-5 shadow-sm"
+                      >
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                          <p className="text-sm font-semibold break-words text-slate-950">
+                            {item.toolCode}
+                          </p>
+                          <span
+                            className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
+                              item.failClosed
+                                ? 'bg-amber-50 text-amber-700'
+                                : 'bg-rose-50 text-rose-700'
+                            }`}
+                          >
+                            {item.failClosed
+                              ? externalToolSsoCopy.failClosed
+                              : externalToolSsoCopy.notFailClosed}
+                          </span>
+                        </div>
+                        <dl className="mt-4 grid gap-3 sm:grid-cols-2">
+                          <div>
+                            <dt className="text-xs font-semibold tracking-[0.16em] text-slate-500 uppercase">
+                              {externalToolSsoCopy.statusLabel}
+                            </dt>
+                            <dd className="mt-1 text-sm font-medium text-slate-900">
+                              {item.status}
+                            </dd>
+                          </div>
+                          <div>
+                            <dt className="text-xs font-semibold tracking-[0.16em] text-slate-500 uppercase">
+                              {externalToolSsoCopy.phaseLabel}
+                            </dt>
+                            <dd className="mt-1 text-sm font-medium text-slate-900">
+                              {item.requiredByPhase || ssoCopy.unavailable}
+                            </dd>
+                          </div>
+                          <div className="sm:col-span-2">
+                            <dt className="text-xs font-semibold tracking-[0.16em] text-slate-500 uppercase">
+                              {externalToolSsoCopy.providerLabel}
+                            </dt>
+                            <dd className="mt-1 text-sm font-medium break-words text-slate-900">
+                              {item.providerId || ssoCopy.unavailable}
+                            </dd>
+                          </div>
+                        </dl>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </FormSection>
+            </GlassSurface>
+          ) : null}
 
           <GlassSurface className="p-6">
             <FormSection title={copy.sessions.title} description={copy.sessions.description}>

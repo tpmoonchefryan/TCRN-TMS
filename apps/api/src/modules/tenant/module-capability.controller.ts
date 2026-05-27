@@ -17,6 +17,7 @@ export class ModuleCapabilityController {
   @ApiResponse({
     status: 200,
     description: 'Returns the current authenticated tenant effective capability snapshot',
+    schema: { type: 'object' },
   })
   async getCurrentTenantEffectiveCapabilities(@CurrentUser() user: AuthenticatedUser) {
     return success(
@@ -30,6 +31,7 @@ export class ModuleCapabilityController {
   @ApiResponse({
     status: 200,
     description: 'Returns the read-only module/capability registry contract',
+    schema: { type: 'object' },
   })
   async getRegistry(@CurrentUser() user: AuthenticatedUser) {
     await this.moduleCapabilityService.verifyAcAccess(user);

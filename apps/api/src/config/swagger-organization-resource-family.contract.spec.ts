@@ -289,6 +289,7 @@ describe('Swagger organization resource family contract', () => {
     expect(getDocumentedDtoProperties(CreateTenantDto)).toEqual([
       'adminUser',
       'code',
+      'enabledCapabilityCodes',
       'name',
       'settings',
     ]);

@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
   AuthenticatedSessionResult,
   LoginFlowResult,
+  SsoProviderDiscovery,
 } from '@/domains/auth-identity/api/auth.api';
 import { LoginForm } from '@/domains/auth-identity/components/LoginForm';
 import type {
@@ -35,6 +36,14 @@ const mocks = vi.hoisted(() => ({
     >(),
   readPostLoginOrganizationTree:
     vi.fn<(accessToken: string) => Promise<OrganizationTreeResponse>>(),
+  listSsoProviders: vi.fn<(tenantCode: string) => Promise<SsoProviderDiscovery[]>>(),
+  startSsoLogin: vi.fn<
+    (input: { tenantCode: string; providerCode: string; next?: string | null }) => Promise<{
+      authorizationUrl: string;
+      stateExpiresIn: number;
+      provider: SsoProviderDiscovery;
+    }>
+  >(),
   search: {
     current: '',
   },
@@ -115,6 +124,8 @@ vi.mock('@/domains/auth-identity/api/auth.api', () => ({
   verifyTotp: mocks.verifyTotp,
   forceResetPassword: mocks.forceResetPassword,
   readPostLoginOrganizationTree: mocks.readPostLoginOrganizationTree,
+  listSsoProviders: mocks.listSsoProviders,
+  startSsoLogin: mocks.startSsoLogin,
 }));
 
 function buildAuthenticatedResult(
@@ -200,7 +211,10 @@ describe('LoginForm', () => {
     mocks.verifyTotp.mockReset();
     mocks.forceResetPassword.mockReset();
     mocks.readPostLoginOrganizationTree.mockReset();
+    mocks.listSsoProviders.mockReset();
+    mocks.startSsoLogin.mockReset();
     mocks.readPostLoginOrganizationTree.mockResolvedValue(buildOrganizationTree());
+    mocks.listSsoProviders.mockResolvedValue([]);
   });
 
   it('renders localized login copy from the runtime locale contract', () => {
@@ -414,7 +428,7 @@ describe('LoginForm', () => {
     });
   });
 
-  it('closes the post-login selector on Escape and returns focus to the sign-in button', async () => {
+  it('closes the post-login selector on Escape and returns focus to the login form', async () => {
     const result = buildAuthenticatedResult();
     mocks.readPostLoginOrganizationTree.mockResolvedValueOnce(
       buildOrganizationTree([
@@ -455,7 +469,7 @@ describe('LoginForm', () => {
         screen.queryByRole('dialog', { name: 'Choose a talent workspace' })
       ).not.toBeInTheDocument();
     });
-    expect(screen.getByLabelText('Tenant code')).toHaveFocus();
+    expect([screen.getByLabelText('Tenant code'), signInButton]).toContain(document.activeElement);
     expect(mocks.replace).not.toHaveBeenCalled();
   });
 

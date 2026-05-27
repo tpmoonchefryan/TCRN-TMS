@@ -95,6 +95,55 @@ model TenantCapabilityAudit {
   @@schema("public")
 }
 
+/// TMS SSO Provider - tenant product, AC platform, or external-tool SSO metadata.
+model TmsSsoProvider {
+  id                 String   @id @default(uuid()) @db.Uuid
+  tenantId           String   @map("tenant_id") @db.Uuid
+  code               String   @db.VarChar(64)
+  displayName        Json     @map("display_name") @db.JsonB
+  providerType       String   @map("provider_type") @db.VarChar(32)
+  ownerScope         String   @map("owner_scope") @db.VarChar(32)
+  issuerUrl          String?  @map("issuer_url") @db.VarChar(512)
+  authorizationUrl   String?  @map("authorization_url") @db.VarChar(512)
+  tokenUrl           String?  @map("token_url") @db.VarChar(512)
+  userinfoUrl        String?  @map("userinfo_url") @db.VarChar(512)
+  jwksUrl            String?  @map("jwks_url") @db.VarChar(512)
+  clientId           String?  @map("client_id") @db.VarChar(255)
+  clientSecretRef    String?  @map("client_secret_ref") @db.VarChar(255)
+  redirectUri        String?  @map("redirect_uri") @db.VarChar(512)
+  scopes             String[] @default(["openid", "profile", "email"]) @db.VarChar(64)
+  claimMappingPolicy Json     @default("{\"subject\":\"sub\",\"email\":\"email\",\"displayName\":\"name\",\"emailVerified\":\"email_verified\"}") @map("claim_mapping_policy") @db.JsonB
+  isEnabled          Boolean  @default(true) @map("is_enabled")
+  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt          DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  createdBy          String?  @map("created_by") @db.Uuid
+  updatedBy          String?  @map("updated_by") @db.Uuid
+  version            Int      @default(1)
+
+  @@unique([tenantId, code])
+  @@index([tenantId, ownerScope, isEnabled])
+  @@index([ownerScope, code])
+  @@map("tms_sso_provider")
+  @@schema("public")
+}
+
+/// Platform external tool SSO readiness - fail-closed readiness contract for tool deeplinks.
+model PlatformExternalToolSsoReadiness {
+  id              String   @id @default(uuid()) @db.Uuid
+  toolCode        String   @unique @map("tool_code") @db.VarChar(128)
+  status          String   @default("blocked") @db.VarChar(32)
+  requiredByPhase String?  @map("required_by_phase") @db.VarChar(64)
+  providerId      String?  @map("provider_id") @db.Uuid
+  failClosed      Boolean  @default(true) @map("fail_closed")
+  evidence        Json     @default("{}") @db.JsonB
+  updatedAt       DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  updatedBy       String?  @map("updated_by") @db.Uuid
+
+  @@index([status, failClosed])
+  @@map("platform_external_tool_sso_readiness")
+  @@schema("public")
+}
+
 /// Custom Domain Binding - Global hostname registry for tenant/subsidiary/talent owned domains
 model CustomDomainBinding {
   id                            String   @id @default(uuid()) @db.Uuid
@@ -357,10 +406,39 @@ model SystemUser {
   marshmallowExportJobs MarshmallowExportJob[]
   reportJobs            ReportJob[]
   customerAccessLogs    CustomerAccessLog[]
+  ssoAccountLinks       TmsSsoAccountLink[]
 
   @@index([email])
   @@index([isActive])
   @@map("system_user")
+  @@schema("tenant_template")
+}
+
+/// TMS SSO Account Link - tenant-local binding between a TCRN user and an SSO subject.
+model TmsSsoAccountLink {
+  id             String    @id @default(uuid()) @db.Uuid
+  userId         String    @map("user_id") @db.Uuid
+  providerId     String    @map("provider_id") @db.Uuid
+  providerCode   String    @map("provider_code") @db.VarChar(64)
+  providerIssuer String    @map("provider_issuer") @db.VarChar(512)
+  subject        String    @db.VarChar(255)
+  email          String?   @db.VarChar(255)
+  displayName    String?   @map("display_name") @db.VarChar(255)
+  claimsHash     String?   @map("claims_hash") @db.Char(64)
+  linkedAt       DateTime  @default(now()) @map("linked_at") @db.Timestamptz
+  lastLoginAt    DateTime? @map("last_login_at") @db.Timestamptz
+  revokedAt      DateTime? @map("revoked_at") @db.Timestamptz
+  revokedBy      String?   @map("revoked_by") @db.Uuid
+  createdBy      String?   @map("created_by") @db.Uuid
+  updatedAt      DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  version        Int       @default(1)
+
+  user SystemUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, revokedAt])
+  @@index([providerId, providerIssuer, subject])
+  @@index([providerCode])
+  @@map("tms_sso_account_link")
   @@schema("tenant_template")
 }
 

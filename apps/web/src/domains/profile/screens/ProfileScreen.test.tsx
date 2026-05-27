@@ -364,6 +364,14 @@ describe('ProfileScreen', () => {
         return [];
       }
 
+      if (path === '/api/v1/auth/sso/account-links') {
+        return [];
+      }
+
+      if (path === '/api/v1/auth/sso/account-link-providers') {
+        return [];
+      }
+
       throw new Error(`Unhandled request: ${path}`);
     });
 
@@ -382,6 +390,238 @@ describe('ProfileScreen', () => {
     expect(await screen.findByLabelText('Current password')).toBeInTheDocument();
     expect(screen.getByText('Active Sessions')).toBeInTheDocument();
     expect(screen.queryByText('Avatar & Email')).not.toBeInTheDocument();
+  });
+
+  it('renders and revokes current-user SSO account links from security mode', async () => {
+    let ssoLinks: Array<{
+      id: string;
+      providerId: string;
+      providerCode: string;
+      providerIssuer: string;
+      email: string | null;
+      displayName: string | null;
+      linkedAt: string;
+      lastLoginAt: string | null;
+      revokedAt: string | null;
+    }> = [
+      {
+        id: 'sso-link-1',
+        providerId: 'provider-1',
+        providerCode: 'mock-sso',
+        providerIssuer: 'mock:mock-sso',
+        email: 'alice.idp@example.com',
+        displayName: 'Alice IdP',
+        linkedAt: '2026-05-27T08:00:00.000Z',
+        lastLoginAt: '2026-05-27T09:00:00.000Z',
+        revokedAt: null,
+      },
+    ];
+
+    currentSession = {
+      tenantName: 'Moonshot Tenant',
+      user: {
+        id: 'user-1',
+        username: 'alice',
+        email: 'alice@example.com',
+        displayName: 'Alice',
+        avatarUrl: null,
+        preferredLanguage: 'en',
+        totpEnabled: false,
+        forceReset: false,
+        passwordExpiresAt: '2026-07-16T10:00:00.000Z',
+      },
+    };
+
+    mockRequest.mockImplementation(async (path: string, init?: RequestInit) => {
+      if (path === '/api/v1/users/me' && (!init || init.method === undefined)) {
+        return buildProfile();
+      }
+
+      if (path === '/api/v1/users/me/sessions') {
+        return [];
+      }
+
+      if (path === '/api/v1/auth/sso/account-links' && (!init || init.method === undefined)) {
+        return ssoLinks;
+      }
+
+      if (path === '/api/v1/auth/sso/account-link-providers') {
+        return [];
+      }
+
+      if (path === '/api/v1/auth/sso/account-links/sso-link-1' && init?.method === 'DELETE') {
+        ssoLinks = [{ ...ssoLinks[0], revokedAt: '2026-05-27T10:00:00.000Z' }];
+        return { revoked: true };
+      }
+
+      throw new Error(`Unhandled request: ${path}`);
+    });
+
+    renderProfileScreen({ tenantId: 'tenant-1', mode: 'security' });
+
+    expect(await screen.findByText('Single sign-on connections')).toBeInTheDocument();
+    expect(screen.getByText('mock-sso')).toBeInTheDocument();
+    expect(screen.getByText('Alice IdP / alice.idp@example.com')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Revoke connection' }));
+
+    expect(await screen.findByText('Revoke mock-sso SSO connection?')).toBeInTheDocument();
+    fireEvent.click(screen.getAllByRole('button', { name: 'Revoke connection' })[1]);
+
+    await waitFor(() => {
+      expect(mockRequest).toHaveBeenCalledWith(
+        '/api/v1/auth/sso/account-links/sso-link-1',
+        expect.objectContaining({
+          method: 'DELETE',
+        })
+      );
+    });
+
+    expect(await screen.findByText('SSO connection revoked.')).toBeInTheDocument();
+    expect(await screen.findByText('Revoked')).toBeInTheDocument();
+  });
+
+  it('starts current-user SSO account linking from security mode', async () => {
+    window.location.hash = '';
+
+    currentSession = {
+      tenantName: 'Moonshot Tenant',
+      user: {
+        id: 'user-1',
+        username: 'alice',
+        email: 'alice@example.com',
+        displayName: 'Alice',
+        avatarUrl: null,
+        preferredLanguage: 'en',
+        totpEnabled: false,
+        forceReset: false,
+        passwordExpiresAt: '2026-07-16T10:00:00.000Z',
+      },
+    };
+
+    mockRequest.mockImplementation(async (path: string, init?: RequestInit) => {
+      if (path === '/api/v1/users/me' && (!init || init.method === undefined)) {
+        return buildProfile();
+      }
+
+      if (path === '/api/v1/users/me/sessions') {
+        return [];
+      }
+
+      if (path === '/api/v1/auth/sso/account-links') {
+        return [];
+      }
+
+      if (path === '/api/v1/auth/sso/account-link-providers') {
+        return [
+          {
+            id: 'provider-1',
+            code: 'mock-sso',
+            displayName: { en: 'Mock SSO' },
+            providerType: 'oidc',
+            ownerScope: 'tenant_product',
+            enabled: true,
+          },
+        ];
+      }
+
+      if (path === '/api/v1/auth/sso/account-links/start' && init?.method === 'POST') {
+        return {
+          authorizationUrl: '#sso-link-started',
+          stateExpiresIn: 300,
+          provider: {
+            id: 'provider-1',
+            code: 'mock-sso',
+            displayName: { en: 'Mock SSO' },
+            providerType: 'oidc',
+            ownerScope: 'tenant_product',
+            enabled: true,
+          },
+        };
+      }
+
+      throw new Error(`Unhandled request: ${path}`);
+    });
+
+    renderProfileScreen({ tenantId: 'tenant-1', mode: 'security' });
+
+    const linkButton = await screen.findByRole('button', {
+      name: 'Link provider: Mock SSO',
+    });
+    fireEvent.click(linkButton);
+
+    await waitFor(() => {
+      expect(mockRequest).toHaveBeenCalledWith(
+        '/api/v1/auth/sso/account-links/start',
+        expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify({
+            providerCode: 'mock-sso',
+            next: '/tenant/tenant-1/profile/security',
+          }),
+        })
+      );
+    });
+    expect(window.location.hash).toBe('#sso-link-started');
+  });
+
+  it('shows external-tool SSO readiness only in AC security mode', async () => {
+    currentPathname = '/ac/tenant-ac/profile/security';
+    currentSession = {
+      tenantName: 'AC Tenant',
+      user: {
+        id: 'user-1',
+        username: 'alice',
+        email: 'alice@example.com',
+        displayName: 'Alice',
+        avatarUrl: null,
+        preferredLanguage: 'en',
+        totpEnabled: false,
+        forceReset: false,
+        passwordExpiresAt: '2026-07-16T10:00:00.000Z',
+      },
+    };
+
+    mockRequest.mockImplementation(async (path: string, init?: RequestInit) => {
+      if (path === '/api/v1/users/me' && (!init || init.method === undefined)) {
+        return buildProfile();
+      }
+
+      if (path === '/api/v1/users/me/sessions') {
+        return [];
+      }
+
+      if (path === '/api/v1/auth/sso/account-links') {
+        return [];
+      }
+
+      if (path === '/api/v1/auth/sso/account-link-providers') {
+        return [];
+      }
+
+      if (path === '/api/v1/auth/sso/external-tools/readiness') {
+        return [
+          {
+            toolCode: 'grafana_observability',
+            status: 'blocked',
+            requiredByPhase: 'phase-5',
+            providerId: null,
+            failClosed: true,
+            evidence: { reason: 'awaiting_sso_acceptance' },
+            updatedAt: '2026-05-27T09:00:00.000Z',
+          },
+        ];
+      }
+
+      throw new Error(`Unhandled request: ${path}`);
+    });
+
+    renderProfileScreen({ tenantId: 'tenant-ac', workspaceKind: 'ac', mode: 'security' });
+
+    expect(await screen.findByText('External-tool SSO readiness')).toBeInTheDocument();
+    expect(screen.getByText('grafana_observability')).toBeInTheDocument();
+    expect(screen.getByText('Fail closed')).toBeInTheDocument();
+    expect(screen.queryByText(/password prompt|local credential/i)).not.toBeInTheDocument();
   });
 
   it('paginates security sessions at 20 rows by default and lets the user advance pages', async () => {
@@ -416,6 +656,14 @@ describe('ProfileScreen', () => {
 
       if (path === '/api/v1/users/me/sessions') {
         return sessions;
+      }
+
+      if (path === '/api/v1/auth/sso/account-links') {
+        return [];
+      }
+
+      if (path === '/api/v1/auth/sso/account-link-providers') {
+        return [];
       }
 
       throw new Error(`Unhandled request: ${path}`);
@@ -472,6 +720,14 @@ describe('ProfileScreen', () => {
 
       if (path === '/api/v1/users/me/sessions') {
         return sessions;
+      }
+
+      if (path === '/api/v1/auth/sso/account-links') {
+        return [];
+      }
+
+      if (path === '/api/v1/auth/sso/account-link-providers') {
+        return [];
       }
 
       throw new Error(`Unhandled request: ${path}`);
@@ -553,6 +809,14 @@ describe('ProfileScreen', () => {
         return [];
       }
 
+      if (path === '/api/v1/auth/sso/account-links') {
+        return [];
+      }
+
+      if (path === '/api/v1/auth/sso/account-link-providers') {
+        return [];
+      }
+
       if (path === '/api/v1/users/me/totp/setup' && init?.method === 'POST') {
         return {
           secret: 'ABC123',
@@ -620,6 +884,14 @@ describe('ProfileScreen', () => {
 
       if (path === '/api/v1/users/me/sessions' && (!init || init.method === undefined)) {
         return sessions;
+      }
+
+      if (path === '/api/v1/auth/sso/account-links') {
+        return [];
+      }
+
+      if (path === '/api/v1/auth/sso/account-link-providers') {
+        return [];
       }
 
       if (path === '/api/v1/users/me/sessions/sess-old' && init?.method === 'DELETE') {

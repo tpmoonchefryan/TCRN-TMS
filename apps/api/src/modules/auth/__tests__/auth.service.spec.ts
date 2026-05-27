@@ -141,6 +141,113 @@ describe('AuthService', () => {
       );
     });
 
+    it('fails closed before issuing an SSO session when permission snapshots cannot refresh', async () => {
+      (
+        mockPermissionSnapshotService.refreshUserSnapshots as ReturnType<typeof vi.fn>
+      ).mockRejectedValueOnce(new Error('redis unavailable'));
+
+      await expect(
+        service.completeLogin(
+          {
+            ...mockUser,
+            tenant_id: mockTenant.id,
+            tenant_code: mockTenant.code,
+            tenant_name: mockTenant.name,
+            tenant_tier: mockTenant.tier,
+          },
+          mockTenant.schemaName,
+          '127.0.0.1',
+          'Vitest',
+          { authMethod: 'sso', requirePermissionSnapshot: true }
+        )
+      ).rejects.toThrow(ForbiddenException);
+
+      expect(mockTokenService.generateAccessToken).not.toHaveBeenCalled();
+      expect(mockTokenService.generateRefreshToken).not.toHaveBeenCalled();
+    });
+
+    it('keeps TCRN TOTP step-up before issuing an SSO session', async () => {
+      const result = await service.completeLogin(
+        {
+          ...mockUser,
+          is_totp_enabled: true,
+          tenant_id: mockTenant.id,
+          tenant_code: mockTenant.code,
+          tenant_name: mockTenant.name,
+          tenant_tier: mockTenant.tier,
+        },
+        mockTenant.schemaName,
+        '127.0.0.1',
+        'Vitest',
+        { authMethod: 'sso', enforcePreSessionPosture: true, requirePermissionSnapshot: true }
+      );
+
+      expect(result).toEqual({
+        type: 'totp_required',
+        sessionToken: 'totp_session_token',
+        expiresIn: 300,
+      });
+      expect(mockTokenService.generateTotpSessionToken).toHaveBeenCalledWith({
+        sub: mockUser.id,
+        tid: mockTenant.id,
+        tsc: mockTenant.schemaName,
+      });
+      expect(mockTokenService.generateAccessToken).not.toHaveBeenCalled();
+      expect(mockTokenService.generateRefreshToken).not.toHaveBeenCalled();
+      expect(mockSessionService.trackLoginAttempt).not.toHaveBeenCalled();
+    });
+
+    it('fails closed before SSO token issuance when password reset posture is present', async () => {
+      await expect(
+        service.completeLogin(
+          {
+            ...mockUser,
+            force_reset: true,
+            tenant_id: mockTenant.id,
+            tenant_code: mockTenant.code,
+            tenant_name: mockTenant.name,
+            tenant_tier: mockTenant.tier,
+          },
+          mockTenant.schemaName,
+          '127.0.0.1',
+          'Vitest',
+          { authMethod: 'sso', enforcePreSessionPosture: true, requirePermissionSnapshot: true }
+        )
+      ).rejects.toThrow(UnauthorizedException);
+
+      expect(mockTokenService.generateAccessToken).not.toHaveBeenCalled();
+      expect(mockTokenService.generateRefreshToken).not.toHaveBeenCalled();
+      expect(mockTokenService.generatePasswordResetSessionToken).not.toHaveBeenCalled();
+      expect(mockSessionService.trackLoginAttempt).not.toHaveBeenCalled();
+    });
+
+    it('fails closed before SSO token issuance when the TCRN account is locked', async () => {
+      (mockSessionService.isUserLocked as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+        isLocked: true,
+        lockedUntil: new Date('2026-05-27T01:00:00.000Z'),
+      });
+
+      await expect(
+        service.completeLogin(
+          {
+            ...mockUser,
+            tenant_id: mockTenant.id,
+            tenant_code: mockTenant.code,
+            tenant_name: mockTenant.name,
+            tenant_tier: mockTenant.tier,
+          },
+          mockTenant.schemaName,
+          '127.0.0.1',
+          'Vitest',
+          { authMethod: 'sso', enforcePreSessionPosture: true, requirePermissionSnapshot: true }
+        )
+      ).rejects.toThrow(UnauthorizedException);
+
+      expect(mockTokenService.generateAccessToken).not.toHaveBeenCalled();
+      expect(mockTokenService.generateRefreshToken).not.toHaveBeenCalled();
+      expect(mockSessionService.trackLoginAttempt).not.toHaveBeenCalled();
+    });
+
     it('should throw UnauthorizedException for invalid tenant', async () => {
       (mockTenantService.getTenantByCode as ReturnType<typeof vi.fn>).mockResolvedValue(null);
 

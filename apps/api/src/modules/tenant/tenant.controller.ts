@@ -959,6 +959,7 @@ export class TenantController {
   @ApiResponse({
     status: 200,
     description: 'Returns tenant capability assignments and effective snapshot',
+    schema: { type: 'object' },
   })
   async getTenantCapabilities(
     @CurrentUser() user: AuthenticatedUser,
@@ -984,6 +985,7 @@ export class TenantController {
   @ApiResponse({
     status: 200,
     description: 'Returns updated tenant capability assignments and effective snapshot',
+    schema: { type: 'object' },
   })
   async replaceTenantCapabilities(
     @CurrentUser() user: AuthenticatedUser,
@@ -1068,7 +1070,8 @@ export class TenantController {
         }),
       },
     });
-    const capabilities = await this.moduleCapabilityService.buildTenantResponseCapabilities(updated);
+    const capabilities =
+      await this.moduleCapabilityService.buildTenantResponseCapabilities(updated);
 
     return success({
       id: updated.id,
