@@ -44,6 +44,19 @@ const filesByScope = {
     ),
     path.join(webRoot, 'src/platform/routing/AcShell.tsx'),
   ],
+  'observability-adapter-foundation': [
+    path.join(webRoot, 'src/domains/observability/screens/observability.copy.ts'),
+    path.join(webRoot, 'src/domains/observability/screens/ObservabilityScreen.tsx'),
+    path.join(
+      webRoot,
+      'src/domains/platform-tool-connections/screens/platform-tool-connections.copy.ts'
+    ),
+    path.join(
+      webRoot,
+      'src/domains/platform-tool-connections/screens/PlatformToolConnectionsScreen.tsx'
+    ),
+    path.join(webRoot, 'src/platform/routing/AcShell.tsx'),
+  ],
 };
 const files = filesByScope[options.scope] ?? [];
 const fileTexts = files.map((filePath) => ({

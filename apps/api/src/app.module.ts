@@ -30,6 +30,7 @@ import { IntegrationModule } from './modules/integration';
 import { LogModule } from './modules/log';
 import { MarshmallowModule } from './modules/marshmallow';
 import { MinioModule } from './modules/minio';
+import { ObservabilityAdaptersModule } from './modules/observability-adapters';
 import { OrganizationModule } from './modules/organization';
 import { PermissionModule } from './modules/permission';
 import { PiiModule } from './modules/pii';
@@ -135,6 +136,7 @@ import { repoEnvFilePaths } from './repo-env';
 
     // AC platform tool connection framework
     PlatformToolsModule,
+    ObservabilityAdaptersModule,
   ],
   controllers: [AppController],
   providers: [

@@ -14,8 +14,11 @@ import type {
 import {
   buildCompatibleLogSearchQuery,
   buildCompatibleRawLogSearchQuery,
+  buildTenantScopedLokiKeywordSearchQuery,
   getDefaultLokiQueryStart,
+  isRawLogQuerySyntax,
   LOKI_LOG_STREAMS,
+  normalizeLokiQueryRange,
   normalizeLogSearchStream,
   resolveRelativeTimeRange,
   transformLokiQueryResponse,
@@ -36,6 +39,7 @@ export class LokiQueryService {
   }
 
   async search(params: {
+    tenantSchema?: string;
     keyword: string;
     stream?: string;
     start?: string;
@@ -46,6 +50,7 @@ export class LokiQueryService {
   }
 
   async queryChangeLogs(params: {
+    tenantSchema?: string;
     objectType?: string;
     action?: string;
     start?: string;
@@ -56,6 +61,7 @@ export class LokiQueryService {
   }
 
   async queryTechEvents(params: {
+    tenantSchema?: string;
     severity?: string;
     eventType?: string;
     scope?: string;
@@ -67,6 +73,7 @@ export class LokiQueryService {
   }
 
   async queryIntegrationLogs(params: {
+    tenantSchema?: string;
     direction?: string;
     consumerCode?: string;
     status?: string;
@@ -81,8 +88,11 @@ export class LokiQueryService {
 export {
   buildCompatibleLogSearchQuery,
   buildCompatibleRawLogSearchQuery,
+  buildTenantScopedLokiKeywordSearchQuery,
   getDefaultLokiQueryStart as getDefaultStart,
+  isRawLogQuerySyntax,
   LOKI_LOG_STREAMS,
+  normalizeLokiQueryRange,
   normalizeLogSearchStream,
   resolveRelativeTimeRange,
   transformLokiQueryResponse as transformResponse,

@@ -1,10 +1,12 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-import { Controller, Get, Query } from '@nestjs/common';
+import { Controller, ForbiddenException, Get, Query, Req } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import type { Request } from 'express';
 
 import { ErrorCodes } from '@tcrn/shared';
 
-import { RequirePermissions } from '../../../common/decorators';
+import { CurrentUser, RequirePermissions, type AuthenticatedUser } from '../../../common/decorators';
+import { isRawLogQuerySyntax } from '../domain/loki-query.policy';
 import { buildCompatibleLogSearchQuery, LokiQueryService } from '../services';
 
 const LOG_SEARCH_RESPONSE_SCHEMA = {
@@ -129,7 +131,7 @@ export class LogSearchController {
   @ApiQuery({
     name: 'query',
     required: false,
-    description: 'Raw LogQL query or plain-text keyword fallback',
+    description: 'Legacy plain-text keyword fallback. Raw LogQL selectors are denied.',
   })
   @ApiQuery({
     name: 'timeRange',
@@ -157,6 +159,8 @@ export class LogSearchController {
     schema: LOG_SEARCH_FORBIDDEN_SCHEMA,
   })
   async search(
+    @Req() req: Request,
+    @CurrentUser() user: AuthenticatedUser,
     @Query('keyword') keyword?: string,
     @Query('stream') stream?: string,
     @Query('severity') severity?: string,
@@ -167,8 +171,18 @@ export class LogSearchController {
     @Query('timeRange') timeRange?: string,
     @Query('app') app?: string
   ) {
+    if (isRawLogQuerySyntax(query)) {
+      throw new ForbiddenException({
+        code: ErrorCodes.PERM_ACCESS_DENIED,
+        message: 'Raw LogQL queries are not available through product log search',
+      });
+    }
+
+    const tenantSchema = this.resolveTenantSchema(req, user);
+
     return this.lokiQueryService.query(
       buildCompatibleLogSearchQuery({
+        tenantSchema,
         keyword,
         stream,
         severity,
@@ -201,6 +215,8 @@ export class LogSearchController {
     schema: LOG_SEARCH_FORBIDDEN_SCHEMA,
   })
   async searchChangeLogs(
+    @Req() req: Request,
+    @CurrentUser() user: AuthenticatedUser,
     @Query('objectType') objectType?: string,
     @Query('action') action?: string,
     @Query('start') start?: string,
@@ -208,6 +224,7 @@ export class LogSearchController {
     @Query('limit') limit?: string
   ) {
     return this.lokiQueryService.queryChangeLogs({
+      tenantSchema: this.resolveTenantSchema(req, user),
       objectType,
       action,
       start,
@@ -235,6 +252,8 @@ export class LogSearchController {
     schema: LOG_SEARCH_FORBIDDEN_SCHEMA,
   })
   async searchTechEvents(
+    @Req() req: Request,
+    @CurrentUser() user: AuthenticatedUser,
     @Query('severity') severity?: string,
     @Query('eventType') eventType?: string,
     @Query('scope') scope?: string,
@@ -243,6 +262,7 @@ export class LogSearchController {
     @Query('limit') limit?: string
   ) {
     return this.lokiQueryService.queryTechEvents({
+      tenantSchema: this.resolveTenantSchema(req, user),
       severity,
       eventType,
       scope,
@@ -271,6 +291,8 @@ export class LogSearchController {
     schema: LOG_SEARCH_FORBIDDEN_SCHEMA,
   })
   async searchIntegrationLogs(
+    @Req() req: Request,
+    @CurrentUser() user: AuthenticatedUser,
     @Query('direction') direction?: string,
     @Query('consumerCode') consumerCode?: string,
     @Query('status') status?: string,
@@ -279,6 +301,7 @@ export class LogSearchController {
     @Query('limit') limit?: string
   ) {
     return this.lokiQueryService.queryIntegrationLogs({
+      tenantSchema: this.resolveTenantSchema(req, user),
       direction,
       consumerCode,
       status,
@@ -286,5 +309,18 @@ export class LogSearchController {
       end,
       limit: limit ? parseInt(limit, 10) : undefined,
     });
+  }
+
+  private resolveTenantSchema(req: Request, user: AuthenticatedUser | null): string {
+    const tenantSchema = user?.tenantSchema ?? req.tenantContext?.schemaName;
+
+    if (!tenantSchema || !/^[A-Za-z0-9_]+$/.test(tenantSchema)) {
+      throw new ForbiddenException({
+        code: ErrorCodes.PERM_ACCESS_DENIED,
+        message: 'Tenant-scoped log search requires a valid tenant context',
+      });
+    }
+
+    return tenantSchema;
   }
 }

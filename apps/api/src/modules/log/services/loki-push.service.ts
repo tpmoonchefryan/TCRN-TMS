@@ -8,8 +8,65 @@ import { ConfigService } from '@nestjs/config';
 export interface LokiEntry {
   stream: string;
   labels: Record<string, string>;
+  tenantSchema?: string;
   timestamp: Date | string;
   data: unknown;
+}
+
+const SENSITIVE_OBSERVABILITY_KEY_PATTERN =
+  /(password|token|authorization|cookie|client[_-]?secret|api[_-]?key|private[_-]?key|requestBody|responseBody|email|phone|customer|pii)/i;
+const EMAIL_VALUE_PATTERN = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi;
+const PHONE_VALUE_PATTERN = /\+?\d[\d\s().-]{7,}\d/g;
+const TENANT_SCHEMA_LABEL_PATTERN = /^[A-Za-z0-9_]+$/;
+
+function redactObservabilityText(value: string) {
+  return value
+    .replace(EMAIL_VALUE_PATTERN, '[redacted-email]')
+    .replace(PHONE_VALUE_PATTERN, '[redacted-phone]');
+}
+
+function redactObservabilityValue(value: unknown, depth = 0): unknown {
+  if (depth > 8) {
+    return '[redacted-depth-limit]';
+  }
+
+  if (typeof value === 'string') {
+    return redactObservabilityText(value);
+  }
+
+  if (Array.isArray(value)) {
+    return value.map((item) => redactObservabilityValue(item, depth + 1));
+  }
+
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>).map(([key, nestedValue]) => [
+        key,
+        SENSITIVE_OBSERVABILITY_KEY_PATTERN.test(key)
+          ? '[redacted]'
+          : redactObservabilityValue(nestedValue, depth + 1),
+      ])
+    );
+  }
+
+  return value;
+}
+
+function redactObservabilityLabels(labels: Record<string, string>) {
+  return Object.fromEntries(
+    Object.entries(labels).map(([key, value]) => [
+      key,
+      SENSITIVE_OBSERVABILITY_KEY_PATTERN.test(key) ? '[redacted]' : redactObservabilityText(value),
+    ])
+  );
+}
+
+function tenantScopeLabel(tenantSchema?: string): Record<string, string> {
+  const trimmed = tenantSchema?.trim();
+
+  return trimmed && TENANT_SCHEMA_LABEL_PATTERN.test(trimmed)
+    ? { tenant_schema: trimmed }
+    : {};
 }
 
 /**
@@ -57,14 +114,23 @@ export class LokiPushService implements OnModuleInit {
   /**
    * Push single log entry to Loki
    */
-  async push(stream: string, labels: Record<string, string>, entry: unknown): Promise<void> {
+  async push(
+    stream: string,
+    labels: Record<string, string>,
+    entry: unknown,
+    tenantSchema?: string
+  ): Promise<void> {
     if (!this.enabled) return;
 
     this.pendingEntries.push({
       stream,
-      labels,
+      labels: {
+        ...redactObservabilityLabels(labels),
+        ...tenantScopeLabel(tenantSchema),
+      },
+      tenantSchema,
       timestamp: new Date(),
-      data: entry,
+      data: redactObservabilityValue(entry),
     });
 
     // Flush if batch is full
@@ -80,6 +146,7 @@ export class LokiPushService implements OnModuleInit {
     action: string;
     objectType: string;
     objectId: string;
+    tenantSchema?: string;
     operatorId?: string;
     diff: unknown;
   }): Promise<void> {
@@ -89,7 +156,8 @@ export class LokiPushService implements OnModuleInit {
         action: entry.action,
         object_type: entry.objectType,
       },
-      entry
+      entry,
+      entry.tenantSchema
     );
   }
 
@@ -100,6 +168,7 @@ export class LokiPushService implements OnModuleInit {
     severity: string;
     eventType: string;
     scope: string;
+    tenantSchema?: string;
     message?: string;
     payload?: unknown;
   }): Promise<void> {
@@ -110,7 +179,8 @@ export class LokiPushService implements OnModuleInit {
         event_type: entry.eventType,
         scope: entry.scope,
       },
-      entry
+      entry,
+      entry.tenantSchema
     );
   }
 
@@ -119,6 +189,7 @@ export class LokiPushService implements OnModuleInit {
    */
   async pushIntegrationLog(entry: {
     direction: string;
+    tenantSchema?: string;
     consumerCode?: string;
     responseStatus?: number;
     endpoint: string;
@@ -130,7 +201,8 @@ export class LokiPushService implements OnModuleInit {
         consumer_code: entry.consumerCode || 'unknown',
         status: entry.responseStatus?.toString() || 'unknown',
       },
-      entry
+      entry,
+      entry.tenantSchema
     );
   }
 

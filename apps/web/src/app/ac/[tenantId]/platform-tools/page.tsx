@@ -2,9 +2,17 @@ import { PlatformToolConnectionsScreen } from '@/domains/platform-tool-connectio
 
 export default async function AcPlatformToolsPage({
   params,
+  searchParams,
 }: Readonly<{
   params: Promise<{ tenantId: string }>;
+  searchParams?: Promise<{ family?: string | string[] }>;
 }>) {
   const { tenantId } = await params;
-  return <PlatformToolConnectionsScreen tenantId={tenantId} />;
+  const resolvedSearchParams = searchParams ? await searchParams : {};
+  const rawFamily = Array.isArray(resolvedSearchParams.family)
+    ? resolvedSearchParams.family[0]
+    : resolvedSearchParams.family;
+  const initialFamily = rawFamily === 'observability' ? 'observability' : undefined;
+
+  return <PlatformToolConnectionsScreen tenantId={tenantId} initialFamily={initialFamily} />;
 }

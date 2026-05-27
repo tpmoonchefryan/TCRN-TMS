@@ -88,13 +88,90 @@ function writePlatformToolEvidence() {
   }
 }
 
-if (readArg('--filter', 'sso') === 'platform-tools') {
+function writeObservabilityEvidence() {
+  const out = readArg('--out', 'observability-swagger-redaction.json');
+  const controllerPath = path.join(
+    productRoot,
+    'apps/api/src/modules/observability-adapters/observability-adapters.controller.ts'
+  );
+  const dtoPath = path.join(
+    productRoot,
+    'apps/api/src/modules/observability-adapters/dto/observability-adapters.dto.ts'
+  );
+  const controllerText = readFileSync(controllerPath, 'utf8');
+  const dtoText = readFileSync(dtoPath, 'utf8');
+  const requiredPaths = [
+    '/observability/adapters/definitions',
+    '/observability/adapters/policy',
+    '/observability/adapters/summary',
+    '/observability/adapters/{adapterCode}/deep-link',
+  ];
+  const requiredSourceSnippets = [
+    "@Get('definitions')",
+    "@Get('policy')",
+    "@Get('summary')",
+    "@Get(':adapterCode/deep-link')",
+  ];
+  const missingRequiredPaths = requiredSourceSnippets
+    .map((snippet, index) => ({ snippet, path: requiredPaths[index] }))
+    .filter((entry) => !controllerText.includes(entry.snippet))
+    .map((entry) => entry.path);
+  const documentText = `${controllerText}\n${dtoText}`;
+  const rawMaterialHits = [
+    'secretValue',
+    'clientSecret',
+    'api_key',
+    'private_key',
+    'access_token',
+    'id_token',
+    'authorization_code',
+    'password',
+  ]
+    .filter((needle) => documentText.includes(needle))
+    .map((needle) => ({ needle, classification: 'forbidden' }));
+  const payload = {
+    checkedAt: new Date().toISOString(),
+    test_layer: 'source_scan',
+    data_mode: 'source_scan',
+    target_scope: 'observability_adapter_foundation',
+    observabilityPaths: requiredPaths.filter((pathName) => !missingRequiredPaths.includes(pathName)),
+    missingRequiredPaths,
+    rawMaterialHits,
+    forbiddenRawMaterial: rawMaterialHits.map((hit) => hit.needle),
+    bearerAuthPresent: controllerText.includes('@ApiBearerAuth()'),
+    acOnlyGuardPresent: controllerText.includes('AC operators only'),
+    executePermissionForDeepLink: controllerText.includes("action: 'execute'"),
+    passed:
+      missingRequiredPaths.length === 0 &&
+      rawMaterialHits.length === 0 &&
+      controllerText.includes('@ApiBearerAuth()') &&
+      controllerText.includes('AC operators only') &&
+      controllerText.includes("action: 'execute'"),
+  };
+
+  mkdirSync(path.dirname(out), { recursive: true });
+  writeFileSync(out, `${JSON.stringify(payload, null, 2)}\n`, 'utf8');
+  console.log(JSON.stringify(payload, null, 2));
+
+  if (!payload.passed) {
+    process.exitCode = 1;
+  }
+}
+
+const filter = readArg('--filter', 'sso');
+
+if (filter === 'platform-tools') {
   writePlatformToolEvidence();
 } else {
-  const result = spawnSync('pnpm', ['exec', 'tsx', scriptPath, ...args], {
-    cwd: productRoot,
-    stdio: 'inherit',
-  });
+  const scriptRelativePath = path.relative(path.join(productRoot, 'apps/api'), scriptPath);
+  const result = spawnSync(
+    'pnpm',
+    ['--dir', 'apps/api', 'exec', 'ts-node', '-P', 'tsconfig.json', scriptRelativePath, ...args],
+    {
+      cwd: productRoot,
+      stdio: 'inherit',
+    }
+  );
 
   process.exitCode = result.status ?? 1;
 }

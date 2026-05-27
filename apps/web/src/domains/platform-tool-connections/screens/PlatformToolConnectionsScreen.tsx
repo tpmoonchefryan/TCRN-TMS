@@ -128,15 +128,23 @@ function buildFormState(item: PlatformToolConnectionBundle): FormState {
   };
 }
 
+function normalizeInitialFamily(value?: PlatformToolFamily | 'all' | 'observability') {
+  return value === 'observability' ? 'observability_console' : value ?? 'all';
+}
+
 export function PlatformToolConnectionsScreen({
   tenantId,
+  initialFamily,
 }: Readonly<{
   tenantId: string;
+  initialFamily?: PlatformToolFamily | 'all' | 'observability';
 }>) {
   const { request } = useSession();
   const copy = usePlatformToolConnectionsCopy();
   const [environment, setEnvironment] = useState<PlatformToolConnectionEnvironment>('local');
-  const [family, setFamily] = useState<PlatformToolFamily | 'all'>('all');
+  const [family, setFamily] = useState<PlatformToolFamily | 'all'>(() =>
+    normalizeInitialFamily(initialFamily)
+  );
   const [items, setItems] = useState<PlatformToolConnectionBundle[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

@@ -4,6 +4,7 @@
  * Loki query parameters
  */
 export interface LokiQueryParams {
+  tenantSchema?: string;
   stream?: string;
   severity?: string;
   eventType?: string;
@@ -15,6 +16,7 @@ export interface LokiQueryParams {
   limit?: number;
   direction?: 'forward' | 'backward';
   rawQuery?: string;
+  trustedRawQuery?: true;
 }
 
 export const LOKI_LOG_STREAMS = ['change_log', 'technical_event_log', 'integration_log'] as const;
@@ -22,6 +24,7 @@ export const LOKI_LOG_STREAMS = ['change_log', 'technical_event_log', 'integrati
 export type LokiLogStream = (typeof LOKI_LOG_STREAMS)[number];
 
 export interface CompatibleLogSearchParams {
+  tenantSchema?: string;
   keyword?: string;
   stream?: string;
   severity?: string;
@@ -42,6 +45,11 @@ const RELATIVE_TIME_RANGE_MS = {
 } as const;
 
 const LEGACY_APPLICATION_FILTERS = new Set(['api', 'web', 'worker']);
+const LOKI_MAX_QUERY_RANGE_MS = 24 * 60 * 60 * 1000;
+const LOKI_MAX_RESULT_LIMIT = 100;
+const TENANT_SCHEMA_LABEL_PATTERN = /^[A-Za-z0-9_]+$/;
+const RAW_LOG_QUERY_SYNTAX_PATTERN =
+  /(^\s*\{)|(\|\s*(json|regexp|pattern|line_format|label_format|unwrap|=~|!~|=|!=))|(\[[0-9]+[smhd]\])|(\b(count|sum|avg|max|min|rate|count_over_time|sum_over_time|quantile_over_time)\s*\()/i;
 
 /**
  * Loki query response entry
@@ -109,7 +117,7 @@ export function resolveRelativeTimeRange(
   }
 
   const end = new Date(now);
-  const start = new Date(end.getTime() - durationMs);
+  const start = new Date(end.getTime() - Math.min(durationMs, LOKI_MAX_QUERY_RANGE_MS));
 
   return {
     start: start.toISOString(),
@@ -117,16 +125,24 @@ export function resolveRelativeTimeRange(
   };
 }
 
+export function isRawLogQuerySyntax(value?: string): boolean {
+  const trimmed = value?.trim();
+
+  if (!trimmed) {
+    return false;
+  }
+
+  return RAW_LOG_QUERY_SYNTAX_PATTERN.test(trimmed);
+}
+
 export function buildCompatibleRawLogSearchQuery(query: string, stream?: LokiLogStream): string {
   const trimmedQuery = query.trim();
 
-  if (hasLogSelector(trimmedQuery)) {
-    return injectStreamIntoFirstSelector(trimmedQuery, stream);
+  if (isRawLogQuerySyntax(trimmedQuery)) {
+    throw new Error('raw_logql_denied');
   }
 
-  const selector = stream ? `{app="tcrn-tms", stream="${stream}"}` : '{app="tcrn-tms"}';
-
-  return `${selector} |= ${JSON.stringify(trimmedQuery)}`;
+  return buildLokiKeywordSearchQuery(trimmedQuery, stream);
 }
 
 export function buildCompatibleLogSearchQuery(
@@ -140,10 +156,13 @@ export function buildCompatibleLogSearchQuery(
   const relativeRange = resolveRelativeTimeRange(params.timeRange, now);
   const start = params.start || relativeRange?.start;
   const end = params.end || relativeRange?.end;
+  const tenantSchema = normalizeTenantSchemaLabel(params.tenantSchema);
 
   if (query) {
     return {
-      rawQuery: buildCompatibleRawLogSearchQuery(query, stream),
+      keyword: query,
+      ...(tenantSchema ? { tenantSchema } : {}),
+      stream,
       start,
       end,
       limit,
@@ -152,6 +171,7 @@ export function buildCompatibleLogSearchQuery(
 
   return {
     keyword,
+    ...(tenantSchema ? { tenantSchema } : {}),
     stream,
     severity: params.severity?.trim() || undefined,
     start,
@@ -161,91 +181,140 @@ export function buildCompatibleLogSearchQuery(
 }
 
 export function buildLokiQueryLogQl(params: LokiQueryParams): string {
-  const labels: string[] = ['app="tcrn-tms"'];
+  const labels: string[] = [buildLabelMatcher('app', 'tcrn-tms')];
 
+  const tenantSchema = normalizeTenantSchemaLabel(params.tenantSchema);
+  if (tenantSchema) {
+    labels.push(buildLabelMatcher('tenant_schema', tenantSchema));
+  }
   if (params.stream) {
-    labels.push(`stream="${params.stream}"`);
+    labels.push(buildLabelMatcher('stream', params.stream));
   }
   if (params.severity) {
-    labels.push(`severity="${params.severity}"`);
+    labels.push(buildLabelMatcher('severity', params.severity));
   }
   if (params.eventType) {
-    labels.push(`event_type="${params.eventType}"`);
+    labels.push(buildLabelMatcher('event_type', params.eventType));
   }
   if (params.scope) {
-    labels.push(`scope="${params.scope}"`);
+    labels.push(buildLabelMatcher('scope', params.scope));
   }
 
   let query = `{${labels.join(', ')}}`;
 
   if (params.traceId) {
-    query += ` | json | trace_id="${params.traceId}"`;
+    query += ` | json | trace_id=${formatLogQlString(params.traceId)}`;
   }
   if (params.keyword) {
-    query += ` |= "${params.keyword}"`;
+    query += ` |= ${formatLogQlString(params.keyword)}`;
   }
 
   return query;
 }
 
 export function buildLokiKeywordSearchQuery(keyword: string, stream?: string): string {
-  let logql = '{app="tcrn-tms"';
+  let logql = `{${buildLabelMatcher('app', 'tcrn-tms')}`;
   if (stream) {
-    logql += `, stream="${stream}"`;
+    logql += `, ${buildLabelMatcher('stream', stream)}`;
   }
-  logql += `} |= "${keyword}"`;
+  logql += `} |= ${formatLogQlString(keyword)}`;
 
   return logql;
 }
 
-export function buildChangeLogQuery(params: { objectType?: string; action?: string }): string {
-  const labels: string[] = ['app="tcrn-tms"', 'stream="change_log"'];
+export function buildTenantScopedLokiKeywordSearchQuery(
+  keyword: string,
+  stream?: string,
+  tenantSchema?: string
+): string {
+  const labels = [buildLabelMatcher('app', 'tcrn-tms')];
+  const normalizedTenantSchema = normalizeTenantSchemaLabel(tenantSchema);
 
+  if (normalizedTenantSchema) {
+    labels.push(buildLabelMatcher('tenant_schema', normalizedTenantSchema));
+  }
+  if (stream) {
+    labels.push(buildLabelMatcher('stream', stream));
+  }
+
+  return `{${labels.join(', ')}} |= ${formatLogQlString(keyword)}`;
+}
+
+export function buildChangeLogQuery(params: {
+  tenantSchema?: string;
+  objectType?: string;
+  action?: string;
+}): string {
+  const labels: string[] = [
+    buildLabelMatcher('app', 'tcrn-tms'),
+    buildLabelMatcher('stream', 'change_log'),
+  ];
+  const tenantSchema = normalizeTenantSchemaLabel(params.tenantSchema);
+
+  if (tenantSchema) {
+    labels.push(buildLabelMatcher('tenant_schema', tenantSchema));
+  }
   if (params.objectType) {
-    labels.push(`object_type="${params.objectType}"`);
+    labels.push(buildLabelMatcher('object_type', params.objectType));
   }
   if (params.action) {
-    labels.push(`action="${params.action}"`);
+    labels.push(buildLabelMatcher('action', params.action));
   }
 
   return `{${labels.join(', ')}}`;
 }
 
 export function buildTechEventQuery(params: {
+  tenantSchema?: string;
   severity?: string;
   eventType?: string;
   scope?: string;
 }): string {
-  const labels: string[] = ['app="tcrn-tms"', 'stream="technical_event_log"'];
+  const labels: string[] = [
+    buildLabelMatcher('app', 'tcrn-tms'),
+    buildLabelMatcher('stream', 'technical_event_log'),
+  ];
+  const tenantSchema = normalizeTenantSchemaLabel(params.tenantSchema);
 
+  if (tenantSchema) {
+    labels.push(buildLabelMatcher('tenant_schema', tenantSchema));
+  }
   if (params.severity) {
-    labels.push(`severity="${params.severity}"`);
+    labels.push(buildLabelMatcher('severity', params.severity));
   }
   if (params.eventType) {
-    labels.push(`event_type="${params.eventType}"`);
+    labels.push(buildLabelMatcher('event_type', params.eventType));
   }
   if (params.scope) {
-    labels.push(`scope="${params.scope}"`);
+    labels.push(buildLabelMatcher('scope', params.scope));
   }
 
   return `{${labels.join(', ')}}`;
 }
 
 export function buildIntegrationLogQuery(params: {
+  tenantSchema?: string;
   direction?: string;
   consumerCode?: string;
   status?: string;
 }): string {
-  const labels: string[] = ['app="tcrn-tms"', 'stream="integration_log"'];
+  const labels: string[] = [
+    buildLabelMatcher('app', 'tcrn-tms'),
+    buildLabelMatcher('stream', 'integration_log'),
+  ];
+  const tenantSchema = normalizeTenantSchemaLabel(params.tenantSchema);
 
+  if (tenantSchema) {
+    labels.push(buildLabelMatcher('tenant_schema', tenantSchema));
+  }
   if (params.direction) {
-    labels.push(`direction="${params.direction}"`);
+    labels.push(buildLabelMatcher('direction', params.direction));
   }
   if (params.consumerCode) {
-    labels.push(`consumer_code="${params.consumerCode}"`);
+    labels.push(buildLabelMatcher('consumer_code', params.consumerCode));
   }
   if (params.status) {
-    labels.push(`status="${params.status}"`);
+    labels.push(buildLabelMatcher('status', params.status));
   }
 
   return `{${labels.join(', ')}}`;
@@ -255,6 +324,25 @@ export function getDefaultLokiQueryStart(now = new Date()): string {
   const date = new Date(now);
   date.setHours(date.getHours() - 24);
   return date.toISOString();
+}
+
+export function normalizeLokiQueryRange(input: {
+  start?: string;
+  end?: string;
+  limit?: number;
+  now?: Date;
+}): { start: string; end: string; limit: number } {
+  const now = input.now ?? new Date();
+  const parsedEnd = parseValidDate(input.end) ?? now;
+  const requestedStart = parseValidDate(input.start) ?? new Date(parsedEnd.getTime() - LOKI_MAX_QUERY_RANGE_MS);
+  const minStart = new Date(parsedEnd.getTime() - LOKI_MAX_QUERY_RANGE_MS);
+  const start = requestedStart.getTime() < minStart.getTime() ? minStart : requestedStart;
+
+  return {
+    start: start.toISOString(),
+    end: parsedEnd.toISOString(),
+    limit: parsePositiveInteger(input.limit) ?? LOKI_MAX_RESULT_LIMIT,
+  };
 }
 
 export function transformLokiQueryResponse(data: RawLokiQueryResponse): LokiQueryResponse {
@@ -274,32 +362,11 @@ export function transformLokiQueryResponse(data: RawLokiQueryResponse): LokiQuer
   };
 }
 
-function hasLogSelector(query: string): boolean {
-  return /\{[^}]*\}/.test(query);
-}
-
-function injectStreamIntoFirstSelector(query: string, stream?: LokiLogStream): string {
-  if (!stream) {
-    return query;
-  }
-
-  return query.replace(/\{([^}]*)\}/, (_selector, labels: string) => {
-    if (/\bstream\s*=/.test(labels)) {
-      return `{${labels}}`;
-    }
-
-    const normalizedLabels = labels.trim();
-    const nextLabels = normalizedLabels
-      ? `${normalizedLabels}, stream="${stream}"`
-      : `stream="${stream}"`;
-
-    return `{${nextLabels}}`;
-  });
-}
-
 function parsePositiveInteger(value?: number | string): number | undefined {
   if (typeof value === 'number') {
-    return Number.isFinite(value) && value > 0 ? Math.floor(value) : undefined;
+    return Number.isFinite(value) && value > 0
+      ? Math.min(Math.floor(value), LOKI_MAX_RESULT_LIMIT)
+      : undefined;
   }
 
   if (typeof value !== 'string' || value.trim() === '') {
@@ -307,7 +374,30 @@ function parsePositiveInteger(value?: number | string): number | undefined {
   }
 
   const parsed = Number.parseInt(value, 10);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
+  return Number.isFinite(parsed) && parsed > 0 ? Math.min(parsed, LOKI_MAX_RESULT_LIMIT) : undefined;
+}
+
+function buildLabelMatcher(label: string, value: string): string {
+  return `${label}=${formatLogQlString(value)}`;
+}
+
+export function normalizeTenantSchemaLabel(value?: string): string | undefined {
+  const trimmed = value?.trim();
+
+  return trimmed && TENANT_SCHEMA_LABEL_PATTERN.test(trimmed) ? trimmed : undefined;
+}
+
+function formatLogQlString(value: string): string {
+  return JSON.stringify(String(value).trim().slice(0, 256));
+}
+
+function parseValidDate(value?: string): Date | undefined {
+  if (!value) {
+    return undefined;
+  }
+
+  const date = new Date(value);
+  return Number.isFinite(date.getTime()) ? date : undefined;
 }
 
 function safeJsonParse(value: string): unknown {

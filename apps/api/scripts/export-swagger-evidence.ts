@@ -11,12 +11,13 @@ import { AppModule } from '../src/app.module';
 import { applyGlobalSwaggerParameters } from '../src/config/swagger-global-parameters';
 import { buildSwaggerConfig, CONFIG_TAGS } from '../src/config/swagger.config';
 import { AuthModule } from '../src/modules/auth';
+import { ObservabilityAdaptersModule } from '../src/modules/observability-adapters';
 import { PlatformToolsModule } from '../src/modules/platform-tools';
 import { loadRepoEnvFiles } from '../src/repo-env';
 
 interface CliOptions {
   out: string;
-  filter: 'sso' | 'platform-tools';
+  filter: 'sso' | 'platform-tools' | 'observability';
 }
 
 const REQUIRED_SSO_PATH_SUFFIXES = [
@@ -43,6 +44,13 @@ const REQUIRED_PLATFORM_TOOL_PATH_SUFFIXES = [
   '/platform-tools/deployment-boundary',
 ] as const;
 
+const REQUIRED_OBSERVABILITY_PATH_SUFFIXES = [
+  '/observability/adapters/definitions',
+  '/observability/adapters/policy',
+  '/observability/adapters/summary',
+  '/observability/adapters/{adapterCode}/deep-link',
+] as const;
+
 function parseArgs(argv: string[]): CliOptions {
   const options: CliOptions = {
     out: 'swagger-sso-docs.json',
@@ -57,7 +65,8 @@ function parseArgs(argv: string[]): CliOptions {
       options.out = next;
       index += 1;
     } else if (arg === '--filter' && next) {
-      options.filter = next === 'platform-tools' ? 'platform-tools' : 'sso';
+      options.filter =
+        next === 'platform-tools' || next === 'observability' ? next : 'sso';
       index += 1;
     }
   }
@@ -114,6 +123,50 @@ function buildPlatformToolEvidence(document: OpenAPIObject) {
       forbiddenRawMaterial.length === 0 &&
       documentText.includes('secretRef') &&
       !documentText.includes('secretValue'),
+  };
+}
+
+function buildObservabilityEvidence(document: OpenAPIObject) {
+  const observabilityPaths = Object.keys(document.paths)
+    .filter((pathName) => normalizePathSuffix(pathName).startsWith('/observability/adapters/'))
+    .sort();
+  const normalizedPathSuffixes = new Set(observabilityPaths.map(normalizePathSuffix));
+  const missingRequiredPaths = REQUIRED_OBSERVABILITY_PATH_SUFFIXES.filter(
+    (requiredPath) => !normalizedPathSuffixes.has(requiredPath)
+  );
+  const documentText = JSON.stringify(document);
+  const rawMaterialHits = [
+    'secretValue',
+    'clientSecret',
+    'client_secret',
+    'api_key',
+    'private_key',
+    'access_token',
+    'id_token',
+    'authorization_code',
+    'password',
+    'Raw LogQL query',
+  ]
+    .filter((needle) => documentText.includes(needle))
+    .map((needle) => ({ needle, classification: 'forbidden' }));
+
+  return {
+    checkedAt: new Date().toISOString(),
+    test_layer: 'generated_openapi',
+    data_mode: 'read_only_generated_doc',
+    target_scope: 'observability_adapter_foundation',
+    observabilityPaths,
+    missingRequiredPaths,
+    rawMaterialHits,
+    forbiddenRawMaterial: rawMaterialHits.map((hit) => hit.needle),
+    bearerAuthPresent: documentText.includes('bearer') || documentText.includes('JWT-auth'),
+    executePermissionForDeepLink: documentText.includes('Read AC observability adapter deep-link readiness'),
+    rawLogQlDeniedInDocs: !documentText.includes('Raw LogQL query'),
+    passed:
+      missingRequiredPaths.length === 0 &&
+      rawMaterialHits.length === 0 &&
+      (documentText.includes('bearer') || documentText.includes('JWT-auth')) &&
+      documentText.includes('Read AC observability adapter deep-link readiness'),
   };
 }
 
@@ -189,19 +242,44 @@ async function main() {
   const config = buildSwaggerConfig(
     options.filter === 'platform-tools'
       ? 'TCRN TMS - Phase 4 Platform Tool Evidence'
+      : options.filter === 'observability'
+        ? 'TCRN TMS - Phase 5 Observability Adapter Evidence'
       : 'TCRN TMS - Phase 3 SSO Evidence',
     options.filter === 'platform-tools'
       ? 'Generated Platform Tool Connections OpenAPI evidence for Phase 4 acceptance'
+      : options.filter === 'observability'
+        ? 'Generated Observability Adapter OpenAPI evidence for Phase 5 acceptance'
       : 'Generated SSO OpenAPI evidence for Phase 3 acceptance',
     '1.0.0',
     CONFIG_TAGS
   );
   const document = cloneSerializableSwaggerValue(
     SwaggerModule.createDocument(app, config, {
-      include: options.filter === 'platform-tools' ? [PlatformToolsModule] : [AuthModule],
+      include:
+        options.filter === 'platform-tools'
+          ? [PlatformToolsModule]
+          : options.filter === 'observability'
+            ? [ObservabilityAdaptersModule]
+            : [AuthModule],
     })
   ) as OpenAPIObject;
   applyGlobalSwaggerParameters(document);
+
+  if (options.filter === 'observability') {
+    const payload = buildObservabilityEvidence(document);
+
+    mkdirSync(path.dirname(options.out), { recursive: true });
+    writeFileSync(options.out, `${JSON.stringify(payload, null, 2)}\n`, 'utf8');
+    console.log(JSON.stringify(payload, null, 2));
+
+    await app.close();
+
+    if (!payload.passed) {
+      process.exitCode = 1;
+    }
+
+    return;
+  }
 
   if (options.filter === 'platform-tools') {
     const payload = buildPlatformToolEvidence(document);

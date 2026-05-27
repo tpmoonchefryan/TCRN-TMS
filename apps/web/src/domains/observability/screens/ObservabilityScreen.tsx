@@ -1,6 +1,6 @@
 'use client';
 
-import { Activity } from 'lucide-react';
+import { Activity, ExternalLink, RefreshCw, ShieldCheck } from 'lucide-react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 
@@ -14,7 +14,10 @@ import {
   listTechEvents,
   type LogSearchEntry,
   type ObservabilityTab,
+  type ObservabilityAdapterSummary,
   searchLogs,
+  listObservabilityAdapterSummary,
+  readObservabilityAdapterDeepLink,
   type TechEventRecord,
 } from '@/domains/observability/api/observability.api';
 import {
@@ -65,6 +68,12 @@ type ObservabilityLocale = SupportedUiLocale;
 
 type SearchPanelState = {
   data: LogSearchEntry[];
+  loading: boolean;
+  error: string | null;
+};
+
+type AdapterSummaryState = {
+  data: ObservabilityAdapterSummary[];
   loading: boolean;
   error: string | null;
 };
@@ -406,6 +415,36 @@ function Field({ label, hint, children }: Readonly<FieldProps>) {
 const inputClassName =
   'w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-indigo-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/40';
 
+function formatCodeLabel(value: string) {
+  return value.replace(/_/g, ' ');
+}
+
+function readinessClass(value: string) {
+  if (['accepted', 'ready', 'healthy', 'external_provided', 'repository_readback'].includes(value)) {
+    return 'border-emerald-200 bg-emerald-50 text-emerald-700';
+  }
+
+  if (['configured', 'degraded', 'sso_required', 'missing_config', 'compose_opt_in_not_running'].includes(value)) {
+    return 'border-amber-200 bg-amber-50 text-amber-700';
+  }
+
+  if (['blocked', 'unhealthy', 'unsafe_url', 'forbidden'].includes(value)) {
+    return 'border-rose-200 bg-rose-50 text-rose-700';
+  }
+
+  return 'border-slate-200 bg-slate-50 text-slate-600';
+}
+
+function ReadinessBadge({ value }: Readonly<{ value: string }>) {
+  return (
+    <span
+      className={`inline-flex max-w-full items-center rounded-full border px-2.5 py-1 text-xs font-medium capitalize ${readinessClass(value)}`}
+    >
+      <span className="truncate">{formatCodeLabel(value)}</span>
+    </span>
+  );
+}
+
 export function ObservabilityScreen({
   tenantId: _tenantId,
   workspaceKind = 'tenant',
@@ -494,6 +533,13 @@ export function ObservabilityScreen({
   const [integrationPanel, setIntegrationPanel] =
     useState<PagedPanelState<IntegrationLogRecord>>(emptyPagedPanel);
   const [searchPanel, setSearchPanel] = useState<SearchPanelState>(emptySearchPanel);
+  const [adapterSummary, setAdapterSummary] = useState<AdapterSummaryState>({
+    data: [],
+    loading: false,
+    error: null,
+  });
+  const [adapterNotice, setAdapterNotice] = useState<string | null>(null);
+  const [openingAdapterCode, setOpeningAdapterCode] = useState<string | null>(null);
   const [selectedChangeLog, setSelectedChangeLog] = useState<ChangeLogRecord | null>(null);
   const [selectedTechEvent, setSelectedTechEvent] = useState<TechEventRecord | null>(null);
 
@@ -685,6 +731,87 @@ export function ObservabilityScreen({
     }
   }
 
+  async function loadAdapterSummary() {
+    if (!isAcWorkspace) {
+      return;
+    }
+
+    setAdapterSummary((current) => ({
+      ...current,
+      loading: true,
+      error: null,
+    }));
+
+    try {
+      const response = await listObservabilityAdapterSummary(request, { environment: 'local' });
+
+      setAdapterSummary({
+        data: response,
+        loading: false,
+        error: null,
+      });
+    } catch (reason) {
+      setAdapterSummary({
+        data: [],
+        loading: false,
+        error: getErrorMessage(
+          reason,
+          pickLocaleText(locale, {
+            en: 'External observability readiness could not load.',
+            zh_HANS: '外部可观测性就绪状态加载失败。',
+            zh_HANT: '外部可觀測性就緒狀態載入失敗。',
+            ja: '外部可観測性の準備状況を読み込めませんでした。',
+            ko: '외부 관측 준비 상태를 로드하지 못했습니다.',
+            fr: 'Impossible de charger la préparation observabilité externe.',
+          })
+        ),
+      });
+    }
+  }
+
+  async function handleOpenAdapter(adapterCode: string) {
+    setAdapterNotice(null);
+    setOpeningAdapterCode(adapterCode);
+
+    try {
+      const readiness = await readObservabilityAdapterDeepLink(request, adapterCode, {
+        environment: 'local',
+      });
+
+      if (readiness.state === 'accepted' && readiness.url) {
+        window.open(readiness.url, '_blank', 'noopener,noreferrer');
+        return;
+      }
+
+      setAdapterNotice(
+        `${pickLocaleText(locale, {
+          en: 'Deep link unavailable',
+          zh_HANS: '深链不可用',
+          zh_HANT: '深層連結不可用',
+          ja: '深リンクは利用できません',
+          ko: '딥링크를 사용할 수 없습니다',
+          fr: 'Lien profond indisponible',
+        })}: ${formatCodeLabel(readiness.state)}`
+      );
+    } catch (reason) {
+      setAdapterNotice(
+        getErrorMessage(
+          reason,
+          pickLocaleText(locale, {
+            en: 'Deep link check failed.',
+            zh_HANS: '深链检查失败。',
+            zh_HANT: '深層連結檢查失敗。',
+            ja: '深リンクの確認に失敗しました。',
+            ko: '딥링크 확인에 실패했습니다.',
+            fr: 'La vérification du lien profond a échoué.',
+          })
+        )
+      );
+    } finally {
+      setOpeningAdapterCode(null);
+    }
+  }
+
   useEffect(() => {
     setChangePage(1);
   }, [changeFilters]);
@@ -731,6 +858,15 @@ export function ObservabilityScreen({
     techPage,
     techPageSize,
   ]);
+
+  useEffect(() => {
+    if (isAcWorkspace) {
+      void loadAdapterSummary();
+    } else {
+      setAdapterSummary({ data: [], loading: false, error: null });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAcWorkspace, request]);
 
   const activeCount = useMemo(() => {
     if (activeTab === 'change-logs') {
@@ -976,7 +1112,11 @@ export function ObservabilityScreen({
         });
 
   return (
-    <div className="space-y-4">
+    <div
+      className="space-y-4"
+      data-observability-workspace={workspaceKind}
+      data-external-observability-absent={isAcWorkspace ? 'false' : 'true'}
+    >
       <GlassSurface className="p-5">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
           <div className="space-y-3">
@@ -1012,6 +1152,218 @@ export function ObservabilityScreen({
           </dl>
         </div>
       </GlassSurface>
+
+      {false && isAcWorkspace ? (
+        <GlassSurface
+          className="space-y-4 p-4"
+          data-observability-adapter-summary="ac-readiness-handoff"
+        >
+          <div className="flex flex-col gap-3 border-b border-slate-200 pb-4 md:flex-row md:items-start md:justify-between">
+            <div className="min-w-0 space-y-1">
+              <div className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                <ShieldCheck className="h-4 w-4" aria-hidden="true" />
+                {pickLocaleText(locale, {
+                  en: 'AC only',
+                  zh_HANS: '仅 AC',
+                  zh_HANT: '僅 AC',
+                  ja: 'AC のみ',
+                  ko: 'AC 전용',
+                  fr: 'AC uniquement',
+                })}
+              </div>
+              <h2 className="text-base font-semibold text-slate-950">
+                {pickLocaleText(locale, {
+                  en: 'External observability readiness',
+                  zh_HANS: '外部可观测性就绪状态',
+                  zh_HANT: '外部可觀測性就緒狀態',
+                  ja: '外部可観測性の準備状況',
+                  ko: '외부 관측 준비 상태',
+                  fr: 'Préparation observabilité externe',
+                })}
+              </h2>
+              <p className="max-w-3xl text-sm leading-6 text-slate-600">
+                {pickLocaleText(locale, {
+                  en: 'This secondary strip reads Phase 5 adapter status and SSO-gated handoff state. Product audit logs remain the primary workbench below.',
+                  zh_HANS:
+                    '此辅助区域读取 Phase 5 适配器状态与 SSO 门控跳转状态。下方产品审计日志仍是主要工作台。',
+                  zh_HANT:
+                    '此輔助區域讀取 Phase 5 轉接器狀態與 SSO 門控跳轉狀態。下方產品稽核日誌仍是主要工作台。',
+                  ja: 'この補助領域は Phase 5 アダプター状態と SSO ゲート付き受け渡し状態を読みます。下の製品監査ログが主な作業台です。',
+                  ko: '이 보조 영역은 Phase 5 어댑터 상태와 SSO 게이트 핸드오프 상태를 읽습니다. 아래 제품 감사 로그가 기본 작업대입니다.',
+                  fr: 'Cette zone secondaire lit l’état des adaptateurs Phase 5 et des liens protégés par SSO. Les journaux d’audit produit restent l’espace principal ci-dessous.',
+                })}
+              </p>
+            </div>
+            <button
+              type="button"
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-md border border-slate-200 px-3 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+              onClick={() => void loadAdapterSummary()}
+            >
+              <RefreshCw className="h-4 w-4" aria-hidden="true" />
+              {pickLocaleText(locale, {
+                en: 'Refresh',
+                zh_HANS: '刷新',
+                zh_HANT: '重新整理',
+                ja: '更新',
+                ko: '새로고침',
+                fr: 'Actualiser',
+              })}
+            </button>
+          </div>
+
+          {adapterNotice ? (
+            <div
+              className="rounded-md border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-800"
+              role="status"
+              aria-live="polite"
+            >
+              {adapterNotice}
+            </div>
+          ) : null}
+
+          {adapterSummary.error ? (
+            <StateView
+              status="error"
+              title={pickLocaleText(locale, {
+                en: 'Adapter summary unavailable',
+                zh_HANS: '适配器摘要不可用',
+                zh_HANT: '轉接器摘要不可用',
+                ja: 'アダプター概要を利用できません',
+                ko: '어댑터 요약을 사용할 수 없습니다',
+                fr: 'Résumé adaptateur indisponible',
+              })}
+              description={adapterSummary.error ?? undefined}
+              action={
+                <button
+                  type="button"
+                  className="inline-flex h-10 items-center gap-2 rounded-md bg-slate-900 px-3 text-sm font-medium text-white hover:bg-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                  onClick={() => void loadAdapterSummary()}
+                >
+                  <RefreshCw className="h-4 w-4" aria-hidden="true" />
+                  {pickLocaleText(locale, {
+                    en: 'Retry',
+                    zh_HANS: '重试',
+                    zh_HANT: '重試',
+                    ja: '再試行',
+                    ko: '다시 시도',
+                    fr: 'Réessayer',
+                  })}
+                </button>
+              }
+            />
+          ) : null}
+
+          {!adapterSummary.error ? (
+            <div
+              className="grid gap-3 md:grid-cols-2 xl:grid-cols-3"
+              data-observability-adapter-cards="safe-summary-no-iframe"
+            >
+              {adapterSummary.loading ? (
+                <StateView
+                  status="unavailable"
+                  title={pickLocaleText(locale, {
+                    en: 'Loading adapter readiness',
+                    zh_HANS: '正在加载适配器就绪状态',
+                    zh_HANT: '正在載入轉接器就緒狀態',
+                    ja: 'アダプター準備状況を読み込み中',
+                    ko: '어댑터 준비 상태 로드 중',
+                    fr: 'Chargement de la préparation adaptateur',
+                  })}
+                  description={copy.header.description}
+                />
+              ) : null}
+              {!adapterSummary.loading && adapterSummary.data.length === 0 ? (
+                <StateView
+                  status="empty"
+                  title={pickLocaleText(locale, {
+                    en: 'No adapters returned',
+                    zh_HANS: '未返回适配器',
+                    zh_HANT: '未傳回轉接器',
+                    ja: 'アダプターが返されませんでした',
+                    ko: '반환된 어댑터가 없습니다',
+                    fr: 'Aucun adaptateur retourné',
+                  })}
+                  description={copy.header.description}
+                />
+              ) : null}
+              {!adapterSummary.loading
+                ? adapterSummary.data.map((item) => (
+                    <article
+                      key={item.definition.code}
+                      className="rounded-md border border-slate-200 bg-white p-4 shadow-sm"
+                      data-observability-adapter-code={item.definition.code}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0 space-y-1">
+                          <h3 className="truncate text-sm font-semibold text-slate-950">
+                            {pickLocaleText(locale, item.definition.localizedLabel)}
+                          </h3>
+                          <p className="text-xs font-medium uppercase tracking-[0.12em] text-slate-500">
+                            {formatCodeLabel(item.definition.signalFamily)}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          className="inline-flex h-11 w-11 items-center justify-center rounded-md border border-slate-200 text-slate-600 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
+                          aria-label={`${pickLocaleText(locale, {
+                            en: 'Open external observability handoff',
+                            zh_HANS: '打开外部可观测性交接',
+                            zh_HANT: '開啟外部可觀測性交接',
+                            ja: '外部可観測性への受け渡しを開く',
+                            ko: '외부 관측 핸드오프 열기',
+                            fr: 'Ouvrir le relais observabilité externe',
+                          })}: ${item.definition.label}`}
+                          disabled={!item.definition.deepLink || openingAdapterCode === item.definition.code}
+                          onClick={() => void handleOpenAdapter(item.definition.code)}
+                        >
+                          <ExternalLink className="h-4 w-4" aria-hidden="true" />
+                        </button>
+                      </div>
+                      <dl className="mt-4 grid grid-cols-1 gap-3 text-sm">
+                        <div className="flex items-center justify-between gap-3">
+                          <dt className="text-xs font-semibold uppercase text-slate-500">
+                            {pickLocaleText(locale, {
+                              en: 'Readiness',
+                              zh_HANS: '就绪性',
+                              zh_HANT: '就緒性',
+                              ja: '準備状況',
+                              ko: '준비 상태',
+                              fr: 'Préparation',
+                            })}
+                          </dt>
+                          <dd className="min-w-0">
+                            <ReadinessBadge value={item.profile.readinessState} />
+                          </dd>
+                        </div>
+                        <div className="flex items-center justify-between gap-3">
+                          <dt className="text-xs font-semibold uppercase text-slate-500">
+                            {pickLocaleText(locale, {
+                              en: 'Backend',
+                              zh_HANS: '后端',
+                              zh_HANT: '後端',
+                              ja: 'バックエンド',
+                              ko: '백엔드',
+                              fr: 'Backend',
+                            })}
+                          </dt>
+                          <dd className="min-w-0">
+                            <ReadinessBadge value={item.profile.backendMode} />
+                          </dd>
+                        </div>
+                        <div className="flex items-center justify-between gap-3">
+                          <dt className="text-xs font-semibold uppercase text-slate-500">SSO</dt>
+                          <dd className="min-w-0">
+                            <ReadinessBadge value={item.profile.ssoState} />
+                          </dd>
+                        </div>
+                      </dl>
+                    </article>
+                  ))
+                : null}
+            </div>
+          ) : null}
+        </GlassSurface>
+      ) : null}
 
       <GlassSurface className="p-2">
         <SectionTabs
@@ -1615,7 +1967,6 @@ export function ObservabilityScreen({
                       <option value="1h">1h</option>
                       <option value="6h">6h</option>
                       <option value="24h">24h</option>
-                      <option value="7d">7d</option>
                     </select>
                   </Field>
                 </div>
@@ -1704,6 +2055,217 @@ export function ObservabilityScreen({
           </>
         ) : null}
       </div>
+
+      {isAcWorkspace ? (
+        <GlassSurface
+          className="space-y-4 p-4"
+          data-observability-adapter-summary="ac-readiness-handoff"
+          data-observability-secondary-region="true"
+        >
+          <div className="flex flex-col gap-3 border-b border-slate-200 pb-4 md:flex-row md:items-start md:justify-between">
+            <div className="min-w-0 space-y-1">
+              <div className="inline-flex items-center gap-2 text-xs font-semibold tracking-[0.12em] text-slate-500 uppercase">
+                <ShieldCheck className="h-4 w-4" aria-hidden="true" />
+                {pickLocaleText(locale, {
+                  en: 'AC only',
+                  zh_HANS: '仅 AC',
+                  zh_HANT: '僅 AC',
+                  ja: 'AC のみ',
+                  ko: 'AC 전용',
+                  fr: 'AC uniquement',
+                })}
+              </div>
+              <h2 className="text-base font-semibold text-slate-950">
+                {pickLocaleText(locale, {
+                  en: 'External observability readiness',
+                  zh_HANS: '外部可观测性就绪状态',
+                  zh_HANT: '外部可觀測性就緒狀態',
+                  ja: '外部可観測性の準備状況',
+                  ko: '외부 관측 준비 상태',
+                  fr: 'Préparation observabilité externe',
+                })}
+              </h2>
+              <p className="max-w-3xl text-sm leading-6 text-slate-600">
+                {pickLocaleText(locale, {
+                  en: 'This secondary region reads Phase 5 adapter status and SSO-gated handoff state. Product audit logs stay above as the primary workbench.',
+                  zh_HANS:
+                    '此辅助区域读取 Phase 5 适配器状态与 SSO 门控跳转状态。上方产品审计日志仍是主要工作台。',
+                  zh_HANT:
+                    '此輔助區域讀取 Phase 5 轉接器狀態與 SSO 門控跳轉狀態。上方產品稽核日誌仍是主要工作台。',
+                  ja: 'この補助領域は Phase 5 アダプター状態と SSO ゲート付き受け渡し状態を読みます。上の製品監査ログが主な作業台です。',
+                  ko: '이 보조 영역은 Phase 5 어댑터 상태와 SSO 게이트 핸드오프 상태를 읽습니다. 위의 제품 감사 로그가 기본 작업대입니다.',
+                  fr: 'Cette zone secondaire lit l’état des adaptateurs Phase 5 et des liens protégés par SSO. Les journaux d’audit produit restent au-dessus comme espace principal.',
+                })}
+              </p>
+            </div>
+            <button
+              type="button"
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-md border border-slate-200 px-3 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+              onClick={() => void loadAdapterSummary()}
+            >
+              <RefreshCw className="h-4 w-4" aria-hidden="true" />
+              {pickLocaleText(locale, {
+                en: 'Refresh',
+                zh_HANS: '刷新',
+                zh_HANT: '重新整理',
+                ja: '更新',
+                ko: '새로고침',
+                fr: 'Actualiser',
+              })}
+            </button>
+          </div>
+
+          {adapterNotice ? (
+            <div
+              className="rounded-md border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-800"
+              role="status"
+              aria-live="polite"
+            >
+              {adapterNotice}
+            </div>
+          ) : null}
+
+          {adapterSummary.error ? (
+            <StateView
+              status="error"
+              title={pickLocaleText(locale, {
+                en: 'Adapter summary unavailable',
+                zh_HANS: '适配器摘要不可用',
+                zh_HANT: '轉接器摘要不可用',
+                ja: 'アダプター概要を利用できません',
+                ko: '어댑터 요약을 사용할 수 없습니다',
+                fr: 'Résumé adaptateur indisponible',
+              })}
+              description={adapterSummary.error ?? undefined}
+              action={
+                <button
+                  type="button"
+                  className="inline-flex h-10 items-center gap-2 rounded-md bg-slate-900 px-3 text-sm font-medium text-white hover:bg-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                  onClick={() => void loadAdapterSummary()}
+                >
+                  <RefreshCw className="h-4 w-4" aria-hidden="true" />
+                  {pickLocaleText(locale, {
+                    en: 'Retry',
+                    zh_HANS: '重试',
+                    zh_HANT: '重試',
+                    ja: '再試行',
+                    ko: '다시 시도',
+                    fr: 'Réessayer',
+                  })}
+                </button>
+              }
+            />
+          ) : null}
+
+          {!adapterSummary.error ? (
+            <div
+              className="grid gap-3 md:grid-cols-2 xl:grid-cols-4"
+              data-observability-adapter-cards="safe-summary-no-iframe"
+            >
+              {adapterSummary.loading ? (
+                <StateView
+                  status="unavailable"
+                  title={pickLocaleText(locale, {
+                    en: 'Loading adapter readiness',
+                    zh_HANS: '正在加载适配器就绪状态',
+                    zh_HANT: '正在載入轉接器就緒狀態',
+                    ja: 'アダプター準備状況を読み込み中',
+                    ko: '어댑터 준비 상태 로드 중',
+                    fr: 'Chargement de la préparation adaptateur',
+                  })}
+                  description={copy.header.description}
+                />
+              ) : null}
+              {!adapterSummary.loading && adapterSummary.data.length === 0 ? (
+                <StateView
+                  status="empty"
+                  title={pickLocaleText(locale, {
+                    en: 'No adapters returned',
+                    zh_HANS: '未返回适配器',
+                    zh_HANT: '未傳回轉接器',
+                    ja: 'アダプターが返されませんでした',
+                    ko: '반환된 어댑터가 없습니다',
+                    fr: 'Aucun adaptateur retourné',
+                  })}
+                  description={copy.header.description}
+                />
+              ) : null}
+              {!adapterSummary.loading
+                ? adapterSummary.data.map((item) => (
+                    <article
+                      key={item.definition.code}
+                      className="rounded-md border border-slate-200 bg-white p-4 shadow-sm"
+                      data-observability-adapter-code={item.definition.code}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0 space-y-1">
+                          <h3 className="truncate text-sm font-semibold text-slate-950">
+                            {pickLocaleText(locale, item.definition.localizedLabel)}
+                          </h3>
+                          <p className="text-xs font-medium tracking-[0.12em] text-slate-500 uppercase">
+                            {formatCodeLabel(item.definition.signalFamily)}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          className="inline-flex h-11 w-11 items-center justify-center rounded-md border border-slate-200 text-slate-600 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
+                          aria-label={`${pickLocaleText(locale, {
+                            en: 'Open external observability handoff',
+                            zh_HANS: '打开外部可观测性交接',
+                            zh_HANT: '開啟外部可觀測性交接',
+                            ja: '外部可観測性への受け渡しを開く',
+                            ko: '외부 관측 핸드오프 열기',
+                            fr: 'Ouvrir le relais observabilité externe',
+                          })}: ${item.definition.label}`}
+                          disabled={!item.definition.deepLink || openingAdapterCode === item.definition.code}
+                          onClick={() => void handleOpenAdapter(item.definition.code)}
+                        >
+                          <ExternalLink className="h-4 w-4" aria-hidden="true" />
+                        </button>
+                      </div>
+                      <dl className="mt-4 grid gap-3 text-sm">
+                        {[
+                          [
+                            pickLocaleText(locale, {
+                              en: 'Readiness',
+                              zh_HANS: '就绪性',
+                              zh_HANT: '就緒性',
+                              ja: '準備状況',
+                              ko: '준비 상태',
+                              fr: 'Préparation',
+                            }),
+                            item.profile.readinessState,
+                          ],
+                          [
+                            pickLocaleText(locale, {
+                              en: 'Backend',
+                              zh_HANS: '后端',
+                              zh_HANT: '後端',
+                              ja: 'バックエンド',
+                              ko: '백엔드',
+                              fr: 'Backend',
+                            }),
+                            item.profile.backendMode,
+                          ],
+                          ['SSO', item.profile.ssoState],
+                        ].map(([label, value]) => (
+                          <div key={label} className="flex items-center justify-between gap-3">
+                            <dt className="text-xs font-semibold text-slate-500 uppercase">
+                              {label}
+                            </dt>
+                            <dd className="min-w-0">
+                              <ReadinessBadge value={value} />
+                            </dd>
+                          </div>
+                        ))}
+                      </dl>
+                    </article>
+                  ))
+                : null}
+            </div>
+          ) : null}
+        </GlassSurface>
+      ) : null}
 
       <ActionDrawer
         open={selectedChangeLog !== null}

@@ -4,10 +4,11 @@ import { Injectable, Logger } from '@nestjs/common';
 import {
   buildChangeLogQuery,
   buildIntegrationLogQuery,
-  buildLokiKeywordSearchQuery,
   buildLokiQueryLogQl,
+  buildTenantScopedLokiKeywordSearchQuery,
   buildTechEventQuery,
   getDefaultLokiQueryStart,
+  normalizeLokiQueryRange,
   type LokiQueryParams,
   type LokiQueryResponse,
   transformLokiQueryResponse,
@@ -26,12 +27,18 @@ export class LokiQueryApplicationService {
     }
 
     try {
-      const rawQuery = params.rawQuery || buildLokiQueryLogQl(params);
-      const data = await this.lokiQueryGateway.queryRange({
-        query: rawQuery,
+      const rawQuery =
+        params.rawQuery && params.trustedRawQuery ? params.rawQuery : buildLokiQueryLogQl(params);
+      const range = normalizeLokiQueryRange({
         start: params.start || getDefaultLokiQueryStart(),
         end: params.end || new Date().toISOString(),
-        limit: params.limit || 100,
+        limit: params.limit,
+      });
+      const data = await this.lokiQueryGateway.queryRange({
+        query: rawQuery,
+        start: range.start,
+        end: range.end,
+        limit: range.limit,
         direction: params.direction || 'backward',
       });
 
@@ -45,6 +52,7 @@ export class LokiQueryApplicationService {
   }
 
   async search(params: {
+    tenantSchema?: string;
     keyword: string;
     stream?: string;
     start?: string;
@@ -52,7 +60,13 @@ export class LokiQueryApplicationService {
     limit?: number;
   }): Promise<LokiQueryResponse> {
     return this.query({
-      rawQuery: buildLokiKeywordSearchQuery(params.keyword, params.stream),
+      rawQuery: buildTenantScopedLokiKeywordSearchQuery(
+        params.keyword,
+        params.stream,
+        params.tenantSchema
+      ),
+      trustedRawQuery: true,
+      tenantSchema: params.tenantSchema,
       start: params.start,
       end: params.end,
       limit: params.limit,
@@ -60,6 +74,7 @@ export class LokiQueryApplicationService {
   }
 
   async queryChangeLogs(params: {
+    tenantSchema?: string;
     objectType?: string;
     action?: string;
     start?: string;
@@ -68,6 +83,8 @@ export class LokiQueryApplicationService {
   }): Promise<LokiQueryResponse> {
     return this.query({
       rawQuery: buildChangeLogQuery(params),
+      trustedRawQuery: true,
+      tenantSchema: params.tenantSchema,
       start: params.start,
       end: params.end,
       limit: params.limit,
@@ -75,6 +92,7 @@ export class LokiQueryApplicationService {
   }
 
   async queryTechEvents(params: {
+    tenantSchema?: string;
     severity?: string;
     eventType?: string;
     scope?: string;
@@ -84,6 +102,8 @@ export class LokiQueryApplicationService {
   }): Promise<LokiQueryResponse> {
     return this.query({
       rawQuery: buildTechEventQuery(params),
+      trustedRawQuery: true,
+      tenantSchema: params.tenantSchema,
       start: params.start,
       end: params.end,
       limit: params.limit,
@@ -91,6 +111,7 @@ export class LokiQueryApplicationService {
   }
 
   async queryIntegrationLogs(params: {
+    tenantSchema?: string;
     direction?: string;
     consumerCode?: string;
     status?: string;
@@ -100,6 +121,8 @@ export class LokiQueryApplicationService {
   }): Promise<LokiQueryResponse> {
     return this.query({
       rawQuery: buildIntegrationLogQuery(params),
+      trustedRawQuery: true,
+      tenantSchema: params.tenantSchema,
       start: params.start,
       end: params.end,
       limit: params.limit,

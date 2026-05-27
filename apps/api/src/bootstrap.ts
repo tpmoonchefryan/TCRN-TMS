@@ -27,6 +27,7 @@ import { IntegrationModule } from './modules/integration';
 import { LogModule } from './modules/log';
 import { MarshmallowModule } from './modules/marshmallow';
 import { OrganizationModule } from './modules/organization';
+import { ObservabilityAdaptersModule } from './modules/observability-adapters';
 import { PermissionModule } from './modules/permission';
 import { PiiConfigModule } from './modules/pii-config';
 import { PlatformToolsModule } from './modules/platform-tools';
@@ -226,6 +227,7 @@ export async function bootstrap(): Promise<void> {
           SecurityModule,
           PiiConfigModule,
           PlatformToolsModule,
+          ObservabilityAdaptersModule,
           LogModule,
           EmailModule,
           SettingsModule,

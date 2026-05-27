@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 
 function parseArgs(argv) {
   const options = {
-    route: '/ac/<acTenantId>/platform-tools',
+    routes: ['/ac/<acTenantId>/platform-tools'],
     out: 'a11y-summary.json',
   };
 
@@ -14,7 +14,7 @@ function parseArgs(argv) {
     const next = argv[index + 1];
 
     if (arg === '--route' && next) {
-      options.route = next;
+      options.routes.push(next);
       index += 1;
     } else if (arg === '--out' && next) {
       options.out = next;
@@ -28,37 +28,55 @@ function parseArgs(argv) {
 const options = parseArgs(process.argv.slice(2));
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const webRoot = path.resolve(scriptDir, '..');
-const sourcePath = path.join(
+const platformToolsPath = path.join(
   webRoot,
   'src/domains/platform-tool-connections/screens/PlatformToolConnectionsScreen.tsx'
 );
+const observabilityPath = path.join(
+  webRoot,
+  'src/domains/observability/screens/ObservabilityScreen.tsx'
+);
 const shellPath = path.join(webRoot, 'src/platform/routing/AcShell.tsx');
-const sourceText = readFileSync(sourcePath, 'utf8');
+const platformToolsText = readFileSync(platformToolsPath, 'utf8');
+const observabilityText = readFileSync(observabilityPath, 'utf8');
 const shellText = readFileSync(shellPath, 'utf8');
 const checks = [
   {
     id: 'icon_buttons_have_aria_labels',
     passed:
-      sourceText.includes('aria-label={`${copy.actions.inspect}') &&
-      sourceText.includes('aria-label={`${copy.actions.configure}') &&
-      sourceText.includes('aria-label={`${copy.actions.runCheck}') &&
-      sourceText.includes('aria-label={`${item.connection.enabled'),
+      platformToolsText.includes('aria-label={`${copy.actions.inspect}') &&
+      platformToolsText.includes('aria-label={`${copy.actions.configure}') &&
+      platformToolsText.includes('aria-label={`${copy.actions.runCheck}') &&
+      platformToolsText.includes('aria-label={`${item.connection.enabled') &&
+      observabilityText.includes('Open external observability handoff'),
   },
   {
     id: 'drawer_has_close_label',
-    passed: sourceText.includes('closeButtonAriaLabel={copy.actions.close}'),
+    passed:
+      platformToolsText.includes('closeButtonAriaLabel={copy.actions.close}') &&
+      observabilityText.includes('closeButtonAriaLabel={closeDetailsLabel}'),
   },
   {
     id: 'status_region_exists',
-    passed: sourceText.includes('role="status"') && sourceText.includes('aria-live="polite"'),
+    passed:
+      platformToolsText.includes('role="status"') &&
+      platformToolsText.includes('aria-live="polite"') &&
+      observabilityText.includes('role="status"') &&
+      observabilityText.includes('aria-live="polite"'),
   },
   {
     id: 'mobile_touch_targets_are_explicit',
-    passed: sourceText.includes('h-11 w-11') && sourceText.includes('sm:h-9 sm:w-9'),
+    passed:
+      platformToolsText.includes('h-11 w-11') &&
+      platformToolsText.includes('sm:h-9 sm:w-9') &&
+      observabilityText.includes('h-11 w-11'),
   },
   {
     id: 'mobile_uses_true_list_not_desktop_table',
-    passed: sourceText.includes('md:hidden') && sourceText.includes('hidden md:block'),
+    passed:
+      platformToolsText.includes('md:hidden') &&
+      platformToolsText.includes('hidden md:block') &&
+      observabilityText.includes('md:grid-cols-2'),
   },
   {
     id: 'mobile_nav_route_has_shell_entry',
@@ -66,17 +84,28 @@ const checks = [
   },
   {
     id: 'horizontal_overflow_is_bounded',
-    passed: sourceText.includes('overflow-x-auto') || sourceText.includes('min-w-[860px]'),
+    passed:
+      (platformToolsText.includes('overflow-x-auto') || platformToolsText.includes('min-w-[860px]')) &&
+      observabilityText.includes('grid gap-3 md:grid-cols-2 xl:grid-cols-3'),
+  },
+  {
+    id: 'no_iframe_dashboard_clone',
+    passed: !platformToolsText.includes('<iframe') && !observabilityText.includes('<iframe'),
+  },
+  {
+    id: 'tenant_external_observability_absence_marker',
+    passed: observabilityText.includes('data-external-observability-absent'),
   },
 ];
 const payload = {
   checkedAt: new Date().toISOString(),
   test_layer: 'source_scan',
   data_mode: 'source_scan',
-  target_scope: 'ac_platform_tool_connection',
-  route: options.route,
+  target_scope: 'observability_adapter_foundation',
+  routes: Array.from(new Set(options.routes)),
   files: [
-    path.relative(webRoot, sourcePath),
+    path.relative(webRoot, platformToolsPath),
+    path.relative(webRoot, observabilityPath),
     path.relative(webRoot, shellPath),
   ],
   checks,

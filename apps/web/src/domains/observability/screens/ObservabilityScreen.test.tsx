@@ -385,4 +385,136 @@ describe('ObservabilityScreen', () => {
     expect(await screen.findByRole('heading', { name: '可观测性' })).toBeInTheDocument();
     expect((await screen.findAllByText('变更日志')).length).toBeGreaterThan(0);
   });
+
+  it('adds AC-only external observability adapter readiness without changing tenant workbench authority', async () => {
+    mockRequest.mockImplementation(async (path: string) => {
+      if (path === '/api/v1/logs/changes?page=1&pageSize=20') {
+        return {
+          items: [],
+          total: 0,
+          page: 1,
+          pageSize: 20,
+          totalPages: 0,
+        };
+      }
+
+      if (path === '/api/v1/observability/adapters/summary?environment=local') {
+        return [
+          {
+            definition: {
+              code: 'otel_trace_exporter',
+              label: 'OpenTelemetry Trace Exporter',
+              localizedLabel: {
+                en: 'OpenTelemetry Trace Exporter',
+                zh_HANS: 'OpenTelemetry 追踪导出器',
+              },
+              signalFamily: 'traces',
+              platformToolCode: null,
+              defaultEnabled: false,
+              defaultReadinessState: 'disabled',
+              ownerPhase: 'phase_5',
+              humanUi: false,
+              deepLink: false,
+              safeQueryCapability: 'none',
+              localDevModes: ['disabled', 'local_stub', 'external_provided'],
+              ssoRequirement: 'not_applicable',
+              licensePosture: 'recorded_before_ready',
+              sourceOfTruthBoundary: 'TCRN remains the product audit source of truth.',
+              defaultBackendState: 'disabled by default',
+              sortOrder: 10,
+            },
+            profile: {
+              adapterCode: 'otel_trace_exporter',
+              environment: 'local',
+              enabled: false,
+              backendMode: 'disabled',
+              readinessState: 'disabled',
+              healthStatus: 'disabled',
+              ssoState: 'not_applicable',
+              platformToolConnectionId: null,
+              platformToolCode: null,
+              endpointConfigured: false,
+              lastCheckedAt: null,
+              configVersion: 0,
+            },
+            policy: {
+              sourceOfTruthBoundary: 'TCRN remains the product audit source of truth.',
+              rawQueryAllowedForOrdinaryTenants: false,
+              maxQueryRangeHours: 24,
+              maxResultLimit: 100,
+            },
+          },
+          {
+            definition: {
+              code: 'grafana_console',
+              label: 'Grafana Console',
+              localizedLabel: {
+                en: 'Grafana Console',
+                zh_HANS: 'Grafana 控制台',
+              },
+              signalFamily: 'dashboards',
+              platformToolCode: 'grafana',
+              defaultEnabled: false,
+              defaultReadinessState: 'disabled',
+              ownerPhase: 'phase_5',
+              humanUi: true,
+              deepLink: true,
+              safeQueryCapability: 'sso_gated_deep_link_template',
+              localDevModes: ['disabled', 'compose_opt_in', 'external_provided'],
+              ssoRequirement: 'required',
+              licensePosture: 'recorded_before_ready',
+              sourceOfTruthBoundary: 'TCRN remains the product audit source of truth.',
+              defaultBackendState: 'disabled by default',
+              sortOrder: 70,
+            },
+            profile: {
+              adapterCode: 'grafana_console',
+              environment: 'local',
+              enabled: true,
+              backendMode: 'external_provided',
+              readinessState: 'sso_required',
+              healthStatus: 'healthy',
+              ssoState: 'blocked',
+              platformToolConnectionId: 'connection-grafana',
+              platformToolCode: 'grafana',
+              endpointConfigured: true,
+              lastCheckedAt: null,
+              configVersion: 1,
+            },
+            policy: {
+              sourceOfTruthBoundary: 'TCRN remains the product audit source of truth.',
+              rawQueryAllowedForOrdinaryTenants: false,
+              maxQueryRangeHours: 24,
+              maxResultLimit: 100,
+            },
+          },
+        ];
+      }
+
+      if (path === '/api/v1/observability/adapters/grafana_console/deep-link?environment=local') {
+        return {
+          adapterCode: 'grafana_console',
+          environment: 'local',
+          state: 'sso_required',
+          url: null,
+          opensInNewTab: false,
+        };
+      }
+
+      throw new Error(`Unhandled request: ${path}`);
+    });
+
+    render(<ObservabilityScreen tenantId="tenant-ac" workspaceKind="ac" />);
+
+    expect(await screen.findByRole('heading', { name: 'External observability readiness' })).toBeInTheDocument();
+    expect(screen.getByText('OpenTelemetry Trace Exporter')).toBeInTheDocument();
+    expect(screen.getByText('Grafana Console')).toBeInTheDocument();
+    expect(screen.getByText(/Product audit logs stay above as the primary workbench/)).toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByLabelText('Open external observability handoff: Grafana Console')
+    );
+
+    expect(await screen.findByText('Deep link unavailable: sso required')).toBeInTheDocument();
+  });
 });
