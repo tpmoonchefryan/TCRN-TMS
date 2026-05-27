@@ -63,7 +63,7 @@ export class PermissionGuard implements CanActivate {
     // Check each required permission
     for (const perm of requiredPermissions) {
       const { checkedAction } = resolveRbacPermission(perm.resource, perm.action);
-      const hasPermission = await this.permissionService.checkPermission(
+      const allowed = await this.permissionService.refreshAndCheckPermission(
         user.tenantSchema,
         user.id,
         perm.resource,
@@ -71,16 +71,6 @@ export class PermissionGuard implements CanActivate {
         scopeType,
         scopeId
       );
-      const allowed = hasPermission
-        ? true
-        : await this.permissionService.refreshAndCheckPermission(
-            user.tenantSchema,
-            user.id,
-            perm.resource,
-            checkedAction,
-            scopeType,
-            scopeId
-          );
 
       if (!allowed) {
         const permissionLabel =

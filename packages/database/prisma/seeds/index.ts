@@ -16,6 +16,7 @@ import { seedEmailTemplates } from './08-email-templates';
 import { seedPublicPresenceSystemAssets } from './09-public-presence-assets';
 import { seedPiiConfig } from './10-pii-config';
 import { loadRepoEnvFiles } from '../../scripts/load-repo-env';
+import { syncRbacContractSchemas } from '../../scripts/sync-rbac-contract';
 
 loadRepoEnvFiles(import.meta.url);
 
@@ -42,6 +43,14 @@ async function main() {
     await seedMembershipConfigs(prisma);
     await seedBlocklistEntries(prisma);
     await seedExternalBlocklistPatterns(prisma);
+
+    // AC schema is created before tenant_template receives seeded RBAC rows.
+    // Keep the platform admin schema aligned before assigning ac_admin roles.
+    console.log('\n📌 Phase 2b: AC RBAC Contract Sync');
+    await syncRbacContractSchemas(prisma, {
+      schemas: [acTenant.schemaName],
+      skipTemplate: true,
+    });
 
     // Phase 3: AC Admin user (after roles are created)
     console.log('\n📌 Phase 3: AC Admin User');

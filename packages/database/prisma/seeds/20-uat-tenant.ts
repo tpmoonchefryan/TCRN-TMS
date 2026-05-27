@@ -8,6 +8,7 @@ import {
   copyTenantTemplateForeignKeys,
   copyTenantTemplateSeedData,
 } from '../../src/platform/tenancy/template-bootstrap';
+import { syncSeedTenantCapabilities } from './_module-capabilities';
 
 export interface UatTenantResult {
   corpTenant: Tenant;
@@ -116,11 +117,6 @@ export async function seedUatTenants(prisma: PrismaClient): Promise<UatTenantRes
       settings: {
         timezone: 'Asia/Tokyo',
         defaultLanguage: 'ja',
-        features: {
-          multiSubsidiary: true,
-          advancedReports: true,
-          apiIntegration: true,
-        },
       },
     },
     create: {
@@ -132,13 +128,19 @@ export async function seedUatTenants(prisma: PrismaClient): Promise<UatTenantRes
       settings: {
         timezone: 'Asia/Tokyo',
         defaultLanguage: 'ja',
-        features: {
-          multiSubsidiary: true,
-          advancedReports: true,
-          apiIntegration: true,
-        },
       },
     },
+  });
+
+  await syncSeedTenantCapabilities(prisma, {
+    tenant: corpTenant,
+    enabledCapabilityCodes: [
+      'public_presence.homepage',
+      'marshmallow.mailbox',
+      'reports.mfr',
+      'integration.webhooks',
+    ],
+    note: 'UAT corporation seed maps legacy advancedReports/apiIntegration to registry capabilities.',
   });
 
   await ensureTenantSchema(prisma, corpSchemaName);
@@ -157,11 +159,6 @@ export async function seedUatTenants(prisma: PrismaClient): Promise<UatTenantRes
       settings: {
         timezone: 'Asia/Shanghai',
         defaultLanguage: 'zh_HANS',
-        features: {
-          multiSubsidiary: false,
-          advancedReports: false,
-          apiIntegration: false,
-        },
       },
     },
     create: {
@@ -173,13 +170,14 @@ export async function seedUatTenants(prisma: PrismaClient): Promise<UatTenantRes
       settings: {
         timezone: 'Asia/Shanghai',
         defaultLanguage: 'zh_HANS',
-        features: {
-          multiSubsidiary: false,
-          advancedReports: false,
-          apiIntegration: false,
-        },
       },
     },
+  });
+
+  await syncSeedTenantCapabilities(prisma, {
+    tenant: soloTenant,
+    enabledCapabilityCodes: ['public_presence.homepage', 'marshmallow.mailbox'],
+    note: 'UAT solo seed uses default creator-facing registry capabilities.',
   });
 
   await ensureTenantSchema(prisma, soloSchemaName);

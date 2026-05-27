@@ -29,6 +29,7 @@ import type { RequestContext } from '@tcrn/shared';
 import {
   AuthenticatedUser,
   CurrentUser,
+  RequireCapabilities,
   RequirePermissions,
   RequirePublishedTalentAccess,
 } from '../../../common/decorators';
@@ -329,6 +330,7 @@ const HOMEPAGE_CONFLICT_SCHEMA = createErrorEnvelopeSchema(
 
 @ApiTags('Ops - Homepage')
 @ApiBearerAuth()
+@RequireCapabilities('public_presence.homepage')
 @RequirePublishedTalentAccess()
 @Controller('talents/:talentId/homepage')
 export class HomepageController {

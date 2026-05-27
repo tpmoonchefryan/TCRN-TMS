@@ -24,6 +24,12 @@ import {
   TopCommandBar,
 } from '@/platform/ui';
 
+import {
+  isCapabilityCodeEnabled,
+  TALENT_SECTION_CAPABILITY,
+  type RoutedCapabilityCode,
+} from './module-capability-routing';
+
 function getTalentBusinessTitle(
   section: TalentWorkspaceSection,
   titles: {
@@ -57,6 +63,7 @@ interface TalentBusinessShellProps {
   talentId: string;
   section: TalentWorkspaceSection;
   session: BrowserSession;
+  enabledCapabilityCodes?: readonly string[] | null;
   children: React.ReactNode;
   onNavigate: (href: string) => void;
   onSignOut: () => Promise<void>;
@@ -68,6 +75,7 @@ export function TalentBusinessShell({
   talentId,
   section,
   session,
+  enabledCapabilityCodes,
   children,
   onNavigate,
   onSignOut,
@@ -77,6 +85,8 @@ export function TalentBusinessShell({
   const { request } = useSession();
   const [talentName, setTalentName] = useState<string | null>(null);
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
+  const visibleEnabledCapabilityCodes =
+    enabledCapabilityCodes ?? session.capabilities?.enabledCapabilityCodes ?? null;
 
   useEffect(() => {
     let cancelled = false;
@@ -102,7 +112,14 @@ export function TalentBusinessShell({
     };
   }, [request, talentId]);
 
-  const navItems = [
+  const navItems: Array<{
+    key: string;
+    label: string;
+    href: string;
+    isActive: boolean;
+    icon: React.ReactNode;
+    capabilityCode?: RoutedCapabilityCode;
+  }> = [
     {
       key: 'overview',
       label: copy.talentBusiness.nav.overview,
@@ -123,6 +140,7 @@ export function TalentBusinessShell({
       href: buildTalentWorkspaceSectionPath(tenantId, talentId, 'homepage'),
       isActive: section === 'homepage',
       icon: <Globe2 className="h-4 w-4" />,
+      capabilityCode: TALENT_SECTION_CAPABILITY.homepage,
     },
     {
       key: 'marshmallow',
@@ -130,6 +148,7 @@ export function TalentBusinessShell({
       href: buildTalentWorkspaceSectionPath(tenantId, talentId, 'marshmallow'),
       isActive: section === 'marshmallow',
       icon: <Mailbox className="h-4 w-4" />,
+      capabilityCode: TALENT_SECTION_CAPABILITY.marshmallow,
     },
     {
       key: 'reports',
@@ -137,8 +156,9 @@ export function TalentBusinessShell({
       href: buildTalentWorkspaceSectionPath(tenantId, talentId, 'reports'),
       isActive: section === 'reports',
       icon: <FileSpreadsheet className="h-4 w-4" />,
+      capabilityCode: TALENT_SECTION_CAPABILITY.reports,
     },
-  ];
+  ].filter((item) => isCapabilityCodeEnabled(visibleEnabledCapabilityCodes, item.capabilityCode));
 
   const organizationHref = `/tenant/${tenantId}/organization-structure`;
   const userName =

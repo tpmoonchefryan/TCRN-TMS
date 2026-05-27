@@ -10,6 +10,154 @@ const localeState = {
   locale: 'en' as SupportedUiLocale,
 };
 
+const localized = (value: string) => ({
+  en: value,
+  zh_HANS: value,
+  zh_HANT: value,
+  ja: value,
+  ko: value,
+  fr: value,
+});
+
+const capabilityRegistryResponse = {
+  registryVersion: 'test.registry',
+  modules: [
+    {
+      code: 'public_presence',
+      label: localized('Public Presence'),
+      description: localized('Homepage management'),
+      sortOrder: 10,
+    },
+  ],
+  capabilities: [
+    {
+      code: 'public_presence.homepage',
+      moduleCode: 'public_presence',
+      label: localized('Homepage Studio'),
+      description: localized('Homepage management and publishing.'),
+      status: 'active',
+      assignable: true,
+      assignmentScope: 'tenant',
+      runtimeScopes: ['tenant'],
+      dependencies: [],
+      conflicts: [],
+      menuBindings: [],
+      apiBindings: [],
+      settingsBindings: [],
+      migrationAliases: ['homepage'],
+      defaultEnabledForStandardTenant: true,
+      sortOrder: 10,
+    },
+    {
+      code: 'marshmallow.mailbox',
+      moduleCode: 'marshmallow',
+      label: localized('Marshmallow Mailbox'),
+      description: localized('Mailbox moderation.'),
+      status: 'active',
+      assignable: true,
+      assignmentScope: 'tenant',
+      runtimeScopes: ['tenant'],
+      dependencies: [],
+      conflicts: [],
+      menuBindings: [],
+      apiBindings: [],
+      settingsBindings: [],
+      migrationAliases: ['marshmallow'],
+      defaultEnabledForStandardTenant: true,
+      sortOrder: 20,
+    },
+    {
+      code: 'core.settings',
+      moduleCode: 'core',
+      label: localized('Settings'),
+      description: localized('Core settings.'),
+      status: 'active',
+      assignable: false,
+      assignmentScope: 'system',
+      runtimeScopes: ['tenant'],
+      dependencies: [],
+      conflicts: [],
+      menuBindings: [],
+      apiBindings: [],
+      settingsBindings: [],
+      migrationAliases: [],
+      defaultEnabledForStandardTenant: true,
+      sortOrder: 30,
+    },
+  ],
+};
+
+const capabilityReadbackResponse = {
+  tenantId: 'tenant-1',
+  version: 1,
+  assignments: [
+    {
+      capabilityCode: 'public_presence.homepage',
+      moduleCode: 'public_presence',
+      label: localized('Homepage Studio'),
+      description: localized('Homepage management and publishing.'),
+      assignable: true,
+      editable: true,
+      enabled: true,
+      lockedReason: null,
+      source: 'seed',
+      updatedAt: null,
+      note: null,
+    },
+    {
+      capabilityCode: 'marshmallow.mailbox',
+      moduleCode: 'marshmallow',
+      label: localized('Marshmallow Mailbox'),
+      description: localized('Mailbox moderation.'),
+      assignable: true,
+      editable: true,
+      enabled: false,
+      lockedReason: null,
+      source: 'seed',
+      updatedAt: null,
+      note: null,
+    },
+    {
+      capabilityCode: 'core.settings',
+      moduleCode: 'core',
+      label: localized('Settings'),
+      description: localized('Core settings.'),
+      assignable: false,
+      editable: false,
+      enabled: true,
+      lockedReason: 'System capability',
+      source: 'system',
+      updatedAt: null,
+      note: null,
+    },
+  ],
+  effective: {
+    tenantId: 'tenant-1',
+    scopeType: 'tenant',
+    scopeId: null,
+    enabledCapabilityCodes: ['public_presence.homepage', 'core.settings'],
+    registryVersion: 'test.registry',
+    resolvedAt: '2026-04-17T01:00:00.000Z',
+    summary: {
+      enabledCapabilityCodes: ['public_presence.homepage'],
+      labels: [localized('Homepage Studio')],
+      displayLabels: ['Homepage Studio'],
+    },
+  },
+  registryVersion: 'test.registry',
+};
+
+const tenantCapabilitiesDigest = {
+  enabledCapabilityCodes: ['public_presence.homepage'],
+  summary: {
+    enabledCapabilityCodes: ['public_presence.homepage'],
+    labels: [localized('Homepage Studio')],
+    displayLabels: ['Homepage Studio'],
+  },
+  registryVersion: 'test.registry',
+  version: 1,
+};
+
 vi.mock('next/navigation', () => ({
   useRouter: () => ({
     replace: mockReplace,
@@ -45,6 +193,10 @@ describe('TenantEditorScreen', () => {
 
   it('provisions a tenant from the dedicated create page and redirects to its editor', async () => {
     mockRequest.mockImplementation(async (path: string, init?: RequestInit) => {
+      if (path === '/api/v1/module-capabilities/registry' && !init) {
+        return capabilityRegistryResponse;
+      }
+
       if (path === '/api/v1/tenants' && init?.method === 'POST') {
         return {
           id: 'tenant-new',
@@ -56,6 +208,7 @@ describe('TenantEditorScreen', () => {
           settings: {
             maxTalents: 25,
           },
+          capabilities: tenantCapabilitiesDigest,
           stats: {
             subsidiaryCount: 0,
             talentCount: 0,
@@ -70,6 +223,11 @@ describe('TenantEditorScreen', () => {
     });
 
     render(<TenantEditorScreen acTenantId="tenant-ac" mode="create" />);
+
+    expect(await screen.findByText('Capabilities')).toBeInTheDocument();
+    expect(screen.getByLabelText('Enable Homepage Studio')).toBeChecked();
+    expect(screen.getByLabelText('Enable Settings')).toBeDisabled();
+    expect(screen.queryByLabelText('Enabled features')).not.toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText('Tenant code'), {
       target: { value: 'beta' },
@@ -97,6 +255,7 @@ describe('TenantEditorScreen', () => {
         '/api/v1/tenants',
         expect.objectContaining({
           method: 'POST',
+          body: expect.stringContaining('"enabledCapabilityCodes"'),
         })
       );
     });
@@ -105,6 +264,21 @@ describe('TenantEditorScreen', () => {
 
   it('loads and updates a tenant from the dedicated edit page', async () => {
     mockRequest.mockImplementation(async (path: string, init?: RequestInit) => {
+      if (path === '/api/v1/module-capabilities/registry' && !init) {
+        return capabilityRegistryResponse;
+      }
+
+      if (path === '/api/v1/tenants/tenant-1/capabilities' && !init) {
+        return capabilityReadbackResponse;
+      }
+
+      if (path === '/api/v1/tenants/tenant-1/capabilities' && init?.method === 'PUT') {
+        return {
+          ...capabilityReadbackResponse,
+          version: 2,
+        };
+      }
+
       if (path === '/api/v1/tenants/tenant-1' && !init) {
         return {
           id: 'tenant-1',
@@ -116,8 +290,8 @@ describe('TenantEditorScreen', () => {
           settings: {
             maxTalents: 10,
             maxCustomersPerTalent: 200,
-            features: ['homepage'],
           },
+          capabilities: tenantCapabilitiesDigest,
           stats: {
             subsidiaryCount: 1,
             talentCount: 4,
@@ -160,8 +334,8 @@ describe('TenantEditorScreen', () => {
           settings: {
             maxTalents: 12,
             maxCustomersPerTalent: 200,
-            features: ['homepage'],
           },
+          capabilities: tenantCapabilitiesDigest,
           stats: {
             subsidiaryCount: 1,
             talentCount: 4,
@@ -221,9 +395,16 @@ describe('TenantEditorScreen', () => {
           method: 'PATCH',
         })
       );
+      expect(mockRequest).toHaveBeenCalledWith(
+        '/api/v1/tenants/tenant-1/capabilities',
+        expect.objectContaining({
+          method: 'PUT',
+          body: expect.stringContaining('"enabledCapabilityCodes"'),
+        })
+      );
     });
 
-    expect(await screen.findByText('Alpha Entertainment Updated was updated.')).toBeInTheDocument();
+    expect(await screen.findByText('Alpha Entertainment was updated.')).toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText('Sending domain hostname: mail.alpha.example.com'), {
       target: { value: 'sender.alpha.example.com' },
@@ -273,6 +454,14 @@ describe('TenantEditorScreen', () => {
     });
 
     mockRequest.mockImplementation(async (path: string, init?: RequestInit) => {
+      if (path === '/api/v1/module-capabilities/registry' && !init) {
+        return capabilityRegistryResponse;
+      }
+
+      if (path === '/api/v1/tenants/tenant-1/capabilities' && !init) {
+        return capabilityReadbackResponse;
+      }
+
       if (path === '/api/v1/tenants/tenant-1' && !init) {
         return {
           id: 'tenant-1',
@@ -284,8 +473,8 @@ describe('TenantEditorScreen', () => {
           settings: {
             maxTalents: 10,
             maxCustomersPerTalent: 200,
-            features: ['homepage'],
           },
+          capabilities: tenantCapabilitiesDigest,
           stats: {
             subsidiaryCount: 1,
             talentCount: 4,

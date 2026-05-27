@@ -31,9 +31,67 @@ model Tenant {
 
   customDomainBindings         CustomDomainBinding[]
   customDomainTalentSelections CustomDomainTalentSelection[]
+  capabilityState              TenantCapabilityState?
+  capabilityAssignments        TenantCapabilityAssignment[]
+  capabilityAudits             TenantCapabilityAudit[]
 
   @@index([code])
   @@map("tenant")
+  @@schema("public")
+}
+
+model TenantCapabilityState {
+  tenantId  String   @id @map("tenant_id") @db.Uuid
+  version   Int      @default(1)
+  updatedBy String?  @map("updated_by") @db.Uuid
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("tenant_capability_state")
+  @@schema("public")
+}
+
+model TenantCapabilityAssignment {
+  id             String   @id @default(uuid()) @db.Uuid
+  tenantId       String   @map("tenant_id") @db.Uuid
+  capabilityCode String   @map("capability_code") @db.VarChar(128)
+  enabled        Boolean  @default(true)
+  source         String   @default("system") @db.VarChar(32)
+  assignedBy     String?  @map("assigned_by") @db.Uuid
+  assignedAt     DateTime @default(now()) @map("assigned_at") @db.Timestamptz
+  updatedBy      String?  @map("updated_by") @db.Uuid
+  updatedAt      DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  note           String?  @db.Text
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, capabilityCode])
+  @@index([tenantId, enabled])
+  @@index([capabilityCode])
+  @@map("tenant_capability_assignment")
+  @@schema("public")
+}
+
+model TenantCapabilityAudit {
+  id                 String   @id @default(uuid()) @db.Uuid
+  tenantId           String   @map("tenant_id") @db.Uuid
+  actorId            String?  @map("actor_id") @db.Uuid
+  action             String   @db.VarChar(64)
+  oldVersion         Int?     @map("old_version")
+  newVersion         Int      @map("new_version")
+  oldCapabilityCodes Json     @map("old_capability_codes") @db.JsonB
+  newCapabilityCodes Json     @map("new_capability_codes") @db.JsonB
+  note               String?  @db.Text
+  requestId          String?  @map("request_id") @db.VarChar(128)
+  ipAddress          String?  @map("ip_address") @db.VarChar(64)
+  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, createdAt])
+  @@index([actorId])
+  @@map("tenant_capability_audit")
   @@schema("public")
 }
 

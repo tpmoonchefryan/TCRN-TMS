@@ -56,6 +56,20 @@ export interface CurrentUserProfile {
   createdAt: string;
 }
 
+export interface CurrentTenantCapabilitySnapshot {
+  tenantId: string;
+  effective: {
+    tenantId: string;
+    scopeType: string;
+    scopeId: string | null;
+    enabledCapabilityCodes: string[];
+    disabledReasons: Record<string, string>;
+    registryVersion: string;
+    resolvedAt: string;
+  };
+  registryVersion: string;
+}
+
 function normalizeUiLocaleOrDefault(input?: string | null): SupportedUiLocale {
   return normalizeSupportedUiLocale(input) ?? 'en';
 }
@@ -186,6 +200,20 @@ export async function getCurrentUser(accessToken: string): Promise<CurrentUserPr
   });
 
   return normalizeCurrentUserProfile(await readApiData<CurrentUserProfile>(response));
+}
+
+export async function getCurrentTenantCapabilities(
+  accessToken: string
+): Promise<CurrentTenantCapabilitySnapshot> {
+  const response = await fetch('/api/v1/module-capabilities/effective', {
+    method: 'GET',
+    credentials: 'include',
+    headers: withBrowserPublicConsumerHeaders({
+      Authorization: `Bearer ${accessToken}`,
+    }),
+  });
+
+  return readApiData<CurrentTenantCapabilitySnapshot>(response);
 }
 
 export async function readPostLoginOrganizationTree(

@@ -14,6 +14,21 @@ const baseSession: BrowserSession = {
   tenantName: 'Moonshot Tenant',
   tenantTier: 'standard',
   tenantCode: 'MOON',
+  capabilities: {
+    tenantId: 'tenant-1',
+    scopeType: 'tenant',
+    scopeId: null,
+    enabledCapabilityCodes: [
+      'core.organization',
+      'core.settings',
+      'core.user_access',
+      'integration.webhooks',
+      'observability.product_audit',
+    ],
+    disabledReasons: {},
+    registryVersion: 'test',
+    resolvedAt: '2026-04-17T10:00:00.000Z',
+  },
   user: {
     id: 'user-1',
     username: 'alice',

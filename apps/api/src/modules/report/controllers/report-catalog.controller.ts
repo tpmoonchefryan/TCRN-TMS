@@ -4,7 +4,7 @@ import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@ne
 
 import { ErrorCodes, SUPPORTED_UI_LOCALES } from '@tcrn/shared';
 
-import { RequirePermissions } from '../../../common/decorators';
+import { RequireCapabilities, RequirePermissions } from '../../../common/decorators';
 import { ReportCatalogApplicationService } from '../application/report-catalog.service';
 
 const createErrorEnvelopeSchema = (code: string, message: string) => ({
@@ -171,6 +171,7 @@ const REPORT_NOT_FOUND_SCHEMA = createErrorEnvelopeSchema(
 
 @ApiTags('Ops - Reports')
 @ApiBearerAuth()
+@RequireCapabilities('reports.mfr')
 @Controller('reports')
 export class ReportCatalogController {
   constructor(private readonly reportCatalogApplicationService: ReportCatalogApplicationService) {}

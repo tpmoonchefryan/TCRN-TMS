@@ -9,13 +9,22 @@ import {
   activateTenant,
   createTenant,
   deactivateTenant,
+  type ModuleCapabilityDefinition,
+  type ModuleCapabilityRegistry,
+  readModuleCapabilityRegistry,
   type ManagedSendingDomain,
   type ManagedSendingDomainStatus,
   readTenant,
+  readTenantCapabilities,
   readTenantSendingDomains,
+  replaceTenantCapabilities,
+  type TenantCapabilityAssignmentView,
+  type TenantCapabilityReadback,
   updateTenant,
   updateTenantSendingDomains,
 } from '@/domains/platform-tenant-management/api/tenant-management.api';
+import { ApiRequestError } from '@/platform/http/api';
+import { pickLocaleText } from '@/platform/runtime/locale/locale-text';
 import { useSession } from '@/platform/runtime/session/session-provider';
 import { AsyncSubmitButton, GlassSurface, StateView } from '@/platform/ui';
 
@@ -29,7 +38,6 @@ import {
   inputClassName,
   NoticeBanner,
   readPositiveInteger,
-  splitFeatures,
   SummaryCard,
   type TenantDraft,
   ToneBadge,
@@ -54,6 +62,14 @@ export function TenantEditorScreen({
   const [loadError, setLoadError] = useState<string | null>(null);
   const [notice, setNotice] = useState<{ tone: 'success' | 'error'; message: string } | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [capabilityRegistry, setCapabilityRegistry] = useState<ModuleCapabilityRegistry | null>(
+    null
+  );
+  const [capabilityReadback, setCapabilityReadback] = useState<TenantCapabilityReadback | null>(
+    null
+  );
+  const [capabilitiesLoading, setCapabilitiesLoading] = useState(true);
+  const [capabilitiesError, setCapabilitiesError] = useState<string | null>(null);
   const [sendingDomains, setSendingDomains] = useState<ManagedSendingDomain[]>([]);
   const [sendingDomainsLoading, setSendingDomainsLoading] = useState(mode === 'edit');
   const [sendingDomainsError, setSendingDomainsError] = useState<string | null>(null);
@@ -75,6 +91,52 @@ export function TenantEditorScreen({
       userCount: number;
     };
   } | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadCapabilities() {
+      setCapabilitiesLoading(true);
+      setCapabilitiesError(null);
+
+      try {
+        const [registry, readback] = await Promise.all([
+          readModuleCapabilityRegistry(request),
+          mode === 'edit' && managedTenantId
+            ? readTenantCapabilities(request, managedTenantId)
+            : Promise.resolve(null),
+        ]);
+
+        if (cancelled) {
+          return;
+        }
+
+        setCapabilityRegistry(registry);
+        setCapabilityReadback(readback);
+
+        if (mode === 'edit' && readback) {
+          setDraft((current) => ({
+            ...current,
+            enabledCapabilityCodes: readback.effective.summary.enabledCapabilityCodes,
+          }));
+        }
+      } catch (reason) {
+        if (!cancelled) {
+          setCapabilitiesError(getErrorMessage(reason, editorCopy.loadError));
+        }
+      } finally {
+        if (!cancelled) {
+          setCapabilitiesLoading(false);
+        }
+      }
+    }
+
+    void loadCapabilities();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [managedTenantId, mode, request]);
 
   useEffect(() => {
     if (mode !== 'edit' || !managedTenantId) {
@@ -175,8 +237,8 @@ export function TenantEditorScreen({
           settings: {
             maxTalents: readPositiveInteger(draft.maxTalents),
             maxCustomersPerTalent: readPositiveInteger(draft.maxCustomersPerTalent),
-            features: splitFeatures(draft.featuresText),
           },
+          enabledCapabilityCodes: draft.enabledCapabilityCodes,
         });
 
         router.replace(`/ac/${acTenantId}/tenants/${created.id}`);
@@ -187,22 +249,41 @@ export function TenantEditorScreen({
         throw new Error('Missing managed tenant id.');
       }
 
-      const updated = await updateTenant(request, managedTenantId, {
+      await updateTenant(request, managedTenantId, {
         name: draft.name.trim() || undefined,
         settings: {
           maxTalents: readPositiveInteger(draft.maxTalents),
           maxCustomersPerTalent: readPositiveInteger(draft.maxCustomersPerTalent),
-          features: splitFeatures(draft.featuresText),
         },
       });
 
+      if (!capabilityReadback) {
+        throw new Error(editorCopy.loadError);
+      }
+
+      await replaceTenantCapabilities(request, managedTenantId, {
+        enabledCapabilityCodes: draft.enabledCapabilityCodes,
+        version: capabilityReadback.version,
+        note: editorCopy.capabilitySaveNote,
+      });
+
+      const [updated, refreshedCapabilities] = await Promise.all([
+        readTenant(request, managedTenantId),
+        readTenantCapabilities(request, managedTenantId),
+      ]);
+
       setTenantState(updated);
+      setCapabilityReadback(refreshedCapabilities);
       setDraft(buildDraftFromTenant(updated));
       setNotice({
         tone: 'success',
         message: `${updated.name} ${editorCopy.successUpdate}`,
       });
     } catch (reason) {
+      if (reason instanceof ApiRequestError && reason.code === 'RES_VERSION_MISMATCH') {
+        setCapabilitiesError(`${reason.message} ${editorCopy.capabilityConflictHint}`);
+      }
+
       setNotice({
         tone: 'error',
         message: getErrorMessage(
@@ -318,6 +399,76 @@ export function TenantEditorScreen({
     setSendingDomainsNotice(null);
   }
 
+  function handleCapabilityToggle(capabilityCode: string, checked: boolean) {
+    setDraft((current) => {
+      const nextCodes = new Set(current.enabledCapabilityCodes);
+
+      if (checked) {
+        nextCodes.add(capabilityCode);
+      } else {
+        nextCodes.delete(capabilityCode);
+      }
+
+      const sortedCodes = [...nextCodes].sort((left, right) => {
+        const leftSort =
+          capabilityRegistry?.capabilities.find((item) => item.code === left)?.sortOrder ??
+          Number.MAX_SAFE_INTEGER;
+        const rightSort =
+          capabilityRegistry?.capabilities.find((item) => item.code === right)?.sortOrder ??
+          Number.MAX_SAFE_INTEGER;
+
+        return leftSort === rightSort ? left.localeCompare(right) : leftSort - rightSort;
+      });
+
+      return {
+        ...current,
+        enabledCapabilityCodes: sortedCodes,
+      };
+    });
+  }
+
+  async function handleReloadCapabilities() {
+    if (mode !== 'edit' || !managedTenantId) {
+      return;
+    }
+
+    setCapabilitiesLoading(true);
+    setCapabilitiesError(null);
+    setNotice(null);
+
+    try {
+      const refreshed = await readTenantCapabilities(request, managedTenantId);
+
+      setCapabilityReadback(refreshed);
+      setDraft((current) => ({
+        ...current,
+        enabledCapabilityCodes: refreshed.effective.summary.enabledCapabilityCodes,
+      }));
+    } catch (reason) {
+      setCapabilitiesError(getErrorMessage(reason, editorCopy.loadError));
+    } finally {
+      setCapabilitiesLoading(false);
+    }
+  }
+
+  function buildCreateCapabilityRows(): TenantCapabilityAssignmentView[] {
+    return (capabilityRegistry?.capabilities ?? []).map((capability: ModuleCapabilityDefinition) => ({
+      capabilityCode: capability.code,
+      moduleCode: capability.moduleCode,
+      label: capability.label,
+      description: capability.description,
+      assignable: capability.assignable,
+      editable: capability.assignable,
+      enabled: capability.assignable
+        ? draft.enabledCapabilityCodes.includes(capability.code)
+        : capability.defaultEnabledForStandardTenant,
+      lockedReason: capability.assignable ? null : editorCopy.capabilityLockedSystem,
+      source: capability.assignable ? 'draft' : 'system',
+      updatedAt: null,
+      note: null,
+    }));
+  }
+
   async function handleSaveSendingDomains() {
     if (!managedTenantId || savingSendingDomains) {
       return;
@@ -369,6 +520,13 @@ export function TenantEditorScreen({
     mode === 'create'
       ? editorCopy.provisionTitle
       : tenantState?.name || editorCopy.tenantEditorFallbackTitle;
+  const capabilityRows =
+    mode === 'edit' && capabilityReadback
+      ? capabilityReadback.assignments
+      : buildCreateCapabilityRows();
+  const enabledCapabilityLabels = capabilityRows
+    .filter((capability) => capability.assignable && capability.enabled)
+    .map((capability) => pickLocaleText(locale, capability.label));
 
   return (
     <div className="space-y-6">
@@ -450,7 +608,7 @@ export function TenantEditorScreen({
             />
           </Field>
 
-          <Field label={editorCopy.maxTalentsLabel}>
+          <Field label={editorCopy.maxTalentsLabel} hint={editorCopy.quotaHelper}>
             <input
               aria-label={editorCopy.maxTalentsLabel}
               value={draft.maxTalents}
@@ -463,7 +621,7 @@ export function TenantEditorScreen({
             />
           </Field>
 
-          <Field label={editorCopy.maxCustomersLabel}>
+          <Field label={editorCopy.maxCustomersLabel} hint={editorCopy.quotaHelper}>
             <input
               aria-label={editorCopy.maxCustomersLabel}
               value={draft.maxCustomersPerTalent}
@@ -476,17 +634,91 @@ export function TenantEditorScreen({
             />
           </Field>
 
-          <Field label={editorCopy.featuresLabel} hint={editorCopy.featuresHint}>
-            <input
-              aria-label={editorCopy.featuresLabel}
-              value={draft.featuresText}
-              onChange={(event) =>
-                setDraft((current) => ({ ...current, featuresText: event.target.value }))
-              }
-              className={inputClassName}
-              placeholder={editorCopy.featuresPlaceholder}
-            />
-          </Field>
+          <div className="space-y-3 md:col-span-2">
+            <div>
+              <h2 className="text-sm font-semibold text-slate-900">
+                {editorCopy.capabilitiesLabel}
+              </h2>
+              <p className="mt-1 max-w-3xl text-xs leading-5 text-slate-500">
+                {editorCopy.capabilitiesHint}
+              </p>
+              <p className="mt-2 text-xs font-medium text-slate-600">
+                {enabledCapabilityLabels.length > 0
+                  ? enabledCapabilityLabels.join(' / ')
+                  : editorCopy.capabilityNoOptionalModules}
+              </p>
+            </div>
+
+            {capabilitiesLoading ? (
+              <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                {editorCopy.capabilitiesLoading}
+              </div>
+            ) : null}
+
+            {capabilitiesError ? (
+              <NoticeBanner tone="error" message={capabilitiesError} />
+            ) : null}
+
+            {mode === 'edit' ? (
+              <button
+                type="button"
+                onClick={() => void handleReloadCapabilities()}
+                className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+              >
+                {editorCopy.capabilityReloadAction}
+              </button>
+            ) : null}
+
+            <div className="overflow-hidden rounded-xl border border-slate-200">
+              <div className="divide-y divide-slate-200">
+                {capabilityRows.map((capability) => {
+                  const label = pickLocaleText(locale, capability.label);
+                  const description = pickLocaleText(locale, capability.description);
+                  const checkboxLabel = editorCopy.capabilityEnableLabel(label);
+
+                  return (
+                    <label
+                      key={capability.capabilityCode}
+                      className="grid gap-3 bg-white px-4 py-3 sm:grid-cols-[auto_1fr_auto]"
+                    >
+                      <input
+                        type="checkbox"
+                        className="mt-1 h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                        checked={capability.enabled}
+                        disabled={!capability.editable}
+                        aria-label={checkboxLabel}
+                        aria-disabled={!capability.editable}
+                        onChange={(event) =>
+                          handleCapabilityToggle(capability.capabilityCode, event.target.checked)
+                        }
+                      />
+                      <span className="min-w-0">
+                        <span className="block text-sm font-semibold text-slate-900">{label}</span>
+                        <span className="mt-1 block text-xs leading-5 text-slate-500">
+                          {description}
+                        </span>
+                        {!capability.editable ? (
+                          <span className="mt-1 block text-xs text-slate-500">
+                            {capability.lockedReason || editorCopy.capabilityLockedSystem}
+                          </span>
+                        ) : null}
+                      </span>
+                      <span className="flex items-start justify-start sm:justify-end">
+                        <ToneBadge
+                          tone={capability.editable ? 'info' : 'neutral'}
+                          label={
+                            capability.editable
+                              ? editorCopy.capabilityAssignableBadge
+                              : editorCopy.capabilityLockedBadge
+                          }
+                        />
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
 
           <div className="rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-4">
             <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">

@@ -42,6 +42,44 @@ import { TenantModule } from './modules/tenant';
 
 const logger = new Logger('Bootstrap');
 
+function cloneSerializableSwaggerValue<T>(value: T, stack = new WeakSet<object>()): T {
+  if (!value || typeof value !== 'object') {
+    return value;
+  }
+
+  if (stack.has(value)) {
+    return undefined as T;
+  }
+
+  stack.add(value);
+
+  if (Array.isArray(value)) {
+    const clonedArray = value
+      .map((item) => cloneSerializableSwaggerValue(item, stack))
+      .filter((item) => item !== undefined);
+
+    stack.delete(value);
+    return clonedArray as T;
+  }
+
+  const clonedObject: Record<string, unknown> = {};
+
+  for (const [key, item] of Object.entries(value)) {
+    const clonedItem = cloneSerializableSwaggerValue(item, stack);
+
+    if (clonedItem !== undefined) {
+      clonedObject[key] = clonedItem;
+    }
+  }
+
+  stack.delete(value);
+  return clonedObject as T;
+}
+
+function createSerializableSwaggerDocument<T>(document: T): T {
+  return cloneSerializableSwaggerValue(document);
+}
+
 // Loaded after telemetry initialization so OTEL auto-instrumentation can patch runtime deps.
 export async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule, {
@@ -145,23 +183,25 @@ export async function bootstrap(): Promise<void> {
       '1.0.0',
       OPERATIONS_TAGS
     );
-    const operationsDoc = SwaggerModule.createDocument(app, operationsConfig, {
-      include: [
-        OrganizationModule,
-        SubsidiaryModule,
-        TalentModule,
-        CustomerModule,
-        ImportModule,
-        ExportModule,
-        MarshmallowModule,
-        HomepageModule,
-        ReportModule,
-        IntegrationModule,
-        RoleModule,
-        PermissionModule,
-      ],
-      extraModels: [],
-    });
+    const operationsDoc = createSerializableSwaggerDocument(
+      SwaggerModule.createDocument(app, operationsConfig, {
+        include: [
+          OrganizationModule,
+          SubsidiaryModule,
+          TalentModule,
+          CustomerModule,
+          ImportModule,
+          ExportModule,
+          MarshmallowModule,
+          HomepageModule,
+          ReportModule,
+          IntegrationModule,
+          RoleModule,
+          PermissionModule,
+        ],
+        extraModels: [],
+      })
+    );
     applyGlobalSwaggerParameters(operationsDoc);
     // Needed to serve the JSON for the explorer
     SwaggerModule.setup('api/docs/operations', app, operationsDoc, SWAGGER_OPTIONS);
@@ -173,22 +213,24 @@ export async function bootstrap(): Promise<void> {
       '1.0.0',
       CONFIG_TAGS
     );
-    const configDoc = SwaggerModule.createDocument(app, configConfig, {
-      include: [
-        AuthModule, // Auth is here as per requirement
-        TenantModule,
-        SystemUserModule,
-        SystemRoleModule,
-        AppConfigModule,
-        DictionaryModule,
-        SecurityModule,
-        PiiConfigModule,
-        LogModule,
-        EmailModule,
-        SettingsModule,
-        DelegatedAdminModule,
-      ],
-    });
+    const configDoc = createSerializableSwaggerDocument(
+      SwaggerModule.createDocument(app, configConfig, {
+        include: [
+          AuthModule, // Auth is here as per requirement
+          TenantModule,
+          SystemUserModule,
+          SystemRoleModule,
+          AppConfigModule,
+          DictionaryModule,
+          SecurityModule,
+          PiiConfigModule,
+          LogModule,
+          EmailModule,
+          SettingsModule,
+          DelegatedAdminModule,
+        ],
+      })
+    );
     applyGlobalSwaggerParameters(configDoc);
     SwaggerModule.setup('api/docs/config', app, configDoc, SWAGGER_OPTIONS);
 
@@ -199,9 +241,11 @@ export async function bootstrap(): Promise<void> {
       '1.0.0',
       PUBLIC_TAGS
     );
-    const publicDoc = SwaggerModule.createDocument(app, publicConfig, {
-      include: [PublicModule, HealthModule],
-    });
+    const publicDoc = createSerializableSwaggerDocument(
+      SwaggerModule.createDocument(app, publicConfig, {
+        include: [PublicModule, HealthModule],
+      })
+    );
     SwaggerModule.setup('api/docs/public', app, publicDoc, SWAGGER_OPTIONS);
 
     // 4. Main Explorer UI

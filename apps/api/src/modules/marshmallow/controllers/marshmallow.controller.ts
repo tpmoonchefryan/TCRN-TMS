@@ -31,6 +31,7 @@ import type { RequestContext } from '@tcrn/shared';
 
 import {
   CurrentUser,
+  RequireCapabilities,
   RequirePermissions,
   RequirePublishedTalentAccess,
 } from '../../../common/decorators';
@@ -82,6 +83,7 @@ interface AuthenticatedUser {
 
 @ApiTags('Ops - Marshmallow')
 @ApiBearerAuth()
+@RequireCapabilities('marshmallow.mailbox')
 @RequirePublishedTalentAccess()
 @Controller('talents/:talentId/marshmallow')
 export class MarshmallowController {

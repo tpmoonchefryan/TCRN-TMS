@@ -1,5 +1,5 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
+import { ForbiddenException, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 
 import { prisma } from '@tcrn/database';
 import { ErrorCodes } from '@tcrn/shared';
@@ -767,6 +767,48 @@ export class AuthService {
    * Verify access token (used by guards)
    */
   async verifyAccessToken(token: string): Promise<AccessTokenPayload> {
-    return this.tokenService.verifyAccessToken(token);
+    const payload = this.tokenService.verifyAccessToken(token);
+    const tenant = await this.tenantService.getTenantById(payload.tid);
+
+    if (!tenant || tenant.schemaName !== payload.tsc) {
+      throw new UnauthorizedException({
+        code: ErrorCodes.AUTH_TOKEN_INVALID,
+        message: 'Authentication token tenant is invalid',
+      });
+    }
+
+    if (!tenant.isActive) {
+      throw new ForbiddenException({
+        code: ErrorCodes.TENANT_DISABLED,
+        message: 'Tenant is disabled',
+      });
+    }
+
+    const users = await prisma.$queryRawUnsafe<Array<{ id: string; is_active: boolean }>>(
+      `
+      SELECT id, is_active
+      FROM "${tenant.schemaName}".system_user
+      WHERE id = $1::uuid
+      LIMIT 1
+    `,
+      payload.sub
+    );
+    const user = users[0];
+
+    if (!user) {
+      throw new UnauthorizedException({
+        code: ErrorCodes.AUTH_TOKEN_INVALID,
+        message: 'Authentication token subject is invalid',
+      });
+    }
+
+    if (!user.is_active) {
+      throw new ForbiddenException({
+        code: ErrorCodes.AUTH_ACCOUNT_DISABLED,
+        message: 'Account is disabled',
+      });
+    }
+
+    return payload;
   }
 }

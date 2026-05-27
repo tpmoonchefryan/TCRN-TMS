@@ -27,6 +27,7 @@ import { ErrorCodes } from '@tcrn/shared';
 import {
   AuthenticatedUser,
   CurrentUser,
+  RequireCapabilities,
   RequirePermissions,
   RequirePublishedTalentAccess,
 } from '../../../common/decorators';
@@ -378,6 +379,7 @@ const REPORT_BAD_REQUEST_SCHEMA = createErrorEnvelopeSchema(
 
 @ApiTags('Ops - Reports')
 @ApiBearerAuth()
+@RequireCapabilities('reports.mfr')
 @RequirePublishedTalentAccess()
 @Controller('reports')
 export class ReportController {

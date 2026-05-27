@@ -1,5 +1,5 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-import { UnauthorizedException } from '@nestjs/common';
+import { ForbiddenException, UnauthorizedException } from '@nestjs/common';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { prisma } from '@tcrn/database';
@@ -226,6 +226,80 @@ describe('AuthService', () => {
       });
 
       await expect(service.login('TEST', 'testuser', 'password', '127.0.0.1')).rejects.toThrow(
+        UnauthorizedException
+      );
+    });
+  });
+
+  describe('verifyAccessToken', () => {
+    const accessPayload = {
+      sub: 'user-123',
+      tid: 'tenant-123',
+      tsc: 'tenant_test123',
+      email: 'test@example.com',
+      username: 'testuser',
+      type: 'access' as const,
+      jti: 'token-id',
+    };
+
+    it('returns the token payload only when tenant and user are still active', async () => {
+      (mockTokenService.verifyAccessToken as ReturnType<typeof vi.fn>).mockReturnValue(
+        accessPayload
+      );
+      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([{ id: 'user-123', is_active: true }]);
+
+      await expect(service.verifyAccessToken('access-token')).resolves.toEqual(accessPayload);
+      expect(mockTenantService.getTenantById).toHaveBeenCalledWith('tenant-123');
+      expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalledWith(
+        expect.stringContaining('WHERE id = $1::uuid'),
+        'user-123'
+      );
+    });
+
+    it('fails closed when the token tenant no longer exists or schema drifts', async () => {
+      (mockTokenService.verifyAccessToken as ReturnType<typeof vi.fn>).mockReturnValue({
+        ...accessPayload,
+        tsc: 'tenant_old_schema',
+      });
+
+      await expect(service.verifyAccessToken('access-token')).rejects.toBeInstanceOf(
+        UnauthorizedException
+      );
+    });
+
+    it('fails closed when the tenant is disabled after token issuance', async () => {
+      (mockTokenService.verifyAccessToken as ReturnType<typeof vi.fn>).mockReturnValue(
+        accessPayload
+      );
+      (mockTenantService.getTenantById as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+        ...mockTenant,
+        isActive: false,
+      });
+
+      await expect(service.verifyAccessToken('access-token')).rejects.toBeInstanceOf(
+        ForbiddenException
+      );
+      expect(mockPrisma.$queryRawUnsafe).not.toHaveBeenCalled();
+    });
+
+    it('fails closed when the user is disabled after token issuance', async () => {
+      (mockTokenService.verifyAccessToken as ReturnType<typeof vi.fn>).mockReturnValue(
+        accessPayload
+      );
+      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([{ id: 'user-123', is_active: false }]);
+
+      await expect(service.verifyAccessToken('access-token')).rejects.toBeInstanceOf(
+        ForbiddenException
+      );
+    });
+
+    it('fails closed when the token subject was deprovisioned', async () => {
+      (mockTokenService.verifyAccessToken as ReturnType<typeof vi.fn>).mockReturnValue(
+        accessPayload
+      );
+      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([]);
+
+      await expect(service.verifyAccessToken('access-token')).rejects.toBeInstanceOf(
         UnauthorizedException
       );
     });

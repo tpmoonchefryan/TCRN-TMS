@@ -20,7 +20,7 @@ import {
   type RequestContext,
 } from '@tcrn/shared';
 
-import { CurrentUser, RequirePermissions } from '../../../common/decorators';
+import { CurrentUser, RequireCapabilities, RequirePermissions } from '../../../common/decorators';
 import {
   AdapterListQueryDto,
   CreateAdapterDto,
@@ -57,6 +57,7 @@ function parseBooleanQueryValue(value: string | string[] | undefined, fallback: 
 
 @ApiTags('Ops - Integration')
 @ApiBearerAuth()
+@RequireCapabilities('integration.webhooks')
 @Controller('integration')
 export class IntegrationController {
   constructor(

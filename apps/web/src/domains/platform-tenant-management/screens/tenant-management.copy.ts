@@ -64,9 +64,17 @@ interface TenantManagementCopy {
     deactivateError: string;
     deactivateSubmit: string;
     editDescription: string;
-    featuresHint: string;
-    featuresLabel: string;
-    featuresPlaceholder: string;
+    capabilitiesHint: string;
+    capabilitiesLabel: string;
+    capabilitiesLoading: string;
+    capabilityAssignableBadge: string;
+    capabilityLockedBadge: string;
+    capabilityLockedSystem: string;
+    capabilityEnableLabel: (label: string) => string;
+    capabilityConflictHint: string;
+    capabilityReloadAction: string;
+    capabilityNoOptionalModules: string;
+    capabilitySaveNote: string;
     generatedDuringCreate: string;
     loadError: string;
     loading: string;
@@ -74,6 +82,7 @@ interface TenantManagementCopy {
     maxCustomersPlaceholder: string;
     maxTalentsLabel: string;
     maxTalentsPlaceholder: string;
+    quotaHelper: string;
     newTenant: string;
     inactiveStatus: string;
     provisionTitle: string;
@@ -192,10 +201,19 @@ const COPY: Record<SupportedUiLocale, TenantManagementCopy> = {
         'The tenant record stays available, but tenant access is disabled until it is reactivated.',
       deactivateError: 'Failed to deactivate tenant.',
       deactivateSubmit: 'Deactivate tenant',
-      editDescription: 'Review tenant identity, limits, and status.',
-      featuresHint: 'Separate multiple enabled modules with commas.',
-      featuresLabel: 'Enabled features',
-      featuresPlaceholder: 'homepage, marshmallow',
+      editDescription: 'Review tenant identity, limits, modules, and status.',
+      capabilitiesHint:
+        'Registry-backed modules are product availability controls. RBAC permissions are still required.',
+      capabilitiesLabel: 'Capabilities',
+      capabilitiesLoading: 'Loading capability registry...',
+      capabilityAssignableBadge: 'Assignable',
+      capabilityLockedBadge: 'Locked',
+      capabilityLockedSystem: 'System capability derived from tenant tier and registry rules.',
+      capabilityEnableLabel: (label) => `Enable ${label}`,
+      capabilityConflictHint: 'Capability assignments changed elsewhere. Reload before saving again.',
+      capabilityReloadAction: 'Reload capabilities',
+      capabilityNoOptionalModules: 'No optional modules enabled',
+      capabilitySaveNote: 'Updated from AC Tenant Management.',
       generatedDuringCreate: 'Created automatically',
       loadError: 'Failed to load tenant.',
       loading: 'Loading tenant…',
@@ -203,6 +221,8 @@ const COPY: Record<SupportedUiLocale, TenantManagementCopy> = {
       maxCustomersPlaceholder: '10000',
       maxTalentsLabel: 'Max talents',
       maxTalentsPlaceholder: '25',
+      quotaHelper:
+        'Leave empty for no limit. If a future limit is set below current usage, existing records remain available; only new creations are blocked.',
       newTenant: 'New tenant',
       inactiveStatus: 'Inactive',
       provisionTitle: 'Create tenant',
@@ -319,10 +339,18 @@ const COPY: Record<SupportedUiLocale, TenantManagementCopy> = {
       deactivateDescription: '租户记录会被保留，但租户访问会被停用，直到再次启用。',
       deactivateError: '停用租户失败。',
       deactivateSubmit: '停用租户',
-      editDescription: '在一个页面中查看并编辑租户标识、容量与状态。',
-      featuresHint: '多个已启用模块请用逗号分隔。',
-      featuresLabel: '启用功能',
-      featuresPlaceholder: 'homepage, marshmallow',
+      editDescription: '在一个页面中查看并编辑租户标识、容量、模块与状态。',
+      capabilitiesHint: 'Registry 模块控制产品可用性，仍需 RBAC 权限才能访问。',
+      capabilitiesLabel: '能力模块',
+      capabilitiesLoading: '正在加载能力 Registry...',
+      capabilityAssignableBadge: '可分配',
+      capabilityLockedBadge: '锁定',
+      capabilityLockedSystem: '系统能力由租户层级与 Registry 规则派生。',
+      capabilityEnableLabel: (label) => `启用${label}`,
+      capabilityConflictHint: '能力分配已在其他位置变更，请重新加载后再保存。',
+      capabilityReloadAction: '重新加载能力',
+      capabilityNoOptionalModules: '未启用可选模块',
+      capabilitySaveNote: '由 AC 租户管理更新。',
       generatedDuringCreate: '创建后自动生成',
       loadError: '加载租户失败。',
       loading: '正在加载租户…',
@@ -330,6 +358,7 @@ const COPY: Record<SupportedUiLocale, TenantManagementCopy> = {
       maxCustomersPlaceholder: '10000',
       maxTalentsLabel: '最大艺人数',
       maxTalentsPlaceholder: '25',
+      quotaHelper: '留空表示不限制。若未来设置的限制低于当前用量，既有记录仍可用，仅阻止新建。',
       newTenant: '新租户',
       inactiveStatus: '停用',
       provisionTitle: '创建租户',
@@ -445,10 +474,18 @@ const COPY: Record<SupportedUiLocale, TenantManagementCopy> = {
       deactivateDescription: '租户记录会被保留，但租户访问会被停用，直到再次启用。',
       deactivateError: '停用租户失败。',
       deactivateSubmit: '停用租户',
-      editDescription: '在一个页面中查看并编辑租户标识、容量与状态。',
-      featuresHint: '多个已启用模块请用逗号分隔。',
-      featuresLabel: '启用功能',
-      featuresPlaceholder: 'homepage, marshmallow',
+      editDescription: '在一個頁面中查看並編輯租戶標識、容量、模組與狀態。',
+      capabilitiesHint: 'Registry 模組控制產品可用性，仍需 RBAC 權限才能存取。',
+      capabilitiesLabel: '能力模組',
+      capabilitiesLoading: '正在載入能力 Registry...',
+      capabilityAssignableBadge: '可分配',
+      capabilityLockedBadge: '鎖定',
+      capabilityLockedSystem: '系統能力由租戶層級與 Registry 規則派生。',
+      capabilityEnableLabel: (label) => `啟用${label}`,
+      capabilityConflictHint: '能力分配已在其他位置變更，請重新載入後再儲存。',
+      capabilityReloadAction: '重新載入能力',
+      capabilityNoOptionalModules: '未啟用可選模組',
+      capabilitySaveNote: '由 AC 租戶管理更新。',
       generatedDuringCreate: '创建后自动生成',
       loadError: '加载租户失败。',
       loading: '正在加载租户…',
@@ -456,6 +493,7 @@ const COPY: Record<SupportedUiLocale, TenantManagementCopy> = {
       maxCustomersPlaceholder: '10000',
       maxTalentsLabel: '最大艺人数',
       maxTalentsPlaceholder: '25',
+      quotaHelper: '留空表示不限制。若未來設定的限制低於目前用量，既有記錄仍可用，僅阻止新建。',
       newTenant: '新租户',
       inactiveStatus: '停用',
       provisionTitle: '创建租户',
@@ -572,10 +610,20 @@ const COPY: Record<SupportedUiLocale, TenantManagementCopy> = {
         'テナント記録は残りますが、再有効化されるまでテナントアクセスは停止されます。',
       deactivateError: 'テナントの無効化に失敗しました。',
       deactivateSubmit: 'テナントを無効化',
-      editDescription: 'テナント識別情報、上限、状態を一箇所で確認・編集します。',
-      featuresHint: '有効なモジュールをカンマ区切りで入力します。',
-      featuresLabel: '有効な機能',
-      featuresPlaceholder: 'homepage, marshmallow',
+      editDescription: 'テナント識別情報、上限、モジュール、状態を一箇所で確認・編集します。',
+      capabilitiesHint:
+        'Registry で管理されるモジュールはプロダクトの利用可否を制御します。アクセスには RBAC 権限も必要です。',
+      capabilitiesLabel: '機能モジュール',
+      capabilitiesLoading: '機能 Registry を読み込み中...',
+      capabilityAssignableBadge: '割り当て可能',
+      capabilityLockedBadge: 'ロック中',
+      capabilityLockedSystem: 'システム機能はテナントティアと Registry ルールから派生します。',
+      capabilityEnableLabel: (label) => `${label} を有効化`,
+      capabilityConflictHint:
+        '機能割り当てが別の場所で変更されました。再度保存する前に読み込み直してください。',
+      capabilityReloadAction: '機能を再読み込み',
+      capabilityNoOptionalModules: '有効な任意モジュールはありません',
+      capabilitySaveNote: 'AC テナント管理から更新しました。',
       generatedDuringCreate: '作成後に自動生成',
       loadError: 'テナントの読み込みに失敗しました。',
       loading: 'テナントを読み込み中…',
@@ -583,6 +631,8 @@ const COPY: Record<SupportedUiLocale, TenantManagementCopy> = {
       maxCustomersPlaceholder: '10000',
       maxTalentsLabel: '最大タレント数',
       maxTalentsPlaceholder: '25',
+      quotaHelper:
+        '空欄の場合は上限なしです。将来の上限が現在の利用数を下回っても、既存レコードは維持され、新規作成のみ停止されます。',
       newTenant: '新規テナント',
       inactiveStatus: '無効',
       provisionTitle: 'テナントを作成',
@@ -700,10 +750,19 @@ const COPY: Record<SupportedUiLocale, TenantManagementCopy> = {
         'The tenant record stays available, but tenant access is disabled until it is reactivated.',
       deactivateError: 'Failed to deactivate tenant.',
       deactivateSubmit: 'Deactivate tenant',
-      editDescription: 'Review tenant identity, limits, and status.',
-      featuresHint: 'Separate multiple enabled modules with commas.',
-      featuresLabel: 'Enabled features',
-      featuresPlaceholder: 'homepage, marshmallow',
+      editDescription: 'Review tenant identity, limits, modules, and status.',
+      capabilitiesHint:
+        'Registry 기반 모듈은 제품 사용 가능 여부를 제어합니다. 접근에는 RBAC 권한도 필요합니다.',
+      capabilitiesLabel: '기능 모듈',
+      capabilitiesLoading: '기능 Registry를 불러오는 중...',
+      capabilityAssignableBadge: '할당 가능',
+      capabilityLockedBadge: '잠김',
+      capabilityLockedSystem: '시스템 기능은 테넌트 등급과 Registry 규칙에서 파생됩니다.',
+      capabilityEnableLabel: (label) => `${label} 활성화`,
+      capabilityConflictHint: '기능 할당이 다른 곳에서 변경되었습니다. 다시 저장하기 전에 새로고침하세요.',
+      capabilityReloadAction: '기능 새로고침',
+      capabilityNoOptionalModules: '활성화된 선택 모듈 없음',
+      capabilitySaveNote: 'AC 테넌트 관리에서 업데이트됨.',
       generatedDuringCreate: 'Created automatically',
       loadError: 'Failed to load tenant.',
       loading: 'Loading tenant…',
@@ -711,6 +770,8 @@ const COPY: Record<SupportedUiLocale, TenantManagementCopy> = {
       maxCustomersPlaceholder: '10000',
       maxTalentsLabel: 'Max talents',
       maxTalentsPlaceholder: '25',
+      quotaHelper:
+        '비워 두면 제한이 없습니다. 향후 제한이 현재 사용량보다 낮아져도 기존 기록은 유지되며 새 생성만 차단됩니다.',
       newTenant: 'New tenant',
       inactiveStatus: 'Inactive',
       provisionTitle: 'Create tenant',
@@ -828,10 +889,20 @@ const COPY: Record<SupportedUiLocale, TenantManagementCopy> = {
         'The tenant record stays available, but tenant access is disabled until it is reactivated.',
       deactivateError: 'Failed to deactivate tenant.',
       deactivateSubmit: 'Deactivate tenant',
-      editDescription: 'Review tenant identity, limits, and status.',
-      featuresHint: 'Separate multiple enabled modules with commas.',
-      featuresLabel: 'Enabled features',
-      featuresPlaceholder: 'homepage, marshmallow',
+      editDescription: 'Review tenant identity, limits, modules, and status.',
+      capabilitiesHint:
+        'Les modules geres par le Registry controlent la disponibilite produit. Les permissions RBAC restent requises.',
+      capabilitiesLabel: 'Modules de capacite',
+      capabilitiesLoading: 'Chargement du Registry des capacites...',
+      capabilityAssignableBadge: 'Assignable',
+      capabilityLockedBadge: 'Verrouille',
+      capabilityLockedSystem: 'Cette capacite systeme vient du tier tenant et des regles Registry.',
+      capabilityEnableLabel: (label) => `Activer ${label}`,
+      capabilityConflictHint:
+        'Les affectations de capacites ont change ailleurs. Rechargez avant de sauvegarder.',
+      capabilityReloadAction: 'Recharger les capacites',
+      capabilityNoOptionalModules: 'Aucun module optionnel active',
+      capabilitySaveNote: 'Mis a jour depuis AC Tenant Management.',
       generatedDuringCreate: 'Created automatically',
       loadError: 'Failed to load tenant.',
       loading: 'Loading tenant…',
@@ -839,6 +910,8 @@ const COPY: Record<SupportedUiLocale, TenantManagementCopy> = {
       maxCustomersPlaceholder: '10000',
       maxTalentsLabel: 'Max talents',
       maxTalentsPlaceholder: '25',
+      quotaHelper:
+        'Laissez vide pour ne pas limiter. Si une future limite passe sous l usage actuel, les donnees existantes restent disponibles; seules les nouvelles creations sont bloquees.',
       newTenant: 'New tenant',
       inactiveStatus: 'Inactive',
       provisionTitle: 'Create tenant',

@@ -5,7 +5,7 @@ import { Request } from 'express';
 
 import type { RequestContext } from '@tcrn/shared';
 
-import { CurrentUser, RequirePermissions } from '../../../common/decorators';
+import { CurrentUser, RequireCapabilities, RequirePermissions } from '../../../common/decorators';
 import { AdapterListQueryDto, CreateAdapterDto, OwnerType } from '../dto/integration.dto';
 import { AdapterResolutionService } from '../services/adapter-resolution.service';
 import { AdapterService } from '../services/adapter.service';
@@ -32,6 +32,7 @@ function parseBooleanQueryValue(value: string | string[] | undefined, fallback: 
 
 @ApiTags('Ops - Integration')
 @ApiBearerAuth()
+@RequireCapabilities('integration.webhooks')
 @Controller('subsidiaries/:subsidiaryId/integration/adapters')
 export class SubsidiaryIntegrationAdapterController {
   constructor(
@@ -155,6 +156,7 @@ export class SubsidiaryIntegrationAdapterController {
 
 @ApiTags('Ops - Integration')
 @ApiBearerAuth()
+@RequireCapabilities('integration.webhooks')
 @Controller('talents/:talentId/integration/adapters')
 export class TalentIntegrationAdapterController {
   constructor(

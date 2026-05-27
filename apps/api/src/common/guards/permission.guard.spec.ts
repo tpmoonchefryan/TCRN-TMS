@@ -72,7 +72,8 @@ describe('PermissionGuard', () => {
 
     await expect(guard.canActivate(createContext(request))).resolves.toBe(true);
 
-    expect(mockPermissionService.checkPermission).toHaveBeenCalledWith(
+    expect(mockPermissionService.checkPermission).not.toHaveBeenCalled();
+    expect(mockPermissionService.refreshAndCheckPermission).toHaveBeenCalledWith(
       'tenant_test',
       'user-1',
       'customer.profile',
@@ -96,7 +97,8 @@ describe('PermissionGuard', () => {
 
     await expect(guard.canActivate(createContext(request))).resolves.toBe(true);
 
-    expect(mockPermissionService.checkPermission).toHaveBeenCalledWith(
+    expect(mockPermissionService.checkPermission).not.toHaveBeenCalled();
+    expect(mockPermissionService.refreshAndCheckPermission).toHaveBeenCalledWith(
       'tenant_test',
       'user-1',
       'customer.profile',
@@ -121,7 +123,8 @@ describe('PermissionGuard', () => {
 
     await expect(guard.canActivate(createContext(request))).resolves.toBe(true);
 
-    expect(mockPermissionService.checkPermission).toHaveBeenCalledWith(
+    expect(mockPermissionService.checkPermission).not.toHaveBeenCalled();
+    expect(mockPermissionService.refreshAndCheckPermission).toHaveBeenCalledWith(
       'tenant_test',
       'user-1',
       'customer.profile',
@@ -143,7 +146,8 @@ describe('PermissionGuard', () => {
 
     await expect(guard.canActivate(createContext(request))).resolves.toBe(true);
 
-    expect(mockPermissionService.checkPermission).toHaveBeenCalledWith(
+    expect(mockPermissionService.checkPermission).not.toHaveBeenCalled();
+    expect(mockPermissionService.refreshAndCheckPermission).toHaveBeenCalledWith(
       'tenant_test',
       'user-1',
       'customer.profile',
@@ -151,11 +155,10 @@ describe('PermissionGuard', () => {
       undefined,
       undefined
     );
-    expect(mockPermissionService.refreshAndCheckPermission).not.toHaveBeenCalled();
   });
 
-  it('refreshes the snapshot once when the cached permission check returns false', async () => {
-    mockPermissionService.checkPermission.mockResolvedValueOnce(false);
+  it('does not trust a cached grant and allows only after refreshing the snapshot', async () => {
+    mockPermissionService.checkPermission.mockResolvedValueOnce(true);
     mockPermissionService.refreshAndCheckPermission.mockResolvedValueOnce(true);
 
     const request = {
@@ -169,14 +172,7 @@ describe('PermissionGuard', () => {
 
     await expect(guard.canActivate(createContext(request))).resolves.toBe(true);
 
-    expect(mockPermissionService.checkPermission).toHaveBeenCalledWith(
-      'tenant_test',
-      'user-1',
-      'customer.profile',
-      'read',
-      undefined,
-      undefined
-    );
+    expect(mockPermissionService.checkPermission).not.toHaveBeenCalled();
     expect(mockPermissionService.refreshAndCheckPermission).toHaveBeenCalledWith(
       'tenant_test',
       'user-1',
@@ -188,7 +184,6 @@ describe('PermissionGuard', () => {
   });
 
   it('still denies access when the refreshed permission check remains false', async () => {
-    mockPermissionService.checkPermission.mockResolvedValueOnce(false);
     mockPermissionService.refreshAndCheckPermission.mockResolvedValueOnce(false);
 
     const request = {
@@ -203,6 +198,7 @@ describe('PermissionGuard', () => {
     await expect(guard.canActivate(createContext(request))).rejects.toBeInstanceOf(
       ForbiddenException
     );
+    expect(mockPermissionService.checkPermission).not.toHaveBeenCalled();
     expect(mockPermissionService.refreshAndCheckPermission).toHaveBeenCalledTimes(1);
   });
 });

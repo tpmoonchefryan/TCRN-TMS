@@ -12,6 +12,24 @@ const localeState = {
   locale: 'en' as SupportedUiLocale,
 };
 
+const capabilitiesDigest = (labels: string[]) => ({
+  enabledCapabilityCodes: labels.map((label) => label.toLowerCase().replaceAll(' ', '.')),
+  summary: {
+    enabledCapabilityCodes: labels.map((label) => label.toLowerCase().replaceAll(' ', '.')),
+    labels: labels.map((label) => ({
+      en: label,
+      zh_HANS: label,
+      zh_HANT: label,
+      ja: label,
+      ko: label,
+      fr: label,
+    })),
+    displayLabels: labels,
+  },
+  registryVersion: 'test.registry',
+  version: 1,
+});
+
 vi.mock('@/platform/runtime/session/session-provider', () => ({
   useSession: () => ({
     session: {
@@ -68,6 +86,7 @@ describe('TenantManagementScreen', () => {
               tier: 'ac',
               isActive: true,
               settings: {},
+              capabilities: capabilitiesDigest([]),
               stats: {
                 subsidiaryCount: 1,
                 talentCount: 2,
@@ -86,6 +105,12 @@ describe('TenantManagementScreen', () => {
               settings: {
                 maxTalents: 25,
               },
+              capabilities: capabilitiesDigest([
+                'Homepage Studio',
+                'Marshmallow Mailbox',
+                'MFR Reports',
+                'Tenant Webhooks',
+              ]),
               stats: {
                 subsidiaryCount: 0,
                 talentCount: 0,
@@ -120,6 +145,7 @@ describe('TenantManagementScreen', () => {
               tier: 'standard',
               isActive: false,
               settings: {},
+              capabilities: capabilitiesDigest(['Homepage Studio']),
               stats: {
                 subsidiaryCount: 2,
                 talentCount: 5,
@@ -160,6 +186,11 @@ describe('TenantManagementScreen', () => {
       'href',
       '/ac/tenant-ac/tenants/tenant-new'
     );
+    expect(screen.getByText('Homepage Studio')).toBeInTheDocument();
+    expect(screen.getByText('Marshmallow Mailbox')).toBeInTheDocument();
+    expect(screen.getByText('MFR Reports')).toBeInTheDocument();
+    expect(screen.getByText('+1')).toBeInTheDocument();
+    expect(screen.queryByText('public_presence.homepage')).not.toBeInTheDocument();
     expect(screen.queryByPlaceholderText('ACME_CORP')).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
@@ -186,6 +217,7 @@ describe('TenantManagementScreen', () => {
               tier: 'standard',
               isActive: true,
               settings: {},
+              capabilities: capabilitiesDigest(['Homepage Studio']),
               stats: {
                 subsidiaryCount: 1,
                 talentCount: 4,

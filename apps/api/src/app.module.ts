@@ -6,7 +6,12 @@ import { ScheduleModule } from '@nestjs/schedule';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { JwtAuthGuard, PermissionGuard, PublishedTalentAccessGuard } from './common/guards';
+import {
+  CapabilityGuard,
+  JwtAuthGuard,
+  PermissionGuard,
+  PublishedTalentAccessGuard,
+} from './common/guards';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { configValidationSchema } from './config/config.schema';
@@ -138,6 +143,10 @@ import { repoEnvFilePaths } from './repo-env';
     {
       provide: APP_GUARD,
       useClass: PermissionGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: CapabilityGuard,
     },
     {
       provide: APP_GUARD,

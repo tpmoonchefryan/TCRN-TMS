@@ -18,7 +18,12 @@ import {
 } from '@tcrn/shared';
 import type { RequestContext } from '@tcrn/shared';
 
-import { AuthenticatedUser, CurrentUser, RequirePermissions } from '../../../common/decorators';
+import {
+  AuthenticatedUser,
+  CurrentUser,
+  RequireCapabilities,
+  RequirePermissions,
+} from '../../../common/decorators';
 import { zodPipe } from '../../../common/pipes/zod-validation.pipe';
 import { PublicPresenceAssetService } from '../application/public-presence-asset.service';
 
@@ -55,6 +60,7 @@ interface DuplicatePublicPresenceAssetDto {
 
 @ApiTags('Ops - Public Presence Assets')
 @ApiBearerAuth()
+@RequireCapabilities('public_presence.homepage')
 @Controller('public-presence/assets')
 export class PublicPresenceAssetController {
   constructor(private readonly publicPresenceAssetService: PublicPresenceAssetService) {}

@@ -14,7 +14,7 @@ export interface TenantDraft {
   name: string;
   maxTalents: string;
   maxCustomersPerTalent: string;
-  featuresText: string;
+  enabledCapabilityCodes: string[];
   adminUsername: string;
   adminEmail: string;
   adminPassword: string;
@@ -26,7 +26,7 @@ export const emptyTenantDraft: TenantDraft = {
   name: '',
   maxTalents: '',
   maxCustomersPerTalent: '',
-  featuresText: '',
+  enabledCapabilityCodes: ['public_presence.homepage', 'marshmallow.mailbox'],
   adminUsername: '',
   adminEmail: '',
   adminPassword: '',
@@ -59,24 +59,12 @@ export function readPositiveInteger(value: string) {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
 }
 
-export function splitFeatures(value: string) {
-  const items = value
-    .split(',')
-    .map((item) => item.trim())
-    .filter(Boolean);
-
-  return items.length > 0 ? items : undefined;
-}
-
 export function buildDraftFromTenant(tenant: TenantDetail | null): TenantDraft {
   if (!tenant) {
     return emptyTenantDraft;
   }
 
   const settings = tenant.settings || {};
-  const features = Array.isArray(settings.features)
-    ? settings.features.filter((item) => typeof item === 'string')
-    : [];
 
   return {
     code: tenant.code,
@@ -86,7 +74,7 @@ export function buildDraftFromTenant(tenant: TenantDetail | null): TenantDraft {
       typeof settings.maxCustomersPerTalent === 'number'
         ? String(settings.maxCustomersPerTalent)
         : '',
-    featuresText: features.join(', '),
+    enabledCapabilityCodes: tenant.capabilities.enabledCapabilityCodes,
     adminUsername: '',
     adminEmail: '',
     adminPassword: '',
@@ -177,7 +165,10 @@ export function NoticeBanner({
       : 'border-rose-200 bg-rose-50 text-rose-800';
 
   return (
-    <div className={`rounded-2xl border px-4 py-3 text-sm font-medium ${toneClasses}`}>
+    <div
+      role={tone === 'error' ? 'alert' : 'status'}
+      className={`rounded-2xl border px-4 py-3 text-sm font-medium ${toneClasses}`}
+    >
       {message}
     </div>
   );

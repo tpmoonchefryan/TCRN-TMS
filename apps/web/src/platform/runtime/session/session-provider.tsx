@@ -16,6 +16,8 @@ import { normalizeSupportedUiLocale, type SupportedUiLocale } from '@tcrn/shared
 import {
   type AuthenticatedSessionResult,
   type CurrentUserProfile,
+  type CurrentTenantCapabilitySnapshot,
+  getCurrentTenantCapabilities,
   getCurrentUser,
   logout,
   refreshAccessToken,
@@ -39,6 +41,7 @@ export interface BrowserSession {
   tenantName: string;
   tenantTier: string;
   tenantCode: string;
+  capabilities?: CurrentTenantCapabilitySnapshot['effective'] | null;
   user: {
     id: string;
     username: string;
@@ -108,6 +111,7 @@ function buildSession(result: AuthenticatedSessionResult, tenantCode: string): B
     tenantName: result.user.tenant.name,
     tenantTier: result.user.tenant.tier,
     tenantCode,
+    capabilities: null,
     user: normalizeSessionUser({
       id: result.user.id,
       username: result.user.username,
@@ -166,6 +170,7 @@ export function SessionProvider({
   const [status, setStatus] = useState<SessionStatus>('booting');
   const [session, setSession] = useState<BrowserSession | null>(null);
   const sessionRef = useRef<BrowserSession | null>(null);
+  const capabilityHydrationTokenRef = useRef<string | null>(null);
 
   useEffect(() => {
     const stored = readStoredSession();
@@ -234,6 +239,7 @@ export function SessionProvider({
           tenantName: previous?.tenantName || hint?.tenantName || '',
           tenantTier: previous?.tenantTier || hint?.tenantTier || 'unknown',
           tenantCode: previous?.tenantCode || hint?.tenantCode || '',
+          capabilities: null,
           user: buildSessionUserFromProfile(profile),
         });
 
@@ -303,6 +309,49 @@ export function SessionProvider({
     },
     [applySession, clearSession]
   );
+
+  useEffect(() => {
+    if (
+      status !== 'authenticated' ||
+      !session?.accessToken ||
+      session.capabilities ||
+      capabilityHydrationTokenRef.current === session.accessToken
+    ) {
+      return;
+    }
+
+    let cancelled = false;
+    const accessToken = session.accessToken;
+    capabilityHydrationTokenRef.current = accessToken;
+
+    async function hydrateCapabilities() {
+      try {
+        const snapshot = await getCurrentTenantCapabilities(accessToken);
+
+        if (cancelled || !sessionRef.current) {
+          return;
+        }
+
+        applySession({
+          ...sessionRef.current,
+          capabilities: snapshot.effective,
+        });
+      } catch {
+        if (!cancelled && sessionRef.current) {
+          applySession({
+            ...sessionRef.current,
+            capabilities: null,
+          });
+        }
+      }
+    }
+
+    void hydrateCapabilities();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [applySession, session?.accessToken, session?.capabilities, status]);
 
   const request = useCallback(
     async <T,>(path: string, init?: RequestInit) => {

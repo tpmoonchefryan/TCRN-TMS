@@ -12,7 +12,9 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  Put,
   Query,
+  Req,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -26,6 +28,8 @@ import {
 import * as argon2 from 'argon2';
 import { Type } from 'class-transformer';
 import {
+  ArrayUnique,
+  IsArray,
   IsBoolean,
   IsEmail,
   IsInt,
@@ -36,8 +40,9 @@ import {
   MinLength,
   ValidateNested,
 } from 'class-validator';
+import { Request } from 'express';
 
-import { prisma } from '@tcrn/database';
+import { Prisma, prisma } from '@tcrn/database';
 import {
   ErrorCodes,
   RBAC_POLICY_DEFINITIONS,
@@ -47,6 +52,7 @@ import {
 
 import { AuthenticatedUser, CurrentUser, RequirePermissions } from '../../common/decorators';
 import { paginated, success } from '../../common/response.util';
+import { ModuleCapabilityService } from './module-capability.service';
 import { TenantService } from './tenant.service';
 
 // DTOs
@@ -84,14 +90,8 @@ export class TenantSettingsDto {
   @Min(1000)
   maxCustomersPerTalent?: number;
 
-  @ApiPropertyOptional({
-    description: 'Enabled features list',
-    example: ['homepage', 'marshmallow'],
-    type: [String],
-  })
   @IsOptional()
-  @IsString({ each: true })
-  features?: string[];
+  features?: unknown;
 }
 
 export class CreateTenantDto {
@@ -116,6 +116,17 @@ export class CreateTenantDto {
   @ValidateNested()
   @Type(() => TenantSettingsDto)
   settings?: TenantSettingsDto;
+
+  @ApiPropertyOptional({
+    description: 'Assignable module capability codes enabled for the tenant',
+    example: ['public_presence.homepage', 'marshmallow.mailbox'],
+    type: [String],
+  })
+  @IsOptional()
+  @IsArray()
+  @ArrayUnique()
+  @IsString({ each: true })
+  enabledCapabilityCodes?: string[];
 
   @ApiProperty({ description: 'Initial admin user', type: AdminUserDto })
   @ValidateNested()
@@ -191,6 +202,31 @@ export class DeactivateTenantDto {
   @IsOptional()
   @IsString()
   reason?: string;
+}
+
+export class ReplaceTenantCapabilitiesDto {
+  @ApiProperty({
+    description: 'Assignable module capability codes enabled for the tenant',
+    example: ['public_presence.homepage', 'marshmallow.mailbox'],
+    type: [String],
+  })
+  @IsArray()
+  @ArrayUnique()
+  @IsString({ each: true })
+  enabledCapabilityCodes: string[];
+
+  @ApiProperty({ description: 'Optimistic lock version', example: 1, minimum: 1 })
+  @IsInt()
+  @Min(1)
+  version: number;
+
+  @ApiPropertyOptional({
+    description: 'Operator note recorded in the capability assignment audit',
+    example: 'Enable reports for onboarding validation',
+  })
+  @IsOptional()
+  @IsString()
+  note?: string;
 }
 
 const createSuccessEnvelopeSchema = (
@@ -469,7 +505,10 @@ const RBAC_ROLE_PERMISSION_ENTRIES = RBAC_ROLE_TEMPLATES.flatMap((role) =>
 @Controller('tenants')
 @ApiBearerAuth()
 export class TenantController {
-  constructor(private readonly tenantService: TenantService) {}
+  constructor(
+    private readonly tenantService: TenantService,
+    private readonly moduleCapabilityService: ModuleCapabilityService
+  ) {}
 
   /**
    * Verify AC tenant access
@@ -482,6 +521,14 @@ export class TenantController {
         message: 'Only AC tenant administrators can access this resource',
       });
     }
+  }
+
+  private firstHeaderValue(value: string | string[] | undefined): string | null {
+    if (Array.isArray(value)) {
+      return value[0] ?? null;
+    }
+
+    return value ?? null;
   }
 
   /**
@@ -675,6 +722,8 @@ export class TenantController {
         const stats = tenant.schemaName
           ? await this.getTenantStats(tenant.schemaName)
           : { subsidiaryCount: 0, talentCount: 0, userCount: 0 };
+        const capabilities =
+          await this.moduleCapabilityService.buildTenantResponseCapabilities(tenant);
 
         return {
           id: tenant.id,
@@ -684,6 +733,7 @@ export class TenantController {
           tier: tenant.tier,
           isActive: tenant.isActive,
           settings: tenant.settings,
+          capabilities,
           stats,
           createdAt: tenant.createdAt.toISOString(),
           updatedAt: tenant.updatedAt.toISOString(),
@@ -723,6 +773,9 @@ export class TenantController {
   })
   async createTenant(@CurrentUser() user: AuthenticatedUser, @Body() dto: CreateTenantDto) {
     await this.verifyAcAccess(user);
+    this.moduleCapabilityService.rejectRetiredSettingsFeatures(
+      dto.settings as Record<string, unknown> | undefined
+    );
 
     // Check code uniqueness
     const existing = await this.tenantService.getTenantByCode(dto.code);
@@ -738,8 +791,16 @@ export class TenantController {
       code: dto.code,
       name: dto.name,
       tier: 'standard',
-      settings: (dto.settings || {}) as Record<string, unknown>,
+      settings: this.moduleCapabilityService.sanitizeTenantSettings(
+        dto.settings as Record<string, unknown> | undefined
+      ),
     });
+
+    const capabilityAssignment = await this.moduleCapabilityService.initializeTenantCapabilities(
+      tenant,
+      dto.enabledCapabilityCodes,
+      user.id
+    );
 
     // Verify and seed essential data (resources, roles, policies) if missing
     await this.seedEssentialDataIfMissing(tenant.schemaName);
@@ -802,6 +863,12 @@ export class TenantController {
       schemaName: tenant.schemaName,
       tier: tenant.tier,
       isActive: tenant.isActive,
+      capabilities: {
+        enabledCapabilityCodes: capabilityAssignment.effective.summary.enabledCapabilityCodes,
+        summary: capabilityAssignment.effective.summary,
+        registryVersion: capabilityAssignment.registryVersion,
+        version: capabilityAssignment.version,
+      },
       adminUser: {
         username: dto.adminUser.username,
         email: dto.adminUser.email,
@@ -860,6 +927,7 @@ export class TenantController {
     const stats = tenant.schemaName
       ? await this.getTenantStats(tenant.schemaName)
       : { subsidiaryCount: 0, talentCount: 0, userCount: 0 };
+    const capabilities = await this.moduleCapabilityService.buildTenantResponseCapabilities(tenant);
 
     return success({
       id: tenant.id,
@@ -869,10 +937,68 @@ export class TenantController {
       tier: tenant.tier,
       isActive: tenant.isActive,
       settings: tenant.settings,
+      capabilities,
       stats,
       createdAt: tenant.createdAt.toISOString(),
       updatedAt: tenant.updatedAt.toISOString(),
     });
+  }
+
+  /**
+   * GET /api/v1/tenants/:tenantId/capabilities
+   * Read tenant capability assignments (AC only)
+   */
+  @Get(':tenantId/capabilities')
+  @RequirePermissions({ resource: 'tenant.manage', action: 'read' })
+  @ApiOperation({ summary: 'Read tenant capability assignments (AC only)' })
+  @ApiParam({
+    name: 'tenantId',
+    description: 'Tenant identifier',
+    schema: { type: 'string', format: 'uuid' },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns tenant capability assignments and effective snapshot',
+  })
+  async getTenantCapabilities(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('tenantId', ParseUUIDPipe) tenantId: string
+  ) {
+    await this.verifyAcAccess(user);
+
+    return success(await this.moduleCapabilityService.getTenantCapabilities(tenantId));
+  }
+
+  /**
+   * PUT /api/v1/tenants/:tenantId/capabilities
+   * Replace tenant assignable capability set (AC only)
+   */
+  @Put(':tenantId/capabilities')
+  @RequirePermissions({ resource: 'tenant.manage', action: 'write' })
+  @ApiOperation({ summary: 'Replace tenant capability assignments (AC only)' })
+  @ApiParam({
+    name: 'tenantId',
+    description: 'Tenant identifier',
+    schema: { type: 'string', format: 'uuid' },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns updated tenant capability assignments and effective snapshot',
+  })
+  async replaceTenantCapabilities(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('tenantId', ParseUUIDPipe) tenantId: string,
+    @Body() dto: ReplaceTenantCapabilitiesDto,
+    @Req() request: Request
+  ) {
+    await this.verifyAcAccess(user);
+
+    return success(
+      await this.moduleCapabilityService.replaceTenantCapabilities(tenantId, dto, user.id, {
+        requestId: this.firstHeaderValue(request.headers['x-request-id']),
+        ipAddress: request.ip,
+      })
+    );
   }
 
   /**
@@ -913,6 +1039,9 @@ export class TenantController {
     @Body() dto: UpdateTenantDto
   ) {
     await this.verifyAcAccess(user);
+    this.moduleCapabilityService.rejectRetiredSettingsFeatures(
+      dto.settings as Record<string, unknown> | undefined
+    );
 
     const tenant = await this.tenantService.getTenantById(tenantId);
     if (!tenant) {
@@ -928,10 +1057,18 @@ export class TenantController {
       data: {
         ...(dto.name && { name: dto.name }),
         ...(dto.settings && {
-          settings: { ...((tenant.settings as object) || {}), ...dto.settings },
+          settings: {
+            ...this.moduleCapabilityService.sanitizeTenantSettings(
+              (tenant.settings as Record<string, unknown>) || {}
+            ),
+            ...this.moduleCapabilityService.sanitizeTenantSettings(
+              dto.settings as Record<string, unknown>
+            ),
+          } as Prisma.InputJsonValue,
         }),
       },
     });
+    const capabilities = await this.moduleCapabilityService.buildTenantResponseCapabilities(updated);
 
     return success({
       id: updated.id,
@@ -939,6 +1076,7 @@ export class TenantController {
       name: updated.name,
       isActive: updated.isActive,
       settings: updated.settings,
+      capabilities,
       updatedAt: updated.updatedAt.toISOString(),
     });
   }

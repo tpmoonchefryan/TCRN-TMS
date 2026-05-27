@@ -23,6 +23,7 @@ import {
 import {
   AuthenticatedUser,
   CurrentUser,
+  RequireCapabilities,
   RequirePermissions,
   RequirePublishedTalentAccess,
 } from '../../../common/decorators';
@@ -69,6 +70,7 @@ const PUBLIC_PRESENCE_PROJECTION_SCHEMA = {
 
 @ApiTags('Ops - Public Presence')
 @ApiBearerAuth()
+@RequireCapabilities('public_presence.homepage')
 @RequirePublishedTalentAccess({ allowDraft: true })
 @Controller('talents/:talentId/public-presence')
 export class PublicPresenceController {

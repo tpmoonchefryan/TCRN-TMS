@@ -385,9 +385,10 @@ export function TenantManagementScreen({
           <div className="flex flex-wrap items-end gap-3">
             <Link
               href={`/ac/${acTenantId}/tenants/new`}
-              className="inline-flex items-center gap-2 rounded-full border border-slate-950 bg-slate-950 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
+              className="inline-flex items-center gap-2 rounded-full border border-indigo-700 bg-indigo-700 px-4 py-2 text-sm font-semibold !text-white shadow-sm transition hover:bg-indigo-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+              style={{ color: '#fff' }}
             >
-              <Plus className="h-4 w-4" />
+              <Plus className="h-4 w-4 !text-white" />
               {managementCopy.createTenant}
             </Link>
             <label className="relative min-w-[18rem]">
@@ -454,6 +455,7 @@ export function TenantManagementScreen({
             managementCopy.tenantColumn,
             managementCopy.tierColumn,
             managementCopy.lifecycleColumn,
+            copy.editor.capabilitiesLabel,
             managementCopy.statsColumn,
             managementCopy.updatedColumn,
             managementCopy.actionsColumn,
@@ -487,6 +489,29 @@ export function TenantManagementScreen({
                     tenant.isActive ? managementCopy.activeStatus : managementCopy.inactiveStatus
                   }
                 />
+              </td>
+              <td className="px-6 py-4">
+                <div className="flex max-w-64 flex-wrap gap-1.5">
+                  {(tenant.capabilities?.summary.displayLabels ?? []).length > 0 ? (
+                    <>
+                      {(tenant.capabilities?.summary.displayLabels ?? [])
+                        .slice(0, 3)
+                        .map((label) => (
+                          <ToneBadge key={label} tone="info" label={label} />
+                        ))}
+                      {(tenant.capabilities?.summary.displayLabels ?? []).length > 3 ? (
+                        <ToneBadge
+                          tone="neutral"
+                          label={`+${(tenant.capabilities?.summary.displayLabels ?? []).length - 3}`}
+                        />
+                      ) : null}
+                    </>
+                  ) : (
+                    <span className="text-xs leading-5 text-slate-500">
+                      {copy.editor.capabilityNoOptionalModules}
+                    </span>
+                  )}
+                </div>
               </td>
               <td className="px-6 py-4 text-sm text-slate-600">
                 <div className="space-y-1">

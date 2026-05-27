@@ -18,6 +18,12 @@ import {
   TopCommandBar,
 } from '@/platform/ui';
 
+import {
+  getTenantGovernancePathCapability,
+  isCapabilityCodeEnabled,
+  type RoutedCapabilityCode,
+} from './module-capability-routing';
+
 function getTenantGovernancePageTitle(
   tenantId: string,
   pathname: string,
@@ -82,6 +88,7 @@ interface TenantGovernanceShellProps {
   tenantId: string;
   pathname: string;
   session: BrowserSession;
+  enabledCapabilityCodes?: readonly string[] | null;
   children: React.ReactNode;
   onNavigate: (href: string) => void;
   onSignOut: () => Promise<void>;
@@ -92,6 +99,7 @@ export function TenantGovernanceShell({
   tenantId,
   pathname,
   session,
+  enabledCapabilityCodes,
   children,
   onNavigate,
   onSignOut,
@@ -99,6 +107,8 @@ export function TenantGovernanceShell({
 }: Readonly<TenantGovernanceShellProps>) {
   const { copy, locale, localeOptions, setLocale } = useUiLocale();
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
+  const visibleEnabledCapabilityCodes =
+    enabledCapabilityCodes ?? session.capabilities?.enabledCapabilityCodes ?? null;
   const integrationLabels = {
     interfaceManagement: pickLocaleText(locale, {
       en: 'Interface Management',
@@ -118,7 +128,14 @@ export function TenantGovernanceShell({
     }),
   };
 
-  const navItems = [
+  const navItems: Array<{
+    key: string;
+    label: string;
+    href: string;
+    isActive: boolean;
+    icon: React.ReactNode;
+    capabilityCode?: RoutedCapabilityCode;
+  }> = [
     {
       key: 'organization',
       label: copy.tenantGovernance.nav.organizationStructure,
@@ -139,6 +156,9 @@ export function TenantGovernanceShell({
       href: `/tenant/${tenantId}/interface-management`,
       isActive: pathname.includes('/interface-management'),
       icon: <Cable className="h-4 w-4" />,
+      capabilityCode: getTenantGovernancePathCapability(
+        `/tenant/${tenantId}/interface-management`
+      ) ?? undefined,
     },
     {
       key: 'webhook-management',
@@ -146,6 +166,8 @@ export function TenantGovernanceShell({
       href: `/tenant/${tenantId}/webhook-management`,
       isActive: pathname.includes('/webhook-management'),
       icon: <Webhook className="h-4 w-4" />,
+      capabilityCode: getTenantGovernancePathCapability(`/tenant/${tenantId}/webhook-management`) ??
+        undefined,
     },
     {
       key: 'security',
@@ -160,8 +182,10 @@ export function TenantGovernanceShell({
       href: `/tenant/${tenantId}/observability`,
       isActive: pathname.includes('/observability'),
       icon: <Activity className="h-4 w-4" />,
+      capabilityCode: getTenantGovernancePathCapability(`/tenant/${tenantId}/observability`) ??
+        undefined,
     },
-  ];
+  ].filter((item) => isCapabilityCodeEnabled(visibleEnabledCapabilityCodes, item.capabilityCode));
 
   const userName =
     session.user.displayName || session.user.username || copy.common.authenticatedUser;

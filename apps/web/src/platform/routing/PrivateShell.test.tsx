@@ -19,6 +19,15 @@ const acSession: BrowserSession = {
   tenantName: 'AC Tenant',
   tenantTier: 'ac',
   tenantCode: 'AC',
+  capabilities: {
+    tenantId: 'tenant-ac',
+    scopeType: 'tenant',
+    scopeId: null,
+    enabledCapabilityCodes: ['platform.ac_management'],
+    disabledReasons: {},
+    registryVersion: 'test',
+    resolvedAt: '2026-04-17T10:00:00.000Z',
+  },
   user: {
     id: 'user-ac',
     username: 'operator',
@@ -41,6 +50,24 @@ const standardSession: BrowserSession = {
   tenantName: 'Moonshot Tenant',
   tenantTier: 'standard',
   tenantCode: 'MOON',
+  capabilities: {
+    tenantId: 'tenant-1',
+    scopeType: 'tenant',
+    scopeId: null,
+    enabledCapabilityCodes: [
+      'core.organization',
+      'core.settings',
+      'core.user_access',
+      'integration.webhooks',
+      'marshmallow.mailbox',
+      'observability.product_audit',
+      'public_presence.homepage',
+      'reports.mfr',
+    ],
+    disabledReasons: {},
+    registryVersion: 'test',
+    resolvedAt: '2026-04-17T10:00:00.000Z',
+  },
   user: {
     id: 'user-1',
     username: 'alice',
@@ -146,5 +173,70 @@ describe('PrivateShell', () => {
         tenantTier: 'standard',
       });
     });
+  });
+
+  it('renders same-shell unavailable state and hides tenant nav when a direct route capability is disabled', () => {
+    pathname = '/tenant/tenant-1/webhook-management';
+    mockSession = {
+      ...standardSession,
+      capabilities: {
+        ...standardSession.capabilities!,
+        enabledCapabilityCodes: [
+          'core.organization',
+          'core.settings',
+          'core.user_access',
+          'observability.product_audit',
+          'public_presence.homepage',
+        ],
+      },
+    };
+
+    render(
+      <UiLocaleProvider>
+        <PrivateShell tenantId="tenant-1">
+          <div>Webhook content</div>
+        </PrivateShell>
+      </UiLocaleProvider>
+    );
+
+    expect(screen.getByText('Module not enabled')).toBeInTheDocument();
+    expect(screen.queryByText('Webhook content')).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Webhook Management' })).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Back to tenant workspace' })).toHaveAttribute(
+      'href',
+      '/tenant/tenant-1'
+    );
+  });
+
+  it('renders same-shell unavailable state and hides talent nav when a talent module is disabled', () => {
+    pathname = '/tenant/tenant-1/talent/talent-1/homepage';
+    mockSession = {
+      ...standardSession,
+      capabilities: {
+        ...standardSession.capabilities!,
+        enabledCapabilityCodes: [
+          'core.organization',
+          'core.settings',
+          'core.user_access',
+          'marshmallow.mailbox',
+        ],
+      },
+    };
+
+    render(
+      <UiLocaleProvider>
+        <PrivateShell tenantId="tenant-1">
+          <div>Homepage content</div>
+        </PrivateShell>
+      </UiLocaleProvider>
+    );
+
+    expect(screen.getByText('Module not enabled')).toBeInTheDocument();
+    expect(screen.queryByText('Homepage content')).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Homepage' })).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Back to talent overview' })).toHaveAttribute(
+      'href',
+      '/tenant/tenant-1/talent/talent-1'
+    );
   });
 });

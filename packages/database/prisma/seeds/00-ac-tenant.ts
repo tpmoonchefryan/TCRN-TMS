@@ -2,6 +2,7 @@
 // AC (Admin Console) tenant seed data
 
 import { PrismaClient, Tenant } from '../../src/platform/prisma/client';
+import { syncSeedTenantCapabilities } from './_module-capabilities';
 
 export interface AcTenantResult {
   tenant: Tenant;
@@ -67,10 +68,6 @@ export async function seedAcTenant(prisma: PrismaClient): Promise<AcTenantResult
       settings: {
         timezone: 'UTC',
         defaultLanguage: 'en',
-        features: {
-          tenant_management: true,
-          platform_admin: true,
-        },
       },
     },
     create: {
@@ -82,12 +79,14 @@ export async function seedAcTenant(prisma: PrismaClient): Promise<AcTenantResult
       settings: {
         timezone: 'UTC',
         defaultLanguage: 'en',
-        features: {
-          tenant_management: true,
-          platform_admin: true,
-        },
       },
     },
+  });
+
+  await syncSeedTenantCapabilities(prisma, {
+    tenant,
+    enabledCapabilityCodes: [],
+    note: 'AC tenant uses non-assignable platform/core capabilities; assignable tenant modules stay empty.',
   });
 
   // Ensure schema and tables exist
