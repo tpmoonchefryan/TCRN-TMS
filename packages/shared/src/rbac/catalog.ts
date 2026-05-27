@@ -200,6 +200,22 @@ export const RBAC_RESOURCES = [
     RBAC_CANONICAL_ACTIONS,
     10
   ),
+  resource(
+    'platform.tool_connection',
+    'platform',
+    {
+      name: {
+        en: 'Platform Tool Connections',
+        zh_HANS: '平台工具连接',
+        zh_HANT: '平台工具連線',
+        ja: 'プラットフォームツール接続',
+        ko: '플랫폼 도구 연결',
+        fr: 'Connexions aux outils plateforme',
+      },
+    },
+    ['read', 'write', 'execute', 'admin'],
+    15
+  ),
 
   resource(
     'subsidiary',

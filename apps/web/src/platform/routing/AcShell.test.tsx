@@ -99,6 +99,11 @@ describe('AcShell', () => {
       )
     ).toBeInTheDocument();
     expect(
+      within(screen.getByRole('navigation', { name: 'Main navigation' })).getByText(
+        'Platform Tool Connections'
+      )
+    ).toBeInTheDocument();
+    expect(
       within(screen.getByRole('navigation', { name: 'Main navigation' })).queryByText(
         'Integration Management'
       )
@@ -244,5 +249,29 @@ describe('AcShell', () => {
       within(navigation).getByRole('link', { name: 'Webhook Management' })
     ).not.toHaveAttribute('aria-current');
     expect(screen.getAllByText('API Client Management').length).toBeGreaterThan(0);
+  });
+
+  it('places Platform Tool Connections after API Client Management and before Observability', () => {
+    mockPathname = '/ac/tenant-ac/platform-tools';
+
+    render(
+      <UiLocaleProvider>
+        <AcShell tenantId="tenant-ac">
+          <div>AC platform tools</div>
+        </AcShell>
+      </UiLocaleProvider>
+    );
+
+    const navigation = screen.getByRole('navigation', { name: 'Main navigation' });
+    const navKeys = within(navigation)
+      .getAllByRole('link')
+      .map((link) => link.getAttribute('data-nav-key'));
+
+    expect(navKeys.indexOf('api-clients')).toBeLessThan(navKeys.indexOf('platform-tools'));
+    expect(navKeys.indexOf('platform-tools')).toBeLessThan(navKeys.indexOf('observability'));
+    expect(within(navigation).getByRole('link', { name: 'Platform Tool Connections' })).toHaveAttribute(
+      'aria-current',
+      'page'
+    );
   });
 });

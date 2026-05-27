@@ -49,6 +49,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
                 : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
             } `}
             aria-current={item.isActive ? 'page' : undefined}
+            data-nav-key={item.key}
           >
             {item.icon && (
               <span

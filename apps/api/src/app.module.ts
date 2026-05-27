@@ -34,6 +34,7 @@ import { OrganizationModule } from './modules/organization';
 import { PermissionModule } from './modules/permission';
 import { PiiModule } from './modules/pii';
 import { PiiConfigModule } from './modules/pii-config';
+import { PlatformToolsModule } from './modules/platform-tools';
 import { PublicModule } from './modules/public';
 import { QueueModule } from './modules/queue';
 import { RedisModule } from './modules/redis';
@@ -131,6 +132,9 @@ import { repoEnvFilePaths } from './repo-env';
 
     // Settings module
     SettingsModule,
+
+    // AC platform tool connection framework
+    PlatformToolsModule,
   ],
   controllers: [AppController],
   providers: [

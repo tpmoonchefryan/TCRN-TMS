@@ -11,10 +11,12 @@ import { AppModule } from '../src/app.module';
 import { applyGlobalSwaggerParameters } from '../src/config/swagger-global-parameters';
 import { buildSwaggerConfig, CONFIG_TAGS } from '../src/config/swagger.config';
 import { AuthModule } from '../src/modules/auth';
+import { PlatformToolsModule } from '../src/modules/platform-tools';
 import { loadRepoEnvFiles } from '../src/repo-env';
 
 interface CliOptions {
   out: string;
+  filter: 'sso' | 'platform-tools';
 }
 
 const REQUIRED_SSO_PATH_SUFFIXES = [
@@ -32,9 +34,19 @@ const REQUIRED_SSO_PATH_SUFFIXES = [
   '/auth/sso/external-tools/readiness/{toolCode}',
 ] as const;
 
+const REQUIRED_PLATFORM_TOOL_PATH_SUFFIXES = [
+  '/platform-tools/definitions',
+  '/platform-tools/connections',
+  '/platform-tools/connections/{toolCode}',
+  '/platform-tools/connections/{toolCode}/health-check',
+  '/platform-tools/connections/{toolCode}/deep-link',
+  '/platform-tools/deployment-boundary',
+] as const;
+
 function parseArgs(argv: string[]): CliOptions {
   const options: CliOptions = {
     out: 'swagger-sso-docs.json',
+    filter: 'sso',
   };
 
   for (let index = 0; index < argv.length; index += 1) {
@@ -44,10 +56,65 @@ function parseArgs(argv: string[]): CliOptions {
     if (arg === '--out' && next) {
       options.out = next;
       index += 1;
+    } else if (arg === '--filter' && next) {
+      options.filter = next === 'platform-tools' ? 'platform-tools' : 'sso';
+      index += 1;
     }
   }
 
   return options;
+}
+
+function buildPlatformToolEvidence(document: OpenAPIObject) {
+  const platformToolPaths = Object.keys(document.paths)
+    .filter((pathName) => normalizePathSuffix(pathName).startsWith('/platform-tools/'))
+    .sort();
+  const normalizedPathSuffixes = new Set(platformToolPaths.map(normalizePathSuffix));
+  const missingRequiredPaths = REQUIRED_PLATFORM_TOOL_PATH_SUFFIXES.filter(
+    (requiredPath) => !normalizedPathSuffixes.has(requiredPath)
+  );
+  const documentText = JSON.stringify(document);
+  const rawMaterialHits = [
+    'client_secret',
+    'clientSecret',
+    'api_key',
+    'private_key',
+    'access_token',
+    'id_token',
+    'authorization_code',
+    'password',
+  ]
+    .filter((needle) => documentText.includes(needle))
+    .map((needle) => ({
+      needle,
+      classification:
+        needle === 'client_secret'
+          ? 'allowed_redacted_config_key'
+          : needle === 'password'
+            ? 'forbidden'
+            : 'forbidden',
+    }));
+  const forbiddenRawMaterial = rawMaterialHits
+    .filter((hit) => hit.classification === 'forbidden')
+    .map((hit) => hit.needle);
+
+  return {
+    checkedAt: new Date().toISOString(),
+    test_layer: 'source_scan',
+    data_mode: 'source_scan',
+    target_scope: 'ac_platform_tool_connection',
+    platformToolPaths,
+    missingRequiredPaths,
+    rawMaterialHits,
+    forbiddenRawMaterial,
+    secretReferenceInputOnly: documentText.includes('secretRef') && !documentText.includes('secretValue'),
+    bearerAuthPresent: documentText.includes('bearer') || documentText.includes('JWT-auth'),
+    passed:
+      missingRequiredPaths.length === 0 &&
+      forbiddenRawMaterial.length === 0 &&
+      documentText.includes('secretRef') &&
+      !documentText.includes('secretValue'),
+  };
 }
 
 function cloneSerializableSwaggerValue<T>(value: T, stack = new WeakSet<object>()): T {
@@ -120,15 +187,37 @@ async function main() {
   app.setGlobalPrefix('api/v1');
 
   const config = buildSwaggerConfig(
-    'TCRN TMS - Phase 3 SSO Evidence',
-    'Generated SSO OpenAPI evidence for Phase 3 acceptance',
+    options.filter === 'platform-tools'
+      ? 'TCRN TMS - Phase 4 Platform Tool Evidence'
+      : 'TCRN TMS - Phase 3 SSO Evidence',
+    options.filter === 'platform-tools'
+      ? 'Generated Platform Tool Connections OpenAPI evidence for Phase 4 acceptance'
+      : 'Generated SSO OpenAPI evidence for Phase 3 acceptance',
     '1.0.0',
     CONFIG_TAGS
   );
   const document = cloneSerializableSwaggerValue(
-    SwaggerModule.createDocument(app, config, { include: [AuthModule] })
+    SwaggerModule.createDocument(app, config, {
+      include: options.filter === 'platform-tools' ? [PlatformToolsModule] : [AuthModule],
+    })
   ) as OpenAPIObject;
   applyGlobalSwaggerParameters(document);
+
+  if (options.filter === 'platform-tools') {
+    const payload = buildPlatformToolEvidence(document);
+
+    mkdirSync(path.dirname(options.out), { recursive: true });
+    writeFileSync(options.out, `${JSON.stringify(payload, null, 2)}\n`, 'utf8');
+    console.log(JSON.stringify(payload, null, 2));
+
+    await app.close();
+
+    if (!payload.passed) {
+      process.exitCode = 1;
+    }
+
+    return;
+  }
 
   const ssoPaths = Object.keys(document.paths)
     .filter((pathName) => normalizePathSuffix(pathName).startsWith('/auth/sso/'))

@@ -29,6 +29,7 @@ import { MarshmallowModule } from './modules/marshmallow';
 import { OrganizationModule } from './modules/organization';
 import { PermissionModule } from './modules/permission';
 import { PiiConfigModule } from './modules/pii-config';
+import { PlatformToolsModule } from './modules/platform-tools';
 import { PublicModule } from './modules/public';
 import { ReportModule } from './modules/report';
 import { RoleModule } from './modules/role';
@@ -224,6 +225,7 @@ export async function bootstrap(): Promise<void> {
           DictionaryModule,
           SecurityModule,
           PiiConfigModule,
+          PlatformToolsModule,
           LogModule,
           EmailModule,
           SettingsModule,

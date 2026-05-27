@@ -59,6 +59,7 @@ export const CONFIG_TAGS = [
   { name: 'System - Dictionary', description: '数据字典' },
   { name: 'System - Config', description: '配置实体' },
   { name: 'System - PII', description: 'PII 服务配置' },
+  { name: 'System - Platform Tools', description: 'AC 平台工具连接' },
   { name: 'System - Security', description: '安全与黑名单' },
   { name: 'System - Settings', description: '通用设置' },
   { name: 'System - Logs', description: '日志查询' },

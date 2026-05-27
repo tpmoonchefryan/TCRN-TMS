@@ -1,6 +1,6 @@
 'use client';
 
-import { Activity, BookText, Building2, Cable, KeyRound, Users, Webhook } from 'lucide-react';
+import { Activity, BookText, Building2, Cable, KeyRound, PlugZap, Users, Webhook } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
@@ -30,6 +30,7 @@ function getAcPageTitle(
     apiClientManagement: string;
     interfaceManagement: string;
     observability: string;
+    platformToolConnections: string;
     profile: string;
     systemDictionary: string;
     tenantManagement: string;
@@ -55,6 +56,10 @@ function getAcPageTitle(
 
   if (pathname.includes('/api-clients')) {
     return titles.apiClientManagement;
+  }
+
+  if (pathname.includes('/platform-tools')) {
+    return titles.platformToolConnections;
   }
 
   if (pathname.includes('/observability')) {
@@ -110,6 +115,14 @@ export function AcShell({
       ja: 'Webhook 管理',
       ko: '웹훅 관리',
       fr: 'Gestion des webhooks',
+    }),
+    platformToolConnections: pickLocaleText(locale, {
+      en: 'Platform Tool Connections',
+      zh_HANS: '平台工具连接',
+      zh_HANT: '平台工具連線',
+      ja: 'プラットフォームツール接続',
+      ko: '플랫폼 도구 연결',
+      fr: 'Connexions aux outils plateforme',
     }),
   };
   const loadingCopy = {
@@ -276,6 +289,13 @@ export function AcShell({
       icon: <KeyRound className="h-4 w-4" />,
     },
     {
+      key: 'platform-tools',
+      label: integrationLabels.platformToolConnections,
+      href: `/ac/${tenantId}/platform-tools`,
+      isActive: pathname.includes('/platform-tools'),
+      icon: <PlugZap className="h-4 w-4" />,
+    },
+    {
       key: 'observability',
       label: copy.ac.nav.observability,
       href: `/ac/${tenantId}/observability`,
@@ -297,6 +317,7 @@ export function AcShell({
     ...copy.ac.titles,
     apiClientManagement: integrationLabels.apiClientManagement,
     interfaceManagement: integrationLabels.interfaceManagement,
+    platformToolConnections: integrationLabels.platformToolConnections,
     webhookManagement: integrationLabels.webhookManagement,
   });
   const shellA11y = {

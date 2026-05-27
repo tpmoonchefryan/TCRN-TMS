@@ -144,6 +144,115 @@ model PlatformExternalToolSsoReadiness {
   @@schema("public")
 }
 
+/// Platform tool definition - AC-only external tool framework catalog.
+model PlatformToolDefinition {
+  code                 String   @id @db.VarChar(128)
+  family               String   @db.VarChar(64)
+  displayKey           String   @map("display_key") @db.VarChar(128)
+  label                String   @db.VarChar(128)
+  localizedLabel       Json     @map("localized_label") @db.JsonB
+  defaultState         String   @map("default_state") @db.VarChar(64)
+  ownerPhase           String   @map("owner_phase") @db.VarChar(128)
+  humanUi              Boolean  @default(false) @map("human_ui")
+  deepLink             Boolean  @default(false) @map("deep_link")
+  allowedLocalDevModes String[] @map("allowed_local_dev_modes") @db.VarChar(64)
+  ssoRequirement       String   @map("sso_requirement") @db.VarChar(32)
+  licensePosture       String   @map("license_posture") @db.VarChar(255)
+  defaultConnection    String   @default("none") @map("default_connection") @db.VarChar(32)
+  sortOrder            Int      @default(0) @map("sort_order")
+  createdAt            DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt            DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([family, sortOrder])
+  @@map("platform_tool_definition")
+  @@schema("public")
+}
+
+/// Platform tool connection - AC-owned connection/readiness metadata.
+model PlatformToolConnection {
+  id                 String   @id @default(uuid()) @db.Uuid
+  tenantId           String   @map("tenant_id") @db.Uuid
+  toolCode           String   @map("tool_code") @db.VarChar(128)
+  environment        String   @default("local") @db.VarChar(32)
+  deploymentMode     String   @default("disabled") @map("deployment_mode") @db.VarChar(64)
+  localDevMode       String   @default("disabled") @map("local_dev_mode") @db.VarChar(64)
+  endpointUrl        String?  @map("endpoint_url") @db.VarChar(1024)
+  internalServiceUrl String?  @map("internal_service_url") @db.VarChar(1024)
+  namespace          String?  @db.VarChar(128)
+  serviceName        String?  @map("service_name") @db.VarChar(128)
+  enabled            Boolean  @default(false)
+  readinessState     String   @default("not_configured") @map("readiness_state") @db.VarChar(64)
+  ssoReadinessState  String   @default("blocked") @map("sso_readiness_state") @db.VarChar(32)
+  healthStatus       String   @default("unknown") @map("health_status") @db.VarChar(32)
+  lastCheckedAt      DateTime? @map("last_checked_at") @db.Timestamptz
+  configVersion      Int      @default(1) @map("config_version")
+  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt          DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  createdBy          String?  @map("created_by") @db.Uuid
+  updatedBy          String?  @map("updated_by") @db.Uuid
+  version            Int      @default(1)
+
+  @@unique([tenantId, toolCode, environment])
+  @@index([tenantId, toolCode])
+  @@index([toolCode, readinessState])
+  @@map("platform_tool_connection")
+  @@schema("public")
+}
+
+/// Platform tool config values - redacted connection config and secret references.
+model PlatformToolConfigValue {
+  id          String   @id @default(uuid()) @db.Uuid
+  connectionId String @map("connection_id") @db.Uuid
+  configKey   String @map("config_key") @db.VarChar(128)
+  configValue Json?  @map("config_value") @db.JsonB
+  isSecret    Boolean @default(false) @map("is_secret")
+  secretRef   String? @map("secret_ref") @db.VarChar(255)
+  secretStatus String @default("not_set") @map("secret_status") @db.VarChar(64)
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  updatedBy   String? @map("updated_by") @db.Uuid
+
+  @@unique([connectionId, configKey])
+  @@index([connectionId])
+  @@map("platform_tool_config_value")
+  @@schema("public")
+}
+
+/// Platform tool health snapshots - safe AC operator read model.
+model PlatformToolHealthSnapshot {
+  id           String   @id @default(uuid()) @db.Uuid
+  connectionId String  @map("connection_id") @db.Uuid
+  status       String  @db.VarChar(32)
+  latencyMs    Int?    @map("latency_ms")
+  safeDetails  Json    @default("{}") @map("safe_details") @db.JsonB
+  checkedAt    DateTime @default(now()) @map("checked_at") @db.Timestamptz
+  checkedBy    String? @map("checked_by") @db.Uuid
+
+  @@index([connectionId, checkedAt])
+  @@map("platform_tool_health_snapshot")
+  @@schema("public")
+}
+
+/// Platform tool audit events - secret-safe operator evidence.
+model PlatformToolAuditEvent {
+  id           String   @id @default(uuid()) @db.Uuid
+  tenantId     String   @map("tenant_id") @db.Uuid
+  connectionId String?  @map("connection_id") @db.Uuid
+  toolCode     String   @map("tool_code") @db.VarChar(128)
+  action       String   @db.VarChar(64)
+  actorId      String?  @map("actor_id") @db.Uuid
+  beforeState  Json?    @map("before_state") @db.JsonB
+  afterState   Json?    @map("after_state") @db.JsonB
+  requestId    String?  @map("request_id") @db.VarChar(128)
+  ipAddress    String?  @map("ip_address") @db.VarChar(64)
+  userAgent    String?  @map("user_agent") @db.Text
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([tenantId, toolCode, createdAt])
+  @@index([connectionId, createdAt])
+  @@map("platform_tool_audit_event")
+  @@schema("public")
+}
+
 /// Custom Domain Binding - Global hostname registry for tenant/subsidiary/talent owned domains
 model CustomDomainBinding {
   id                            String   @id @default(uuid()) @db.Uuid

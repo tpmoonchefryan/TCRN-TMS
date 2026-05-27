@@ -1,0 +1,177 @@
+import type { SupportedUiLocale } from '@tcrn/shared';
+
+import { useUiLocale } from '@/platform/runtime/locale/locale-provider';
+import { pickLocaleText } from '@/platform/runtime/locale/locale-text';
+
+type CopyMap = Parameters<typeof pickLocaleText>[1];
+
+const familyCopy: Record<string, CopyMap> = {
+  identity_provider: {
+    en: 'Identity',
+    zh_HANS: '身份',
+    zh_HANT: '身份',
+    ja: 'ID',
+    ko: 'ID',
+    fr: 'Identité',
+  },
+  observability_console: {
+    en: 'Observability',
+    zh_HANS: '可观测性',
+    zh_HANT: '可觀測性',
+    ja: '可観測性',
+    ko: '관측',
+    fr: 'Observabilité',
+  },
+  runtime_flags: {
+    en: 'Runtime Flags',
+    zh_HANS: '运行时开关',
+    zh_HANT: '執行期開關',
+    ja: 'ランタイムフラグ',
+    ko: '런타임 플래그',
+    fr: 'Flags runtime',
+  },
+  webhook_delivery: {
+    en: 'Webhook Delivery',
+    zh_HANS: 'Webhook 投递',
+    zh_HANT: 'Webhook 投遞',
+    ja: 'Webhook 配信',
+    ko: '웹훅 전달',
+    fr: 'Livraison webhook',
+  },
+  event_backbone: {
+    en: 'Event Backbone',
+    zh_HANS: '事件骨干',
+    zh_HANT: '事件骨幹',
+    ja: 'イベント基盤',
+    ko: '이벤트 백본',
+    fr: 'Backbone événementiel',
+  },
+  api_gateway: {
+    en: 'API Gateway',
+    zh_HANS: 'API 网关',
+    zh_HANT: 'API 閘道',
+    ja: 'API ゲートウェイ',
+    ko: 'API 게이트웨이',
+    fr: 'Passerelle API',
+  },
+  internal_tooling: {
+    en: 'Internal Tools',
+    zh_HANS: '内部工具',
+    zh_HANT: '內部工具',
+    ja: '内部ツール',
+    ko: '내부 도구',
+    fr: 'Outils internes',
+  },
+  developer_portal: {
+    en: 'Developer Portal',
+    zh_HANS: '开发者门户',
+    zh_HANT: '開發者入口',
+    ja: '開発者ポータル',
+    ko: '개발자 포털',
+    fr: 'Portail développeur',
+  },
+  external_authorization: {
+    en: 'External AuthZ',
+    zh_HANS: '外部授权',
+    zh_HANT: '外部授權',
+    ja: '外部認可',
+    ko: '외부 권한',
+    fr: 'Autorisation externe',
+  },
+};
+
+export function usePlatformToolConnectionsCopy() {
+  const { locale } = useUiLocale();
+  const text = (copy: CopyMap) => pickLocaleText(locale, copy);
+
+  return {
+    locale,
+    text,
+    title: text({
+      en: 'Platform Tool Connections',
+      zh_HANS: '平台工具连接',
+      zh_HANT: '平台工具連線',
+      ja: 'プラットフォームツール接続',
+      ko: '플랫폼 도구 연결',
+      fr: 'Connexions aux outils plateforme',
+    }),
+    statusLine: text({
+      en: 'AC platform boundary active.',
+      zh_HANS: 'AC 平台边界已生效。',
+      zh_HANT: 'AC 平台邊界已生效。',
+      ja: 'AC プラットフォーム境界が有効です。',
+      ko: 'AC 플랫폼 경계가 활성화되었습니다.',
+      fr: 'Frontière plateforme AC active.',
+    }),
+    filters: {
+      environment: text({
+        en: 'Environment',
+        zh_HANS: '环境',
+        zh_HANT: '環境',
+        ja: '環境',
+        ko: '환경',
+        fr: 'Environnement',
+      }),
+      family: text({
+        en: 'Family',
+        zh_HANS: '家族',
+        zh_HANT: '家族',
+        ja: 'ファミリー',
+        ko: '제품군',
+        fr: 'Famille',
+      }),
+      allFamilies: text({
+        en: 'All families',
+        zh_HANS: '全部家族',
+        zh_HANT: '全部家族',
+        ja: 'すべて',
+        ko: '전체',
+        fr: 'Toutes',
+      }),
+    },
+    columns: {
+      tool: text({ en: 'Tool', zh_HANS: '工具', zh_HANT: '工具', ja: 'ツール', ko: '도구', fr: 'Outil' }),
+      family: text({ en: 'Family', zh_HANS: '家族', zh_HANT: '家族', ja: 'ファミリー', ko: '제품군', fr: 'Famille' }),
+      connection: text({ en: 'Connection', zh_HANS: '连接', zh_HANT: '連線', ja: '接続', ko: '연결', fr: 'Connexion' }),
+      health: text({ en: 'Health', zh_HANS: '健康', zh_HANT: '健康', ja: 'ヘルス', ko: '상태', fr: 'Santé' }),
+      sso: text({ en: 'SSO', zh_HANS: 'SSO', zh_HANT: 'SSO', ja: 'SSO', ko: 'SSO', fr: 'SSO' }),
+      actions: text({ en: 'Actions', zh_HANS: '操作', zh_HANT: '操作', ja: '操作', ko: '작업', fr: 'Actions' }),
+    },
+    actions: {
+      refresh: text({ en: 'Refresh', zh_HANS: '刷新', zh_HANT: '重新整理', ja: '更新', ko: '새로고침', fr: 'Actualiser' }),
+      inspect: text({ en: 'Inspect', zh_HANS: '查看', zh_HANT: '檢視', ja: '詳細', ko: '검토', fr: 'Inspecter' }),
+      configure: text({ en: 'Configure', zh_HANS: '配置', zh_HANT: '設定', ja: '設定', ko: '구성', fr: 'Configurer' }),
+      runCheck: text({ en: 'Run check', zh_HANS: '运行检查', zh_HANT: '執行檢查', ja: 'チェック', ko: '점검 실행', fr: 'Vérifier' }),
+      open: text({ en: 'Open', zh_HANS: '打开', zh_HANT: '開啟', ja: '開く', ko: '열기', fr: 'Ouvrir' }),
+      save: text({ en: 'Save', zh_HANS: '保存', zh_HANT: '儲存', ja: '保存', ko: '저장', fr: 'Enregistrer' }),
+      cancel: text({ en: 'Cancel', zh_HANS: '取消', zh_HANT: '取消', ja: 'キャンセル', ko: '취소', fr: 'Annuler' }),
+      close: text({ en: 'Close panel', zh_HANS: '关闭面板', zh_HANT: '關閉面板', ja: 'パネルを閉じる', ko: '패널 닫기', fr: 'Fermer le panneau' }),
+      disabledOpen: text({
+        en: 'Link unavailable',
+        zh_HANS: '链接不可用',
+        zh_HANT: '連結不可用',
+        ja: 'リンク不可',
+        ko: '링크 사용 불가',
+        fr: 'Lien indisponible',
+      }),
+    },
+    fields: {
+      endpointUrl: text({ en: 'Endpoint URL', zh_HANS: '端点 URL', zh_HANT: '端點 URL', ja: 'エンドポイント URL', ko: '엔드포인트 URL', fr: 'URL endpoint' }),
+      internalServiceUrl: text({ en: 'Internal service URL', zh_HANS: '内部服务 URL', zh_HANT: '內部服務 URL', ja: '内部サービス URL', ko: '내부 서비스 URL', fr: 'URL service interne' }),
+      namespace: text({ en: 'Namespace', zh_HANS: '命名空间', zh_HANT: '命名空間', ja: '名前空間', ko: '네임스페이스', fr: 'Namespace' }),
+      serviceName: text({ en: 'Service name', zh_HANS: '服务名', zh_HANT: '服務名', ja: 'サービス名', ko: '서비스 이름', fr: 'Nom du service' }),
+      deploymentMode: text({ en: 'Deployment mode', zh_HANS: '部署模式', zh_HANT: '部署模式', ja: 'デプロイモード', ko: '배포 모드', fr: 'Mode de déploiement' }),
+      localDevMode: text({ en: 'Local-dev mode', zh_HANS: '本地开发模式', zh_HANT: '本機開發模式', ja: 'ローカル開発モード', ko: '로컬 개발 모드', fr: 'Mode local-dev' }),
+      enabled: text({ en: 'Enabled', zh_HANS: '启用', zh_HANT: '啟用', ja: '有効', ko: '사용', fr: 'Activé' }),
+      secretRef: text({ en: 'Client secret reference', zh_HANS: '客户端密钥引用', zh_HANT: '用戶端密鑰引用', ja: 'クライアントシークレット参照', ko: '클라이언트 시크릿 참조', fr: 'Référence secret client' }),
+    },
+    states: {
+      loading: text({ en: 'Loading platform tools', zh_HANS: '正在加载平台工具', zh_HANT: '正在載入平台工具', ja: '読み込み中', ko: '플랫폼 도구 로드 중', fr: 'Chargement des outils' }),
+      empty: text({ en: 'No platform tools', zh_HANS: '暂无平台工具', zh_HANT: '暫無平台工具', ja: 'ツールがありません', ko: '도구 없음', fr: 'Aucun outil' }),
+      error: text({ en: 'Platform tools could not load', zh_HANS: '平台工具加载失败', zh_HANT: '平台工具載入失敗', ja: '読み込み失敗', ko: '로드 실패', fr: 'Chargement impossible' }),
+      saved: text({ en: 'Connection saved', zh_HANS: '连接已保存', zh_HANT: '連線已儲存', ja: '接続を保存しました', ko: '연결 저장됨', fr: 'Connexion enregistrée' }),
+      denied: text({ en: 'Deep link denied', zh_HANS: '深链已拒绝', zh_HANT: '深層連結已拒絕', ja: '深リンクは拒否されました', ko: '딥링크 거부됨', fr: 'Lien profond refusé' }),
+    },
+    familyLabel: (family: string) => text(familyCopy[family] ?? { en: family }),
+  };
+}
