@@ -15,7 +15,8 @@ const COPY = {
     header: {
       eyebrowPrefix: 'Operations',
       title: 'Observability',
-      description: 'Review recent changes, system events, integration traffic, and logs.',
+      description:
+        'Review TCRN product audit summaries, system events, integration traffic, and safe log search.',
     },
     summary: {
       tenantLabel: 'Tenant',
@@ -175,7 +176,7 @@ const COPY = {
     header: {
       eyebrowPrefix: '运维',
       title: '可观测性',
-      description: '在同一页查看近期变更、系统事件、集成流量与日志。',
+      description: '在同一页查看 TCRN 产品审计摘要、系统事件、集成流量与安全日志搜索。',
     },
     summary: {
       tenantLabel: '租户',
@@ -329,7 +330,7 @@ const COPY = {
     header: {
       eyebrowPrefix: '运维',
       title: '可观测性',
-      description: '在同一页查看近期变更、系统事件、集成流量与日志。',
+      description: '在同一页查看 TCRN 產品稽核摘要、系統事件、整合流量與安全日誌搜尋。',
     },
     summary: {
       tenantLabel: '租户',
@@ -483,7 +484,8 @@ const COPY = {
     header: {
       eyebrowPrefix: '運用',
       title: 'オブザーバビリティ',
-      description: '同じ画面で変更履歴、技術イベント、連携トラフィック、ログ検索を確認します。',
+      description:
+        'TCRN プロダクト監査サマリー、技術イベント、連携トラフィック、安全なログ検索を確認します。',
     },
     summary: {
       tenantLabel: 'テナント',
@@ -651,7 +653,8 @@ const COPY = {
     header: {
       eyebrowPrefix: 'Operations',
       title: 'Observability',
-      description: 'Review recent changes, system events, integration traffic, and logs.',
+      description:
+        'Review TCRN product audit summaries, system events, integration traffic, and safe log search.',
     },
     summary: {
       tenantLabel: 'Tenant',
@@ -811,7 +814,8 @@ const COPY = {
     header: {
       eyebrowPrefix: 'Operations',
       title: 'Observability',
-      description: 'Review recent changes, system events, integration traffic, and logs.',
+      description:
+        'Review TCRN product audit summaries, system events, integration traffic, and safe log search.',
     },
     summary: {
       tenantLabel: 'Tenant',

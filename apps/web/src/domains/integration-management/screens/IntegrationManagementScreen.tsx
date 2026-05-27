@@ -4015,36 +4015,38 @@ export function IntegrationManagementScreen({
                   ? !selectedIntegrationScope && !isAcWorkspace
                     ? noScopeWorkspaceDescription
                     : text({
-                        en: 'Manage adapter interfaces for the selected scope. Webhooks, API clients, and email settings stay on their own surfaces.',
+                        en: 'Manage TCRN product interface definitions for the selected scope. Webhooks, API clients, and email settings stay on their own surfaces.',
                         zh_HANS:
-                          '管理所选范围的适配器接口。Webhook、API 客户端与邮件设置保留在各自独立页面。',
+                          '管理所选范围的 TCRN 产品接口定义。Webhook、API 客户端与邮件设置保留在各自独立页面。',
                         zh_HANT:
-                          '管理所選範圍的適配器介面。Webhook、API 用戶端與郵件設定保留在各自獨立頁面。',
-                        ja: '選択したスコープのアダプターインターフェースを管理します。Webhook、API クライアント、メール設定は独立した画面に残します。',
-                        ko: '선택한 범위의 어댑터 인터페이스를 관리합니다. 웹훅, API 클라이언트, 이메일 설정은 별도 화면에 유지합니다.',
-                        fr: 'Gérez les interfaces d’adaptateur du périmètre sélectionné. Les webhooks, clients API et paramètres e-mail restent sur leurs surfaces dédiées.',
+                          '管理所選範圍的 TCRN 產品介面定義。Webhook、API 用戶端與郵件設定保留在各自獨立頁面。',
+                        ja: '選択したスコープの TCRN プロダクトインターフェース定義を管理します。Webhook、API クライアント、メール設定は独立した画面に残します。',
+                        ko: '선택한 범위의 TCRN 제품 인터페이스 정의를 관리합니다. 웹훅, API 클라이언트, 이메일 설정은 별도 화면에 유지합니다.',
+                        fr: 'Gérez les définitions d’interface produit TCRN du périmètre sélectionné. Les webhooks, clients API et paramètres e-mail restent sur leurs surfaces dédiées.',
                       })
                   : surface === 'webhooks'
                     ? !selectedIntegrationScope && !isAcWorkspace
                       ? noScopeWorkspaceDescription
                       : text({
-                          en: 'Manage tenant-root webhook endpoints separately from adapter interfaces and API clients.',
+                          en: 'Manage TCRN business webhook event subscriptions separately from interface definitions and API clients.',
                           zh_HANS:
-                            '在独立页面管理租户根范围 Webhook 端点，与适配器接口和 API 客户端分开。',
+                            '在独立页面管理 TCRN 业务 Webhook 事件订阅，与接口定义和 API 客户端分开。',
                           zh_HANT:
-                            '在獨立頁面管理租戶根範圍 Webhook 端點，並與適配器介面和 API 用戶端分開。',
-                          ja: 'テナントルートの Webhook エンドポイントを、アダプターインターフェースや API クライアントから分けて管理します。',
-                          ko: '테넌트 루트 웹훅 엔드포인트를 어댑터 인터페이스 및 API 클라이언트와 분리해 관리합니다.',
-                          fr: 'Gérez les endpoints webhook de racine tenant séparément des interfaces d’adaptateur et des clients API.',
+                            '在獨立頁面管理 TCRN 業務 Webhook 事件訂閱，並與介面定義和 API 用戶端分開。',
+                          ja: 'TCRN の業務 Webhook イベント購読を、インターフェース定義や API クライアントから分けて管理します。',
+                          ko: 'TCRN 비즈니스 웹훅 이벤트 구독을 인터페이스 정의 및 API 클라이언트와 분리해 관리합니다.',
+                          fr: 'Gérez les abonnements aux événements webhook métier TCRN séparément des définitions d’interface et des clients API.',
                         })
                     : surface === 'api-clients'
                       ? text({
-                          en: 'Manage platform API clients and key lifecycle from Account Center only.',
-                          zh_HANS: '仅在账户中心管理平台 API 客户端与密钥生命周期。',
-                          zh_HANT: '僅在帳戶中心管理平台 API 用戶端與金鑰生命週期。',
-                          ja: 'プラットフォーム API クライアントとキーのライフサイクルはアカウントセンターでのみ管理します。',
-                          ko: '플랫폼 API 클라이언트와 키 수명주기는 계정 센터에서만 관리합니다.',
-                          fr: 'Gérez les clients API plateforme et le cycle de vie des clés uniquement depuis l’Account Center.',
+                          en: 'Manage TCRN product API client records, scopes, and key lifecycle from Account Center only.',
+                          zh_HANS:
+                            '仅在账户中心管理 TCRN 产品 API 客户端记录、范围与密钥生命周期。',
+                          zh_HANT:
+                            '僅在帳戶中心管理 TCRN 產品 API 用戶端記錄、範圍與金鑰生命週期。',
+                          ja: 'TCRN プロダクト API クライアントのレコード、スコープ、キーライフサイクルはアカウントセンターでのみ管理します。',
+                          ko: 'TCRN 제품 API 클라이언트 기록, 범위, 키 수명주기는 계정 센터에서만 관리합니다.',
+                          fr: 'Gérez les enregistrements, périmètres et cycles de vie des clés des clients API produit TCRN uniquement depuis l’Account Center.',
                         })
                       : isAcWorkspace
                         ? text({

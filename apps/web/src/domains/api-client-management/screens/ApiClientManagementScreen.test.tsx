@@ -69,6 +69,7 @@ describe('ApiClientManagementScreen', () => {
     expect(
       await screen.findByRole('heading', { name: 'API Client Management' })
     ).toBeInTheDocument();
+    expect(screen.getByText(/TCRN product API client records/)).toBeInTheDocument();
     expect(await screen.findByText('No API clients configured')).toBeInTheDocument();
     expect(screen.getAllByText('API Clients').length).toBeGreaterThan(0);
     expect(screen.getByRole('button', { name: /New API client/i })).toBeInTheDocument();

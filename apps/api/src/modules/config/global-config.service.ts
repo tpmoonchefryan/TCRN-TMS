@@ -11,6 +11,18 @@ export interface GlobalConfigValue {
   description?: string | null;
 }
 
+export interface GlobalConfigMetadata {
+  key: string;
+  description?: string | null;
+}
+
+export interface GlobalConfigAuditSnapshot {
+  id: string;
+  key: string;
+  value: unknown;
+  description?: string | null;
+}
+
 @Injectable()
 export class GlobalConfigService {
   constructor(private readonly db: DatabaseService) {}
@@ -29,6 +41,50 @@ export class GlobalConfigService {
     }
 
     return {
+      key: config.key,
+      value: config.value,
+      description: config.description,
+    };
+  }
+
+  async getMetadata(key: string): Promise<GlobalConfigMetadata | null> {
+    const prisma = this.db.getPrisma();
+    const config = await prisma.globalConfig.findUnique({
+      where: { key },
+      select: {
+        key: true,
+        description: true,
+      },
+    });
+
+    if (!config) {
+      return null;
+    }
+
+    return {
+      key: config.key,
+      description: config.description,
+    };
+  }
+
+  async getAuditSnapshot(key: string): Promise<GlobalConfigAuditSnapshot | null> {
+    const prisma = this.db.getPrisma();
+    const config = await prisma.globalConfig.findUnique({
+      where: { key },
+      select: {
+        id: true,
+        key: true,
+        value: true,
+        description: true,
+      },
+    });
+
+    if (!config) {
+      return null;
+    }
+
+    return {
+      id: config.id,
       key: config.key,
       value: config.value,
       description: config.description,

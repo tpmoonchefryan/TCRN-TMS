@@ -119,6 +119,7 @@ describe('ObservabilityScreen', () => {
     render(<ObservabilityScreen tenantId="tenant-1" />);
 
     expect(await screen.findByRole('heading', { name: 'Observability' })).toBeInTheDocument();
+    expect(screen.getByText(/TCRN product audit summaries/)).toBeInTheDocument();
     expect(await screen.findByText('Tokino Sora')).toBeInTheDocument();
     expect(screen.getByText('Operator Alice')).toBeInTheDocument();
     expect(screen.getByText(/displayName: Old Name -> Tokino Sora/)).toBeInTheDocument();

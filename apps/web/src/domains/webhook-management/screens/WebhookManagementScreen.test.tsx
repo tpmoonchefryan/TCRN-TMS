@@ -81,6 +81,7 @@ describe('WebhookManagementScreen', () => {
     render(<WebhookManagementScreen tenantId="tenant-1" />);
 
     expect(await screen.findByRole('heading', { name: 'Webhook Management' })).toBeInTheDocument();
+    expect(screen.getByText(/TCRN business webhook event subscriptions/)).toBeInTheDocument();
 
     expect(await screen.findByText('No webhooks configured')).toBeInTheDocument();
     expect(screen.getByText('Webhook Endpoints')).toBeInTheDocument();

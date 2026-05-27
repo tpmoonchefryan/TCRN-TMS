@@ -179,6 +179,30 @@ describe('AcShell', () => {
     });
   });
 
+  it('does not render AC route content for an authenticated ordinary tenant session', async () => {
+    mockSession = {
+      ...baseSession,
+      tenantId: 'tenant-standard',
+      tenantName: 'Standard Tenant',
+      tenantTier: 'standard',
+    };
+
+    render(
+      <UiLocaleProvider>
+        <AcShell tenantId="tenant-ac">
+          <div>AC tenant table</div>
+        </AcShell>
+      </UiLocaleProvider>
+    );
+
+    expect(screen.getByRole('heading', { name: 'Platform account unavailable' })).toBeInTheDocument();
+    expect(screen.queryByText('AC tenant table')).not.toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(replace).toHaveBeenCalledWith('/tenant/tenant-standard');
+    });
+  });
+
   it('does not highlight AC sidebar navigation for account security routes', () => {
     mockPathname = '/ac/tenant-ac/profile/security';
 

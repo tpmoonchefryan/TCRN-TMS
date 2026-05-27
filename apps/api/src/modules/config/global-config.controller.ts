@@ -7,6 +7,7 @@ import {
   NotFoundException,
   Param,
   Patch,
+  Req,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -17,11 +18,21 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { IsNotEmpty } from 'class-validator';
+import { createHash } from 'crypto';
+import type { Request } from 'express';
+
+import type { RequestContext } from '@tcrn/shared';
 
 import { AuthenticatedUser, CurrentUser } from '../../common/decorators/current-user.decorator';
 import { success } from '../../common/response.util';
+import { ChangeLogService } from '../log/services';
 import { RequirePlatformConfigPermission } from './config-rbac';
-import { GlobalConfigService } from './global-config.service';
+import { GlobalConfigService, type GlobalConfigAuditSnapshot } from './global-config.service';
+import {
+  buildRedactedPlatformConfigValue,
+  getPlatformConfigExposurePolicy,
+  type PlatformConfigExposurePolicy,
+} from './platform-config-exposure';
 
 // DTOs
 export class SetConfigDto {
@@ -96,6 +107,42 @@ const GLOBAL_CONFIG_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(GLOBAL_CONFIG_I
   description: 'Base domain for system subdomains (e.g., tcrn.app)',
 });
 
+const GLOBAL_CONFIG_REDACTED_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
+  {
+    type: 'object',
+    properties: {
+      key: { type: 'string', example: 'email.config' },
+      value: {
+        type: 'object',
+        properties: {
+          exposureClass: { type: 'string', example: 'secret_or_sensitive_config' },
+          redacted: { type: 'boolean', example: true },
+          summary: {
+            type: 'string',
+            example: 'Email provider configuration; raw secret values must never leave the service.',
+          },
+        },
+        required: ['exposureClass', 'redacted', 'summary'],
+      },
+      description: {
+        type: 'string',
+        nullable: true,
+        example: 'Email provider configuration',
+      },
+    },
+    required: ['key', 'value'],
+  },
+  {
+    key: 'email.config',
+    value: {
+      exposureClass: 'secret_or_sensitive_config',
+      redacted: true,
+      summary: 'Email provider configuration; raw secret values must never leave the service.',
+    },
+    description: 'Email provider configuration',
+  }
+);
+
 const GLOBAL_CONFIG_LIST_SCHEMA = createSuccessEnvelopeSchema(
   {
     type: 'array',
@@ -139,7 +186,10 @@ const GLOBAL_CONFIG_NOT_FOUND_SCHEMA = createErrorEnvelopeSchema(
 @Controller('platform/config')
 @ApiBearerAuth()
 export class GlobalConfigController {
-  constructor(private readonly globalConfigService: GlobalConfigService) {}
+  constructor(
+    private readonly globalConfigService: GlobalConfigService,
+    private readonly changeLogService: ChangeLogService
+  ) {}
 
   /**
    * Check if user is AC tenant admin
@@ -152,6 +202,160 @@ export class GlobalConfigController {
         message: 'This operation is only available for AC tenant administrators',
       });
     }
+  }
+
+  private assertKnownExposurePolicy(key: string): PlatformConfigExposurePolicy {
+    const policy = getPlatformConfigExposurePolicy(key);
+
+    if (!policy) {
+      throw new ForbiddenException({
+        code: 'PLATFORM_CONFIG_EXPOSURE_DENIED',
+        message: `Platform config key '${key}' is not cataloged for runtime exposure`,
+      });
+    }
+
+    return policy;
+  }
+
+  private assertPolicyReadableByUser(
+    user: AuthenticatedUser,
+    policy: PlatformConfigExposurePolicy
+  ): void {
+    if (policy.exposureClass === 'public_runtime_config') {
+      return;
+    }
+
+    this.checkAcTenantAccess(user);
+  }
+
+  private async readConfigForPolicy(key: string, policy: PlatformConfigExposurePolicy) {
+    if (policy.exposureClass !== 'secret_or_sensitive_config') {
+      return this.globalConfigService.get(key);
+    }
+
+    const metadata = await this.globalConfigService.getMetadata(key);
+
+    if (!metadata) {
+      return null;
+    }
+
+    return {
+      key: metadata.key,
+      value: buildRedactedPlatformConfigValue(policy),
+      description: metadata.description,
+    };
+  }
+
+  private buildRequestContext(user: AuthenticatedUser, req: Request): RequestContext {
+    const requestWithTrace = req as Request & { requestId?: string; traceId?: string };
+
+    return {
+      userId: user.id,
+      userName: user.username ?? user.email ?? user.id,
+      tenantId: user.tenantId,
+      tenantSchema: user.tenantSchema,
+      ipAddress: (req.ip || req.socket?.remoteAddress) ?? undefined,
+      userAgent: this.firstHeaderValue(req.headers['user-agent']),
+      requestId:
+        requestWithTrace.requestId ??
+        requestWithTrace.traceId ??
+        this.firstHeaderValue(req.headers['x-request-id']),
+      traceId: requestWithTrace.traceId,
+    };
+  }
+
+  private firstHeaderValue(value: string | string[] | undefined): string | undefined {
+    return Array.isArray(value) ? value[0] : value;
+  }
+
+  private buildAuditValue(
+    snapshot: GlobalConfigAuditSnapshot,
+    policy: PlatformConfigExposurePolicy
+  ): Record<string, unknown> {
+    const base = {
+      key: snapshot.key,
+      exposureClass: policy.exposureClass,
+      description: snapshot.description ?? null,
+    };
+
+    if (policy.exposureClass === 'secret_or_sensitive_config') {
+      return {
+        ...base,
+        valueRedacted: true,
+        valueSummary: policy.summary,
+        valueDigest: this.hashJsonValue(snapshot.value),
+      };
+    }
+
+    return {
+      ...base,
+      value: snapshot.value,
+    };
+  }
+
+  private hashJsonValue(value: unknown): string {
+    return createHash('sha256').update(this.stableStringify(value)).digest('hex');
+  }
+
+  private buildAuditDecision(
+    key: string,
+    policy: PlatformConfigExposurePolicy,
+    context: RequestContext
+  ) {
+    const secretOrSensitive = policy.exposureClass === 'secret_or_sensitive_config';
+
+    return {
+      key,
+      exposureClass: policy.exposureClass,
+      valueHandling: secretOrSensitive ? 'redacted_summary_and_digest' : 'plain_value',
+      rawValueLogged: !secretOrSensitive,
+      requestId: context.requestId ?? null,
+    };
+  }
+
+  private stableStringify(value: unknown): string {
+    if (Array.isArray(value)) {
+      return `[${value.map((item) => this.stableStringify(item)).join(',')}]`;
+    }
+
+    if (value && typeof value === 'object') {
+      return `{${Object.keys(value as Record<string, unknown>)
+        .sort()
+        .map(
+          (key) =>
+            `${JSON.stringify(key)}:${this.stableStringify((value as Record<string, unknown>)[key])}`
+        )
+        .join(',')}}`;
+    }
+
+    return JSON.stringify(value) ?? 'undefined';
+  }
+
+  private async recordPlatformConfigChange(
+    key: string,
+    policy: PlatformConfigExposurePolicy,
+    before: GlobalConfigAuditSnapshot | null,
+    after: GlobalConfigAuditSnapshot | null,
+    context: RequestContext
+  ) {
+    if (!after) {
+      return;
+    }
+
+    await this.changeLogService.createDirect(
+      {
+        action: before ? 'update' : 'create',
+        objectType: 'platform_config',
+        objectId: after.id,
+        objectName: key,
+        oldValue: before ? this.buildAuditValue(before, policy) : undefined,
+        newValue: {
+          ...this.buildAuditValue(after, policy),
+          auditDecision: this.buildAuditDecision(key, policy, context),
+        },
+      },
+      context
+    );
   }
 
   /**
@@ -168,8 +372,11 @@ export class GlobalConfigController {
   })
   @ApiResponse({
     status: 200,
-    description: 'Returns the requested platform config',
-    schema: GLOBAL_CONFIG_SUCCESS_SCHEMA,
+    description:
+      'Returns a cataloged platform config. Secret or sensitive keys return redacted metadata only.',
+    schema: {
+      oneOf: [GLOBAL_CONFIG_SUCCESS_SCHEMA, GLOBAL_CONFIG_REDACTED_SUCCESS_SCHEMA],
+    },
   })
   @ApiResponse({
     status: 401,
@@ -186,9 +393,11 @@ export class GlobalConfigController {
     description: 'Requested platform config key was not found',
     schema: GLOBAL_CONFIG_NOT_FOUND_SCHEMA,
   })
-  async get(@Param('key') key: string) {
-    // Any authenticated user can read config
-    const config = await this.globalConfigService.get(key);
+  async get(@CurrentUser() user: AuthenticatedUser, @Param('key') key: string) {
+    const policy = this.assertKnownExposurePolicy(key);
+    this.assertPolicyReadableByUser(user, policy);
+
+    const config = await this.readConfigForPolicy(key, policy);
 
     if (!config) {
       throw new NotFoundException({
@@ -235,12 +444,31 @@ export class GlobalConfigController {
   async set(
     @CurrentUser() user: AuthenticatedUser,
     @Param('key') key: string,
-    @Body() dto: SetConfigDto
+    @Body() dto: SetConfigDto,
+    @Req() req: Request
   ) {
-    // Only AC tenant can modify global config
+    const policy = this.assertKnownExposurePolicy(key);
     this.checkAcTenantAccess(user);
 
+    const before = await this.globalConfigService.getAuditSnapshot(key);
     const config = await this.globalConfigService.set(key, dto.value);
+    const after = await this.globalConfigService.getAuditSnapshot(key);
+
+    await this.recordPlatformConfigChange(
+      key,
+      policy,
+      before,
+      after,
+      this.buildRequestContext(user, req)
+    );
+
+    if (policy.exposureClass === 'secret_or_sensitive_config') {
+      return success({
+        key: config.key,
+        value: buildRedactedPlatformConfigValue(policy),
+        description: config.description,
+      });
+    }
 
     return success(config);
   }
@@ -273,6 +501,26 @@ export class GlobalConfigController {
 
     const configs = await this.globalConfigService.getAll();
 
-    return success(configs);
+    return success(
+      configs.flatMap((config) => {
+        const policy = getPlatformConfigExposurePolicy(config.key);
+
+        if (!policy) {
+          return [];
+        }
+
+        if (policy.exposureClass === 'secret_or_sensitive_config') {
+          return [
+            {
+              key: config.key,
+              value: buildRedactedPlatformConfigValue(policy),
+              description: config.description,
+            },
+          ];
+        }
+
+        return [config];
+      })
+    );
   }
 }

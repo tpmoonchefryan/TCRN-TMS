@@ -84,6 +84,7 @@ describe('InterfaceManagementScreen', () => {
     ).toBeInTheDocument();
     await user.click(await screen.findByRole('button', { name: /Tenant root/i }));
 
+    expect(screen.getByText(/TCRN product interface definitions/)).toBeInTheDocument();
     expect(await screen.findByText('No adapters configured')).toBeInTheDocument();
     expect(screen.getByText('Tenant Adapters')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /New adapter/i })).toBeInTheDocument();
