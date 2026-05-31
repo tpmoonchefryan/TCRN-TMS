@@ -509,7 +509,7 @@ The refresh token is automatically set as an HTTP-only cookie.`,
       example: {
         success: true,
         data: {
-          accessToken: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+          accessToken: 'secret-ref:access-token',
           tokenType: 'Bearer',
           expiresIn: 900,
           user: {
@@ -530,7 +530,7 @@ The refresh token is automatically set as an HTTP-only cookie.`,
         success: true,
         data: {
           totpRequired: true,
-          sessionToken: 'sess_abc123...',
+          sessionToken: 'secret-ref:totp-session-token',
           expiresIn: 300,
         },
       },
@@ -544,7 +544,7 @@ The refresh token is automatically set as an HTTP-only cookie.`,
         success: true,
         data: {
           passwordResetRequired: true,
-          sessionToken: 'sess_abc123...',
+          sessionToken: 'secret-ref:password-reset-session-token',
           expiresIn: 300,
           reason: 'password_expired',
         },
@@ -1087,7 +1087,7 @@ Refresh tokens are single-use and rotate on each refresh.`,
       example: {
         success: true,
         data: {
-          accessToken: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+          accessToken: 'secret-ref:access-token',
           tokenType: 'Bearer',
           expiresIn: 900,
         },

@@ -12,7 +12,7 @@ const httpUrlSchema = Joi.string()
 export const configValidationSchema = Joi.object({
   // Node environment
   NODE_ENV: Joi.string()
-    .valid('development', 'staging', 'production', 'test')
+    .valid('development', 'shared_dev', 'staging', 'production', 'test')
     .default('development'),
 
   // Application

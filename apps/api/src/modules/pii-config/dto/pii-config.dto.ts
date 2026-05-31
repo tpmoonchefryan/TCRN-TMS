@@ -136,7 +136,7 @@ export class CreatePiiServiceConfigDto {
   // API Key authentication
   @ApiPropertyOptional({
     description: 'API key used when authType is `api_key`',
-    example: 'pii_live_secret_key',
+    example: 'secret-ref:pii-api-key',
   })
   @IsOptional()
   @IsString()
@@ -219,7 +219,7 @@ export class UpdatePiiServiceConfigDto {
 
   @ApiPropertyOptional({
     description: 'API key used when authType is `api_key`',
-    example: 'pii_live_secret_key',
+    example: 'secret-ref:pii-api-key',
   })
   @IsOptional()
   @IsString()

@@ -1,0 +1,24 @@
+{
+  "checkedAt": "2026-05-31T12:52:32.545Z",
+  "sourceCommit": "5101e727f8186f85bef8bd1048ac59b9dad6de41",
+  "missingRegistry": [],
+  "missingController": [],
+  "missingSwagger": [],
+  "permissionMismatch": [],
+  "scopeMismatch": [],
+  "schemaMismatch": [],
+  "groupMismatch": [],
+  "exposureMismatch": [],
+  "authMismatch": [],
+  "metadataAuthorityMismatch": [],
+  "unclassifiedDynamicPermission": [],
+  "manualOpenApiArtifacts": [],
+  "excludedControllers": [
+    {
+      "file": "apps/api/src/modules/homepage/controllers/internal-domain.controller.ts",
+      "className": "InternalDomainController",
+      "reason": "ApiExcludeController"
+    }
+  ],
+  "result": "pass"
+}

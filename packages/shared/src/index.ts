@@ -35,6 +35,7 @@ export * from './utils/string';
 
 // Feature schema - direct exports for non-conflicting modules
 export * from './homepage/public-routes';
+export * from './api-registry';
 export * from './event-backbone';
 export * from './module-capability';
 export * from './observability-adapters';

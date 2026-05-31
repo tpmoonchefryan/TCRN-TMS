@@ -64,7 +64,7 @@ export class UpdateTenantTurnstileSettingsDto {
   @ApiProperty({
     description:
       'New Cloudflare Turnstile Secret Key. Only accepted when secretKeyMutation is replace.',
-    example: '0x4AAAAAAASECRET',
+    example: 'secret-ref:turnstile-secret-key',
     required: false,
     nullable: true,
   })

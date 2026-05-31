@@ -111,7 +111,7 @@ export class CreateUserDto {
 
   @ApiProperty({
     description: 'Initial password (min 12 chars)',
-    example: 'SecureP@ssw0rd123',
+    example: 'secret-ref:user-password',
     minLength: 12,
   })
   @IsString()
@@ -179,7 +179,7 @@ export class UpdateUserDto {
 export class ResetPasswordDto {
   @ApiPropertyOptional({
     description: 'New password (if empty, generates random)',
-    example: 'NewSecureP@ss123',
+    example: 'secret-ref:new-password',
   })
   @IsOptional()
   @IsString()
@@ -541,14 +541,14 @@ const SYSTEM_USER_MESSAGE_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
     type: 'object',
     properties: {
       message: { type: 'string', example: 'Password reset successfully' },
-      tempPassword: { type: 'string', nullable: true, example: 'TempP@ss123456789' },
+      tempPassword: { type: 'string', nullable: true, example: 'secret-ref:temporary-password' },
       forceReset: { type: 'boolean', example: true },
     },
     required: ['message'],
   },
   {
     message: 'Password reset successfully',
-    tempPassword: 'TempP@ss123456789',
+    tempPassword: 'secret-ref:temporary-password',
     forceReset: true,
   }
 );

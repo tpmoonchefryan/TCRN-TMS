@@ -443,7 +443,7 @@ export class SubmitMessageDto {
 
   @ApiPropertyOptional({
     description: 'Turnstile verification token',
-    example: 'cf-turnstile-token',
+    example: 'secret-ref:turnstile-token',
   })
   @IsOptional()
   @IsString()
@@ -549,13 +549,13 @@ export class MarkReadDto {
 // =============================================================================
 
 export class SsoMarkReadDto {
-  @ApiProperty({ description: 'SSO token issued for streamer mode', example: 'eyJhbGciOi...' })
+  @ApiProperty({ description: 'SSO token issued for streamer mode', example: 'secret-ref:sso-token' })
   @IsString()
   ssoToken!: string;
 }
 
 export class SsoReplyDto {
-  @ApiProperty({ description: 'SSO token issued for streamer mode', example: 'eyJhbGciOi...' })
+  @ApiProperty({ description: 'SSO token issued for streamer mode', example: 'secret-ref:sso-token' })
   @IsString()
   ssoToken!: string;
 

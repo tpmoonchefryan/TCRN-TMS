@@ -27,37 +27,37 @@ import {
 
 /**
  * Login Request DTO
- * @example { tenantCode: 'UAT_Corp', login: 'admin@example.com', password: 'SecureP@ss123' }
+ * @example { tenantCode: 'UAT_Corp', login: 'admin@example.com', password: 'secret-ref:user-password' }
  */
 export class LoginZodDto extends createZodDto(LoginSchema) {}
 
 /**
  * TOTP Verify Request DTO
- * @example { sessionToken: 'sess_abc123', code: '123456' }
+ * @example { sessionToken: 'secret-ref:totp-session-token', code: '123456' }
  */
 export class TotpVerifyZodDto extends createZodDto(TotpVerifySchema) {}
 
 /**
  * Recovery Code Verify Request DTO
- * @example { sessionToken: 'sess_abc123', recoveryCode: 'ABCD-1234-WXYZ' }
+ * @example { sessionToken: 'secret-ref:totp-session-token', recoveryCode: 'ABCD-1234-WXYZ' }
  */
 export class RecoveryCodeVerifyZodDto extends createZodDto(RecoveryCodeVerifySchema) {}
 
 /**
  * Refresh Token Request DTO
- * @example { refreshToken: 'rt_xxx...' }
+ * @example { refreshToken: 'secret-ref:refresh-token' }
  */
 export class RefreshTokenZodDto extends createZodDto(RefreshTokenSchema) {}
 
 /**
  * Change Password Request DTO
- * @example { currentPassword: 'old', newPassword: 'NewSecure123!', newPasswordConfirm: 'NewSecure123!' }
+ * @example { currentPassword: 'secret-ref:current-password', newPassword: 'secret-ref:new-password', newPasswordConfirm: 'secret-ref:new-password' }
  */
 export class ChangePasswordZodDto extends createZodDto(ChangePasswordSchema) {}
 
 /**
  * Force Reset Password Request DTO (when login returns passwordResetRequired)
- * @example { sessionToken: 'sess_abc123', newPassword: 'NewSecure123!', newPasswordConfirm: 'NewSecure123!' }
+ * @example { sessionToken: 'secret-ref:password-reset-session-token', newPassword: 'secret-ref:new-password', newPasswordConfirm: 'secret-ref:new-password' }
  */
 export class ForceResetPasswordZodDto extends createZodDto(ForceResetPasswordSchema) {}
 
@@ -75,12 +75,12 @@ export class TotpEnableZodDto extends createZodDto(TotpEnableSchema) {}
 
 /**
  * TOTP Disable Request DTO
- * @example { password: 'SecureP@ss123' }
+ * @example { password: 'secret-ref:user-password' }
  */
 export class TotpDisableZodDto extends createZodDto(TotpDisableSchema) {}
 
 /**
  * Regenerate Recovery Codes Request DTO
- * @example { password: 'SecureP@ss123' }
+ * @example { password: 'secret-ref:user-password' }
  */
 export class RegenerateRecoveryCodesZodDto extends createZodDto(RegenerateRecoveryCodesSchema) {}

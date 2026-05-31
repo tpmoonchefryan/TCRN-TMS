@@ -66,7 +66,7 @@ export class AdminUserDto {
   @IsEmail()
   email: string;
 
-  @ApiProperty({ description: 'Admin password', example: 'SecureP@ssw0rd123', minLength: 12 })
+  @ApiProperty({ description: 'Admin password', example: 'secret-ref:admin-password', minLength: 12 })
   @IsString()
   @MinLength(12)
   password: string;

@@ -266,19 +266,19 @@ export const MARSHMALLOW_CUSTOM_DOMAIN_SCHEMA = {
     token: {
       type: 'string',
       nullable: true,
-      example: '6dd8dc16b7195d4e0a4de1c29f9af6cbcb00685f44f72bc712d16d2f8d651234',
+      example: 'secret-ref:custom-domain-verification-token',
     },
     txtRecord: {
       type: 'string',
       nullable: true,
-      example: 'tcrn-verify=6dd8dc16b7195d4e0a4de1c29f9af6cbcb00685f44f72bc712d16d2f8d651234',
+      example: 'tcrn-verify=secret-ref:custom-domain-verification-token',
     },
   },
   required: ['customDomain', 'token', 'txtRecord'],
   example: {
     customDomain: 'mail.aki.example.com',
-    token: '6dd8dc16b7195d4e0a4de1c29f9af6cbcb00685f44f72bc712d16d2f8d651234',
-    txtRecord: 'tcrn-verify=6dd8dc16b7195d4e0a4de1c29f9af6cbcb00685f44f72bc712d16d2f8d651234',
+    token: 'secret-ref:custom-domain-verification-token',
+    txtRecord: 'tcrn-verify=secret-ref:custom-domain-verification-token',
   },
 };
 
@@ -298,13 +298,13 @@ export const MARSHMALLOW_VERIFY_DOMAIN_SCHEMA = {
 export const MARSHMALLOW_SSO_TOKEN_SCHEMA = {
   type: 'object',
   properties: {
-    token: { type: 'string', example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' },
+    token: { type: 'string', example: 'secret-ref:sso-token' },
     expiresIn: { type: 'integer', example: 3600 },
     expiresAt: { type: 'string', format: 'date-time', example: '2026-04-13T13:30:00.000Z' },
   },
   required: ['token', 'expiresIn', 'expiresAt'],
   example: {
-    token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+    token: 'secret-ref:sso-token',
     expiresIn: 3600,
     expiresAt: '2026-04-13T13:30:00.000Z',
   },

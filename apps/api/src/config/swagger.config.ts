@@ -5,6 +5,8 @@
  */
 import { DocumentBuilder } from '@nestjs/swagger';
 
+import type { SwaggerExposurePolicy } from '@tcrn/shared';
+
 /**
  * Operations API Tags
  */
@@ -59,6 +61,7 @@ export const CONFIG_TAGS = [
   { name: 'System - Dictionary', description: '数据字典' },
   { name: 'System - Config', description: '配置实体' },
   { name: 'System - PII', description: 'PII 服务配置' },
+  { name: 'System - API Registry', description: 'API 注册表与 Swagger 同步状态' },
   { name: 'System - Platform Tools', description: 'AC 平台工具连接' },
   { name: 'System - Security', description: '安全与黑名单' },
   { name: 'System - Settings', description: '通用设置' },
@@ -127,6 +130,50 @@ export function buildSwaggerConfig(
   return builder.build();
 }
 
+export function resolveSwaggerExposurePolicy(
+  environment = process.env.NODE_ENV ?? 'development'
+): SwaggerExposurePolicy {
+  const normalizedEnvironment =
+    environment === 'production'
+      ? 'production'
+      : environment === 'staging'
+        ? 'staging'
+        : environment === 'test'
+          ? 'test'
+          : environment === 'shared_dev'
+            ? 'shared_dev'
+            : 'local';
+  const prodLike =
+    normalizedEnvironment === 'production' ||
+    normalizedEnvironment === 'staging' ||
+    normalizedEnvironment === 'shared_dev';
+
+  return {
+    environment: normalizedEnvironment,
+    enabled:
+      !prodLike || (Boolean(process.env.SWAGGER_USER) && Boolean(process.env.SWAGGER_PASSWORD)),
+    authRequirement: prodLike ? 'basic_auth_required' : 'none_local_only',
+    tryOutMode: prodLike ? 'read_only_or_disabled_for_private_mutations' : 'local_enabled',
+    allowedGroups: ['operations', 'config', 'public'],
+    publicGroupPolicy: 'public_safe_only',
+    privateGroupPolicy: 'auth_required',
+    acOnlySchemaPolicy: 'never_public',
+    redactionPolicy: 'no_raw_secret_or_pii_examples',
+    basicAuthFallback: 'production_supported',
+    ssoFutureHook: 'reserved_not_active',
+    persistAuthorizationPolicy: prodLike ? 'disabled' : 'local_only',
+    oauthHelperPolicy: 'metadata_only_no_secret',
+    browserStorageCleanupPolicy: 'clear_after_shared_or_prod_like_proof',
+    evidenceTokenPolicy: 'forbid_tokens_cookies_auth_headers',
+  };
+}
+
+export function shouldPersistSwaggerAuthorization(
+  environment = process.env.NODE_ENV ?? 'development'
+) {
+  return resolveSwaggerExposurePolicy(environment).persistAuthorizationPolicy === 'local_only';
+}
+
 /**
  * Swagger module options
  */
@@ -140,7 +187,7 @@ export const SWAGGER_OPTIONS = {
   // OAuth2 redirect URL at top level (required by @nestjs/swagger)
   oauth2RedirectUrl: 'http://localhost:4000/api/docs/oauth2-redirect.html',
   swaggerOptions: {
-    persistAuthorization: true,
+    persistAuthorization: shouldPersistSwaggerAuthorization(),
     docExpansion: 'none',
     filter: true,
     showRequestDuration: true,

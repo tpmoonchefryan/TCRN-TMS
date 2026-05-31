@@ -58,6 +58,195 @@ function parseBooleanQueryValue(value: string | string[] | undefined, fallback: 
   return fallback;
 }
 
+type ApiResponseSchema = Extract<Parameters<typeof ApiResponse>[0], { schema: unknown }>['schema'];
+
+const webhookEventCatalogResponseSchema: ApiResponseSchema = {
+  type: 'array',
+  items: {
+    type: 'object',
+    required: [
+      'event',
+      'eventCode',
+      'name',
+      'label',
+      'description',
+      'descriptionText',
+      'category',
+      'definitionKey',
+      'payloadVersion',
+      'producer',
+      'piiClass',
+      'retention',
+      'subscriptionEligible',
+      'deprecated',
+      'schemaRef',
+      'redactionPolicy',
+    ],
+    properties: {
+      event: { type: 'string', example: 'customer.created' },
+      eventCode: { type: 'string', example: 'customer.created' },
+      name: { type: 'string', example: 'Customer created' },
+      label: { type: 'object', additionalProperties: { type: 'string' } },
+      description: { type: 'string' },
+      descriptionText: { type: 'object', additionalProperties: { type: 'string' } },
+      category: { type: 'string', example: 'customer' },
+      definitionKey: { type: 'string', example: 'customer_events' },
+      payloadVersion: { type: 'string', example: 'v1' },
+      producer: { type: 'string', example: 'tcrn' },
+      piiClass: { type: 'string', enum: ['none', 'reference', 'limited_pii'] },
+      retention: { type: 'string', example: 'delivery_log_redacted_30d' },
+      subscriptionEligible: { type: 'boolean' },
+      deprecated: { type: 'boolean' },
+      schemaRef: { type: 'string', example: 'webhook.payload.customer.created.v1' },
+      redactionPolicy: { type: 'string' },
+    },
+  },
+};
+
+const webhookDeliveryAttemptResponseSchema: ApiResponseSchema = {
+  type: 'object',
+  required: [
+    'id',
+    'outboxId',
+    'webhookId',
+    'eventCode',
+    'payloadVersion',
+    'idempotencyKey',
+    'payloadHash',
+    'attemptNumber',
+    'status',
+    'dispatchMode',
+    'endpointUrl',
+    'requestHeaders',
+    'requestBodySummary',
+    'responseStatus',
+    'responseBodySummary',
+    'errorCode',
+    'errorMessage',
+    'latencyMs',
+    'nextRetryAt',
+    'deliveredAt',
+    'replayReason',
+    'traceId',
+    'createdAt',
+    'updatedAt',
+  ],
+  properties: {
+    id: { type: 'string', format: 'uuid' },
+    outboxId: { type: 'string', format: 'uuid' },
+    webhookId: { type: 'string', format: 'uuid', nullable: true },
+    eventCode: { type: 'string', example: 'customer.created' },
+    payloadVersion: { type: 'string', example: 'v1' },
+    idempotencyKey: { type: 'string' },
+    payloadHash: { type: 'string' },
+    attemptNumber: { type: 'integer', minimum: 1 },
+    status: {
+      type: 'string',
+      enum: [
+        'dry_run',
+        'pending',
+        'delivered',
+        'failed',
+        'retry_scheduled',
+        'dead_lettered',
+        'replayed',
+        'blocked',
+      ],
+    },
+    dispatchMode: {
+      type: 'string',
+      enum: ['disabled', 'local_stub', 'local_dispatch', 'provider_dispatch'],
+    },
+    endpointUrl: { type: 'string', format: 'uri' },
+    requestHeaders: { type: 'object', additionalProperties: true },
+    requestBodySummary: { type: 'object', additionalProperties: true },
+    responseStatus: { type: 'integer', nullable: true },
+    responseBodySummary: { type: 'object', additionalProperties: true },
+    errorCode: { type: 'string', nullable: true },
+    errorMessage: { type: 'string', nullable: true },
+    latencyMs: { type: 'integer', nullable: true },
+    nextRetryAt: { type: 'string', format: 'date-time', nullable: true },
+    deliveredAt: { type: 'string', format: 'date-time', nullable: true },
+    replayReason: { type: 'string', nullable: true },
+    traceId: { type: 'string', nullable: true },
+    createdAt: { type: 'string', format: 'date-time' },
+    updatedAt: { type: 'string', format: 'date-time' },
+  },
+};
+
+const webhookDeliveryAttemptPageResponseSchema: ApiResponseSchema = {
+  type: 'object',
+  required: ['items', 'page', 'pageSize', 'total'],
+  properties: {
+    items: {
+      type: 'array',
+      items: webhookDeliveryAttemptResponseSchema,
+    },
+    page: { type: 'integer', minimum: 1 },
+    pageSize: { type: 'integer', minimum: 1 },
+    total: { type: 'integer', minimum: 0 },
+  },
+};
+
+const webhookDeliveryOperationResponseSchema: ApiResponseSchema = {
+  type: 'object',
+  required: [
+    'accepted',
+    'duplicate',
+    'dryRun',
+    'dispatchMode',
+    'status',
+    'webhookId',
+    'outboxId',
+    'attemptId',
+    'eventCode',
+    'payloadVersion',
+    'idempotencyKey',
+    'traceId',
+    'redacted',
+  ],
+  properties: {
+    accepted: { type: 'boolean' },
+    duplicate: { type: 'boolean' },
+    dryRun: { type: 'boolean' },
+    dispatchMode: {
+      type: 'string',
+      enum: ['disabled', 'local_stub', 'local_dispatch', 'provider_dispatch'],
+    },
+    status: {
+      type: 'string',
+      enum: [
+        'duplicate',
+        'dry_run',
+        'pending',
+        'delivered',
+        'failed',
+        'retry_scheduled',
+        'dead_lettered',
+        'replayed',
+        'blocked',
+      ],
+    },
+    webhookId: { type: 'string', format: 'uuid' },
+    outboxId: { type: 'string', format: 'uuid' },
+    attemptId: { type: 'string', format: 'uuid', nullable: true },
+    eventCode: { type: 'string', example: 'customer.created' },
+    payloadVersion: { type: 'string', example: 'v1' },
+    idempotencyKey: { type: 'string' },
+    traceId: { type: 'string', nullable: true },
+    redacted: { type: 'boolean', enum: [true] },
+  },
+};
+
+const webhookDeliveryConflictResponseSchema: ApiResponseSchema = {
+  type: 'object',
+  required: ['code', 'message'],
+  properties: {
+    code: { type: 'string', example: 'RES_CONFLICT' },
+    message: { type: 'string' },
+  },
+};
+
 @ApiTags('Ops - Integration')
 @ApiBearerAuth()
 @RequireCapabilities('integration.webhooks')
@@ -236,7 +425,11 @@ export class IntegrationController {
   @Get('webhooks/events')
   @RequirePermissions({ resource: 'integration.webhook', action: 'read' })
   @ApiOperation({ summary: 'List TCRN-owned webhook event catalog' })
-  @ApiResponse({ status: 200, description: 'TCRN-owned webhook event catalog' })
+  @ApiResponse({
+    status: 200,
+    description: 'TCRN-owned webhook event catalog',
+    schema: webhookEventCatalogResponseSchema,
+  })
   async getWebhookEvents() {
     return this.webhookService.getEvents();
   }
@@ -244,7 +437,11 @@ export class IntegrationController {
   @Get('webhooks/:webhookId/delivery-attempts')
   @RequirePermissions({ resource: 'integration.webhook', action: 'read' })
   @ApiOperation({ summary: 'List webhook delivery attempts' })
-  @ApiResponse({ status: 200, description: 'Redacted webhook delivery attempt page' })
+  @ApiResponse({
+    status: 200,
+    description: 'Redacted webhook delivery attempt page',
+    schema: webhookDeliveryAttemptPageResponseSchema,
+  })
   async listWebhookDeliveryAttempts(
     @Param('webhookId', ParseUUIDPipe) webhookId: string,
     @Query() query: WebhookDeliveryAttemptQueryDto,
@@ -257,14 +454,22 @@ export class IntegrationController {
   @Get('webhooks/:webhookId/delivery-attempts/:attemptId')
   @RequirePermissions({ resource: 'integration.webhook', action: 'read' })
   @ApiOperation({ summary: 'Get webhook delivery attempt detail' })
-  @ApiResponse({ status: 200, description: 'Redacted webhook delivery attempt detail' })
+  @ApiResponse({
+    status: 200,
+    description: 'Redacted webhook delivery attempt detail',
+    schema: webhookDeliveryAttemptResponseSchema,
+  })
   async getWebhookDeliveryAttempt(
     @Param('webhookId', ParseUUIDPipe) webhookId: string,
     @Param('attemptId', ParseUUIDPipe) attemptId: string,
     @CurrentUser() user: { id: string; username: string; tenantId?: string; tenantSchema?: string },
     @Req() req: Request
   ) {
-    return this.webhookService.getDeliveryAttempt(attemptId, webhookId, this.buildContext(user, req));
+    return this.webhookService.getDeliveryAttempt(
+      attemptId,
+      webhookId,
+      this.buildContext(user, req)
+    );
   }
 
   @Post('webhooks/:webhookId/test-delivery')
@@ -272,10 +477,15 @@ export class IntegrationController {
   @RequirePermissions({ resource: 'integration.webhook', action: 'write' })
   @ApiOperation({ summary: 'Create a webhook test delivery attempt' })
   @ApiBody({ type: WebhookDeliveryOperationDto })
-  @ApiResponse({ status: 202, description: 'Dry-run webhook delivery attempt accepted' })
+  @ApiResponse({
+    status: 202,
+    description: 'Dry-run webhook delivery attempt accepted',
+    schema: webhookDeliveryOperationResponseSchema,
+  })
   @ApiResponse({
     status: 409,
     description: 'Idempotency key is already used for a different webhook delivery operation',
+    schema: webhookDeliveryConflictResponseSchema,
   })
   async createWebhookTestDelivery(
     @Param('webhookId', ParseUUIDPipe) webhookId: string,
@@ -291,10 +501,15 @@ export class IntegrationController {
   @RequirePermissions({ resource: 'integration.webhook', action: 'write' })
   @ApiOperation({ summary: 'Replay a webhook delivery attempt' })
   @ApiBody({ type: WebhookDeliveryOperationDto })
-  @ApiResponse({ status: 202, description: 'Webhook delivery replay accepted' })
+  @ApiResponse({
+    status: 202,
+    description: 'Webhook delivery replay accepted',
+    schema: webhookDeliveryOperationResponseSchema,
+  })
   @ApiResponse({
     status: 409,
     description: 'Idempotency key is already used for a different webhook delivery operation',
+    schema: webhookDeliveryConflictResponseSchema,
   })
   async replayWebhookDeliveryAttempt(
     @Param('webhookId', ParseUUIDPipe) webhookId: string,

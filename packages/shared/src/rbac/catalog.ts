@@ -248,6 +248,22 @@ export const RBAC_RESOURCES = [
     ['read', 'execute', 'admin'],
     17
   ),
+  resource(
+    'platform.api_registry',
+    'platform',
+    {
+      name: {
+        en: 'API Registry',
+        zh_HANS: 'API 注册表',
+        zh_HANT: 'API 註冊表',
+        ja: 'API レジストリ',
+        ko: 'API 레지스트리',
+        fr: 'Registre API',
+      },
+    },
+    ['read'],
+    18
+  ),
 
   resource(
     'subsidiary',
@@ -970,6 +986,7 @@ const viewerReadableResources = RBAC_RESOURCES.filter(
     definition.supportedActions.includes('read') &&
     definition.code !== 'tenant.manage' &&
     definition.code !== 'customer.pii' &&
+    definition.code !== 'platform.api_registry' &&
     definition.code !== 'platform.runtime_flag' &&
     definition.code !== 'public_presence.audit' &&
     !definition.code.startsWith('security.')

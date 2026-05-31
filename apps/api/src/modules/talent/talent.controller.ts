@@ -1015,7 +1015,7 @@ const TALENT_CUSTOM_DOMAIN_CONFIG_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
       customDomainVerificationToken: {
         type: 'string',
         nullable: true,
-        example: 'aabbccddeeff00112233445566778899',
+        example: 'secret-ref:custom-domain-verification-token',
       },
       customDomainSslMode: { type: 'string', example: 'cloudflare' },
       homepageCustomPath: { type: 'string', nullable: true, example: 'homepage' },
@@ -1060,7 +1060,7 @@ const TALENT_CUSTOM_DOMAIN_CONFIG_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
   {
     customDomain: 'fans.example.com',
     customDomainVerified: true,
-    customDomainVerificationToken: 'aabbccddeeff00112233445566778899',
+    customDomainVerificationToken: 'secret-ref:custom-domain-verification-token',
     customDomainSslMode: 'cloudflare',
     homepageCustomPath: 'homepage',
     marshmallowCustomPath: 'marshmallow',
@@ -1098,7 +1098,7 @@ const TALENT_CUSTOM_DOMAIN_BINDING_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
           customDomainVerificationToken: {
             type: 'string',
             nullable: true,
-            example: 'aabbccddeeff00112233445566778899',
+            example: 'secret-ref:custom-domain-verification-token',
           },
           customDomainSslMode: {
             type: 'string',
@@ -1118,11 +1118,11 @@ const TALENT_CUSTOM_DOMAIN_BINDING_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
           'isActive',
         ],
       },
-      token: { type: 'string', nullable: true, example: 'aabbccddeeff00112233445566778899' },
+      token: { type: 'string', nullable: true, example: 'secret-ref:custom-domain-verification-token' },
       txtRecord: {
         type: 'string',
         nullable: true,
-        example: 'tcrn-verify=aabbccddeeff00112233445566778899',
+        example: 'tcrn-verify=secret-ref:custom-domain-verification-token',
       },
     },
     required: ['domain', 'token', 'txtRecord'],
@@ -1134,12 +1134,12 @@ const TALENT_CUSTOM_DOMAIN_BINDING_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
       ownerType: 'tenant',
       ownerId: null,
       customDomainVerified: false,
-      customDomainVerificationToken: 'aabbccddeeff00112233445566778899',
+      customDomainVerificationToken: 'secret-ref:custom-domain-verification-token',
       customDomainSslMode: 'cloudflare',
       isActive: true,
     },
-    token: 'aabbccddeeff00112233445566778899',
-    txtRecord: 'tcrn-verify=aabbccddeeff00112233445566778899',
+    token: 'secret-ref:custom-domain-verification-token',
+    txtRecord: 'tcrn-verify=secret-ref:custom-domain-verification-token',
   }
 );
 
@@ -1148,19 +1148,19 @@ const TALENT_SET_CUSTOM_DOMAIN_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
     type: 'object',
     properties: {
       customDomain: { type: 'string', nullable: true, example: 'fans.example.com' },
-      token: { type: 'string', nullable: true, example: 'aabbccddeeff00112233445566778899' },
+      token: { type: 'string', nullable: true, example: 'secret-ref:custom-domain-verification-token' },
       txtRecord: {
         type: 'string',
         nullable: true,
-        example: 'tcrn-verify=aabbccddeeff00112233445566778899',
+        example: 'tcrn-verify=secret-ref:custom-domain-verification-token',
       },
     },
     required: ['customDomain', 'token', 'txtRecord'],
   },
   {
     customDomain: 'fans.example.com',
-    token: 'aabbccddeeff00112233445566778899',
-    txtRecord: 'tcrn-verify=aabbccddeeff00112233445566778899',
+    token: 'secret-ref:custom-domain-verification-token',
+    txtRecord: 'tcrn-verify=secret-ref:custom-domain-verification-token',
   }
 );
 
@@ -1184,7 +1184,7 @@ const TALENT_CUSTOM_DOMAIN_BINDING_LIST_SUCCESS_SCHEMA = createSuccessEnvelopeSc
             customDomainVerificationToken: {
               type: 'string',
               nullable: true,
-              example: 'aabbccddeeff00112233445566778899',
+              example: 'secret-ref:custom-domain-verification-token',
             },
             customDomainSslMode: {
               type: 'string',

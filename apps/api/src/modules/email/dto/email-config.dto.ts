@@ -18,11 +18,11 @@ import {
  * Tencent Cloud SES configuration
  */
 export class TencentSesConfigDto {
-  @ApiProperty({ description: 'Tencent Cloud Secret ID', example: 'AKIDEXAMPLE1234' })
+  @ApiProperty({ description: 'Tencent Cloud Secret ID', example: 'secret-ref:tencent-ses-id' })
   @IsString()
   secretId!: string;
 
-  @ApiProperty({ description: 'Tencent Cloud Secret Key', example: 'super-secret-key' })
+  @ApiProperty({ description: 'Tencent Cloud Secret Key', example: 'secret-ref:tencent-ses-key' })
   @IsString()
   secretKey!: string;
 
@@ -67,7 +67,10 @@ export class SmtpConfigDto {
   @IsString()
   username!: string;
 
-  @ApiProperty({ description: 'SMTP password', example: 'smtp-password' })
+  @ApiProperty({
+    description: 'SMTP password secret reference',
+    example: 'secret-ref:smtp-credential',
+  })
   @IsString()
   password!: string;
 

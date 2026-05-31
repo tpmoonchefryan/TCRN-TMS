@@ -5,6 +5,7 @@ import {
   BookText,
   Building2,
   Cable,
+  FileJson,
   Flag,
   KeyRound,
   PlugZap,
@@ -38,6 +39,7 @@ function getAcPageTitle(
   titles: {
     integrationManagement: string;
     apiClientManagement: string;
+    apiRegistry: string;
     interfaceManagement: string;
     observability: string;
     platformToolConnections: string;
@@ -67,6 +69,10 @@ function getAcPageTitle(
 
   if (pathname.includes('/api-clients')) {
     return titles.apiClientManagement;
+  }
+
+  if (pathname.includes('/api-registry')) {
+    return titles.apiRegistry;
   }
 
   if (pathname.includes('/platform-tools')) {
@@ -114,6 +120,14 @@ export function AcShell({
       ja: 'API クライアント管理',
       ko: 'API 클라이언트 관리',
       fr: 'Gestion des clients API',
+    }),
+    apiRegistry: pickLocaleText(locale, {
+      en: 'API Registry',
+      zh_HANS: 'API 注册表',
+      zh_HANT: 'API 註冊表',
+      ja: 'API レジストリ',
+      ko: 'API 레지스트리',
+      fr: 'Registre API',
     }),
     interfaceManagement: pickLocaleText(locale, {
       en: 'Interface Management',
@@ -312,6 +326,13 @@ export function AcShell({
       icon: <KeyRound className="h-4 w-4" />,
     },
     {
+      key: 'api-registry',
+      label: integrationLabels.apiRegistry,
+      href: `/ac/${tenantId}/api-registry`,
+      isActive: pathname.includes('/api-registry'),
+      icon: <FileJson className="h-4 w-4" />,
+    },
+    {
       key: 'platform-tools',
       label: integrationLabels.platformToolConnections,
       href: `/ac/${tenantId}/platform-tools`,
@@ -346,6 +367,7 @@ export function AcShell({
   const pageTitle = getAcPageTitle(pathname, {
     ...copy.ac.titles,
     apiClientManagement: integrationLabels.apiClientManagement,
+    apiRegistry: integrationLabels.apiRegistry,
     interfaceManagement: integrationLabels.interfaceManagement,
     platformToolConnections: integrationLabels.platformToolConnections,
     runtimeFlags: integrationLabels.runtimeFlags,

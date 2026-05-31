@@ -13,6 +13,7 @@ import { ApiLogger } from './common/logger/api-logger';
 import { createTraceIdMiddleware } from './common/trace/trace-id.middleware';
 import { applyGlobalSwaggerParameters } from './config/swagger-global-parameters';
 // Import modules for Swagger definition grouping
+import { ApiRegistryModule } from './modules/api-registry';
 import { AuthModule } from './modules/auth';
 import { ConfigModule as AppConfigModule } from './modules/config';
 import { CustomerModule } from './modules/customer';
@@ -27,8 +28,8 @@ import { ImportModule } from './modules/import';
 import { IntegrationModule } from './modules/integration';
 import { LogModule } from './modules/log';
 import { MarshmallowModule } from './modules/marshmallow';
-import { OrganizationModule } from './modules/organization';
 import { ObservabilityAdaptersModule } from './modules/observability-adapters';
+import { OrganizationModule } from './modules/organization';
 import { PermissionModule } from './modules/permission';
 import { PiiConfigModule } from './modules/pii-config';
 import { PlatformToolsModule } from './modules/platform-tools';
@@ -161,12 +162,15 @@ export async function bootstrap(): Promise<void> {
   // Swagger documentation
   const swaggerUser = configService.get('SWAGGER_USER');
   const swaggerPassword = configService.get('SWAGGER_PASSWORD');
+  const { resolveSwaggerExposurePolicy } = await import('./config/swagger.config');
+  const swaggerExposurePolicy = resolveSwaggerExposurePolicy(
+    configService.get('NODE_ENV', 'development')
+  );
 
-  // Enable Swagger in all environments, but protect with auth in production
-  const enableSwagger = !isProduction || (swaggerUser && swaggerPassword);
+  const enableSwagger = swaggerExposurePolicy.enabled;
 
   if (enableSwagger) {
-    if (isProduction && swaggerUser && swaggerPassword) {
+    if (swaggerExposurePolicy.authRequirement === 'basic_auth_required') {
       const basicAuth = (await import('express-basic-auth')).default;
       const authMiddleware = basicAuth({
         users: { [swaggerUser]: swaggerPassword },
@@ -174,7 +178,9 @@ export async function bootstrap(): Promise<void> {
         realm: 'TCRN TMS API Documentation',
       });
       app.use('/api/docs', authMiddleware);
-      logger.log('Swagger documentation protected with HTTP Basic Auth');
+      logger.log(
+        `Swagger documentation protected with HTTP Basic Auth for ${swaggerExposurePolicy.environment}`
+      );
     }
 
     const { buildSwaggerConfig, SWAGGER_OPTIONS, OPERATIONS_TAGS, CONFIG_TAGS, PUBLIC_TAGS } =
@@ -228,6 +234,7 @@ export async function bootstrap(): Promise<void> {
           DictionaryModule,
           SecurityModule,
           PiiConfigModule,
+          ApiRegistryModule,
           PlatformToolsModule,
           ObservabilityAdaptersModule,
           RuntimeFlagsModule,

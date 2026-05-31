@@ -414,7 +414,7 @@ export class PublicMarshmallowController {
     schema: {
       type: 'object',
       properties: {
-        token: { type: 'string', example: 'eyJhbGciOi...' },
+        token: { type: 'string', example: 'secret-ref:sso-token' },
       },
       required: ['token'],
     },

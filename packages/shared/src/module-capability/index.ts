@@ -136,7 +136,11 @@ export const MODULE_DEFINITIONS = [
     requiredCapabilities: [],
     requiredRbacResources: ['tenant.manage'],
     menuBindings: ['ac.tenant-management', 'ac.system-dictionary'],
-    apiBindings: ['/api/v1/tenants', '/api/v1/module-capabilities/registry'],
+    apiBindings: [
+      '/api/v1/tenants',
+      '/api/v1/module-capabilities/registry',
+      '/api/v1/api-registry',
+    ],
     settingsBindings: [],
     documentationGroup: 'platform',
     stability: 'stable',
@@ -637,9 +641,7 @@ export type CapabilityCode = (typeof CAPABILITY_DEFINITIONS)[number]['code'];
 export const CAPABILITY_BY_CODE: ReadonlyMap<string, CapabilityDefinition> = new Map<
   string,
   CapabilityDefinition
->(
-  CAPABILITY_DEFINITIONS.map((capability) => [capability.code, capability])
-);
+>(CAPABILITY_DEFINITIONS.map((capability) => [capability.code, capability]));
 
 export const ASSIGNABLE_CAPABILITY_CODES = CAPABILITY_DEFINITIONS.filter(
   (capability) => capability.assignable
@@ -810,7 +812,9 @@ export function assertModuleCapabilityRegistry() {
     capabilityCodes.add(capability.code);
 
     if (!moduleCodes.has(capability.moduleCode)) {
-      problems.push(`capability ${capability.code} references unknown module ${capability.moduleCode}`);
+      problems.push(
+        `capability ${capability.code} references unknown module ${capability.moduleCode}`
+      );
     }
 
     for (const locale of SUPPORTED_UI_LOCALES) {
@@ -827,7 +831,9 @@ export function assertModuleCapabilityRegistry() {
 
     for (const rbac of capability.requiredRbac) {
       if (!rbacCodes.has(rbac.resourceCode)) {
-        problems.push(`capability ${capability.code} references unknown RBAC resource ${rbac.resourceCode}`);
+        problems.push(
+          `capability ${capability.code} references unknown RBAC resource ${rbac.resourceCode}`
+        );
       }
     }
   }

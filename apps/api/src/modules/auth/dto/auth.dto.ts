@@ -37,7 +37,7 @@ export class LoginDto {
 
   @ApiProperty({
     description: 'User password',
-    example: 'SecureP@ssw0rd123',
+    example: 'secret-ref:user-password',
   })
   @IsNotEmpty()
   @IsString()
@@ -306,7 +306,7 @@ export class UpdateExternalToolSsoReadinessDto {
 export class TotpVerifyDto {
   @ApiProperty({
     description: 'Temporary session token returned from login when TOTP is required',
-    example: 'sess_abc123def456...',
+    example: 'secret-ref:totp-session-token',
   })
   @IsNotEmpty()
   @IsString()
@@ -331,7 +331,7 @@ export class TotpVerifyDto {
 export class RecoveryCodeVerifyDto {
   @ApiProperty({
     description: 'Temporary session token from login',
-    example: 'sess_abc123def456...',
+    example: 'secret-ref:totp-session-token',
   })
   @IsNotEmpty()
   @IsString()
@@ -353,7 +353,7 @@ export class RecoveryCodeVerifyDto {
 export class RefreshTokenDto {
   @ApiPropertyOptional({
     description: 'Refresh token (optional if using HTTP-only cookie)',
-    example: 'rt_dGVuYW50X3RlbXBsYXRl.a1b2c3d4e5f6...',
+    example: 'secret-ref:refresh-token',
   })
   @IsOptional()
   @IsString()
@@ -366,7 +366,7 @@ export class RefreshTokenDto {
 export class ChangePasswordDto {
   @ApiProperty({
     description: 'Current password for verification',
-    example: 'OldP@ssw0rd123',
+    example: 'secret-ref:current-password',
   })
   @IsNotEmpty()
   @IsString()
@@ -375,7 +375,7 @@ export class ChangePasswordDto {
   @ApiProperty({
     description:
       'New password (min 12 chars, must include uppercase, lowercase, number, special char)',
-    example: 'NewSecureP@ss123',
+    example: 'secret-ref:new-password',
     minLength: 12,
   })
   @IsNotEmpty()
@@ -385,7 +385,7 @@ export class ChangePasswordDto {
 
   @ApiProperty({
     description: 'Confirm new password (must match newPassword)',
-    example: 'NewSecureP@ss123',
+    example: 'secret-ref:new-password',
   })
   @IsNotEmpty()
   @IsString()
@@ -453,7 +453,7 @@ export class TotpEnableDto {
 export class TotpDisableDto {
   @ApiProperty({
     description: 'Current password for security confirmation',
-    example: 'SecureP@ssw0rd123',
+    example: 'secret-ref:user-password',
   })
   @IsNotEmpty()
   @IsString()
@@ -474,7 +474,7 @@ export class TotpDisableDto {
 export class RegenerateRecoveryCodesDto {
   @ApiProperty({
     description: 'Current password for security confirmation',
-    example: 'SecureP@ssw0rd123',
+    example: 'secret-ref:user-password',
   })
   @IsNotEmpty()
   @IsString()
@@ -488,7 +488,7 @@ export class RegenerateRecoveryCodesDto {
 export class ForceResetPasswordDto {
   @ApiProperty({
     description: 'Session token returned from login when password reset is required',
-    example: 'sess_abc123def456...',
+    example: 'secret-ref:password-reset-session-token',
   })
   @IsNotEmpty()
   @IsString()
@@ -497,7 +497,7 @@ export class ForceResetPasswordDto {
   @ApiProperty({
     description:
       'New password (min 12 chars, must include uppercase, lowercase, number, special char)',
-    example: 'NewSecureP@ss123',
+    example: 'secret-ref:new-password',
     minLength: 12,
   })
   @IsNotEmpty()
@@ -507,7 +507,7 @@ export class ForceResetPasswordDto {
 
   @ApiProperty({
     description: 'Confirm new password (must match newPassword)',
-    example: 'NewSecureP@ss123',
+    example: 'secret-ref:new-password',
   })
   @IsNotEmpty()
   @IsString()
@@ -524,7 +524,7 @@ export class ForceResetPasswordDto {
 export class LoginSuccessResponseDto {
   @ApiProperty({
     description: 'JWT access token',
-    example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+    example: 'secret-ref:access-token',
   })
   accessToken: string;
 
@@ -550,7 +550,7 @@ export class LoginTotpRequiredResponseDto {
 
   @ApiProperty({
     description: 'Session token for TOTP verification',
-    example: 'sess_abc123def456...',
+    example: 'secret-ref:totp-session-token',
   })
   sessionToken: string;
 }
@@ -565,7 +565,10 @@ export class LoginPasswordResetRequiredResponseDto {
   @ApiProperty({ description: 'Reason for password reset', example: 'password_expired' })
   reason: string;
 
-  @ApiProperty({ description: 'Session token for password reset', example: 'sess_abc123def456...' })
+  @ApiProperty({
+    description: 'Session token for password reset',
+    example: 'secret-ref:password-reset-session-token',
+  })
   sessionToken: string;
 }
 
@@ -603,7 +606,7 @@ export class UserInfoResponseDto {
  * TOTP Setup Response DTO
  */
 export class TotpSetupResponseDto {
-  @ApiProperty({ description: 'TOTP secret key', example: 'JBSWY3DPEHPK3PXP' })
+  @ApiProperty({ description: 'TOTP secret key', example: 'secret-ref:totp-secret' })
   secret: string;
 
   @ApiProperty({
@@ -614,7 +617,7 @@ export class TotpSetupResponseDto {
 
   @ApiProperty({
     description: 'OTP Auth URI',
-    example: 'otpauth://totp/TCRN%20TMS:admin?secret=JBSWY3DPEHPK3PXP&issuer=TCRN%20TMS',
+    example: 'otpauth://totp/TCRN%20TMS:admin?secret=secret-ref:totp-secret&issuer=TCRN%20TMS',
   })
   otpAuthUrl: string;
 }

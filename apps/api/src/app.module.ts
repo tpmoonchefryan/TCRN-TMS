@@ -15,6 +15,7 @@ import {
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { configValidationSchema } from './config/config.schema';
+import { ApiRegistryModule } from './modules/api-registry';
 import { AuthModule } from './modules/auth';
 import { ConfigModule as AppConfigModule } from './modules/config';
 import { CustomerModule } from './modules/customer';
@@ -94,6 +95,7 @@ import { repoEnvFilePaths } from './repo-env';
     // Dictionary & Config modules
     DictionaryModule,
     AppConfigModule,
+    ApiRegistryModule,
 
     // Log module
     LogModule,
