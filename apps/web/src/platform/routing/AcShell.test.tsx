@@ -106,6 +106,11 @@ describe('AcShell', () => {
     ).toBeInTheDocument();
     expect(
       within(screen.getByRole('navigation', { name: 'Main navigation' })).getByText(
+        'Builder Registry'
+      )
+    ).toBeInTheDocument();
+    expect(
+      within(screen.getByRole('navigation', { name: 'Main navigation' })).getByText(
         'Platform Tool Connections'
       )
     ).toBeInTheDocument();
@@ -262,7 +267,7 @@ describe('AcShell', () => {
     expect(screen.getAllByText('API Client Management').length).toBeGreaterThan(0);
   });
 
-  it('places Runtime Flags after Platform Tool Connections and before Observability', () => {
+  it('places Builder Registry after API Gateway and before Observability', () => {
     mockPathname = '/ac/tenant-ac/platform-tools';
 
     render(
@@ -279,6 +284,9 @@ describe('AcShell', () => {
       .map((link) => link.getAttribute('data-nav-key'));
 
     expect(navKeys.indexOf('api-clients')).toBeLessThan(navKeys.indexOf('platform-tools'));
+    expect(navKeys.indexOf('api-registry')).toBeLessThan(navKeys.indexOf('api-gateway-readiness'));
+    expect(navKeys.indexOf('api-gateway-readiness')).toBeLessThan(navKeys.indexOf('builder-registry'));
+    expect(navKeys.indexOf('builder-registry')).toBeLessThan(navKeys.indexOf('observability'));
     expect(navKeys.indexOf('platform-tools')).toBeLessThan(navKeys.indexOf('runtime-flags'));
     expect(navKeys.indexOf('runtime-flags')).toBeLessThan(navKeys.indexOf('observability'));
     expect(within(navigation).getByRole('link', { name: 'Platform Tool Connections' })).toHaveAttribute(
@@ -305,5 +313,25 @@ describe('AcShell', () => {
       'page'
     );
     expect(screen.getAllByText('Runtime Flags').length).toBeGreaterThan(0);
+  });
+
+  it('highlights Builder Registry as an AC read-only platform control item', () => {
+    mockPathname = '/ac/tenant-ac/builder-registry';
+
+    render(
+      <UiLocaleProvider>
+        <AcShell tenantId="tenant-ac">
+          <div>AC builder registry</div>
+        </AcShell>
+      </UiLocaleProvider>
+    );
+
+    const navigation = screen.getByRole('navigation', { name: 'Main navigation' });
+
+    expect(within(navigation).getByRole('link', { name: 'Builder Registry' })).toHaveAttribute(
+      'aria-current',
+      'page'
+    );
+    expect(screen.getAllByText('Builder Registry').length).toBeGreaterThan(0);
   });
 });

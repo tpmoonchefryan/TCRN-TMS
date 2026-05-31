@@ -280,6 +280,22 @@ export const RBAC_RESOURCES = [
     ['read'],
     19
   ),
+  resource(
+    'platform.builder_registry',
+    'platform',
+    {
+      name: {
+        en: 'Builder Registry',
+        zh_HANS: 'Builder 注册表',
+        zh_HANT: 'Builder 註冊表',
+        ja: 'Builder レジストリ',
+        ko: 'Builder 레지스트리',
+        fr: 'Registre Builder',
+      },
+    },
+    ['read'],
+    20
+  ),
 
   resource(
     'subsidiary',
@@ -1004,6 +1020,7 @@ const viewerReadableResources = RBAC_RESOURCES.filter(
     definition.code !== 'customer.pii' &&
     definition.code !== 'platform.api_gateway' &&
     definition.code !== 'platform.api_registry' &&
+    definition.code !== 'platform.builder_registry' &&
     definition.code !== 'platform.runtime_flag' &&
     definition.code !== 'public_presence.audit' &&
     !definition.code.startsWith('security.')

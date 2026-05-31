@@ -18,6 +18,7 @@ import { configValidationSchema } from './config/config.schema';
 import { ApiRegistryModule } from './modules/api-registry';
 import { ApiGatewayReadinessModule } from './modules/api-gateway-readiness';
 import { AuthModule } from './modules/auth';
+import { BuilderRegistryModule } from './modules/builder-registry';
 import { ConfigModule as AppConfigModule } from './modules/config';
 import { CustomerModule } from './modules/customer';
 import { DatabaseModule } from './modules/database';
@@ -98,6 +99,7 @@ import { repoEnvFilePaths } from './repo-env';
     AppConfigModule,
     ApiRegistryModule,
     ApiGatewayReadinessModule,
+    BuilderRegistryModule,
 
     // Log module
     LogModule,

@@ -1,7 +1,7 @@
 {
   "registryVersion": "2026-05-31.phase-9",
-  "generatedAt": "2026-05-31T14:23:19.917Z",
-  "sourceCommit": "522a0e6439e979edd268a7f61bf910ed9c7b6665",
+  "generatedAt": "2026-05-31T17:06:51.225Z",
+  "sourceCommit": "ce7c32464c1527f4da6402f12435e2eb74b2be0b",
   "operations": [
     {
       "operationCode": "config.auth_controller_revoke_sso_account_link",
@@ -46,7 +46,7 @@
         "operationKey": "config DELETE /auth/sso/account-links/{linkId}"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "AuthController_revokeSsoAccountLink",
         "controllerFile": "apps/api/src/modules/auth/auth.controller.ts",
         "controllerLine": 318
@@ -105,7 +105,7 @@
         "operationKey": "config DELETE /blocklist-entries/{id}"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "SecurityController_deleteBlocklist",
         "controllerFile": "apps/api/src/modules/security/controllers/security.controller.ts",
         "controllerLine": 289
@@ -159,7 +159,7 @@
         "operationKey": "config DELETE /delegated-admins/{id}"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "DelegatedAdminController_delete",
         "controllerFile": "apps/api/src/modules/delegated-admin/delegated-admin.controller.ts",
         "controllerLine": 137
@@ -218,7 +218,7 @@
         "operationKey": "config DELETE /email-templates/{code}"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "EmailTemplateController_deactivate",
         "controllerFile": "apps/api/src/modules/email/controllers/email-template.controller.ts",
         "controllerLine": 301
@@ -277,7 +277,7 @@
         "operationKey": "config DELETE /ip-access-rules/{id}"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "SecurityController_deleteIpRule",
         "controllerFile": "apps/api/src/modules/security/controllers/security.controller.ts",
         "controllerLine": 508
@@ -332,7 +332,7 @@
         "operationKey": "config DELETE /system-dictionary/{type}/items/{itemId}"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "DictionaryController_deactivateItem",
         "controllerFile": "apps/api/src/modules/dictionary/dictionary.controller.ts",
         "controllerLine": 878
@@ -391,7 +391,7 @@
         "operationKey": "config DELETE /system-roles/{systemRoleId}"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "SystemRoleController_remove",
         "controllerFile": "apps/api/src/modules/system-role/system-role.controller.ts",
         "controllerLine": 441
@@ -440,7 +440,7 @@
         "operationKey": "config DELETE /users/me/avatar"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "UserController_deleteAvatar",
         "controllerFile": "apps/api/src/modules/auth/auth.controller.ts",
         "controllerLine": 2104
@@ -489,7 +489,7 @@
         "operationKey": "config DELETE /users/me/sessions/{id}"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "UserController_revokeSession",
         "controllerFile": "apps/api/src/modules/auth/auth.controller.ts",
         "controllerLine": 1974
@@ -545,7 +545,7 @@
         "operationKey": "config GET /api-gateway-readiness/cutover-runbook"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "ApiGatewayReadinessController_getCutoverRunbook",
         "controllerFile": "apps/api/src/modules/api-gateway-readiness/api-gateway-readiness.controller.ts",
         "controllerLine": 57
@@ -601,7 +601,7 @@
         "operationKey": "config GET /api-gateway-readiness/rendered/{provider}"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "ApiGatewayReadinessController_getRenderedArtifact",
         "controllerFile": "apps/api/src/modules/api-gateway-readiness/api-gateway-readiness.controller.ts",
         "controllerLine": 42
@@ -657,7 +657,7 @@
         "operationKey": "config GET /api-gateway-readiness/route-policy"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "ApiGatewayReadinessController_getRoutePolicy",
         "controllerFile": "apps/api/src/modules/api-gateway-readiness/api-gateway-readiness.controller.ts",
         "controllerLine": 33
@@ -713,7 +713,7 @@
         "operationKey": "config GET /api-gateway-readiness/summary"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "ApiGatewayReadinessController_getSummary",
         "controllerFile": "apps/api/src/modules/api-gateway-readiness/api-gateway-readiness.controller.ts",
         "controllerLine": 24
@@ -769,7 +769,7 @@
         "operationKey": "config GET /api-registry/builder-readonly-export"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "ApiRegistryController_getBuilderReadonlyExport",
         "controllerFile": "apps/api/src/modules/api-registry/api-registry.controller.ts",
         "controllerLine": 104
@@ -825,7 +825,7 @@
         "operationKey": "config GET /api-registry/document"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "ApiRegistryController_getDocument",
         "controllerFile": "apps/api/src/modules/api-registry/api-registry.controller.ts",
         "controllerLine": 69
@@ -881,7 +881,7 @@
         "operationKey": "config GET /api-registry/drift-report"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "ApiRegistryController_getDriftReport",
         "controllerFile": "apps/api/src/modules/api-registry/api-registry.controller.ts",
         "controllerLine": 80
@@ -937,7 +937,7 @@
         "operationKey": "config GET /api-registry/gateway-route-manifest"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "ApiRegistryController_getGatewayRouteManifest",
         "controllerFile": "apps/api/src/modules/api-registry/api-registry.controller.ts",
         "controllerLine": 96
@@ -993,7 +993,7 @@
         "operationKey": "config GET /api-registry/swagger-exposure-policy"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "ApiRegistryController_getSwaggerExposurePolicy",
         "controllerFile": "apps/api/src/modules/api-registry/api-registry.controller.ts",
         "controllerLine": 88
@@ -1042,7 +1042,7 @@
         "operationKey": "config GET /auth/oauth/authorize"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "AuthController_authorize",
         "controllerFile": "apps/api/src/modules/auth/auth.controller.ts",
         "controllerLine": 1232
@@ -1091,7 +1091,7 @@
         "operationKey": "config GET /auth/sso/account-link-providers"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "AuthController_listSsoAccountLinkProviders",
         "controllerFile": "apps/api/src/modules/auth/auth.controller.ts",
         "controllerLine": 263
@@ -1140,7 +1140,7 @@
         "operationKey": "config GET /auth/sso/account-links"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "AuthController_listSsoAccountLinks",
         "controllerFile": "apps/api/src/modules/auth/auth.controller.ts",
         "controllerLine": 256
@@ -1196,7 +1196,7 @@
         "operationKey": "config GET /auth/sso/admin/providers"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "AuthController_listManagedSsoProviders",
         "controllerFile": "apps/api/src/modules/auth/auth.controller.ts",
         "controllerLine": 336
@@ -1245,7 +1245,7 @@
         "operationKey": "config GET /auth/sso/callback/{providerCode}"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "AuthController_handleSsoCallback",
         "controllerFile": "apps/api/src/modules/auth/auth.controller.ts",
         "controllerLine": 192
@@ -1299,7 +1299,7 @@
         "operationKey": "config GET /auth/sso/external-tools/readiness"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "AuthController_listExternalToolSsoReadiness",
         "controllerFile": "apps/api/src/modules/auth/auth.controller.ts",
         "controllerLine": 445
@@ -1348,7 +1348,7 @@
         "operationKey": "config GET /auth/sso/providers"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "AuthController_listSsoProviders",
         "controllerFile": "apps/api/src/modules/auth/auth.controller.ts",
         "controllerLine": 168
@@ -1407,7 +1407,7 @@
         "operationKey": "config GET /blocklist-entries"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "SecurityController_listBlocklist",
         "controllerFile": "apps/api/src/modules/security/controllers/security.controller.ts",
         "controllerLine": 104
@@ -1466,10 +1466,290 @@
         "operationKey": "config GET /blocklist-entries/{id}"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "SecurityController_getBlocklist",
         "controllerFile": "apps/api/src/modules/security/controllers/security.controller.ts",
         "controllerLine": 206
+      }
+    },
+    {
+      "operationCode": "config.builder_registry_controller_get_artifact",
+      "method": "GET",
+      "pathTemplate": "/builder-registry/artifacts/{artifactKind}",
+      "documentGroup": "config",
+      "tag": "System - Builder Registry",
+      "summary": "Download one generated Builder Registry artifact",
+      "description": null,
+      "ownerModuleCode": "platform",
+      "ownerCapabilityCode": "platform.ac_management",
+      "controllerName": "BuilderRegistryController",
+      "handlerName": "getArtifact",
+      "requestSchemaRef": null,
+      "responseSchemaRefs": [
+        "inline:builderregistrycontroller_getartifact:response:200:application_json"
+      ],
+      "authMode": "bearer_jwt",
+      "requiredPermissions": [
+        {
+          "resource": "platform.builder_registry",
+          "action": "read"
+        }
+      ],
+      "dynamicPermissionResolver": {
+        "enabled": false,
+        "resolverName": null,
+        "source": null,
+        "runtimeProofRequired": false
+      },
+      "scopeType": "ac_platform",
+      "scopeSource": "AC/platform route family",
+      "exposure": "ac_only",
+      "stability": "stable",
+      "deprecation": {
+        "isDeprecated": false,
+        "reason": null,
+        "replacementOperationCode": null,
+        "sunsetAt": null
+      },
+      "piiClass": "none",
+      "examplePolicy": "no_raw_secret_or_pii",
+      "gatewayEligible": false,
+      "builderExportEligible": true,
+      "auditEventTypes": [],
+      "metadataAuthority": {
+        "kind": "tcrn_api_registry_authority_snapshot",
+        "source": "apps/api/src/modules/api-registry/api-registry.authority.json",
+        "operationKey": "config GET /builder-registry/artifacts/{artifactKind}"
+      },
+      "source": {
+        "openapiFile": "openapi/openapi-config.json",
+        "operationId": "BuilderRegistryController_getArtifact",
+        "controllerFile": "apps/api/src/modules/builder-registry/builder-registry.controller.ts",
+        "controllerLine": 77
+      }
+    },
+    {
+      "operationCode": "config.builder_registry_controller_get_composed_dry_run",
+      "method": "GET",
+      "pathTemplate": "/builder-registry/composed-dry-run/ac-capability-surface-overview",
+      "documentGroup": "config",
+      "tag": "System - Builder Registry",
+      "summary": "Inspect the read-only Builder composed operation dry-run",
+      "description": null,
+      "ownerModuleCode": "platform",
+      "ownerCapabilityCode": "platform.ac_management",
+      "controllerName": "BuilderRegistryController",
+      "handlerName": "getComposedDryRun",
+      "requestSchemaRef": null,
+      "responseSchemaRefs": [
+        "inline:builderregistrycontroller_getcomposeddryrun:response:200:application_json"
+      ],
+      "authMode": "bearer_jwt",
+      "requiredPermissions": [
+        {
+          "resource": "platform.builder_registry",
+          "action": "read"
+        }
+      ],
+      "dynamicPermissionResolver": {
+        "enabled": false,
+        "resolverName": null,
+        "source": null,
+        "runtimeProofRequired": false
+      },
+      "scopeType": "ac_platform",
+      "scopeSource": "AC/platform route family",
+      "exposure": "ac_only",
+      "stability": "stable",
+      "deprecation": {
+        "isDeprecated": false,
+        "reason": null,
+        "replacementOperationCode": null,
+        "sunsetAt": null
+      },
+      "piiClass": "none",
+      "examplePolicy": "no_raw_secret_or_pii",
+      "gatewayEligible": false,
+      "builderExportEligible": true,
+      "auditEventTypes": [],
+      "metadataAuthority": {
+        "kind": "tcrn_api_registry_authority_snapshot",
+        "source": "apps/api/src/modules/api-registry/api-registry.authority.json",
+        "operationKey": "config GET /builder-registry/composed-dry-run/ac-capability-surface-overview"
+      },
+      "source": {
+        "openapiFile": "openapi/openapi-config.json",
+        "operationId": "BuilderRegistryController_getComposedDryRun",
+        "controllerFile": "apps/api/src/modules/builder-registry/builder-registry.controller.ts",
+        "controllerLine": 109
+      }
+    },
+    {
+      "operationCode": "config.builder_registry_controller_get_modules",
+      "method": "GET",
+      "pathTemplate": "/builder-registry/modules",
+      "documentGroup": "config",
+      "tag": "System - Builder Registry",
+      "summary": "List Builder Registry module and capability rows",
+      "description": null,
+      "ownerModuleCode": "platform",
+      "ownerCapabilityCode": "platform.ac_management",
+      "controllerName": "BuilderRegistryController",
+      "handlerName": "getModules",
+      "requestSchemaRef": null,
+      "responseSchemaRefs": [
+        "inline:builderregistrycontroller_getmodules:response:200:application_json"
+      ],
+      "authMode": "bearer_jwt",
+      "requiredPermissions": [
+        {
+          "resource": "platform.builder_registry",
+          "action": "read"
+        }
+      ],
+      "dynamicPermissionResolver": {
+        "enabled": false,
+        "resolverName": null,
+        "source": null,
+        "runtimeProofRequired": false
+      },
+      "scopeType": "ac_platform",
+      "scopeSource": "AC/platform route family",
+      "exposure": "ac_only",
+      "stability": "stable",
+      "deprecation": {
+        "isDeprecated": false,
+        "reason": null,
+        "replacementOperationCode": null,
+        "sunsetAt": null
+      },
+      "piiClass": "none",
+      "examplePolicy": "no_raw_secret_or_pii",
+      "gatewayEligible": false,
+      "builderExportEligible": true,
+      "auditEventTypes": [],
+      "metadataAuthority": {
+        "kind": "tcrn_api_registry_authority_snapshot",
+        "source": "apps/api/src/modules/api-registry/api-registry.authority.json",
+        "operationKey": "config GET /builder-registry/modules"
+      },
+      "source": {
+        "openapiFile": "openapi/openapi-config.json",
+        "operationId": "BuilderRegistryController_getModules",
+        "controllerFile": "apps/api/src/modules/builder-registry/builder-registry.controller.ts",
+        "controllerLine": 50
+      }
+    },
+    {
+      "operationCode": "config.builder_registry_controller_get_operation",
+      "method": "GET",
+      "pathTemplate": "/builder-registry/operations/{operationCode}",
+      "documentGroup": "config",
+      "tag": "System - Builder Registry",
+      "summary": "Inspect one Builder Registry operation",
+      "description": null,
+      "ownerModuleCode": "platform",
+      "ownerCapabilityCode": "platform.ac_management",
+      "controllerName": "BuilderRegistryController",
+      "handlerName": "getOperation",
+      "requestSchemaRef": null,
+      "responseSchemaRefs": [
+        "inline:builderregistrycontroller_getoperation:response:200:application_json"
+      ],
+      "authMode": "bearer_jwt",
+      "requiredPermissions": [
+        {
+          "resource": "platform.builder_registry",
+          "action": "read"
+        }
+      ],
+      "dynamicPermissionResolver": {
+        "enabled": false,
+        "resolverName": null,
+        "source": null,
+        "runtimeProofRequired": false
+      },
+      "scopeType": "ac_platform",
+      "scopeSource": "AC/platform route family",
+      "exposure": "ac_only",
+      "stability": "stable",
+      "deprecation": {
+        "isDeprecated": false,
+        "reason": null,
+        "replacementOperationCode": null,
+        "sunsetAt": null
+      },
+      "piiClass": "none",
+      "examplePolicy": "no_raw_secret_or_pii",
+      "gatewayEligible": false,
+      "builderExportEligible": true,
+      "auditEventTypes": [],
+      "metadataAuthority": {
+        "kind": "tcrn_api_registry_authority_snapshot",
+        "source": "apps/api/src/modules/api-registry/api-registry.authority.json",
+        "operationKey": "config GET /builder-registry/operations/{operationCode}"
+      },
+      "source": {
+        "openapiFile": "openapi/openapi-config.json",
+        "operationId": "BuilderRegistryController_getOperation",
+        "controllerFile": "apps/api/src/modules/builder-registry/builder-registry.controller.ts",
+        "controllerLine": 59
+      }
+    },
+    {
+      "operationCode": "config.builder_registry_controller_get_summary",
+      "method": "GET",
+      "pathTemplate": "/builder-registry/summary",
+      "documentGroup": "config",
+      "tag": "System - Builder Registry",
+      "summary": "Read AC Builder Registry summary",
+      "description": null,
+      "ownerModuleCode": "platform",
+      "ownerCapabilityCode": "platform.ac_management",
+      "controllerName": "BuilderRegistryController",
+      "handlerName": "getSummary",
+      "requestSchemaRef": null,
+      "responseSchemaRefs": [
+        "inline:builderregistrycontroller_getsummary:response:200:application_json"
+      ],
+      "authMode": "bearer_jwt",
+      "requiredPermissions": [
+        {
+          "resource": "platform.builder_registry",
+          "action": "read"
+        }
+      ],
+      "dynamicPermissionResolver": {
+        "enabled": false,
+        "resolverName": null,
+        "source": null,
+        "runtimeProofRequired": false
+      },
+      "scopeType": "ac_platform",
+      "scopeSource": "AC/platform route family",
+      "exposure": "ac_only",
+      "stability": "stable",
+      "deprecation": {
+        "isDeprecated": false,
+        "reason": null,
+        "replacementOperationCode": null,
+        "sunsetAt": null
+      },
+      "piiClass": "none",
+      "examplePolicy": "no_raw_secret_or_pii",
+      "gatewayEligible": false,
+      "builderExportEligible": true,
+      "auditEventTypes": [],
+      "metadataAuthority": {
+        "kind": "tcrn_api_registry_authority_snapshot",
+        "source": "apps/api/src/modules/api-registry/api-registry.authority.json",
+        "operationKey": "config GET /builder-registry/summary"
+      },
+      "source": {
+        "openapiFile": "openapi/openapi-config.json",
+        "operationId": "BuilderRegistryController_getSummary",
+        "controllerFile": "apps/api/src/modules/builder-registry/builder-registry.controller.ts",
+        "controllerLine": 41
       }
     },
     {
@@ -1524,7 +1804,7 @@
         "operationKey": "config GET /compliance/report"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "ComplianceReportController_generateReport",
         "controllerFile": "apps/api/src/modules/log/controllers/compliance-report.controller.ts",
         "controllerLine": 24
@@ -1573,7 +1853,7 @@
         "operationKey": "config GET /configuration-entity/{entityType}"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "ConfigController_list",
         "controllerFile": "apps/api/src/modules/config/config.controller.ts",
         "controllerLine": 653
@@ -1622,7 +1902,7 @@
         "operationKey": "config GET /configuration-entity/{entityType}/{id}"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "ConfigController_getById",
         "controllerFile": "apps/api/src/modules/config/config.controller.ts",
         "controllerLine": 731
@@ -1676,7 +1956,7 @@
         "operationKey": "config GET /configuration-entity/blocklist-entry/effective"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "ConfigController_getEffectiveBlocklist",
         "controllerFile": "apps/api/src/modules/config/config.controller.ts",
         "controllerLine": 1015
@@ -1730,7 +2010,7 @@
         "operationKey": "config GET /configuration-entity/membership-classes/{classId}/types"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "ConfigController_getMembershipTypesByClass",
         "controllerFile": "apps/api/src/modules/config/config.controller.ts",
         "controllerLine": 591
@@ -1784,7 +2064,7 @@
         "operationKey": "config GET /configuration-entity/membership-tree"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "ConfigController_getMembershipTree",
         "controllerFile": "apps/api/src/modules/config/config.controller.ts",
         "controllerLine": 567
@@ -1838,7 +2118,7 @@
         "operationKey": "config GET /configuration-entity/membership-types/{typeId}/levels"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "ConfigController_getMembershipLevelsByType",
         "controllerFile": "apps/api/src/modules/config/config.controller.ts",
         "controllerLine": 622
@@ -1892,7 +2172,7 @@
         "operationKey": "config GET /delegated-admins"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "DelegatedAdminController_list",
         "controllerFile": "apps/api/src/modules/delegated-admin/delegated-admin.controller.ts",
         "controllerLine": 63
@@ -1946,7 +2226,7 @@
         "operationKey": "config GET /delegated-admins/my-scopes"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "DelegatedAdminController_getMyScopes",
         "controllerFile": "apps/api/src/modules/delegated-admin/delegated-admin.controller.ts",
         "controllerLine": 153
@@ -2004,7 +2284,7 @@
         "operationKey": "config GET /email-templates"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "EmailTemplateController_findAll",
         "controllerFile": "apps/api/src/modules/email/controllers/email-template.controller.ts",
         "controllerLine": 163
@@ -2063,7 +2343,7 @@
         "operationKey": "config GET /email-templates/{code}"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "EmailTemplateController_findOne",
         "controllerFile": "apps/api/src/modules/email/controllers/email-template.controller.ts",
         "controllerLine": 200
@@ -2116,7 +2396,7 @@
         "operationKey": "config GET /email/config"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "EmailConfigController_getConfig",
         "controllerFile": "apps/api/src/modules/email/controllers/email-config.controller.ts",
         "controllerLine": 203
@@ -2172,7 +2452,7 @@
         "operationKey": "config GET /email/sender-domains"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "TenantSendingDomainController_getTenantSenderDomains",
         "controllerFile": "apps/api/src/modules/email/controllers/tenant-sending-domain.controller.ts",
         "controllerLine": 232
@@ -2229,7 +2509,7 @@
         "operationKey": "config GET /email/tenants/{tenantId}/sending-domains"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "TenantSendingDomainController_getManagedTenantSendingDomains",
         "controllerFile": "apps/api/src/modules/email/controllers/tenant-sending-domain.controller.ts",
         "controllerLine": 185
@@ -2283,7 +2563,7 @@
         "operationKey": "config GET /event-backbone/bullmq-classification"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "EventBackboneController_getBullMqClassification",
         "controllerFile": "apps/api/src/modules/event-backbone/event-backbone.controller.ts",
         "controllerLine": 38
@@ -2337,7 +2617,7 @@
         "operationKey": "config GET /event-backbone/policy"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "EventBackboneController_getPolicy",
         "controllerFile": "apps/api/src/modules/event-backbone/event-backbone.controller.ts",
         "controllerLine": 46
@@ -2391,7 +2671,7 @@
         "operationKey": "config GET /event-backbone/registry"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "EventBackboneController_getRegistry",
         "controllerFile": "apps/api/src/modules/event-backbone/event-backbone.controller.ts",
         "controllerLine": 18
@@ -2445,7 +2725,7 @@
         "operationKey": "config GET /event-backbone/subject-mapping"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "EventBackboneController_getSubjectMapping",
         "controllerFile": "apps/api/src/modules/event-backbone/event-backbone.controller.ts",
         "controllerLine": 26
@@ -2499,7 +2779,7 @@
         "operationKey": "config GET /event-backbone/summary"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "EventBackboneController_getSummary",
         "controllerFile": "apps/api/src/modules/event-backbone/event-backbone.controller.ts",
         "controllerLine": 54
@@ -2558,7 +2838,7 @@
         "operationKey": "config GET /ip-access-rules"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "SecurityController_listIpRules",
         "controllerFile": "apps/api/src/modules/security/controllers/security.controller.ts",
         "controllerLine": 414
@@ -2616,7 +2896,7 @@
         "operationKey": "config GET /logs/changes"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "ChangeLogController_list",
         "controllerFile": "apps/api/src/modules/log/controllers/change-log.controller.ts",
         "controllerLine": 22
@@ -2674,7 +2954,7 @@
         "operationKey": "config GET /logs/changes/object/{objectType}/{objectId}"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "ChangeLogController_getObjectHistory",
         "controllerFile": "apps/api/src/modules/log/controllers/change-log.controller.ts",
         "controllerLine": 44
@@ -2732,7 +3012,7 @@
         "operationKey": "config GET /logs/changes/operator/{operatorId}"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "ChangeLogController_getOperatorHistory",
         "controllerFile": "apps/api/src/modules/log/controllers/change-log.controller.ts",
         "controllerLine": 77
@@ -2790,7 +3070,7 @@
         "operationKey": "config GET /logs/events"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "TechEventLogController_list",
         "controllerFile": "apps/api/src/modules/log/controllers/tech-event-log.controller.ts",
         "controllerLine": 23
@@ -2848,7 +3128,7 @@
         "operationKey": "config GET /logs/events/trace/{traceId}"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "TechEventLogController_getByTraceId",
         "controllerFile": "apps/api/src/modules/log/controllers/tech-event-log.controller.ts",
         "controllerLine": 45
@@ -2906,7 +3186,7 @@
         "operationKey": "config GET /logs/integrations"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "IntegrationLogController_list",
         "controllerFile": "apps/api/src/modules/log/controllers/integration-log.controller.ts",
         "controllerLine": 23
@@ -2964,7 +3244,7 @@
         "operationKey": "config GET /logs/integrations/failed"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "IntegrationLogController_getFailed",
         "controllerFile": "apps/api/src/modules/log/controllers/integration-log.controller.ts",
         "controllerLine": 68
@@ -3022,7 +3302,7 @@
         "operationKey": "config GET /logs/integrations/trace/{traceId}"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "IntegrationLogController_getByTraceId",
         "controllerFile": "apps/api/src/modules/log/controllers/integration-log.controller.ts",
         "controllerLine": 45
@@ -3080,7 +3360,7 @@
         "operationKey": "config GET /logs/search"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "LogSearchController_search",
         "controllerFile": "apps/api/src/modules/log/controllers/log-search.controller.ts",
         "controllerLine": 122
@@ -3138,7 +3418,7 @@
         "operationKey": "config GET /logs/search/change-logs"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "LogSearchController_searchChangeLogs",
         "controllerFile": "apps/api/src/modules/log/controllers/log-search.controller.ts",
         "controllerLine": 199
@@ -3196,7 +3476,7 @@
         "operationKey": "config GET /logs/search/events"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "LogSearchController_searchTechEvents",
         "controllerFile": "apps/api/src/modules/log/controllers/log-search.controller.ts",
         "controllerLine": 236
@@ -3254,7 +3534,7 @@
         "operationKey": "config GET /logs/search/integrations"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "LogSearchController_searchIntegrationLogs",
         "controllerFile": "apps/api/src/modules/log/controllers/log-search.controller.ts",
         "controllerLine": 275
@@ -3305,7 +3585,7 @@
         "operationKey": "config GET /module-capabilities/effective"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "ModuleCapabilityController_getCurrentTenantEffectiveCapabilities",
         "controllerFile": "apps/api/src/modules/tenant/module-capability.controller.ts",
         "controllerLine": 15
@@ -3361,7 +3641,7 @@
         "operationKey": "config GET /module-capabilities/registry"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "ModuleCapabilityController_getRegistry",
         "controllerFile": "apps/api/src/modules/tenant/module-capability.controller.ts",
         "controllerLine": 28
@@ -3415,7 +3695,7 @@
         "operationKey": "config GET /observability/adapters/{adapterCode}/deep-link"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "ObservabilityAdaptersController_getDeepLink",
         "controllerFile": "apps/api/src/modules/observability-adapters/observability-adapters.controller.ts",
         "controllerLine": 46
@@ -3469,7 +3749,7 @@
         "operationKey": "config GET /observability/adapters/definitions"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "ObservabilityAdaptersController_listDefinitions",
         "controllerFile": "apps/api/src/modules/observability-adapters/observability-adapters.controller.ts",
         "controllerLine": 21
@@ -3523,7 +3803,7 @@
         "operationKey": "config GET /observability/adapters/policy"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "ObservabilityAdaptersController_getSignalPolicy",
         "controllerFile": "apps/api/src/modules/observability-adapters/observability-adapters.controller.ts",
         "controllerLine": 28
@@ -3577,7 +3857,7 @@
         "operationKey": "config GET /observability/adapters/summary"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "ObservabilityAdaptersController_getSummary",
         "controllerFile": "apps/api/src/modules/observability-adapters/observability-adapters.controller.ts",
         "controllerLine": 35
@@ -3634,7 +3914,7 @@
         "operationKey": "config GET /organization/settings"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "SettingsController_getTenantSettings",
         "controllerFile": "apps/api/src/modules/settings/settings.controller.ts",
         "controllerLine": 349
@@ -3690,7 +3970,7 @@
         "operationKey": "config GET /organization/settings/artist-lifecycle-flow"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "SettingsController_getTenantArtistLifecycleFlow",
         "controllerFile": "apps/api/src/modules/settings/settings.controller.ts",
         "controllerLine": 410
@@ -3747,7 +4027,7 @@
         "operationKey": "config GET /organization/settings/turnstile"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "SettingsController_getTenantTurnstileSettings",
         "controllerFile": "apps/api/src/modules/settings/settings.controller.ts",
         "controllerLine": 441
@@ -3805,7 +4085,7 @@
         "operationKey": "config GET /pii-service-configs"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "PiiServiceConfigController_list",
         "controllerFile": "apps/api/src/modules/pii-config/controllers/pii-service-config.controller.ts",
         "controllerLine": 71
@@ -3863,7 +4143,7 @@
         "operationKey": "config GET /pii-service-configs/{id}"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "PiiServiceConfigController_getById",
         "controllerFile": "apps/api/src/modules/pii-config/controllers/pii-service-config.controller.ts",
         "controllerLine": 100
@@ -3917,7 +4197,7 @@
         "operationKey": "config GET /platform-tools/connections"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "PlatformToolsController_listConnections",
         "controllerFile": "apps/api/src/modules/platform-tools/platform-tools.controller.ts",
         "controllerLine": 28
@@ -3971,7 +4251,7 @@
         "operationKey": "config GET /platform-tools/connections/{toolCode}"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "PlatformToolsController_getConnection",
         "controllerFile": "apps/api/src/modules/platform-tools/platform-tools.controller.ts",
         "controllerLine": 39
@@ -4025,7 +4305,7 @@
         "operationKey": "config GET /platform-tools/connections/{toolCode}/deep-link"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "PlatformToolsController_getDeepLink",
         "controllerFile": "apps/api/src/modules/platform-tools/platform-tools.controller.ts",
         "controllerLine": 75
@@ -4079,7 +4359,7 @@
         "operationKey": "config GET /platform-tools/definitions"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "PlatformToolsController_listDefinitions",
         "controllerFile": "apps/api/src/modules/platform-tools/platform-tools.controller.ts",
         "controllerLine": 21
@@ -4133,7 +4413,7 @@
         "operationKey": "config GET /platform-tools/deployment-boundary"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "PlatformToolsController_getDeploymentBoundary",
         "controllerFile": "apps/api/src/modules/platform-tools/platform-tools.controller.ts",
         "controllerLine": 87
@@ -4186,7 +4466,7 @@
         "operationKey": "config GET /platform/config"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "GlobalConfigController_list",
         "controllerFile": "apps/api/src/modules/config/global-config.controller.ts",
         "controllerLine": 480
@@ -4240,7 +4520,7 @@
         "operationKey": "config GET /platform/config/{key}"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "GlobalConfigController_get",
         "controllerFile": "apps/api/src/modules/config/global-config.controller.ts",
         "controllerLine": 365
@@ -4298,7 +4578,7 @@
         "operationKey": "config GET /profile-stores"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "ProfileStoreController_list",
         "controllerFile": "apps/api/src/modules/pii-config/controllers/profile-store.controller.ts",
         "controllerLine": 268
@@ -4357,7 +4637,7 @@
         "operationKey": "config GET /profile-stores/{id}"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "ProfileStoreController_getById",
         "controllerFile": "apps/api/src/modules/pii-config/controllers/profile-store.controller.ts",
         "controllerLine": 298
@@ -4415,7 +4695,7 @@
         "operationKey": "config GET /rate-limit/stats"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "RateLimitStatsController_getStats",
         "controllerFile": "apps/api/src/modules/security/controllers/rate-limit-stats.controller.ts",
         "controllerLine": 142
@@ -4469,7 +4749,7 @@
         "operationKey": "config GET /runtime-flags/adapters"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "RuntimeFlagsController_listAdapters",
         "controllerFile": "apps/api/src/modules/runtime-flags/runtime-flags.controller.ts",
         "controllerLine": 33
@@ -4523,7 +4803,7 @@
         "operationKey": "config GET /runtime-flags/definitions"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "RuntimeFlagsController_listDefinitions",
         "controllerFile": "apps/api/src/modules/runtime-flags/runtime-flags.controller.ts",
         "controllerLine": 40
@@ -4577,7 +4857,7 @@
         "operationKey": "config GET /runtime-flags/policy"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "RuntimeFlagsController_getPolicy",
         "controllerFile": "apps/api/src/modules/runtime-flags/runtime-flags.controller.ts",
         "controllerLine": 47
@@ -4631,7 +4911,7 @@
         "operationKey": "config GET /runtime-flags/provider-readiness"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "RuntimeFlagsController_getProviderReadiness",
         "controllerFile": "apps/api/src/modules/runtime-flags/runtime-flags.controller.ts",
         "controllerLine": 65
@@ -4685,7 +4965,7 @@
         "operationKey": "config GET /runtime-flags/summary"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "RuntimeFlagsController_getSummary",
         "controllerFile": "apps/api/src/modules/runtime-flags/runtime-flags.controller.ts",
         "controllerLine": 54
@@ -4743,7 +5023,7 @@
         "operationKey": "config GET /subsidiaries/{subsidiaryId}/settings"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "SettingsController_getSubsidiarySettings",
         "controllerFile": "apps/api/src/modules/settings/settings.controller.ts",
         "controllerLine": 489
@@ -4799,7 +5079,7 @@
         "operationKey": "config GET /subsidiaries/{subsidiaryId}/settings/artist-lifecycle-flow"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "SettingsController_getSubsidiaryArtistLifecycleFlow",
         "controllerFile": "apps/api/src/modules/settings/settings.controller.ts",
         "controllerLine": 525
@@ -4851,7 +5131,7 @@
         "operationKey": "config GET /system-dictionary"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "DictionaryController_listTypes",
         "controllerFile": "apps/api/src/modules/dictionary/dictionary.controller.ts",
         "controllerLine": 563
@@ -4904,7 +5184,7 @@
         "operationKey": "config GET /system-dictionary/{type}"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "DictionaryController_getByType",
         "controllerFile": "apps/api/src/modules/dictionary/dictionary.controller.ts",
         "controllerLine": 585
@@ -4957,7 +5237,7 @@
         "operationKey": "config GET /system-dictionary/{type}/{code}"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "DictionaryController_getItem",
         "controllerFile": "apps/api/src/modules/dictionary/dictionary.controller.ts",
         "controllerLine": 641
@@ -5014,7 +5294,7 @@
         "operationKey": "config GET /system-roles"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "SystemRoleController_findAll",
         "controllerFile": "apps/api/src/modules/system-role/system-role.controller.ts",
         "controllerLine": 330
@@ -5072,7 +5352,7 @@
         "operationKey": "config GET /system-roles/{systemRoleId}"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "SystemRoleController_findOne",
         "controllerFile": "apps/api/src/modules/system-role/system-role.controller.ts",
         "controllerLine": 363
@@ -5129,7 +5409,7 @@
         "operationKey": "config GET /system-users"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "SystemUserController_list",
         "controllerFile": "apps/api/src/modules/system-user/system-user.controller.ts",
         "controllerLine": 623
@@ -5187,7 +5467,7 @@
         "operationKey": "config GET /system-users/{systemUserId}"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "SystemUserController_getById",
         "controllerFile": "apps/api/src/modules/system-user/system-user.controller.ts",
         "controllerLine": 715
@@ -5244,7 +5524,7 @@
         "operationKey": "config GET /system-users/{systemUserId}/scope-access"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "SystemUserController_getScopeAccess",
         "controllerFile": "apps/api/src/modules/system-user/system-user.controller.ts",
         "controllerLine": 1023
@@ -5302,7 +5582,7 @@
         "operationKey": "config GET /talents/{talentId}/settings"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "SettingsController_getTalentSettings",
         "controllerFile": "apps/api/src/modules/settings/settings.controller.ts",
         "controllerLine": 652
@@ -5358,7 +5638,7 @@
         "operationKey": "config GET /talents/{talentId}/settings/artist-lifecycle-flow"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "SettingsController_getTalentArtistLifecycleFlow",
         "controllerFile": "apps/api/src/modules/settings/settings.controller.ts",
         "controllerLine": 688
@@ -5416,7 +5696,7 @@
         "operationKey": "config GET /tenants"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "TenantController_listTenants",
         "controllerFile": "apps/api/src/modules/tenant/tenant.controller.ts",
         "controllerLine": 663
@@ -5475,7 +5755,7 @@
         "operationKey": "config GET /tenants/{tenantId}"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "TenantController_getTenant",
         "controllerFile": "apps/api/src/modules/tenant/tenant.controller.ts",
         "controllerLine": 884
@@ -5531,7 +5811,7 @@
         "operationKey": "config GET /tenants/{tenantId}/capabilities"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "TenantController_getTenantCapabilities",
         "controllerFile": "apps/api/src/modules/tenant/tenant.controller.ts",
         "controllerLine": 951
@@ -5583,7 +5863,7 @@
         "operationKey": "config GET /users/me"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "UserController_getCurrentUser",
         "controllerFile": "apps/api/src/modules/auth/auth.controller.ts",
         "controllerLine": 1266
@@ -5634,7 +5914,7 @@
         "operationKey": "config GET /users/me/sessions"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "UserController_getSessions",
         "controllerFile": "apps/api/src/modules/auth/auth.controller.ts",
         "controllerLine": 1921
@@ -5690,7 +5970,7 @@
         "operationKey": "config PATCH /auth/sso/admin/providers/{providerCode}"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "AuthController_upsertManagedSsoProvider",
         "controllerFile": "apps/api/src/modules/auth/auth.controller.ts",
         "controllerLine": 392
@@ -5744,7 +6024,7 @@
         "operationKey": "config PATCH /auth/sso/external-tools/readiness/{toolCode}"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "AuthController_updateExternalToolSsoReadiness",
         "controllerFile": "apps/api/src/modules/auth/auth.controller.ts",
         "controllerLine": 453
@@ -5805,7 +6085,7 @@
         "operationKey": "config PATCH /blocklist-entries/{id}"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "SecurityController_updateBlocklist",
         "controllerFile": "apps/api/src/modules/security/controllers/security.controller.ts",
         "controllerLine": 241
@@ -5854,7 +6134,7 @@
         "operationKey": "config PATCH /configuration-entity/{entityType}/{id}"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "ConfigController_update",
         "controllerFile": "apps/api/src/modules/config/config.controller.ts",
         "controllerLine": 764
@@ -5914,7 +6194,7 @@
         "operationKey": "config PATCH /email-templates/{code}"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "EmailTemplateController_update",
         "controllerFile": "apps/api/src/modules/email/controllers/email-template.controller.ts",
         "controllerLine": 264
@@ -5968,7 +6248,7 @@
         "operationKey": "config PATCH /email/config"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "EmailConfigController_saveConfig",
         "controllerFile": "apps/api/src/modules/email/controllers/email-config.controller.ts",
         "controllerLine": 230
@@ -6024,7 +6304,7 @@
         "operationKey": "config PATCH /email/sender-domains"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "TenantSendingDomainController_saveTenantSenderDomains",
         "controllerFile": "apps/api/src/modules/email/controllers/tenant-sending-domain.controller.ts",
         "controllerLine": 246
@@ -6081,7 +6361,7 @@
         "operationKey": "config PATCH /email/tenants/{tenantId}/sending-domains"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "TenantSendingDomainController_saveManagedTenantSendingDomains",
         "controllerFile": "apps/api/src/modules/email/controllers/tenant-sending-domain.controller.ts",
         "controllerLine": 207
@@ -6139,7 +6419,7 @@
         "operationKey": "config PATCH /organization/settings"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "SettingsController_updateTenantSettings",
         "controllerFile": "apps/api/src/modules/settings/settings.controller.ts",
         "controllerLine": 376
@@ -6195,7 +6475,7 @@
         "operationKey": "config PATCH /organization/settings/artist-lifecycle-flow"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "SettingsController_updateTenantArtistLifecycleFlow",
         "controllerFile": "apps/api/src/modules/settings/settings.controller.ts",
         "controllerLine": 424
@@ -6253,7 +6533,7 @@
         "operationKey": "config PATCH /organization/settings/turnstile"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "SettingsController_updateTenantTurnstileSettings",
         "controllerFile": "apps/api/src/modules/settings/settings.controller.ts",
         "controllerLine": 458
@@ -6311,7 +6591,7 @@
         "operationKey": "config PATCH /pii-service-configs/{id}"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "PiiServiceConfigController_update",
         "controllerFile": "apps/api/src/modules/pii-config/controllers/pii-service-config.controller.ts",
         "controllerLine": 163
@@ -6365,7 +6645,7 @@
         "operationKey": "config PATCH /platform-tools/connections/{toolCode}"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "PlatformToolsController_upsertConnection",
         "controllerFile": "apps/api/src/modules/platform-tools/platform-tools.controller.ts",
         "controllerLine": 51
@@ -6419,7 +6699,7 @@
         "operationKey": "config PATCH /platform/config/{key}"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "GlobalConfigController_set",
         "controllerFile": "apps/api/src/modules/config/global-config.controller.ts",
         "controllerLine": 416
@@ -6480,7 +6760,7 @@
         "operationKey": "config PATCH /profile-stores/{id}"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "ProfileStoreController_update",
         "controllerFile": "apps/api/src/modules/pii-config/controllers/profile-store.controller.ts",
         "controllerLine": 386
@@ -6534,7 +6814,7 @@
         "operationKey": "config PATCH /runtime-flags/kill-switches/{switchId}/deactivate"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "RuntimeFlagsController_deactivateKillSwitch",
         "controllerFile": "apps/api/src/modules/runtime-flags/runtime-flags.controller.ts",
         "controllerLine": 98
@@ -6593,7 +6873,7 @@
         "operationKey": "config PATCH /subsidiaries/{subsidiaryId}/settings"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "SettingsController_updateSubsidiarySettings",
         "controllerFile": "apps/api/src/modules/settings/settings.controller.ts",
         "controllerLine": 555
@@ -6652,7 +6932,7 @@
         "operationKey": "config PATCH /subsidiaries/{subsidiaryId}/settings/reset"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "SettingsController_resetSubsidiarySetting",
         "controllerFile": "apps/api/src/modules/settings/settings.controller.ts",
         "controllerLine": 604
@@ -6707,7 +6987,7 @@
         "operationKey": "config PATCH /system-dictionary/{type}"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "DictionaryController_updateType",
         "controllerFile": "apps/api/src/modules/dictionary/dictionary.controller.ts",
         "controllerLine": 723
@@ -6762,7 +7042,7 @@
         "operationKey": "config PATCH /system-dictionary/{type}/items/{itemId}"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "DictionaryController_updateItem",
         "controllerFile": "apps/api/src/modules/dictionary/dictionary.controller.ts",
         "controllerLine": 816
@@ -6821,7 +7101,7 @@
         "operationKey": "config PATCH /system-roles/{systemRoleId}"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "SystemRoleController_update",
         "controllerFile": "apps/api/src/modules/system-role/system-role.controller.ts",
         "controllerLine": 405
@@ -6879,7 +7159,7 @@
         "operationKey": "config PATCH /system-users/{systemUserId}"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "SystemUserController_update",
         "controllerFile": "apps/api/src/modules/system-user/system-user.controller.ts",
         "controllerLine": 794
@@ -6938,7 +7218,7 @@
         "operationKey": "config PATCH /talents/{talentId}/settings"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "SettingsController_updateTalentSettings",
         "controllerFile": "apps/api/src/modules/settings/settings.controller.ts",
         "controllerLine": 714
@@ -6997,7 +7277,7 @@
         "operationKey": "config PATCH /talents/{talentId}/settings/reset"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "SettingsController_resetTalentSetting",
         "controllerFile": "apps/api/src/modules/settings/settings.controller.ts",
         "controllerLine": 763
@@ -7056,7 +7336,7 @@
         "operationKey": "config PATCH /tenants/{tenantId}"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "TenantController_updateTenant",
         "controllerFile": "apps/api/src/modules/tenant/tenant.controller.ts",
         "controllerLine": 1010
@@ -7109,7 +7389,7 @@
         "operationKey": "config PATCH /users/me"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "UserController_updateCurrentUser",
         "controllerFile": "apps/api/src/modules/auth/auth.controller.ts",
         "controllerLine": 1362
@@ -7158,7 +7438,7 @@
         "operationKey": "config POST /auth/forgot-password"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "AuthController_forgotPassword",
         "controllerFile": "apps/api/src/modules/auth/auth.controller.ts",
         "controllerLine": 764
@@ -7211,7 +7491,7 @@
         "operationKey": "config POST /auth/login"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "AuthController_login",
         "controllerFile": "apps/api/src/modules/auth/auth.controller.ts",
         "controllerLine": 491
@@ -7263,7 +7543,7 @@
         "operationKey": "config POST /auth/logout"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "AuthController_logout",
         "controllerFile": "apps/api/src/modules/auth/auth.controller.ts",
         "controllerLine": 1137
@@ -7312,7 +7592,7 @@
         "operationKey": "config POST /auth/logout-all"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "AuthController_logoutAll",
         "controllerFile": "apps/api/src/modules/auth/auth.controller.ts",
         "controllerLine": 1195
@@ -7361,7 +7641,7 @@
         "operationKey": "config POST /auth/password/reset"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "AuthController_forceResetPassword",
         "controllerFile": "apps/api/src/modules/auth/auth.controller.ts",
         "controllerLine": 668
@@ -7410,7 +7690,7 @@
         "operationKey": "config POST /auth/recovery-code/verify"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "AuthController_verifyRecoveryCode",
         "controllerFile": "apps/api/src/modules/auth/auth.controller.ts",
         "controllerLine": 1033
@@ -7462,7 +7742,7 @@
         "operationKey": "config POST /auth/refresh"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "AuthController_refresh",
         "controllerFile": "apps/api/src/modules/auth/auth.controller.ts",
         "controllerLine": 1070
@@ -7511,7 +7791,7 @@
         "operationKey": "config POST /auth/reset-password-by-token"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "AuthController_resetPasswordByToken",
         "controllerFile": "apps/api/src/modules/auth/auth.controller.ts",
         "controllerLine": 890
@@ -7560,7 +7840,7 @@
         "operationKey": "config POST /auth/sso/account-links/complete"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "AuthController_completeSsoAccountLink",
         "controllerFile": "apps/api/src/modules/auth/auth.controller.ts",
         "controllerLine": 293
@@ -7609,7 +7889,7 @@
         "operationKey": "config POST /auth/sso/account-links/start"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "AuthController_startSsoAccountLink",
         "controllerFile": "apps/api/src/modules/auth/auth.controller.ts",
         "controllerLine": 270
@@ -7658,7 +7938,7 @@
         "operationKey": "config POST /auth/sso/exchange"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "AuthController_exchangeSsoResult",
         "controllerFile": "apps/api/src/modules/auth/auth.controller.ts",
         "controllerLine": 208
@@ -7707,7 +7987,7 @@
         "operationKey": "config POST /auth/sso/start"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "AuthController_startSsoLogin",
         "controllerFile": "apps/api/src/modules/auth/auth.controller.ts",
         "controllerLine": 179
@@ -7756,7 +8036,7 @@
         "operationKey": "config POST /auth/totp/verify"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "AuthController_verifyTotp",
         "controllerFile": "apps/api/src/modules/auth/auth.controller.ts",
         "controllerLine": 633
@@ -7816,7 +8096,7 @@
         "operationKey": "config POST /blocklist-entries"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "SecurityController_createBlocklist",
         "controllerFile": "apps/api/src/modules/security/controllers/security.controller.ts",
         "controllerLine": 141
@@ -7876,7 +8156,7 @@
         "operationKey": "config POST /blocklist-entries/{id}/disable"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "SecurityController_disableBlocklist",
         "controllerFile": "apps/api/src/modules/security/controllers/security.controller.ts",
         "controllerLine": 326
@@ -7936,7 +8216,7 @@
         "operationKey": "config POST /blocklist-entries/{id}/enable"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "SecurityController_enableBlocklist",
         "controllerFile": "apps/api/src/modules/security/controllers/security.controller.ts",
         "controllerLine": 368
@@ -7995,7 +8275,7 @@
         "operationKey": "config POST /blocklist-entries/test"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "SecurityController_testBlocklist",
         "controllerFile": "apps/api/src/modules/security/controllers/security.controller.ts",
         "controllerLine": 178
@@ -8044,7 +8324,7 @@
         "operationKey": "config POST /configuration-entity/{entityType}"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "ConfigController_create",
         "controllerFile": "apps/api/src/modules/config/config.controller.ts",
         "controllerLine": 692
@@ -8093,7 +8373,7 @@
         "operationKey": "config POST /configuration-entity/{entityType}/{id}/deactivate"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "ConfigController_deactivate",
         "controllerFile": "apps/api/src/modules/config/config.controller.ts",
         "controllerLine": 805
@@ -8142,7 +8422,7 @@
         "operationKey": "config POST /configuration-entity/{entityType}/{id}/disable"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "ConfigController_disable",
         "controllerFile": "apps/api/src/modules/config/config.controller.ts",
         "controllerLine": 866
@@ -8191,7 +8471,7 @@
         "operationKey": "config POST /configuration-entity/{entityType}/{id}/enable"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "ConfigController_enable",
         "controllerFile": "apps/api/src/modules/config/config.controller.ts",
         "controllerLine": 896
@@ -8240,7 +8520,7 @@
         "operationKey": "config POST /configuration-entity/{entityType}/{id}/reactivate"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "ConfigController_reactivate",
         "controllerFile": "apps/api/src/modules/config/config.controller.ts",
         "controllerLine": 836
@@ -8294,7 +8574,7 @@
         "operationKey": "config POST /configuration-entity/blocklist-entry/test"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "ConfigController_testBlocklist",
         "controllerFile": "apps/api/src/modules/config/config.controller.ts",
         "controllerLine": 996
@@ -8348,7 +8628,7 @@
         "operationKey": "config POST /configuration-entity/consumer/{consumerId}/generate-key"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "ConfigController_generateConsumerKey",
         "controllerFile": "apps/api/src/modules/config/config.controller.ts",
         "controllerLine": 925
@@ -8402,7 +8682,7 @@
         "operationKey": "config POST /configuration-entity/consumer/{consumerId}/revoke-key"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "ConfigController_revokeConsumerKey",
         "controllerFile": "apps/api/src/modules/config/config.controller.ts",
         "controllerLine": 977
@@ -8456,7 +8736,7 @@
         "operationKey": "config POST /configuration-entity/consumer/{consumerId}/rotate-key"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "ConfigController_rotateConsumerKey",
         "controllerFile": "apps/api/src/modules/config/config.controller.ts",
         "controllerLine": 951
@@ -8510,7 +8790,7 @@
         "operationKey": "config POST /delegated-admins"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "DelegatedAdminController_create",
         "controllerFile": "apps/api/src/modules/delegated-admin/delegated-admin.controller.ts",
         "controllerLine": 106
@@ -8570,7 +8850,7 @@
         "operationKey": "config POST /email-templates"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "EmailTemplateController_create",
         "controllerFile": "apps/api/src/modules/email/controllers/email-template.controller.ts",
         "controllerLine": 232
@@ -8630,7 +8910,7 @@
         "operationKey": "config POST /email-templates/{code}/preview"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "EmailTemplateController_preview",
         "controllerFile": "apps/api/src/modules/email/controllers/email-template.controller.ts",
         "controllerLine": 365
@@ -8689,7 +8969,7 @@
         "operationKey": "config POST /email-templates/{code}/reactivate"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "EmailTemplateController_reactivate",
         "controllerFile": "apps/api/src/modules/email/controllers/email-template.controller.ts",
         "controllerLine": 333
@@ -8743,7 +9023,7 @@
         "operationKey": "config POST /email/config/test"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "EmailConfigController_sendTestEmail",
         "controllerFile": "apps/api/src/modules/email/controllers/email-config.controller.ts",
         "controllerLine": 278
@@ -8797,7 +9077,7 @@
         "operationKey": "config POST /email/config/test-connection"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "EmailConfigController_testConnection",
         "controllerFile": "apps/api/src/modules/email/controllers/email-config.controller.ts",
         "controllerLine": 368
@@ -8851,7 +9131,7 @@
         "operationKey": "config POST /event-backbone/replay-preview"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "EventBackboneController_previewReplay",
         "controllerFile": "apps/api/src/modules/event-backbone/event-backbone.controller.ts",
         "controllerLine": 65
@@ -8910,7 +9190,7 @@
         "operationKey": "config POST /ip-access-rules"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "SecurityController_createIpRule",
         "controllerFile": "apps/api/src/modules/security/controllers/security.controller.ts",
         "controllerLine": 448
@@ -8969,7 +9249,7 @@
         "operationKey": "config POST /ip-access-rules/check"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "SecurityController_checkIpAccess",
         "controllerFile": "apps/api/src/modules/security/controllers/security.controller.ts",
         "controllerLine": 480
@@ -9027,7 +9307,7 @@
         "operationKey": "config POST /pii-service-configs"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "PiiServiceConfigController_create",
         "controllerFile": "apps/api/src/modules/pii-config/controllers/pii-service-config.controller.ts",
         "controllerLine": 134
@@ -9085,7 +9365,7 @@
         "operationKey": "config POST /pii-service-configs/{id}/test"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "PiiServiceConfigController_testConnection",
         "controllerFile": "apps/api/src/modules/pii-config/controllers/pii-service-config.controller.ts",
         "controllerLine": 198
@@ -9139,7 +9419,7 @@
         "operationKey": "config POST /platform-tools/connections/{toolCode}/health-check"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "PlatformToolsController_runHealthCheck",
         "controllerFile": "apps/api/src/modules/platform-tools/platform-tools.controller.ts",
         "controllerLine": 63
@@ -9200,7 +9480,7 @@
         "operationKey": "config POST /profile-stores"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "ProfileStoreController_create",
         "controllerFile": "apps/api/src/modules/pii-config/controllers/profile-store.controller.ts",
         "controllerLine": 338
@@ -9254,7 +9534,7 @@
         "operationKey": "config POST /runtime-flags/evaluate"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "RuntimeFlagsController_evaluate",
         "controllerFile": "apps/api/src/modules/runtime-flags/runtime-flags.controller.ts",
         "controllerLine": 76
@@ -9308,7 +9588,7 @@
         "operationKey": "config POST /runtime-flags/kill-switches"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "RuntimeFlagsController_activateKillSwitch",
         "controllerFile": "apps/api/src/modules/runtime-flags/runtime-flags.controller.ts",
         "controllerLine": 87
@@ -9360,7 +9640,7 @@
         "operationKey": "config POST /security/fingerprint"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "SecurityController_getFingerprint",
         "controllerFile": "apps/api/src/modules/security/controllers/security.controller.ts",
         "controllerLine": 69
@@ -9414,7 +9694,7 @@
         "operationKey": "config POST /system-dictionary"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "DictionaryController_createType",
         "controllerFile": "apps/api/src/modules/dictionary/dictionary.controller.ts",
         "controllerLine": 690
@@ -9469,7 +9749,7 @@
         "operationKey": "config POST /system-dictionary/{type}/items"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "DictionaryController_createItem",
         "controllerFile": "apps/api/src/modules/dictionary/dictionary.controller.ts",
         "controllerLine": 769
@@ -9524,7 +9804,7 @@
         "operationKey": "config POST /system-dictionary/{type}/items/{itemId}/reactivate"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "DictionaryController_reactivateItem",
         "controllerFile": "apps/api/src/modules/dictionary/dictionary.controller.ts",
         "controllerLine": 940
@@ -9582,7 +9862,7 @@
         "operationKey": "config POST /system-roles"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "SystemRoleController_create",
         "controllerFile": "apps/api/src/modules/system-role/system-role.controller.ts",
         "controllerLine": 307
@@ -9640,7 +9920,7 @@
         "operationKey": "config POST /system-users"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "SystemUserController_create",
         "controllerFile": "apps/api/src/modules/system-user/system-user.controller.ts",
         "controllerLine": 671
@@ -9698,7 +9978,7 @@
         "operationKey": "config POST /system-users/{systemUserId}/deactivate"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "SystemUserController_deactivate",
         "controllerFile": "apps/api/src/modules/system-user/system-user.controller.ts",
         "controllerLine": 883
@@ -9756,7 +10036,7 @@
         "operationKey": "config POST /system-users/{systemUserId}/force-totp"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "SystemUserController_forceTotp",
         "controllerFile": "apps/api/src/modules/system-user/system-user.controller.ts",
         "controllerLine": 972
@@ -9814,7 +10094,7 @@
         "operationKey": "config POST /system-users/{systemUserId}/reactivate"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "SystemUserController_reactivate",
         "controllerFile": "apps/api/src/modules/system-user/system-user.controller.ts",
         "controllerLine": 923
@@ -9872,7 +10152,7 @@
         "operationKey": "config POST /system-users/{systemUserId}/reset-password"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "SystemUserController_resetPassword",
         "controllerFile": "apps/api/src/modules/system-user/system-user.controller.ts",
         "controllerLine": 838
@@ -9929,7 +10209,7 @@
         "operationKey": "config POST /system-users/{systemUserId}/scope-access"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "SystemUserController_setScopeAccess",
         "controllerFile": "apps/api/src/modules/system-user/system-user.controller.ts",
         "controllerLine": 1053
@@ -9988,7 +10268,7 @@
         "operationKey": "config POST /tenants"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "TenantController_createTenant",
         "controllerFile": "apps/api/src/modules/tenant/tenant.controller.ts",
         "controllerLine": 751
@@ -10047,7 +10327,7 @@
         "operationKey": "config POST /tenants/{tenantId}/activate"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "TenantController_activateTenant",
         "controllerFile": "apps/api/src/modules/tenant/tenant.controller.ts",
         "controllerLine": 1091
@@ -10106,7 +10386,7 @@
         "operationKey": "config POST /tenants/{tenantId}/deactivate"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "TenantController_deactivateTenant",
         "controllerFile": "apps/api/src/modules/tenant/tenant.controller.ts",
         "controllerLine": 1145
@@ -10155,7 +10435,7 @@
         "operationKey": "config POST /users/me/avatar"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "UserController_uploadAvatar",
         "controllerFile": "apps/api/src/modules/auth/auth.controller.ts",
         "controllerLine": 2013
@@ -10204,7 +10484,7 @@
         "operationKey": "config POST /users/me/email/confirm"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "UserController_confirmEmailChange",
         "controllerFile": "apps/api/src/modules/auth/auth.controller.ts",
         "controllerLine": 2277
@@ -10253,7 +10533,7 @@
         "operationKey": "config POST /users/me/email/request-change"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "UserController_requestEmailChange",
         "controllerFile": "apps/api/src/modules/auth/auth.controller.ts",
         "controllerLine": 2156
@@ -10306,7 +10586,7 @@
         "operationKey": "config POST /users/me/password"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "UserController_changePassword",
         "controllerFile": "apps/api/src/modules/auth/auth.controller.ts",
         "controllerLine": 1441
@@ -10355,7 +10635,7 @@
         "operationKey": "config POST /users/me/recovery-codes"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "UserController_regenerateRecoveryCodes",
         "controllerFile": "apps/api/src/modules/auth/auth.controller.ts",
         "controllerLine": 1829
@@ -10404,7 +10684,7 @@
         "operationKey": "config POST /users/me/totp/disable"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "UserController_disableTotp",
         "controllerFile": "apps/api/src/modules/auth/auth.controller.ts",
         "controllerLine": 1740
@@ -10453,7 +10733,7 @@
         "operationKey": "config POST /users/me/totp/enable"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "UserController_enableTotp",
         "controllerFile": "apps/api/src/modules/auth/auth.controller.ts",
         "controllerLine": 1643
@@ -10505,7 +10785,7 @@
         "operationKey": "config POST /users/me/totp/setup"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "UserController_setupTotp",
         "controllerFile": "apps/api/src/modules/auth/auth.controller.ts",
         "controllerLine": 1573
@@ -10561,7 +10841,7 @@
         "operationKey": "config PUT /tenants/{tenantId}/capabilities"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "TenantController_replaceTenantCapabilities",
         "controllerFile": "apps/api/src/modules/tenant/tenant.controller.ts",
         "controllerLine": 977
@@ -10621,7 +10901,7 @@
         "operationKey": "operations DELETE /exports/{jobId}"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "ExportController_cancelJob",
         "controllerFile": "apps/api/src/modules/export/controllers/export.controller.ts",
         "controllerLine": 299
@@ -10680,7 +10960,7 @@
         "operationKey": "operations DELETE /external-blocklist/{id}"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "ExternalBlocklistController_delete",
         "controllerFile": "apps/api/src/modules/marshmallow/controllers/external-blocklist.controller.ts",
         "controllerLine": 341
@@ -10734,7 +11014,7 @@
         "operationKey": "operations DELETE /integration/webhooks/{webhookId}"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "IntegrationController_deleteWebhook",
         "controllerFile": "apps/api/src/modules/integration/controllers/integration.controller.ts",
         "controllerLine": 552
@@ -10794,7 +11074,7 @@
         "operationKey": "operations DELETE /reports/mfr/jobs/{jobId}"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "ReportController_cancelMfrJob",
         "controllerFile": "apps/api/src/modules/report/controllers/report.controller.ts",
         "controllerLine": 620
@@ -10854,7 +11134,7 @@
         "operationKey": "operations DELETE /talents/{talentId}"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "TalentController_deleteTalent",
         "controllerFile": "apps/api/src/modules/talent/talent.controller.ts",
         "controllerLine": 1831
@@ -10913,7 +11193,7 @@
         "operationKey": "operations DELETE /talents/{talentId}/customers/{customerId}/external-ids/{externalIdId}"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "ExternalIdController_delete",
         "controllerFile": "apps/api/src/modules/customer/controllers/external-id.controller.ts",
         "controllerLine": 139
@@ -10973,7 +11253,7 @@
         "operationKey": "operations DELETE /talents/{talentId}/imports/customers/{type}/{jobId}"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "ImportController_cancelJob",
         "controllerFile": "apps/api/src/modules/import/controllers/import.controller.ts",
         "controllerLine": 610
@@ -11027,7 +11307,7 @@
         "operationKey": "operations DELETE /users/{userId}/roles/{assignmentId}"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "UserRoleController_removeAssignment",
         "controllerFile": "apps/api/src/modules/role/user-role.controller.ts",
         "controllerLine": 186
@@ -11085,7 +11365,7 @@
         "operationKey": "operations GET /exports"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "ExportController_listJobs",
         "controllerFile": "apps/api/src/modules/export/controllers/export.controller.ts",
         "controllerLine": 181
@@ -11144,7 +11424,7 @@
         "operationKey": "operations GET /exports/{jobId}"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "ExportController_getJob",
         "controllerFile": "apps/api/src/modules/export/controllers/export.controller.ts",
         "controllerLine": 215
@@ -11203,7 +11483,7 @@
         "operationKey": "operations GET /exports/{jobId}/download"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "ExportController_downloadExport",
         "controllerFile": "apps/api/src/modules/export/controllers/export.controller.ts",
         "controllerLine": 252
@@ -11262,7 +11542,7 @@
         "operationKey": "operations GET /external-blocklist"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "ExternalBlocklistController_findMany",
         "controllerFile": "apps/api/src/modules/marshmallow/controllers/external-blocklist.controller.ts",
         "controllerLine": 63
@@ -11321,7 +11601,7 @@
         "operationKey": "operations GET /external-blocklist/{id}"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "ExternalBlocklistController_findById",
         "controllerFile": "apps/api/src/modules/marshmallow/controllers/external-blocklist.controller.ts",
         "controllerLine": 196
@@ -11379,7 +11659,7 @@
         "operationKey": "operations GET /external-blocklist/scope/{scopeType}/{scopeId}"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "ExternalBlocklistController_findWithInheritance",
         "controllerFile": "apps/api/src/modules/marshmallow/controllers/external-blocklist.controller.ts",
         "controllerLine": 108
@@ -11437,7 +11717,7 @@
         "operationKey": "operations GET /external-blocklist/talent/{talentId}"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "ExternalBlocklistController_findWithInheritanceTalent",
         "controllerFile": "apps/api/src/modules/marshmallow/controllers/external-blocklist.controller.ts",
         "controllerLine": 155
@@ -11491,7 +11771,7 @@
         "operationKey": "operations GET /integration/adapter-definitions"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "IntegrationController_getAdapterDefinitions",
         "controllerFile": "apps/api/src/modules/integration/controllers/integration.controller.ts",
         "controllerLine": 262
@@ -11545,7 +11825,7 @@
         "operationKey": "operations GET /integration/adapters"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "IntegrationController_listTenantAdapters",
         "controllerFile": "apps/api/src/modules/integration/controllers/integration.controller.ts",
         "controllerLine": 276
@@ -11599,7 +11879,7 @@
         "operationKey": "operations GET /integration/adapters/{adapterId}"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "IntegrationController_getAdapter",
         "controllerFile": "apps/api/src/modules/integration/controllers/integration.controller.ts",
         "controllerLine": 335
@@ -11653,7 +11933,7 @@
         "operationKey": "operations GET /integration/adapters/effective/{platformCode}"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "IntegrationController_resolveTenantEffectiveAdapter",
         "controllerFile": "apps/api/src/modules/integration/controllers/integration.controller.ts",
         "controllerLine": 315
@@ -11707,7 +11987,7 @@
         "operationKey": "operations GET /integration/webhook-definitions"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "IntegrationController_getWebhookDefinitions",
         "controllerFile": "apps/api/src/modules/integration/controllers/integration.controller.ts",
         "controllerLine": 269
@@ -11761,7 +12041,7 @@
         "operationKey": "operations GET /integration/webhooks"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "IntegrationController_listWebhooks",
         "controllerFile": "apps/api/src/modules/integration/controllers/integration.controller.ts",
         "controllerLine": 404
@@ -11815,7 +12095,7 @@
         "operationKey": "operations GET /integration/webhooks/{webhookId}"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "IntegrationController_getWebhook",
         "controllerFile": "apps/api/src/modules/integration/controllers/integration.controller.ts",
         "controllerLine": 529
@@ -11871,7 +12151,7 @@
         "operationKey": "operations GET /integration/webhooks/{webhookId}/delivery-attempts"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "IntegrationController_listWebhookDeliveryAttempts",
         "controllerFile": "apps/api/src/modules/integration/controllers/integration.controller.ts",
         "controllerLine": 437
@@ -11927,7 +12207,7 @@
         "operationKey": "operations GET /integration/webhooks/{webhookId}/delivery-attempts/{attemptId}"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "IntegrationController_getWebhookDeliveryAttempt",
         "controllerFile": "apps/api/src/modules/integration/controllers/integration.controller.ts",
         "controllerLine": 454
@@ -11983,7 +12263,7 @@
         "operationKey": "operations GET /integration/webhooks/events"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "IntegrationController_getWebhookEvents",
         "controllerFile": "apps/api/src/modules/integration/controllers/integration.controller.ts",
         "controllerLine": 425
@@ -12036,7 +12316,7 @@
         "operationKey": "operations GET /organization/path/{subpath}"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "OrganizationController_getByPath",
         "controllerFile": "apps/api/src/modules/organization/organization.controller.ts",
         "controllerLine": 828
@@ -12089,7 +12369,7 @@
         "operationKey": "operations GET /organization/tree"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "OrganizationController_getTree",
         "controllerFile": "apps/api/src/modules/organization/organization.controller.ts",
         "controllerLine": 580
@@ -12141,7 +12421,7 @@
         "operationKey": "operations GET /organization/tree/children"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "OrganizationController_getChildren",
         "controllerFile": "apps/api/src/modules/organization/organization.controller.ts",
         "controllerLine": 770
@@ -12194,7 +12474,7 @@
         "operationKey": "operations GET /organization/tree/root"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "OrganizationController_getRootNodes",
         "controllerFile": "apps/api/src/modules/organization/organization.controller.ts",
         "controllerLine": 711
@@ -12243,10 +12523,10 @@
         "operationKey": "operations GET /permissions"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PermissionController_list",
         "controllerFile": "apps/api/src/modules/permission/permission.controller.ts",
-        "controllerLine": 126
+        "controllerLine": 144
       }
     },
     {
@@ -12262,7 +12542,9 @@
       "controllerName": "PermissionController",
       "handlerName": "getResources",
       "requestSchemaRef": null,
-      "responseSchemaRefs": [],
+      "responseSchemaRefs": [
+        "inline:permissioncontroller_getresources:response:200:application_json"
+      ],
       "authMode": "bearer_jwt",
       "requiredPermissions": [],
       "dynamicPermissionResolver": {
@@ -12292,10 +12574,10 @@
         "operationKey": "operations GET /permissions/resources"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PermissionController_getResources",
         "controllerFile": "apps/api/src/modules/permission/permission.controller.ts",
-        "controllerLine": 158
+        "controllerLine": 176
       }
     },
     {
@@ -12346,7 +12628,7 @@
         "operationKey": "operations GET /public-presence/assets"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PublicPresenceAssetController_listAssets",
         "controllerFile": "apps/api/src/modules/homepage/controllers/public-presence-asset.controller.ts",
         "controllerLine": 68
@@ -12400,7 +12682,7 @@
         "operationKey": "operations GET /public-presence/assets/{assetId}"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PublicPresenceAssetController_getAssetDetail",
         "controllerFile": "apps/api/src/modules/homepage/controllers/public-presence-asset.controller.ts",
         "controllerLine": 84
@@ -12454,7 +12736,7 @@
         "operationKey": "operations GET /public-presence/assets/{assetId}/revisions"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PublicPresenceAssetController_listAssetRevisions",
         "controllerFile": "apps/api/src/modules/homepage/controllers/public-presence-asset.controller.ts",
         "controllerLine": 101
@@ -12506,7 +12788,7 @@
         "operationKey": "operations GET /public/domain-lookup"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "DomainLookupController_lookupDomain",
         "controllerFile": "apps/api/src/modules/homepage/controllers/domain-lookup.controller.ts",
         "controllerLine": 76
@@ -12558,7 +12840,7 @@
         "operationKey": "operations GET /public/homepage/{path}"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PublicHomepageController_getPublicHomepageByLegacyPath",
         "controllerFile": "apps/api/src/modules/homepage/controllers/public-homepage.controller.ts",
         "controllerLine": 173
@@ -12610,7 +12892,7 @@
         "operationKey": "operations GET /public/homepage/{path}/calendar.ics"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "CalendarController_getCalendar",
         "controllerFile": "apps/api/src/modules/homepage/controllers/calendar.controller.ts",
         "controllerLine": 43
@@ -12662,7 +12944,7 @@
         "operationKey": "operations GET /public/homepage/{tenantCode}/{talentCode}"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PublicHomepageController_getPublicHomepageByCodes",
         "controllerFile": "apps/api/src/modules/homepage/controllers/public-homepage.controller.ts",
         "controllerLine": 139
@@ -12714,7 +12996,7 @@
         "operationKey": "operations GET /public/marshmallow/{path}/config"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PublicMarshmallowController_getConfig",
         "controllerFile": "apps/api/src/modules/marshmallow/controllers/public-marshmallow.controller.ts",
         "controllerLine": 91
@@ -12767,7 +13049,7 @@
         "operationKey": "operations GET /public/marshmallow/{path}/messages"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PublicMarshmallowController_getMessages",
         "controllerFile": "apps/api/src/modules/marshmallow/controllers/public-marshmallow.controller.ts",
         "controllerLine": 161
@@ -12819,7 +13101,7 @@
         "operationKey": "operations GET /public/marshmallow/{tenantCode}/{talentCode}/config"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PublicMarshmallowController_getConfigByCodes",
         "controllerFile": "apps/api/src/modules/marshmallow/controllers/public-marshmallow.controller.ts",
         "controllerLine": 62
@@ -12872,7 +13154,7 @@
         "operationKey": "operations GET /public/marshmallow/{tenantCode}/{talentCode}/messages"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PublicMarshmallowController_getMessagesByCodes",
         "controllerFile": "apps/api/src/modules/marshmallow/controllers/public-marshmallow.controller.ts",
         "controllerLine": 118
@@ -12930,7 +13212,7 @@
         "operationKey": "operations GET /reports/catalog"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "ReportCatalogController_listCatalog",
         "controllerFile": "apps/api/src/modules/report/controllers/report-catalog.controller.ts",
         "controllerLine": 179
@@ -12989,7 +13271,7 @@
         "operationKey": "operations GET /reports/catalog/{reportId}"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "ReportCatalogController_getCatalogItem",
         "controllerFile": "apps/api/src/modules/report/controllers/report-catalog.controller.ts",
         "controllerLine": 201
@@ -13048,7 +13330,7 @@
         "operationKey": "operations GET /reports/mfr/jobs"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "ReportController_listMfrJobs",
         "controllerFile": "apps/api/src/modules/report/controllers/report.controller.ts",
         "controllerLine": 472
@@ -13108,7 +13390,7 @@
         "operationKey": "operations GET /reports/mfr/jobs/{jobId}"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "ReportController_getMfrJob",
         "controllerFile": "apps/api/src/modules/report/controllers/report.controller.ts",
         "controllerLine": 510
@@ -13168,7 +13450,7 @@
         "operationKey": "operations GET /reports/mfr/jobs/{jobId}/download"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "ReportController_downloadMfrJob",
         "controllerFile": "apps/api/src/modules/report/controllers/report.controller.ts",
         "controllerLine": 560
@@ -13225,7 +13507,7 @@
         "operationKey": "operations GET /roles"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "RoleController_list",
         "controllerFile": "apps/api/src/modules/role/role.controller.ts",
         "controllerLine": 475
@@ -13283,7 +13565,7 @@
         "operationKey": "operations GET /roles/{roleId}"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "RoleController_getById",
         "controllerFile": "apps/api/src/modules/role/role.controller.ts",
         "controllerLine": 580
@@ -13335,7 +13617,7 @@
         "operationKey": "operations GET /subsidiaries"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "SubsidiaryController_list",
         "controllerFile": "apps/api/src/modules/subsidiary/subsidiary.controller.ts",
         "controllerLine": 528
@@ -13388,7 +13670,7 @@
         "operationKey": "operations GET /subsidiaries/{subsidiaryId}"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "SubsidiaryController_getById",
         "controllerFile": "apps/api/src/modules/subsidiary/subsidiary.controller.ts",
         "controllerLine": 643
@@ -13442,7 +13724,7 @@
         "operationKey": "operations GET /subsidiaries/{subsidiaryId}/integration/adapters"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "SubsidiaryIntegrationAdapterController_listSubsidiaryAdapters",
         "controllerFile": "apps/api/src/modules/integration/controllers/scoped-integration-adapter.controller.ts",
         "controllerLine": 43
@@ -13496,7 +13778,7 @@
         "operationKey": "operations GET /subsidiaries/{subsidiaryId}/integration/adapters/effective/{platformCode}"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "SubsidiaryIntegrationAdapterController_resolveSubsidiaryEffectiveAdapter",
         "controllerFile": "apps/api/src/modules/integration/controllers/scoped-integration-adapter.controller.ts",
         "controllerLine": 84
@@ -13553,7 +13835,7 @@
         "operationKey": "operations GET /talents"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "TalentController_list",
         "controllerFile": "apps/api/src/modules/talent/talent.controller.ts",
         "controllerLine": 1389
@@ -13611,7 +13893,7 @@
         "operationKey": "operations GET /talents/{talentId}"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "TalentController_getById",
         "controllerFile": "apps/api/src/modules/talent/talent.controller.ts",
         "controllerLine": 1694
@@ -13669,7 +13951,7 @@
         "operationKey": "operations GET /talents/{talentId}/custom-domain"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "TalentController_getCustomDomainConfig",
         "controllerFile": "apps/api/src/modules/talent/talent.controller.ts",
         "controllerLine": 2237
@@ -13727,7 +14009,7 @@
         "operationKey": "operations GET /talents/{talentId}/customers"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "CustomerController_list",
         "controllerFile": "apps/api/src/modules/customer/controllers/customer.controller.ts",
         "controllerLine": 73
@@ -13786,7 +14068,7 @@
         "operationKey": "operations GET /talents/{talentId}/customers/{customerId}"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "CustomerController_getById",
         "controllerFile": "apps/api/src/modules/customer/controllers/customer.controller.ts",
         "controllerLine": 116
@@ -13845,7 +14127,7 @@
         "operationKey": "operations GET /talents/{talentId}/customers/{customerId}/external-ids"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "ExternalIdController_list",
         "controllerFile": "apps/api/src/modules/customer/controllers/external-id.controller.ts",
         "controllerLine": 36
@@ -13904,7 +14186,7 @@
         "operationKey": "operations GET /talents/{talentId}/customers/{customerId}/memberships"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "MembershipController_list",
         "controllerFile": "apps/api/src/modules/customer/controllers/membership.controller.ts",
         "controllerLine": 50
@@ -13963,7 +14245,7 @@
         "operationKey": "operations GET /talents/{talentId}/customers/{customerId}/platform-identities"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PlatformIdentityController_list",
         "controllerFile": "apps/api/src/modules/customer/controllers/platform-identity.controller.ts",
         "controllerLine": 52
@@ -14023,7 +14305,7 @@
         "operationKey": "operations GET /talents/{talentId}/customers/{customerId}/platform-identities/history"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PlatformIdentityController_getHistory",
         "controllerFile": "apps/api/src/modules/customer/controllers/platform-identity.controller.ts",
         "controllerLine": 218
@@ -14081,7 +14363,7 @@
         "operationKey": "operations GET /talents/{talentId}/homepage"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "HomepageController_getHomepage",
         "controllerFile": "apps/api/src/modules/homepage/controllers/homepage.controller.ts",
         "controllerLine": 350
@@ -14139,7 +14421,7 @@
         "operationKey": "operations GET /talents/{talentId}/homepage/versions"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "HomepageController_listVersions",
         "controllerFile": "apps/api/src/modules/homepage/controllers/homepage.controller.ts",
         "controllerLine": 624
@@ -14197,7 +14479,7 @@
         "operationKey": "operations GET /talents/{talentId}/homepage/versions/{versionId}"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "HomepageController_getVersion",
         "controllerFile": "apps/api/src/modules/homepage/controllers/homepage.controller.ts",
         "controllerLine": 674
@@ -14256,7 +14538,7 @@
         "operationKey": "operations GET /talents/{talentId}/imports/customers"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "ImportController_listJobs",
         "controllerFile": "apps/api/src/modules/import/controllers/import.controller.ts",
         "controllerLine": 452
@@ -14316,7 +14598,7 @@
         "operationKey": "operations GET /talents/{talentId}/imports/customers/{type}/{jobId}"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "ImportController_getJob",
         "controllerFile": "apps/api/src/modules/import/controllers/import.controller.ts",
         "controllerLine": 496
@@ -14374,7 +14656,7 @@
         "operationKey": "operations GET /talents/{talentId}/imports/customers/{type}/{jobId}/errors"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "ImportController_getJobErrors",
         "controllerFile": "apps/api/src/modules/import/controllers/import.controller.ts",
         "controllerLine": 551
@@ -14432,7 +14714,7 @@
         "operationKey": "operations GET /talents/{talentId}/imports/customers/companies/template"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "ImportController_downloadCompanyTemplate",
         "controllerFile": "apps/api/src/modules/import/controllers/import.controller.ts",
         "controllerLine": 242
@@ -14490,7 +14772,7 @@
         "operationKey": "operations GET /talents/{talentId}/imports/customers/individuals/template"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "ImportController_downloadIndividualTemplate",
         "controllerFile": "apps/api/src/modules/import/controllers/import.controller.ts",
         "controllerLine": 200
@@ -14544,7 +14826,7 @@
         "operationKey": "operations GET /talents/{talentId}/integration/adapters"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "TalentIntegrationAdapterController_listTalentAdapters",
         "controllerFile": "apps/api/src/modules/integration/controllers/scoped-integration-adapter.controller.ts",
         "controllerLine": 167
@@ -14598,7 +14880,7 @@
         "operationKey": "operations GET /talents/{talentId}/integration/adapters/effective/{platformCode}"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "TalentIntegrationAdapterController_resolveTalentEffectiveAdapter",
         "controllerFile": "apps/api/src/modules/integration/controllers/scoped-integration-adapter.controller.ts",
         "controllerLine": 208
@@ -14657,7 +14939,7 @@
         "operationKey": "operations GET /talents/{talentId}/marshmallow/config"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "MarshmallowController_getConfig",
         "controllerFile": "apps/api/src/modules/marshmallow/controllers/marshmallow.controller.ts",
         "controllerLine": 103
@@ -14716,7 +14998,7 @@
         "operationKey": "operations GET /talents/{talentId}/marshmallow/export/{jobId}"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "MarshmallowController_getExportJob",
         "controllerFile": "apps/api/src/modules/marshmallow/controllers/marshmallow.controller.ts",
         "controllerLine": 804
@@ -14776,7 +15058,7 @@
         "operationKey": "operations GET /talents/{talentId}/marshmallow/export/{jobId}/download"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "MarshmallowController_getExportDownloadUrl",
         "controllerFile": "apps/api/src/modules/marshmallow/controllers/marshmallow.controller.ts",
         "controllerLine": 845
@@ -14835,7 +15117,7 @@
         "operationKey": "operations GET /talents/{talentId}/marshmallow/messages"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "MarshmallowController_listMessages",
         "controllerFile": "apps/api/src/modules/marshmallow/controllers/marshmallow.controller.ts",
         "controllerLine": 436
@@ -14891,7 +15173,7 @@
         "operationKey": "operations GET /talents/{talentId}/public-presence"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PublicPresenceController_getWorkspace",
         "controllerFile": "apps/api/src/modules/homepage/controllers/public-presence.controller.ts",
         "controllerLine": 83
@@ -14947,7 +15229,7 @@
         "operationKey": "operations GET /talents/{talentId}/public-presence/preview"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PublicPresenceController_getDraftPreview",
         "controllerFile": "apps/api/src/modules/homepage/controllers/public-presence.controller.ts",
         "controllerLine": 107
@@ -15005,7 +15287,7 @@
         "operationKey": "operations GET /talents/{talentId}/publish-readiness"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "TalentController_getPublishReadiness",
         "controllerFile": "apps/api/src/modules/talent/talent.controller.ts",
         "controllerLine": 1935
@@ -15063,7 +15345,7 @@
         "operationKey": "operations GET /talents/custom-domain-bindings"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "TalentController_listCustomDomainBindings",
         "controllerFile": "apps/api/src/modules/talent/talent.controller.ts",
         "controllerLine": 1510
@@ -15117,7 +15399,7 @@
         "operationKey": "operations GET /users/{userId}/roles"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "UserRoleController_getUserRoles",
         "controllerFile": "apps/api/src/modules/role/user-role.controller.ts",
         "controllerLine": 73
@@ -15166,7 +15448,7 @@
         "operationKey": "operations GET /users/me/permissions"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "MyPermissionsController_getMyPermissions",
         "controllerFile": "apps/api/src/modules/permission/my-permissions.controller.ts",
         "controllerLine": 51
@@ -15227,7 +15509,7 @@
         "operationKey": "operations PATCH /external-blocklist/{id}"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "ExternalBlocklistController_update",
         "controllerFile": "apps/api/src/modules/marshmallow/controllers/external-blocklist.controller.ts",
         "controllerLine": 286
@@ -15281,7 +15563,7 @@
         "operationKey": "operations PATCH /integration/adapters/{adapterId}"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "IntegrationController_updateAdapter",
         "controllerFile": "apps/api/src/modules/integration/controllers/integration.controller.ts",
         "controllerLine": 346
@@ -15335,7 +15617,7 @@
         "operationKey": "operations PATCH /integration/adapters/{adapterId}/configs"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "IntegrationController_updateAdapterConfigs",
         "controllerFile": "apps/api/src/modules/integration/controllers/integration.controller.ts",
         "controllerLine": 380
@@ -15389,7 +15671,7 @@
         "operationKey": "operations PATCH /integration/webhooks/{webhookId}"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "IntegrationController_updateWebhook",
         "controllerFile": "apps/api/src/modules/integration/controllers/integration.controller.ts",
         "controllerLine": 540
@@ -15448,7 +15730,7 @@
         "operationKey": "operations PATCH /roles/{roleId}"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "RoleController_update",
         "controllerFile": "apps/api/src/modules/role/role.controller.ts",
         "controllerLine": 643
@@ -15508,7 +15790,7 @@
         "operationKey": "operations PATCH /roles/{roleId}/permissions"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "RoleController_setPermissions",
         "controllerFile": "apps/api/src/modules/role/role.controller.ts",
         "controllerLine": 694
@@ -15562,7 +15844,7 @@
         "operationKey": "operations PATCH /subsidiaries/{subsidiaryId}"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "SubsidiaryController_update",
         "controllerFile": "apps/api/src/modules/subsidiary/subsidiary.controller.ts",
         "controllerLine": 704
@@ -15621,7 +15903,7 @@
         "operationKey": "operations PATCH /talents/{talentId}"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "TalentController_update",
         "controllerFile": "apps/api/src/modules/talent/talent.controller.ts",
         "controllerLine": 1776
@@ -15680,7 +15962,7 @@
         "operationKey": "operations PATCH /talents/{talentId}/custom-domain/inherited-selections"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "TalentController_selectInheritedCustomDomains",
         "controllerFile": "apps/api/src/modules/talent/talent.controller.ts",
         "controllerLine": 2365
@@ -15738,7 +16020,7 @@
         "operationKey": "operations PATCH /talents/{talentId}/custom-domain/paths"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "TalentController_updateServicePaths",
         "controllerFile": "apps/api/src/modules/talent/talent.controller.ts",
         "controllerLine": 2410
@@ -15796,7 +16078,7 @@
         "operationKey": "operations PATCH /talents/{talentId}/custom-domain/ssl-mode"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "TalentController_updateSslMode",
         "controllerFile": "apps/api/src/modules/talent/talent.controller.ts",
         "controllerLine": 2446
@@ -15856,7 +16138,7 @@
         "operationKey": "operations PATCH /talents/{talentId}/customers/{customerId}/memberships/{recordId}"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "MembershipController_update",
         "controllerFile": "apps/api/src/modules/customer/controllers/membership.controller.ts",
         "controllerLine": 145
@@ -15917,7 +16199,7 @@
         "operationKey": "operations PATCH /talents/{talentId}/customers/{customerId}/platform-identities/{identityId}"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PlatformIdentityController_update",
         "controllerFile": "apps/api/src/modules/customer/controllers/platform-identity.controller.ts",
         "controllerLine": 155
@@ -15978,7 +16260,7 @@
         "operationKey": "operations PATCH /talents/{talentId}/customers/companies/{customerId}"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "CustomerController_updateCompany",
         "controllerFile": "apps/api/src/modules/customer/controllers/customer.controller.ts",
         "controllerLine": 468
@@ -16039,7 +16321,7 @@
         "operationKey": "operations PATCH /talents/{talentId}/customers/individuals/{customerId}"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "CustomerController_updateIndividual",
         "controllerFile": "apps/api/src/modules/customer/controllers/customer.controller.ts",
         "controllerLine": 208
@@ -16100,7 +16382,7 @@
         "operationKey": "operations PATCH /talents/{talentId}/customers/individuals/{customerId}/pii"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "CustomerController_updateIndividualPii",
         "controllerFile": "apps/api/src/modules/customer/controllers/customer.controller.ts",
         "controllerLine": 365
@@ -16158,7 +16440,7 @@
         "operationKey": "operations PATCH /talents/{talentId}/homepage/draft"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "HomepageController_saveDraft",
         "controllerFile": "apps/api/src/modules/homepage/controllers/homepage.controller.ts",
         "controllerLine": 448
@@ -16217,7 +16499,7 @@
         "operationKey": "operations PATCH /talents/{talentId}/homepage/settings"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "HomepageController_updateSettings",
         "controllerFile": "apps/api/src/modules/homepage/controllers/homepage.controller.ts",
         "controllerLine": 580
@@ -16278,7 +16560,7 @@
         "operationKey": "operations PATCH /talents/{talentId}/marshmallow/config"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "MarshmallowController_updateConfig",
         "controllerFile": "apps/api/src/modules/marshmallow/controllers/marshmallow.controller.ts",
         "controllerLine": 138
@@ -16338,7 +16620,7 @@
         "operationKey": "operations PATCH /talents/{talentId}/marshmallow/messages/{messageId}"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "MarshmallowController_updateMessage",
         "controllerFile": "apps/api/src/modules/marshmallow/controllers/marshmallow.controller.ts",
         "controllerLine": 707
@@ -16394,7 +16676,7 @@
         "operationKey": "operations PATCH /talents/{talentId}/public-presence/draft"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PublicPresenceController_saveDraft",
         "controllerFile": "apps/api/src/modules/homepage/controllers/public-presence.controller.ts",
         "controllerLine": 166
@@ -16453,7 +16735,7 @@
         "operationKey": "operations PATCH /talents/custom-domain-bindings/{domainId}"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "TalentController_updateCustomDomainBinding",
         "controllerFile": "apps/api/src/modules/talent/talent.controller.ts",
         "controllerLine": 1607
@@ -16507,7 +16789,7 @@
         "operationKey": "operations PATCH /users/{userId}/roles/{assignmentId}"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "UserRoleController_updateAssignment",
         "controllerFile": "apps/api/src/modules/role/user-role.controller.ts",
         "controllerLine": 156
@@ -16566,7 +16848,7 @@
         "operationKey": "operations POST /exports"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "ExportController_createExport",
         "controllerFile": "apps/api/src/modules/export/controllers/export.controller.ts",
         "controllerLine": 148
@@ -16626,7 +16908,7 @@
         "operationKey": "operations POST /external-blocklist"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "ExternalBlocklistController_create",
         "controllerFile": "apps/api/src/modules/marshmallow/controllers/external-blocklist.controller.ts",
         "controllerLine": 242
@@ -16686,7 +16968,7 @@
         "operationKey": "operations POST /external-blocklist/{id}/disable"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "ExternalBlocklistController_disableInScope",
         "controllerFile": "apps/api/src/modules/marshmallow/controllers/external-blocklist.controller.ts",
         "controllerLine": 380
@@ -16746,7 +17028,7 @@
         "operationKey": "operations POST /external-blocklist/{id}/enable"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "ExternalBlocklistController_enableInScope",
         "controllerFile": "apps/api/src/modules/marshmallow/controllers/external-blocklist.controller.ts",
         "controllerLine": 429
@@ -16805,7 +17087,7 @@
         "operationKey": "operations POST /external-blocklist/batch-toggle"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "ExternalBlocklistController_batchToggle",
         "controllerFile": "apps/api/src/modules/marshmallow/controllers/external-blocklist.controller.ts",
         "controllerLine": 478
@@ -16859,7 +17141,7 @@
         "operationKey": "operations POST /integration/adapters"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "IntegrationController_createTenantAdapter",
         "controllerFile": "apps/api/src/modules/integration/controllers/integration.controller.ts",
         "controllerLine": 301
@@ -16913,7 +17195,7 @@
         "operationKey": "operations POST /integration/adapters/{adapterId}/configs/{configKey}/reveal"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "IntegrationController_revealConfig",
         "controllerFile": "apps/api/src/modules/integration/controllers/integration.controller.ts",
         "controllerLine": 392
@@ -16967,7 +17249,7 @@
         "operationKey": "operations POST /integration/adapters/{adapterId}/deactivate"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "IntegrationController_deactivateAdapter",
         "controllerFile": "apps/api/src/modules/integration/controllers/integration.controller.ts",
         "controllerLine": 358
@@ -17021,7 +17303,7 @@
         "operationKey": "operations POST /integration/adapters/{adapterId}/reactivate"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "IntegrationController_reactivateAdapter",
         "controllerFile": "apps/api/src/modules/integration/controllers/integration.controller.ts",
         "controllerLine": 369
@@ -17075,7 +17357,7 @@
         "operationKey": "operations POST /integration/consumers/{consumerId}/regenerate-key"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "IntegrationController_regenerateConsumerKey",
         "controllerFile": "apps/api/src/modules/integration/controllers/integration.controller.ts",
         "controllerLine": 585
@@ -17129,7 +17411,7 @@
         "operationKey": "operations POST /integration/webhooks"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "IntegrationController_createWebhook",
         "controllerFile": "apps/api/src/modules/integration/controllers/integration.controller.ts",
         "controllerLine": 414
@@ -17183,7 +17465,7 @@
         "operationKey": "operations POST /integration/webhooks/{webhookId}/deactivate"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "IntegrationController_deactivateWebhook",
         "controllerFile": "apps/api/src/modules/integration/controllers/integration.controller.ts",
         "controllerLine": 563
@@ -17240,7 +17522,7 @@
         "operationKey": "operations POST /integration/webhooks/{webhookId}/delivery-attempts/{attemptId}/replay"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "IntegrationController_replayWebhookDeliveryAttempt",
         "controllerFile": "apps/api/src/modules/integration/controllers/integration.controller.ts",
         "controllerLine": 499
@@ -17294,7 +17576,7 @@
         "operationKey": "operations POST /integration/webhooks/{webhookId}/reactivate"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "IntegrationController_reactivateWebhook",
         "controllerFile": "apps/api/src/modules/integration/controllers/integration.controller.ts",
         "controllerLine": 574
@@ -17351,7 +17633,7 @@
         "operationKey": "operations POST /integration/webhooks/{webhookId}/test-delivery"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "IntegrationController_createWebhookTestDelivery",
         "controllerFile": "apps/api/src/modules/integration/controllers/integration.controller.ts",
         "controllerLine": 475
@@ -17400,10 +17682,10 @@
         "operationKey": "operations POST /permissions/check"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PermissionController_checkPermissions",
         "controllerFile": "apps/api/src/modules/permission/permission.controller.ts",
-        "controllerLine": 175
+        "controllerLine": 197
       }
     },
     {
@@ -17454,7 +17736,7 @@
         "operationKey": "operations POST /public-presence/assets"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PublicPresenceAssetController_createAsset",
         "controllerFile": "apps/api/src/modules/homepage/controllers/public-presence-asset.controller.ts",
         "controllerLine": 120
@@ -17508,7 +17790,7 @@
         "operationKey": "operations POST /public-presence/assets/{assetId}/current/validate"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PublicPresenceAssetController_validateAsset",
         "controllerFile": "apps/api/src/modules/homepage/controllers/public-presence-asset.controller.ts",
         "controllerLine": 170
@@ -17562,7 +17844,7 @@
         "operationKey": "operations POST /public-presence/assets/{assetId}/duplicate"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PublicPresenceAssetController_duplicateAsset",
         "controllerFile": "apps/api/src/modules/homepage/controllers/public-presence-asset.controller.ts",
         "controllerLine": 196
@@ -17616,7 +17898,7 @@
         "operationKey": "operations POST /public/marshmallow/{path}/messages/{messageId}/mark-read"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PublicMarshmallowController_markAsRead",
         "controllerFile": "apps/api/src/modules/marshmallow/controllers/public-marshmallow.controller.ts",
         "controllerLine": 359
@@ -17670,7 +17952,7 @@
         "operationKey": "operations POST /public/marshmallow/{path}/messages/{messageId}/mark-read-auth"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PublicMarshmallowController_markAsReadAuth",
         "controllerFile": "apps/api/src/modules/marshmallow/controllers/public-marshmallow.controller.ts",
         "controllerLine": 452
@@ -17724,7 +18006,7 @@
         "operationKey": "operations POST /public/marshmallow/{path}/messages/{messageId}/reply-auth"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PublicMarshmallowController_replyAuth",
         "controllerFile": "apps/api/src/modules/marshmallow/controllers/public-marshmallow.controller.ts",
         "controllerLine": 511
@@ -17778,7 +18060,7 @@
         "operationKey": "operations POST /public/marshmallow/{path}/submit"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PublicMarshmallowController_submitMessage",
         "controllerFile": "apps/api/src/modules/marshmallow/controllers/public-marshmallow.controller.ts",
         "controllerLine": 246
@@ -17832,7 +18114,7 @@
         "operationKey": "operations POST /public/marshmallow/{tenantCode}/{talentCode}/submit"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PublicMarshmallowController_submitMessageByCodes",
         "controllerFile": "apps/api/src/modules/marshmallow/controllers/public-marshmallow.controller.ts",
         "controllerLine": 206
@@ -17885,7 +18167,7 @@
         "operationKey": "operations POST /public/marshmallow/messages/{messageId}/react"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PublicMarshmallowController_toggleReaction",
         "controllerFile": "apps/api/src/modules/marshmallow/controllers/public-marshmallow.controller.ts",
         "controllerLine": 319
@@ -17937,7 +18219,7 @@
         "operationKey": "operations POST /public/marshmallow/preview-image"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PublicMarshmallowController_previewImage",
         "controllerFile": "apps/api/src/modules/marshmallow/controllers/public-marshmallow.controller.ts",
         "controllerLine": 284
@@ -17989,7 +18271,7 @@
         "operationKey": "operations POST /public/marshmallow/validate-sso"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PublicMarshmallowController_validateSsoToken",
         "controllerFile": "apps/api/src/modules/marshmallow/controllers/public-marshmallow.controller.ts",
         "controllerLine": 409
@@ -18049,7 +18331,7 @@
         "operationKey": "operations POST /reports/mfr/jobs"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "ReportController_createMfrJob",
         "controllerFile": "apps/api/src/modules/report/controllers/report.controller.ts",
         "controllerLine": 432
@@ -18109,7 +18391,7 @@
         "operationKey": "operations POST /reports/mfr/search"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "ReportController_searchMfr",
         "controllerFile": "apps/api/src/modules/report/controllers/report.controller.ts",
         "controllerLine": 395
@@ -18167,7 +18449,7 @@
         "operationKey": "operations POST /roles"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "RoleController_create",
         "controllerFile": "apps/api/src/modules/role/role.controller.ts",
         "controllerLine": 522
@@ -18227,7 +18509,7 @@
         "operationKey": "operations POST /roles/{roleId}/deactivate"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "RoleController_deactivate",
         "controllerFile": "apps/api/src/modules/role/role.controller.ts",
         "controllerLine": 762
@@ -18286,7 +18568,7 @@
         "operationKey": "operations POST /roles/{roleId}/reactivate"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "RoleController_reactivate",
         "controllerFile": "apps/api/src/modules/role/role.controller.ts",
         "controllerLine": 819
@@ -18340,7 +18622,7 @@
         "operationKey": "operations POST /subsidiaries"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "SubsidiaryController_create",
         "controllerFile": "apps/api/src/modules/subsidiary/subsidiary.controller.ts",
         "controllerLine": 588
@@ -18394,7 +18676,7 @@
         "operationKey": "operations POST /subsidiaries/{subsidiaryId}/deactivate"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "SubsidiaryController_deactivate",
         "controllerFile": "apps/api/src/modules/subsidiary/subsidiary.controller.ts",
         "controllerLine": 802
@@ -18448,7 +18730,7 @@
         "operationKey": "operations POST /subsidiaries/{subsidiaryId}/integration/adapters"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "SubsidiaryIntegrationAdapterController_createSubsidiaryAdapter",
         "controllerFile": "apps/api/src/modules/integration/controllers/scoped-integration-adapter.controller.ts",
         "controllerLine": 69
@@ -18502,7 +18784,7 @@
         "operationKey": "operations POST /subsidiaries/{subsidiaryId}/integration/adapters/{adapterId}/disable"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "SubsidiaryIntegrationAdapterController_disableSubsidiaryInheritedAdapter",
         "controllerFile": "apps/api/src/modules/integration/controllers/scoped-integration-adapter.controller.ts",
         "controllerLine": 105
@@ -18556,7 +18838,7 @@
         "operationKey": "operations POST /subsidiaries/{subsidiaryId}/integration/adapters/{adapterId}/enable"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "SubsidiaryIntegrationAdapterController_enableSubsidiaryInheritedAdapter",
         "controllerFile": "apps/api/src/modules/integration/controllers/scoped-integration-adapter.controller.ts",
         "controllerLine": 121
@@ -18608,7 +18890,7 @@
         "operationKey": "operations POST /subsidiaries/{subsidiaryId}/move"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "SubsidiaryController_move",
         "controllerFile": "apps/api/src/modules/subsidiary/subsidiary.controller.ts",
         "controllerLine": 757
@@ -18662,7 +18944,7 @@
         "operationKey": "operations POST /subsidiaries/{subsidiaryId}/reactivate"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "SubsidiaryController_reactivate",
         "controllerFile": "apps/api/src/modules/subsidiary/subsidiary.controller.ts",
         "controllerLine": 857
@@ -18721,7 +19003,7 @@
         "operationKey": "operations POST /talents"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "TalentController_create",
         "controllerFile": "apps/api/src/modules/talent/talent.controller.ts",
         "controllerLine": 1443
@@ -18780,7 +19062,7 @@
         "operationKey": "operations POST /talents/{talentId}/custom-domain"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "TalentController_setCustomDomain",
         "controllerFile": "apps/api/src/modules/talent/talent.controller.ts",
         "controllerLine": 2278
@@ -18839,7 +19121,7 @@
         "operationKey": "operations POST /talents/{talentId}/custom-domain/verify"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "TalentController_verifyCustomDomain",
         "controllerFile": "apps/api/src/modules/talent/talent.controller.ts",
         "controllerLine": 2324
@@ -18900,7 +19182,7 @@
         "operationKey": "operations POST /talents/{talentId}/customers/{customerId}/deactivate"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "CustomerController_deactivate",
         "controllerFile": "apps/api/src/modules/customer/controllers/customer.controller.ts",
         "controllerLine": 521
@@ -18961,7 +19243,7 @@
         "operationKey": "operations POST /talents/{talentId}/customers/{customerId}/external-ids"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "ExternalIdController_create",
         "controllerFile": "apps/api/src/modules/customer/controllers/external-id.controller.ts",
         "controllerLine": 82
@@ -19021,7 +19303,7 @@
         "operationKey": "operations POST /talents/{talentId}/customers/{customerId}/memberships"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "MembershipController_create",
         "controllerFile": "apps/api/src/modules/customer/controllers/membership.controller.ts",
         "controllerLine": 97
@@ -19082,7 +19364,7 @@
         "operationKey": "operations POST /talents/{talentId}/customers/{customerId}/platform-identities"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PlatformIdentityController_create",
         "controllerFile": "apps/api/src/modules/customer/controllers/platform-identity.controller.ts",
         "controllerLine": 98
@@ -19141,7 +19423,7 @@
         "operationKey": "operations POST /talents/{talentId}/customers/{customerId}/reactivate"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "CustomerController_reactivate",
         "controllerFile": "apps/api/src/modules/customer/controllers/customer.controller.ts",
         "controllerLine": 585
@@ -19202,7 +19484,7 @@
         "operationKey": "operations POST /talents/{talentId}/customers/batch"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "CustomerController_batchOperation",
         "controllerFile": "apps/api/src/modules/customer/controllers/customer.controller.ts",
         "controllerLine": 636
@@ -19262,7 +19544,7 @@
         "operationKey": "operations POST /talents/{talentId}/customers/companies"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "CustomerController_createCompany",
         "controllerFile": "apps/api/src/modules/customer/controllers/customer.controller.ts",
         "controllerLine": 422
@@ -19322,7 +19604,7 @@
         "operationKey": "operations POST /talents/{talentId}/customers/companies/{customerId}/pii-portal-session"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "CustomerController_createCompanyPiiPortalSession",
         "controllerFile": "apps/api/src/modules/customer/controllers/customer.controller.ts",
         "controllerLine": 313
@@ -19382,7 +19664,7 @@
         "operationKey": "operations POST /talents/{talentId}/customers/individuals"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "CustomerController_createIndividual",
         "controllerFile": "apps/api/src/modules/customer/controllers/customer.controller.ts",
         "controllerLine": 162
@@ -19442,7 +19724,7 @@
         "operationKey": "operations POST /talents/{talentId}/customers/individuals/{customerId}/pii-portal-session"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "CustomerController_createPiiPortalSession",
         "controllerFile": "apps/api/src/modules/customer/controllers/customer.controller.ts",
         "controllerLine": 261
@@ -19502,7 +19784,7 @@
         "operationKey": "operations POST /talents/{talentId}/disable"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "TalentController_disable",
         "controllerFile": "apps/api/src/modules/talent/talent.controller.ts",
         "controllerLine": 2097
@@ -19562,7 +19844,7 @@
         "operationKey": "operations POST /talents/{talentId}/homepage/assets"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "HomepageController_uploadAsset",
         "controllerFile": "apps/api/src/modules/homepage/controllers/homepage.controller.ts",
         "controllerLine": 383
@@ -19621,7 +19903,7 @@
         "operationKey": "operations POST /talents/{talentId}/homepage/publish"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "HomepageController_publish",
         "controllerFile": "apps/api/src/modules/homepage/controllers/homepage.controller.ts",
         "controllerLine": 492
@@ -19679,7 +19961,7 @@
         "operationKey": "operations POST /talents/{talentId}/homepage/unpublish"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "HomepageController_unpublish",
         "controllerFile": "apps/api/src/modules/homepage/controllers/homepage.controller.ts",
         "controllerLine": 541
@@ -19737,7 +20019,7 @@
         "operationKey": "operations POST /talents/{talentId}/homepage/versions/{versionId}/restore"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "HomepageController_restoreVersion",
         "controllerFile": "apps/api/src/modules/homepage/controllers/homepage.controller.ts",
         "controllerLine": 736
@@ -19796,7 +20078,7 @@
         "operationKey": "operations POST /talents/{talentId}/imports/customers/companies"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "ImportController_uploadCompany",
         "controllerFile": "apps/api/src/modules/import/controllers/import.controller.ts",
         "controllerLine": 368
@@ -19855,7 +20137,7 @@
         "operationKey": "operations POST /talents/{talentId}/imports/customers/individuals"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "ImportController_uploadIndividual",
         "controllerFile": "apps/api/src/modules/import/controllers/import.controller.ts",
         "controllerLine": 288
@@ -19909,7 +20191,7 @@
         "operationKey": "operations POST /talents/{talentId}/integration/adapters"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "TalentIntegrationAdapterController_createTalentAdapter",
         "controllerFile": "apps/api/src/modules/integration/controllers/scoped-integration-adapter.controller.ts",
         "controllerLine": 193
@@ -19963,7 +20245,7 @@
         "operationKey": "operations POST /talents/{talentId}/integration/adapters/{adapterId}/disable"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "TalentIntegrationAdapterController_disableTalentInheritedAdapter",
         "controllerFile": "apps/api/src/modules/integration/controllers/scoped-integration-adapter.controller.ts",
         "controllerLine": 229
@@ -20017,7 +20299,7 @@
         "operationKey": "operations POST /talents/{talentId}/integration/adapters/{adapterId}/enable"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "TalentIntegrationAdapterController_enableTalentInheritedAdapter",
         "controllerFile": "apps/api/src/modules/integration/controllers/scoped-integration-adapter.controller.ts",
         "controllerLine": 245
@@ -20076,7 +20358,7 @@
         "operationKey": "operations POST /talents/{talentId}/marshmallow/avatar"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "MarshmallowController_uploadAvatar",
         "controllerFile": "apps/api/src/modules/marshmallow/controllers/marshmallow.controller.ts",
         "controllerLine": 186
@@ -20137,7 +20419,7 @@
         "operationKey": "operations POST /talents/{talentId}/marshmallow/config/domain"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "MarshmallowController_setCustomDomain",
         "controllerFile": "apps/api/src/modules/marshmallow/controllers/marshmallow.controller.ts",
         "controllerLine": 281
@@ -20197,7 +20479,7 @@
         "operationKey": "operations POST /talents/{talentId}/marshmallow/config/verify-domain"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "MarshmallowController_verifyCustomDomain",
         "controllerFile": "apps/api/src/modules/marshmallow/controllers/marshmallow.controller.ts",
         "controllerLine": 342
@@ -20257,7 +20539,7 @@
         "operationKey": "operations POST /talents/{talentId}/marshmallow/export"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "MarshmallowController_exportMessages",
         "controllerFile": "apps/api/src/modules/marshmallow/controllers/marshmallow.controller.ts",
         "controllerLine": 760
@@ -20316,7 +20598,7 @@
         "operationKey": "operations POST /talents/{talentId}/marshmallow/messages/{messageId}/approve"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "MarshmallowController_approveMessage",
         "controllerFile": "apps/api/src/modules/marshmallow/controllers/marshmallow.controller.ts",
         "controllerLine": 479
@@ -20376,7 +20658,7 @@
         "operationKey": "operations POST /talents/{talentId}/marshmallow/messages/{messageId}/reject"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "MarshmallowController_rejectMessage",
         "controllerFile": "apps/api/src/modules/marshmallow/controllers/marshmallow.controller.ts",
         "controllerLine": 522
@@ -20436,7 +20718,7 @@
         "operationKey": "operations POST /talents/{talentId}/marshmallow/messages/{messageId}/reply"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "MarshmallowController_replyMessage",
         "controllerFile": "apps/api/src/modules/marshmallow/controllers/marshmallow.controller.ts",
         "controllerLine": 614
@@ -20495,7 +20777,7 @@
         "operationKey": "operations POST /talents/{talentId}/marshmallow/messages/{messageId}/unreject"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "MarshmallowController_unrejectMessage",
         "controllerFile": "apps/api/src/modules/marshmallow/controllers/marshmallow.controller.ts",
         "controllerLine": 571
@@ -20555,7 +20837,7 @@
         "operationKey": "operations POST /talents/{talentId}/marshmallow/messages/batch"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "MarshmallowController_batchAction",
         "controllerFile": "apps/api/src/modules/marshmallow/controllers/marshmallow.controller.ts",
         "controllerLine": 663
@@ -20613,7 +20895,7 @@
         "operationKey": "operations POST /talents/{talentId}/marshmallow/sso-token"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "MarshmallowController_generateSsoToken",
         "controllerFile": "apps/api/src/modules/marshmallow/controllers/marshmallow.controller.ts",
         "controllerLine": 389
@@ -20670,7 +20952,7 @@
         "operationKey": "operations POST /talents/{talentId}/move"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "TalentController_move",
         "controllerFile": "apps/api/src/modules/talent/talent.controller.ts",
         "controllerLine": 1886
@@ -20726,7 +21008,7 @@
         "operationKey": "operations POST /talents/{talentId}/public-presence/bootstrap"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PublicPresenceController_bootstrapDraft",
         "controllerFile": "apps/api/src/modules/homepage/controllers/public-presence.controller.ts",
         "controllerLine": 137
@@ -20780,7 +21062,7 @@
         "operationKey": "operations POST /talents/{talentId}/public-presence/publish"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PublicPresenceController_publishNow",
         "controllerFile": "apps/api/src/modules/homepage/controllers/public-presence.controller.ts",
         "controllerLine": 260
@@ -20834,7 +21116,7 @@
         "operationKey": "operations POST /talents/{talentId}/public-presence/publish/cancel"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PublicPresenceController_cancelScheduledPublish",
         "controllerFile": "apps/api/src/modules/homepage/controllers/public-presence.controller.ts",
         "controllerLine": 303
@@ -20888,7 +21170,7 @@
         "operationKey": "operations POST /talents/{talentId}/public-presence/publish/schedule"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PublicPresenceController_schedulePublish",
         "controllerFile": "apps/api/src/modules/homepage/controllers/public-presence.controller.ts",
         "controllerLine": 282
@@ -20942,7 +21224,7 @@
         "operationKey": "operations POST /talents/{talentId}/public-presence/review/approve"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PublicPresenceController_approve",
         "controllerFile": "apps/api/src/modules/homepage/controllers/public-presence.controller.ts",
         "controllerLine": 238
@@ -20996,7 +21278,7 @@
         "operationKey": "operations POST /talents/{talentId}/public-presence/review/request-changes"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PublicPresenceController_requestChanges",
         "controllerFile": "apps/api/src/modules/homepage/controllers/public-presence.controller.ts",
         "controllerLine": 217
@@ -21050,7 +21332,7 @@
         "operationKey": "operations POST /talents/{talentId}/public-presence/review/submit"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PublicPresenceController_submitForReview",
         "controllerFile": "apps/api/src/modules/homepage/controllers/public-presence.controller.ts",
         "controllerLine": 195
@@ -21104,7 +21386,7 @@
         "operationKey": "operations POST /talents/{talentId}/public-presence/rollback-draft"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PublicPresenceController_createRollbackDraft",
         "controllerFile": "apps/api/src/modules/homepage/controllers/public-presence.controller.ts",
         "controllerLine": 325
@@ -21164,7 +21446,7 @@
         "operationKey": "operations POST /talents/{talentId}/publish"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "TalentController_publish",
         "controllerFile": "apps/api/src/modules/talent/talent.controller.ts",
         "controllerLine": 2036
@@ -21224,7 +21506,7 @@
         "operationKey": "operations POST /talents/{talentId}/re-enable"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "TalentController_reEnable",
         "controllerFile": "apps/api/src/modules/talent/talent.controller.ts",
         "controllerLine": 2158
@@ -21284,7 +21566,7 @@
         "operationKey": "operations POST /talents/{talentId}/stage-transitions"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "TalentController_transitionArtistStage",
         "controllerFile": "apps/api/src/modules/talent/talent.controller.ts",
         "controllerLine": 1971
@@ -21342,7 +21624,7 @@
         "operationKey": "operations POST /talents/custom-domain-bindings"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "TalentController_createCustomDomainBinding",
         "controllerFile": "apps/api/src/modules/talent/talent.controller.ts",
         "controllerLine": 1576
@@ -21401,7 +21683,7 @@
         "operationKey": "operations POST /talents/custom-domain-bindings/{domainId}/verify"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "TalentController_verifyCustomDomainBinding",
         "controllerFile": "apps/api/src/modules/talent/talent.controller.ts",
         "controllerLine": 1653
@@ -21455,7 +21737,7 @@
         "operationKey": "operations POST /users/{userId}/roles"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "UserRoleController_assignRole",
         "controllerFile": "apps/api/src/modules/role/user-role.controller.ts",
         "controllerLine": 118
@@ -21509,7 +21791,7 @@
         "operationKey": "operations PUT /public-presence/assets/{assetId}/current"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PublicPresenceAssetController_saveAssetDraft",
         "controllerFile": "apps/api/src/modules/homepage/controllers/public-presence-asset.controller.ts",
         "controllerLine": 144
@@ -21560,7 +21842,7 @@
         "operationKey": "public GET /health"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-public.json",
+        "openapiFile": "openapi/openapi-public.json",
         "operationId": "HealthController_check",
         "controllerFile": "apps/api/src/modules/health/health.controller.ts",
         "controllerLine": 67
@@ -21611,7 +21893,7 @@
         "operationKey": "public GET /health/live"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-public.json",
+        "openapiFile": "openapi/openapi-public.json",
         "operationId": "HealthController_live",
         "controllerFile": "apps/api/src/modules/health/health.controller.ts",
         "controllerLine": 78
@@ -21663,7 +21945,7 @@
         "operationKey": "public GET /health/ready"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-public.json",
+        "openapiFile": "openapi/openapi-public.json",
         "operationId": "HealthController_ready",
         "controllerFile": "apps/api/src/modules/health/health.controller.ts",
         "controllerLine": 85
@@ -21712,7 +21994,7 @@
         "operationKey": "public GET /public/assets/{bucket}/{key}"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-public.json",
+        "openapiFile": "openapi/openapi-public.json",
         "operationId": "PublicAssetsController_getAsset",
         "controllerFile": "apps/api/src/modules/public/public-assets.controller.ts",
         "controllerLine": 27
@@ -21761,7 +22043,7 @@
         "operationKey": "public GET /public/domain-lookup/{hostname}"
       },
       "source": {
-        "openapiFile": "openapi-before/openapi-public.json",
+        "openapiFile": "openapi/openapi-public.json",
         "operationId": "PublicDomainController_lookupDomain",
         "controllerFile": "apps/api/src/modules/public/public-domain.controller.ts",
         "controllerLine": 21
@@ -21777,8 +22059,8 @@
     },
     "config": {
       "title": "TCRN TMS - System & Config API",
-      "operationCount": 192,
-      "pathCount": 154,
+      "operationCount": 197,
+      "pathCount": 159,
       "schemaCount": 69
     },
     "public": {
@@ -21794,7 +22076,7 @@
       "documentationGroup": "core"
     },
     "platform": {
-      "operationCount": 55,
+      "operationCount": 60,
       "documentationGroup": "platform"
     },
     "observability": {
@@ -21824,7 +22106,7 @@
       "moduleCode": "core"
     },
     "platform.ac_management": {
-      "operationCount": 55,
+      "operationCount": 60,
       "moduleCode": "platform"
     },
     "core.settings": {
@@ -21908,6 +22190,12 @@
       "operationCount": 4
     },
     "platform.api_registry": {
+      "actions": [
+        "read"
+      ],
+      "operationCount": 5
+    },
+    "platform.builder_registry": {
       "actions": [
         "read"
       ],
@@ -22266,6 +22554,21 @@
       "operationCount": 1
     },
     "inline:securitycontroller_getblocklist:response:404:application_json": {
+      "operationCount": 1
+    },
+    "inline:builderregistrycontroller_getartifact:response:200:application_json": {
+      "operationCount": 1
+    },
+    "inline:builderregistrycontroller_getcomposeddryrun:response:200:application_json": {
+      "operationCount": 1
+    },
+    "inline:builderregistrycontroller_getmodules:response:200:application_json": {
+      "operationCount": 1
+    },
+    "inline:builderregistrycontroller_getoperation:response:200:application_json": {
+      "operationCount": 1
+    },
+    "inline:builderregistrycontroller_getsummary:response:200:application_json": {
       "operationCount": 1
     },
     "inline:compliancereportcontroller_generatereport:response:200:application_json": {
@@ -23631,6 +23934,9 @@
       "operationCount": 1
     },
     "inline:organizationcontroller_getrootnodes:response:404:application_json": {
+      "operationCount": 1
+    },
+    "inline:permissioncontroller_getresources:response:200:application_json": {
       "operationCount": 1
     },
     "inline:domainlookupcontroller_lookupdomain:response:200:application_json": {

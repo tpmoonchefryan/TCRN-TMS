@@ -63,6 +63,7 @@ export const CONFIG_TAGS = [
   { name: 'System - PII', description: 'PII 服务配置' },
   { name: 'System - API Registry', description: 'API 注册表与 Swagger 同步状态' },
   { name: 'System - API Gateway', description: 'API 网关就绪与只读渲染状态' },
+  { name: 'System - Builder Registry', description: 'Builder 注册表与只读生成物状态' },
   { name: 'System - Platform Tools', description: 'AC 平台工具连接' },
   { name: 'System - Security', description: '安全与黑名单' },
   { name: 'System - Settings', description: '通用设置' },

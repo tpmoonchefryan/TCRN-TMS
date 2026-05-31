@@ -77,10 +77,13 @@ export class PermissionGuard implements CanActivate {
           perm.action === checkedAction
             ? `${perm.resource}:${perm.action}`
             : `${perm.resource}:${perm.action} (checked as ${perm.resource}:${checkedAction})`;
+        const denyMessage = this.shouldHidePermissionLabel(request)
+          ? 'Permission denied'
+          : `Permission denied: ${permissionLabel}`;
 
         throw new ForbiddenException({
           code: ErrorCodes.PERM_ACCESS_DENIED,
-          message: `Permission denied: ${permissionLabel}`,
+          message: denyMessage,
         });
       }
     }
@@ -130,6 +133,13 @@ export class PermissionGuard implements CanActivate {
     }
 
     return {};
+  }
+
+  private shouldHidePermissionLabel(request: Request): boolean {
+    const path = request.path ?? '';
+    const originalUrl = request.originalUrl ?? '';
+
+    return path.includes('/builder-registry') || originalUrl.includes('/builder-registry');
   }
 
   private getSingleValue(value: unknown): string | undefined {

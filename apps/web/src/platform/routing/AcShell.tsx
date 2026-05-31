@@ -3,6 +3,7 @@
 import {
   Activity,
   BookText,
+  Boxes,
   Building2,
   Cable,
   FileJson,
@@ -42,6 +43,7 @@ function getAcPageTitle(
     apiClientManagement: string;
     apiGatewayReadiness: string;
     apiRegistry: string;
+    builderRegistry: string;
     interfaceManagement: string;
     observability: string;
     platformToolConnections: string;
@@ -79,6 +81,10 @@ function getAcPageTitle(
 
   if (pathname.includes('/api-gateway-readiness')) {
     return titles.apiGatewayReadiness;
+  }
+
+  if (pathname.includes('/builder-registry')) {
+    return titles.builderRegistry;
   }
 
   if (pathname.includes('/platform-tools')) {
@@ -142,6 +148,14 @@ export function AcShell({
       ja: 'API ゲートウェイ',
       ko: 'API 게이트웨이',
       fr: 'Passerelle API',
+    }),
+    builderRegistry: pickLocaleText(locale, {
+      en: 'Builder Registry',
+      zh_HANS: 'Builder 注册表',
+      zh_HANT: 'Builder 註冊表',
+      ja: 'Builder レジストリ',
+      ko: 'Builder 레지스트리',
+      fr: 'Registre Builder',
     }),
     interfaceManagement: pickLocaleText(locale, {
       en: 'Interface Management',
@@ -354,6 +368,13 @@ export function AcShell({
       icon: <Network className="h-4 w-4" />,
     },
     {
+      key: 'builder-registry',
+      label: integrationLabels.builderRegistry,
+      href: `/ac/${tenantId}/builder-registry`,
+      isActive: pathname.includes('/builder-registry'),
+      icon: <Boxes className="h-4 w-4" />,
+    },
+    {
       key: 'platform-tools',
       label: integrationLabels.platformToolConnections,
       href: `/ac/${tenantId}/platform-tools`,
@@ -390,6 +411,7 @@ export function AcShell({
     apiClientManagement: integrationLabels.apiClientManagement,
     apiGatewayReadiness: integrationLabels.apiGatewayReadiness,
     apiRegistry: integrationLabels.apiRegistry,
+    builderRegistry: integrationLabels.builderRegistry,
     interfaceManagement: integrationLabels.interfaceManagement,
     platformToolConnections: integrationLabels.platformToolConnections,
     runtimeFlags: integrationLabels.runtimeFlags,

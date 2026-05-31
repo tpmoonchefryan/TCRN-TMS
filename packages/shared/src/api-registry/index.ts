@@ -189,6 +189,8 @@ export interface BuilderApiReadonlyExport {
   exportVersion: typeof API_REGISTRY_VERSION;
   generatedFromRegistryVersion: typeof API_REGISTRY_VERSION;
   mode: 'read_only';
+  operationCount: number;
+  excludedOperationCount: number;
   operations: readonly Pick<
     ApiOperationDefinition,
     | 'operationCode'
@@ -204,6 +206,15 @@ export interface BuilderApiReadonlyExport {
     | 'requestSchemaRef'
     | 'responseSchemaRefs'
   >[];
+  excludedOperations: readonly {
+    operationCode: string;
+    method: string;
+    pathTemplate: string;
+    reason: string;
+  }[];
+  sourceReadbackHash: string;
+  warnings: readonly string[];
+  passed: boolean;
 }
 
 export function validateApiOperationDefinition(operation: ApiOperationDefinition): string[] {

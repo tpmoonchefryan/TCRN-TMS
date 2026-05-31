@@ -15,6 +15,7 @@ import { applyGlobalSwaggerParameters } from './config/swagger-global-parameters
 // Import modules for Swagger definition grouping
 import { ApiRegistryModule } from './modules/api-registry';
 import { AuthModule } from './modules/auth';
+import { BuilderRegistryModule } from './modules/builder-registry';
 import { ConfigModule as AppConfigModule } from './modules/config';
 import { CustomerModule } from './modules/customer';
 import { DelegatedAdminModule } from './modules/delegated-admin';
@@ -239,6 +240,7 @@ export async function bootstrap(): Promise<void> {
           ObservabilityAdaptersModule,
           RuntimeFlagsModule,
           EventBackboneModule,
+          BuilderRegistryModule,
           LogModule,
           EmailModule,
           SettingsModule,

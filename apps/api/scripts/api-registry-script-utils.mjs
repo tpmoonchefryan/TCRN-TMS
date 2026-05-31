@@ -39,7 +39,7 @@ const TAG_OWNERS = [
   [/System - Settings|System - Config|System - Dictionary|System - PII/, ['core', 'core.settings']],
   [/System - Logs|Compliance/, ['observability', 'observability.product_audit']],
   [
-    /System - Platform Tools|System - Runtime Flags|System - Event Backbone|System - API Registry|System - API Gateway|Org - Tenants|System - Delegated Admin|System - Security/,
+    /System - Platform Tools|System - Runtime Flags|System - Event Backbone|System - API Registry|System - API Gateway|System - Builder Registry|Org - Tenants|System - Delegated Admin|System - Security/,
     ['platform', 'platform.ac_management'],
   ],
 ];
@@ -767,11 +767,12 @@ export function collectSwaggerOperations(openapiDir) {
   const docs = readOpenApiGroups(openapiDir);
   const operations = [];
   const summaries = {};
+  const openapiSourceDir = path.basename(path.resolve(openapiDir));
 
   for (const [documentGroup, document] of Object.entries(docs)) {
     const fileName = DOCUMENT_GROUP_FILES[documentGroup];
     summaries[documentGroup] = {
-      file: path.join('openapi-before', fileName),
+      file: path.join(openapiSourceDir, fileName),
       title: document.info?.title ?? documentGroup,
       pathCount: Object.keys(document.paths ?? {}).length,
       schemaCount: Object.keys(document.components?.schemas ?? {}).length,
@@ -787,7 +788,7 @@ export function collectSwaggerOperations(openapiDir) {
 
         operations.push({
           documentGroup,
-          openapiFile: path.join('openapi-before', fileName),
+          openapiFile: path.join(openapiSourceDir, fileName),
           method: method.toUpperCase(),
           path: pathName,
           normalizedPath: normalizeOpenApiPath(pathName),
@@ -860,7 +861,7 @@ function classifyScope(operation) {
   }
 
   if (
-    /api-registry|api-gateway-readiness|platform-tools|runtime-flags|event-backbone|observability\/adapters|\/tenants\b|system-users|system-roles|delegated-admins/.test(
+    /api-registry|api-gateway-readiness|builder-registry|platform-tools|runtime-flags|event-backbone|observability\/adapters|\/tenants\b|system-users|system-roles|delegated-admins/.test(
       pathName
     )
   ) {
@@ -1547,26 +1548,33 @@ export function buildGatewayManifest(registry) {
 }
 
 export function buildBuilderReadonlyExport(registry) {
+  const operations = registry.operations
+    .filter(
+      (operation) =>
+        operation.builderExportEligible &&
+        READONLY_GATEWAY_METHODS.has(operation.method.toUpperCase()) &&
+        Boolean(operation.requestSchemaRef || operation.responseSchemaRefs?.length)
+    )
+    .map((operation) => ({
+      operationCode: operation.operationCode,
+      method: operation.method,
+      pathTemplate: operation.pathTemplate,
+      documentGroup: operation.documentGroup,
+      ownerModuleCode: operation.ownerModuleCode,
+      ownerCapabilityCode: operation.ownerCapabilityCode,
+      requiredPermissions: operation.requiredPermissions,
+      scopeType: operation.scopeType,
+      exposure: operation.exposure,
+      stability: operation.stability,
+      requestSchemaRef: operation.requestSchemaRef,
+      responseSchemaRefs: operation.responseSchemaRefs,
+    }));
+
   return {
     exportVersion: API_REGISTRY_VERSION,
     generatedFromRegistryVersion: registry.registryVersion,
     mode: 'read_only',
-    operations: registry.operations
-      .filter((operation) => operation.builderExportEligible)
-      .map((operation) => ({
-        operationCode: operation.operationCode,
-        method: operation.method,
-        pathTemplate: operation.pathTemplate,
-        documentGroup: operation.documentGroup,
-        ownerModuleCode: operation.ownerModuleCode,
-        ownerCapabilityCode: operation.ownerCapabilityCode,
-        requiredPermissions: operation.requiredPermissions,
-        scopeType: operation.scopeType,
-        exposure: operation.exposure,
-        stability: operation.stability,
-        requestSchemaRef: operation.requestSchemaRef,
-        responseSchemaRefs: operation.responseSchemaRefs,
-      })),
+    operations,
     passed: true,
   };
 }

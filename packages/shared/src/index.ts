@@ -37,6 +37,7 @@ export * from './utils/string';
 export * from './homepage/public-routes';
 export * from './api-gateway-readiness';
 export * from './api-registry';
+export * from './builder-registry';
 export * from './event-backbone';
 export * from './module-capability';
 export * from './observability-adapters';

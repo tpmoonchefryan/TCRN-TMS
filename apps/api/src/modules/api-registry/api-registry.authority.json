@@ -1,7 +1,7 @@
 {
   "authorityVersion": "2026-05-31.phase-9",
-  "generatedAt": "2026-05-31T14:23:19.917Z",
-  "sourceCommit": "522a0e6439e979edd268a7f61bf910ed9c7b6665",
+  "generatedAt": "2026-05-31T17:06:51.225Z",
+  "sourceCommit": "ce7c32464c1527f4da6402f12435e2eb74b2be0b",
   "sourceDocument": "apps/api/src/modules/api-registry/api-registry.snapshot.json",
   "operations": [
     {
@@ -29,7 +29,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "AuthController_revokeSsoAccountLink",
         "controllerFile": "apps/api/src/modules/auth/auth.controller.ts",
         "controllerLine": 318
@@ -65,7 +65,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "SecurityController_deleteBlocklist",
         "controllerFile": "apps/api/src/modules/security/controllers/security.controller.ts",
         "controllerLine": 289
@@ -101,7 +101,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "DelegatedAdminController_delete",
         "controllerFile": "apps/api/src/modules/delegated-admin/delegated-admin.controller.ts",
         "controllerLine": 137
@@ -137,7 +137,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "EmailTemplateController_deactivate",
         "controllerFile": "apps/api/src/modules/email/controllers/email-template.controller.ts",
         "controllerLine": 301
@@ -173,7 +173,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "SecurityController_deleteIpRule",
         "controllerFile": "apps/api/src/modules/security/controllers/security.controller.ts",
         "controllerLine": 508
@@ -204,7 +204,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "DictionaryController_deactivateItem",
         "controllerFile": "apps/api/src/modules/dictionary/dictionary.controller.ts",
         "controllerLine": 878
@@ -240,7 +240,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "SystemRoleController_remove",
         "controllerFile": "apps/api/src/modules/system-role/system-role.controller.ts",
         "controllerLine": 441
@@ -271,7 +271,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "UserController_deleteAvatar",
         "controllerFile": "apps/api/src/modules/auth/auth.controller.ts",
         "controllerLine": 2104
@@ -302,7 +302,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "UserController_revokeSession",
         "controllerFile": "apps/api/src/modules/auth/auth.controller.ts",
         "controllerLine": 1974
@@ -338,7 +338,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "ApiGatewayReadinessController_getCutoverRunbook",
         "controllerFile": "apps/api/src/modules/api-gateway-readiness/api-gateway-readiness.controller.ts",
         "controllerLine": 57
@@ -374,7 +374,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "ApiGatewayReadinessController_getRenderedArtifact",
         "controllerFile": "apps/api/src/modules/api-gateway-readiness/api-gateway-readiness.controller.ts",
         "controllerLine": 42
@@ -410,7 +410,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "ApiGatewayReadinessController_getRoutePolicy",
         "controllerFile": "apps/api/src/modules/api-gateway-readiness/api-gateway-readiness.controller.ts",
         "controllerLine": 33
@@ -446,7 +446,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "ApiGatewayReadinessController_getSummary",
         "controllerFile": "apps/api/src/modules/api-gateway-readiness/api-gateway-readiness.controller.ts",
         "controllerLine": 24
@@ -482,7 +482,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "ApiRegistryController_getBuilderReadonlyExport",
         "controllerFile": "apps/api/src/modules/api-registry/api-registry.controller.ts",
         "controllerLine": 104
@@ -518,7 +518,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "ApiRegistryController_getDocument",
         "controllerFile": "apps/api/src/modules/api-registry/api-registry.controller.ts",
         "controllerLine": 69
@@ -554,7 +554,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "ApiRegistryController_getDriftReport",
         "controllerFile": "apps/api/src/modules/api-registry/api-registry.controller.ts",
         "controllerLine": 80
@@ -590,7 +590,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "ApiRegistryController_getGatewayRouteManifest",
         "controllerFile": "apps/api/src/modules/api-registry/api-registry.controller.ts",
         "controllerLine": 96
@@ -626,7 +626,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "ApiRegistryController_getSwaggerExposurePolicy",
         "controllerFile": "apps/api/src/modules/api-registry/api-registry.controller.ts",
         "controllerLine": 88
@@ -657,7 +657,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "AuthController_authorize",
         "controllerFile": "apps/api/src/modules/auth/auth.controller.ts",
         "controllerLine": 1232
@@ -688,7 +688,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "AuthController_listSsoAccountLinkProviders",
         "controllerFile": "apps/api/src/modules/auth/auth.controller.ts",
         "controllerLine": 263
@@ -719,7 +719,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "AuthController_listSsoAccountLinks",
         "controllerFile": "apps/api/src/modules/auth/auth.controller.ts",
         "controllerLine": 256
@@ -755,7 +755,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "AuthController_listManagedSsoProviders",
         "controllerFile": "apps/api/src/modules/auth/auth.controller.ts",
         "controllerLine": 336
@@ -786,7 +786,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "AuthController_handleSsoCallback",
         "controllerFile": "apps/api/src/modules/auth/auth.controller.ts",
         "controllerLine": 192
@@ -822,7 +822,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "AuthController_listExternalToolSsoReadiness",
         "controllerFile": "apps/api/src/modules/auth/auth.controller.ts",
         "controllerLine": 445
@@ -853,7 +853,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "AuthController_listSsoProviders",
         "controllerFile": "apps/api/src/modules/auth/auth.controller.ts",
         "controllerLine": 168
@@ -889,7 +889,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "SecurityController_listBlocklist",
         "controllerFile": "apps/api/src/modules/security/controllers/security.controller.ts",
         "controllerLine": 104
@@ -925,10 +925,190 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "SecurityController_getBlocklist",
         "controllerFile": "apps/api/src/modules/security/controllers/security.controller.ts",
         "controllerLine": 206
+      }
+    },
+    {
+      "operationCode": "config.builder_registry_controller_get_artifact",
+      "method": "GET",
+      "pathTemplate": "/builder-registry/artifacts/{artifactKind}",
+      "documentGroup": "config",
+      "ownerModuleCode": "platform",
+      "ownerCapabilityCode": "platform.ac_management",
+      "authMode": "bearer_jwt",
+      "requiredPermissions": [
+        {
+          "resource": "platform.builder_registry",
+          "action": "read"
+        }
+      ],
+      "scopeType": "ac_platform",
+      "scopeSource": "AC/platform route family",
+      "exposure": "ac_only",
+      "stability": "stable",
+      "deprecation": {
+        "isDeprecated": false,
+        "reason": null,
+        "replacementOperationCode": null,
+        "sunsetAt": null
+      },
+      "piiClass": "none",
+      "examplePolicy": "no_raw_secret_or_pii",
+      "gatewayEligible": false,
+      "builderExportEligible": true,
+      "auditEventTypes": [],
+      "source": {
+        "openapiFile": "openapi/openapi-config.json",
+        "operationId": "BuilderRegistryController_getArtifact",
+        "controllerFile": "apps/api/src/modules/builder-registry/builder-registry.controller.ts",
+        "controllerLine": 77
+      }
+    },
+    {
+      "operationCode": "config.builder_registry_controller_get_composed_dry_run",
+      "method": "GET",
+      "pathTemplate": "/builder-registry/composed-dry-run/ac-capability-surface-overview",
+      "documentGroup": "config",
+      "ownerModuleCode": "platform",
+      "ownerCapabilityCode": "platform.ac_management",
+      "authMode": "bearer_jwt",
+      "requiredPermissions": [
+        {
+          "resource": "platform.builder_registry",
+          "action": "read"
+        }
+      ],
+      "scopeType": "ac_platform",
+      "scopeSource": "AC/platform route family",
+      "exposure": "ac_only",
+      "stability": "stable",
+      "deprecation": {
+        "isDeprecated": false,
+        "reason": null,
+        "replacementOperationCode": null,
+        "sunsetAt": null
+      },
+      "piiClass": "none",
+      "examplePolicy": "no_raw_secret_or_pii",
+      "gatewayEligible": false,
+      "builderExportEligible": true,
+      "auditEventTypes": [],
+      "source": {
+        "openapiFile": "openapi/openapi-config.json",
+        "operationId": "BuilderRegistryController_getComposedDryRun",
+        "controllerFile": "apps/api/src/modules/builder-registry/builder-registry.controller.ts",
+        "controllerLine": 109
+      }
+    },
+    {
+      "operationCode": "config.builder_registry_controller_get_modules",
+      "method": "GET",
+      "pathTemplate": "/builder-registry/modules",
+      "documentGroup": "config",
+      "ownerModuleCode": "platform",
+      "ownerCapabilityCode": "platform.ac_management",
+      "authMode": "bearer_jwt",
+      "requiredPermissions": [
+        {
+          "resource": "platform.builder_registry",
+          "action": "read"
+        }
+      ],
+      "scopeType": "ac_platform",
+      "scopeSource": "AC/platform route family",
+      "exposure": "ac_only",
+      "stability": "stable",
+      "deprecation": {
+        "isDeprecated": false,
+        "reason": null,
+        "replacementOperationCode": null,
+        "sunsetAt": null
+      },
+      "piiClass": "none",
+      "examplePolicy": "no_raw_secret_or_pii",
+      "gatewayEligible": false,
+      "builderExportEligible": true,
+      "auditEventTypes": [],
+      "source": {
+        "openapiFile": "openapi/openapi-config.json",
+        "operationId": "BuilderRegistryController_getModules",
+        "controllerFile": "apps/api/src/modules/builder-registry/builder-registry.controller.ts",
+        "controllerLine": 50
+      }
+    },
+    {
+      "operationCode": "config.builder_registry_controller_get_operation",
+      "method": "GET",
+      "pathTemplate": "/builder-registry/operations/{operationCode}",
+      "documentGroup": "config",
+      "ownerModuleCode": "platform",
+      "ownerCapabilityCode": "platform.ac_management",
+      "authMode": "bearer_jwt",
+      "requiredPermissions": [
+        {
+          "resource": "platform.builder_registry",
+          "action": "read"
+        }
+      ],
+      "scopeType": "ac_platform",
+      "scopeSource": "AC/platform route family",
+      "exposure": "ac_only",
+      "stability": "stable",
+      "deprecation": {
+        "isDeprecated": false,
+        "reason": null,
+        "replacementOperationCode": null,
+        "sunsetAt": null
+      },
+      "piiClass": "none",
+      "examplePolicy": "no_raw_secret_or_pii",
+      "gatewayEligible": false,
+      "builderExportEligible": true,
+      "auditEventTypes": [],
+      "source": {
+        "openapiFile": "openapi/openapi-config.json",
+        "operationId": "BuilderRegistryController_getOperation",
+        "controllerFile": "apps/api/src/modules/builder-registry/builder-registry.controller.ts",
+        "controllerLine": 59
+      }
+    },
+    {
+      "operationCode": "config.builder_registry_controller_get_summary",
+      "method": "GET",
+      "pathTemplate": "/builder-registry/summary",
+      "documentGroup": "config",
+      "ownerModuleCode": "platform",
+      "ownerCapabilityCode": "platform.ac_management",
+      "authMode": "bearer_jwt",
+      "requiredPermissions": [
+        {
+          "resource": "platform.builder_registry",
+          "action": "read"
+        }
+      ],
+      "scopeType": "ac_platform",
+      "scopeSource": "AC/platform route family",
+      "exposure": "ac_only",
+      "stability": "stable",
+      "deprecation": {
+        "isDeprecated": false,
+        "reason": null,
+        "replacementOperationCode": null,
+        "sunsetAt": null
+      },
+      "piiClass": "none",
+      "examplePolicy": "no_raw_secret_or_pii",
+      "gatewayEligible": false,
+      "builderExportEligible": true,
+      "auditEventTypes": [],
+      "source": {
+        "openapiFile": "openapi/openapi-config.json",
+        "operationId": "BuilderRegistryController_getSummary",
+        "controllerFile": "apps/api/src/modules/builder-registry/builder-registry.controller.ts",
+        "controllerLine": 41
       }
     },
     {
@@ -961,7 +1141,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "ComplianceReportController_generateReport",
         "controllerFile": "apps/api/src/modules/log/controllers/compliance-report.controller.ts",
         "controllerLine": 24
@@ -992,7 +1172,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "ConfigController_list",
         "controllerFile": "apps/api/src/modules/config/config.controller.ts",
         "controllerLine": 653
@@ -1023,7 +1203,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "ConfigController_getById",
         "controllerFile": "apps/api/src/modules/config/config.controller.ts",
         "controllerLine": 731
@@ -1059,7 +1239,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "ConfigController_getEffectiveBlocklist",
         "controllerFile": "apps/api/src/modules/config/config.controller.ts",
         "controllerLine": 1015
@@ -1095,7 +1275,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "ConfigController_getMembershipTypesByClass",
         "controllerFile": "apps/api/src/modules/config/config.controller.ts",
         "controllerLine": 591
@@ -1131,7 +1311,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "ConfigController_getMembershipTree",
         "controllerFile": "apps/api/src/modules/config/config.controller.ts",
         "controllerLine": 567
@@ -1167,7 +1347,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "ConfigController_getMembershipLevelsByType",
         "controllerFile": "apps/api/src/modules/config/config.controller.ts",
         "controllerLine": 622
@@ -1203,7 +1383,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "DelegatedAdminController_list",
         "controllerFile": "apps/api/src/modules/delegated-admin/delegated-admin.controller.ts",
         "controllerLine": 63
@@ -1239,7 +1419,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "DelegatedAdminController_getMyScopes",
         "controllerFile": "apps/api/src/modules/delegated-admin/delegated-admin.controller.ts",
         "controllerLine": 153
@@ -1275,7 +1455,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "EmailTemplateController_findAll",
         "controllerFile": "apps/api/src/modules/email/controllers/email-template.controller.ts",
         "controllerLine": 163
@@ -1311,7 +1491,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "EmailTemplateController_findOne",
         "controllerFile": "apps/api/src/modules/email/controllers/email-template.controller.ts",
         "controllerLine": 200
@@ -1342,7 +1522,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "EmailConfigController_getConfig",
         "controllerFile": "apps/api/src/modules/email/controllers/email-config.controller.ts",
         "controllerLine": 203
@@ -1378,7 +1558,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "TenantSendingDomainController_getTenantSenderDomains",
         "controllerFile": "apps/api/src/modules/email/controllers/tenant-sending-domain.controller.ts",
         "controllerLine": 232
@@ -1414,7 +1594,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "TenantSendingDomainController_getManagedTenantSendingDomains",
         "controllerFile": "apps/api/src/modules/email/controllers/tenant-sending-domain.controller.ts",
         "controllerLine": 185
@@ -1450,7 +1630,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "EventBackboneController_getBullMqClassification",
         "controllerFile": "apps/api/src/modules/event-backbone/event-backbone.controller.ts",
         "controllerLine": 38
@@ -1486,7 +1666,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "EventBackboneController_getPolicy",
         "controllerFile": "apps/api/src/modules/event-backbone/event-backbone.controller.ts",
         "controllerLine": 46
@@ -1522,7 +1702,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "EventBackboneController_getRegistry",
         "controllerFile": "apps/api/src/modules/event-backbone/event-backbone.controller.ts",
         "controllerLine": 18
@@ -1558,7 +1738,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "EventBackboneController_getSubjectMapping",
         "controllerFile": "apps/api/src/modules/event-backbone/event-backbone.controller.ts",
         "controllerLine": 26
@@ -1594,7 +1774,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "EventBackboneController_getSummary",
         "controllerFile": "apps/api/src/modules/event-backbone/event-backbone.controller.ts",
         "controllerLine": 54
@@ -1630,7 +1810,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "SecurityController_listIpRules",
         "controllerFile": "apps/api/src/modules/security/controllers/security.controller.ts",
         "controllerLine": 414
@@ -1666,7 +1846,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "ChangeLogController_list",
         "controllerFile": "apps/api/src/modules/log/controllers/change-log.controller.ts",
         "controllerLine": 22
@@ -1702,7 +1882,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "ChangeLogController_getObjectHistory",
         "controllerFile": "apps/api/src/modules/log/controllers/change-log.controller.ts",
         "controllerLine": 44
@@ -1738,7 +1918,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "ChangeLogController_getOperatorHistory",
         "controllerFile": "apps/api/src/modules/log/controllers/change-log.controller.ts",
         "controllerLine": 77
@@ -1774,7 +1954,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "TechEventLogController_list",
         "controllerFile": "apps/api/src/modules/log/controllers/tech-event-log.controller.ts",
         "controllerLine": 23
@@ -1810,7 +1990,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "TechEventLogController_getByTraceId",
         "controllerFile": "apps/api/src/modules/log/controllers/tech-event-log.controller.ts",
         "controllerLine": 45
@@ -1846,7 +2026,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "IntegrationLogController_list",
         "controllerFile": "apps/api/src/modules/log/controllers/integration-log.controller.ts",
         "controllerLine": 23
@@ -1882,7 +2062,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "IntegrationLogController_getFailed",
         "controllerFile": "apps/api/src/modules/log/controllers/integration-log.controller.ts",
         "controllerLine": 68
@@ -1918,7 +2098,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "IntegrationLogController_getByTraceId",
         "controllerFile": "apps/api/src/modules/log/controllers/integration-log.controller.ts",
         "controllerLine": 45
@@ -1954,7 +2134,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "LogSearchController_search",
         "controllerFile": "apps/api/src/modules/log/controllers/log-search.controller.ts",
         "controllerLine": 122
@@ -1990,7 +2170,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "LogSearchController_searchChangeLogs",
         "controllerFile": "apps/api/src/modules/log/controllers/log-search.controller.ts",
         "controllerLine": 199
@@ -2026,7 +2206,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "LogSearchController_searchTechEvents",
         "controllerFile": "apps/api/src/modules/log/controllers/log-search.controller.ts",
         "controllerLine": 236
@@ -2062,7 +2242,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "LogSearchController_searchIntegrationLogs",
         "controllerFile": "apps/api/src/modules/log/controllers/log-search.controller.ts",
         "controllerLine": 275
@@ -2093,7 +2273,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "ModuleCapabilityController_getCurrentTenantEffectiveCapabilities",
         "controllerFile": "apps/api/src/modules/tenant/module-capability.controller.ts",
         "controllerLine": 15
@@ -2129,7 +2309,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "ModuleCapabilityController_getRegistry",
         "controllerFile": "apps/api/src/modules/tenant/module-capability.controller.ts",
         "controllerLine": 28
@@ -2165,7 +2345,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "ObservabilityAdaptersController_getDeepLink",
         "controllerFile": "apps/api/src/modules/observability-adapters/observability-adapters.controller.ts",
         "controllerLine": 46
@@ -2201,7 +2381,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "ObservabilityAdaptersController_listDefinitions",
         "controllerFile": "apps/api/src/modules/observability-adapters/observability-adapters.controller.ts",
         "controllerLine": 21
@@ -2237,7 +2417,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "ObservabilityAdaptersController_getSignalPolicy",
         "controllerFile": "apps/api/src/modules/observability-adapters/observability-adapters.controller.ts",
         "controllerLine": 28
@@ -2273,7 +2453,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "ObservabilityAdaptersController_getSummary",
         "controllerFile": "apps/api/src/modules/observability-adapters/observability-adapters.controller.ts",
         "controllerLine": 35
@@ -2309,7 +2489,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "SettingsController_getTenantSettings",
         "controllerFile": "apps/api/src/modules/settings/settings.controller.ts",
         "controllerLine": 349
@@ -2345,7 +2525,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "SettingsController_getTenantArtistLifecycleFlow",
         "controllerFile": "apps/api/src/modules/settings/settings.controller.ts",
         "controllerLine": 410
@@ -2381,7 +2561,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "SettingsController_getTenantTurnstileSettings",
         "controllerFile": "apps/api/src/modules/settings/settings.controller.ts",
         "controllerLine": 441
@@ -2417,7 +2597,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "PiiServiceConfigController_list",
         "controllerFile": "apps/api/src/modules/pii-config/controllers/pii-service-config.controller.ts",
         "controllerLine": 71
@@ -2453,7 +2633,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "PiiServiceConfigController_getById",
         "controllerFile": "apps/api/src/modules/pii-config/controllers/pii-service-config.controller.ts",
         "controllerLine": 100
@@ -2489,7 +2669,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "PlatformToolsController_listConnections",
         "controllerFile": "apps/api/src/modules/platform-tools/platform-tools.controller.ts",
         "controllerLine": 28
@@ -2525,7 +2705,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "PlatformToolsController_getConnection",
         "controllerFile": "apps/api/src/modules/platform-tools/platform-tools.controller.ts",
         "controllerLine": 39
@@ -2561,7 +2741,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "PlatformToolsController_getDeepLink",
         "controllerFile": "apps/api/src/modules/platform-tools/platform-tools.controller.ts",
         "controllerLine": 75
@@ -2597,7 +2777,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "PlatformToolsController_listDefinitions",
         "controllerFile": "apps/api/src/modules/platform-tools/platform-tools.controller.ts",
         "controllerLine": 21
@@ -2633,7 +2813,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "PlatformToolsController_getDeploymentBoundary",
         "controllerFile": "apps/api/src/modules/platform-tools/platform-tools.controller.ts",
         "controllerLine": 87
@@ -2664,7 +2844,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "GlobalConfigController_list",
         "controllerFile": "apps/api/src/modules/config/global-config.controller.ts",
         "controllerLine": 480
@@ -2695,7 +2875,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "GlobalConfigController_get",
         "controllerFile": "apps/api/src/modules/config/global-config.controller.ts",
         "controllerLine": 365
@@ -2731,7 +2911,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "ProfileStoreController_list",
         "controllerFile": "apps/api/src/modules/pii-config/controllers/profile-store.controller.ts",
         "controllerLine": 268
@@ -2767,7 +2947,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "ProfileStoreController_getById",
         "controllerFile": "apps/api/src/modules/pii-config/controllers/profile-store.controller.ts",
         "controllerLine": 298
@@ -2803,7 +2983,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "RateLimitStatsController_getStats",
         "controllerFile": "apps/api/src/modules/security/controllers/rate-limit-stats.controller.ts",
         "controllerLine": 142
@@ -2839,7 +3019,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "RuntimeFlagsController_listAdapters",
         "controllerFile": "apps/api/src/modules/runtime-flags/runtime-flags.controller.ts",
         "controllerLine": 33
@@ -2875,7 +3055,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "RuntimeFlagsController_listDefinitions",
         "controllerFile": "apps/api/src/modules/runtime-flags/runtime-flags.controller.ts",
         "controllerLine": 40
@@ -2911,7 +3091,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "RuntimeFlagsController_getPolicy",
         "controllerFile": "apps/api/src/modules/runtime-flags/runtime-flags.controller.ts",
         "controllerLine": 47
@@ -2947,7 +3127,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "RuntimeFlagsController_getProviderReadiness",
         "controllerFile": "apps/api/src/modules/runtime-flags/runtime-flags.controller.ts",
         "controllerLine": 65
@@ -2983,7 +3163,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "RuntimeFlagsController_getSummary",
         "controllerFile": "apps/api/src/modules/runtime-flags/runtime-flags.controller.ts",
         "controllerLine": 54
@@ -3019,7 +3199,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "SettingsController_getSubsidiarySettings",
         "controllerFile": "apps/api/src/modules/settings/settings.controller.ts",
         "controllerLine": 489
@@ -3055,7 +3235,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "SettingsController_getSubsidiaryArtistLifecycleFlow",
         "controllerFile": "apps/api/src/modules/settings/settings.controller.ts",
         "controllerLine": 525
@@ -3086,7 +3266,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "DictionaryController_listTypes",
         "controllerFile": "apps/api/src/modules/dictionary/dictionary.controller.ts",
         "controllerLine": 563
@@ -3117,7 +3297,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "DictionaryController_getByType",
         "controllerFile": "apps/api/src/modules/dictionary/dictionary.controller.ts",
         "controllerLine": 585
@@ -3148,7 +3328,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "DictionaryController_getItem",
         "controllerFile": "apps/api/src/modules/dictionary/dictionary.controller.ts",
         "controllerLine": 641
@@ -3184,7 +3364,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "SystemRoleController_findAll",
         "controllerFile": "apps/api/src/modules/system-role/system-role.controller.ts",
         "controllerLine": 330
@@ -3220,7 +3400,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "SystemRoleController_findOne",
         "controllerFile": "apps/api/src/modules/system-role/system-role.controller.ts",
         "controllerLine": 363
@@ -3256,7 +3436,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "SystemUserController_list",
         "controllerFile": "apps/api/src/modules/system-user/system-user.controller.ts",
         "controllerLine": 623
@@ -3292,7 +3472,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "SystemUserController_getById",
         "controllerFile": "apps/api/src/modules/system-user/system-user.controller.ts",
         "controllerLine": 715
@@ -3328,7 +3508,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "SystemUserController_getScopeAccess",
         "controllerFile": "apps/api/src/modules/system-user/system-user.controller.ts",
         "controllerLine": 1023
@@ -3364,7 +3544,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "SettingsController_getTalentSettings",
         "controllerFile": "apps/api/src/modules/settings/settings.controller.ts",
         "controllerLine": 652
@@ -3400,7 +3580,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "SettingsController_getTalentArtistLifecycleFlow",
         "controllerFile": "apps/api/src/modules/settings/settings.controller.ts",
         "controllerLine": 688
@@ -3436,7 +3616,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "TenantController_listTenants",
         "controllerFile": "apps/api/src/modules/tenant/tenant.controller.ts",
         "controllerLine": 663
@@ -3472,7 +3652,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "TenantController_getTenant",
         "controllerFile": "apps/api/src/modules/tenant/tenant.controller.ts",
         "controllerLine": 884
@@ -3508,7 +3688,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "TenantController_getTenantCapabilities",
         "controllerFile": "apps/api/src/modules/tenant/tenant.controller.ts",
         "controllerLine": 951
@@ -3539,7 +3719,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "UserController_getCurrentUser",
         "controllerFile": "apps/api/src/modules/auth/auth.controller.ts",
         "controllerLine": 1266
@@ -3570,7 +3750,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "UserController_getSessions",
         "controllerFile": "apps/api/src/modules/auth/auth.controller.ts",
         "controllerLine": 1921
@@ -3606,7 +3786,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "AuthController_upsertManagedSsoProvider",
         "controllerFile": "apps/api/src/modules/auth/auth.controller.ts",
         "controllerLine": 392
@@ -3642,7 +3822,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "AuthController_updateExternalToolSsoReadiness",
         "controllerFile": "apps/api/src/modules/auth/auth.controller.ts",
         "controllerLine": 453
@@ -3678,7 +3858,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "SecurityController_updateBlocklist",
         "controllerFile": "apps/api/src/modules/security/controllers/security.controller.ts",
         "controllerLine": 241
@@ -3709,7 +3889,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "ConfigController_update",
         "controllerFile": "apps/api/src/modules/config/config.controller.ts",
         "controllerLine": 764
@@ -3745,7 +3925,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "EmailTemplateController_update",
         "controllerFile": "apps/api/src/modules/email/controllers/email-template.controller.ts",
         "controllerLine": 264
@@ -3776,7 +3956,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "EmailConfigController_saveConfig",
         "controllerFile": "apps/api/src/modules/email/controllers/email-config.controller.ts",
         "controllerLine": 230
@@ -3812,7 +3992,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "TenantSendingDomainController_saveTenantSenderDomains",
         "controllerFile": "apps/api/src/modules/email/controllers/tenant-sending-domain.controller.ts",
         "controllerLine": 246
@@ -3848,7 +4028,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "TenantSendingDomainController_saveManagedTenantSendingDomains",
         "controllerFile": "apps/api/src/modules/email/controllers/tenant-sending-domain.controller.ts",
         "controllerLine": 207
@@ -3884,7 +4064,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "SettingsController_updateTenantSettings",
         "controllerFile": "apps/api/src/modules/settings/settings.controller.ts",
         "controllerLine": 376
@@ -3920,7 +4100,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "SettingsController_updateTenantArtistLifecycleFlow",
         "controllerFile": "apps/api/src/modules/settings/settings.controller.ts",
         "controllerLine": 424
@@ -3956,7 +4136,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "SettingsController_updateTenantTurnstileSettings",
         "controllerFile": "apps/api/src/modules/settings/settings.controller.ts",
         "controllerLine": 458
@@ -3992,7 +4172,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "PiiServiceConfigController_update",
         "controllerFile": "apps/api/src/modules/pii-config/controllers/pii-service-config.controller.ts",
         "controllerLine": 163
@@ -4028,7 +4208,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "PlatformToolsController_upsertConnection",
         "controllerFile": "apps/api/src/modules/platform-tools/platform-tools.controller.ts",
         "controllerLine": 51
@@ -4059,7 +4239,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "GlobalConfigController_set",
         "controllerFile": "apps/api/src/modules/config/global-config.controller.ts",
         "controllerLine": 416
@@ -4095,7 +4275,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "ProfileStoreController_update",
         "controllerFile": "apps/api/src/modules/pii-config/controllers/profile-store.controller.ts",
         "controllerLine": 386
@@ -4131,7 +4311,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "RuntimeFlagsController_deactivateKillSwitch",
         "controllerFile": "apps/api/src/modules/runtime-flags/runtime-flags.controller.ts",
         "controllerLine": 98
@@ -4167,7 +4347,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "SettingsController_updateSubsidiarySettings",
         "controllerFile": "apps/api/src/modules/settings/settings.controller.ts",
         "controllerLine": 555
@@ -4203,7 +4383,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "SettingsController_resetSubsidiarySetting",
         "controllerFile": "apps/api/src/modules/settings/settings.controller.ts",
         "controllerLine": 604
@@ -4234,7 +4414,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "DictionaryController_updateType",
         "controllerFile": "apps/api/src/modules/dictionary/dictionary.controller.ts",
         "controllerLine": 723
@@ -4265,7 +4445,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "DictionaryController_updateItem",
         "controllerFile": "apps/api/src/modules/dictionary/dictionary.controller.ts",
         "controllerLine": 816
@@ -4301,7 +4481,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "SystemRoleController_update",
         "controllerFile": "apps/api/src/modules/system-role/system-role.controller.ts",
         "controllerLine": 405
@@ -4337,7 +4517,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "SystemUserController_update",
         "controllerFile": "apps/api/src/modules/system-user/system-user.controller.ts",
         "controllerLine": 794
@@ -4373,7 +4553,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "SettingsController_updateTalentSettings",
         "controllerFile": "apps/api/src/modules/settings/settings.controller.ts",
         "controllerLine": 714
@@ -4409,7 +4589,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "SettingsController_resetTalentSetting",
         "controllerFile": "apps/api/src/modules/settings/settings.controller.ts",
         "controllerLine": 763
@@ -4445,7 +4625,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "TenantController_updateTenant",
         "controllerFile": "apps/api/src/modules/tenant/tenant.controller.ts",
         "controllerLine": 1010
@@ -4476,7 +4656,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "UserController_updateCurrentUser",
         "controllerFile": "apps/api/src/modules/auth/auth.controller.ts",
         "controllerLine": 1362
@@ -4507,7 +4687,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "AuthController_forgotPassword",
         "controllerFile": "apps/api/src/modules/auth/auth.controller.ts",
         "controllerLine": 764
@@ -4538,7 +4718,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "AuthController_login",
         "controllerFile": "apps/api/src/modules/auth/auth.controller.ts",
         "controllerLine": 491
@@ -4569,7 +4749,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "AuthController_logout",
         "controllerFile": "apps/api/src/modules/auth/auth.controller.ts",
         "controllerLine": 1137
@@ -4600,7 +4780,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "AuthController_logoutAll",
         "controllerFile": "apps/api/src/modules/auth/auth.controller.ts",
         "controllerLine": 1195
@@ -4631,7 +4811,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "AuthController_forceResetPassword",
         "controllerFile": "apps/api/src/modules/auth/auth.controller.ts",
         "controllerLine": 668
@@ -4662,7 +4842,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "AuthController_verifyRecoveryCode",
         "controllerFile": "apps/api/src/modules/auth/auth.controller.ts",
         "controllerLine": 1033
@@ -4693,7 +4873,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "AuthController_refresh",
         "controllerFile": "apps/api/src/modules/auth/auth.controller.ts",
         "controllerLine": 1070
@@ -4724,7 +4904,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "AuthController_resetPasswordByToken",
         "controllerFile": "apps/api/src/modules/auth/auth.controller.ts",
         "controllerLine": 890
@@ -4755,7 +4935,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "AuthController_completeSsoAccountLink",
         "controllerFile": "apps/api/src/modules/auth/auth.controller.ts",
         "controllerLine": 293
@@ -4786,7 +4966,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "AuthController_startSsoAccountLink",
         "controllerFile": "apps/api/src/modules/auth/auth.controller.ts",
         "controllerLine": 270
@@ -4817,7 +4997,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "AuthController_exchangeSsoResult",
         "controllerFile": "apps/api/src/modules/auth/auth.controller.ts",
         "controllerLine": 208
@@ -4848,7 +5028,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "AuthController_startSsoLogin",
         "controllerFile": "apps/api/src/modules/auth/auth.controller.ts",
         "controllerLine": 179
@@ -4879,7 +5059,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "AuthController_verifyTotp",
         "controllerFile": "apps/api/src/modules/auth/auth.controller.ts",
         "controllerLine": 633
@@ -4915,7 +5095,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "SecurityController_createBlocklist",
         "controllerFile": "apps/api/src/modules/security/controllers/security.controller.ts",
         "controllerLine": 141
@@ -4951,7 +5131,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "SecurityController_disableBlocklist",
         "controllerFile": "apps/api/src/modules/security/controllers/security.controller.ts",
         "controllerLine": 326
@@ -4987,7 +5167,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "SecurityController_enableBlocklist",
         "controllerFile": "apps/api/src/modules/security/controllers/security.controller.ts",
         "controllerLine": 368
@@ -5023,7 +5203,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "SecurityController_testBlocklist",
         "controllerFile": "apps/api/src/modules/security/controllers/security.controller.ts",
         "controllerLine": 178
@@ -5054,7 +5234,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "ConfigController_create",
         "controllerFile": "apps/api/src/modules/config/config.controller.ts",
         "controllerLine": 692
@@ -5085,7 +5265,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "ConfigController_deactivate",
         "controllerFile": "apps/api/src/modules/config/config.controller.ts",
         "controllerLine": 805
@@ -5116,7 +5296,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "ConfigController_disable",
         "controllerFile": "apps/api/src/modules/config/config.controller.ts",
         "controllerLine": 866
@@ -5147,7 +5327,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "ConfigController_enable",
         "controllerFile": "apps/api/src/modules/config/config.controller.ts",
         "controllerLine": 896
@@ -5178,7 +5358,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "ConfigController_reactivate",
         "controllerFile": "apps/api/src/modules/config/config.controller.ts",
         "controllerLine": 836
@@ -5214,7 +5394,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "ConfigController_testBlocklist",
         "controllerFile": "apps/api/src/modules/config/config.controller.ts",
         "controllerLine": 996
@@ -5250,7 +5430,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "ConfigController_generateConsumerKey",
         "controllerFile": "apps/api/src/modules/config/config.controller.ts",
         "controllerLine": 925
@@ -5286,7 +5466,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "ConfigController_revokeConsumerKey",
         "controllerFile": "apps/api/src/modules/config/config.controller.ts",
         "controllerLine": 977
@@ -5322,7 +5502,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "ConfigController_rotateConsumerKey",
         "controllerFile": "apps/api/src/modules/config/config.controller.ts",
         "controllerLine": 951
@@ -5358,7 +5538,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "DelegatedAdminController_create",
         "controllerFile": "apps/api/src/modules/delegated-admin/delegated-admin.controller.ts",
         "controllerLine": 106
@@ -5394,7 +5574,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "EmailTemplateController_create",
         "controllerFile": "apps/api/src/modules/email/controllers/email-template.controller.ts",
         "controllerLine": 232
@@ -5430,7 +5610,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "EmailTemplateController_preview",
         "controllerFile": "apps/api/src/modules/email/controllers/email-template.controller.ts",
         "controllerLine": 365
@@ -5466,7 +5646,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "EmailTemplateController_reactivate",
         "controllerFile": "apps/api/src/modules/email/controllers/email-template.controller.ts",
         "controllerLine": 333
@@ -5497,7 +5677,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "EmailConfigController_sendTestEmail",
         "controllerFile": "apps/api/src/modules/email/controllers/email-config.controller.ts",
         "controllerLine": 278
@@ -5528,7 +5708,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "EmailConfigController_testConnection",
         "controllerFile": "apps/api/src/modules/email/controllers/email-config.controller.ts",
         "controllerLine": 368
@@ -5564,7 +5744,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "EventBackboneController_previewReplay",
         "controllerFile": "apps/api/src/modules/event-backbone/event-backbone.controller.ts",
         "controllerLine": 65
@@ -5600,7 +5780,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "SecurityController_createIpRule",
         "controllerFile": "apps/api/src/modules/security/controllers/security.controller.ts",
         "controllerLine": 448
@@ -5636,7 +5816,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "SecurityController_checkIpAccess",
         "controllerFile": "apps/api/src/modules/security/controllers/security.controller.ts",
         "controllerLine": 480
@@ -5672,7 +5852,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "PiiServiceConfigController_create",
         "controllerFile": "apps/api/src/modules/pii-config/controllers/pii-service-config.controller.ts",
         "controllerLine": 134
@@ -5708,7 +5888,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "PiiServiceConfigController_testConnection",
         "controllerFile": "apps/api/src/modules/pii-config/controllers/pii-service-config.controller.ts",
         "controllerLine": 198
@@ -5744,7 +5924,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "PlatformToolsController_runHealthCheck",
         "controllerFile": "apps/api/src/modules/platform-tools/platform-tools.controller.ts",
         "controllerLine": 63
@@ -5780,7 +5960,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "ProfileStoreController_create",
         "controllerFile": "apps/api/src/modules/pii-config/controllers/profile-store.controller.ts",
         "controllerLine": 338
@@ -5816,7 +5996,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "RuntimeFlagsController_evaluate",
         "controllerFile": "apps/api/src/modules/runtime-flags/runtime-flags.controller.ts",
         "controllerLine": 76
@@ -5852,7 +6032,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "RuntimeFlagsController_activateKillSwitch",
         "controllerFile": "apps/api/src/modules/runtime-flags/runtime-flags.controller.ts",
         "controllerLine": 87
@@ -5883,7 +6063,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "SecurityController_getFingerprint",
         "controllerFile": "apps/api/src/modules/security/controllers/security.controller.ts",
         "controllerLine": 69
@@ -5914,7 +6094,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "DictionaryController_createType",
         "controllerFile": "apps/api/src/modules/dictionary/dictionary.controller.ts",
         "controllerLine": 690
@@ -5945,7 +6125,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "DictionaryController_createItem",
         "controllerFile": "apps/api/src/modules/dictionary/dictionary.controller.ts",
         "controllerLine": 769
@@ -5976,7 +6156,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "DictionaryController_reactivateItem",
         "controllerFile": "apps/api/src/modules/dictionary/dictionary.controller.ts",
         "controllerLine": 940
@@ -6012,7 +6192,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "SystemRoleController_create",
         "controllerFile": "apps/api/src/modules/system-role/system-role.controller.ts",
         "controllerLine": 307
@@ -6048,7 +6228,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "SystemUserController_create",
         "controllerFile": "apps/api/src/modules/system-user/system-user.controller.ts",
         "controllerLine": 671
@@ -6084,7 +6264,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "SystemUserController_deactivate",
         "controllerFile": "apps/api/src/modules/system-user/system-user.controller.ts",
         "controllerLine": 883
@@ -6120,7 +6300,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "SystemUserController_forceTotp",
         "controllerFile": "apps/api/src/modules/system-user/system-user.controller.ts",
         "controllerLine": 972
@@ -6156,7 +6336,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "SystemUserController_reactivate",
         "controllerFile": "apps/api/src/modules/system-user/system-user.controller.ts",
         "controllerLine": 923
@@ -6192,7 +6372,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "SystemUserController_resetPassword",
         "controllerFile": "apps/api/src/modules/system-user/system-user.controller.ts",
         "controllerLine": 838
@@ -6228,7 +6408,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "SystemUserController_setScopeAccess",
         "controllerFile": "apps/api/src/modules/system-user/system-user.controller.ts",
         "controllerLine": 1053
@@ -6264,7 +6444,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "TenantController_createTenant",
         "controllerFile": "apps/api/src/modules/tenant/tenant.controller.ts",
         "controllerLine": 751
@@ -6300,7 +6480,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "TenantController_activateTenant",
         "controllerFile": "apps/api/src/modules/tenant/tenant.controller.ts",
         "controllerLine": 1091
@@ -6336,7 +6516,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "TenantController_deactivateTenant",
         "controllerFile": "apps/api/src/modules/tenant/tenant.controller.ts",
         "controllerLine": 1145
@@ -6367,7 +6547,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "UserController_uploadAvatar",
         "controllerFile": "apps/api/src/modules/auth/auth.controller.ts",
         "controllerLine": 2013
@@ -6398,7 +6578,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "UserController_confirmEmailChange",
         "controllerFile": "apps/api/src/modules/auth/auth.controller.ts",
         "controllerLine": 2277
@@ -6429,7 +6609,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "UserController_requestEmailChange",
         "controllerFile": "apps/api/src/modules/auth/auth.controller.ts",
         "controllerLine": 2156
@@ -6460,7 +6640,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "UserController_changePassword",
         "controllerFile": "apps/api/src/modules/auth/auth.controller.ts",
         "controllerLine": 1441
@@ -6491,7 +6671,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "UserController_regenerateRecoveryCodes",
         "controllerFile": "apps/api/src/modules/auth/auth.controller.ts",
         "controllerLine": 1829
@@ -6522,7 +6702,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "UserController_disableTotp",
         "controllerFile": "apps/api/src/modules/auth/auth.controller.ts",
         "controllerLine": 1740
@@ -6553,7 +6733,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "UserController_enableTotp",
         "controllerFile": "apps/api/src/modules/auth/auth.controller.ts",
         "controllerLine": 1643
@@ -6584,7 +6764,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "UserController_setupTotp",
         "controllerFile": "apps/api/src/modules/auth/auth.controller.ts",
         "controllerLine": 1573
@@ -6620,7 +6800,7 @@
       "builderExportEligible": false,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-config.json",
+        "openapiFile": "openapi/openapi-config.json",
         "operationId": "TenantController_replaceTenantCapabilities",
         "controllerFile": "apps/api/src/modules/tenant/tenant.controller.ts",
         "controllerLine": 977
@@ -6656,7 +6836,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "ExportController_cancelJob",
         "controllerFile": "apps/api/src/modules/export/controllers/export.controller.ts",
         "controllerLine": 299
@@ -6692,7 +6872,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "ExternalBlocklistController_delete",
         "controllerFile": "apps/api/src/modules/marshmallow/controllers/external-blocklist.controller.ts",
         "controllerLine": 341
@@ -6728,7 +6908,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "IntegrationController_deleteWebhook",
         "controllerFile": "apps/api/src/modules/integration/controllers/integration.controller.ts",
         "controllerLine": 552
@@ -6764,7 +6944,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "ReportController_cancelMfrJob",
         "controllerFile": "apps/api/src/modules/report/controllers/report.controller.ts",
         "controllerLine": 620
@@ -6800,7 +6980,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "TalentController_deleteTalent",
         "controllerFile": "apps/api/src/modules/talent/talent.controller.ts",
         "controllerLine": 1831
@@ -6836,7 +7016,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "ExternalIdController_delete",
         "controllerFile": "apps/api/src/modules/customer/controllers/external-id.controller.ts",
         "controllerLine": 139
@@ -6872,7 +7052,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "ImportController_cancelJob",
         "controllerFile": "apps/api/src/modules/import/controllers/import.controller.ts",
         "controllerLine": 610
@@ -6908,7 +7088,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "UserRoleController_removeAssignment",
         "controllerFile": "apps/api/src/modules/role/user-role.controller.ts",
         "controllerLine": 186
@@ -6944,7 +7124,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "ExportController_listJobs",
         "controllerFile": "apps/api/src/modules/export/controllers/export.controller.ts",
         "controllerLine": 181
@@ -6980,7 +7160,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "ExportController_getJob",
         "controllerFile": "apps/api/src/modules/export/controllers/export.controller.ts",
         "controllerLine": 215
@@ -7016,7 +7196,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "ExportController_downloadExport",
         "controllerFile": "apps/api/src/modules/export/controllers/export.controller.ts",
         "controllerLine": 252
@@ -7052,7 +7232,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "ExternalBlocklistController_findMany",
         "controllerFile": "apps/api/src/modules/marshmallow/controllers/external-blocklist.controller.ts",
         "controllerLine": 63
@@ -7088,7 +7268,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "ExternalBlocklistController_findById",
         "controllerFile": "apps/api/src/modules/marshmallow/controllers/external-blocklist.controller.ts",
         "controllerLine": 196
@@ -7124,7 +7304,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "ExternalBlocklistController_findWithInheritance",
         "controllerFile": "apps/api/src/modules/marshmallow/controllers/external-blocklist.controller.ts",
         "controllerLine": 108
@@ -7160,7 +7340,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "ExternalBlocklistController_findWithInheritanceTalent",
         "controllerFile": "apps/api/src/modules/marshmallow/controllers/external-blocklist.controller.ts",
         "controllerLine": 155
@@ -7196,7 +7376,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "IntegrationController_getAdapterDefinitions",
         "controllerFile": "apps/api/src/modules/integration/controllers/integration.controller.ts",
         "controllerLine": 262
@@ -7232,7 +7412,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "IntegrationController_listTenantAdapters",
         "controllerFile": "apps/api/src/modules/integration/controllers/integration.controller.ts",
         "controllerLine": 276
@@ -7268,7 +7448,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "IntegrationController_getAdapter",
         "controllerFile": "apps/api/src/modules/integration/controllers/integration.controller.ts",
         "controllerLine": 335
@@ -7304,7 +7484,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "IntegrationController_resolveTenantEffectiveAdapter",
         "controllerFile": "apps/api/src/modules/integration/controllers/integration.controller.ts",
         "controllerLine": 315
@@ -7340,7 +7520,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "IntegrationController_getWebhookDefinitions",
         "controllerFile": "apps/api/src/modules/integration/controllers/integration.controller.ts",
         "controllerLine": 269
@@ -7376,7 +7556,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "IntegrationController_listWebhooks",
         "controllerFile": "apps/api/src/modules/integration/controllers/integration.controller.ts",
         "controllerLine": 404
@@ -7412,7 +7592,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "IntegrationController_getWebhook",
         "controllerFile": "apps/api/src/modules/integration/controllers/integration.controller.ts",
         "controllerLine": 529
@@ -7448,7 +7628,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "IntegrationController_listWebhookDeliveryAttempts",
         "controllerFile": "apps/api/src/modules/integration/controllers/integration.controller.ts",
         "controllerLine": 437
@@ -7484,7 +7664,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "IntegrationController_getWebhookDeliveryAttempt",
         "controllerFile": "apps/api/src/modules/integration/controllers/integration.controller.ts",
         "controllerLine": 454
@@ -7520,7 +7700,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "IntegrationController_getWebhookEvents",
         "controllerFile": "apps/api/src/modules/integration/controllers/integration.controller.ts",
         "controllerLine": 425
@@ -7551,7 +7731,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "OrganizationController_getByPath",
         "controllerFile": "apps/api/src/modules/organization/organization.controller.ts",
         "controllerLine": 828
@@ -7582,7 +7762,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "OrganizationController_getTree",
         "controllerFile": "apps/api/src/modules/organization/organization.controller.ts",
         "controllerLine": 580
@@ -7613,7 +7793,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "OrganizationController_getChildren",
         "controllerFile": "apps/api/src/modules/organization/organization.controller.ts",
         "controllerLine": 770
@@ -7644,7 +7824,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "OrganizationController_getRootNodes",
         "controllerFile": "apps/api/src/modules/organization/organization.controller.ts",
         "controllerLine": 711
@@ -7675,10 +7855,10 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PermissionController_list",
         "controllerFile": "apps/api/src/modules/permission/permission.controller.ts",
-        "controllerLine": 126
+        "controllerLine": 144
       }
     },
     {
@@ -7706,10 +7886,10 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PermissionController_getResources",
         "controllerFile": "apps/api/src/modules/permission/permission.controller.ts",
-        "controllerLine": 158
+        "controllerLine": 176
       }
     },
     {
@@ -7742,7 +7922,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PublicPresenceAssetController_listAssets",
         "controllerFile": "apps/api/src/modules/homepage/controllers/public-presence-asset.controller.ts",
         "controllerLine": 68
@@ -7778,7 +7958,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PublicPresenceAssetController_getAssetDetail",
         "controllerFile": "apps/api/src/modules/homepage/controllers/public-presence-asset.controller.ts",
         "controllerLine": 84
@@ -7814,7 +7994,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PublicPresenceAssetController_listAssetRevisions",
         "controllerFile": "apps/api/src/modules/homepage/controllers/public-presence-asset.controller.ts",
         "controllerLine": 101
@@ -7845,7 +8025,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "DomainLookupController_lookupDomain",
         "controllerFile": "apps/api/src/modules/homepage/controllers/domain-lookup.controller.ts",
         "controllerLine": 76
@@ -7876,7 +8056,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PublicHomepageController_getPublicHomepageByLegacyPath",
         "controllerFile": "apps/api/src/modules/homepage/controllers/public-homepage.controller.ts",
         "controllerLine": 173
@@ -7907,7 +8087,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "CalendarController_getCalendar",
         "controllerFile": "apps/api/src/modules/homepage/controllers/calendar.controller.ts",
         "controllerLine": 43
@@ -7938,7 +8118,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PublicHomepageController_getPublicHomepageByCodes",
         "controllerFile": "apps/api/src/modules/homepage/controllers/public-homepage.controller.ts",
         "controllerLine": 139
@@ -7969,7 +8149,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PublicMarshmallowController_getConfig",
         "controllerFile": "apps/api/src/modules/marshmallow/controllers/public-marshmallow.controller.ts",
         "controllerLine": 91
@@ -8000,7 +8180,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PublicMarshmallowController_getMessages",
         "controllerFile": "apps/api/src/modules/marshmallow/controllers/public-marshmallow.controller.ts",
         "controllerLine": 161
@@ -8031,7 +8211,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PublicMarshmallowController_getConfigByCodes",
         "controllerFile": "apps/api/src/modules/marshmallow/controllers/public-marshmallow.controller.ts",
         "controllerLine": 62
@@ -8062,7 +8242,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PublicMarshmallowController_getMessagesByCodes",
         "controllerFile": "apps/api/src/modules/marshmallow/controllers/public-marshmallow.controller.ts",
         "controllerLine": 118
@@ -8098,7 +8278,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "ReportCatalogController_listCatalog",
         "controllerFile": "apps/api/src/modules/report/controllers/report-catalog.controller.ts",
         "controllerLine": 179
@@ -8134,7 +8314,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "ReportCatalogController_getCatalogItem",
         "controllerFile": "apps/api/src/modules/report/controllers/report-catalog.controller.ts",
         "controllerLine": 201
@@ -8170,7 +8350,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "ReportController_listMfrJobs",
         "controllerFile": "apps/api/src/modules/report/controllers/report.controller.ts",
         "controllerLine": 472
@@ -8206,7 +8386,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "ReportController_getMfrJob",
         "controllerFile": "apps/api/src/modules/report/controllers/report.controller.ts",
         "controllerLine": 510
@@ -8242,7 +8422,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "ReportController_downloadMfrJob",
         "controllerFile": "apps/api/src/modules/report/controllers/report.controller.ts",
         "controllerLine": 560
@@ -8278,7 +8458,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "RoleController_list",
         "controllerFile": "apps/api/src/modules/role/role.controller.ts",
         "controllerLine": 475
@@ -8314,7 +8494,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "RoleController_getById",
         "controllerFile": "apps/api/src/modules/role/role.controller.ts",
         "controllerLine": 580
@@ -8345,7 +8525,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "SubsidiaryController_list",
         "controllerFile": "apps/api/src/modules/subsidiary/subsidiary.controller.ts",
         "controllerLine": 528
@@ -8376,7 +8556,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "SubsidiaryController_getById",
         "controllerFile": "apps/api/src/modules/subsidiary/subsidiary.controller.ts",
         "controllerLine": 643
@@ -8412,7 +8592,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "SubsidiaryIntegrationAdapterController_listSubsidiaryAdapters",
         "controllerFile": "apps/api/src/modules/integration/controllers/scoped-integration-adapter.controller.ts",
         "controllerLine": 43
@@ -8448,7 +8628,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "SubsidiaryIntegrationAdapterController_resolveSubsidiaryEffectiveAdapter",
         "controllerFile": "apps/api/src/modules/integration/controllers/scoped-integration-adapter.controller.ts",
         "controllerLine": 84
@@ -8484,7 +8664,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "TalentController_list",
         "controllerFile": "apps/api/src/modules/talent/talent.controller.ts",
         "controllerLine": 1389
@@ -8520,7 +8700,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "TalentController_getById",
         "controllerFile": "apps/api/src/modules/talent/talent.controller.ts",
         "controllerLine": 1694
@@ -8556,7 +8736,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "TalentController_getCustomDomainConfig",
         "controllerFile": "apps/api/src/modules/talent/talent.controller.ts",
         "controllerLine": 2237
@@ -8592,7 +8772,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "CustomerController_list",
         "controllerFile": "apps/api/src/modules/customer/controllers/customer.controller.ts",
         "controllerLine": 73
@@ -8628,7 +8808,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "CustomerController_getById",
         "controllerFile": "apps/api/src/modules/customer/controllers/customer.controller.ts",
         "controllerLine": 116
@@ -8664,7 +8844,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "ExternalIdController_list",
         "controllerFile": "apps/api/src/modules/customer/controllers/external-id.controller.ts",
         "controllerLine": 36
@@ -8700,7 +8880,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "MembershipController_list",
         "controllerFile": "apps/api/src/modules/customer/controllers/membership.controller.ts",
         "controllerLine": 50
@@ -8736,7 +8916,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PlatformIdentityController_list",
         "controllerFile": "apps/api/src/modules/customer/controllers/platform-identity.controller.ts",
         "controllerLine": 52
@@ -8772,7 +8952,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PlatformIdentityController_getHistory",
         "controllerFile": "apps/api/src/modules/customer/controllers/platform-identity.controller.ts",
         "controllerLine": 218
@@ -8808,7 +8988,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "HomepageController_getHomepage",
         "controllerFile": "apps/api/src/modules/homepage/controllers/homepage.controller.ts",
         "controllerLine": 350
@@ -8844,7 +9024,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "HomepageController_listVersions",
         "controllerFile": "apps/api/src/modules/homepage/controllers/homepage.controller.ts",
         "controllerLine": 624
@@ -8880,7 +9060,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "HomepageController_getVersion",
         "controllerFile": "apps/api/src/modules/homepage/controllers/homepage.controller.ts",
         "controllerLine": 674
@@ -8916,7 +9096,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "ImportController_listJobs",
         "controllerFile": "apps/api/src/modules/import/controllers/import.controller.ts",
         "controllerLine": 452
@@ -8952,7 +9132,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "ImportController_getJob",
         "controllerFile": "apps/api/src/modules/import/controllers/import.controller.ts",
         "controllerLine": 496
@@ -8988,7 +9168,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "ImportController_getJobErrors",
         "controllerFile": "apps/api/src/modules/import/controllers/import.controller.ts",
         "controllerLine": 551
@@ -9024,7 +9204,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "ImportController_downloadCompanyTemplate",
         "controllerFile": "apps/api/src/modules/import/controllers/import.controller.ts",
         "controllerLine": 242
@@ -9060,7 +9240,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "ImportController_downloadIndividualTemplate",
         "controllerFile": "apps/api/src/modules/import/controllers/import.controller.ts",
         "controllerLine": 200
@@ -9096,7 +9276,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "TalentIntegrationAdapterController_listTalentAdapters",
         "controllerFile": "apps/api/src/modules/integration/controllers/scoped-integration-adapter.controller.ts",
         "controllerLine": 167
@@ -9132,7 +9312,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "TalentIntegrationAdapterController_resolveTalentEffectiveAdapter",
         "controllerFile": "apps/api/src/modules/integration/controllers/scoped-integration-adapter.controller.ts",
         "controllerLine": 208
@@ -9168,7 +9348,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "MarshmallowController_getConfig",
         "controllerFile": "apps/api/src/modules/marshmallow/controllers/marshmallow.controller.ts",
         "controllerLine": 103
@@ -9204,7 +9384,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "MarshmallowController_getExportJob",
         "controllerFile": "apps/api/src/modules/marshmallow/controllers/marshmallow.controller.ts",
         "controllerLine": 804
@@ -9240,7 +9420,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "MarshmallowController_getExportDownloadUrl",
         "controllerFile": "apps/api/src/modules/marshmallow/controllers/marshmallow.controller.ts",
         "controllerLine": 845
@@ -9276,7 +9456,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "MarshmallowController_listMessages",
         "controllerFile": "apps/api/src/modules/marshmallow/controllers/marshmallow.controller.ts",
         "controllerLine": 436
@@ -9312,7 +9492,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PublicPresenceController_getWorkspace",
         "controllerFile": "apps/api/src/modules/homepage/controllers/public-presence.controller.ts",
         "controllerLine": 83
@@ -9348,7 +9528,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PublicPresenceController_getDraftPreview",
         "controllerFile": "apps/api/src/modules/homepage/controllers/public-presence.controller.ts",
         "controllerLine": 107
@@ -9384,7 +9564,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "TalentController_getPublishReadiness",
         "controllerFile": "apps/api/src/modules/talent/talent.controller.ts",
         "controllerLine": 1935
@@ -9420,7 +9600,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "TalentController_listCustomDomainBindings",
         "controllerFile": "apps/api/src/modules/talent/talent.controller.ts",
         "controllerLine": 1510
@@ -9456,7 +9636,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "UserRoleController_getUserRoles",
         "controllerFile": "apps/api/src/modules/role/user-role.controller.ts",
         "controllerLine": 73
@@ -9487,7 +9667,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "MyPermissionsController_getMyPermissions",
         "controllerFile": "apps/api/src/modules/permission/my-permissions.controller.ts",
         "controllerLine": 51
@@ -9523,7 +9703,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "ExternalBlocklistController_update",
         "controllerFile": "apps/api/src/modules/marshmallow/controllers/external-blocklist.controller.ts",
         "controllerLine": 286
@@ -9559,7 +9739,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "IntegrationController_updateAdapter",
         "controllerFile": "apps/api/src/modules/integration/controllers/integration.controller.ts",
         "controllerLine": 346
@@ -9595,7 +9775,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "IntegrationController_updateAdapterConfigs",
         "controllerFile": "apps/api/src/modules/integration/controllers/integration.controller.ts",
         "controllerLine": 380
@@ -9631,7 +9811,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "IntegrationController_updateWebhook",
         "controllerFile": "apps/api/src/modules/integration/controllers/integration.controller.ts",
         "controllerLine": 540
@@ -9667,7 +9847,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "RoleController_update",
         "controllerFile": "apps/api/src/modules/role/role.controller.ts",
         "controllerLine": 643
@@ -9703,7 +9883,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "RoleController_setPermissions",
         "controllerFile": "apps/api/src/modules/role/role.controller.ts",
         "controllerLine": 694
@@ -9734,7 +9914,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "SubsidiaryController_update",
         "controllerFile": "apps/api/src/modules/subsidiary/subsidiary.controller.ts",
         "controllerLine": 704
@@ -9770,7 +9950,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "TalentController_update",
         "controllerFile": "apps/api/src/modules/talent/talent.controller.ts",
         "controllerLine": 1776
@@ -9806,7 +9986,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "TalentController_selectInheritedCustomDomains",
         "controllerFile": "apps/api/src/modules/talent/talent.controller.ts",
         "controllerLine": 2365
@@ -9842,7 +10022,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "TalentController_updateServicePaths",
         "controllerFile": "apps/api/src/modules/talent/talent.controller.ts",
         "controllerLine": 2410
@@ -9878,7 +10058,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "TalentController_updateSslMode",
         "controllerFile": "apps/api/src/modules/talent/talent.controller.ts",
         "controllerLine": 2446
@@ -9914,7 +10094,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "MembershipController_update",
         "controllerFile": "apps/api/src/modules/customer/controllers/membership.controller.ts",
         "controllerLine": 145
@@ -9950,7 +10130,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PlatformIdentityController_update",
         "controllerFile": "apps/api/src/modules/customer/controllers/platform-identity.controller.ts",
         "controllerLine": 155
@@ -9986,7 +10166,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "CustomerController_updateCompany",
         "controllerFile": "apps/api/src/modules/customer/controllers/customer.controller.ts",
         "controllerLine": 468
@@ -10022,7 +10202,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "CustomerController_updateIndividual",
         "controllerFile": "apps/api/src/modules/customer/controllers/customer.controller.ts",
         "controllerLine": 208
@@ -10058,7 +10238,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "CustomerController_updateIndividualPii",
         "controllerFile": "apps/api/src/modules/customer/controllers/customer.controller.ts",
         "controllerLine": 365
@@ -10094,7 +10274,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "HomepageController_saveDraft",
         "controllerFile": "apps/api/src/modules/homepage/controllers/homepage.controller.ts",
         "controllerLine": 448
@@ -10130,7 +10310,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "HomepageController_updateSettings",
         "controllerFile": "apps/api/src/modules/homepage/controllers/homepage.controller.ts",
         "controllerLine": 580
@@ -10166,7 +10346,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "MarshmallowController_updateConfig",
         "controllerFile": "apps/api/src/modules/marshmallow/controllers/marshmallow.controller.ts",
         "controllerLine": 138
@@ -10202,7 +10382,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "MarshmallowController_updateMessage",
         "controllerFile": "apps/api/src/modules/marshmallow/controllers/marshmallow.controller.ts",
         "controllerLine": 707
@@ -10238,7 +10418,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PublicPresenceController_saveDraft",
         "controllerFile": "apps/api/src/modules/homepage/controllers/public-presence.controller.ts",
         "controllerLine": 166
@@ -10274,7 +10454,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "TalentController_updateCustomDomainBinding",
         "controllerFile": "apps/api/src/modules/talent/talent.controller.ts",
         "controllerLine": 1607
@@ -10310,7 +10490,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "UserRoleController_updateAssignment",
         "controllerFile": "apps/api/src/modules/role/user-role.controller.ts",
         "controllerLine": 156
@@ -10346,7 +10526,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "ExportController_createExport",
         "controllerFile": "apps/api/src/modules/export/controllers/export.controller.ts",
         "controllerLine": 148
@@ -10382,7 +10562,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "ExternalBlocklistController_create",
         "controllerFile": "apps/api/src/modules/marshmallow/controllers/external-blocklist.controller.ts",
         "controllerLine": 242
@@ -10418,7 +10598,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "ExternalBlocklistController_disableInScope",
         "controllerFile": "apps/api/src/modules/marshmallow/controllers/external-blocklist.controller.ts",
         "controllerLine": 380
@@ -10454,7 +10634,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "ExternalBlocklistController_enableInScope",
         "controllerFile": "apps/api/src/modules/marshmallow/controllers/external-blocklist.controller.ts",
         "controllerLine": 429
@@ -10490,7 +10670,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "ExternalBlocklistController_batchToggle",
         "controllerFile": "apps/api/src/modules/marshmallow/controllers/external-blocklist.controller.ts",
         "controllerLine": 478
@@ -10526,7 +10706,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "IntegrationController_createTenantAdapter",
         "controllerFile": "apps/api/src/modules/integration/controllers/integration.controller.ts",
         "controllerLine": 301
@@ -10562,7 +10742,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "IntegrationController_revealConfig",
         "controllerFile": "apps/api/src/modules/integration/controllers/integration.controller.ts",
         "controllerLine": 392
@@ -10598,7 +10778,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "IntegrationController_deactivateAdapter",
         "controllerFile": "apps/api/src/modules/integration/controllers/integration.controller.ts",
         "controllerLine": 358
@@ -10634,7 +10814,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "IntegrationController_reactivateAdapter",
         "controllerFile": "apps/api/src/modules/integration/controllers/integration.controller.ts",
         "controllerLine": 369
@@ -10670,7 +10850,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "IntegrationController_regenerateConsumerKey",
         "controllerFile": "apps/api/src/modules/integration/controllers/integration.controller.ts",
         "controllerLine": 585
@@ -10706,7 +10886,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "IntegrationController_createWebhook",
         "controllerFile": "apps/api/src/modules/integration/controllers/integration.controller.ts",
         "controllerLine": 414
@@ -10742,7 +10922,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "IntegrationController_deactivateWebhook",
         "controllerFile": "apps/api/src/modules/integration/controllers/integration.controller.ts",
         "controllerLine": 563
@@ -10778,7 +10958,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "IntegrationController_replayWebhookDeliveryAttempt",
         "controllerFile": "apps/api/src/modules/integration/controllers/integration.controller.ts",
         "controllerLine": 499
@@ -10814,7 +10994,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "IntegrationController_reactivateWebhook",
         "controllerFile": "apps/api/src/modules/integration/controllers/integration.controller.ts",
         "controllerLine": 574
@@ -10850,7 +11030,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "IntegrationController_createWebhookTestDelivery",
         "controllerFile": "apps/api/src/modules/integration/controllers/integration.controller.ts",
         "controllerLine": 475
@@ -10881,10 +11061,10 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PermissionController_checkPermissions",
         "controllerFile": "apps/api/src/modules/permission/permission.controller.ts",
-        "controllerLine": 175
+        "controllerLine": 197
       }
     },
     {
@@ -10917,7 +11097,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PublicPresenceAssetController_createAsset",
         "controllerFile": "apps/api/src/modules/homepage/controllers/public-presence-asset.controller.ts",
         "controllerLine": 120
@@ -10953,7 +11133,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PublicPresenceAssetController_validateAsset",
         "controllerFile": "apps/api/src/modules/homepage/controllers/public-presence-asset.controller.ts",
         "controllerLine": 170
@@ -10989,7 +11169,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PublicPresenceAssetController_duplicateAsset",
         "controllerFile": "apps/api/src/modules/homepage/controllers/public-presence-asset.controller.ts",
         "controllerLine": 196
@@ -11020,7 +11200,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PublicMarshmallowController_markAsRead",
         "controllerFile": "apps/api/src/modules/marshmallow/controllers/public-marshmallow.controller.ts",
         "controllerLine": 359
@@ -11051,7 +11231,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PublicMarshmallowController_markAsReadAuth",
         "controllerFile": "apps/api/src/modules/marshmallow/controllers/public-marshmallow.controller.ts",
         "controllerLine": 452
@@ -11082,7 +11262,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PublicMarshmallowController_replyAuth",
         "controllerFile": "apps/api/src/modules/marshmallow/controllers/public-marshmallow.controller.ts",
         "controllerLine": 511
@@ -11113,7 +11293,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PublicMarshmallowController_submitMessage",
         "controllerFile": "apps/api/src/modules/marshmallow/controllers/public-marshmallow.controller.ts",
         "controllerLine": 246
@@ -11144,7 +11324,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PublicMarshmallowController_submitMessageByCodes",
         "controllerFile": "apps/api/src/modules/marshmallow/controllers/public-marshmallow.controller.ts",
         "controllerLine": 206
@@ -11175,7 +11355,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PublicMarshmallowController_toggleReaction",
         "controllerFile": "apps/api/src/modules/marshmallow/controllers/public-marshmallow.controller.ts",
         "controllerLine": 319
@@ -11206,7 +11386,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PublicMarshmallowController_previewImage",
         "controllerFile": "apps/api/src/modules/marshmallow/controllers/public-marshmallow.controller.ts",
         "controllerLine": 284
@@ -11237,7 +11417,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PublicMarshmallowController_validateSsoToken",
         "controllerFile": "apps/api/src/modules/marshmallow/controllers/public-marshmallow.controller.ts",
         "controllerLine": 409
@@ -11273,7 +11453,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "ReportController_createMfrJob",
         "controllerFile": "apps/api/src/modules/report/controllers/report.controller.ts",
         "controllerLine": 432
@@ -11309,7 +11489,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "ReportController_searchMfr",
         "controllerFile": "apps/api/src/modules/report/controllers/report.controller.ts",
         "controllerLine": 395
@@ -11345,7 +11525,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "RoleController_create",
         "controllerFile": "apps/api/src/modules/role/role.controller.ts",
         "controllerLine": 522
@@ -11381,7 +11561,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "RoleController_deactivate",
         "controllerFile": "apps/api/src/modules/role/role.controller.ts",
         "controllerLine": 762
@@ -11417,7 +11597,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "RoleController_reactivate",
         "controllerFile": "apps/api/src/modules/role/role.controller.ts",
         "controllerLine": 819
@@ -11448,7 +11628,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "SubsidiaryController_create",
         "controllerFile": "apps/api/src/modules/subsidiary/subsidiary.controller.ts",
         "controllerLine": 588
@@ -11479,7 +11659,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "SubsidiaryController_deactivate",
         "controllerFile": "apps/api/src/modules/subsidiary/subsidiary.controller.ts",
         "controllerLine": 802
@@ -11515,7 +11695,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "SubsidiaryIntegrationAdapterController_createSubsidiaryAdapter",
         "controllerFile": "apps/api/src/modules/integration/controllers/scoped-integration-adapter.controller.ts",
         "controllerLine": 69
@@ -11551,7 +11731,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "SubsidiaryIntegrationAdapterController_disableSubsidiaryInheritedAdapter",
         "controllerFile": "apps/api/src/modules/integration/controllers/scoped-integration-adapter.controller.ts",
         "controllerLine": 105
@@ -11587,7 +11767,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "SubsidiaryIntegrationAdapterController_enableSubsidiaryInheritedAdapter",
         "controllerFile": "apps/api/src/modules/integration/controllers/scoped-integration-adapter.controller.ts",
         "controllerLine": 121
@@ -11618,7 +11798,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "SubsidiaryController_move",
         "controllerFile": "apps/api/src/modules/subsidiary/subsidiary.controller.ts",
         "controllerLine": 757
@@ -11649,7 +11829,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "SubsidiaryController_reactivate",
         "controllerFile": "apps/api/src/modules/subsidiary/subsidiary.controller.ts",
         "controllerLine": 857
@@ -11685,7 +11865,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "TalentController_create",
         "controllerFile": "apps/api/src/modules/talent/talent.controller.ts",
         "controllerLine": 1443
@@ -11721,7 +11901,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "TalentController_setCustomDomain",
         "controllerFile": "apps/api/src/modules/talent/talent.controller.ts",
         "controllerLine": 2278
@@ -11757,7 +11937,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "TalentController_verifyCustomDomain",
         "controllerFile": "apps/api/src/modules/talent/talent.controller.ts",
         "controllerLine": 2324
@@ -11793,7 +11973,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "CustomerController_deactivate",
         "controllerFile": "apps/api/src/modules/customer/controllers/customer.controller.ts",
         "controllerLine": 521
@@ -11829,7 +12009,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "ExternalIdController_create",
         "controllerFile": "apps/api/src/modules/customer/controllers/external-id.controller.ts",
         "controllerLine": 82
@@ -11865,7 +12045,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "MembershipController_create",
         "controllerFile": "apps/api/src/modules/customer/controllers/membership.controller.ts",
         "controllerLine": 97
@@ -11901,7 +12081,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PlatformIdentityController_create",
         "controllerFile": "apps/api/src/modules/customer/controllers/platform-identity.controller.ts",
         "controllerLine": 98
@@ -11937,7 +12117,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "CustomerController_reactivate",
         "controllerFile": "apps/api/src/modules/customer/controllers/customer.controller.ts",
         "controllerLine": 585
@@ -11973,7 +12153,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "CustomerController_batchOperation",
         "controllerFile": "apps/api/src/modules/customer/controllers/customer.controller.ts",
         "controllerLine": 636
@@ -12009,7 +12189,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "CustomerController_createCompany",
         "controllerFile": "apps/api/src/modules/customer/controllers/customer.controller.ts",
         "controllerLine": 422
@@ -12045,7 +12225,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "CustomerController_createCompanyPiiPortalSession",
         "controllerFile": "apps/api/src/modules/customer/controllers/customer.controller.ts",
         "controllerLine": 313
@@ -12081,7 +12261,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "CustomerController_createIndividual",
         "controllerFile": "apps/api/src/modules/customer/controllers/customer.controller.ts",
         "controllerLine": 162
@@ -12117,7 +12297,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "CustomerController_createPiiPortalSession",
         "controllerFile": "apps/api/src/modules/customer/controllers/customer.controller.ts",
         "controllerLine": 261
@@ -12153,7 +12333,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "TalentController_disable",
         "controllerFile": "apps/api/src/modules/talent/talent.controller.ts",
         "controllerLine": 2097
@@ -12189,7 +12369,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "HomepageController_uploadAsset",
         "controllerFile": "apps/api/src/modules/homepage/controllers/homepage.controller.ts",
         "controllerLine": 383
@@ -12225,7 +12405,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "HomepageController_publish",
         "controllerFile": "apps/api/src/modules/homepage/controllers/homepage.controller.ts",
         "controllerLine": 492
@@ -12261,7 +12441,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "HomepageController_unpublish",
         "controllerFile": "apps/api/src/modules/homepage/controllers/homepage.controller.ts",
         "controllerLine": 541
@@ -12297,7 +12477,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "HomepageController_restoreVersion",
         "controllerFile": "apps/api/src/modules/homepage/controllers/homepage.controller.ts",
         "controllerLine": 736
@@ -12333,7 +12513,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "ImportController_uploadCompany",
         "controllerFile": "apps/api/src/modules/import/controllers/import.controller.ts",
         "controllerLine": 368
@@ -12369,7 +12549,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "ImportController_uploadIndividual",
         "controllerFile": "apps/api/src/modules/import/controllers/import.controller.ts",
         "controllerLine": 288
@@ -12405,7 +12585,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "TalentIntegrationAdapterController_createTalentAdapter",
         "controllerFile": "apps/api/src/modules/integration/controllers/scoped-integration-adapter.controller.ts",
         "controllerLine": 193
@@ -12441,7 +12621,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "TalentIntegrationAdapterController_disableTalentInheritedAdapter",
         "controllerFile": "apps/api/src/modules/integration/controllers/scoped-integration-adapter.controller.ts",
         "controllerLine": 229
@@ -12477,7 +12657,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "TalentIntegrationAdapterController_enableTalentInheritedAdapter",
         "controllerFile": "apps/api/src/modules/integration/controllers/scoped-integration-adapter.controller.ts",
         "controllerLine": 245
@@ -12513,7 +12693,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "MarshmallowController_uploadAvatar",
         "controllerFile": "apps/api/src/modules/marshmallow/controllers/marshmallow.controller.ts",
         "controllerLine": 186
@@ -12549,7 +12729,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "MarshmallowController_setCustomDomain",
         "controllerFile": "apps/api/src/modules/marshmallow/controllers/marshmallow.controller.ts",
         "controllerLine": 281
@@ -12585,7 +12765,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "MarshmallowController_verifyCustomDomain",
         "controllerFile": "apps/api/src/modules/marshmallow/controllers/marshmallow.controller.ts",
         "controllerLine": 342
@@ -12621,7 +12801,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "MarshmallowController_exportMessages",
         "controllerFile": "apps/api/src/modules/marshmallow/controllers/marshmallow.controller.ts",
         "controllerLine": 760
@@ -12657,7 +12837,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "MarshmallowController_approveMessage",
         "controllerFile": "apps/api/src/modules/marshmallow/controllers/marshmallow.controller.ts",
         "controllerLine": 479
@@ -12693,7 +12873,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "MarshmallowController_rejectMessage",
         "controllerFile": "apps/api/src/modules/marshmallow/controllers/marshmallow.controller.ts",
         "controllerLine": 522
@@ -12729,7 +12909,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "MarshmallowController_replyMessage",
         "controllerFile": "apps/api/src/modules/marshmallow/controllers/marshmallow.controller.ts",
         "controllerLine": 614
@@ -12765,7 +12945,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "MarshmallowController_unrejectMessage",
         "controllerFile": "apps/api/src/modules/marshmallow/controllers/marshmallow.controller.ts",
         "controllerLine": 571
@@ -12801,7 +12981,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "MarshmallowController_batchAction",
         "controllerFile": "apps/api/src/modules/marshmallow/controllers/marshmallow.controller.ts",
         "controllerLine": 663
@@ -12837,7 +13017,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "MarshmallowController_generateSsoToken",
         "controllerFile": "apps/api/src/modules/marshmallow/controllers/marshmallow.controller.ts",
         "controllerLine": 389
@@ -12873,7 +13053,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "TalentController_move",
         "controllerFile": "apps/api/src/modules/talent/talent.controller.ts",
         "controllerLine": 1886
@@ -12909,7 +13089,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PublicPresenceController_bootstrapDraft",
         "controllerFile": "apps/api/src/modules/homepage/controllers/public-presence.controller.ts",
         "controllerLine": 137
@@ -12945,7 +13125,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PublicPresenceController_publishNow",
         "controllerFile": "apps/api/src/modules/homepage/controllers/public-presence.controller.ts",
         "controllerLine": 260
@@ -12981,7 +13161,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PublicPresenceController_cancelScheduledPublish",
         "controllerFile": "apps/api/src/modules/homepage/controllers/public-presence.controller.ts",
         "controllerLine": 303
@@ -13017,7 +13197,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PublicPresenceController_schedulePublish",
         "controllerFile": "apps/api/src/modules/homepage/controllers/public-presence.controller.ts",
         "controllerLine": 282
@@ -13053,7 +13233,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PublicPresenceController_approve",
         "controllerFile": "apps/api/src/modules/homepage/controllers/public-presence.controller.ts",
         "controllerLine": 238
@@ -13089,7 +13269,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PublicPresenceController_requestChanges",
         "controllerFile": "apps/api/src/modules/homepage/controllers/public-presence.controller.ts",
         "controllerLine": 217
@@ -13125,7 +13305,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PublicPresenceController_submitForReview",
         "controllerFile": "apps/api/src/modules/homepage/controllers/public-presence.controller.ts",
         "controllerLine": 195
@@ -13161,7 +13341,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PublicPresenceController_createRollbackDraft",
         "controllerFile": "apps/api/src/modules/homepage/controllers/public-presence.controller.ts",
         "controllerLine": 325
@@ -13197,7 +13377,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "TalentController_publish",
         "controllerFile": "apps/api/src/modules/talent/talent.controller.ts",
         "controllerLine": 2036
@@ -13233,7 +13413,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "TalentController_reEnable",
         "controllerFile": "apps/api/src/modules/talent/talent.controller.ts",
         "controllerLine": 2158
@@ -13269,7 +13449,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "TalentController_transitionArtistStage",
         "controllerFile": "apps/api/src/modules/talent/talent.controller.ts",
         "controllerLine": 1971
@@ -13305,7 +13485,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "TalentController_createCustomDomainBinding",
         "controllerFile": "apps/api/src/modules/talent/talent.controller.ts",
         "controllerLine": 1576
@@ -13341,7 +13521,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "TalentController_verifyCustomDomainBinding",
         "controllerFile": "apps/api/src/modules/talent/talent.controller.ts",
         "controllerLine": 1653
@@ -13377,7 +13557,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "UserRoleController_assignRole",
         "controllerFile": "apps/api/src/modules/role/user-role.controller.ts",
         "controllerLine": 118
@@ -13413,7 +13593,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-operations.json",
+        "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PublicPresenceAssetController_saveAssetDraft",
         "controllerFile": "apps/api/src/modules/homepage/controllers/public-presence-asset.controller.ts",
         "controllerLine": 144
@@ -13444,7 +13624,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-public.json",
+        "openapiFile": "openapi/openapi-public.json",
         "operationId": "HealthController_check",
         "controllerFile": "apps/api/src/modules/health/health.controller.ts",
         "controllerLine": 67
@@ -13475,7 +13655,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-public.json",
+        "openapiFile": "openapi/openapi-public.json",
         "operationId": "HealthController_live",
         "controllerFile": "apps/api/src/modules/health/health.controller.ts",
         "controllerLine": 78
@@ -13506,7 +13686,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-public.json",
+        "openapiFile": "openapi/openapi-public.json",
         "operationId": "HealthController_ready",
         "controllerFile": "apps/api/src/modules/health/health.controller.ts",
         "controllerLine": 85
@@ -13537,7 +13717,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-public.json",
+        "openapiFile": "openapi/openapi-public.json",
         "operationId": "PublicAssetsController_getAsset",
         "controllerFile": "apps/api/src/modules/public/public-assets.controller.ts",
         "controllerLine": 27
@@ -13568,7 +13748,7 @@
       "builderExportEligible": true,
       "auditEventTypes": [],
       "source": {
-        "openapiFile": "openapi-before/openapi-public.json",
+        "openapiFile": "openapi/openapi-public.json",
         "operationId": "PublicDomainController_lookupDomain",
         "controllerFile": "apps/api/src/modules/public/public-domain.controller.ts",
         "controllerLine": 21

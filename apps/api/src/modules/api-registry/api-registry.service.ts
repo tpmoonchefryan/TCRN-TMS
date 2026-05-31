@@ -1,4 +1,5 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 
@@ -26,6 +27,35 @@ const DRIFT_REPORT_CANDIDATES = [
   path.resolve(__dirname, 'api-registry.drift-report.json'),
 ];
 const READONLY_GATEWAY_METHODS = new Set(['GET', 'HEAD']);
+const BUILDER_READONLY_METHODS = new Set(['GET', 'HEAD']);
+
+function isSchemaBackedBuilderReadOperation(operation: ApiRegistryDocument['operations'][number]) {
+  return (
+    operation.builderExportEligible &&
+    BUILDER_READONLY_METHODS.has(operation.method.toUpperCase()) &&
+    Boolean(operation.requestSchemaRef || operation.responseSchemaRefs.length > 0)
+  );
+}
+
+function isBuilderReadonlyExcluded(operation: ApiRegistryDocument['operations'][number]): string | null {
+  const method = operation.method.toUpperCase();
+
+  if (!operation.builderExportEligible) {
+    return 'not_builder_export_eligible';
+  }
+  if (!BUILDER_READONLY_METHODS.has(method)) {
+    return 'write_delete_admin_or_execute_operation';
+  }
+  if (!operation.requestSchemaRef && operation.responseSchemaRefs.length === 0) {
+    return 'missing_schema_ref';
+  }
+
+  return null;
+}
+
+function hashContent(content: string) {
+  return createHash('sha256').update(content).digest('hex');
+}
 
 function deriveGatewayPolicy(operation: ApiRegistryDocument['operations'][number]) {
   const method = operation.method.toUpperCase();
@@ -186,27 +216,55 @@ export class ApiRegistryService {
 
   getBuilderReadonlyExport(): BuilderApiReadonlyExport {
     const document = this.getDocument();
+    const operations = document.operations
+      .filter((operation) => isSchemaBackedBuilderReadOperation(operation))
+      .map((operation) => ({
+        operationCode: operation.operationCode,
+        method: operation.method,
+        pathTemplate: operation.pathTemplate,
+        documentGroup: operation.documentGroup,
+        ownerModuleCode: operation.ownerModuleCode,
+        ownerCapabilityCode: operation.ownerCapabilityCode,
+        requiredPermissions: operation.requiredPermissions,
+        scopeType: operation.scopeType,
+        exposure: operation.exposure,
+        stability: operation.stability,
+        requestSchemaRef: operation.requestSchemaRef,
+        responseSchemaRefs: operation.responseSchemaRefs,
+      }));
+    const excludedOperations = document.operations
+      .map((operation) => {
+        const reason = isBuilderReadonlyExcluded(operation);
+
+        return reason
+          ? {
+              operationCode: operation.operationCode,
+              method: operation.method,
+              pathTemplate: operation.pathTemplate,
+              reason,
+            }
+          : null;
+      })
+      .filter((operation): operation is NonNullable<typeof operation> => Boolean(operation));
 
     return {
       exportVersion: API_REGISTRY_VERSION,
       generatedFromRegistryVersion: document.registryVersion,
       mode: 'read_only',
-      operations: document.operations
-        .filter((operation) => operation.builderExportEligible)
-        .map((operation) => ({
-          operationCode: operation.operationCode,
-          method: operation.method,
-          pathTemplate: operation.pathTemplate,
-          documentGroup: operation.documentGroup,
-          ownerModuleCode: operation.ownerModuleCode,
-          ownerCapabilityCode: operation.ownerCapabilityCode,
-          requiredPermissions: operation.requiredPermissions,
-          scopeType: operation.scopeType,
-          exposure: operation.exposure,
-          stability: operation.stability,
-          requestSchemaRef: operation.requestSchemaRef,
-          responseSchemaRefs: operation.responseSchemaRefs,
-        })),
+      operationCount: operations.length,
+      excludedOperationCount: excludedOperations.length,
+      operations,
+      excludedOperations,
+      sourceReadbackHash: hashContent(
+        JSON.stringify({
+          sourceCommit: document.sourceCommit,
+          generatedFromRegistryVersion: document.registryVersion,
+          operationCount: operations.length,
+          excludedOperationCount: excludedOperations.length,
+        })
+      ),
+      warnings: [],
+      passed: operations.length > 0,
     };
   }
 }

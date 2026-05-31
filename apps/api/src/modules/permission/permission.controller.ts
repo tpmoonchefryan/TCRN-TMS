@@ -2,6 +2,7 @@
 import { BadRequestException, Body, Controller, Get, Post, Query, Req } from '@nestjs/common';
 import {
   ApiBearerAuth,
+  ApiOkResponse,
   ApiOperation,
   ApiProperty,
   ApiPropertyOptional,
@@ -26,6 +27,23 @@ import { getPrimaryAcceptLanguage } from '../../common/request-locale.util';
 import { success } from '../../common/response.util';
 import { PermissionSnapshotService, ScopeType } from './permission-snapshot.service';
 import { PermissionAction, PermissionService } from './permission.service';
+
+type ApiOkResponseOptions = NonNullable<Parameters<typeof ApiOkResponse>[0]>;
+type OpenApiResponseSchema = Extract<ApiOkResponseOptions, { schema: unknown }>['schema'];
+
+const PERMISSION_RESOURCES_RESPONSE_SCHEMA: OpenApiResponseSchema = {
+  type: 'object',
+  properties: {
+    success: { type: 'boolean' },
+    data: {
+      type: 'array',
+      items: {
+        type: 'object',
+        additionalProperties: true,
+      },
+    },
+  },
+};
 
 // DTOs
 class ListPermissionsQueryDto {
@@ -157,6 +175,10 @@ export class PermissionController {
    */
   @Get('resources')
   @ApiOperation({ summary: 'Get resource definitions' })
+  @ApiOkResponse({
+    description: 'Catalog-backed permission resource definitions',
+    schema: PERMISSION_RESOURCES_RESPONSE_SCHEMA,
+  })
   async getResources(@CurrentUser() user: AuthenticatedUser, @Req() req: Request) {
     const language = getPrimaryAcceptLanguage(req);
 

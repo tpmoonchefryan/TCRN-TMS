@@ -11,6 +11,7 @@ import { buildSwaggerConfig, CONFIG_TAGS, OPERATIONS_TAGS, PUBLIC_TAGS } from '.
 import { ApiGatewayReadinessModule } from '../src/modules/api-gateway-readiness';
 import { ApiRegistryModule } from '../src/modules/api-registry';
 import { AuthModule } from '../src/modules/auth';
+import { BuilderRegistryModule } from '../src/modules/builder-registry';
 import { ConfigModule as AppConfigModule } from '../src/modules/config';
 import { CustomerModule } from '../src/modules/customer';
 import { DelegatedAdminModule } from '../src/modules/delegated-admin';
@@ -165,6 +166,7 @@ async function main() {
         ObservabilityAdaptersModule,
         RuntimeFlagsModule,
         EventBackboneModule,
+        BuilderRegistryModule,
         LogModule,
         EmailModule,
         SettingsModule,
