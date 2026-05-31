@@ -34,6 +34,7 @@ import { PlatformToolsModule } from './modules/platform-tools';
 import { PublicModule } from './modules/public';
 import { ReportModule } from './modules/report';
 import { RoleModule } from './modules/role';
+import { RuntimeFlagsModule } from './modules/runtime-flags';
 import { SecurityModule } from './modules/security';
 import { SettingsModule } from './modules/settings';
 import { SubsidiaryModule } from './modules/subsidiary';
@@ -228,6 +229,7 @@ export async function bootstrap(): Promise<void> {
           PiiConfigModule,
           PlatformToolsModule,
           ObservabilityAdaptersModule,
+          RuntimeFlagsModule,
           LogModule,
           EmailModule,
           SettingsModule,

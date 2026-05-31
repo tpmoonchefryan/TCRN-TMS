@@ -41,6 +41,7 @@ import { QueueModule } from './modules/queue';
 import { RedisModule } from './modules/redis';
 import { ReportModule } from './modules/report';
 import { RoleModule } from './modules/role';
+import { RuntimeFlagsModule } from './modules/runtime-flags';
 import { SecurityModule } from './modules/security';
 import { FingerprintInterceptor } from './modules/security/interceptors/fingerprint.interceptor';
 import { GlobalRateLimitMiddleware } from './modules/security/middleware/rate-limit.middleware';
@@ -137,6 +138,7 @@ import { repoEnvFilePaths } from './repo-env';
     // AC platform tool connection framework
     PlatformToolsModule,
     ObservabilityAdaptersModule,
+    RuntimeFlagsModule,
   ],
   controllers: [AppController],
   providers: [

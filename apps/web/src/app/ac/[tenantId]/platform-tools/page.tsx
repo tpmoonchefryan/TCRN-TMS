@@ -12,7 +12,12 @@ export default async function AcPlatformToolsPage({
   const rawFamily = Array.isArray(resolvedSearchParams.family)
     ? resolvedSearchParams.family[0]
     : resolvedSearchParams.family;
-  const initialFamily = rawFamily === 'observability' ? 'observability' : undefined;
+  const initialFamily =
+    rawFamily === 'observability'
+      ? 'observability'
+      : rawFamily === 'runtime_flags' || rawFamily === 'runtime-flags'
+        ? 'runtime_flags'
+        : undefined;
 
   return <PlatformToolConnectionsScreen tenantId={tenantId} initialFamily={initialFamily} />;
 }

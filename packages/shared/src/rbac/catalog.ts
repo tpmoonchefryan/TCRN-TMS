@@ -216,6 +216,22 @@ export const RBAC_RESOURCES = [
     ['read', 'write', 'execute', 'admin'],
     15
   ),
+  resource(
+    'platform.runtime_flag',
+    'platform',
+    {
+      name: {
+        en: 'Runtime Flags',
+        zh_HANS: '运行时开关',
+        zh_HANT: '執行期開關',
+        ja: 'ランタイムフラグ',
+        ko: '런타임 플래그',
+        fr: 'Flags runtime',
+      },
+    },
+    ['read', 'execute', 'admin'],
+    16
+  ),
 
   resource(
     'subsidiary',
@@ -938,6 +954,7 @@ const viewerReadableResources = RBAC_RESOURCES.filter(
     definition.supportedActions.includes('read') &&
     definition.code !== 'tenant.manage' &&
     definition.code !== 'customer.pii' &&
+    definition.code !== 'platform.runtime_flag' &&
     definition.code !== 'public_presence.audit' &&
     !definition.code.startsWith('security.')
 ).map((definition) => permission(definition.code, ['read']));

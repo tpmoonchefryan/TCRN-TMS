@@ -38,6 +38,7 @@ export * from './homepage/public-routes';
 export * from './module-capability';
 export * from './observability-adapters';
 export * from './platform-tools';
+export * from './runtime-flags';
 export * from './public-presence';
 export * from './rbac/catalog';
 export * from './types/config';

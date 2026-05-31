@@ -20,7 +20,11 @@ const baseURL = process.env.E2E_BASE_URL || `http://127.0.0.1:${webPort}`;
 
 export default defineConfig({
   testDir: '.',
-  testMatch: ['p4-platform-tool-connections.spec.ts', 'p5-observability-adapter-foundation.spec.ts'],
+  testMatch: [
+    'p4-platform-tool-connections.spec.ts',
+    'p5-observability-adapter-foundation.spec.ts',
+    'p6-runtime-feature-flag-adapter.spec.ts',
+  ],
   fullyParallel: false,
   workers: 1,
   timeout: 60_000,

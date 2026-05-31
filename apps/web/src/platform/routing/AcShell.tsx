@@ -1,6 +1,16 @@
 'use client';
 
-import { Activity, BookText, Building2, Cable, KeyRound, PlugZap, Users, Webhook } from 'lucide-react';
+import {
+  Activity,
+  BookText,
+  Building2,
+  Cable,
+  Flag,
+  KeyRound,
+  PlugZap,
+  Users,
+  Webhook,
+} from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
@@ -32,6 +42,7 @@ function getAcPageTitle(
     observability: string;
     platformToolConnections: string;
     profile: string;
+    runtimeFlags: string;
     systemDictionary: string;
     tenantManagement: string;
     userManagement: string;
@@ -60,6 +71,10 @@ function getAcPageTitle(
 
   if (pathname.includes('/platform-tools')) {
     return titles.platformToolConnections;
+  }
+
+  if (pathname.includes('/runtime-flags')) {
+    return titles.runtimeFlags;
   }
 
   if (pathname.includes('/observability')) {
@@ -123,6 +138,14 @@ export function AcShell({
       ja: 'プラットフォームツール接続',
       ko: '플랫폼 도구 연결',
       fr: 'Connexions aux outils plateforme',
+    }),
+    runtimeFlags: pickLocaleText(locale, {
+      en: 'Runtime Flags',
+      zh_HANS: '运行时开关',
+      zh_HANT: '執行期開關',
+      ja: 'ランタイムフラグ',
+      ko: '런타임 플래그',
+      fr: 'Flags runtime',
     }),
   };
   const loadingCopy = {
@@ -296,6 +319,13 @@ export function AcShell({
       icon: <PlugZap className="h-4 w-4" />,
     },
     {
+      key: 'runtime-flags',
+      label: integrationLabels.runtimeFlags,
+      href: `/ac/${tenantId}/runtime-flags`,
+      isActive: pathname.includes('/runtime-flags'),
+      icon: <Flag className="h-4 w-4" />,
+    },
+    {
       key: 'observability',
       label: copy.ac.nav.observability,
       href: `/ac/${tenantId}/observability`,
@@ -318,6 +348,7 @@ export function AcShell({
     apiClientManagement: integrationLabels.apiClientManagement,
     interfaceManagement: integrationLabels.interfaceManagement,
     platformToolConnections: integrationLabels.platformToolConnections,
+    runtimeFlags: integrationLabels.runtimeFlags,
     webhookManagement: integrationLabels.webhookManagement,
   });
   const shellA11y = {

@@ -168,11 +168,11 @@ export const ActionDrawer: React.FC<ActionDrawerProps> = ({
         >
           <header className="flex flex-none items-start justify-between gap-4 border-b border-slate-200 bg-white px-6 py-5">
             <div className="min-w-0 space-y-1">
-              <h2 id={titleId} className={`text-xl font-bold ${tokens.colors.text}`}>
+              <h2 id={titleId} className={`text-xl font-bold break-words ${tokens.colors.text}`}>
                 {title}
               </h2>
               {description ? (
-                <p id={descId} className={`text-sm ${tokens.colors.textMuted}`}>
+                <p id={descId} className={`text-sm break-words ${tokens.colors.textMuted}`}>
                   {description}
                 </p>
               ) : null}

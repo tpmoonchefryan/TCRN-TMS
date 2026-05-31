@@ -34,6 +34,7 @@ model Tenant {
   capabilityState              TenantCapabilityState?
   capabilityAssignments        TenantCapabilityAssignment[]
   capabilityAudits             TenantCapabilityAudit[]
+  runtimeFlagKillSwitches      RuntimeFlagKillSwitch[]
 
   @@index([code])
   @@map("tenant")
@@ -250,6 +251,32 @@ model PlatformToolAuditEvent {
   @@index([tenantId, toolCode, createdAt])
   @@index([connectionId, createdAt])
   @@map("platform_tool_audit_event")
+  @@schema("public")
+}
+
+/// Runtime flag kill switches - AC-owned emergency overrides for registered runtime flags.
+model RuntimeFlagKillSwitch {
+  id                  String    @id @default(uuid()) @db.Uuid
+  tenantId            String    @map("tenant_id") @db.Uuid
+  flagCode            String    @map("flag_code") @db.VarChar(160)
+  status              String    @default("active") @db.VarChar(32)
+  affectedBehavior    String    @map("affected_behavior") @db.VarChar(255)
+  reason              String    @db.Text
+  rollbackInstruction String    @map("rollback_instruction") @db.Text
+  source              String    @default("ac_runtime_flags") @db.VarChar(64)
+  expiresAt           DateTime  @map("expires_at") @db.Timestamptz
+  activatedBy         String?   @map("activated_by") @db.Uuid
+  deactivatedBy       String?   @map("deactivated_by") @db.Uuid
+  deactivatedAt       DateTime? @map("deactivated_at") @db.Timestamptz
+  auditMetadata       Json      @default("{}") @map("audit_metadata") @db.JsonB
+  createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, status, expiresAt])
+  @@index([flagCode, status, expiresAt])
+  @@map("runtime_flag_kill_switch")
   @@schema("public")
 }
 

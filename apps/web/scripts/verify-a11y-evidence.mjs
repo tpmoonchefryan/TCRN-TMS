@@ -36,10 +36,16 @@ const observabilityPath = path.join(
   webRoot,
   'src/domains/observability/screens/ObservabilityScreen.tsx'
 );
+const runtimeFlagsPath = path.join(
+  webRoot,
+  'src/domains/runtime-flags/screens/RuntimeFlagsScreen.tsx'
+);
 const shellPath = path.join(webRoot, 'src/platform/routing/AcShell.tsx');
 const platformToolsText = readFileSync(platformToolsPath, 'utf8');
 const observabilityText = readFileSync(observabilityPath, 'utf8');
+const runtimeFlagsText = readFileSync(runtimeFlagsPath, 'utf8');
 const shellText = readFileSync(shellPath, 'utf8');
+const runtimeFlagRoutesRequested = options.routes.some((route) => route.includes('runtime-flags'));
 const checks = [
   {
     id: 'icon_buttons_have_aria_labels',
@@ -48,13 +54,18 @@ const checks = [
       platformToolsText.includes('aria-label={`${copy.actions.configure}') &&
       platformToolsText.includes('aria-label={`${copy.actions.runCheck}') &&
       platformToolsText.includes('aria-label={`${item.connection.enabled') &&
-      observabilityText.includes('Open external observability handoff'),
+      observabilityText.includes('Open external observability handoff') &&
+      (!runtimeFlagRoutesRequested ||
+        (runtimeFlagsText.includes('aria-label={`${copy.actions.preview}') &&
+          runtimeFlagsText.includes('aria-label={`${copy.actions.activate}'))),
   },
   {
     id: 'drawer_has_close_label',
     passed:
       platformToolsText.includes('closeButtonAriaLabel={copy.actions.close}') &&
-      observabilityText.includes('closeButtonAriaLabel={closeDetailsLabel}'),
+      observabilityText.includes('closeButtonAriaLabel={closeDetailsLabel}') &&
+      (!runtimeFlagRoutesRequested ||
+        runtimeFlagsText.includes('closeButtonAriaLabel={copy.actions.close}')),
   },
   {
     id: 'status_region_exists',
@@ -62,50 +73,88 @@ const checks = [
       platformToolsText.includes('role="status"') &&
       platformToolsText.includes('aria-live="polite"') &&
       observabilityText.includes('role="status"') &&
-      observabilityText.includes('aria-live="polite"'),
+      observabilityText.includes('aria-live="polite"') &&
+      (!runtimeFlagRoutesRequested ||
+        (runtimeFlagsText.includes('role="status"') &&
+          runtimeFlagsText.includes('aria-live="polite"'))),
   },
   {
     id: 'mobile_touch_targets_are_explicit',
     passed:
       platformToolsText.includes('h-11 w-11') &&
       platformToolsText.includes('sm:h-9 sm:w-9') &&
-      observabilityText.includes('h-11 w-11'),
+      observabilityText.includes('h-11 w-11') &&
+      (!runtimeFlagRoutesRequested || runtimeFlagsText.includes('h-11 w-11')),
   },
   {
     id: 'mobile_uses_true_list_not_desktop_table',
     passed:
       platformToolsText.includes('md:hidden') &&
       platformToolsText.includes('hidden md:block') &&
-      observabilityText.includes('md:grid-cols-2'),
+      observabilityText.includes('md:grid-cols-2') &&
+      (!runtimeFlagRoutesRequested ||
+        (runtimeFlagsText.includes('data-runtime-flags-mobile-list') &&
+          runtimeFlagsText.includes('hidden overflow-x-auto md:block'))),
   },
   {
     id: 'mobile_nav_route_has_shell_entry',
-    passed: shellText.includes("key: 'platform-tools'") && shellText.includes('/platform-tools'),
+    passed:
+      shellText.includes("key: 'platform-tools'") &&
+      shellText.includes('/platform-tools') &&
+      (!runtimeFlagRoutesRequested ||
+        (shellText.includes("key: 'runtime-flags'") && shellText.includes('/runtime-flags'))),
   },
   {
     id: 'horizontal_overflow_is_bounded',
     passed:
       (platformToolsText.includes('overflow-x-auto') || platformToolsText.includes('min-w-[860px]')) &&
-      observabilityText.includes('grid gap-3 md:grid-cols-2 xl:grid-cols-3'),
+      observabilityText.includes('grid gap-3 md:grid-cols-2 xl:grid-cols-3') &&
+      (!runtimeFlagRoutesRequested ||
+        (runtimeFlagsText.includes('data-runtime-flags-mobile-list') &&
+          runtimeFlagsText.includes('break-words'))),
   },
   {
     id: 'no_iframe_dashboard_clone',
-    passed: !platformToolsText.includes('<iframe') && !observabilityText.includes('<iframe'),
+    passed:
+      !platformToolsText.includes('<iframe') &&
+      !observabilityText.includes('<iframe') &&
+      !runtimeFlagsText.includes('<iframe'),
   },
   {
-    id: 'tenant_external_observability_absence_marker',
-    passed: observabilityText.includes('data-external-observability-absent'),
+    id: 'runtime_flag_kill_switch_confirmation',
+    passed:
+      !runtimeFlagRoutesRequested ||
+      (runtimeFlagsText.includes('data-runtime-kill-switch-confirmation') &&
+        runtimeFlagsText.includes('explicitConfirmation') &&
+        runtimeFlagsText.includes('disabled={!canSubmitKillSwitch}')),
   },
 ];
+checks.push(
+  runtimeFlagRoutesRequested
+    ? {
+        id: 'runtime_flag_absence_and_state_markers',
+        passed:
+          runtimeFlagsText.includes('data-runtime-flags-state') &&
+          runtimeFlagsText.includes('data-runtime-provider-readiness') &&
+          runtimeFlagsText.includes('data-runtime-kill-switch-panel'),
+      }
+    : {
+        id: 'tenant_external_observability_absence_marker',
+        passed: observabilityText.includes('data-external-observability-absent'),
+      }
+);
 const payload = {
   checkedAt: new Date().toISOString(),
   test_layer: 'source_scan',
   data_mode: 'source_scan',
-  target_scope: 'observability_adapter_foundation',
+  target_scope: runtimeFlagRoutesRequested
+    ? 'runtime-feature-flag-adapter'
+    : 'observability_adapter_foundation',
   routes: Array.from(new Set(options.routes)),
   files: [
     path.relative(webRoot, platformToolsPath),
     path.relative(webRoot, observabilityPath),
+    path.relative(webRoot, runtimeFlagsPath),
     path.relative(webRoot, shellPath),
   ],
   checks,
