@@ -8,6 +8,7 @@ import { SwaggerModule, type OpenAPIObject } from '@nestjs/swagger';
 import { AppModule } from '../src/app.module';
 import { applyGlobalSwaggerParameters } from '../src/config/swagger-global-parameters';
 import { buildSwaggerConfig, CONFIG_TAGS, OPERATIONS_TAGS, PUBLIC_TAGS } from '../src/config/swagger.config';
+import { ApiGatewayReadinessModule } from '../src/modules/api-gateway-readiness';
 import { ApiRegistryModule } from '../src/modules/api-registry';
 import { AuthModule } from '../src/modules/auth';
 import { ConfigModule as AppConfigModule } from '../src/modules/config';
@@ -85,6 +86,34 @@ function writeJson(out: string, payload: unknown) {
   writeFileSync(out, `${JSON.stringify(payload, null, 2)}\n`, 'utf8');
 }
 
+function redactOpenApiEvidenceValue(value: unknown, keyHint = ''): unknown {
+  if (!value || typeof value !== 'object') {
+    if (typeof value !== 'string') {
+      return value;
+    }
+    if (/^otpauth:\/\/totp\//i.test(value)) {
+      return 'secret-ref:tcrn.openapi.totp_uri';
+    }
+    if (
+      /(secret|token|password|private_key|client_secret|api[_-]?key)/i.test(keyHint) &&
+      !/^(env:|secret-ref:|redacted|masked|\*\*\*)/i.test(value)
+    ) {
+      return 'secret-ref:tcrn.openapi.example';
+    }
+    return value;
+  }
+
+  if (Array.isArray(value)) {
+    return value.map((item) => redactOpenApiEvidenceValue(item, keyHint));
+  }
+
+  const output: Record<string, unknown> = {};
+  for (const [key, item] of Object.entries(value)) {
+    output[key] = redactOpenApiEvidenceValue(item, key);
+  }
+  return output;
+}
+
 async function main() {
   const outDir = readArg('--out-dir', 'openapi-before');
   loadRepoEnvFiles();
@@ -130,6 +159,7 @@ async function main() {
         DictionaryModule,
         SecurityModule,
         PiiConfigModule,
+        ApiGatewayReadinessModule,
         ApiRegistryModule,
         PlatformToolsModule,
         ObservabilityAdaptersModule,
@@ -159,7 +189,7 @@ async function main() {
       SwaggerModule.createDocument(app, config, { include: group.include as Function[], extraModels: [] })
     ) as OpenAPIObject;
     applyGlobalSwaggerParameters(document);
-    writeJson(path.join(outDir, group.file), document);
+    writeJson(path.join(outDir, group.file), redactOpenApiEvidenceValue(document));
     summary[group.group] = {
       file: path.join(outDir, group.file),
       pathCount: Object.keys(document.paths).length,

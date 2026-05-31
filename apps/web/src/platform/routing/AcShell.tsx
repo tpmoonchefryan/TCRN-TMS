@@ -8,6 +8,7 @@ import {
   FileJson,
   Flag,
   KeyRound,
+  Network,
   PlugZap,
   Users,
   Webhook,
@@ -39,6 +40,7 @@ function getAcPageTitle(
   titles: {
     integrationManagement: string;
     apiClientManagement: string;
+    apiGatewayReadiness: string;
     apiRegistry: string;
     interfaceManagement: string;
     observability: string;
@@ -73,6 +75,10 @@ function getAcPageTitle(
 
   if (pathname.includes('/api-registry')) {
     return titles.apiRegistry;
+  }
+
+  if (pathname.includes('/api-gateway-readiness')) {
+    return titles.apiGatewayReadiness;
   }
 
   if (pathname.includes('/platform-tools')) {
@@ -128,6 +134,14 @@ export function AcShell({
       ja: 'API レジストリ',
       ko: 'API 레지스트리',
       fr: 'Registre API',
+    }),
+    apiGatewayReadiness: pickLocaleText(locale, {
+      en: 'API Gateway',
+      zh_HANS: 'API 网关',
+      zh_HANT: 'API 閘道',
+      ja: 'API ゲートウェイ',
+      ko: 'API 게이트웨이',
+      fr: 'Passerelle API',
     }),
     interfaceManagement: pickLocaleText(locale, {
       en: 'Interface Management',
@@ -333,6 +347,13 @@ export function AcShell({
       icon: <FileJson className="h-4 w-4" />,
     },
     {
+      key: 'api-gateway-readiness',
+      label: integrationLabels.apiGatewayReadiness,
+      href: `/ac/${tenantId}/api-gateway-readiness`,
+      isActive: pathname.includes('/api-gateway-readiness'),
+      icon: <Network className="h-4 w-4" />,
+    },
+    {
       key: 'platform-tools',
       label: integrationLabels.platformToolConnections,
       href: `/ac/${tenantId}/platform-tools`,
@@ -367,6 +388,7 @@ export function AcShell({
   const pageTitle = getAcPageTitle(pathname, {
     ...copy.ac.titles,
     apiClientManagement: integrationLabels.apiClientManagement,
+    apiGatewayReadiness: integrationLabels.apiGatewayReadiness,
     apiRegistry: integrationLabels.apiRegistry,
     interfaceManagement: integrationLabels.interfaceManagement,
     platformToolConnections: integrationLabels.platformToolConnections,

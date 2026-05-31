@@ -1,7 +1,7 @@
 {
   "authorityVersion": "2026-05-31.phase-9",
-  "generatedAt": "2026-05-31T12:52:31.899Z",
-  "sourceCommit": "5101e727f8186f85bef8bd1048ac59b9dad6de41",
+  "generatedAt": "2026-05-31T14:23:19.917Z",
+  "sourceCommit": "522a0e6439e979edd268a7f61bf910ed9c7b6665",
   "sourceDocument": "apps/api/src/modules/api-registry/api-registry.snapshot.json",
   "operations": [
     {
@@ -306,6 +306,150 @@
         "operationId": "UserController_revokeSession",
         "controllerFile": "apps/api/src/modules/auth/auth.controller.ts",
         "controllerLine": 1974
+      }
+    },
+    {
+      "operationCode": "config.api_gateway_readiness_controller_get_cutover_runbook",
+      "method": "GET",
+      "pathTemplate": "/api-gateway-readiness/cutover-runbook",
+      "documentGroup": "config",
+      "ownerModuleCode": "platform",
+      "ownerCapabilityCode": "platform.ac_management",
+      "authMode": "bearer_jwt",
+      "requiredPermissions": [
+        {
+          "resource": "platform.api_gateway",
+          "action": "read"
+        }
+      ],
+      "scopeType": "ac_platform",
+      "scopeSource": "AC/platform route family",
+      "exposure": "ac_only",
+      "stability": "stable",
+      "deprecation": {
+        "isDeprecated": false,
+        "reason": null,
+        "replacementOperationCode": null,
+        "sunsetAt": null
+      },
+      "piiClass": "none",
+      "examplePolicy": "no_raw_secret_or_pii",
+      "gatewayEligible": false,
+      "builderExportEligible": false,
+      "auditEventTypes": [],
+      "source": {
+        "openapiFile": "openapi-before/openapi-config.json",
+        "operationId": "ApiGatewayReadinessController_getCutoverRunbook",
+        "controllerFile": "apps/api/src/modules/api-gateway-readiness/api-gateway-readiness.controller.ts",
+        "controllerLine": 57
+      }
+    },
+    {
+      "operationCode": "config.api_gateway_readiness_controller_get_rendered_artifact",
+      "method": "GET",
+      "pathTemplate": "/api-gateway-readiness/rendered/{provider}",
+      "documentGroup": "config",
+      "ownerModuleCode": "platform",
+      "ownerCapabilityCode": "platform.ac_management",
+      "authMode": "bearer_jwt",
+      "requiredPermissions": [
+        {
+          "resource": "platform.api_gateway",
+          "action": "read"
+        }
+      ],
+      "scopeType": "ac_platform",
+      "scopeSource": "AC/platform route family",
+      "exposure": "ac_only",
+      "stability": "stable",
+      "deprecation": {
+        "isDeprecated": false,
+        "reason": null,
+        "replacementOperationCode": null,
+        "sunsetAt": null
+      },
+      "piiClass": "none",
+      "examplePolicy": "no_raw_secret_or_pii",
+      "gatewayEligible": false,
+      "builderExportEligible": false,
+      "auditEventTypes": [],
+      "source": {
+        "openapiFile": "openapi-before/openapi-config.json",
+        "operationId": "ApiGatewayReadinessController_getRenderedArtifact",
+        "controllerFile": "apps/api/src/modules/api-gateway-readiness/api-gateway-readiness.controller.ts",
+        "controllerLine": 42
+      }
+    },
+    {
+      "operationCode": "config.api_gateway_readiness_controller_get_route_policy",
+      "method": "GET",
+      "pathTemplate": "/api-gateway-readiness/route-policy",
+      "documentGroup": "config",
+      "ownerModuleCode": "platform",
+      "ownerCapabilityCode": "platform.ac_management",
+      "authMode": "bearer_jwt",
+      "requiredPermissions": [
+        {
+          "resource": "platform.api_gateway",
+          "action": "read"
+        }
+      ],
+      "scopeType": "ac_platform",
+      "scopeSource": "AC/platform route family",
+      "exposure": "ac_only",
+      "stability": "stable",
+      "deprecation": {
+        "isDeprecated": false,
+        "reason": null,
+        "replacementOperationCode": null,
+        "sunsetAt": null
+      },
+      "piiClass": "none",
+      "examplePolicy": "no_raw_secret_or_pii",
+      "gatewayEligible": false,
+      "builderExportEligible": false,
+      "auditEventTypes": [],
+      "source": {
+        "openapiFile": "openapi-before/openapi-config.json",
+        "operationId": "ApiGatewayReadinessController_getRoutePolicy",
+        "controllerFile": "apps/api/src/modules/api-gateway-readiness/api-gateway-readiness.controller.ts",
+        "controllerLine": 33
+      }
+    },
+    {
+      "operationCode": "config.api_gateway_readiness_controller_get_summary",
+      "method": "GET",
+      "pathTemplate": "/api-gateway-readiness/summary",
+      "documentGroup": "config",
+      "ownerModuleCode": "platform",
+      "ownerCapabilityCode": "platform.ac_management",
+      "authMode": "bearer_jwt",
+      "requiredPermissions": [
+        {
+          "resource": "platform.api_gateway",
+          "action": "read"
+        }
+      ],
+      "scopeType": "ac_platform",
+      "scopeSource": "AC/platform route family",
+      "exposure": "ac_only",
+      "stability": "stable",
+      "deprecation": {
+        "isDeprecated": false,
+        "reason": null,
+        "replacementOperationCode": null,
+        "sunsetAt": null
+      },
+      "piiClass": "none",
+      "examplePolicy": "no_raw_secret_or_pii",
+      "gatewayEligible": false,
+      "builderExportEligible": false,
+      "auditEventTypes": [],
+      "source": {
+        "openapiFile": "openapi-before/openapi-config.json",
+        "operationId": "ApiGatewayReadinessController_getSummary",
+        "controllerFile": "apps/api/src/modules/api-gateway-readiness/api-gateway-readiness.controller.ts",
+        "controllerLine": 24
       }
     },
     {

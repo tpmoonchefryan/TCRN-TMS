@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 
 import { tokens } from '../foundations/tokens';
 
@@ -23,6 +23,15 @@ export const StateView: React.FC<StateViewProps> = ({
   actions,
   icon,
 }) => {
+  const titleRef = useRef<HTMLHeadingElement>(null);
+  const shouldFocusTitle = status === 'error' || status === 'denied';
+
+  useEffect(() => {
+    if (shouldFocusTitle) {
+      titleRef.current?.focus();
+    }
+  }, [shouldFocusTitle, title]);
+
   const getStatusColor = () => {
     switch (status) {
       case 'error':
@@ -83,13 +92,21 @@ export const StateView: React.FC<StateViewProps> = ({
   return (
     <div
       className={`flex flex-col items-center justify-center rounded-2xl border p-12 text-center ${tokens.colors.border} ${tokens.colors.surface} ${tokens.effects.glass} animate-in fade-in duration-300 ${tokens.motion.reduced}`}
+      role={status === 'error' || status === 'denied' ? 'alert' : 'status'}
+      aria-live={status === 'error' || status === 'denied' ? 'assertive' : 'polite'}
     >
       <div
         className={`mb-6 flex h-16 w-16 items-center justify-center rounded-2xl ${getStatusColor()}`}
       >
         {icon || <DefaultIcon />}
       </div>
-      <h3 className={`mb-2 text-lg font-bold ${tokens.colors.text}`}>{title}</h3>
+      <h3
+        ref={titleRef}
+        tabIndex={shouldFocusTitle ? -1 : undefined}
+        className={`mb-2 text-lg font-bold ${tokens.colors.text}`}
+      >
+        {title}
+      </h3>
       {description && (
         <p className={`max-w-sm text-sm ${tokens.colors.textMuted}`}>{description}</p>
       )}

@@ -99,6 +99,12 @@ describe('AcShell', () => {
       )
     ).toBeInTheDocument();
     expect(
+      within(screen.getByRole('navigation', { name: 'Main navigation' })).getByText('API Registry')
+    ).toBeInTheDocument();
+    expect(
+      within(screen.getByRole('navigation', { name: 'Main navigation' })).getByText('API Gateway')
+    ).toBeInTheDocument();
+    expect(
       within(screen.getByRole('navigation', { name: 'Main navigation' })).getByText(
         'Platform Tool Connections'
       )

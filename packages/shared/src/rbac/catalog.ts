@@ -264,6 +264,22 @@ export const RBAC_RESOURCES = [
     ['read'],
     18
   ),
+  resource(
+    'platform.api_gateway',
+    'platform',
+    {
+      name: {
+        en: 'API Gateway Readiness',
+        zh_HANS: 'API 网关就绪',
+        zh_HANT: 'API 閘道就緒',
+        ja: 'API ゲートウェイ準備',
+        ko: 'API 게이트웨이 준비',
+        fr: 'Préparation passerelle API',
+      },
+    },
+    ['read'],
+    19
+  ),
 
   resource(
     'subsidiary',
@@ -986,6 +1002,7 @@ const viewerReadableResources = RBAC_RESOURCES.filter(
     definition.supportedActions.includes('read') &&
     definition.code !== 'tenant.manage' &&
     definition.code !== 'customer.pii' &&
+    definition.code !== 'platform.api_gateway' &&
     definition.code !== 'platform.api_registry' &&
     definition.code !== 'platform.runtime_flag' &&
     definition.code !== 'public_presence.audit' &&

@@ -1,5 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 import path from 'node:path';
+import { existsSync } from 'node:fs';
 
 import {
   buildRegistryDocument,
@@ -14,7 +15,12 @@ const out = options.out ?? 'api-registry-document.json';
 const inferredOpenapiDir = path.join(path.dirname(out), 'openapi-before');
 const openapiDir = options['openapi-dir'] ?? inferredOpenapiDir;
 
-if (options['export-openapi']) {
+if (
+  options['export-openapi'] ||
+  !existsSync(path.join(openapiDir, 'openapi-operations.json')) ||
+  !existsSync(path.join(openapiDir, 'openapi-config.json')) ||
+  !existsSync(path.join(openapiDir, 'openapi-public.json'))
+) {
   exportOpenApiDocs(openapiDir);
 }
 

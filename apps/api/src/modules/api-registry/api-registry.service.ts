@@ -35,12 +35,14 @@ function deriveGatewayPolicy(operation: ApiRegistryDocument['operations'][number
       return {
         authPolicyRefs: ['public-readonly'],
         rateLimitHints: ['public-readonly-default'],
+        oidcHints: [],
       };
     }
 
     return {
       authPolicyRefs: ['public-submit', 'abuse-protection'],
       rateLimitHints: ['public-submit-default'],
+      oidcHints: [],
     };
   }
 
@@ -48,6 +50,7 @@ function deriveGatewayPolicy(operation: ApiRegistryDocument['operations'][number
     return {
       authPolicyRefs: ['public-auth-flow', 'auth-rate-limit'],
       rateLimitHints: ['auth-flow-default'],
+      oidcHints: [],
     };
   }
 
@@ -55,6 +58,11 @@ function deriveGatewayPolicy(operation: ApiRegistryDocument['operations'][number
     authPolicyRefs:
       operation.requiredPermissions.length > 0 ? ['tcrn-jwt', 'tcrn-rbac'] : ['tcrn-jwt'],
     rateLimitHints: [operation.exposure === 'ac_only' ? 'ac-platform-default' : 'tenant-default'],
+    oidcHints: [
+      'future-edge-jwt-validation',
+      operation.exposure === 'ac_only' ? 'future-ac-sso-hook' : 'future-tenant-oidc-hook',
+      'rbac-and-tenant-authority-remain-in-tcrn',
+    ],
   };
 }
 
@@ -167,7 +175,7 @@ export class ApiRegistryService {
             upstreamService: 'tcrn-api',
             authPolicyRefs: policy.authPolicyRefs,
             rateLimitHints: policy.rateLimitHints,
-            oidcHints: operation.exposure === 'ac_only' ? ['future-ac-sso-hook'] : [],
+            oidcHints: policy.oidcHints,
             canaryEligible: operation.stability !== 'deprecated',
             rollbackNotes: 'Derived dry-run manifest only; Phase 9 never applies gateway config.',
             notAppliedReason: 'phase_9_readiness_only',

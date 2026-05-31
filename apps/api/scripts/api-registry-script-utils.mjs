@@ -39,7 +39,7 @@ const TAG_OWNERS = [
   [/System - Settings|System - Config|System - Dictionary|System - PII/, ['core', 'core.settings']],
   [/System - Logs|Compliance/, ['observability', 'observability.product_audit']],
   [
-    /System - Platform Tools|System - Runtime Flags|System - Event Backbone|System - API Registry|Org - Tenants|System - Delegated Admin|System - Security/,
+    /System - Platform Tools|System - Runtime Flags|System - Event Backbone|System - API Registry|System - API Gateway|Org - Tenants|System - Delegated Admin|System - Security/,
     ['platform', 'platform.ac_management'],
   ],
 ];
@@ -263,12 +263,14 @@ export function deriveGatewayPolicy(operation) {
       return {
         authPolicyRefs: ['public-readonly'],
         rateLimitHints: ['public-readonly-default'],
+        oidcHints: [],
       };
     }
 
     return {
       authPolicyRefs: ['public-submit', 'abuse-protection'],
       rateLimitHints: ['public-submit-default'],
+      oidcHints: [],
     };
   }
 
@@ -276,6 +278,7 @@ export function deriveGatewayPolicy(operation) {
     return {
       authPolicyRefs: ['public-auth-flow', 'auth-rate-limit'],
       rateLimitHints: ['auth-flow-default'],
+      oidcHints: [],
     };
   }
 
@@ -283,6 +286,11 @@ export function deriveGatewayPolicy(operation) {
     authPolicyRefs:
       operation.requiredPermissions?.length > 0 ? ['tcrn-jwt', 'tcrn-rbac'] : ['tcrn-jwt'],
     rateLimitHints: [operation.exposure === 'ac_only' ? 'ac-platform-default' : 'tenant-default'],
+    oidcHints: [
+      'future-edge-jwt-validation',
+      operation.exposure === 'ac_only' ? 'future-ac-sso-hook' : 'future-tenant-oidc-hook',
+      'rbac-and-tenant-authority-remain-in-tcrn',
+    ],
   };
 }
 
@@ -852,7 +860,7 @@ function classifyScope(operation) {
   }
 
   if (
-    /api-registry|platform-tools|runtime-flags|event-backbone|observability\/adapters|\/tenants\b|system-users|system-roles|delegated-admins/.test(
+    /api-registry|api-gateway-readiness|platform-tools|runtime-flags|event-backbone|observability\/adapters|\/tenants\b|system-users|system-roles|delegated-admins/.test(
       pathName
     )
   ) {
@@ -1406,6 +1414,10 @@ function isSensitiveExample(pathParts, value) {
     return true;
   }
 
+  if (/^otpauth:\/\/totp\//i.test(value)) {
+    return true;
+  }
+
   if (tokenKey && (longHex || /[A-Za-z0-9._~+/=-]{8,}/.test(value))) {
     return true;
   }
@@ -1463,10 +1475,10 @@ export function verifyOpenApiRedaction(openapiDir) {
     const componentText = JSON.stringify(document.components ?? {});
     const suspiciousExamples = [
       ...pathsText.matchAll(
-        /"example"\s*:\s*"([^"]*(?:Bearer|access_token|private_key|password|client_secret)[^"]*)"/gi
+        /"example"\s*:\s*"([^"]*(?:Bearer|access_token|private_key|password|client_secret|otpauth:\/\/)[^"]*)"/gi
       ),
       ...componentText.matchAll(
-        /"example"\s*:\s*"([^"]*(?:Bearer|access_token|private_key|password|client_secret)[^"]*)"/gi
+        /"example"\s*:\s*"([^"]*(?:Bearer|access_token|private_key|password|client_secret|otpauth:\/\/)[^"]*)"/gi
       ),
     ];
     const forbiddenExamples = suspiciousExamples
@@ -1517,7 +1529,7 @@ export function buildGatewayManifest(registry) {
         upstreamService: 'tcrn-api',
         authPolicyRefs: policy.authPolicyRefs,
         rateLimitHints: policy.rateLimitHints,
-        oidcHints: operation.exposure === 'ac_only' ? ['future-ac-sso-hook'] : [],
+        oidcHints: policy.oidcHints,
         canaryEligible: operation.stability !== 'deprecated',
         rollbackNotes: 'Derived dry-run manifest only; Phase 9 never applies gateway config.',
         notAppliedReason: 'phase_9_readiness_only',
