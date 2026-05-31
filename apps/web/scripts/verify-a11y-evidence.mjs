@@ -44,15 +44,20 @@ const integrationManagementPath = path.join(
   webRoot,
   'src/domains/integration-management/screens/IntegrationManagementScreen.tsx'
 );
+const platformToolsPagePath = path.join(webRoot, 'src/app/ac/[tenantId]/platform-tools/page.tsx');
 const shellPath = path.join(webRoot, 'src/platform/routing/AcShell.tsx');
 const platformToolsText = readFileSync(platformToolsPath, 'utf8');
 const observabilityText = readFileSync(observabilityPath, 'utf8');
 const runtimeFlagsText = readFileSync(runtimeFlagsPath, 'utf8');
 const integrationManagementText = readFileSync(integrationManagementPath, 'utf8');
+const platformToolsPageText = readFileSync(platformToolsPagePath, 'utf8');
 const shellText = readFileSync(shellPath, 'utf8');
 const runtimeFlagRoutesRequested = options.routes.some((route) => route.includes('runtime-flags'));
 const webhookDeliveryRoutesRequested = options.routes.some((route) =>
   route.includes('webhook-management')
+);
+const eventBackboneRoutesRequested = options.routes.some(
+  (route) => route.includes('event_backbone') || route.includes('event-backbone')
 );
 const checks = [
   {
@@ -62,6 +67,8 @@ const checks = [
       platformToolsText.includes('aria-label={`${copy.actions.configure}') &&
       platformToolsText.includes('aria-label={`${copy.actions.runCheck}') &&
       platformToolsText.includes('aria-label={`${item.connection.enabled') &&
+      (!eventBackboneRoutesRequested ||
+        platformToolsText.includes('aria-label={copy.eventBackbone.title}')) &&
       observabilityText.includes('Open external observability handoff') &&
       (!runtimeFlagRoutesRequested ||
         (runtimeFlagsText.includes('aria-label={`${copy.actions.preview}') &&
@@ -99,6 +106,10 @@ const checks = [
     passed:
       platformToolsText.includes('md:hidden') &&
       platformToolsText.includes('hidden md:block') &&
+      (!eventBackboneRoutesRequested ||
+        (platformToolsText.includes('data-event-backbone-summary="ac-readiness"') &&
+          platformToolsText.includes('data-overflow-check="event-backbone-stream-table"') &&
+          platformToolsText.includes('data-overflow-check="event-backbone-consumer-table"'))) &&
       observabilityText.includes('md:grid-cols-2') &&
       (!runtimeFlagRoutesRequested ||
         (runtimeFlagsText.includes('data-runtime-flags-mobile-list') &&
@@ -109,6 +120,8 @@ const checks = [
     passed:
       shellText.includes("key: 'platform-tools'") &&
       shellText.includes('/platform-tools') &&
+      (!eventBackboneRoutesRequested ||
+        platformToolsPageText.includes("rawFamily === 'event_backbone'")) &&
       (!runtimeFlagRoutesRequested ||
         (shellText.includes("key: 'runtime-flags'") && shellText.includes('/runtime-flags'))),
   },
@@ -116,6 +129,10 @@ const checks = [
     id: 'horizontal_overflow_is_bounded',
     passed:
       (platformToolsText.includes('overflow-x-auto') || platformToolsText.includes('min-w-[860px]')) &&
+      (!eventBackboneRoutesRequested ||
+        (platformToolsText.includes('min-w-[620px]') &&
+          platformToolsText.includes('min-w-[700px]') &&
+          platformToolsText.includes('break-all'))) &&
       observabilityText.includes('grid gap-3 md:grid-cols-2 xl:grid-cols-3') &&
       (!runtimeFlagRoutesRequested ||
         (runtimeFlagsText.includes('data-runtime-flags-mobile-list') &&
@@ -151,6 +168,30 @@ checks.push(
         passed: observabilityText.includes('data-external-observability-absent'),
       }
 );
+if (eventBackboneRoutesRequested) {
+  checks.push(
+    {
+      id: 'event_backbone_ac_summary_markers',
+      passed:
+        platformToolsText.includes('data-event-backbone-summary="ac-readiness"') &&
+        platformToolsText.includes('data-event-backbone-stream=') &&
+        platformToolsText.includes('data-event-backbone-consumer='),
+    },
+    {
+      id: 'event_backbone_raw_payload_copy_and_no_iframe',
+      passed:
+        platformToolsText.includes('copy.eventBackbone.noRawPayload') &&
+        platformToolsText.includes('rawPayloadAccess') &&
+        !platformToolsText.includes('<iframe'),
+    },
+    {
+      id: 'event_backbone_query_route_supported',
+      passed:
+        platformToolsPageText.includes("rawFamily === 'event_backbone'") &&
+        platformToolsPageText.includes("'event_backbone'"),
+    }
+  );
+}
 if (webhookDeliveryRoutesRequested) {
   checks.push(
     {
@@ -181,15 +222,18 @@ const payload = {
   data_mode: 'source_scan',
   target_scope: webhookDeliveryRoutesRequested
     ? 'webhook-delivery-adapter'
-    : runtimeFlagRoutesRequested
-      ? 'runtime-feature-flag-adapter'
-      : 'observability_adapter_foundation',
+    : eventBackboneRoutesRequested
+      ? 'event-backbone-adapter'
+      : runtimeFlagRoutesRequested
+        ? 'runtime-feature-flag-adapter'
+        : 'observability_adapter_foundation',
   routes: Array.from(new Set(options.routes)),
   files: [
     path.relative(webRoot, platformToolsPath),
     path.relative(webRoot, observabilityPath),
     path.relative(webRoot, runtimeFlagsPath),
     path.relative(webRoot, integrationManagementPath),
+    path.relative(webRoot, platformToolsPagePath),
     path.relative(webRoot, shellPath),
   ],
   checks,

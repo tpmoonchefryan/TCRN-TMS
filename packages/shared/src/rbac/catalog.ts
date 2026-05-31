@@ -232,6 +232,22 @@ export const RBAC_RESOURCES = [
     ['read', 'execute', 'admin'],
     16
   ),
+  resource(
+    'platform.event_backbone',
+    'platform',
+    {
+      name: {
+        en: 'Event Backbone',
+        zh_HANS: '事件骨干',
+        zh_HANT: '事件骨幹',
+        ja: 'イベント基盤',
+        ko: '이벤트 백본',
+        fr: 'Backbone événementiel',
+      },
+    },
+    ['read', 'execute', 'admin'],
+    17
+  ),
 
   resource(
     'subsidiary',

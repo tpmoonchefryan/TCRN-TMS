@@ -1,8 +1,12 @@
 'use client';
 
-import { ExternalLink, RefreshCw, Save, Search, Settings, ShieldCheck } from 'lucide-react';
+import { DatabaseZap, ExternalLink, Network, RefreshCw, Save, Search, Settings, ShieldCheck } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
+import {
+  readEventBackboneSummary,
+  type EventBackboneSummary,
+} from '@/domains/event-backbone/api/event-backbone.api';
 import type {
   PlatformToolConnectionBundle,
   PlatformToolConnectionEnvironment,
@@ -156,6 +160,11 @@ export function PlatformToolConnectionsScreen({
   const [formState, setFormState] = useState<FormState | null>(null);
   const [saving, setSaving] = useState(false);
   const [checkingCode, setCheckingCode] = useState<string | null>(null);
+  const [eventBackboneSummary, setEventBackboneSummary] = useState<EventBackboneSummary | null>(
+    null
+  );
+  const [eventBackboneError, setEventBackboneError] = useState<string | null>(null);
+  const [eventBackboneLoading, setEventBackboneLoading] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -178,6 +187,39 @@ export function PlatformToolConnectionsScreen({
     void load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [environment, family]);
+
+  useEffect(() => {
+    if (family !== 'event_backbone') {
+      setEventBackboneSummary(null);
+      setEventBackboneError(null);
+      return;
+    }
+
+    let cancelled = false;
+    setEventBackboneLoading(true);
+    setEventBackboneError(null);
+
+    readEventBackboneSummary(request, environment)
+      .then((summary) => {
+        if (!cancelled) {
+          setEventBackboneSummary(summary);
+        }
+      })
+      .catch((reason) => {
+        if (!cancelled) {
+          setEventBackboneError(getErrorMessage(reason, copy.states.error));
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setEventBackboneLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [copy.states.error, environment, family, request]);
 
   useEffect(() => {
     if (!selectedCode) {
@@ -366,6 +408,159 @@ export function PlatformToolConnectionsScreen({
     </tr>
   ));
 
+  const selectedBoundary = selected?.definition.family === 'event_backbone'
+    ? copy.eventBackbone.boundary
+    : selected?.definition.sourceOfTruthBoundary;
+
+  const renderEventBackboneSummary = () => {
+    if (family !== 'event_backbone') {
+      return null;
+    }
+
+    if (eventBackboneLoading) {
+      return (
+        <StateView
+          status="unavailable"
+          title={copy.eventBackbone.loading}
+          description={copy.eventBackbone.boundary}
+        />
+      );
+    }
+
+    if (eventBackboneError) {
+      return (
+        <StateView
+          status="error"
+          title={copy.eventBackbone.error}
+          description={eventBackboneError}
+          action={
+            <button
+              type="button"
+              className="inline-flex h-10 items-center gap-2 rounded-md bg-slate-900 px-3 text-sm font-medium text-white hover:bg-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+              onClick={() => {
+                setEventBackboneLoading(true);
+                readEventBackboneSummary(request, environment)
+                  .then(setEventBackboneSummary)
+                  .catch((reason) => setEventBackboneError(getErrorMessage(reason, copy.states.error)))
+                  .finally(() => setEventBackboneLoading(false));
+              }}
+            >
+              <RefreshCw className="h-4 w-4" aria-hidden="true" />
+              {copy.actions.refresh}
+            </button>
+          }
+        />
+      );
+    }
+
+    if (!eventBackboneSummary) {
+      return null;
+    }
+
+    return (
+      <section
+        className="min-w-0 space-y-4"
+        data-event-backbone-summary="ac-readiness"
+        aria-label={copy.eventBackbone.title}
+      >
+        <div className="grid min-w-0 gap-3 md:grid-cols-3">
+          <div className="min-w-0 rounded-md border border-slate-200 bg-white p-4">
+            <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
+              <Network className="h-4 w-4 text-indigo-600" aria-hidden="true" />
+              {copy.eventBackbone.bridgeMode}
+            </div>
+            <p className="mt-2 text-2xl font-semibold text-slate-950">
+              {formatCode(eventBackboneSummary.bridgeMode)}
+            </p>
+            <p className="mt-1 text-sm text-slate-600">{copy.eventBackbone.disabledDefault}</p>
+          </div>
+          <div className="min-w-0 rounded-md border border-slate-200 bg-white p-4">
+            <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
+              <DatabaseZap className="h-4 w-4 text-emerald-600" aria-hidden="true" />
+              {copy.eventBackbone.registry}
+            </div>
+            <p className="mt-2 text-2xl font-semibold text-slate-950">
+              {eventBackboneSummary.registry.totalEvents}
+            </p>
+            <p className="mt-1 text-sm text-slate-600">
+              {eventBackboneSummary.registry.families.length} {copy.eventBackbone.families}
+            </p>
+          </div>
+          <div className="min-w-0 rounded-md border border-slate-200 bg-white p-4">
+            <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
+              <ShieldCheck className="h-4 w-4 text-sky-600" aria-hidden="true" />
+              {copy.eventBackbone.rawPayloadAccess}
+            </div>
+            <p className="mt-2 text-2xl font-semibold text-slate-950">0</p>
+            <p className="mt-1 text-sm text-slate-600">{copy.eventBackbone.noRawPayload}</p>
+          </div>
+        </div>
+
+        <div className="rounded-md border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
+          {copy.eventBackbone.boundary}
+        </div>
+
+        <div className="grid min-w-0 gap-4 xl:grid-cols-2">
+          <div className="min-w-0 overflow-hidden rounded-md border border-slate-200 bg-white">
+            <div className="border-b border-slate-200 px-4 py-3">
+              <h2 className="text-sm font-semibold text-slate-950">{copy.eventBackbone.streams}</h2>
+            </div>
+            <div className="max-w-full overflow-x-auto" data-overflow-check="event-backbone-stream-table">
+              <table className="min-w-[620px] text-left text-sm">
+                <thead className="bg-slate-50 text-xs font-semibold uppercase text-slate-500">
+                  <tr>
+                    <th className="px-4 py-3">{copy.eventBackbone.family}</th>
+                    <th className="px-4 py-3">{copy.eventBackbone.stream}</th>
+                    <th className="px-4 py-3">{copy.eventBackbone.status}</th>
+                    <th className="px-4 py-3">{copy.eventBackbone.dlq}</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {eventBackboneSummary.streams.map((stream) => (
+                    <tr key={stream.family} data-event-backbone-stream={stream.family}>
+                      <td className="px-4 py-3 font-medium text-slate-900">{formatCode(stream.family)}</td>
+                      <td className="break-all px-4 py-3 text-slate-600">{stream.streamName}</td>
+                      <td className="px-4 py-3"><StatusBadge value={stream.status} /></td>
+                      <td className="px-4 py-3 text-slate-600">{stream.dlqCount}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div className="min-w-0 overflow-hidden rounded-md border border-slate-200 bg-white">
+            <div className="border-b border-slate-200 px-4 py-3">
+              <h2 className="text-sm font-semibold text-slate-950">{copy.eventBackbone.consumers}</h2>
+            </div>
+            <div className="max-w-full overflow-x-auto" data-overflow-check="event-backbone-consumer-table">
+              <table className="min-w-[700px] text-left text-sm">
+                <thead className="bg-slate-50 text-xs font-semibold uppercase text-slate-500">
+                  <tr>
+                    <th className="px-4 py-3">{copy.eventBackbone.queue}</th>
+                    <th className="px-4 py-3">{copy.eventBackbone.consumer}</th>
+                    <th className="px-4 py-3">{copy.eventBackbone.classification}</th>
+                    <th className="px-4 py-3">{copy.eventBackbone.status}</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {eventBackboneSummary.consumers.map((consumer) => (
+                    <tr key={consumer.durableName} data-event-backbone-consumer={consumer.queue}>
+                      <td className="px-4 py-3 font-medium text-slate-900">{consumer.queue}</td>
+                      <td className="break-all px-4 py-3 text-slate-600">{consumer.durableName}</td>
+                      <td className="px-4 py-3 text-slate-600">{formatCode(consumer.classification)}</td>
+                      <td className="px-4 py-3"><StatusBadge value={consumer.status} /></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  };
+
   return (
     <div
       className="space-y-5"
@@ -426,6 +621,8 @@ export function PlatformToolConnectionsScreen({
           {notice}
         </div>
       ) : null}
+
+      {renderEventBackboneSummary()}
 
       {error ? (
         <StateView
@@ -587,7 +784,7 @@ export function PlatformToolConnectionsScreen({
               </div>
             </dl>
             <div className="rounded-md border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
-              {selected.definition.sourceOfTruthBoundary}
+              {selectedBoundary}
             </div>
             {isConfigOpen && formState ? (
               <div className="space-y-4 border-t border-slate-200 pt-5">

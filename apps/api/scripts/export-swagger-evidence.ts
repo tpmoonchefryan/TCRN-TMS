@@ -11,6 +11,7 @@ import { AppModule } from '../src/app.module';
 import { applyGlobalSwaggerParameters } from '../src/config/swagger-global-parameters';
 import { buildSwaggerConfig, CONFIG_TAGS } from '../src/config/swagger.config';
 import { AuthModule } from '../src/modules/auth';
+import { EventBackboneModule } from '../src/modules/event-backbone';
 import { IntegrationModule } from '../src/modules/integration/integration.module';
 import { ObservabilityAdaptersModule } from '../src/modules/observability-adapters';
 import { PlatformToolsModule } from '../src/modules/platform-tools';
@@ -18,7 +19,7 @@ import { loadRepoEnvFiles } from '../src/repo-env';
 
 interface CliOptions {
   out: string;
-  filter: 'sso' | 'platform-tools' | 'observability' | 'webhook-delivery';
+  filter: 'sso' | 'platform-tools' | 'observability' | 'webhook-delivery' | 'event-backbone';
 }
 
 const REQUIRED_SSO_PATH_SUFFIXES = [
@@ -60,6 +61,15 @@ const REQUIRED_WEBHOOK_DELIVERY_PATH_SUFFIXES = [
   '/integration/webhooks/{webhookId}/delivery-attempts/{attemptId}/replay',
 ] as const;
 
+const REQUIRED_EVENT_BACKBONE_PATH_SUFFIXES = [
+  '/event-backbone/registry',
+  '/event-backbone/subject-mapping',
+  '/event-backbone/bullmq-classification',
+  '/event-backbone/policy',
+  '/event-backbone/summary',
+  '/event-backbone/replay-preview',
+] as const;
+
 function parseArgs(argv: string[]): CliOptions {
   const options: CliOptions = {
     out: 'swagger-sso-docs.json',
@@ -75,7 +85,10 @@ function parseArgs(argv: string[]): CliOptions {
       index += 1;
     } else if (arg === '--filter' && next) {
       options.filter =
-        next === 'platform-tools' || next === 'observability' || next === 'webhook-delivery'
+        next === 'platform-tools' ||
+        next === 'observability' ||
+        next === 'webhook-delivery' ||
+        next === 'event-backbone'
           ? next
           : 'sso';
       index += 1;
@@ -271,6 +284,69 @@ function buildWebhookDeliveryEvidence(document: OpenAPIObject) {
   };
 }
 
+function buildEventBackboneEvidence(document: OpenAPIObject) {
+  const eventBackbonePaths = Object.keys(document.paths)
+    .filter((pathName) => normalizePathSuffix(pathName).startsWith('/event-backbone/'))
+    .sort();
+  const normalizedPathSuffixes = new Set(eventBackbonePaths.map(normalizePathSuffix));
+  const missingRequiredPaths = REQUIRED_EVENT_BACKBONE_PATH_SUFFIXES.filter(
+    (requiredPath) => !normalizedPathSuffixes.has(requiredPath)
+  );
+  const operationProof = REQUIRED_EVENT_BACKBONE_PATH_SUFFIXES.map((requiredPath) => {
+    const pathItem = pathBySuffix(document, requiredPath);
+    const operation = requiredPath.includes('replay-preview') ? pathItem?.post : pathItem?.get;
+
+    return {
+      path: requiredPath,
+      operationId: operation?.operationId ?? null,
+      tags: operation?.tags ?? [],
+      statuses: Object.keys(operation?.responses ?? {}).sort(),
+      hasBearerSecurity: Boolean(operation?.security) || JSON.stringify(document).includes('bearer'),
+    };
+  });
+  const documentText = JSON.stringify(document);
+  const rawMaterialHits = [
+    'secretValue',
+    'clientSecret',
+    'private_key',
+    'access_token',
+    'id_token',
+    'authorization_code',
+    'providerToken',
+    'providerSecret',
+  ]
+    .filter((needle) => documentText.includes(needle))
+    .map((needle) => ({ needle, classification: 'forbidden' }));
+
+  return {
+    checkedAt: new Date().toISOString(),
+    test_layer: 'generated_openapi',
+    data_mode: 'read_only_generated_doc',
+    target_scope: 'event_backbone_adapter',
+    eventBackbonePaths,
+    missingRequiredPaths,
+    operationProof,
+    rawMaterialHits,
+    forbiddenRawMaterial: rawMaterialHits.map((hit) => hit.needle),
+    bearerAuthPresent: documentText.includes('bearer') || documentText.includes('JWT-auth'),
+    operationIdsPresent: operationProof.every((operation) => operation.operationId),
+    dryRunReasonDtoPresent:
+      documentText.includes('EventBackboneReplayPreviewDto') &&
+      documentText.includes('reason') &&
+      documentText.includes('dryRun'),
+    noSwaggerEditorAuthority: !documentText.includes('swagger-editor'),
+    passed:
+      missingRequiredPaths.length === 0 &&
+      rawMaterialHits.length === 0 &&
+      (documentText.includes('bearer') || documentText.includes('JWT-auth')) &&
+      operationProof.every((operation) => operation.operationId) &&
+      documentText.includes('EventBackboneReplayPreviewDto') &&
+      documentText.includes('reason') &&
+      documentText.includes('dryRun') &&
+      !documentText.includes('swagger-editor'),
+  };
+}
+
 function cloneSerializableSwaggerValue<T>(value: T, stack = new WeakSet<object>()): T {
   if (!value || typeof value !== 'object') {
     return value;
@@ -347,6 +423,8 @@ async function main() {
         ? 'TCRN TMS - Phase 5 Observability Adapter Evidence'
         : options.filter === 'webhook-delivery'
           ? 'TCRN TMS - Phase 7 Webhook Delivery Evidence'
+          : options.filter === 'event-backbone'
+            ? 'TCRN TMS - Phase 8 Event Backbone Evidence'
           : 'TCRN TMS - Phase 3 SSO Evidence',
     options.filter === 'platform-tools'
       ? 'Generated Platform Tool Connections OpenAPI evidence for Phase 4 acceptance'
@@ -354,6 +432,8 @@ async function main() {
         ? 'Generated Observability Adapter OpenAPI evidence for Phase 5 acceptance'
         : options.filter === 'webhook-delivery'
           ? 'Generated Webhook Delivery OpenAPI evidence for Phase 7 acceptance'
+          : options.filter === 'event-backbone'
+            ? 'Generated Event Backbone OpenAPI evidence for Phase 8 acceptance'
           : 'Generated SSO OpenAPI evidence for Phase 3 acceptance',
     '1.0.0',
     CONFIG_TAGS
@@ -367,10 +447,28 @@ async function main() {
             ? [ObservabilityAdaptersModule]
             : options.filter === 'webhook-delivery'
               ? [IntegrationModule]
+              : options.filter === 'event-backbone'
+                ? [EventBackboneModule]
               : [AuthModule],
     })
   ) as OpenAPIObject;
   applyGlobalSwaggerParameters(document);
+
+  if (options.filter === 'event-backbone') {
+    const payload = buildEventBackboneEvidence(document);
+
+    mkdirSync(path.dirname(options.out), { recursive: true });
+    writeFileSync(options.out, `${JSON.stringify(payload, null, 2)}\n`, 'utf8');
+    console.log(JSON.stringify(payload, null, 2));
+
+    await app.close();
+
+    if (!payload.passed) {
+      process.exitCode = 1;
+    }
+
+    return;
+  }
 
   if (options.filter === 'webhook-delivery') {
     const payload = buildWebhookDeliveryEvidence(document);

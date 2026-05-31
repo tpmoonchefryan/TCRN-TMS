@@ -366,6 +366,90 @@ function writeWebhookDeliveryEvidence() {
   }
 }
 
+function writeEventBackboneEvidence() {
+  const out = readArg('--out', 'event-backbone-swagger-redaction.json');
+  const controllerPath = path.join(
+    productRoot,
+    'apps/api/src/modules/event-backbone/event-backbone.controller.ts'
+  );
+  const dtoPath = path.join(
+    productRoot,
+    'apps/api/src/modules/event-backbone/dto/event-backbone.dto.ts'
+  );
+  const controllerText = readFileSync(controllerPath, 'utf8');
+  const dtoText = readFileSync(dtoPath, 'utf8');
+  const requiredPaths = [
+    '/event-backbone/registry',
+    '/event-backbone/subject-mapping',
+    '/event-backbone/bullmq-classification',
+    '/event-backbone/policy',
+    '/event-backbone/summary',
+    '/event-backbone/replay-preview',
+  ];
+  const requiredSourceSnippets = [
+    "@Get('registry')",
+    "@Get('subject-mapping')",
+    "@Get('bullmq-classification')",
+    "@Get('policy')",
+    "@Get('summary')",
+    "@Post('replay-preview')",
+  ];
+  const missingRequiredPaths = requiredSourceSnippets
+    .map((snippet, index) => ({ snippet, path: requiredPaths[index] }))
+    .filter((entry) => !controllerText.includes(entry.snippet))
+    .map((entry) => entry.path);
+  const documentText = `${controllerText}\n${dtoText}`;
+  const rawMaterialHits = [
+    'secretValue',
+    'clientSecret',
+    'private_key',
+    'access_token',
+    'id_token',
+    'authorization_code',
+    'providerToken',
+    'providerSecret',
+  ]
+    .filter((needle) => documentText.includes(needle))
+    .map((needle) => ({ needle, classification: 'forbidden' }));
+  const payload = {
+    checkedAt: new Date().toISOString(),
+    test_layer: 'source_scan',
+    data_mode: 'source_scan',
+    target_scope: 'event_backbone_adapter',
+    eventBackbonePaths: requiredPaths.filter(
+      (pathName) => !missingRequiredPaths.includes(pathName)
+    ),
+    missingRequiredPaths,
+    rawMaterialHits,
+    forbiddenRawMaterial: rawMaterialHits.map((hit) => hit.needle),
+    bearerAuthPresent: controllerText.includes('@ApiBearerAuth()'),
+    acOnlyGuardPresent: controllerText.includes('AC operators only'),
+    permissionResourcePresent: controllerText.includes("resource: 'platform.event_backbone'"),
+    executePermissionForReplay: controllerText.includes("action: 'execute'"),
+    replayReasonDtoPresent: dtoText.includes('reason!: string'),
+    replayDryRunDtoPresent: dtoText.includes('dryRun'),
+    noSwaggerEditorAuthority: !documentText.includes('swagger-editor'),
+    passed:
+      missingRequiredPaths.length === 0 &&
+      rawMaterialHits.length === 0 &&
+      controllerText.includes('@ApiBearerAuth()') &&
+      controllerText.includes('AC operators only') &&
+      controllerText.includes("resource: 'platform.event_backbone'") &&
+      controllerText.includes("action: 'execute'") &&
+      dtoText.includes('reason!: string') &&
+      dtoText.includes('dryRun') &&
+      !documentText.includes('swagger-editor'),
+  };
+
+  mkdirSync(path.dirname(out), { recursive: true });
+  writeFileSync(out, `${JSON.stringify(payload, null, 2)}\n`, 'utf8');
+  console.log(JSON.stringify(payload, null, 2));
+
+  if (!payload.passed) {
+    process.exitCode = 1;
+  }
+}
+
 const filter = readArg('--filter', 'sso');
 
 if (filter === 'platform-tools') {
@@ -376,6 +460,8 @@ if (filter === 'platform-tools') {
   writeRuntimeFlagEvidence();
 } else if (filter === 'webhook-delivery') {
   writeWebhookDeliveryEvidence();
+} else if (filter === 'event-backbone') {
+  writeEventBackboneEvidence();
 } else {
   const scriptRelativePath = path.relative(path.join(productRoot, 'apps/api'), scriptPath);
   const result = spawnSync(

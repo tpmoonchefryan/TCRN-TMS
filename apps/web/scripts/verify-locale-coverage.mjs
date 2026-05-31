@@ -84,6 +84,19 @@ const filesByScope = {
     ),
     path.join(webRoot, 'src/platform/routing/AcShell.tsx'),
   ],
+  'event-backbone-adapter': [
+    path.join(
+      webRoot,
+      'src/domains/platform-tool-connections/screens/platform-tool-connections.copy.ts'
+    ),
+    path.join(
+      webRoot,
+      'src/domains/platform-tool-connections/screens/PlatformToolConnectionsScreen.tsx'
+    ),
+    path.join(webRoot, 'src/domains/event-backbone/api/event-backbone.api.ts'),
+    path.join(webRoot, 'src/app/ac/[tenantId]/platform-tools/page.tsx'),
+    path.join(webRoot, 'src/platform/routing/AcShell.tsx'),
+  ],
 };
 const files = filesByScope[options.scope] ?? [];
 const fileTexts = files.map((filePath) => ({

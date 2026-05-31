@@ -19,6 +19,7 @@ import { CustomerModule } from './modules/customer';
 import { DelegatedAdminModule } from './modules/delegated-admin';
 import { DictionaryModule } from './modules/dictionary';
 import { EmailModule } from './modules/email';
+import { EventBackboneModule } from './modules/event-backbone';
 import { ExportModule } from './modules/export';
 import { HealthModule } from './modules/health/health.module';
 import { HomepageModule } from './modules/homepage';
@@ -230,6 +231,7 @@ export async function bootstrap(): Promise<void> {
           PlatformToolsModule,
           ObservabilityAdaptersModule,
           RuntimeFlagsModule,
+          EventBackboneModule,
           LogModule,
           EmailModule,
           SettingsModule,

@@ -2261,6 +2261,78 @@ model WebhookDeliveryAttempt {
   @@schema("tenant_template")
 }
 
+/// Event Backbone Outbox (Phase 8)
+model EventBackboneOutbox {
+  id                  String    @id @default(uuid()) @db.Uuid
+  eventCode           String    @map("event_code") @db.VarChar(128)
+  eventFamily         String    @map("event_family") @db.VarChar(64)
+  payloadVersion      String    @default("1") @map("payload_version") @db.VarChar(32)
+  producer            String    @db.VarChar(128)
+  tenantId            String?   @map("tenant_id") @db.Uuid
+  subsidiaryId        String?   @map("subsidiary_id") @db.Uuid
+  talentId            String?   @map("talent_id") @db.Uuid
+  scopeClass          String    @map("scope_class") @db.VarChar(32)
+  piiClass            String    @map("pii_class") @db.VarChar(64)
+  idempotencyKey      String    @unique @map("idempotency_key") @db.VarChar(160)
+  payloadHash         String    @map("payload_hash") @db.VarChar(64)
+  payloadEnvelope     Json      @default("{}") @map("payload_envelope") @db.JsonB
+  redactedPayload     Json      @default("{}") @map("redacted_payload") @db.JsonB
+  bridgeMode          String    @default("disabled") @map("bridge_mode") @db.VarChar(32)
+  publishStatus       String    @default("pending") @map("publish_status") @db.VarChar(32)
+  publishAttempts     Int       @default(0) @map("publish_attempts")
+  nextPublishAt       DateTime? @map("next_publish_at") @db.Timestamptz
+  publishedAt         DateTime? @map("published_at") @db.Timestamptz
+  deadLetteredAt      DateTime? @map("dead_lettered_at") @db.Timestamptz
+  dlqReason           String?   @map("dlq_reason") @db.Text
+  replayOfOutboxId    String?   @map("replay_of_outbox_id") @db.Uuid
+  replayReason        String?   @map("replay_reason") @db.Text
+  correlationId       String?   @map("correlation_id") @db.VarChar(128)
+  traceId             String?   @map("trace_id") @db.VarChar(64)
+  createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  createdBy           String?   @map("created_by") @db.Uuid
+  version             Int       @default(1)
+
+  consumerCursors EventBackboneConsumerCursor[]
+
+  @@index([eventCode])
+  @@index([eventFamily, publishStatus])
+  @@index([publishStatus, nextPublishAt])
+  @@index([tenantId, eventCode])
+  @@index([traceId])
+  @@index([createdAt])
+  @@map("event_backbone_outbox")
+  @@schema("tenant_template")
+}
+
+/// Event Backbone Consumer Cursor (Phase 8)
+model EventBackboneConsumerCursor {
+  id                String    @id @default(uuid()) @db.Uuid
+  outboxId          String    @map("outbox_id") @db.Uuid
+  consumerOwner     String    @map("consumer_owner") @db.VarChar(128)
+  durableName       String    @map("durable_name") @db.VarChar(160)
+  sideEffectKey     String    @map("side_effect_key") @db.VarChar(160)
+  status            String    @default("pending") @db.VarChar(32)
+  attemptCount      Int       @default(0) @map("attempt_count")
+  lastAttemptAt     DateTime? @map("last_attempt_at") @db.Timestamptz
+  acknowledgedAt    DateTime? @map("acknowledged_at") @db.Timestamptz
+  deadLetteredAt    DateTime? @map("dead_lettered_at") @db.Timestamptz
+  dlqReason         String?   @map("dlq_reason") @db.Text
+  replayReason      String?   @map("replay_reason") @db.Text
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  outbox EventBackboneOutbox @relation(fields: [outboxId], references: [id], onDelete: Cascade)
+
+  @@unique([outboxId, consumerOwner])
+  @@unique([sideEffectKey])
+  @@index([durableName, status])
+  @@index([status, lastAttemptAt])
+  @@index([createdAt])
+  @@map("event_backbone_consumer_cursor")
+  @@schema("tenant_template")
+}
+
 // =============================================================================
 // SESSION & TOKEN Module
 // =============================================================================

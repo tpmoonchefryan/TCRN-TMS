@@ -22,6 +22,7 @@ import { DatabaseModule } from './modules/database';
 import { DelegatedAdminModule } from './modules/delegated-admin';
 import { DictionaryModule } from './modules/dictionary';
 import { EmailModule } from './modules/email';
+import { EventBackboneModule } from './modules/event-backbone';
 import { ExportModule } from './modules/export';
 import { HealthModule } from './modules/health/health.module';
 import { HomepageModule } from './modules/homepage';
@@ -139,6 +140,7 @@ import { repoEnvFilePaths } from './repo-env';
     PlatformToolsModule,
     ObservabilityAdaptersModule,
     RuntimeFlagsModule,
+    EventBackboneModule,
   ],
   controllers: [AppController],
   providers: [

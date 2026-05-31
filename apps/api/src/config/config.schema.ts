@@ -48,6 +48,11 @@ export const configValidationSchema = Joi.object({
     .valid('disabled', 'local_stub', 'local_dispatch', 'provider_dispatch')
     .default('disabled'),
 
+  // Event backbone adapter
+  EVENT_BACKBONE_MODE: Joi.string()
+    .valid('disabled', 'local_stub', 'mirror_only', 'selected_event_stream', 'external_provided')
+    .default('disabled'),
+
   // Import limits (PRD §21)
   IMPORT_MAX_ROWS: Joi.number().default(50000),
 
