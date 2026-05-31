@@ -17,7 +17,9 @@ export default async function AcPlatformToolsPage({
       ? 'observability'
       : rawFamily === 'runtime_flags' || rawFamily === 'runtime-flags'
         ? 'runtime_flags'
-        : undefined;
+        : rawFamily === 'webhook_delivery' || rawFamily === 'webhook-delivery'
+          ? 'webhook_delivery'
+          : undefined;
 
   return <PlatformToolConnectionsScreen tenantId={tenantId} initialFamily={initialFamily} />;
 }

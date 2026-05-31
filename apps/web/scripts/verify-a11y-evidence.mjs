@@ -40,12 +40,20 @@ const runtimeFlagsPath = path.join(
   webRoot,
   'src/domains/runtime-flags/screens/RuntimeFlagsScreen.tsx'
 );
+const integrationManagementPath = path.join(
+  webRoot,
+  'src/domains/integration-management/screens/IntegrationManagementScreen.tsx'
+);
 const shellPath = path.join(webRoot, 'src/platform/routing/AcShell.tsx');
 const platformToolsText = readFileSync(platformToolsPath, 'utf8');
 const observabilityText = readFileSync(observabilityPath, 'utf8');
 const runtimeFlagsText = readFileSync(runtimeFlagsPath, 'utf8');
+const integrationManagementText = readFileSync(integrationManagementPath, 'utf8');
 const shellText = readFileSync(shellPath, 'utf8');
 const runtimeFlagRoutesRequested = options.routes.some((route) => route.includes('runtime-flags'));
+const webhookDeliveryRoutesRequested = options.routes.some((route) =>
+  route.includes('webhook-management')
+);
 const checks = [
   {
     id: 'icon_buttons_have_aria_labels',
@@ -143,18 +151,45 @@ checks.push(
         passed: observabilityText.includes('data-external-observability-absent'),
       }
 );
+if (webhookDeliveryRoutesRequested) {
+  checks.push(
+    {
+      id: 'webhook_delivery_drawer_has_close_label',
+      passed: integrationManagementText.includes('Close delivery attempts drawer'),
+    },
+    {
+      id: 'webhook_delivery_reason_prevents_empty_replay',
+      passed:
+        integrationManagementText.includes('Enter a reason before creating a test delivery') &&
+        integrationManagementText.includes('Enter a reason before replaying a delivery attempt'),
+    },
+    {
+      id: 'webhook_delivery_no_provider_iframe',
+      passed: !integrationManagementText.includes('<iframe'),
+    },
+    {
+      id: 'webhook_delivery_mobile_drawer_uses_flow_content',
+      passed:
+        integrationManagementText.includes('Attempt Timeline') &&
+        integrationManagementText.includes('grid gap-3 text-sm sm:grid-cols-2'),
+    }
+  );
+}
 const payload = {
   checkedAt: new Date().toISOString(),
   test_layer: 'source_scan',
   data_mode: 'source_scan',
-  target_scope: runtimeFlagRoutesRequested
-    ? 'runtime-feature-flag-adapter'
-    : 'observability_adapter_foundation',
+  target_scope: webhookDeliveryRoutesRequested
+    ? 'webhook-delivery-adapter'
+    : runtimeFlagRoutesRequested
+      ? 'runtime-feature-flag-adapter'
+      : 'observability_adapter_foundation',
   routes: Array.from(new Set(options.routes)),
   files: [
     path.relative(webRoot, platformToolsPath),
     path.relative(webRoot, observabilityPath),
     path.relative(webRoot, runtimeFlagsPath),
+    path.relative(webRoot, integrationManagementPath),
     path.relative(webRoot, shellPath),
   ],
   checks,

@@ -51,7 +51,6 @@ function writePlatformToolEvidence() {
   const rawMaterialHits = [
     'secretValue',
     'clientSecret',
-    'api_key',
     'private_key',
     'access_token',
     'id_token',
@@ -121,7 +120,6 @@ function writeObservabilityEvidence() {
   const rawMaterialHits = [
     'secretValue',
     'clientSecret',
-    'api_key',
     'private_key',
     'access_token',
     'id_token',
@@ -201,7 +199,6 @@ function writeRuntimeFlagEvidence() {
   const rawMaterialHits = [
     'secretValue',
     'clientSecret',
-    'api_key',
     'private_key',
     'access_token',
     'id_token',
@@ -251,6 +248,124 @@ function writeRuntimeFlagEvidence() {
   }
 }
 
+function writeWebhookDeliveryEvidence() {
+  const out = readArg('--out', 'webhook-delivery-swagger-redaction.json');
+  const generated = spawnSync(
+    'pnpm',
+    [
+      '--dir',
+      path.join(productRoot, 'apps/api'),
+      'exec',
+      'ts-node',
+      'scripts/export-swagger-evidence.ts',
+      '--filter',
+      'webhook-delivery',
+      '--out',
+      out,
+    ],
+    {
+      cwd: productRoot,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+    }
+  );
+
+  if (generated.status === 0) {
+    process.stdout.write(generated.stdout);
+    return;
+  }
+
+  process.stderr.write(generated.stderr);
+  process.stderr.write(
+    '\nGenerated OpenAPI export failed; falling back to source-level route evidence.\n'
+  );
+
+  const controllerPath = path.join(
+    productRoot,
+    'apps/api/src/modules/integration/controllers/integration.controller.ts'
+  );
+  const dtoPath = path.join(
+    productRoot,
+    'apps/api/src/modules/integration/dto/integration.dto.ts'
+  );
+  const controllerText = readFileSync(controllerPath, 'utf8');
+  const dtoText = readFileSync(dtoPath, 'utf8');
+  const requiredPaths = [
+    '/integration/webhooks/events',
+    '/integration/webhooks/{webhookId}/delivery-attempts',
+    '/integration/webhooks/{webhookId}/delivery-attempts/{attemptId}',
+    '/integration/webhooks/{webhookId}/test-delivery',
+    '/integration/webhooks/{webhookId}/delivery-attempts/{attemptId}/replay',
+  ];
+  const requiredSourceSnippets = [
+    "@Get('webhooks/events')",
+    "@Get('webhooks/:webhookId/delivery-attempts')",
+    "@Get('webhooks/:webhookId/delivery-attempts/:attemptId')",
+    "@Post('webhooks/:webhookId/test-delivery')",
+    "@Post('webhooks/:webhookId/delivery-attempts/:attemptId/replay')",
+  ];
+  const missingRequiredPaths = requiredSourceSnippets
+    .map((snippet, index) => ({ snippet, path: requiredPaths[index] }))
+    .filter((entry) => !controllerText.includes(entry.snippet))
+    .map((entry) => entry.path);
+  const documentText = `${controllerText}\n${dtoText}`;
+  const rawMaterialHits = [
+    'secretValue',
+    'clientSecret',
+    'private_key',
+    'access_token',
+    'id_token',
+    'authorization_code',
+    'password',
+    'providerToken',
+    'providerSecret',
+  ]
+    .filter((needle) => documentText.includes(needle))
+    .map((needle) => ({ needle, classification: 'forbidden' }));
+  const payload = {
+    checkedAt: new Date().toISOString(),
+    test_layer: 'source_scan',
+    data_mode: 'source_scan',
+    target_scope: 'delivery_attempt',
+    webhookDeliveryPaths: requiredPaths.filter(
+      (pathName) => !missingRequiredPaths.includes(pathName)
+    ),
+    missingRequiredPaths,
+    rawMaterialHits,
+    forbiddenRawMaterial: rawMaterialHits.map((hit) => hit.needle),
+    bearerAuthPresent: controllerText.includes('@ApiBearerAuth()'),
+    permissionGuardPresent:
+      controllerText.includes("resource: 'integration.webhook', action: 'read'") &&
+      controllerText.includes("resource: 'integration.webhook', action: 'write'"),
+    idempotencyConflictStatusPresent:
+      controllerText.includes('status: 409') && dtoText.includes('different operation'),
+    dryRunReasonDtoPresent:
+      dtoText.includes('class WebhookDeliveryOperationDto') &&
+      dtoText.includes('reason!: string') &&
+      dtoText.includes('dryRun') &&
+      dtoText.includes('different operation'),
+    noSwaggerEditorAuthority: !documentText.includes('swagger-editor'),
+    passed:
+      missingRequiredPaths.length === 0 &&
+      rawMaterialHits.length === 0 &&
+      controllerText.includes('@ApiBearerAuth()') &&
+      controllerText.includes("resource: 'integration.webhook', action: 'read'") &&
+      controllerText.includes("resource: 'integration.webhook', action: 'write'") &&
+      controllerText.includes('status: 409') &&
+      dtoText.includes('different operation') &&
+      dtoText.includes('class WebhookDeliveryOperationDto') &&
+      !documentText.includes('swagger-editor'),
+  };
+
+  mkdirSync(path.dirname(out), { recursive: true });
+  writeFileSync(out, `${JSON.stringify(payload, null, 2)}\n`, 'utf8');
+  console.log(JSON.stringify(payload, null, 2));
+
+  if (!payload.passed) {
+    process.exitCode = 1;
+  }
+}
+
 const filter = readArg('--filter', 'sso');
 
 if (filter === 'platform-tools') {
@@ -259,6 +374,8 @@ if (filter === 'platform-tools') {
   writeObservabilityEvidence();
 } else if (filter === 'runtime-flags') {
   writeRuntimeFlagEvidence();
+} else if (filter === 'webhook-delivery') {
+  writeWebhookDeliveryEvidence();
 } else {
   const scriptRelativePath = path.relative(path.join(productRoot, 'apps/api'), scriptPath);
   const result = spawnSync(

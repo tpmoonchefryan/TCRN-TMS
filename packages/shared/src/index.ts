@@ -96,15 +96,22 @@ export type {
   IntegrationLocalizedText,
   IntegrationWebhookDefinition,
   WebhookEventDefinition,
+  WebhookEventCatalogItem,
+  WebhookDeliveryAdapterCatalogItem,
+  WebhookPayloadEnvelopeDefinition,
+  WebhookPiiClass,
 } from './types/integration/schema';
 export {
   ADAPTER_CONFIG_KEYS,
+  getWebhookEventCatalogItem,
   getIntegrationAdapterCreateDefinition,
   getIntegrationAdapterDefinition,
   getIntegrationWebhookDefinition,
   INTEGRATION_ADAPTER_CREATE_DEFINITIONS,
   INTEGRATION_ADAPTER_DEFINITIONS,
   INTEGRATION_WEBHOOK_DEFINITIONS,
+  WEBHOOK_DELIVERY_ADAPTER_CATALOG,
+  WEBHOOK_EVENT_CATALOG,
 } from './types/integration/schema';
 export type {
   ChangeLogQueryParams,

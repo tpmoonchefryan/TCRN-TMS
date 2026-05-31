@@ -2174,7 +2174,90 @@ model Webhook {
   updatedBy           String?   @map("updated_by") @db.Uuid
   version             Int       @default(1)
 
+  deliveryOutboxes WebhookDeliveryOutbox[]
+  deliveryAttempts WebhookDeliveryAttempt[]
+
   @@map("webhook")
+  @@schema("tenant_template")
+}
+
+/// Webhook Delivery Outbox (Phase 7)
+model WebhookDeliveryOutbox {
+  id                 String    @id @default(uuid()) @db.Uuid
+  webhookId          String?   @map("webhook_id") @db.Uuid
+  eventId            String    @map("event_id") @db.VarChar(128)
+  eventCode          String    @map("event_code") @db.VarChar(64)
+  payloadVersion     String    @default("v1") @map("payload_version") @db.VarChar(32)
+  tenantId           String?   @map("tenant_id") @db.Uuid
+  subsidiaryId       String?   @map("subsidiary_id") @db.Uuid
+  talentId           String?   @map("talent_id") @db.Uuid
+  idempotencyKey     String    @unique @map("idempotency_key") @db.VarChar(128)
+  payloadHash        String    @map("payload_hash") @db.VarChar(64)
+  payloadEnvelope    Json      @default("{}") @map("payload_envelope") @db.JsonB
+  redactedPayload    Json      @default("{}") @map("redacted_payload") @db.JsonB
+  dispatchMode       String    @default("disabled") @map("dispatch_mode") @db.VarChar(32)
+  status             String    @default("pending") @db.VarChar(32)
+  attemptCount       Int       @default(0) @map("attempt_count")
+  nextAttemptAt      DateTime? @map("next_attempt_at") @db.Timestamptz
+  availableAt        DateTime  @default(now()) @map("available_at") @db.Timestamptz
+  deliveredAt        DateTime? @map("delivered_at") @db.Timestamptz
+  deadLetteredAt     DateTime? @map("dead_lettered_at") @db.Timestamptz
+  dlqReason          String?   @map("dlq_reason") @db.Text
+  providerMessageId  String?   @map("provider_message_id") @db.VarChar(128)
+  correlationId      String?   @map("correlation_id") @db.VarChar(128)
+  traceId            String?   @map("trace_id") @db.VarChar(64)
+  replayOfOutboxId   String?   @map("replay_of_outbox_id") @db.Uuid
+  createdAt          DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt          DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  createdBy          String?   @map("created_by") @db.Uuid
+  version            Int       @default(1)
+
+  webhook Webhook?                 @relation(fields: [webhookId], references: [id], onDelete: SetNull)
+  attempts WebhookDeliveryAttempt[]
+
+  @@index([webhookId, status])
+  @@index([eventCode])
+  @@index([status, nextAttemptAt])
+  @@index([traceId])
+  @@index([createdAt])
+  @@map("webhook_delivery_outbox")
+  @@schema("tenant_template")
+}
+
+/// Webhook Delivery Attempt (Phase 7)
+model WebhookDeliveryAttempt {
+  id                  String    @id @default(uuid()) @db.Uuid
+  outboxId            String    @map("outbox_id") @db.Uuid
+  webhookId           String?   @map("webhook_id") @db.Uuid
+  attemptNumber       Int       @map("attempt_number")
+  status              String    @db.VarChar(32)
+  dispatchMode        String    @default("disabled") @map("dispatch_mode") @db.VarChar(32)
+  endpointUrl         String    @map("endpoint_url") @db.VarChar(512)
+  providerAttemptId   String?   @map("provider_attempt_id") @db.VarChar(128)
+  requestHeaders      Json      @default("{}") @map("request_headers") @db.JsonB
+  requestBodySummary  Json      @default("{}") @map("request_body_summary") @db.JsonB
+  responseStatus      Int?      @map("response_status") @db.SmallInt
+  responseBodySummary Json      @default("{}") @map("response_body_summary") @db.JsonB
+  errorCode           String?   @map("error_code") @db.VarChar(64)
+  errorMessage        String?   @map("error_message") @db.Text
+  latencyMs           Int?      @map("latency_ms")
+  nextRetryAt         DateTime? @map("next_retry_at") @db.Timestamptz
+  deliveredAt         DateTime? @map("delivered_at") @db.Timestamptz
+  replayReason        String?   @map("replay_reason") @db.Text
+  requestedBy         String?   @map("requested_by") @db.Uuid
+  traceId             String?   @map("trace_id") @db.VarChar(64)
+  createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  outbox  WebhookDeliveryOutbox @relation(fields: [outboxId], references: [id], onDelete: Cascade)
+  webhook Webhook?              @relation(fields: [webhookId], references: [id], onDelete: SetNull)
+
+  @@unique([outboxId, attemptNumber])
+  @@index([webhookId, status])
+  @@index([status, nextRetryAt])
+  @@index([traceId])
+  @@index([createdAt])
+  @@map("webhook_delivery_attempt")
   @@schema("tenant_template")
 }
 

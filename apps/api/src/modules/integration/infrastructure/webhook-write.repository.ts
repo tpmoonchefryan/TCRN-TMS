@@ -42,6 +42,12 @@ export interface WebhookActiveStatePersistenceInput {
   userId: string | null;
 }
 
+export interface WebhookMonitoredTalentScopeRecord {
+  id: string;
+  subsidiaryId: string | null;
+  isActive: boolean;
+}
+
 function asRecord(
   value: Prisma.JsonValue | Record<string, unknown> | null | undefined
 ): Record<string, unknown> | null {
@@ -148,6 +154,28 @@ export class WebhookWriteRepository {
     });
 
     return record ? mapWebhookRecord(record) : null;
+  }
+
+  async findMonitoredTalentScopeRecords(
+    prisma: Prisma.TransactionClient,
+    tenantSchema: string,
+    talentIds: string[]
+  ): Promise<WebhookMonitoredTalentScopeRecord[]> {
+    if (talentIds.length === 0) {
+      return [];
+    }
+
+    return prisma.$queryRawUnsafe<WebhookMonitoredTalentScopeRecord[]>(
+      `
+        SELECT
+          id,
+          subsidiary_id as "subsidiaryId",
+          is_active as "isActive"
+        FROM "${tenantSchema}".talent
+        WHERE id = ANY($1::uuid[])
+      `,
+      talentIds
+    );
   }
 
   async create(

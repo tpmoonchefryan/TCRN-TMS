@@ -31,6 +31,7 @@ import {
   createEmailTemplate,
   createScopedAdapter,
   createTenantAdapter,
+  createWebhookTestDelivery,
   createWebhook,
   deactivateConsumer,
   deactivateEmailTemplate,
@@ -61,6 +62,7 @@ import {
   listScopedAdapters,
   listTenantAdapters,
   listWebhookDefinitions,
+  listWebhookDeliveryAttempts,
   listWebhookEvents,
   listWebhooks,
   type OwnerType,
@@ -75,6 +77,7 @@ import {
   revealTenantAdapterConfig,
   revokeConsumerKey,
   rotateConsumerKey,
+  replayWebhookDeliveryAttempt,
   saveEmailConfig,
   sendEmailTest,
   testEmailConnection,
@@ -83,6 +86,8 @@ import {
   updateTenantAdapter,
   updateTenantAdapterConfigs,
   updateWebhook,
+  type WebhookDeliveryAttemptPage,
+  type WebhookDeliveryAttemptRecord,
   type WebhookEventDefinition,
 } from '@/domains/integration-management/api/integration-management.api';
 import {
@@ -1388,6 +1393,12 @@ export function IntegrationManagementScreen({
   );
   const [webhookTranslationDrawerOpen, setWebhookTranslationDrawerOpen] = useState(false);
   const [webhookSubmitting, setWebhookSubmitting] = useState(false);
+  const [webhookDeliveryDrawerOpen, setWebhookDeliveryDrawerOpen] = useState(false);
+  const [webhookDeliveryPanel, setWebhookDeliveryPanel] = useState<
+    PanelState<WebhookDeliveryAttemptPage | null>
+  >(createPanelState<WebhookDeliveryAttemptPage | null>(null, false));
+  const [webhookDeliveryReason, setWebhookDeliveryReason] = useState('');
+  const [webhookDeliverySubmitting, setWebhookDeliverySubmitting] = useState(false);
 
   const [consumerCreateMode, setConsumerCreateMode] = useState(false);
   const [selectedConsumerId, setSelectedConsumerId] = useState<string | null>(null);
@@ -1760,6 +1771,8 @@ export function IntegrationManagementScreen({
     setWebhookCreateMode(false);
     setSelectedWebhookId(null);
     setWebhookDrawerOpen(false);
+    setWebhookDeliveryDrawerOpen(false);
+    setWebhookDeliveryPanel(createPanelState<WebhookDeliveryAttemptPage | null>(null, false));
     setWebhookDetailPanel(createPanelState<IntegrationWebhookDetailRecord | null>(null, false));
     setWebhookEditorState(buildWebhookDraft());
     setConsumerCreateMode(false);
@@ -1784,6 +1797,7 @@ export function IntegrationManagementScreen({
     setActiveTab(nextTab);
     setAdapterDrawerOpen(false);
     setWebhookDrawerOpen(false);
+    setWebhookDeliveryDrawerOpen(false);
     setConsumerDrawerOpen(false);
     setEmailConfigDrawerOpen(false);
     setTemplateDrawerOpen(false);
@@ -2190,6 +2204,50 @@ export function IntegrationManagementScreen({
     }
   }
 
+  async function refreshWebhookDeliveryAttempts(webhookId: string | null = selectedWebhookId) {
+    if (!webhookId) {
+      setWebhookDeliveryPanel(createPanelState<WebhookDeliveryAttemptPage | null>(null, false));
+      return;
+    }
+
+    setWebhookDeliveryPanel((current) => ({
+      ...current,
+      loading: true,
+      error: null,
+      unavailableReason: null,
+    }));
+
+    try {
+      const data = await listWebhookDeliveryAttempts(request, webhookId);
+      setWebhookDeliveryPanel({
+        data,
+        loading: false,
+        error: null,
+        unavailableReason: null,
+      });
+    } catch (reason) {
+      const unavailableReason = getUnavailableReason(reason);
+      setWebhookDeliveryPanel((current) => ({
+        data: current.data,
+        loading: false,
+        error: unavailableReason
+          ? null
+          : getErrorMessage(
+              reason,
+              text({
+                en: 'Failed to load webhook delivery attempts.',
+                zh_HANS: '加载 Webhook 投递尝试失败。',
+                zh_HANT: '載入 Webhook 投遞嘗試失敗。',
+                ja: 'Webhook 配信試行の読み込みに失敗しました。',
+                ko: 'Webhook 전달 시도 로드에 실패했습니다.',
+                fr: 'Échec du chargement des tentatives de livraison webhook.',
+              })
+            ),
+        unavailableReason,
+      }));
+    }
+  }
+
   async function refreshEmailConfig() {
     setEmailConfigPanel((current) => ({
       ...current,
@@ -2272,6 +2330,7 @@ export function IntegrationManagementScreen({
         setWebhooksPanel(createPanelState<IntegrationWebhookListItemRecord[]>([], false));
         setWebhookEventsPanel(createPanelState<WebhookEventDefinition[]>([], false));
         setWebhookDefinitionsPanel(createPanelState<IntegrationWebhookDefinition[]>([], false));
+        setWebhookDeliveryPanel(createPanelState<WebhookDeliveryAttemptPage | null>(null, false));
         setConsumersPanel(createPanelState<IntegrationConsumerRecord[]>([], false));
         setEmailTemplatesPanel(createPanelState<EmailTemplateRecord[]>([], false));
         setEmailConfigPanel({
@@ -2307,6 +2366,7 @@ export function IntegrationManagementScreen({
           });
           setWebhookEventsPanel(createPanelState<WebhookEventDefinition[]>([], false));
           setWebhookDefinitionsPanel(createPanelState<IntegrationWebhookDefinition[]>([], false));
+          setWebhookDeliveryPanel(createPanelState<WebhookDeliveryAttemptPage | null>(null, false));
         }
       } else if (activeTab === 'api-keys') {
         tasks.push(refreshConsumers());
@@ -2831,6 +2891,69 @@ export function IntegrationManagementScreen({
     value: string | null | undefined,
     fallback = text('Never', '从未', 'なし')
   ) => formatIntegrationManagementDateTime(locale, value, fallback);
+  const formatNullableMetric = (value: number | null | undefined, unit: string) =>
+    value === null || value === undefined ? text('Not recorded', '未记录', '未記録') : `${value}${unit}`;
+  const formatJsonSummary = (value: unknown) => {
+    if (!value || (typeof value === 'object' && Object.keys(value).length === 0)) {
+      return text('Redacted empty summary', '已脱敏空摘要', 'マスク済み空サマリー');
+    }
+
+    return JSON.stringify(value).slice(0, 180);
+  };
+  const formatDeliveryStatusLabel = (status: WebhookDeliveryAttemptRecord['status']) => {
+    const labels: Record<WebhookDeliveryAttemptRecord['status'], string> = {
+      dry_run: text({
+        en: 'Dry-run',
+        zh_HANS: 'Dry-run',
+        zh_HANT: 'Dry-run',
+        ja: 'ドライラン',
+        ko: 'Dry-run',
+        fr: 'Dry-run',
+      }),
+      pending: text('Pending', '待处理', '保留中'),
+      delivered: text('Delivered', '已投递', '配信済み'),
+      failed: text('Failed', '失败', '失敗'),
+      retry_scheduled: text({
+        en: 'Retry scheduled',
+        zh_HANS: '已安排重试',
+        zh_HANT: '已安排重試',
+        ja: '再試行予定',
+        ko: '재시도 예약됨',
+        fr: 'Retry planifié',
+      }),
+      dead_lettered: text({
+        en: 'Dead-lettered',
+        zh_HANS: '已进入 DLQ',
+        zh_HANT: '已進入 DLQ',
+        ja: 'DLQ 済み',
+        ko: 'DLQ 처리됨',
+        fr: 'En DLQ',
+      }),
+      replayed: text('Replayed', '已重放', '再実行済み'),
+      blocked: text('Blocked', '已阻止', 'ブロック済み'),
+    };
+
+    return labels[status];
+  };
+  const formatDeliveryDispatchLabel = (
+    dispatchMode: WebhookDeliveryAttemptRecord['dispatchMode']
+  ) => {
+    const labels: Record<WebhookDeliveryAttemptRecord['dispatchMode'], string> = {
+      disabled: text({
+        en: 'Dry-run / disabled dispatch',
+        zh_HANS: 'Dry-run / 已禁用投递',
+        zh_HANT: 'Dry-run / 已停用投遞',
+        ja: 'ドライラン / 配信無効',
+        ko: 'Dry-run / 전달 비활성',
+        fr: 'Dry-run / livraison désactivée',
+      }),
+      local_stub: text('Local stub', '本地 stub', 'ローカルスタブ'),
+      local_dispatch: text('Local dispatch', '本地投递', 'ローカル配信'),
+      provider_dispatch: text('Provider dispatch', '服务商投递', 'プロバイダー配信'),
+    };
+
+    return labels[dispatchMode];
+  };
   const pickLocalizedLabel = (value: LocalizedText | null | undefined, fallback: string) =>
     value ? pickLocaleText(locale, value) : fallback;
   const pickConsumerDisplayName = (consumer: IntegrationConsumerRecord) =>
@@ -3258,6 +3381,8 @@ export function IntegrationManagementScreen({
 
     try {
       const headers = parseHeaderLines(webhookDraft.headersText, getInvalidHeaderMessage);
+      const updateDefinitionBacked =
+        !webhookCreateMode && Boolean(webhookDetailPanel.data?.definitionKey);
       const payload =
         webhookCreateMode && selectedWebhookDefinition
           ? {
@@ -3284,7 +3409,9 @@ export function IntegrationManagementScreen({
               name: buildLocalizedTextPayload(webhookDraft.nameBase, webhookDraft.nameLocaleValues),
               url: webhookDraft.url.trim(),
               secret: trimToUndefined(webhookDraft.secret),
-              events: webhookDraft.selectedEvents as WebhookEventDefinition['event'][],
+              events: updateDefinitionBacked
+                ? undefined
+                : (webhookDraft.selectedEvents as WebhookEventDefinition['event'][]),
               headers,
               monitoredTalentIds: webhookDraft.monitoredTalentIds,
               retryPolicy: {
@@ -3351,6 +3478,196 @@ export function IntegrationManagementScreen({
     } finally {
       setWebhookSubmitting(false);
     }
+  }
+
+  async function handleWebhookTestDelivery() {
+    if (!selectedWebhookId) {
+      return;
+    }
+
+    const webhookId = selectedWebhookId;
+    const reason = webhookDeliveryReason.trim();
+
+    if (!reason) {
+      setNotice({
+        tone: 'error',
+        message: text({
+          en: 'Enter a reason before creating a test delivery.',
+          zh_HANS: '创建测试投递前请输入原因。',
+          zh_HANT: '建立測試投遞前請輸入原因。',
+          ja: 'テスト配信を作成する前に理由を入力してください。',
+          ko: '테스트 전달을 만들기 전에 사유를 입력하세요.',
+          fr: 'Saisissez une raison avant de créer une livraison de test.',
+        }),
+      });
+      return;
+    }
+
+    setNotice(null);
+
+    setConfirmState({
+      title: text({
+        en: 'Record dry-run delivery test?',
+        zh_HANS: '记录 dry-run 投递测试？',
+        zh_HANT: '記錄 dry-run 投遞測試？',
+        ja: 'ドライラン配信テストを記録しますか？',
+        ko: 'dry-run 전달 테스트를 기록할까요?',
+        fr: 'Enregistrer le test de livraison dry-run ?',
+      }),
+      description: text({
+        en: `This records a redacted outbox and attempt entry with the reason: ${reason}`,
+        zh_HANS: `这会使用以下原因记录已脱敏的 outbox 与 attempt 条目：${reason}`,
+        zh_HANT: `這會使用以下原因記錄已脫敏的 outbox 與 attempt 項目：${reason}`,
+        ja: `次の理由でマスク済み outbox と試行エントリを記録します: ${reason}`,
+        ko: `다음 사유로 마스킹된 outbox와 attempt 항목을 기록합니다: ${reason}`,
+        fr: `Cette action enregistre une outbox et une tentative expurgées avec la raison : ${reason}`,
+      }),
+      confirmText: text({
+        en: 'Record test',
+        zh_HANS: '记录测试',
+        zh_HANT: '記錄測試',
+        ja: 'テストを記録',
+        ko: '테스트 기록',
+        fr: 'Enregistrer le test',
+      }),
+      pendingText: text({
+        en: 'Recording dry-run test...',
+        zh_HANS: '正在记录 dry-run 测试...',
+        zh_HANT: '正在記錄 dry-run 測試...',
+        ja: 'ドライランテストを記録しています...',
+        ko: 'dry-run 테스트 기록 중...',
+        fr: 'Enregistrement du test dry-run...',
+      }),
+      intent: 'primary',
+      errorFallback: text({
+        en: 'Failed to create webhook test delivery.',
+        zh_HANS: '创建 Webhook 测试投递失败。',
+        zh_HANT: '建立 Webhook 測試投遞失敗。',
+        ja: 'Webhook テスト配信の作成に失敗しました。',
+        ko: 'Webhook 테스트 전달 생성에 실패했습니다.',
+        fr: 'Échec de création de la livraison de test webhook.',
+      }),
+      onConfirm: async () => {
+        setWebhookDeliverySubmitting(true);
+        try {
+          const result = await createWebhookTestDelivery(request, webhookId, {
+            reason,
+            dryRun: true,
+          });
+          await refreshWebhookDeliveryAttempts(webhookId);
+          await refreshWebhooks(webhookId);
+          return result.duplicate
+            ? text({
+                en: 'Duplicate test delivery was not enqueued again.',
+                zh_HANS: '重复测试投递未再次入队。',
+                zh_HANT: '重複測試投遞未再次入列。',
+                ja: '重複したテスト配信は再度キューに入りませんでした。',
+                ko: '중복 테스트 전달은 다시 대기열에 넣지 않았습니다.',
+                fr: "La livraison de test en double n'a pas été remise en file.",
+              })
+            : text({
+                en: 'Dry-run delivery attempt recorded.',
+                zh_HANS: '已记录 dry-run 投递尝试。',
+                zh_HANT: '已記錄 dry-run 投遞嘗試。',
+                ja: 'ドライラン配信試行を記録しました。',
+                ko: 'dry-run 전달 시도를 기록했습니다.',
+                fr: 'Tentative de livraison dry-run enregistrée.',
+              });
+        } finally {
+          setWebhookDeliverySubmitting(false);
+        }
+      },
+    });
+  }
+
+  async function handleWebhookReplayAttempt(attempt: WebhookDeliveryAttemptRecord) {
+    if (!selectedWebhookId) {
+      return;
+    }
+
+    const webhookId = selectedWebhookId;
+    const reason = webhookDeliveryReason.trim();
+
+    if (!reason) {
+      setNotice({
+        tone: 'error',
+        message: text({
+          en: 'Enter a reason before replaying a delivery attempt.',
+          zh_HANS: '重放投递尝试前请输入原因。',
+          zh_HANT: '重放投遞嘗試前請輸入原因。',
+          ja: '配信試行を再実行する前に理由を入力してください。',
+          ko: '전달 시도를 재실행하기 전에 사유를 입력하세요.',
+          fr: 'Saisissez une raison avant de rejouer une tentative de livraison.',
+        }),
+      });
+      return;
+    }
+
+    setNotice(null);
+
+    setConfirmState({
+      title: text({
+        en: 'Replay this delivery attempt as dry-run?',
+        zh_HANS: '以 dry-run 重放这次投递尝试？',
+        zh_HANT: '以 dry-run 重放這次投遞嘗試？',
+        ja: 'この配信試行をドライランで再実行しますか？',
+        ko: '이 전달 시도를 dry-run으로 재실행할까요?',
+        fr: 'Rejouer cette tentative en dry-run ?',
+      }),
+      description: text({
+        en: `Replay is audited with the operator reason: ${reason}`,
+        zh_HANS: `重放会使用以下操作员原因进入审计：${reason}`,
+        zh_HANT: `重放會使用以下操作員原因進入稽核：${reason}`,
+        ja: `再実行は次のオペレーター理由で監査されます: ${reason}`,
+        ko: `재실행은 다음 운영자 사유로 감사됩니다: ${reason}`,
+        fr: `Le rejeu sera audité avec la raison opérateur : ${reason}`,
+      }),
+      confirmText: text({
+        en: 'Replay dry-run',
+        zh_HANS: '重放 dry-run',
+        zh_HANT: '重放 dry-run',
+        ja: 'ドライラン再実行',
+        ko: 'dry-run 재실행',
+        fr: 'Rejeu dry-run',
+      }),
+      pendingText: text({
+        en: 'Recording replay dry-run...',
+        zh_HANS: '正在记录重放 dry-run...',
+        zh_HANT: '正在記錄重放 dry-run...',
+        ja: '再実行ドライランを記録しています...',
+        ko: '재실행 dry-run 기록 중...',
+        fr: 'Enregistrement du rejeu dry-run...',
+      }),
+      intent: 'primary',
+      errorFallback: text({
+        en: 'Failed to replay webhook delivery attempt.',
+        zh_HANS: '重放 Webhook 投递尝试失败。',
+        zh_HANT: '重放 Webhook 投遞嘗試失敗。',
+        ja: 'Webhook 配信試行の再実行に失敗しました。',
+        ko: 'Webhook 전달 시도 재실행에 실패했습니다.',
+        fr: 'Échec du rejeu de la tentative de livraison webhook.',
+      }),
+      onConfirm: async () => {
+        setWebhookDeliverySubmitting(true);
+        try {
+          await replayWebhookDeliveryAttempt(request, webhookId, attempt.id, {
+            reason,
+            dryRun: true,
+          });
+          await refreshWebhookDeliveryAttempts(webhookId);
+          return text({
+            en: 'Replay dry-run recorded.',
+            zh_HANS: '已记录重放 dry-run。',
+            zh_HANT: '已記錄重放 dry-run。',
+            ja: '再実行ドライランを記録しました。',
+            ko: '재실행 dry-run을 기록했습니다.',
+            fr: 'Rejeu dry-run enregistré.',
+          });
+        } finally {
+          setWebhookDeliverySubmitting(false);
+        }
+      },
+    });
   }
 
   async function handleConsumerSave() {
@@ -5641,6 +5958,14 @@ export function IntegrationManagementScreen({
                                 text('Events', '事件数', 'イベント数'),
                                 text('Talents', '艺人范围', 'タレント範囲'),
                                 text('Failures', '失败次数', '失敗回数'),
+                                text({
+                                  en: 'Last delivery',
+                                  zh_HANS: '最近投递',
+                                  zh_HANT: '最近投遞',
+                                  ja: '直近の配信',
+                                  ko: '최근 전달',
+                                  fr: 'Dernière livraison',
+                                }),
                                 text('Status', '状态', '状態'),
                                 text('Actions', '操作', '操作'),
                               ]}
@@ -5680,6 +6005,20 @@ export function IntegrationManagementScreen({
                                   <td className="px-6 py-4 text-sm text-slate-700">
                                     {webhook.consecutiveFailures}
                                   </td>
+                                  <td className="px-6 py-4 text-sm text-slate-700">
+                                    {webhook.lastStatus
+                                      ? `${webhook.lastStatus} · ${formatDateTime(
+                                          webhook.lastTriggeredAt
+                                        )}`
+                                      : text({
+                                          en: 'No attempts',
+                                          zh_HANS: '暂无尝试',
+                                          zh_HANT: '暫無嘗試',
+                                          ja: '試行なし',
+                                          ko: '시도 없음',
+                                          fr: 'Aucune tentative',
+                                        })}
+                                  </td>
                                   <td className="px-6 py-4">
                                     <StatusBadge
                                       tone={webhook.isActive ? 'success' : 'danger'}
@@ -5698,6 +6037,24 @@ export function IntegrationManagementScreen({
                                         }
                                       >
                                         {text('Open', '打开', '開く')}
+                                      </SecondaryButton>
+                                      <SecondaryButton
+                                        onClick={() => {
+                                          setSelectedWebhookId(webhook.id);
+                                          setWebhookDeliveryReason('');
+                                          setWebhookDeliveryDrawerOpen(true);
+                                          void refreshWebhookDeliveryAttempts(webhook.id);
+                                        }}
+                                      >
+                                        <RotateCcw className="h-4 w-4" />
+                                        {text({
+                                          en: 'Delivery',
+                                          zh_HANS: '投递',
+                                          zh_HANT: '投遞',
+                                          ja: '配信',
+                                          ko: '전달',
+                                          fr: 'Livraison',
+                                        })}
                                       </SecondaryButton>
                                       {webhook.isActive ? (
                                         <SecondaryButton
@@ -6213,9 +6570,16 @@ export function IntegrationManagementScreen({
                                 {text('Subscribed events', '订阅事件', '購読イベント')}
                               </p>
                               <div className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                                {webhookCreateMode ? (
-                                  selectedWebhookDefinition ? (
-                                    selectedWebhookDefinition.events.map((eventName) => {
+                                {webhookCreateMode || webhookDetailPanel.data?.definitionKey ? (
+                                  (
+                                    webhookCreateMode
+                                      ? selectedWebhookDefinition?.events
+                                      : webhookDetailPanel.data?.events
+                                  )?.length ? (
+                                    (webhookCreateMode
+                                      ? selectedWebhookDefinition?.events
+                                      : webhookDetailPanel.data?.events
+                                    )?.map((eventName) => {
                                       const eventDefinition = webhookEventsPanel.data.find(
                                         (item) => item.event === eventName
                                       );
@@ -6494,6 +6858,391 @@ export function IntegrationManagementScreen({
                               '表から既存の Webhook を選択するか、新しいエンドポイント定義を開始してください。'
                             )}
                           />
+                        )}
+                      </FormSection>
+                    </ActionDrawer>
+
+                    <ActionDrawer
+                      open={webhookDeliveryDrawerOpen}
+                      onOpenChange={setWebhookDeliveryDrawerOpen}
+                      title={text({
+                        en: 'Delivery Attempts',
+                        zh_HANS: '投递尝试',
+                        zh_HANT: '投遞嘗試',
+                        ja: '配信試行',
+                        ko: '전달 시도',
+                        fr: 'Tentatives de livraison',
+                      })}
+                      description={text({
+                        en: 'Review redacted delivery state and record dry-run test or replay attempts inside TCRN.',
+                        zh_HANS:
+                          '查看已脱敏的投递状态，并在 TCRN 内记录 dry-run 测试或重放尝试。',
+                        zh_HANT:
+                          '查看已脫敏的投遞狀態，並在 TCRN 內記錄 dry-run 測試或重放嘗試。',
+                        ja: 'マスク済みの配信状態を確認し、TCRN 内でドライランのテストまたは再実行を記録します。',
+                        ko: '마스킹된 전달 상태를 검토하고 TCRN 안에서 dry-run 테스트 또는 재실행을 기록합니다.',
+                        fr: 'Consultez les états de livraison expurgés et enregistrez les tests ou rejeux dry-run dans TCRN.',
+                      })}
+                      closeButtonAriaLabel={text({
+                        en: 'Close delivery attempts drawer',
+                        zh_HANS: '关闭投递尝试抽屉',
+                        zh_HANT: '關閉投遞嘗試抽屜',
+                        ja: '配信試行ドロワーを閉じる',
+                        ko: '전달 시도 패널 닫기',
+                        fr: 'Fermer le panneau des tentatives de livraison',
+                      })}
+                    >
+                      <FormSection
+                        title={text({
+                          en: 'Dry-run Controls',
+                          zh_HANS: 'Dry-run 控制',
+                          zh_HANT: 'Dry-run 控制',
+                          ja: 'ドライラン操作',
+                          ko: 'Dry-run 제어',
+                          fr: 'Contrôles dry-run',
+                        })}
+                        description={text({
+                          en: 'A reason is required for every test delivery or replay. Dry-run mode records outbox and attempt state without outbound HTTP.',
+                          zh_HANS:
+                            '每次测试投递或重放都必须填写原因。Dry-run 模式只记录 outbox 与 attempt 状态，不发起外部 HTTP。',
+                          zh_HANT:
+                            '每次測試投遞或重放都必須填寫原因。Dry-run 模式只記錄 outbox 與 attempt 狀態，不發起外部 HTTP。',
+                          ja: 'すべてのテスト配信または再実行には理由が必要です。ドライランは outbox と試行状態のみを記録し、外部 HTTP は送信しません。',
+                          ko: '모든 테스트 전달 또는 재실행에는 사유가 필요합니다. dry-run은 outbox와 시도 상태만 기록하고 외부 HTTP는 호출하지 않습니다.',
+                          fr: 'Une raison est requise pour chaque test ou rejeu. Le mode dry-run enregistre uniquement l’outbox et la tentative, sans HTTP sortant.',
+                        })}
+                        actions={
+                          <>
+                            <SecondaryButton
+                              onClick={() => void refreshWebhookDeliveryAttempts()}
+                              disabled={!selectedWebhookId || webhookDeliveryPanel.loading}
+                            >
+                              <RefreshCcw className="h-4 w-4" />
+                              {text({
+                                en: 'Refresh',
+                                zh_HANS: '刷新',
+                                zh_HANT: '重新整理',
+                                ja: '更新',
+                                ko: '새로고침',
+                                fr: 'Actualiser',
+                              })}
+                            </SecondaryButton>
+                            <SecondaryButton
+                              tone="primary"
+                              onClick={() => void handleWebhookTestDelivery()}
+                              disabled={
+                                !selectedWebhookId ||
+                                webhookDeliverySubmitting ||
+                                !webhookDeliveryReason.trim()
+                              }
+                            >
+                              <RotateCcw className="h-4 w-4" />
+                              {text({
+                                en: 'Record test',
+                                zh_HANS: '记录测试',
+                                zh_HANT: '記錄測試',
+                                ja: 'テストを記録',
+                                ko: '테스트 기록',
+                                fr: 'Enregistrer un test',
+                              })}
+                            </SecondaryButton>
+                          </>
+                        }
+                      >
+                        <TextAreaField
+                          label={text({
+                            en: 'Reason',
+                            zh_HANS: '原因',
+                            zh_HANT: '原因',
+                            ja: '理由',
+                            ko: '사유',
+                            fr: 'Raison',
+                          })}
+                          value={webhookDeliveryReason}
+                          onChange={setWebhookDeliveryReason}
+                          rows={3}
+                          placeholder={text({
+                            en: 'Required audit reason for test or replay',
+                            zh_HANS: '测试或重放所需的审计原因',
+                            zh_HANT: '測試或重放所需的稽核原因',
+                            ja: 'テストまたは再実行に必要な監査理由',
+                            ko: '테스트 또는 재실행에 필요한 감사 사유',
+                            fr: 'Raison d’audit requise pour test ou rejeu',
+                          })}
+                        />
+                      </FormSection>
+
+                      <FormSection
+                        title={text({
+                          en: 'Attempt Timeline',
+                          zh_HANS: '尝试时间线',
+                          zh_HANT: '嘗試時間線',
+                          ja: '試行タイムライン',
+                          ko: '시도 타임라인',
+                          fr: 'Chronologie des tentatives',
+                        })}
+                        description={text({
+                          en: 'Only redacted summaries, status, trace, retry, and replay metadata are shown.',
+                          zh_HANS: '这里只显示脱敏摘要、状态、追踪、重试与重放元数据。',
+                          zh_HANT: '这里只顯示脫敏摘要、狀態、追蹤、重試與重放中繼資料。',
+                          ja: 'マスク済みの概要、状態、トレース、再試行、再実行メタデータのみを表示します。',
+                          ko: '마스킹된 요약, 상태, 추적, 재시도, 재실행 메타데이터만 표시합니다.',
+                          fr: 'Seuls les résumés expurgés, états, traces, retries et métadonnées de rejeu sont affichés.',
+                        })}
+                      >
+                        {webhookDeliveryPanel.unavailableReason ? (
+                          <StateView
+                            status="unavailable"
+                            title={text({
+                              en: 'Delivery attempts unavailable',
+                              zh_HANS: '投递尝试不可用',
+                              zh_HANT: '投遞嘗試不可用',
+                              ja: '配信試行を利用できません',
+                              ko: '전달 시도를 사용할 수 없습니다',
+                              fr: 'Tentatives de livraison indisponibles',
+                            })}
+                            description={webhookDeliveryPanel.unavailableReason}
+                          />
+                        ) : webhookDeliveryPanel.error ? (
+                          <StateView
+                            status="error"
+                            title={text({
+                              en: 'Delivery attempts failed to load',
+                              zh_HANS: '投递尝试加载失败',
+                              zh_HANT: '投遞嘗試載入失敗',
+                              ja: '配信試行の読み込みに失敗しました',
+                              ko: '전달 시도 로드 실패',
+                              fr: 'Échec du chargement des tentatives',
+                            })}
+                            description={webhookDeliveryPanel.error}
+                          />
+                        ) : webhookDeliveryPanel.loading ? (
+                          <StateView
+                            status="empty"
+                            title={text({
+                              en: 'Loading delivery attempts',
+                              zh_HANS: '正在加载投递尝试',
+                              zh_HANT: '正在載入投遞嘗試',
+                              ja: '配信試行を読み込んでいます',
+                              ko: '전달 시도 로드 중',
+                              fr: 'Chargement des tentatives',
+                            })}
+                          />
+                        ) : !webhookDeliveryPanel.data?.items.length ? (
+                          <StateView
+                            status="empty"
+                            title={text({
+                              en: 'No delivery attempts yet',
+                              zh_HANS: '暂无投递尝试',
+                              zh_HANT: '暫無投遞嘗試',
+                              ja: '配信試行はまだありません',
+                              ko: '아직 전달 시도가 없습니다',
+                              fr: 'Aucune tentative pour le moment',
+                            })}
+                            description={text({
+                              en: 'Record a dry-run test to create the first outbox and attempt proof.',
+                              zh_HANS: '记录一次 dry-run 测试即可创建第一条 outbox 与 attempt 证明。',
+                              zh_HANT: '記錄一次 dry-run 測試即可建立第一筆 outbox 與 attempt 證明。',
+                              ja: 'ドライランテストを記録して、最初の outbox と試行証跡を作成します。',
+                              ko: 'dry-run 테스트를 기록해 첫 outbox와 attempt 증거를 만듭니다.',
+                              fr: 'Enregistrez un test dry-run pour créer la première preuve outbox et tentative.',
+                            })}
+                          />
+                        ) : (
+                          <div className="space-y-3">
+                            {webhookDeliveryPanel.data.items.map((attempt) => (
+                              <div
+                                key={attempt.id}
+                                className="rounded-lg border border-slate-200 bg-white/90 p-4"
+                              >
+                                <div className="flex flex-wrap items-start justify-between gap-3">
+                                  <div className="space-y-1">
+                                    <div className="flex flex-wrap items-center gap-2">
+                                      <StatusBadge
+                                        tone={
+                                          attempt.status === 'delivered'
+                                            ? 'success'
+                                            : attempt.status === 'failed' ||
+                                                attempt.status === 'dead_lettered' ||
+                                                attempt.status === 'blocked'
+                                              ? 'danger'
+                                              : 'info'
+                                        }
+                                        label={formatDeliveryStatusLabel(attempt.status)}
+                                      />
+                                      <span className="text-xs tracking-[0.14em] text-slate-500 uppercase">
+                                        {attempt.eventCode} · {attempt.payloadVersion}
+                                      </span>
+                                    </div>
+                                    <p className="text-sm text-slate-600">
+                                      {formatDateTime(attempt.createdAt)} ·{' '}
+                                      {formatDeliveryDispatchLabel(attempt.dispatchMode)}
+                                    </p>
+                                    <p className="break-all text-xs text-slate-500">
+                                      {attempt.traceId || attempt.outboxId}
+                                    </p>
+                                  </div>
+                                  <SecondaryButton
+                                    onClick={() => void handleWebhookReplayAttempt(attempt)}
+                                    disabled={
+                                      webhookDeliverySubmitting || !webhookDeliveryReason.trim()
+                                    }
+                                  >
+                                    <RotateCcw className="h-4 w-4" />
+                                    {text({
+                                      en: 'Replay dry-run',
+                                      zh_HANS: '重放 dry-run',
+                                      zh_HANT: '重放 dry-run',
+                                      ja: 'ドライラン再実行',
+                                      ko: 'dry-run 재실행',
+                                      fr: 'Rejeu dry-run',
+                                    })}
+                                  </SecondaryButton>
+                                </div>
+                                <div className="mt-3 grid gap-3 text-sm sm:grid-cols-2">
+                                  <SummaryCard
+                                    label={text({
+                                      en: 'Attempt',
+                                      zh_HANS: '尝试',
+                                      zh_HANT: '嘗試',
+                                      ja: '試行',
+                                      ko: '시도',
+                                      fr: 'Tentative',
+                                    })}
+                                    value={`#${attempt.attemptNumber}`}
+                                    hint={text({
+                                      en: 'Outbox attempt number for retry and replay audit.',
+                                      zh_HANS: '用于重试与重放审计的 outbox 尝试编号。',
+                                      zh_HANT: '用於重試與重放稽核的 outbox 嘗試編號。',
+                                      ja: '再試行と再実行監査のための outbox 試行番号です。',
+                                      ko: '재시도와 재실행 감사를 위한 outbox 시도 번호입니다.',
+                                      fr: 'Numéro de tentative outbox pour retry et audit de rejeu.',
+                                    })}
+                                  />
+                                  <SummaryCard
+                                    label={text({
+                                      en: 'Latency',
+                                      zh_HANS: '延迟',
+                                      zh_HANT: '延遲',
+                                      ja: 'レイテンシ',
+                                      ko: '지연 시간',
+                                      fr: 'Latence',
+                                    })}
+                                    value={formatNullableMetric(attempt.latencyMs, 'ms')}
+                                    hint={text({
+                                      en: 'Recorded only when a dispatcher or provider reports timing.',
+                                      zh_HANS: '仅在 dispatcher 或服务商回报耗时时记录。',
+                                      zh_HANT: '僅在 dispatcher 或供應商回報耗時時記錄。',
+                                      ja: 'ディスパッチャーまたはプロバイダーが時間を報告した場合のみ記録されます。',
+                                      ko: 'dispatcher 또는 제공자가 시간을 보고할 때만 기록됩니다.',
+                                      fr: 'Enregistrée uniquement quand un dispatcher ou fournisseur remonte une durée.',
+                                    })}
+                                  />
+                                  <SummaryCard
+                                    label={text({
+                                      en: 'Response',
+                                      zh_HANS: '响应',
+                                      zh_HANT: '回應',
+                                      ja: 'レスポンス',
+                                      ko: '응답',
+                                      fr: 'Réponse',
+                                    })}
+                                    value={attempt.responseStatus?.toString() ?? 'dry-run'}
+                                    hint={attempt.errorCode ?? attempt.errorMessage ?? 'redacted'}
+                                  />
+                                  <SummaryCard
+                                    label={text({
+                                      en: 'Next retry',
+                                      zh_HANS: '下次重试',
+                                      zh_HANT: '下次重試',
+                                      ja: '次の再試行',
+                                      ko: '다음 재시도',
+                                      fr: 'Prochain retry',
+                                    })}
+                                    value={formatDateTime(
+                                      attempt.nextRetryAt,
+                                      text('Not scheduled', '未安排', '未予定')
+                                    )}
+                                    hint={text({
+                                      en: 'DLQ and retry scheduling remain TCRN-owned state.',
+                                      zh_HANS: 'DLQ 与重试调度仍是 TCRN 拥有的状态。',
+                                      zh_HANT: 'DLQ 與重試排程仍是 TCRN 擁有的狀態。',
+                                      ja: 'DLQ と再試行スケジュールは TCRN 所有の状態です。',
+                                      ko: 'DLQ와 재시도 예약은 TCRN 소유 상태입니다.',
+                                      fr: 'DLQ et planification de retry restent des états détenus par TCRN.',
+                                    })}
+                                  />
+                                  <SummaryCard
+                                    label={text({
+                                      en: 'Replay reason',
+                                      zh_HANS: '重放原因',
+                                      zh_HANT: '重放原因',
+                                      ja: '再実行理由',
+                                      ko: '재실행 사유',
+                                      fr: 'Raison de rejeu',
+                                    })}
+                                    value={
+                                      attempt.replayReason
+                                        ? attempt.replayReason.slice(0, 36)
+                                        : text('Not replayed', '未重放', '未再実行')
+                                    }
+                                    hint={text({
+                                      en: 'Operator-entered reason stored for test and replay audit.',
+                                      zh_HANS: '测试和重放审计保存的操作员输入原因。',
+                                      zh_HANT: '測試和重放稽核保存的操作員輸入原因。',
+                                      ja: 'テストと再実行監査のために保存されたオペレーター入力理由です。',
+                                      ko: '테스트와 재실행 감사를 위해 저장된 운영자 입력 사유입니다.',
+                                      fr: "Raison saisie par l'opérateur pour audit de test et rejeu.",
+                                    })}
+                                  />
+                                  <SummaryCard
+                                    label={text({
+                                      en: 'Payload hash',
+                                      zh_HANS: 'Payload 哈希',
+                                      zh_HANT: 'Payload 雜湊',
+                                      ja: 'Payload ハッシュ',
+                                      ko: 'Payload 해시',
+                                      fr: 'Hash payload',
+                                    })}
+                                    value={attempt.payloadHash.slice(0, 12)}
+                                    hint={attempt.idempotencyKey}
+                                  />
+                                </div>
+                                <div className="mt-3 grid gap-3 text-sm sm:grid-cols-2">
+                                  <div className="rounded-lg border border-slate-200 bg-slate-50/80 p-3">
+                                    <p className="text-xs font-semibold tracking-[0.14em] text-slate-500 uppercase">
+                                      {text({
+                                        en: 'Request summary',
+                                        zh_HANS: '请求摘要',
+                                        zh_HANT: '請求摘要',
+                                        ja: 'リクエスト概要',
+                                        ko: '요청 요약',
+                                        fr: 'Résumé requête',
+                                      })}
+                                    </p>
+                                    <p className="mt-2 break-words text-xs leading-5 text-slate-600">
+                                      {formatJsonSummary(attempt.requestBodySummary)}
+                                    </p>
+                                  </div>
+                                  <div className="rounded-lg border border-slate-200 bg-slate-50/80 p-3">
+                                    <p className="text-xs font-semibold tracking-[0.14em] text-slate-500 uppercase">
+                                      {text({
+                                        en: 'Response summary',
+                                        zh_HANS: '响应摘要',
+                                        zh_HANT: '回應摘要',
+                                        ja: 'レスポンス概要',
+                                        ko: '응답 요약',
+                                        fr: 'Résumé réponse',
+                                      })}
+                                    </p>
+                                    <p className="mt-2 break-words text-xs leading-5 text-slate-600">
+                                      {formatJsonSummary(attempt.responseBodySummary)}
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
                         )}
                       </FormSection>
                     </ActionDrawer>

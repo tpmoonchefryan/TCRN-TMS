@@ -19,6 +19,7 @@ import {
   ValidateIf,
   ValidateNested,
 } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 import type { LocalizedText, PartialLocalizedText } from '@tcrn/shared';
 
@@ -292,6 +293,71 @@ export class UpdateWebhookDto {
 
   @IsInt()
   version!: number;
+}
+
+export class WebhookDeliveryAttemptQueryDto {
+  @IsOptional()
+  @IsIn([
+    'dry_run',
+    'pending',
+    'delivered',
+    'failed',
+    'retry_scheduled',
+    'dead_lettered',
+    'replayed',
+    'blocked',
+  ])
+  status?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  page?: number = 1;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(100)
+  pageSize?: number = 20;
+}
+
+export class WebhookDeliveryOperationDto {
+  @ApiProperty({
+    description: 'Operator-entered audit reason for a webhook test delivery or replay.',
+    example: 'Validate endpoint readiness after rotating the receiver secret.',
+  })
+  @IsString()
+  @MaxLength(512)
+  reason!: string;
+
+  @ApiPropertyOptional({
+    description: 'When true, records outbox and attempt state without outbound HTTP dispatch.',
+    default: true,
+  })
+  @IsOptional()
+  @Transform(({ value }) => toBooleanQueryValue(value))
+  @IsBoolean()
+  dryRun?: boolean = true;
+
+  @ApiPropertyOptional({
+    description: 'TCRN-owned event code used for a dry-run test payload.',
+    enum: WebhookEventType,
+  })
+  @IsOptional()
+  @IsEnum(WebhookEventType)
+  sampleEventCode?: WebhookEventType;
+
+  @ApiPropertyOptional({
+    description:
+      'Optional idempotency key. Duplicate keys for the same operation return the existing outbox result; keys already used for a different operation return 409 RES_CONFLICT.',
+    example: 'TEST_P7_WEBHOOK_IDEMPOTENCY',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(128)
+  idempotencyKey?: string;
 }
 
 // =============================================================================

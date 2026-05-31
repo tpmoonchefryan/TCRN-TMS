@@ -90,7 +90,17 @@ describe('WebhookService', () => {
     };
 
     mockConfigService = {
-      get: vi.fn().mockReturnValue(true),
+      get: vi.fn((key: string, defaultValue?: unknown) => {
+        if (key === 'WEBHOOK_REQUIRE_HTTPS') {
+          return true;
+        }
+
+        if (key === 'WEBHOOK_TARGET_RESOLVE_DNS') {
+          return false;
+        }
+
+        return defaultValue;
+      }),
     };
 
     service = new WebhookService(
@@ -216,7 +226,6 @@ describe('WebhookService', () => {
       {
         definitionKey: 'customer-lifecycle',
         url: 'https://example.com/webhook',
-        monitoredTalentIds: ['11111111-1111-4111-8111-111111111111'],
       } as CreateWebhookDto,
       mockContext
     );
@@ -229,7 +238,6 @@ describe('WebhookService', () => {
           extraData: expect.objectContaining({
             definitionKey: 'customer-lifecycle',
             definitionCode: 'CUSTOMER_LIFECYCLE',
-            monitoredTalentIds: ['11111111-1111-4111-8111-111111111111'],
           }),
         }),
       })
@@ -266,6 +274,153 @@ describe('WebhookService', () => {
       response: {
         code: ErrorCodes.VALIDATION_FAILED,
         message: "Webhook definition 'customer-lifecycle' controls code, name, and event fields",
+      },
+    });
+  });
+
+  it('keeps definition-backed webhook events locked during update', async () => {
+    mockPrisma.webhook.findUnique.mockResolvedValueOnce(
+      buildWebhookRecord({
+        code: 'CUSTOMER_LIFECYCLE',
+        version: 7,
+        events: ['customer.created'],
+        extraData: {
+          definitionKey: 'customer-lifecycle',
+          definitionCode: 'CUSTOMER_LIFECYCLE',
+        },
+      })
+    );
+
+    await expect(
+      service.update(
+        'webhook-1',
+        {
+          events: [WebhookEventType.REPORT_FAILED],
+          version: 7,
+        } as UpdateWebhookDto,
+        mockContext
+      )
+    ).rejects.toMatchObject({
+      response: {
+        code: ErrorCodes.VALIDATION_FAILED,
+        message: "Webhook definition 'customer-lifecycle' controls the event set",
+      },
+    });
+
+    expect(mockPrisma.webhook.update).not.toHaveBeenCalled();
+  });
+
+  it('restores the definition event set when updating endpoint metadata', async () => {
+    mockPrisma.webhook.findUnique
+      .mockResolvedValueOnce(
+        buildWebhookRecord({
+          code: 'CUSTOMER_LIFECYCLE',
+          version: 7,
+          events: ['customer.created'],
+          extraData: {
+            definitionKey: 'customer-lifecycle',
+            definitionCode: 'CUSTOMER_LIFECYCLE',
+          },
+        })
+      )
+      .mockResolvedValueOnce(
+        buildWebhookRecord({
+          code: 'CUSTOMER_LIFECYCLE',
+          version: 8,
+          events: ['customer.created', 'customer.updated', 'customer.deactivated'],
+          extraData: {
+            definitionKey: 'customer-lifecycle',
+            definitionCode: 'CUSTOMER_LIFECYCLE',
+          },
+        })
+      );
+
+    await service.update(
+      'webhook-1',
+      {
+        url: 'https://example.com/updated-webhook',
+        version: 7,
+      } as UpdateWebhookDto,
+      mockContext
+    );
+
+    expect(mockPrisma.webhook.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          events: ['customer.created', 'customer.updated', 'customer.deactivated'],
+        }),
+      })
+    );
+  });
+
+  it('rejects empty custom webhook event sets on update', async () => {
+    mockPrisma.webhook.findUnique.mockResolvedValueOnce(buildWebhookRecord({ version: 2 }));
+
+    await expect(
+      service.update(
+        'webhook-1',
+        {
+          events: [],
+          version: 2,
+        } as UpdateWebhookDto,
+        mockContext
+      )
+    ).rejects.toMatchObject({
+      response: {
+        code: ErrorCodes.VALIDATION_FAILED,
+        message: 'Webhook events cannot be empty',
+      },
+    });
+  });
+
+  it('requires tenant context before accepting monitored talent scopes', async () => {
+    mockPrisma.webhook.findUnique.mockResolvedValueOnce(null);
+
+    await expect(
+      service.create(
+        {
+          code: 'TEST_WEBHOOK',
+          name: createLocalizedText({ en: 'Test Webhook' }),
+          url: 'https://example.com/webhook',
+          events: [WebhookEventType.CUSTOMER_CREATED],
+          monitoredTalentIds: ['11111111-1111-4111-8111-111111111111'],
+        } as CreateWebhookDto,
+        mockContext
+      )
+    ).rejects.toMatchObject({
+      response: {
+        code: ErrorCodes.VALIDATION_FAILED,
+        message: 'Monitored talent scope requires tenant context',
+      },
+    });
+  });
+
+  it('rejects monitored talent ids outside the current active tenant scope', async () => {
+    mockPrisma.$queryRawUnsafe
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([
+        {
+          id: '11111111-1111-4111-8111-111111111111',
+          subsidiaryId: null,
+          isActive: false,
+        },
+      ]);
+
+    await expect(
+      service.create(
+        {
+          code: 'TEST_WEBHOOK',
+          name: createLocalizedText({ en: 'Test Webhook' }),
+          url: 'https://example.com/webhook',
+          events: [WebhookEventType.CUSTOMER_CREATED],
+          monitoredTalentIds: ['11111111-1111-4111-8111-111111111111'],
+        } as CreateWebhookDto,
+        tenantContext
+      )
+    ).rejects.toMatchObject({
+      response: {
+        code: ErrorCodes.VALIDATION_FAILED,
+        message: 'Monitored talents must belong to the current tenant and be active',
       },
     });
   });

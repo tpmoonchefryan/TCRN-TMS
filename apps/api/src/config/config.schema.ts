@@ -41,6 +41,13 @@ export const configValidationSchema = Joi.object({
   // NATS
   NATS_URL: Joi.string().default('nats://localhost:4222'),
 
+  // Webhook delivery adapter
+  WEBHOOK_REQUIRE_HTTPS: Joi.boolean().default(true),
+  WEBHOOK_TARGET_RESOLVE_DNS: Joi.boolean().default(false),
+  WEBHOOK_DELIVERY_DISPATCH_MODE: Joi.string()
+    .valid('disabled', 'local_stub', 'local_dispatch', 'provider_dispatch')
+    .default('disabled'),
+
   // Import limits (PRD §21)
   IMPORT_MAX_ROWS: Joi.number().default(50000),
 

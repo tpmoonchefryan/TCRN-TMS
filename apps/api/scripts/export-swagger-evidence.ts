@@ -11,13 +11,14 @@ import { AppModule } from '../src/app.module';
 import { applyGlobalSwaggerParameters } from '../src/config/swagger-global-parameters';
 import { buildSwaggerConfig, CONFIG_TAGS } from '../src/config/swagger.config';
 import { AuthModule } from '../src/modules/auth';
+import { IntegrationModule } from '../src/modules/integration/integration.module';
 import { ObservabilityAdaptersModule } from '../src/modules/observability-adapters';
 import { PlatformToolsModule } from '../src/modules/platform-tools';
 import { loadRepoEnvFiles } from '../src/repo-env';
 
 interface CliOptions {
   out: string;
-  filter: 'sso' | 'platform-tools' | 'observability';
+  filter: 'sso' | 'platform-tools' | 'observability' | 'webhook-delivery';
 }
 
 const REQUIRED_SSO_PATH_SUFFIXES = [
@@ -51,6 +52,14 @@ const REQUIRED_OBSERVABILITY_PATH_SUFFIXES = [
   '/observability/adapters/{adapterCode}/deep-link',
 ] as const;
 
+const REQUIRED_WEBHOOK_DELIVERY_PATH_SUFFIXES = [
+  '/integration/webhooks/events',
+  '/integration/webhooks/{webhookId}/delivery-attempts',
+  '/integration/webhooks/{webhookId}/delivery-attempts/{attemptId}',
+  '/integration/webhooks/{webhookId}/test-delivery',
+  '/integration/webhooks/{webhookId}/delivery-attempts/{attemptId}/replay',
+] as const;
+
 function parseArgs(argv: string[]): CliOptions {
   const options: CliOptions = {
     out: 'swagger-sso-docs.json',
@@ -66,7 +75,9 @@ function parseArgs(argv: string[]): CliOptions {
       index += 1;
     } else if (arg === '--filter' && next) {
       options.filter =
-        next === 'platform-tools' || next === 'observability' ? next : 'sso';
+        next === 'platform-tools' || next === 'observability' || next === 'webhook-delivery'
+          ? next
+          : 'sso';
       index += 1;
     }
   }
@@ -170,6 +181,96 @@ function buildObservabilityEvidence(document: OpenAPIObject) {
   };
 }
 
+function buildWebhookDeliveryEvidence(document: OpenAPIObject) {
+  const webhookDeliveryPaths = Object.keys(document.paths)
+    .filter((pathName) => normalizePathSuffix(pathName).startsWith('/integration/webhooks'))
+    .sort();
+  const normalizedPathSuffixes = new Set(webhookDeliveryPaths.map(normalizePathSuffix));
+  const missingRequiredPaths = REQUIRED_WEBHOOK_DELIVERY_PATH_SUFFIXES.filter(
+    (requiredPath) => !normalizedPathSuffixes.has(requiredPath)
+  );
+  const operationProof = REQUIRED_WEBHOOK_DELIVERY_PATH_SUFFIXES.map((requiredPath) => {
+    const pathItem = pathBySuffix(document, requiredPath);
+    const operation =
+      requiredPath.includes('test-delivery') || requiredPath.includes('replay')
+        ? pathItem?.post
+        : pathItem?.get;
+
+    return {
+      path: requiredPath,
+      operationId: operation?.operationId ?? null,
+      tags: operation?.tags ?? [],
+      statuses: Object.keys(operation?.responses ?? {}).sort(),
+      hasBearerSecurity: Boolean(operation?.security) || JSON.stringify(document).includes('bearer'),
+    };
+  });
+  const documentText = JSON.stringify(document);
+  const rawMaterialHits = [
+    'secretValue',
+    'clientSecret',
+    'private_key',
+    'access_token',
+    'id_token',
+    'authorization_code',
+    'password',
+    'providerToken',
+    'providerSecret',
+    'x-tcrn-signature=',
+    'report binary',
+    'request_body',
+    'response_body',
+  ]
+    .filter((needle) => documentText.includes(needle))
+    .map((needle) => ({ needle, classification: 'forbidden' }));
+  const forbiddenRawMaterial = rawMaterialHits.map((hit) => hit.needle);
+  const deliveryMutationOperations = operationProof.filter(
+    (operation) => operation.path.includes('test-delivery') || operation.path.includes('replay')
+  );
+  const readOperations = operationProof.filter(
+    (operation) => !operation.path.includes('test-delivery') && !operation.path.includes('replay')
+  );
+  const deliveryMutationStatusesPresent = deliveryMutationOperations.every(
+    (operation) => operation.statuses.includes('202') && operation.statuses.includes('409')
+  );
+  const readStatusesPresent = readOperations.every((operation) => operation.statuses.includes('200'));
+
+  return {
+    checkedAt: new Date().toISOString(),
+    test_layer: 'generated_openapi',
+    data_mode: 'read_only_generated_doc',
+    target_scope: 'delivery_attempt',
+    webhookDeliveryPaths,
+    missingRequiredPaths,
+    operationProof,
+    rawMaterialHits,
+    forbiddenRawMaterial,
+    bearerAuthPresent: documentText.includes('bearer') || documentText.includes('JWT-auth'),
+    operationIdsPresent: operationProof.every((operation) => operation.operationId),
+    responseStatusesPresent: deliveryMutationStatusesPresent && readStatusesPresent,
+    idempotencyConflictStatusPresent: deliveryMutationOperations.every((operation) =>
+      operation.statuses.includes('409')
+    ),
+    dryRunReasonDtoPresent:
+      documentText.includes('WebhookDeliveryOperationDto') &&
+      documentText.includes('reason') &&
+      documentText.includes('dryRun') &&
+      documentText.includes('different operation'),
+    noSwaggerEditorAuthority: !documentText.includes('swagger-editor'),
+    passed:
+      missingRequiredPaths.length === 0 &&
+      rawMaterialHits.length === 0 &&
+      (documentText.includes('bearer') || documentText.includes('JWT-auth')) &&
+      operationProof.every((operation) => operation.operationId) &&
+      deliveryMutationStatusesPresent &&
+      readStatusesPresent &&
+      documentText.includes('WebhookDeliveryOperationDto') &&
+      documentText.includes('reason') &&
+      documentText.includes('dryRun') &&
+      documentText.includes('different operation') &&
+      !documentText.includes('swagger-editor'),
+  };
+}
+
 function cloneSerializableSwaggerValue<T>(value: T, stack = new WeakSet<object>()): T {
   if (!value || typeof value !== 'object') {
     return value;
@@ -244,12 +345,16 @@ async function main() {
       ? 'TCRN TMS - Phase 4 Platform Tool Evidence'
       : options.filter === 'observability'
         ? 'TCRN TMS - Phase 5 Observability Adapter Evidence'
-      : 'TCRN TMS - Phase 3 SSO Evidence',
+        : options.filter === 'webhook-delivery'
+          ? 'TCRN TMS - Phase 7 Webhook Delivery Evidence'
+          : 'TCRN TMS - Phase 3 SSO Evidence',
     options.filter === 'platform-tools'
       ? 'Generated Platform Tool Connections OpenAPI evidence for Phase 4 acceptance'
       : options.filter === 'observability'
         ? 'Generated Observability Adapter OpenAPI evidence for Phase 5 acceptance'
-      : 'Generated SSO OpenAPI evidence for Phase 3 acceptance',
+        : options.filter === 'webhook-delivery'
+          ? 'Generated Webhook Delivery OpenAPI evidence for Phase 7 acceptance'
+          : 'Generated SSO OpenAPI evidence for Phase 3 acceptance',
     '1.0.0',
     CONFIG_TAGS
   );
@@ -260,10 +365,28 @@ async function main() {
           ? [PlatformToolsModule]
           : options.filter === 'observability'
             ? [ObservabilityAdaptersModule]
-            : [AuthModule],
+            : options.filter === 'webhook-delivery'
+              ? [IntegrationModule]
+              : [AuthModule],
     })
   ) as OpenAPIObject;
   applyGlobalSwaggerParameters(document);
+
+  if (options.filter === 'webhook-delivery') {
+    const payload = buildWebhookDeliveryEvidence(document);
+
+    mkdirSync(path.dirname(options.out), { recursive: true });
+    writeFileSync(options.out, `${JSON.stringify(payload, null, 2)}\n`, 'utf8');
+    console.log(JSON.stringify(payload, null, 2));
+
+    await app.close();
+
+    if (!payload.passed) {
+      process.exitCode = 1;
+    }
+
+    return;
+  }
 
   if (options.filter === 'observability') {
     const payload = buildObservabilityEvidence(document);

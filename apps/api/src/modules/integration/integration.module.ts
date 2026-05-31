@@ -5,6 +5,7 @@ import { AdapterReadApplicationService } from './application/adapter-read.servic
 import { AdapterResolutionApplicationService } from './application/adapter-resolution.service';
 import { AdapterWriteApplicationService } from './application/adapter-write.service';
 import { ApiKeyApplicationService } from './application/api-key.service';
+import { WebhookDeliveryApplicationService } from './application/webhook-delivery.service';
 import { WebhookReadApplicationService } from './application/webhook-read.service';
 import { WebhookWriteApplicationService } from './application/webhook-write.service';
 import {
@@ -17,6 +18,7 @@ import { AdapterReadRepository } from './infrastructure/adapter-read.repository'
 import { AdapterResolutionRepository } from './infrastructure/adapter-resolution.repository';
 import { AdapterWriteRepository } from './infrastructure/adapter-write.repository';
 import { ApiKeyRepository } from './infrastructure/api-key.repository';
+import { WebhookDeliveryRepository } from './infrastructure/webhook-delivery.repository';
 import { WebhookReadRepository } from './infrastructure/webhook-read.repository';
 import { WebhookWriteRepository } from './infrastructure/webhook-write.repository';
 import {
@@ -49,6 +51,8 @@ import {
     WebhookReadApplicationService,
     WebhookWriteRepository,
     WebhookWriteApplicationService,
+    WebhookDeliveryRepository,
+    WebhookDeliveryApplicationService,
     WebhookService,
     ApiKeyService,
     ApiKeyGuard,

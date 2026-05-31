@@ -167,9 +167,21 @@ export interface IntegrationActivationResponse {
 
 export interface WebhookEventDefinition {
   event: WebhookEventType;
+  eventCode?: WebhookEventType;
   name: string;
+  label?: LocalizedText;
   description: string;
+  descriptionText?: LocalizedText;
   category: string;
+  definitionKey?: string;
+  payloadVersion?: string;
+  producer?: string;
+  piiClass?: 'none' | 'reference' | 'limited_pii';
+  retention?: string;
+  subscriptionEligible?: boolean;
+  deprecated?: boolean;
+  schemaRef?: string;
+  redactionPolicy?: string;
 }
 
 export interface IntegrationWebhookListItemRecord {
@@ -204,6 +216,73 @@ export interface IntegrationWebhookDetailRecord extends IntegrationWebhookListIt
 export interface IntegrationDeleteWebhookResponse {
   id: string;
   deleted: boolean;
+}
+
+export type WebhookDeliveryAttemptStatus =
+  | 'dry_run'
+  | 'pending'
+  | 'delivered'
+  | 'failed'
+  | 'retry_scheduled'
+  | 'dead_lettered'
+  | 'replayed'
+  | 'blocked';
+
+export interface WebhookDeliveryAttemptRecord {
+  id: string;
+  outboxId: string;
+  webhookId: string | null;
+  eventCode: WebhookEventType;
+  payloadVersion: string;
+  idempotencyKey: string;
+  payloadHash: string;
+  attemptNumber: number;
+  status: WebhookDeliveryAttemptStatus;
+  dispatchMode: 'disabled' | 'local_stub' | 'local_dispatch' | 'provider_dispatch';
+  endpointUrl: string;
+  requestHeaders: Record<string, unknown>;
+  requestBodySummary: unknown;
+  responseStatus: number | null;
+  responseBodySummary: unknown;
+  errorCode: string | null;
+  errorMessage: string | null;
+  latencyMs: number | null;
+  nextRetryAt: string | null;
+  deliveredAt: string | null;
+  replayReason: string | null;
+  traceId: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface WebhookDeliveryAttemptPage {
+  items: WebhookDeliveryAttemptRecord[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+export interface WebhookDeliveryOperationPayload {
+  reason: string;
+  dryRun?: boolean;
+  sampleEventCode?: WebhookEventType;
+  idempotencyKey?: string;
+}
+
+export interface WebhookDeliveryOperationResult {
+  accepted: boolean;
+  duplicate: boolean;
+  dryRun: boolean;
+  dispatchMode: WebhookDeliveryAttemptRecord['dispatchMode'];
+  status: WebhookDeliveryAttemptStatus | 'duplicate';
+  webhookId: string;
+  outboxId: string;
+  attemptId: string | null;
+  eventCode: WebhookEventType;
+  payloadVersion: string;
+  idempotencyKey: string;
+  traceId: string | null;
+  redacted: true;
 }
 
 export interface EmailConfigResponse {
@@ -696,6 +775,35 @@ export function reactivateWebhook(request: RequestFn, webhookId: string) {
   return request<IntegrationActivationResponse>(
     `/api/v1/integration/webhooks/${webhookId}/reactivate`,
     buildJsonRequestInit('POST')
+  );
+}
+
+export function listWebhookDeliveryAttempts(request: RequestFn, webhookId: string) {
+  return request<WebhookDeliveryAttemptPage>(
+    `/api/v1/integration/webhooks/${webhookId}/delivery-attempts`
+  );
+}
+
+export function createWebhookTestDelivery(
+  request: RequestFn,
+  webhookId: string,
+  payload: WebhookDeliveryOperationPayload
+) {
+  return request<WebhookDeliveryOperationResult>(
+    `/api/v1/integration/webhooks/${webhookId}/test-delivery`,
+    buildJsonRequestInit('POST', payload)
+  );
+}
+
+export function replayWebhookDeliveryAttempt(
+  request: RequestFn,
+  webhookId: string,
+  attemptId: string,
+  payload: WebhookDeliveryOperationPayload
+) {
+  return request<WebhookDeliveryOperationResult>(
+    `/api/v1/integration/webhooks/${webhookId}/delivery-attempts/${attemptId}/replay`,
+    buildJsonRequestInit('POST', payload)
   );
 }
 

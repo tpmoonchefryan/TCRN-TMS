@@ -90,6 +90,56 @@ export interface IntegrationWebhookDefinition {
   };
 }
 
+export type WebhookPiiClass = 'none' | 'reference' | 'limited_pii';
+
+export interface WebhookPayloadEnvelopeDefinition {
+  payloadVersion: string;
+  producer: string;
+  piiClass: WebhookPiiClass;
+  retention: string;
+  schemaRef: string;
+  redactionPolicy: string;
+}
+
+export interface WebhookEventCatalogItem {
+  event: string;
+  eventCode: string;
+  name: string;
+  label: IntegrationLocalizedText;
+  description: string;
+  descriptionText: IntegrationLocalizedText;
+  category: string;
+  definitionKey: string;
+  payloadVersion: string;
+  producer: string;
+  piiClass: WebhookPiiClass;
+  retention: string;
+  subscriptionEligible: boolean;
+  deprecated: boolean;
+  schemaRef: string;
+  redactionPolicy: string;
+}
+
+export interface WebhookDeliveryAdapterCatalogItem {
+  code:
+    | 'tcrn_webhook_outbox'
+    | 'tcrn_local_webhook_dispatcher'
+    | 'svix_delivery_provider'
+    | 'nats_jetstream_backbone'
+    | 'webhook_signature_policy';
+  label: string;
+  kind: 'built_in_store' | 'built_in_dispatcher' | 'external_provider' | 'stream_readiness' | 'policy';
+  phase4Family: 'config_only' | 'webhook_delivery' | 'event_backbone';
+  defaultState: 'active_when_feature_enabled' | 'disabled_readiness_only' | 'active_policy';
+  ownerPhase: 'phase_7';
+  humanUi: boolean;
+  ssoRequired: boolean;
+  deliveryCapability: string;
+  localDevModes: string[];
+  noProviderBehavior: string;
+  authorityBoundary: string;
+}
+
 // --- Adapter ---
 export interface IntegrationAdapter {
   id: string;
@@ -816,6 +866,408 @@ export const INTEGRATION_WEBHOOK_DEFINITIONS: IntegrationWebhookDefinition[] = [
     },
     events: ['report.completed', 'report.failed', 'import.completed', 'import.failed'],
     defaultRetryPolicy: { maxRetries: 3, backoffMs: 1000 },
+  },
+];
+
+const WEBHOOK_PAYLOAD_ENVELOPES: Record<
+  string,
+  Pick<WebhookPayloadEnvelopeDefinition, 'producer' | 'piiClass' | 'redactionPolicy'>
+> = {
+  'customer.created': {
+    producer: 'customer-profile',
+    piiClass: 'reference',
+    redactionPolicy: 'customer_reference_only',
+  },
+  'customer.updated': {
+    producer: 'customer-profile',
+    piiClass: 'limited_pii',
+    redactionPolicy: 'customer_change_summary_only',
+  },
+  'customer.deactivated': {
+    producer: 'customer-profile',
+    piiClass: 'reference',
+    redactionPolicy: 'customer_reference_only',
+  },
+  'membership.created': {
+    producer: 'membership',
+    piiClass: 'reference',
+    redactionPolicy: 'membership_reference_only',
+  },
+  'membership.renewed': {
+    producer: 'membership',
+    piiClass: 'reference',
+    redactionPolicy: 'membership_reference_only',
+  },
+  'membership.expired': {
+    producer: 'membership',
+    piiClass: 'reference',
+    redactionPolicy: 'membership_reference_only',
+  },
+  'marshmallow.received': {
+    producer: 'marshmallow-moderation',
+    piiClass: 'none',
+    redactionPolicy: 'public_moderation_safe_payload',
+  },
+  'marshmallow.approved': {
+    producer: 'marshmallow-moderation',
+    piiClass: 'none',
+    redactionPolicy: 'approved_public_payload_only',
+  },
+  'report.completed': {
+    producer: 'async-job',
+    piiClass: 'reference',
+    redactionPolicy: 'report_job_reference_only',
+  },
+  'report.failed': {
+    producer: 'async-job',
+    piiClass: 'none',
+    redactionPolicy: 'error_code_without_stacktrace',
+  },
+  'import.completed': {
+    producer: 'async-job',
+    piiClass: 'reference',
+    redactionPolicy: 'import_job_reference_only',
+  },
+  'import.failed': {
+    producer: 'async-job',
+    piiClass: 'none',
+    redactionPolicy: 'error_code_without_row_data',
+  },
+};
+
+const WEBHOOK_EVENT_LABELS: Record<
+  string,
+  { label: IntegrationLocalizedText; description: IntegrationLocalizedText }
+> = {
+  'customer.created': {
+    label: {
+      en: 'Customer created',
+      zh_HANS: '客户已创建',
+      zh_HANT: '客戶已建立',
+      ja: '顧客が作成されました',
+      ko: '고객이 생성됨',
+      fr: 'Client créé',
+    },
+    description: {
+      en: 'A customer profile reference was created.',
+      zh_HANS: '客户档案引用已创建。',
+      zh_HANT: '客戶檔案參照已建立。',
+      ja: '顧客プロフィール参照が作成されました。',
+      ko: '고객 프로필 참조가 생성되었습니다.',
+      fr: 'Une référence de profil client a été créée.',
+    },
+  },
+  'customer.updated': {
+    label: {
+      en: 'Customer updated',
+      zh_HANS: '客户已更新',
+      zh_HANT: '客戶已更新',
+      ja: '顧客が更新されました',
+      ko: '고객이 업데이트됨',
+      fr: 'Client mis à jour',
+    },
+    description: {
+      en: 'A customer profile reference or change summary was updated.',
+      zh_HANS: '客户档案引用或变更摘要已更新。',
+      zh_HANT: '客戶檔案參照或變更摘要已更新。',
+      ja: '顧客プロフィール参照または変更概要が更新されました。',
+      ko: '고객 프로필 참조 또는 변경 요약이 업데이트되었습니다.',
+      fr: 'Une référence de profil client ou un résumé de changement a été mis à jour.',
+    },
+  },
+  'customer.deactivated': {
+    label: {
+      en: 'Customer deactivated',
+      zh_HANS: '客户已停用',
+      zh_HANT: '客戶已停用',
+      ja: '顧客が停止されました',
+      ko: '고객이 비활성화됨',
+      fr: 'Client désactivé',
+    },
+    description: {
+      en: 'A customer profile reference was deactivated.',
+      zh_HANS: '客户档案引用已停用。',
+      zh_HANT: '客戶檔案參照已停用。',
+      ja: '顧客プロフィール参照が停止されました。',
+      ko: '고객 프로필 참조가 비활성화되었습니다.',
+      fr: 'Une référence de profil client a été désactivée.',
+    },
+  },
+  'membership.created': {
+    label: {
+      en: 'Membership created',
+      zh_HANS: '会员已创建',
+      zh_HANT: '會員已建立',
+      ja: 'メンバーシップが作成されました',
+      ko: '멤버십이 생성됨',
+      fr: 'Adhésion créée',
+    },
+    description: {
+      en: 'A membership reference was created.',
+      zh_HANS: '会员引用已创建。',
+      zh_HANT: '會員參照已建立。',
+      ja: 'メンバーシップ参照が作成されました。',
+      ko: '멤버십 참조가 생성되었습니다.',
+      fr: "Une référence d'adhésion a été créée.",
+    },
+  },
+  'membership.renewed': {
+    label: {
+      en: 'Membership renewed',
+      zh_HANS: '会员已续期',
+      zh_HANT: '會員已續期',
+      ja: 'メンバーシップが更新されました',
+      ko: '멤버십이 갱신됨',
+      fr: 'Adhésion renouvelée',
+    },
+    description: {
+      en: 'A membership renewal reference was recorded.',
+      zh_HANS: '会员续期引用已记录。',
+      zh_HANT: '會員續期參照已記錄。',
+      ja: 'メンバーシップ更新参照が記録されました。',
+      ko: '멤버십 갱신 참조가 기록되었습니다.',
+      fr: "Une référence de renouvellement d'adhésion a été enregistrée.",
+    },
+  },
+  'membership.expired': {
+    label: {
+      en: 'Membership expired',
+      zh_HANS: '会员已过期',
+      zh_HANT: '會員已過期',
+      ja: 'メンバーシップが期限切れになりました',
+      ko: '멤버십이 만료됨',
+      fr: 'Adhésion expirée',
+    },
+    description: {
+      en: 'A membership expiry reference was recorded.',
+      zh_HANS: '会员过期引用已记录。',
+      zh_HANT: '會員過期參照已記錄。',
+      ja: 'メンバーシップ期限切れ参照が記録されました。',
+      ko: '멤버십 만료 참조가 기록되었습니다.',
+      fr: "Une référence d'expiration d'adhésion a été enregistrée.",
+    },
+  },
+  'marshmallow.received': {
+    label: {
+      en: 'Marshmallow received',
+      zh_HANS: '棉花糖已收到',
+      zh_HANT: '棉花糖已收到',
+      ja: 'マシュマロを受信しました',
+      ko: '마시멜로 수신됨',
+      fr: 'Marshmallow reçu',
+    },
+    description: {
+      en: 'A public moderation-safe marshmallow message was received.',
+      zh_HANS: '已收到公开且可安全审核的棉花糖消息。',
+      zh_HANT: '已收到公開且可安全審核的棉花糖訊息。',
+      ja: '公開かつモデレーション安全なマシュマロメッセージを受信しました。',
+      ko: '공개 검토에 안전한 마시멜로 메시지를 수신했습니다.',
+      fr: 'Un message Marshmallow public et sûr pour la modération a été reçu.',
+    },
+  },
+  'marshmallow.approved': {
+    label: {
+      en: 'Marshmallow approved',
+      zh_HANS: '棉花糖已通过审核',
+      zh_HANT: '棉花糖已通過審核',
+      ja: 'マシュマロが承認されました',
+      ko: '마시멜로가 승인됨',
+      fr: 'Marshmallow approuvé',
+    },
+    description: {
+      en: 'A public marshmallow message was approved.',
+      zh_HANS: '公开棉花糖消息已通过审核。',
+      zh_HANT: '公開棉花糖訊息已通過審核。',
+      ja: '公開マシュマロメッセージが承認されました。',
+      ko: '공개 마시멜로 메시지가 승인되었습니다.',
+      fr: 'Un message Marshmallow public a été approuvé.',
+    },
+  },
+  'report.completed': {
+    label: {
+      en: 'Report completed',
+      zh_HANS: '报表已完成',
+      zh_HANT: '報表已完成',
+      ja: 'レポートが完了しました',
+      ko: '보고서 완료됨',
+      fr: 'Rapport terminé',
+    },
+    description: {
+      en: 'A report job completed; the payload carries a job reference only.',
+      zh_HANS: '报表任务已完成；payload 仅包含任务引用。',
+      zh_HANT: '報表任務已完成；payload 僅包含任務參照。',
+      ja: 'レポートジョブが完了しました。ペイロードにはジョブ参照のみが含まれます。',
+      ko: '보고서 작업이 완료되었으며 payload에는 작업 참조만 포함됩니다.',
+      fr: 'Une tâche de rapport est terminée ; le payload contient seulement une référence.',
+    },
+  },
+  'report.failed': {
+    label: {
+      en: 'Report failed',
+      zh_HANS: '报表失败',
+      zh_HANT: '報表失敗',
+      ja: 'レポートが失敗しました',
+      ko: '보고서 실패',
+      fr: 'Rapport échoué',
+    },
+    description: {
+      en: 'A report job failed; the payload carries status and error code only.',
+      zh_HANS: '报表任务失败；payload 仅包含状态和错误代码。',
+      zh_HANT: '報表任務失敗；payload 僅包含狀態和錯誤代碼。',
+      ja: 'レポートジョブが失敗しました。ペイロードには状態とエラーコードのみが含まれます。',
+      ko: '보고서 작업이 실패했으며 payload에는 상태와 오류 코드만 포함됩니다.',
+      fr: "Une tâche de rapport a échoué ; le payload contient seulement l'état et le code d'erreur.",
+    },
+  },
+  'import.completed': {
+    label: {
+      en: 'Import completed',
+      zh_HANS: '导入已完成',
+      zh_HANT: '匯入已完成',
+      ja: 'インポートが完了しました',
+      ko: '가져오기 완료됨',
+      fr: 'Import terminé',
+    },
+    description: {
+      en: 'An import job completed; the payload carries a job reference only.',
+      zh_HANS: '导入任务已完成；payload 仅包含任务引用。',
+      zh_HANT: '匯入任務已完成；payload 僅包含任務參照。',
+      ja: 'インポートジョブが完了しました。ペイロードにはジョブ参照のみが含まれます。',
+      ko: '가져오기 작업이 완료되었으며 payload에는 작업 참조만 포함됩니다.',
+      fr: "Une tâche d'import est terminée ; le payload contient seulement une référence.",
+    },
+  },
+  'import.failed': {
+    label: {
+      en: 'Import failed',
+      zh_HANS: '导入失败',
+      zh_HANT: '匯入失敗',
+      ja: 'インポートが失敗しました',
+      ko: '가져오기 실패',
+      fr: 'Import échoué',
+    },
+    description: {
+      en: 'An import job failed; the payload carries status and error code only.',
+      zh_HANS: '导入任务失败；payload 仅包含状态和错误代码。',
+      zh_HANT: '匯入任務失敗；payload 僅包含狀態和錯誤代碼。',
+      ja: 'インポートジョブが失敗しました。ペイロードには状態とエラーコードのみが含まれます。',
+      ko: '가져오기 작업이 실패했으며 payload에는 상태와 오류 코드만 포함됩니다.',
+      fr: "Une tâche d'import a échoué ; le payload contient seulement l'état et le code d'erreur.",
+    },
+  },
+};
+
+export const WEBHOOK_EVENT_CATALOG: WebhookEventCatalogItem[] =
+  INTEGRATION_WEBHOOK_DEFINITIONS.flatMap((definition) =>
+    definition.events.map((event) => {
+      const envelope = WEBHOOK_PAYLOAD_ENVELOPES[event];
+      const text = WEBHOOK_EVENT_LABELS[event];
+
+      if (!envelope || !text) {
+        throw new Error(`Webhook event '${event}' is missing TCRN-owned catalog metadata`);
+      }
+
+      return {
+        event,
+        eventCode: event,
+        name: text.label.en,
+        label: text.label,
+        description: text.description.en,
+        descriptionText: text.description,
+        category: event.split('.')[0],
+        definitionKey: definition.key,
+        payloadVersion: 'v1',
+        producer: envelope.producer,
+        piiClass: envelope.piiClass,
+        retention: 'delivery_log_redacted_30d',
+        subscriptionEligible: true,
+        deprecated: false,
+        schemaRef: `webhook.payload.${event}.v1`,
+        redactionPolicy: envelope.redactionPolicy,
+      };
+    })
+  );
+
+export function getWebhookEventCatalogItem(eventCode: string | undefined) {
+  return WEBHOOK_EVENT_CATALOG.find((item) => item.eventCode === eventCode);
+}
+
+export const WEBHOOK_DELIVERY_ADAPTER_CATALOG: WebhookDeliveryAdapterCatalogItem[] = [
+  {
+    code: 'tcrn_webhook_outbox',
+    label: 'TCRN Webhook Outbox',
+    kind: 'built_in_store',
+    phase4Family: 'config_only',
+    defaultState: 'active_when_feature_enabled',
+    ownerPhase: 'phase_7',
+    humanUi: false,
+    ssoRequired: false,
+    deliveryCapability: 'Durable event enqueue, idempotency, delivery state, DLQ, and replay source.',
+    localDevModes: ['disabled', 'local-stub', 'test-fixture', 'local-dispatch'],
+    noProviderBehavior: 'Stores outbox and attempt state without outbound HTTP by default.',
+    authorityBoundary:
+      'Owns TCRN delivery state, idempotency, replay source, and audit without creating business events.',
+  },
+  {
+    code: 'tcrn_local_webhook_dispatcher',
+    label: 'TCRN Local Webhook Dispatcher',
+    kind: 'built_in_dispatcher',
+    phase4Family: 'config_only',
+    defaultState: 'disabled_readiness_only',
+    ownerPhase: 'phase_7',
+    humanUi: false,
+    ssoRequired: false,
+    deliveryCapability: 'Executes HTTP delivery from TCRN outbox in explicit local or self-hosted modes.',
+    localDevModes: ['disabled', 'local-stub', 'local-dispatch', 'test-fixture'],
+    noProviderBehavior: 'No outbound HTTP unless the dispatch mode explicitly enables it.',
+    authorityBoundary:
+      'Executes mechanics only; TCRN event catalog and subscriptions remain authoritative.',
+  },
+  {
+    code: 'svix_delivery_provider',
+    label: 'Svix-like Webhook Delivery Provider',
+    kind: 'external_provider',
+    phase4Family: 'webhook_delivery',
+    defaultState: 'disabled_readiness_only',
+    ownerPhase: 'phase_7',
+    humanUi: true,
+    ssoRequired: true,
+    deliveryCapability: 'Optional provider-backed HTTP delivery, retries, signing, replay, and status mirroring.',
+    localDevModes: ['disabled', 'stubbed', 'external-provided'],
+    noProviderBehavior: 'No remote calls; TCRN outbox remains pending or locally stubbed.',
+    authorityBoundary:
+      'Provider endpoint apps may mirror TCRN subscriptions only and cannot authorize events or tenants.',
+  },
+  {
+    code: 'nats_jetstream_backbone',
+    label: 'NATS JetStream Event Backbone',
+    kind: 'stream_readiness',
+    phase4Family: 'event_backbone',
+    defaultState: 'disabled_readiness_only',
+    ownerPhase: 'phase_7',
+    humanUi: false,
+    ssoRequired: false,
+    deliveryCapability:
+      'Readiness and classification only in Phase 7; stream bridge delivery is deferred to Phase 8.',
+    localDevModes: ['disabled', 'local-stub', 'external-provided'],
+    noProviderBehavior: 'No stream dependency; event producers write TCRN outbox or fixture no-op only.',
+    authorityBoundary:
+      'NATS subjects, streams, and consumers cannot define business events or subscription authorization in Phase 7.',
+  },
+  {
+    code: 'webhook_signature_policy',
+    label: 'Webhook Signature Policy',
+    kind: 'policy',
+    phase4Family: 'config_only',
+    defaultState: 'active_policy',
+    ownerPhase: 'phase_7',
+    humanUi: false,
+    ssoRequired: false,
+    deliveryCapability: 'HMAC timestamp, payload hash, replay-window, and rotation policy.',
+    localDevModes: ['always-available'],
+    noProviderBehavior: 'Delivery fails closed when signing material is required but missing.',
+    authorityBoundary:
+      'TCRN owns signing and replay rules; provider tokens and secrets are never exposed to ordinary tenants.',
   },
 ];
 

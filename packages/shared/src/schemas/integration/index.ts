@@ -245,6 +245,36 @@ export const UpdateWebhookSchema = z.object({
 export type CreateWebhookInput = z.infer<typeof CreateWebhookSchema>;
 export type UpdateWebhookInput = z.infer<typeof UpdateWebhookSchema>;
 
+export const WebhookDeliveryAttemptStatusSchema = z.enum([
+  'dry_run',
+  'pending',
+  'delivered',
+  'failed',
+  'retry_scheduled',
+  'dead_lettered',
+  'replayed',
+  'blocked',
+]);
+
+export const WebhookDeliveryAttemptQuerySchema = z.object({
+  status: WebhookDeliveryAttemptStatusSchema.optional(),
+  page: z.coerce.number().int().min(1).optional().default(1),
+  pageSize: z.coerce.number().int().min(1).max(100).optional().default(20),
+});
+
+export const WebhookDeliveryOperationSchema = z.object({
+  reason: z.string().min(1).max(512),
+  dryRun: z.coerce.boolean().optional().default(true),
+  sampleEventCode: WebhookEventTypeSchema.optional(),
+  idempotencyKey: z.string().max(128).optional(),
+});
+
+export type WebhookDeliveryAttemptStatus = z.infer<typeof WebhookDeliveryAttemptStatusSchema>;
+export type WebhookDeliveryAttemptQueryInput = z.infer<
+  typeof WebhookDeliveryAttemptQuerySchema
+>;
+export type WebhookDeliveryOperationInput = z.infer<typeof WebhookDeliveryOperationSchema>;
+
 // ============================================================================
 // Integration Log Schemas
 // ============================================================================

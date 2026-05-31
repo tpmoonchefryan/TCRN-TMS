@@ -19,6 +19,7 @@ import {
 } from '@tcrn/shared';
 
 import { ChangeLogService } from '../../log';
+import { validateUrlSafety } from '../../platform-tools/url-safety';
 import {
   mergeWebhookExtraData,
   normalizeMonitoredTalentIds,
@@ -42,7 +43,7 @@ export class WebhookWriteApplicationService {
   ) {}
 
   async create(dto: CreateWebhookDto, context: RequestContext) {
-    this.assertHttpsUrl(dto.url);
+    await this.assertWebhookTargetUrl(dto.url);
     const tenantSchema = getWebhookTenantSchema(context);
     const definition = this.resolveCreateDefinition(dto.definitionKey);
     const createInput = this.buildCreateInput(dto, definition);
@@ -60,6 +61,12 @@ export class WebhookWriteApplicationService {
           message: `Webhook with code '${createInput.code}' already exists`,
         });
       }
+
+      await this.assertMonitoredTalentsAllowed(
+        prisma,
+        tenantSchema,
+        dto.monitoredTalentIds
+      );
 
       const id = await this.webhookWriteRepository.create(prisma, tenantSchema, {
         code: createInput.code,
@@ -182,6 +189,12 @@ export class WebhookWriteApplicationService {
     return mergeWebhookExtraData(definitionExtraData, monitoredTalentIds);
   }
 
+  private getStoredDefinitionKey(webhook: WebhookRecord) {
+    return typeof webhook.extraData?.definitionKey === 'string'
+      ? webhook.extraData.definitionKey
+      : undefined;
+  }
+
   private normalizeWebhookName(name: PartialLocalizedText): LocalizedText {
     const normalized = normalizeLocalizedText(name);
 
@@ -197,13 +210,14 @@ export class WebhookWriteApplicationService {
 
   async update(id: string, dto: UpdateWebhookDto, context: RequestContext) {
     if (dto.url) {
-      this.assertHttpsUrl(dto.url);
+      await this.assertWebhookTargetUrl(dto.url);
     }
 
     const tenantSchema = getWebhookTenantSchema(context);
 
     await this.webhookWriteRepository.withTransaction(async (prisma) => {
       const webhook = await this.getWebhookOrThrow(prisma, id, tenantSchema);
+      const nextEvents = this.resolveUpdateEvents(webhook, dto);
 
       if (webhook.version !== dto.version) {
         throw new ConflictException({
@@ -212,12 +226,18 @@ export class WebhookWriteApplicationService {
         });
       }
 
+      await this.assertMonitoredTalentsAllowed(
+        prisma,
+        tenantSchema,
+        dto.monitoredTalentIds
+      );
+
       await this.webhookWriteRepository.update(prisma, tenantSchema, id, {
         name: dto.name ? this.normalizeWebhookName({ ...webhook.name, ...dto.name }) : webhook.name,
         extraData: mergeWebhookExtraData(webhook.extraData, dto.monitoredTalentIds),
         url: dto.url ?? webhook.url,
         secret: this.resolveSecret(dto.secret, webhook.secret),
-        events: dto.events ?? webhook.events,
+        events: nextEvents,
         headers: (dto.headers ?? webhook.headers ?? {}) as Prisma.InputJsonObject,
         retryPolicy: (dto.retryPolicy !== undefined
           ? toRetryPolicyInput(dto.retryPolicy)
@@ -243,6 +263,78 @@ export class WebhookWriteApplicationService {
     });
 
     return this.webhookReadApplicationService.findById(id, context);
+  }
+
+  private resolveUpdateEvents(webhook: WebhookRecord, dto: UpdateWebhookDto) {
+    const definitionKey = this.getStoredDefinitionKey(webhook);
+
+    if (definitionKey) {
+      const definition = getIntegrationWebhookDefinition(definitionKey);
+
+      if (!definition) {
+        throw new BadRequestException({
+          code: ErrorCodes.VALIDATION_FAILED,
+          message: `Unsupported stored webhook definition '${definitionKey}'`,
+        });
+      }
+
+      if (dto.events !== undefined) {
+        throw new BadRequestException({
+          code: ErrorCodes.VALIDATION_FAILED,
+          message: `Webhook definition '${definitionKey}' controls the event set`,
+        });
+      }
+
+      return definition.events;
+    }
+
+    const nextEvents = dto.events ?? webhook.events;
+
+    if (!nextEvents.length) {
+      throw new BadRequestException({
+        code: ErrorCodes.VALIDATION_FAILED,
+        message: 'Webhook events cannot be empty',
+      });
+    }
+
+    return nextEvents;
+  }
+
+  private async assertMonitoredTalentsAllowed(
+    prisma: Prisma.TransactionClient,
+    tenantSchema: string | null,
+    monitoredTalentIds: string[] | undefined
+  ) {
+    const normalizedIds = Array.from(
+      new Set((monitoredTalentIds ?? []).map((value) => value.trim()).filter(Boolean))
+    );
+
+    if (normalizedIds.length === 0) {
+      return;
+    }
+
+    if (!tenantSchema) {
+      throw new BadRequestException({
+        code: ErrorCodes.VALIDATION_FAILED,
+        message: 'Monitored talent scope requires tenant context',
+      });
+    }
+
+    const scopeRecords = await this.webhookWriteRepository.findMonitoredTalentScopeRecords(
+      prisma,
+      tenantSchema,
+      normalizedIds
+    );
+    const activeIds = new Set(
+      scopeRecords.filter((record) => record.isActive).map((record) => record.id)
+    );
+
+    if (activeIds.size !== normalizedIds.length) {
+      throw new BadRequestException({
+        code: ErrorCodes.VALIDATION_FAILED,
+        message: 'Monitored talents must belong to the current tenant and be active',
+      });
+    }
   }
 
   async delete(id: string, context: RequestContext) {
@@ -334,13 +426,24 @@ export class WebhookWriteApplicationService {
     return nextSecret ? this.cryptoService.encrypt(nextSecret) : null;
   }
 
-  private assertHttpsUrl(url: string) {
+  private async assertWebhookTargetUrl(url: string) {
     const requireHttps = this.configService.get<boolean>('WEBHOOK_REQUIRE_HTTPS', true);
 
     if (requireHttps && !url.startsWith('https://')) {
       throw new BadRequestException({
         code: ErrorCodes.VALIDATION_FAILED,
         message: 'Webhook URL must use HTTPS',
+      });
+    }
+
+    const safety = await validateUrlSafety(url, {
+      resolveDns: this.configService.get<boolean>('WEBHOOK_TARGET_RESOLVE_DNS', false),
+    });
+
+    if (!safety.safe) {
+      throw new BadRequestException({
+        code: ErrorCodes.VALIDATION_FAILED,
+        message: `Webhook URL is not allowed: ${safety.reason}`,
       });
     }
   }

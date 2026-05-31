@@ -19,3 +19,16 @@ export function getWebhookTenantSchema(context?: RequestContext): string | null 
 
   return tenantSchema;
 }
+
+export function requireWebhookTenantSchema(context?: RequestContext): string {
+  const tenantSchema = getWebhookTenantSchema(context);
+
+  if (!tenantSchema) {
+    throw new BadRequestException({
+      code: ErrorCodes.VALIDATION_FAILED,
+      message: 'Webhook tenant schema context is required',
+    });
+  }
+
+  return tenantSchema;
+}

@@ -4,6 +4,7 @@ import {
   Controller,
   Delete,
   Get,
+  HttpCode,
   Param,
   ParseUUIDPipe,
   Patch,
@@ -11,7 +12,7 @@ import {
   Query,
   Req,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Request } from 'express';
 
 import {
@@ -29,6 +30,8 @@ import {
   UpdateAdapterConfigsDto,
   UpdateAdapterDto,
   UpdateWebhookDto,
+  WebhookDeliveryAttemptQueryDto,
+  WebhookDeliveryOperationDto,
 } from '../dto/integration.dto';
 import { AdapterResolutionService } from '../services/adapter-resolution.service';
 import { AdapterService } from '../services/adapter.service';
@@ -232,9 +235,80 @@ export class IntegrationController {
 
   @Get('webhooks/events')
   @RequirePermissions({ resource: 'integration.webhook', action: 'read' })
-  @ApiOperation({ summary: 'List webhook events' })
+  @ApiOperation({ summary: 'List TCRN-owned webhook event catalog' })
+  @ApiResponse({ status: 200, description: 'TCRN-owned webhook event catalog' })
   async getWebhookEvents() {
     return this.webhookService.getEvents();
+  }
+
+  @Get('webhooks/:webhookId/delivery-attempts')
+  @RequirePermissions({ resource: 'integration.webhook', action: 'read' })
+  @ApiOperation({ summary: 'List webhook delivery attempts' })
+  @ApiResponse({ status: 200, description: 'Redacted webhook delivery attempt page' })
+  async listWebhookDeliveryAttempts(
+    @Param('webhookId', ParseUUIDPipe) webhookId: string,
+    @Query() query: WebhookDeliveryAttemptQueryDto,
+    @CurrentUser() user: { id: string; username: string; tenantId?: string; tenantSchema?: string },
+    @Req() req: Request
+  ) {
+    return this.webhookService.listDeliveryAttempts(webhookId, query, this.buildContext(user, req));
+  }
+
+  @Get('webhooks/:webhookId/delivery-attempts/:attemptId')
+  @RequirePermissions({ resource: 'integration.webhook', action: 'read' })
+  @ApiOperation({ summary: 'Get webhook delivery attempt detail' })
+  @ApiResponse({ status: 200, description: 'Redacted webhook delivery attempt detail' })
+  async getWebhookDeliveryAttempt(
+    @Param('webhookId', ParseUUIDPipe) webhookId: string,
+    @Param('attemptId', ParseUUIDPipe) attemptId: string,
+    @CurrentUser() user: { id: string; username: string; tenantId?: string; tenantSchema?: string },
+    @Req() req: Request
+  ) {
+    return this.webhookService.getDeliveryAttempt(attemptId, webhookId, this.buildContext(user, req));
+  }
+
+  @Post('webhooks/:webhookId/test-delivery')
+  @HttpCode(202)
+  @RequirePermissions({ resource: 'integration.webhook', action: 'write' })
+  @ApiOperation({ summary: 'Create a webhook test delivery attempt' })
+  @ApiBody({ type: WebhookDeliveryOperationDto })
+  @ApiResponse({ status: 202, description: 'Dry-run webhook delivery attempt accepted' })
+  @ApiResponse({
+    status: 409,
+    description: 'Idempotency key is already used for a different webhook delivery operation',
+  })
+  async createWebhookTestDelivery(
+    @Param('webhookId', ParseUUIDPipe) webhookId: string,
+    @Body() dto: WebhookDeliveryOperationDto,
+    @CurrentUser() user: { id: string; username: string; tenantId?: string; tenantSchema?: string },
+    @Req() req: Request
+  ) {
+    return this.webhookService.createTestDelivery(webhookId, dto, this.buildContext(user, req));
+  }
+
+  @Post('webhooks/:webhookId/delivery-attempts/:attemptId/replay')
+  @HttpCode(202)
+  @RequirePermissions({ resource: 'integration.webhook', action: 'write' })
+  @ApiOperation({ summary: 'Replay a webhook delivery attempt' })
+  @ApiBody({ type: WebhookDeliveryOperationDto })
+  @ApiResponse({ status: 202, description: 'Webhook delivery replay accepted' })
+  @ApiResponse({
+    status: 409,
+    description: 'Idempotency key is already used for a different webhook delivery operation',
+  })
+  async replayWebhookDeliveryAttempt(
+    @Param('webhookId', ParseUUIDPipe) webhookId: string,
+    @Param('attemptId', ParseUUIDPipe) attemptId: string,
+    @Body() dto: WebhookDeliveryOperationDto,
+    @CurrentUser() user: { id: string; username: string; tenantId?: string; tenantSchema?: string },
+    @Req() req: Request
+  ) {
+    return this.webhookService.replayDeliveryAttempt(
+      webhookId,
+      attemptId,
+      dto,
+      this.buildContext(user, req)
+    );
   }
 
   @Get('webhooks/:webhookId')

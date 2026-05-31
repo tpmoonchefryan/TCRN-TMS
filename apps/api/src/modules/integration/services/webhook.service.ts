@@ -6,55 +6,19 @@ import { type RequestContext } from '@tcrn/shared';
 
 import { DatabaseService } from '../../database';
 import { ChangeLogService } from '../../log';
+import { WebhookDeliveryApplicationService } from '../application/webhook-delivery.service';
 import { WebhookReadApplicationService } from '../application/webhook-read.service';
 import { WebhookWriteApplicationService } from '../application/webhook-write.service';
-import { CreateWebhookDto, UpdateWebhookDto, WebhookEventType } from '../dto/integration.dto';
+import {
+  CreateWebhookDto,
+  UpdateWebhookDto,
+  WebhookDeliveryAttemptQueryDto,
+  WebhookDeliveryOperationDto,
+} from '../dto/integration.dto';
+import { WebhookDeliveryRepository } from '../infrastructure/webhook-delivery.repository';
 import { WebhookReadRepository } from '../infrastructure/webhook-read.repository';
 import { WebhookWriteRepository } from '../infrastructure/webhook-write.repository';
 import { AdapterCryptoService } from './adapter-crypto.service';
-
-const WEBHOOK_EVENTS = Object.values(WebhookEventType).map((event) => ({
-  event,
-  name: getEventName(event),
-  description: getEventDescription(event),
-  category: event.split('.')[0],
-}));
-
-function getEventName(event: WebhookEventType): string {
-  const names: Record<string, string> = {
-    [WebhookEventType.CUSTOMER_CREATED]: '客户创建',
-    [WebhookEventType.CUSTOMER_UPDATED]: '客户更新',
-    [WebhookEventType.CUSTOMER_DEACTIVATED]: '客户停用',
-    [WebhookEventType.MEMBERSHIP_CREATED]: '会员创建',
-    [WebhookEventType.MEMBERSHIP_EXPIRED]: '会员过期',
-    [WebhookEventType.MEMBERSHIP_RENEWED]: '会员续期',
-    [WebhookEventType.MARSHMALLOW_RECEIVED]: '棉花糖收到',
-    [WebhookEventType.MARSHMALLOW_APPROVED]: '棉花糖审核通过',
-    [WebhookEventType.REPORT_COMPLETED]: '报表完成',
-    [WebhookEventType.REPORT_FAILED]: '报表失败',
-    [WebhookEventType.IMPORT_COMPLETED]: '导入完成',
-    [WebhookEventType.IMPORT_FAILED]: '导入失败',
-  };
-  return names[event] || event;
-}
-
-function getEventDescription(event: WebhookEventType): string {
-  const descriptions: Record<string, string> = {
-    [WebhookEventType.CUSTOMER_CREATED]: '当新客户档案创建时触发',
-    [WebhookEventType.CUSTOMER_UPDATED]: '当客户信息更新时触发',
-    [WebhookEventType.CUSTOMER_DEACTIVATED]: '当客户被停用时触发',
-    [WebhookEventType.MEMBERSHIP_CREATED]: '当会员记录创建时触发',
-    [WebhookEventType.MEMBERSHIP_EXPIRED]: '当会员权益过期时触发',
-    [WebhookEventType.MEMBERSHIP_RENEWED]: '当会员续期时触发',
-    [WebhookEventType.MARSHMALLOW_RECEIVED]: '当收到新棉花糖消息时触发',
-    [WebhookEventType.MARSHMALLOW_APPROVED]: '当棉花糖消息审核通过时触发',
-    [WebhookEventType.REPORT_COMPLETED]: '当报表生成完成时触发',
-    [WebhookEventType.REPORT_FAILED]: '当报表生成失败时触发',
-    [WebhookEventType.IMPORT_COMPLETED]: '当批量导入完成时触发',
-    [WebhookEventType.IMPORT_FAILED]: '当批量导入失败时触发',
-  };
-  return descriptions[event] || '';
-}
 
 @Injectable()
 export class WebhookService {
@@ -69,6 +33,13 @@ export class WebhookService {
     private readonly webhookWriteApplicationService: WebhookWriteApplicationService = new WebhookWriteApplicationService(
       new WebhookWriteRepository(databaseService),
       webhookReadApplicationService,
+      cryptoService,
+      changeLogService,
+      configService
+    ),
+    private readonly webhookDeliveryApplicationService: WebhookDeliveryApplicationService = new WebhookDeliveryApplicationService(
+      new WebhookDeliveryRepository(databaseService),
+      new WebhookReadRepository(databaseService),
       cryptoService,
       changeLogService,
       configService
@@ -104,6 +75,35 @@ export class WebhookService {
   }
 
   getEvents() {
-    return WEBHOOK_EVENTS;
+    return this.webhookDeliveryApplicationService.getEventCatalog();
+  }
+
+  async listDeliveryAttempts(
+    webhookId: string,
+    query: WebhookDeliveryAttemptQueryDto,
+    context: RequestContext
+  ) {
+    return this.webhookDeliveryApplicationService.listAttempts(webhookId, query, context);
+  }
+
+  async getDeliveryAttempt(attemptId: string, webhookId: string, context: RequestContext) {
+    return this.webhookDeliveryApplicationService.getAttempt(attemptId, webhookId, context);
+  }
+
+  async createTestDelivery(
+    webhookId: string,
+    dto: WebhookDeliveryOperationDto,
+    context: RequestContext
+  ) {
+    return this.webhookDeliveryApplicationService.createTestDelivery(webhookId, dto, context);
+  }
+
+  async replayDeliveryAttempt(
+    webhookId: string,
+    attemptId: string,
+    dto: WebhookDeliveryOperationDto,
+    context: RequestContext
+  ) {
+    return this.webhookDeliveryApplicationService.replayAttempt(webhookId, attemptId, dto, context);
   }
 }
