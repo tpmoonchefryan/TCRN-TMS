@@ -644,6 +644,13 @@ export type PublicPresenceProjectedSection =
   | PublicPresenceProjectedBilibiliDynamicSection
   | PublicPresenceProjectedFallbackCardSection;
 
+export type PublicPresencePublicProjectedSection =
+  PublicPresenceProjectedSection extends infer Section
+    ? Section extends PublicPresenceProjectedSection
+      ? Omit<Section, 'validationIssueIds'>
+      : never
+    : never;
+
 export interface PublicPresenceProjectionAppearance {
   theme: ThemeConfig;
 }
@@ -686,7 +693,7 @@ export interface PublicPresencePublicProjection {
   route: PublicPresencePublicProjectionRoute;
   metadata: PublicPresenceProjectionMetadata;
   appearance: PublicPresenceProjectionAppearance;
-  sections: PublicPresenceProjectedSection[];
+  sections: PublicPresencePublicProjectedSection[];
   actions: PublicPresenceProjectedAction[];
   media: PublicPresenceProjectedMedia[];
 }

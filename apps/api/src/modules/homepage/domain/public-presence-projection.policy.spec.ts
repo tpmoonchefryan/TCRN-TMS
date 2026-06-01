@@ -238,6 +238,99 @@ describe('public presence projection policy', () => {
     );
   });
 
+  it('blocks protocol-relative and encoded bypasses for internal fan action routes', () => {
+    const document: PublicPresenceDocument = {
+      schemaVersion: '1.0',
+      templateId: 'activeTalentHub',
+      metadata: {
+        title: 'Safe internal actions',
+        description: 'Safe fan action routing',
+        ogImageUrl: 'https://cdn.example.com/suisei/og.png',
+      },
+      sections: [
+        {
+          id: 'actions-1',
+          kind: 'fanActions',
+          fields: {
+            actions: {
+              provenance: 'publicPresence',
+              value: [
+                {
+                  slot: 'marshmallow',
+                  label: 'Safe internal',
+                  url: '/marshmallow/suisei',
+                },
+                {
+                  slot: 'marshmallow',
+                  label: 'Protocol relative',
+                  url: '//evil.example/path',
+                },
+                {
+                  slot: 'marshmallow',
+                  label: 'Backslash host',
+                  url: '/\\evil.example/path',
+                },
+                {
+                  slot: 'marshmallow',
+                  label: 'Encoded bypass',
+                  url: '/%2f%2fevil.example/path',
+                },
+                {
+                  slot: 'marshmallow',
+                  label: 'Relative path',
+                  url: 'marshmallow/suisei',
+                },
+              ],
+            },
+          },
+          phaseVisibility: 'always',
+        },
+      ],
+    };
+
+    const projection = buildPublicPresenceProjectionFromDocument({
+      createdAt: '2026-05-15T10:00:00.000Z',
+      document,
+      documentVersionId: 'version-1',
+      portalId: 'portal-1',
+      route: {
+        canonicalPath: '/tenant-a/suisei/homepage',
+        talentCode: 'suisei',
+        tenantCode: 'tenant-a',
+      },
+      runtimeAuthority: buildPublicPresenceSeedRuntimeAuthorityForTests(document.templateId),
+      source: 'publicPresenceDocument',
+      validationSnapshotId: 'snapshot-1',
+    });
+
+    const linkButtons = projection.sections.filter(
+      (section) => section.sectionType === 'linkButton'
+    );
+    const fallbackCards = projection.sections.filter(
+      (section) => section.sectionType === 'fallbackCard'
+    );
+
+    expect(linkButtons).toHaveLength(1);
+    expect(linkButtons[0]).toMatchObject({
+      action: {
+        category: 'internalRoute',
+        href: '/marshmallow/suisei',
+      },
+    });
+    expect(fallbackCards.map((section) => section.id)).toEqual([
+      'actions-1:action:2',
+      'actions-1:action:3',
+      'actions-1:action:4',
+      'actions-1:action:5',
+    ]);
+    expect(projection.fallbackDecisions).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ reason: 'unsafe-internal-path' }),
+        expect.objectContaining({ reason: 'invalid-internal-route' }),
+      ])
+    );
+  });
+
   it('drops rich text that carries protocol-relative or credential URLs', () => {
     const projection = buildPublicHomepageProjection(
       {

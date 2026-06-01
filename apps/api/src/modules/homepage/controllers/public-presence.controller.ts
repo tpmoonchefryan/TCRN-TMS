@@ -39,6 +39,8 @@ interface BootstrapPublicPresenceDraftDto {
 interface SavePublicPresenceDraftDto {
   document: unknown;
   expectedCurrentContentHash?: string | null;
+  templateAssetId?: string | null;
+  templateId?: string | null;
 }
 
 interface PublicPresenceWorkflowHashDto {
@@ -188,7 +190,8 @@ export class PublicPresenceController {
       talentId,
       dto.document,
       this.buildContext(user, req),
-      dto.expectedCurrentContentHash
+      dto.expectedCurrentContentHash,
+      dto.templateAssetId?.trim() || dto.templateId?.trim() || null
     );
   }
 

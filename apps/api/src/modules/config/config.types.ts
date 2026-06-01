@@ -3,11 +3,7 @@
  * Config Entity Types and Interfaces
  * NOTE: All entity types use singular form (e.g., 'customer-status' not 'customer-statuses')
  */
-import type {
-  LocalizedText,
-  PartialLocalizedText,
-  PublicPresenceTemplateTypeCode,
-} from '@tcrn/shared';
+import type { LocalizedText, PartialLocalizedText } from '@tcrn/shared';
 
 export type OwnerType = 'tenant' | 'subsidiary' | 'talent';
 
@@ -129,9 +125,9 @@ export interface ConsentFields {
 }
 
 export interface ArtistStageFields {
-  artistStatusCode: 'draft' | 'published' | 'disabled';
+  artistStatusCode: string;
   color: string | null;
-  homepageTemplateTypeCode: PublicPresenceTemplateTypeCode;
+  homepageTemplateTypeCode: string;
 }
 
 export interface ConsumerFields {

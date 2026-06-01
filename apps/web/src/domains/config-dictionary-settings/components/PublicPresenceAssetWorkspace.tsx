@@ -318,11 +318,11 @@ function DetailMetric({
   value: string;
 }>) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white/90 px-4 py-3">
+    <div className="min-w-0 rounded-2xl border border-slate-200 bg-white/90 px-4 py-3">
       <p className="text-[11px] font-semibold tracking-[0.16em] text-slate-500 uppercase">
         {label}
       </p>
-      <p className="mt-2 text-sm font-semibold text-slate-900">{value}</p>
+      <p className="mt-2 min-w-0 break-words text-sm font-semibold text-slate-900">{value}</p>
     </div>
   );
 }
@@ -390,7 +390,7 @@ function AssetRow({
             ) : null}
           </div>
           <p className="text-sm leading-6 text-slate-600">{displayDescription}</p>
-          <div className="grid gap-3 md:grid-cols-4">
+          <div className="grid gap-3 sm:grid-cols-2 2xl:grid-cols-4">
             <DetailMetric
               label={pickLocaleText(locale, {
                 en: 'Asset type',

@@ -665,12 +665,25 @@ describe('TenantSettingsScreen', () => {
         return [];
       }
 
+      if (
+        path ===
+        '/api/v1/configuration-entity/business-segment?scopeType=tenant&includeInherited=true&includeDisabled=true&includeInactive=false&ownerOnly=false&page=1&pageSize=20&sort=sortOrder'
+      ) {
+        return emptyConfigEntityEnvelope;
+      }
+
       throw new Error(`Unhandled request: ${path}`);
     });
 
     render(<TenantSettingsScreen tenantId="tenant-1" />);
 
     expect(await screen.findByRole('heading', { name: '租户设置' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: '配置实体管理' }));
+    expect(
+      await screen.findByText('在同一目录中维护租户自有配置实体、主页模板资产与主页组件资产。')
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /主页模板资产 homepage-template-asset/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /主页组件资产 homepage-component-asset/i })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: '设置' }));
     expect(screen.queryByRole('button', { name: '保存租户默认值' })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: '编辑默认值' }));

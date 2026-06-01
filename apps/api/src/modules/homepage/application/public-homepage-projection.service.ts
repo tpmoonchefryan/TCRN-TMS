@@ -6,6 +6,7 @@ import {
   PublicPresenceDocumentSchema,
   type PublicPresencePhaseVisibility,
   type PublicPresenceProjection,
+  type PublicPresencePublicProjectedSection,
   type PublicPresencePublicProjection,
   type PublicPresenceValidationSnapshot,
   PublicPresenceValidationSnapshotSchema,
@@ -13,6 +14,8 @@ import {
 } from '@tcrn/shared';
 
 import type { PublicHomepageTalentRecord } from '../domain/public-homepage-read.policy';
+import { buildPublicPresenceRuntimeAuthority } from '../domain/public-presence-asset-runtime.policy';
+import type { PublicPresenceDocumentVersionRecord } from '../domain/public-presence-foundation.policy';
 import {
   buildPublicHomepageProjection,
   type BuildPublicHomepageProjectionRouteInput,
@@ -22,6 +25,7 @@ import { HomepageAdminRepository } from '../infrastructure/homepage-admin.reposi
 import { PublicHomepageReadRepository } from '../infrastructure/public-homepage-read.repository';
 import { PublicPresenceFoundationRepository } from '../infrastructure/public-presence-foundation.repository';
 import { PublicHomepageService } from './public-homepage.service';
+import { PublicPresenceAssetService } from './public-presence-asset.service';
 import { PublicPresenceStudioService } from './public-presence-studio.service';
 
 @Injectable()
@@ -31,6 +35,7 @@ export class PublicHomepageProjectionService {
     private readonly publicHomepageReadRepository: PublicHomepageReadRepository,
     private readonly publicPresenceFoundationRepository: PublicPresenceFoundationRepository,
     private readonly homepageAdminRepository: HomepageAdminRepository,
+    private readonly publicPresenceAssetService: PublicPresenceAssetService,
     private readonly publicPresenceStudioService: PublicPresenceStudioService
   ) {}
 
@@ -218,6 +223,9 @@ export class PublicHomepageProjectionService {
       tenantSchema,
       version.lastValidationSnapshotId
     );
+    const runtimeAuthority = validationSnapshot
+      ? null
+      : await this.loadRuntimeAuthority(tenantSchema, talentId, version.templateAssetPin);
 
     return buildPublicPresenceProjectionFromDocument({
       contentHash: version.contentHash,
@@ -237,6 +245,7 @@ export class PublicHomepageProjectionService {
       source: 'publicPresenceDocument',
       talentDisplayName: talent.displayName,
       templateAssetPin: version.templateAssetPin,
+      runtimeAuthority,
       validationSnapshot,
       validationSnapshotId: version.lastValidationSnapshotId,
     });
@@ -301,6 +310,9 @@ export class PublicHomepageProjectionService {
       schema,
       liveVersion.lastValidationSnapshotId
     );
+    const runtimeAuthority = validationSnapshot
+      ? null
+      : await this.loadRuntimeAuthority(schema, talent.id, liveVersion.templateAssetPin);
 
     return buildPublicPresenceProjectionFromDocument({
       contentHash: liveVersion.contentHash,
@@ -318,8 +330,30 @@ export class PublicHomepageProjectionService {
       source: 'publicPresenceDocument',
       talentDisplayName: talent.displayName,
       templateAssetPin: liveVersion.templateAssetPin,
+      runtimeAuthority,
       validationSnapshot,
       validationSnapshotId: liveVersion.lastValidationSnapshotId,
+    });
+  }
+
+  private async loadRuntimeAuthority(
+    tenantSchema: string,
+    talentId: string,
+    templateAssetPin: PublicPresenceDocumentVersionRecord['templateAssetPin']
+  ) {
+    const componentAssets = await this.publicPresenceAssetService.listAssets(
+      tenantSchema,
+      {
+        assetKind: 'component',
+        scopeId: talentId,
+        scopeType: 'talent',
+      },
+      null
+    );
+
+    return buildPublicPresenceRuntimeAuthority({
+      componentAssets,
+      templatePin: templateAssetPin,
     });
   }
 
@@ -360,9 +394,15 @@ export class PublicHomepageProjectionService {
       },
       metadata: projection.metadata,
       appearance: projection.appearance,
-      sections: projection.sections,
+      sections: this.toPublicSections(projection.sections),
       actions: projection.actions,
       media: projection.media,
     };
+  }
+
+  private toPublicSections(
+    sections: PublicPresenceProjection['sections']
+  ): PublicPresencePublicProjectedSection[] {
+    return sections.map(({ validationIssueIds: _validationIssueIds, ...section }) => section);
   }
 }

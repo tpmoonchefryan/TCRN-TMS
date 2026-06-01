@@ -523,4 +523,115 @@ describe('ScopedConfigEntityWorkspace', () => {
     expect(within(dialog).getByLabelText('Code *')).toBeInTheDocument();
     expect(within(dialog).getByRole('button', { name: 'Create record' })).toBeInTheDocument();
   });
+
+  it('uses active system dictionary items for artist-stage status and template type selections', async () => {
+    currentSearch = 'configEntityType=artist-stage';
+    let createPayload: Record<string, unknown> | null = null;
+
+    mockRequestEnvelope.mockImplementation(async (path: string) => {
+      if (
+        path ===
+        '/api/v1/configuration-entity/artist-stage?scopeType=tenant&includeInherited=true&includeDisabled=true&includeInactive=false&ownerOnly=false&page=1&pageSize=20&sort=sortOrder'
+      ) {
+        return buildEnvelope([]);
+      }
+
+      if (
+        path === '/api/v1/system-dictionary/artist-status?includeInactive=false&page=1&pageSize=100'
+      ) {
+        return buildEnvelope([
+          {
+            id: 'status-1',
+            dictionaryCode: 'artist-status',
+            code: 'published',
+            name: localizedFixture('Live'),
+            localizedName: 'Live',
+            description: localizedFixture('Live status'),
+            localizedDescription: 'Live status',
+            sortOrder: 1,
+            isActive: true,
+            extraData: null,
+            createdAt: '2026-04-17T00:00:00.000Z',
+            updatedAt: '2026-04-17T00:10:00.000Z',
+            version: 1,
+          },
+        ]);
+      }
+
+      if (
+        path ===
+        '/api/v1/system-dictionary/homepage-template-type?includeInactive=false&page=1&pageSize=100'
+      ) {
+        return buildEnvelope([
+          {
+            id: 'template-type-1',
+            dictionaryCode: 'homepage-template-type',
+            code: 'operating',
+            name: localizedFixture('Operating Site'),
+            localizedName: 'Operating Site',
+            description: localizedFixture('Operating template type'),
+            localizedDescription: 'Operating template type',
+            sortOrder: 1,
+            isActive: true,
+            extraData: null,
+            createdAt: '2026-04-17T00:00:00.000Z',
+            updatedAt: '2026-04-17T00:10:00.000Z',
+            version: 1,
+          },
+        ]);
+      }
+
+      throw new Error(`Unhandled request: ${path}`);
+    });
+    mockRequest.mockImplementation(async (path: string, init?: RequestInit) => {
+      if (path === '/api/v1/configuration-entity/artist-stage' && init?.method === 'POST') {
+        createPayload = JSON.parse(String(init.body)) as Record<string, unknown>;
+        return buildConfigEntityRecord({
+          id: 'stage-live',
+          code: 'LIVE',
+          artistStatusCode: 'published',
+          homepageTemplateTypeCode: 'operating',
+        });
+      }
+
+      throw new Error(`Unhandled request: ${path}`);
+    });
+
+    render(
+      <ScopedConfigEntityWorkspace
+        request={mockRequest}
+        requestEnvelope={mockRequestEnvelope}
+        scopeType="tenant"
+      />
+    );
+
+    expect(await screen.findByText('No artist stage records returned')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'New record' }));
+
+    const dialog = await screen.findByRole('dialog', { name: 'Create Artist Stage' });
+    await waitFor(() => {
+      expect(within(dialog).getByRole('option', { name: 'Live' })).toBeInTheDocument();
+      expect(within(dialog).getByRole('option', { name: 'Operating Site' })).toBeInTheDocument();
+    });
+
+    fireEvent.change(within(dialog).getByLabelText('Code *'), { target: { value: 'live' } });
+    fireEvent.change(within(dialog).getByLabelText('Name base value *'), {
+      target: { value: 'Live' },
+    });
+    fireEvent.change(within(dialog).getByLabelText('Artist Status'), {
+      target: { value: 'published' },
+    });
+    fireEvent.change(within(dialog).getByLabelText('Homepage Template Type'), {
+      target: { value: 'operating' },
+    });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Create record' }));
+
+    await waitFor(() => {
+      expect(createPayload).toMatchObject({
+        code: 'LIVE',
+        artistStatusCode: 'published',
+        homepageTemplateTypeCode: 'operating',
+      });
+    });
+  });
 });

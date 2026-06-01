@@ -341,6 +341,18 @@ export function SubsidiarySettingsScreen({
   const hasDirtyDraft = isSubsidiarySettingsDraftDirty(initialDraft, draft);
   const overrideSet = new Set(settings.overrides);
   const dictionaryCount = dictionaryPanel.data?.length ?? 0;
+  const displayName =
+    typeof detail.localizedName === 'string'
+      ? detail.localizedName.trim()
+      : pickLocaleText(locale, detail.name) || detail.code;
+  const settingsTitle = text({
+    en: 'Subsidiary Settings',
+    zh_HANS: '分目录设置',
+    zh_HANT: '分目錄設定',
+    ja: '配下スコープ設定',
+    ko: '하위 조직 설정',
+    fr: 'Parametres du perimetre',
+  });
   const localOverrideLabel = text({
     en: 'Subsidiary override',
     zh_HANS: '分目录覆盖',
@@ -451,14 +463,7 @@ export function SubsidiarySettingsScreen({
   return (
     <>
       <SettingsLayout
-        title={`${detail.localizedName} ${text({
-          en: 'Subsidiary Settings',
-          zh_HANS: '分目录设置',
-          zh_HANT: '分目錄設定',
-          ja: '配下スコープ設定',
-          ko: '하위 조직 설정',
-          fr: 'Parametres du perimetre',
-        })}`}
+        title={displayName ? `${displayName} ${settingsTitle}` : settingsTitle}
         description={text({
           en: 'Manage subsidiary identity, defaults, configuration entities, and dictionary visibility.',
           zh_HANS: '管理分目录身份、默认值、配置实体与词典可见性。',

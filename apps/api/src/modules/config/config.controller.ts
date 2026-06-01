@@ -237,21 +237,19 @@ class CreateConfigDto {
 
   @ApiPropertyOptional({
     description: 'Artist Status dictionary item code for Artist Stage',
-    enum: ['draft', 'published', 'disabled'],
     example: 'draft',
   })
   @IsOptional()
-  @IsEnum(['draft', 'published', 'disabled'])
-  artistStatusCode?: 'draft' | 'published' | 'disabled';
+  @IsString()
+  artistStatusCode?: string;
 
   @ApiPropertyOptional({
     description: 'Homepage Template Type dictionary item code for Artist Stage',
-    enum: ['pending-reveal', 'operating', 'graduated'],
     example: 'operating',
   })
   @IsOptional()
-  @IsEnum(['pending-reveal', 'operating', 'graduated'])
-  homepageTemplateTypeCode?: 'pending-reveal' | 'operating' | 'graduated';
+  @IsString()
+  homepageTemplateTypeCode?: string;
 
   @ApiPropertyOptional({ description: 'Active status', example: true })
   @IsOptional()
@@ -406,21 +404,19 @@ class UpdateConfigDto {
 
   @ApiPropertyOptional({
     description: 'Artist Status dictionary item code for Artist Stage',
-    enum: ['draft', 'published', 'disabled'],
     example: 'draft',
   })
   @IsOptional()
-  @IsEnum(['draft', 'published', 'disabled'])
-  artistStatusCode?: 'draft' | 'published' | 'disabled';
+  @IsString()
+  artistStatusCode?: string;
 
   @ApiPropertyOptional({
     description: 'Homepage Template Type dictionary item code for Artist Stage',
-    enum: ['pending-reveal', 'operating', 'graduated'],
     example: 'operating',
   })
   @IsOptional()
-  @IsEnum(['pending-reveal', 'operating', 'graduated'])
-  homepageTemplateTypeCode?: 'pending-reveal' | 'operating' | 'graduated';
+  @IsString()
+  homepageTemplateTypeCode?: string;
 
   @ApiPropertyOptional({ description: 'Base URL for platform', example: 'https://twitter.com' })
   @IsOptional()

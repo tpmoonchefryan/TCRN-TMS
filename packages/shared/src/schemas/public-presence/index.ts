@@ -654,6 +654,100 @@ export const PublicPresenceProjectedSectionSchema = z.discriminatedUnion('sectio
   PublicPresenceProjectedFallbackCardSectionSchema,
 ]);
 
+const PublicPresencePublicProjectedHeroSectionSchema = PublicPresenceProjectedHeroSectionSchema.omit(
+  {
+    validationIssueIds: true,
+  }
+).strict();
+
+const PublicPresencePublicProjectedProfileCardSectionSchema =
+  PublicPresenceProjectedProfileCardSectionSchema.omit({
+    validationIssueIds: true,
+  }).strict();
+
+const PublicPresencePublicProjectedSocialLinksSectionSchema =
+  PublicPresenceProjectedSocialLinksSectionSchema.omit({
+    validationIssueIds: true,
+  }).strict();
+
+const PublicPresencePublicProjectedImageGallerySectionSchema =
+  PublicPresenceProjectedImageGallerySectionSchema.omit({
+    validationIssueIds: true,
+  }).strict();
+
+const PublicPresencePublicProjectedVideoEmbedSectionSchema =
+  PublicPresenceProjectedVideoEmbedSectionSchema.omit({
+    validationIssueIds: true,
+  }).strict();
+
+const PublicPresencePublicProjectedRichTextSectionSchema =
+  PublicPresenceProjectedRichTextSectionSchema.omit({
+    validationIssueIds: true,
+  }).strict();
+
+const PublicPresencePublicProjectedLinkButtonSectionSchema =
+  PublicPresenceProjectedLinkButtonSectionSchema.omit({
+    validationIssueIds: true,
+  }).strict();
+
+const PublicPresencePublicProjectedMarshmallowSectionSchema =
+  PublicPresenceProjectedMarshmallowSectionSchema.omit({
+    validationIssueIds: true,
+  }).strict();
+
+const PublicPresencePublicProjectedScheduleSectionSchema =
+  PublicPresenceProjectedScheduleSectionSchema.omit({
+    validationIssueIds: true,
+  }).strict();
+
+const PublicPresencePublicProjectedMusicPlayerSectionSchema =
+  PublicPresenceProjectedMusicPlayerSectionSchema.omit({
+    validationIssueIds: true,
+  }).strict();
+
+const PublicPresencePublicProjectedLiveStatusSectionSchema =
+  PublicPresenceProjectedLiveStatusSectionSchema.omit({
+    validationIssueIds: true,
+  }).strict();
+
+const PublicPresencePublicProjectedDividerSectionSchema =
+  PublicPresenceProjectedDividerSectionSchema.omit({
+    validationIssueIds: true,
+  }).strict();
+
+const PublicPresencePublicProjectedSpacerSectionSchema =
+  PublicPresenceProjectedSpacerSectionSchema.omit({
+    validationIssueIds: true,
+  }).strict();
+
+const PublicPresencePublicProjectedBilibiliDynamicSectionSchema =
+  PublicPresenceProjectedBilibiliDynamicSectionSchema.omit({
+    validationIssueIds: true,
+  }).strict();
+
+const PublicPresencePublicProjectedFallbackCardSectionSchema =
+  PublicPresenceProjectedFallbackCardSectionSchema.omit({
+    validationIssueIds: true,
+  }).strict();
+
+export const PublicPresencePublicProjectedSectionSchema = z.discriminatedUnion('sectionType', [
+  PublicPresencePublicProjectedHeroSectionSchema,
+  PublicPresencePublicProjectedProfileCardSectionSchema,
+  PublicPresencePublicProjectedSocialLinksSectionSchema,
+  PublicPresencePublicProjectedImageGallerySectionSchema,
+  PublicPresencePublicProjectedVideoEmbedSectionSchema,
+  PublicPresencePublicProjectedRichTextSectionSchema,
+  PublicPresencePublicProjectedLinkButtonSectionSchema,
+  PublicPresencePublicProjectedMarshmallowSectionSchema,
+  PublicPresencePublicProjectedScheduleSectionSchema,
+  PublicPresencePublicProjectedMusicPlayerSectionSchema,
+  PublicPresencePublicProjectedLiveStatusSectionSchema,
+  PublicPresencePublicProjectedDividerSectionSchema,
+  PublicPresencePublicProjectedSpacerSectionSchema,
+  PublicPresencePublicProjectedBilibiliDynamicSectionSchema,
+  PublicPresencePublicProjectedFallbackCardSectionSchema,
+]);
+
 export const PublicPresenceProjectionSchema = z
   .object({
     projectionSchemaVersion: z.literal(PUBLIC_PRESENCE_PROJECTION_SCHEMA_VERSION),
@@ -713,7 +807,7 @@ export const PublicPresencePublicProjectionSchema = z
         theme: ThemeConfigSchema,
       })
       .strict(),
-    sections: z.array(PublicPresenceProjectedSectionSchema),
+    sections: z.array(PublicPresencePublicProjectedSectionSchema),
     actions: z.array(PublicPresenceProjectedActionSchema),
     media: z.array(PublicPresenceProjectedMediaSchema),
   })

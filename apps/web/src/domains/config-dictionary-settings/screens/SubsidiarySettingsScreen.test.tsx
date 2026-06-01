@@ -448,7 +448,7 @@ describe('SubsidiarySettingsScreen', () => {
           path: '/TOKYO/',
           depth: 1,
           name: localizedFixture('Tokyo', { zh_HANS: '东京分部', ja: '東京拠点' }),
-          localizedName: '',
+          localizedName: undefined as unknown as string,
           description: localizedFixture('Tokyo branch', { zh_HANS: '东京分部说明' }),
           localizedDescription: 'Tokyo branch',
           sortOrder: 10,
@@ -509,7 +509,8 @@ describe('SubsidiarySettingsScreen', () => {
 
     render(<SubsidiarySettingsScreen tenantId="tenant-1" subsidiaryId="sub-1" />);
 
-    expect(await screen.findByRole('heading', { name: '分目录设置' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: '东京分部 分目录设置' })).toBeInTheDocument();
+    expect(screen.queryByText(/undefined/)).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: '设置' }));
     expect(screen.queryByRole('button', { name: '保存分目录设置' })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: '编辑默认值' }));

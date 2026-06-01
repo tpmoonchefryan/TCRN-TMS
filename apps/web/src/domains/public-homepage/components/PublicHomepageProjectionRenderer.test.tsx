@@ -50,7 +50,6 @@ const baseProjection: PublicHomepageResponse = {
       sectionType: 'hero',
       visibility: 'visible',
       fallbackBehavior: 'safePlaceholder',
-      validationIssueIds: [],
       title: 'Hoshimachi Suisei',
       description: 'Public profile and schedule.',
       timezone: 'Asia/Tokyo',
@@ -81,7 +80,6 @@ const baseProjection: PublicHomepageResponse = {
       sectionType: 'socialLinks',
       visibility: 'visible',
       fallbackBehavior: 'safePlaceholder',
-      validationIssueIds: [],
       title: null,
       links: [
         {
@@ -104,7 +102,6 @@ const baseProjection: PublicHomepageResponse = {
       sectionType: 'richText',
       visibility: 'visible',
       fallbackBehavior: 'stripField',
-      validationIssueIds: [],
       html: '<h2>About</h2><p>Official public homepage.</p>',
       textAlign: 'left',
     },
@@ -114,7 +111,6 @@ const baseProjection: PublicHomepageResponse = {
       sectionType: 'videoEmbed',
       visibility: 'visible',
       fallbackBehavior: 'safePlaceholder',
-      validationIssueIds: [],
       title: 'Debut PV',
       providerId: 'youtube',
       iframeSrc: 'https://www.youtube.com/embed/abc123',
@@ -212,7 +208,6 @@ describe('PublicHomepageProjectionRenderer', () => {
               sectionType: 'hero',
               visibility: 'visible',
               fallbackBehavior: 'safePlaceholder',
-              validationIssueIds: [],
               title: 'Debut preview',
               description: 'Countdown updates, reveal moments, and launch links for fans.',
               timezone: 'Asia/Tokyo',
@@ -243,7 +238,6 @@ describe('PublicHomepageProjectionRenderer', () => {
               sectionType: 'linkButton',
               visibility: 'visible',
               fallbackBehavior: 'safePlaceholder',
-              validationIssueIds: [],
               action: {
                 id: 'action-4',
                 slot: 'compatibility',
@@ -261,7 +255,6 @@ describe('PublicHomepageProjectionRenderer', () => {
               sectionType: 'fallbackCard',
               visibility: 'fallback',
               fallbackBehavior: 'safePlaceholder',
-              validationIssueIds: [],
               title: '',
               description: null,
             },
@@ -271,7 +264,6 @@ describe('PublicHomepageProjectionRenderer', () => {
               sectionType: 'fallbackCard',
               visibility: 'visible',
               fallbackBehavior: 'safePlaceholder',
-              validationIssueIds: [],
               title: '__revealCountdown__',
               description: 'countdown · 2099-05-15T10:00:00.000Z · Asia/Tokyo',
             },
@@ -319,7 +311,6 @@ describe('PublicHomepageProjectionRenderer', () => {
               sectionType: 'linkButton',
               visibility: 'visible',
               fallbackBehavior: 'safePlaceholder',
-              validationIssueIds: [],
               action: {
                 id: 'action-current-1',
                 slot: 'currentAction',
@@ -337,7 +328,6 @@ describe('PublicHomepageProjectionRenderer', () => {
               sectionType: 'linkButton',
               visibility: 'visible',
               fallbackBehavior: 'safePlaceholder',
-              validationIssueIds: [],
               action: {
                 id: 'action-fan-1',
                 slot: 'fanAction',
@@ -355,7 +345,6 @@ describe('PublicHomepageProjectionRenderer', () => {
               sectionType: 'linkButton',
               visibility: 'visible',
               fallbackBehavior: 'safePlaceholder',
-              validationIssueIds: [],
               action: {
                 id: 'action-support-1',
                 slot: 'support',

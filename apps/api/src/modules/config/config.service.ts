@@ -8,11 +8,12 @@ import {
 
 import { Prisma, prisma } from '@tcrn/database';
 import {
+  ARTIST_STATUS_DICTIONARY_CODE,
   ErrorCodes,
+  HOMEPAGE_TEMPLATE_TYPE_DICTIONARY_CODE,
   mergeLocalizedText,
   normalizeLocalizedText,
   pickLocalizedText,
-  PUBLIC_PRESENCE_TEMPLATE_TYPE_CODES,
   type LocalizedText,
 } from '@tcrn/shared';
 
@@ -219,7 +220,7 @@ export class ConfigService {
     if (!normalizedName.en.trim()) {
       throw new BadRequestException('name.en is required');
     }
-    this.assertArtistStageHomepageTemplateType(entityType, data.homepageTemplateTypeCode, true);
+    await this.assertArtistStageDictionaryReferences(entityType, data, true);
 
     if (hasCode && data.code) {
       const existing = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
@@ -327,7 +328,7 @@ export class ConfigService {
         message: 'Data has been modified. Please refresh and try again.',
       });
     }
-    this.assertArtistStageHomepageTemplateType(entityType, data.homepageTemplateTypeCode, false);
+    await this.assertArtistStageDictionaryReferences(entityType, data, false);
 
     const hasDescription = CONFIG_HAS_DESCRIPTION.has(entityType);
     const hasExtraData = CONFIG_HAS_EXTRA_DATA.has(entityType);
@@ -1052,32 +1053,90 @@ export class ConfigService {
     }
   }
 
-  private assertArtistStageHomepageTemplateType(
+  private async assertArtistStageDictionaryReferences(
     entityType: ConfigEntityType,
-    value: unknown,
+    data: ConfigEntityCreateInput | ConfigEntityUpdateInput,
     required: boolean
-  ): void {
+  ): Promise<void> {
     if (entityType !== 'artist-stage') {
       return;
     }
 
-    if (value === undefined) {
-      if (!required) {
-        return;
-      }
+    if (data.artistStatusCode === undefined && required) {
+      throw new BadRequestException({
+        code: 'CONFIG_ARTIST_STAGE_STATUS_REQUIRED',
+        message: 'Artist Stage requires an Artist Status.',
+      });
     }
-
-    if (value === undefined || value === null || value === '') {
+    if (
+      data.artistStatusCode !== undefined &&
+      (data.artistStatusCode === null || String(data.artistStatusCode).trim() === '')
+    ) {
+      throw new BadRequestException({
+        code: 'CONFIG_ARTIST_STAGE_STATUS_REQUIRED',
+        message: 'Artist Stage requires an Artist Status.',
+      });
+    }
+    if (data.homepageTemplateTypeCode === undefined && required) {
+      throw new BadRequestException({
+        code: 'CONFIG_ARTIST_STAGE_TEMPLATE_TYPE_REQUIRED',
+        message: 'Artist Stage requires a Homepage Template Type.',
+      });
+    }
+    if (
+      data.homepageTemplateTypeCode !== undefined &&
+      (data.homepageTemplateTypeCode === null ||
+        String(data.homepageTemplateTypeCode).trim() === '')
+    ) {
       throw new BadRequestException({
         code: 'CONFIG_ARTIST_STAGE_TEMPLATE_TYPE_REQUIRED',
         message: 'Artist Stage requires a Homepage Template Type.',
       });
     }
 
-    if (!(PUBLIC_PRESENCE_TEMPLATE_TYPE_CODES as readonly string[]).includes(String(value))) {
+    if (data.artistStatusCode !== undefined) {
+      await this.assertActiveSystemDictionaryItem(
+        ARTIST_STATUS_DICTIONARY_CODE,
+        String(data.artistStatusCode),
+        'CONFIG_ARTIST_STAGE_STATUS_INVALID',
+        'Artist Stage Artist Status is not an active dictionary item.'
+      );
+    }
+    if (data.homepageTemplateTypeCode !== undefined) {
+      await this.assertActiveSystemDictionaryItem(
+        HOMEPAGE_TEMPLATE_TYPE_DICTIONARY_CODE,
+        String(data.homepageTemplateTypeCode),
+        'CONFIG_ARTIST_STAGE_TEMPLATE_TYPE_INVALID',
+        'Artist Stage Homepage Template Type is not an active dictionary item.'
+      );
+    }
+  }
+
+  private async assertActiveSystemDictionaryItem(
+    dictionaryCode: string,
+    itemCode: string,
+    errorCode: string,
+    message: string
+  ): Promise<void> {
+    const rows = await prisma.$queryRawUnsafe<Array<{ code: string }>>(
+      `
+        SELECT i.code
+        FROM public.system_dictionary d
+        INNER JOIN public.system_dictionary_item i ON i.dictionary_code = d.code
+        WHERE d.code = $1
+          AND i.code = $2
+          AND d.is_active = true
+          AND i.is_active = true
+        LIMIT 1
+      `,
+      dictionaryCode,
+      itemCode
+    );
+
+    if (rows.length === 0) {
       throw new BadRequestException({
-        code: 'CONFIG_ARTIST_STAGE_TEMPLATE_TYPE_INVALID',
-        message: 'Artist Stage Homepage Template Type is not supported.',
+        code: errorCode,
+        message,
       });
     }
   }

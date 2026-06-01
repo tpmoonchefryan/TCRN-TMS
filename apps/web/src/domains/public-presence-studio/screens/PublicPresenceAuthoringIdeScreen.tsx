@@ -665,7 +665,6 @@ function buildTemplatePreviewProjection(
         sectionType: 'hero',
         visibility: 'visible',
         fallbackBehavior: 'safePlaceholder',
-        validationIssueIds: [],
         title,
         description,
         timezone: 'Asia/Tokyo',
@@ -704,7 +703,6 @@ function buildTemplatePreviewProjection(
         sectionType: 'socialLinks',
         visibility: 'visible',
         fallbackBehavior: 'safePlaceholder',
-        validationIssueIds: [],
         title: null,
         links: [
           {
@@ -808,7 +806,6 @@ function buildComponentPreviewProjection(
         sectionType: 'fallbackCard',
         visibility: 'visible',
         fallbackBehavior: 'safePlaceholder',
-        validationIssueIds: [],
         title: sampleTitle,
         description: sampleDescription,
       },

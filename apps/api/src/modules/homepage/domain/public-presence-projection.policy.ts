@@ -401,6 +401,24 @@ function sanitizePublicUrl(
   return { reason: null, value: parsed.toString() };
 }
 
+function sanitizeInternalRoute(value: string | null): SanitizedUrlResult {
+  if (!value) {
+    return { reason: null, value: null };
+  }
+
+  const trimmed = value.trim();
+
+  if (!trimmed.startsWith('/')) {
+    return { reason: 'invalid-internal-route', value: null };
+  }
+
+  if (hasUnsafeInternalPathShape(trimmed) || hasEncodedProtocolRelativeBypass(trimmed)) {
+    return { reason: 'unsafe-internal-path', value: null };
+  }
+
+  return { reason: null, value: trimmed };
+}
+
 function sanitizeMediaUrl(value: string | null): SanitizedUrlResult {
   return sanitizePublicUrl(value, 'mediaAssetUrl');
 }
@@ -1783,10 +1801,7 @@ function buildFanActionSections(
 
     const safeUrl =
       category === 'internalRoute'
-        ? {
-            reason: rawUrl.startsWith('/') ? null : 'invalid-internal-route',
-            value: rawUrl.startsWith('/') ? rawUrl : null,
-          }
+        ? sanitizeInternalRoute(rawUrl)
         : sanitizePublicUrl(
             rawUrl,
             category === 'streamUrl'

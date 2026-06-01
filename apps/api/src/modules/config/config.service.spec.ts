@@ -168,6 +168,7 @@ describe('ConfigService LocalizedText contract', () => {
         'artist-stage',
         'tenant_test',
         {
+          artistStatusCode: 'draft',
           code: 'PRE_DEBUT',
           name: localized('Pre-Debut'),
           ownerType: 'tenant',
@@ -180,14 +181,87 @@ describe('ConfigService LocalizedText contract', () => {
     expect(mockPrisma.$queryRawUnsafe).not.toHaveBeenCalled();
   });
 
-  it('persists artist stage homepage template type as the config entity source of truth', async () => {
-    mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([]).mockResolvedValueOnce([
-      createBaseEntity({
-        artistStatusCode: 'published',
-        code: 'ACTIVE',
-        homepageTemplateTypeCode: 'operating',
-      } as Partial<BaseConfigEntity>),
+  it('requires artist status when creating artist stages', async () => {
+    await expect(
+      service.create(
+        'artist-stage',
+        'tenant_test',
+        {
+          code: 'PRE_DEBUT',
+          homepageTemplateTypeCode: 'pending-reveal',
+          name: localized('Pre-Debut'),
+          ownerType: 'tenant',
+          ownerId: null,
+        },
+        '00000000-0000-0000-0000-000000000001'
+      )
+    ).rejects.toThrow('Artist Status');
+
+    expect(mockPrisma.$queryRawUnsafe).not.toHaveBeenCalled();
+  });
+
+  it('rejects inactive artist status dictionary references for artist stages', async () => {
+    mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([]);
+
+    await expect(
+      service.create(
+        'artist-stage',
+        'tenant_test',
+        {
+          artistStatusCode: 'archived',
+          code: 'ARCHIVED',
+          homepageTemplateTypeCode: 'operating',
+          name: localized('Archived'),
+        },
+        '00000000-0000-0000-0000-000000000001'
+      )
+    ).rejects.toThrow('Artist Status');
+
+    const dictionarySql = String(mockPrisma.$queryRawUnsafe.mock.calls[0][0]);
+    expect(dictionarySql).toContain('public.system_dictionary');
+    expect(mockPrisma.$queryRawUnsafe.mock.calls[0].slice(1)).toEqual([
+      'artist-status',
+      'archived',
     ]);
+  });
+
+  it('rejects inactive homepage template type dictionary references for artist stages', async () => {
+    mockPrisma.$queryRawUnsafe
+      .mockResolvedValueOnce([{ code: 'published' }])
+      .mockResolvedValueOnce([]);
+
+    await expect(
+      service.create(
+        'artist-stage',
+        'tenant_test',
+        {
+          artistStatusCode: 'published',
+          code: 'PREVIEW',
+          homepageTemplateTypeCode: 'preview-only',
+          name: localized('Preview'),
+        },
+        '00000000-0000-0000-0000-000000000001'
+      )
+    ).rejects.toThrow('Homepage Template Type');
+
+    expect(mockPrisma.$queryRawUnsafe.mock.calls[1].slice(1)).toEqual([
+      'homepage-template-type',
+      'preview-only',
+    ]);
+  });
+
+  it('persists artist stage homepage template type as the config entity source of truth', async () => {
+    mockPrisma.$queryRawUnsafe
+      .mockResolvedValueOnce([{ code: 'published' }])
+      .mockResolvedValueOnce([{ code: 'operating' }])
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([
+        createBaseEntity({
+          artistStatusCode: 'published',
+          code: 'ACTIVE',
+          homepageTemplateTypeCode: 'operating',
+        } as Partial<BaseConfigEntity>),
+      ]);
 
     await service.create(
       'artist-stage',
@@ -201,11 +275,12 @@ describe('ConfigService LocalizedText contract', () => {
       '00000000-0000-0000-0000-000000000001'
     );
 
-    const insertSql = String(mockPrisma.$queryRawUnsafe.mock.calls[1][0]);
-    const insertParams = mockPrisma.$queryRawUnsafe.mock.calls[1].slice(1);
+    const insertSql = String(mockPrisma.$queryRawUnsafe.mock.calls[3][0]);
+    const insertParams = mockPrisma.$queryRawUnsafe.mock.calls[3].slice(1);
 
     expect(insertSql).toContain('artist_status_code');
     expect(insertSql).toContain('homepage_template_type_code');
+    expect(insertParams).toContain('published');
     expect(insertParams).toContain('operating');
   });
 

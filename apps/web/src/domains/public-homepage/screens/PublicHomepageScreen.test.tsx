@@ -105,7 +105,6 @@ describe('PublicHomepageScreen', () => {
               sectionType: 'hero',
               visibility: 'visible',
               fallbackBehavior: 'safePlaceholder',
-              validationIssueIds: [],
               title: 'Aki Rosenthal',
               description: 'Official public homepage.',
               timezone: 'Asia/Tokyo',
@@ -136,7 +135,6 @@ describe('PublicHomepageScreen', () => {
               sectionType: 'socialLinks',
               visibility: 'visible',
               fallbackBehavior: 'safePlaceholder',
-              validationIssueIds: [],
               title: null,
               links: [
                 {
@@ -159,7 +157,6 @@ describe('PublicHomepageScreen', () => {
               sectionType: 'richText',
               visibility: 'visible',
               fallbackBehavior: 'stripField',
-              validationIssueIds: [],
               html: '<h2>About</h2><p>Official public homepage.</p>',
               textAlign: 'left',
             },

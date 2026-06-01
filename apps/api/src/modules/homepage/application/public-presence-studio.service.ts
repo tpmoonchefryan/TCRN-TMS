@@ -1353,7 +1353,8 @@ export class PublicPresenceStudioService {
     talentId: string,
     documentInput: unknown,
     context: RequestContext,
-    expectedCurrentContentHash?: string | null
+    expectedCurrentContentHash?: string | null,
+    templateSelection?: string | null
   ): Promise<PublicPresenceStudioWorkspace> {
     const documentResult = PublicPresenceDocumentSchema.safeParse(documentInput);
 
@@ -1376,10 +1377,58 @@ export class PublicPresenceStudioService {
           documentResult.data.templateId
         )
       : null;
+    const { homepagePolicy, templateAssets, visibleTemplateAssets } = await this.loadStudioPolicyContext(
+      talentId,
+      tenantSchema
+    );
+    if (homepagePolicy.status !== 'ready') {
+      throw new ConflictException({
+        code: ErrorCodes.RES_CONFLICT,
+        details: homepagePolicy,
+        message: 'Homepage work is unavailable for the current Artist Stage.',
+      });
+    }
+
+    const currentPin = currentVersion?.templateAssetPin ?? null;
+    const currentPinIsSelectable =
+      currentPin !== null &&
+      templateAssets.some(
+        (asset) =>
+          asset.assetId === currentPin.assetId &&
+          asset.templateId === documentResult.data.templateId &&
+          asset.isSelectable
+      );
+    const requestedTemplateAsset = templateSelection
+      ? this.resolveBootstrapTemplateAsset(templateAssets, templateSelection)
+      : null;
+    if (templateSelection && requestedTemplateAsset?.templateId !== documentResult.data.templateId) {
+      throw new BadRequestException({
+        code: ErrorCodes.VALIDATION_FAILED,
+        message: 'Selected template asset is unavailable for the draft template.',
+      });
+    }
+    const selectedTemplateAsset =
+      requestedTemplateAsset ??
+      (currentPinIsSelectable
+        ? null
+        : templateAssets.find(
+            (asset) =>
+              asset.templateId === documentResult.data.templateId &&
+              asset.isSelectable
+          ) ?? null);
+    const selectedTemplateEntry = selectedTemplateAsset
+      ? visibleTemplateAssets.find((asset) => asset.asset.id === selectedTemplateAsset.assetId) ??
+        null
+      : null;
+    const shouldKeepCurrentPin = !requestedTemplateAsset && currentPinIsSelectable;
+    const templateAssetPin =
+      shouldKeepCurrentPin || !selectedTemplateEntry
+        ? currentPin
+        : buildTemplateAssetPinFromListEntry(selectedTemplateEntry);
 
     await this.publicPresenceFoundationService.saveDraft(talentId, documentResult.data, context, {
       expectedCurrentContentHash,
-      templateAssetPin: currentVersion?.templateAssetPin ?? null,
+      templateAssetPin,
     });
 
     return this.getWorkspace(talentId, tenantSchema, documentResult.data.templateId);

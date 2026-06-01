@@ -336,7 +336,6 @@ describe('public presence validation artifact', () => {
           sectionType: 'hero',
           visibility: 'visible',
           fallbackBehavior: 'safePlaceholder',
-          validationIssueIds: [],
           title: 'Safe Home',
           description: 'Safe public homepage',
           timezone: 'Asia/Tokyo',
@@ -349,7 +348,6 @@ describe('public presence validation artifact', () => {
           sectionType: 'fallbackCard',
           visibility: 'fallback',
           fallbackBehavior: 'lockedSourceOwned',
-          validationIssueIds: [],
           title: 'Compatibility block',
           description: 'Simplified public output only.',
         },
@@ -362,5 +360,17 @@ describe('public presence validation artifact', () => {
       kind: 'legacyCompatibility',
       sectionType: 'fallbackCard',
     });
+
+    const internalProjection = {
+      ...projection,
+      sections: [
+        {
+          ...projection.sections[0],
+          validationIssueIds: ['issue-internal'],
+        },
+      ],
+    };
+
+    expect(() => PublicPresencePublicProjectionSchema.parse(internalProjection)).toThrow();
   });
 });

@@ -237,4 +237,21 @@ export class SettingsRepository {
       return [];
     }
   }
+
+  async listActiveSystemDictionaryItemCodes(dictionaryCode: string): Promise<string[]> {
+    const rows = await prisma.$queryRawUnsafe<Array<{ code: string }>>(
+      `
+        SELECT i.code
+        FROM public.system_dictionary d
+        INNER JOIN public.system_dictionary_item i ON i.dictionary_code = d.code
+        WHERE d.code = $1
+          AND d.is_active = true
+          AND i.is_active = true
+        ORDER BY i.sort_order ASC, i.code ASC
+      `,
+      dictionaryCode
+    );
+
+    return rows.map((row) => row.code);
+  }
 }

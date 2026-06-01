@@ -22,6 +22,7 @@ import {
   updateConfigEntity,
   type UpdateConfigEntityInput,
 } from '@/domains/config-dictionary-settings/api/settings.api';
+import { listDictionaryItems } from '@/domains/config-dictionary-settings/api/system-dictionary.api';
 import { CustomDomainConfigEntityWorkspace } from '@/domains/config-dictionary-settings/components/CustomDomainConfigEntityWorkspace';
 import { PublicPresenceAssetWorkspace } from '@/domains/config-dictionary-settings/components/PublicPresenceAssetWorkspace';
 import {
@@ -70,6 +71,8 @@ interface ScopedConfigEntityWorkspaceProps {
 
 type DraftValue = string | boolean;
 type ConfigEntityDraft = Record<string, DraftValue>;
+type SelectOption = NonNullable<ConfigEntityFieldDefinition['options']>[number];
+type DictionaryOptionsByCode = Record<string, SelectOption[]>;
 
 interface ParentOption {
   id: string;
@@ -711,11 +714,15 @@ function renderScopeSummary(
 function renderField(
   field: ConfigEntityFieldDefinition,
   draft: ConfigEntityDraft,
+  dictionaryOptionsByCode: DictionaryOptionsByCode,
   parentOptions: ParentOption[],
   onChange: (key: string, value: DraftValue) => void,
   _copy: ScopedConfigEntityWorkspaceCopy
 ) {
   const value = draft[field.key];
+  const selectOptions = field.dictionaryCode
+    ? (dictionaryOptionsByCode[field.dictionaryCode] ?? [])
+    : (field.options ?? []);
 
   if (field.kind === 'boolean') {
     return (
@@ -778,7 +785,7 @@ function renderField(
           className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm transition outline-none focus:border-slate-400"
         >
           <option value="">{field.placeholder ?? field.label}</option>
-          {(field.options ?? []).map((option) => (
+          {selectOptions.map((option) => (
             <option key={option.value} value={option.value}>
               {option.label}
             </option>
@@ -896,6 +903,9 @@ export function ScopedConfigEntityWorkspace({
   const [records, setRecords] = useState<ConfigEntityRecord[]>([]);
   const recordsTypeRef = useRef<ScopedConfigEntityType | null>(null);
   const [parentOptions, setParentOptions] = useState<ParentOption[]>([]);
+  const [dictionaryOptionsByCode, setDictionaryOptionsByCode] = useState<DictionaryOptionsByCode>(
+    {}
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState(urlSearch);
@@ -1194,6 +1204,58 @@ export function ScopedConfigEntityWorkspace({
     searchParams,
     selectedType,
   ]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadDictionaryOptions() {
+      const dictionaryCodes = Array.from(
+        new Set(selectedEntry.fields.map((field) => field.dictionaryCode).filter(Boolean))
+      ) as string[];
+
+      if (dictionaryCodes.length === 0) {
+        setDictionaryOptionsByCode({});
+        return;
+      }
+
+      const results = await Promise.all(
+        dictionaryCodes.map(async (dictionaryCode) => {
+          try {
+            const response = await listDictionaryItems(
+              requestEnvelope,
+              dictionaryCode,
+              {
+                includeInactive: false,
+                page: 1,
+                pageSize: 100,
+              },
+              locale
+            );
+
+            return [
+              dictionaryCode,
+              response.items.map((item) => ({
+                label: item.localizedName || item.name.en || item.code,
+                value: item.code,
+              })),
+            ] as const;
+          } catch {
+            return [dictionaryCode, []] as const;
+          }
+        })
+      );
+
+      if (!cancelled) {
+        setDictionaryOptionsByCode(Object.fromEntries(results));
+      }
+    }
+
+    void loadDictionaryOptions();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [locale, requestEnvelope, selectedEntry.fields]);
 
   useEffect(() => {
     let cancelled = false;
@@ -2225,7 +2287,14 @@ export function ScopedConfigEntityWorkspace({
               </div>
               <div className="grid gap-4 lg:grid-cols-2">
                 {selectedEntry.fields.map((field) =>
-                  renderField(field, draft, parentOptions, updateDraft, resolvedCopy)
+                  renderField(
+                    field,
+                    draft,
+                    dictionaryOptionsByCode,
+                    parentOptions,
+                    updateDraft,
+                    resolvedCopy
+                  )
                 )}
               </div>
             </div>

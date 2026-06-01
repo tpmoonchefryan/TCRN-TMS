@@ -871,7 +871,7 @@ function EmptyWorkspaceState({
         </PublicPresenceSurface>
       ) : null}
       <div className="grid gap-4 lg:grid-cols-2">
-        {templateAssets.map((templateAsset) => (
+        {selectableTemplateAssets.map((templateAsset) => (
           <PublicPresenceSurface
             key={templateAsset.assetId}
             className="space-y-3"

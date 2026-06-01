@@ -5,6 +5,7 @@ import { ConfigService as NestConfigService } from '@nestjs/config';
 import {
   createArtistLifecycleFlowSchema,
   ErrorCodes,
+  HOMEPAGE_TEMPLATE_TYPE_DICTIONARY_CODE,
   normalizeSupportedUiLocale,
   type ArtistLifecycleFlow,
 } from '@tcrn/shared';
@@ -220,6 +221,9 @@ export class SettingsApplicationService {
         details: error instanceof Error ? { reason: error.message } : undefined,
       });
     }
+
+    await this.assertArtistLifecycleFlowTemplateTypesActive(normalizedFlow);
+
     const nextSettings = {
       ...(tenant.settings ?? {}),
       [ARTIST_LIFECYCLE_FLOW_SETTINGS_KEY]: normalizedFlow,
@@ -236,6 +240,37 @@ export class SettingsApplicationService {
       version: 1,
       writable: true,
     };
+  }
+
+  private async assertArtistLifecycleFlowTemplateTypesActive(
+    flow: ArtistLifecycleFlow
+  ): Promise<void> {
+    const submittedCodes = [
+      ...new Set(flow.homepagePolicyByStage.flatMap((policy) => policy.allowedTemplateTypeCodes)),
+    ];
+
+    if (submittedCodes.length === 0) {
+      return;
+    }
+
+    const activeCodes = new Set(
+      await this.settingsRepository.listActiveSystemDictionaryItemCodes(
+        HOMEPAGE_TEMPLATE_TYPE_DICTIONARY_CODE
+      )
+    );
+    const invalidCodes = submittedCodes.filter((code) => !activeCodes.has(code));
+
+    if (invalidCodes.length === 0) {
+      return;
+    }
+
+    throw new BadRequestException({
+      code: 'SETTINGS_ARTIST_LIFECYCLE_TEMPLATE_TYPE_INVALID',
+      message: 'Artist Lifecycle Flow references inactive or missing Homepage Template Type items.',
+      details: {
+        invalidTemplateTypeCodes: invalidCodes,
+      },
+    });
   }
 
   async getTenantTurnstileSettings(tenantSchema: string): Promise<TenantTurnstileSettingsResponse> {

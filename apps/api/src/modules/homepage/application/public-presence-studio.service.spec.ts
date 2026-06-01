@@ -486,6 +486,109 @@ describe('PublicPresenceStudioService', () => {
     expect(result.draftVersion?.document.templateId).toBe('activeTalentHub');
   });
 
+  it('repins saved drafts to the current selectable template asset when the prior pin is no longer allowed', async () => {
+    vi.mocked(homepageAdminRepository.findTalentById).mockResolvedValue({
+      code: 'aki-rosenthal',
+      customDomain: null,
+      customDomainVerified: false,
+      displayName: 'Aki Rosenthal',
+      homepagePath: 'aki-home',
+      id: 'talent-1',
+      artistStageId: ARTIST_STAGE_ID,
+      lifecycleStatus: 'published',
+      timezone: 'Asia/Tokyo',
+    } as never);
+    vi.mocked(publicPresenceFoundationRepository.findPortalByTalentId).mockResolvedValue(
+      createPortalRecord()
+    );
+    vi.mocked(publicPresenceFoundationRepository.findLatestVersionByTemplate).mockResolvedValue({
+      ...createVersionRecord(),
+      templateAssetPin: {
+        assetId: 'stale-template-asset',
+        assetRevisionId: 'stale-template-revision',
+        sourceHash: 'b'.repeat(64),
+        snapshot: {
+          assetId: 'stale-template-asset',
+          assetRevisionId: 'stale-template-revision',
+          manifest: buildPublicPresenceTemplateAssetManifest('activeTalentHub', {
+            assetCode: 'stale-active-hub',
+            assetId: 'stale-template-asset',
+            assetRevisionId: 'stale-template-revision',
+          }),
+          revisionNumber: 1,
+          sourceBundle: [],
+          sourceHash: 'b'.repeat(64),
+        },
+      },
+    } as never);
+    vi.mocked(publicPresenceFoundationRepository.findDraftVersion).mockResolvedValue(
+      createVersionRecord()
+    );
+    vi.mocked(publicPresenceFoundationRepository.findDocumentVersionById).mockResolvedValue(null);
+    vi.mocked(publicPresenceFoundationRepository.findValidationSnapshotById).mockResolvedValue(
+      createSnapshotRecord()
+    );
+
+    await service.saveDraft('talent-1', draftDocument, context, 'hash-1');
+
+    expect(publicPresenceFoundationService.saveDraft).toHaveBeenCalledWith(
+      'talent-1',
+      draftDocument,
+      context,
+      expect.objectContaining({
+        expectedCurrentContentHash: 'hash-1',
+        templateAssetPin: expect.objectContaining({
+          assetId: TEMPLATE_FIXTURES.activeTalentHub.assetId,
+          assetRevisionId: TEMPLATE_FIXTURES.activeTalentHub.revisionId,
+        }),
+      })
+    );
+  });
+
+  it('rejects draft saves while the current Artist Stage homepage policy is blocked', async () => {
+    vi.mocked(homepageAdminRepository.findTalentById).mockResolvedValue({
+      code: 'aki-rosenthal',
+      customDomain: null,
+      customDomainVerified: false,
+      displayName: 'Aki Rosenthal',
+      homepagePath: 'aki-home',
+      id: 'talent-1',
+      artistStageId: ARTIST_STAGE_ID,
+      lifecycleStatus: 'published',
+      timezone: 'Asia/Tokyo',
+    } as never);
+    vi.mocked(homepageAdminRepository.readArtistLifecycleFlow).mockResolvedValue({
+      homepagePolicyByStage: [
+        {
+          allowedTemplateTypeCodes: [],
+          stageId: ARTIST_STAGE_ID,
+        },
+      ],
+      nodes: [
+        {
+          stageCode: 'live',
+          stageId: ARTIST_STAGE_ID,
+        },
+      ],
+      transitions: [],
+    } as never);
+    vi.mocked(publicPresenceFoundationRepository.findPortalByTalentId).mockResolvedValue(
+      createPortalRecord()
+    );
+    vi.mocked(publicPresenceFoundationRepository.findLatestVersionByTemplate).mockResolvedValue(
+      createVersionRecord()
+    );
+
+    await expect(service.saveDraft('talent-1', draftDocument, context, 'hash-1')).rejects.toMatchObject({
+      response: expect.objectContaining({
+        code: 'RES_CONFLICT',
+        message: 'Homepage work is unavailable for the current Artist Stage.',
+      }),
+    });
+
+    expect(publicPresenceFoundationService.saveDraft).not.toHaveBeenCalled();
+  });
+
   it('builds creator-readable debut defaults instead of raw talent-code copy', async () => {
     vi.mocked(homepageAdminRepository.listArtistStages).mockResolvedValue([
       createArtistStageRecord('pending-reveal'),

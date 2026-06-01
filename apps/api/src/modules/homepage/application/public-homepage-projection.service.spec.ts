@@ -21,6 +21,7 @@ import { PublicPresenceFoundationRepository } from '../infrastructure/public-pre
 import { buildPublicPresenceSeedRuntimeAuthorityForTests } from '../testing/public-presence-seed-runtime-authority';
 import { PublicHomepageProjectionService } from './public-homepage-projection.service';
 import { PublicHomepageService } from './public-homepage.service';
+import { PublicPresenceAssetService } from './public-presence-asset.service';
 import { PublicPresenceStudioService } from './public-presence-studio.service';
 
 const baseHomepageData: PublicHomepageData = {
@@ -104,7 +105,7 @@ function createTemplateAssetPin(
     assetRevisionId,
     description: text.description,
     name: text.name,
-    ownerId: 'talent-1',
+    ownerId: null,
     ownerType: 'talent',
   });
 
@@ -189,6 +190,9 @@ describe('PublicHomepageProjectionService', () => {
       findTalentById: vi.fn(),
       findTenantCodeBySchema: vi.fn(),
     } as unknown as HomepageAdminRepository;
+    const publicPresenceAssetService = {
+      listAssets: vi.fn().mockResolvedValue([]),
+    } as unknown as PublicPresenceAssetService;
     const publicPresenceStudioService = {
       getWorkspace: vi.fn().mockResolvedValue({
         homepagePolicy: {
@@ -212,12 +216,14 @@ describe('PublicHomepageProjectionService', () => {
         publicHomepageReadRepository,
         publicPresenceFoundationRepository,
         homepageAdminRepository,
+        publicPresenceAssetService,
         publicPresenceStudioService
       ),
       publicHomepageService,
       publicHomepageReadRepository,
       publicPresenceFoundationRepository,
       homepageAdminRepository,
+      publicPresenceAssetService,
       publicPresenceStudioService,
     };
   }
@@ -293,7 +299,9 @@ describe('PublicHomepageProjectionService', () => {
     });
     expect(projection.metadata.title).toBe('Project S');
     expect(projection.metadata.ogImage).toBeNull();
-    expect(service.toPublicProjection(projection)).not.toHaveProperty('documentVersionId');
+    const publicProjection = service.toPublicProjection(projection);
+    expect(publicProjection).not.toHaveProperty('documentVersionId');
+    expect(JSON.stringify(publicProjection)).not.toContain('validationIssueIds');
   });
 
   it('builds draft preview projections for the Studio route with optional phase overrides', async () => {
@@ -379,6 +387,95 @@ describe('PublicHomepageProjectionService', () => {
     });
     expect(projection.resolvedRevealPhase).toBe('revealed');
     expect(projection.metadata.title).toBe('Sora reveal');
+  });
+
+  it('builds draft previews from pinned asset runtime authority when the stored snapshot is absent', async () => {
+    const {
+      service,
+      homepageAdminRepository,
+      publicPresenceAssetService,
+      publicPresenceFoundationRepository,
+      publicPresenceStudioService,
+    } = createService();
+
+    vi.mocked(homepageAdminRepository.findTalentById).mockResolvedValue({
+      id: 'talent-1',
+      code: 'sora',
+      displayName: 'Tokino Sora',
+      homepagePath: 'tokino-sora',
+      customDomain: null,
+      customDomainVerified: false,
+      artistStageId: 'artist-stage-live',
+      lifecycleStatus: 'published',
+      timezone: 'Asia/Tokyo',
+    });
+    vi.mocked(homepageAdminRepository.findTenantCodeBySchema).mockResolvedValue('tenant-a');
+    vi.mocked(publicPresenceFoundationRepository.findPortalByTalentId).mockResolvedValue({
+      id: 'portal-1',
+      talentId: 'talent-1',
+      draftVersionId: 'draft-1',
+      liveVersionId: null,
+      latestVersionNumber: 3,
+      latestValidationState: 'validEditable',
+      lastValidatedAt: new Date('2026-05-15T10:00:00.000Z'),
+      createdAt: new Date('2026-05-15T08:00:00.000Z'),
+      updatedAt: new Date('2026-05-15T10:00:00.000Z'),
+      version: 1,
+    });
+    vi.mocked(publicPresenceStudioService.getWorkspace).mockResolvedValue({
+      homepagePolicy: {
+        allowedTemplateTypeCodes: ['pending-reveal'],
+        blockedReasons: [],
+        status: 'ready',
+      },
+      templateAssets: [
+        {
+          assetId: 'template-asset-1',
+          isSelectable: true,
+          templateId: 'debutReveal',
+        },
+      ],
+    } as Awaited<ReturnType<PublicPresenceStudioService['getWorkspace']>>);
+    vi.mocked(publicPresenceFoundationRepository.findLatestVersionByTemplate).mockResolvedValue({
+      id: 'draft-1',
+      portalId: 'portal-1',
+      versionNumber: 3,
+      documentSchemaVersion: '1.0',
+      templateId: 'debutReveal',
+      templateAssetPin: createTemplateAssetPin('debutReveal'),
+      document: liveDocument as unknown as Record<string, unknown>,
+      documentState: 'draft',
+      contentHashAlgorithm: 'sha256',
+      contentHash: 'draft-hash',
+      lastValidationSnapshotId: null,
+      scheduledFor: null,
+      publishedAt: null,
+      publishedBy: null,
+      createdAt: new Date('2026-05-15T09:00:00.000Z'),
+      updatedAt: new Date('2026-05-15T10:00:00.000Z'),
+      createdBy: 'user-1',
+    });
+
+    const projection = await service.getDraftPreviewProjectionOrThrow(
+      'talent-1',
+      'tenant_alpha',
+      'revealed',
+      'debutReveal'
+    );
+
+    expect(publicPresenceAssetService.listAssets).toHaveBeenCalledWith(
+      'tenant_alpha',
+      {
+        assetKind: 'component',
+        scopeId: 'talent-1',
+        scopeType: 'talent',
+      },
+      null
+    );
+    expect(projection.metadata.title).toBe('Sora reveal');
+    expect(projection.templateAssetPin?.assetRevisionId).toBe(
+      createTemplateAssetPin('debutReveal').assetRevisionId
+    );
   });
 
   it('blocks draft preview projections when Artist Stage homepage policy blocks the template', async () => {

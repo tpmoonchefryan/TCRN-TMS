@@ -5,8 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 
 import {
   type ArtistLifecycleFlow,
-  PUBLIC_PRESENCE_TEMPLATE_TYPE_CODES,
-  type PublicPresenceTemplateTypeCode,
+  HOMEPAGE_TEMPLATE_TYPE_DICTIONARY_CODE,
   type SupportedUiLocale,
 } from '@tcrn/shared';
 
@@ -21,6 +20,7 @@ import {
   type RequestEnvelopeFn,
   updateTenantArtistLifecycleFlow,
 } from '@/domains/config-dictionary-settings/api/settings.api';
+import { listDictionaryItems } from '@/domains/config-dictionary-settings/api/system-dictionary.api';
 import { ApiRequestError } from '@/platform/http/api';
 import { pickLocaleText } from '@/platform/runtime/locale/locale-text';
 
@@ -35,44 +35,19 @@ interface ArtistLifecycleFlowWorkspaceProps {
 }
 
 interface FlowDraft {
-  policyByStage: Record<string, PublicPresenceTemplateTypeCode[]>;
+  policyByStage: Record<string, string[]>;
   transitionKeys: string[];
+}
+
+interface TemplateTypeOption {
+  label: string;
+  value: string;
 }
 
 interface NoticeState {
   tone: 'success' | 'error';
   message: string;
 }
-
-const TEMPLATE_TYPE_LABELS: Record<
-  PublicPresenceTemplateTypeCode,
-  Record<SupportedUiLocale, string>
-> = {
-  'pending-reveal': {
-    en: 'Pending Reveal',
-    zh_HANS: '待揭晓',
-    zh_HANT: '待揭曉',
-    ja: '公開待ち',
-    ko: '공개 대기',
-    fr: 'Reveal en attente',
-  },
-  operating: {
-    en: 'Operating',
-    zh_HANS: '运营中',
-    zh_HANT: '營運中',
-    ja: '運用中',
-    ko: '운영 중',
-    fr: 'En exploitation',
-  },
-  graduated: {
-    en: 'Graduated',
-    zh_HANS: '已毕业',
-    zh_HANT: '已畢業',
-    ja: '卒業済み',
-    ko: '졸업',
-    fr: 'Diplome',
-  },
-};
 
 function getErrorMessage(reason: unknown, fallback: string) {
   return reason instanceof ApiRequestError ? reason.message : fallback;
@@ -101,14 +76,12 @@ function buildTransitionId(
   return `stage-${fromCode}-to-${toCode}`.slice(0, 64);
 }
 
-function normalizePolicyCodes(value: unknown): PublicPresenceTemplateTypeCode[] {
+function normalizePolicyCodes(value: unknown): string[] {
   if (!Array.isArray(value)) {
     return [];
   }
 
-  return value.filter((code): code is PublicPresenceTemplateTypeCode =>
-    PUBLIC_PRESENCE_TEMPLATE_TYPE_CODES.includes(code as PublicPresenceTemplateTypeCode)
-  );
+  return value.map((code) => String(code).trim()).filter(Boolean);
 }
 
 function buildDraft(flow: ArtistLifecycleFlow, stages: ConfigEntityRecord[]): FlowDraft {
@@ -118,11 +91,7 @@ function buildDraft(flow: ArtistLifecycleFlow, stages: ConfigEntityRecord[]): Fl
     const storedPolicy = flow.homepagePolicyByStage.find((policy) => policy.stageId === stage.id);
     const storedCodes = normalizePolicyCodes(storedPolicy?.allowedTemplateTypeCodes);
     const stageCode = stage.homepageTemplateTypeCode;
-    const fallbackCodes =
-      typeof stageCode === 'string' &&
-      PUBLIC_PRESENCE_TEMPLATE_TYPE_CODES.includes(stageCode as PublicPresenceTemplateTypeCode)
-        ? [stageCode as PublicPresenceTemplateTypeCode]
-        : [];
+    const fallbackCodes = typeof stageCode === 'string' && stageCode.trim() ? [stageCode] : [];
 
     policyByStage[stage.id] = storedCodes.length > 0 ? storedCodes : fallbackCodes;
   }
@@ -168,15 +137,16 @@ function buildFlowFromDraft(
     ),
     homepagePolicyByStage: activeStages
       .map((stage) => ({
-        allowedTemplateTypeCodes: draft.policyByStage[stage.id] ?? [],
+        allowedTemplateTypeCodes: (draft.policyByStage[stage.id] ??
+          []) as ArtistLifecycleFlow['homepagePolicyByStage'][number]['allowedTemplateTypeCodes'],
         stageId: stage.id,
       }))
       .filter((policy) => policy.allowedTemplateTypeCodes.length > 0),
   };
 }
 
-function resolveTemplateTypeLabel(code: PublicPresenceTemplateTypeCode, locale: SupportedUiLocale) {
-  return TEMPLATE_TYPE_LABELS[code][locale] || TEMPLATE_TYPE_LABELS[code].en;
+function resolveTemplateTypeLabel(code: string, options: TemplateTypeOption[]) {
+  return options.find((option) => option.value === code)?.label ?? code;
 }
 
 export function ArtistLifecycleFlowWorkspace({
@@ -189,6 +159,7 @@ export function ArtistLifecycleFlowWorkspace({
   const [flowState, setFlowState] = useState<ArtistLifecycleFlowSettingsResponse | null>(null);
   const [stages, setStages] = useState<ConfigEntityRecord[]>([]);
   const [draft, setDraft] = useState<FlowDraft>({ policyByStage: {}, transitionKeys: [] });
+  const [templateTypeOptions, setTemplateTypeOptions] = useState<TemplateTypeOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -203,7 +174,7 @@ export function ArtistLifecycleFlowWorkspace({
     setNotice(null);
 
     try {
-      const [stageRecords, flowResponse] = await Promise.all([
+      const [stageRecords, flowResponse, templateTypeItems] = await Promise.all([
         listAllConfigEntities(
           requestEnvelope,
           'artist-stage',
@@ -222,16 +193,32 @@ export function ArtistLifecycleFlowWorkspace({
           : scopeType === 'subsidiary'
             ? readSubsidiaryArtistLifecycleFlow(request, scopeId || '')
             : readTalentArtistLifecycleFlow(request, scopeId || ''),
+        listDictionaryItems(
+          requestEnvelope,
+          HOMEPAGE_TEMPLATE_TYPE_DICTIONARY_CODE,
+          {
+            includeInactive: false,
+            page: 1,
+            pageSize: 100,
+          },
+          locale
+        ),
       ]);
 
       const nextStages = stageRecords.filter((stage) => stage.code);
+      const nextTemplateTypeOptions = templateTypeItems.items.map((item) => ({
+        label: item.localizedName || item.name[locale] || item.name.en || item.code,
+        value: item.code,
+      }));
       setStages(nextStages);
       setFlowState(flowResponse);
       setDraft(buildDraft(flowResponse.flow, nextStages));
+      setTemplateTypeOptions(nextTemplateTypeOptions);
     } catch (reason) {
       setStages([]);
       setFlowState(null);
       setDraft({ policyByStage: {}, transitionKeys: [] });
+      setTemplateTypeOptions([]);
       setLoadError(
         getErrorMessage(
           reason,
@@ -254,7 +241,7 @@ export function ArtistLifecycleFlowWorkspace({
     void loadWorkspace();
   }, [locale, request, requestEnvelope, scopeId, scopeType]);
 
-  function toggleTemplateType(stageId: string, code: PublicPresenceTemplateTypeCode) {
+  function toggleTemplateType(stageId: string, code: string) {
     setDraft((current) => {
       const currentCodes = current.policyByStage[stageId] ?? [];
       const nextCodes = currentCodes.includes(code)
@@ -531,21 +518,34 @@ export function ArtistLifecycleFlowWorkspace({
                   })}
                 </p>
                 <div className="flex flex-wrap gap-2">
-                  {PUBLIC_PRESENCE_TEMPLATE_TYPE_CODES.map((code) => (
-                    <label
-                      key={code}
-                      className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={(draft.policyByStage[stage.id] ?? []).includes(code)}
-                        disabled={!writable}
-                        onChange={() => toggleTemplateType(stage.id, code)}
-                        className="h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-500"
-                      />
-                      {resolveTemplateTypeLabel(code, locale)}
-                    </label>
-                  ))}
+                  {templateTypeOptions.length > 0 ? (
+                    templateTypeOptions.map((option) => (
+                      <label
+                        key={option.value}
+                        className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={(draft.policyByStage[stage.id] ?? []).includes(option.value)}
+                          disabled={!writable}
+                          onChange={() => toggleTemplateType(stage.id, option.value)}
+                          className="h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-500"
+                        />
+                        {resolveTemplateTypeLabel(option.value, templateTypeOptions)}
+                      </label>
+                    ))
+                  ) : (
+                    <p className="text-sm leading-6 text-slate-600">
+                      {pickLocaleText(locale, {
+                        en: 'No active Homepage Template Type dictionary items are available.',
+                        zh_HANS: '当前没有可用的 Homepage Template Type 字典项。',
+                        zh_HANT: '目前沒有可用的 Homepage Template Type 字典項。',
+                        ja: '利用可能な Homepage Template Type 辞書項目がありません。',
+                        ko: '사용 가능한 Homepage Template Type 사전 항목이 없습니다.',
+                        fr: 'Aucun item de dictionnaire Homepage Template Type actif disponible.',
+                      })}
+                    </p>
+                  )}
                 </div>
               </div>
 

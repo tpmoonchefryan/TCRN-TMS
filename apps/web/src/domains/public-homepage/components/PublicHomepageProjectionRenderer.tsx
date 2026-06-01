@@ -9,6 +9,7 @@ import {
   type PublicPresenceProjectedAction,
   type PublicPresenceProjectedSection,
   type PublicPresenceProjection,
+  type PublicPresencePublicProjectedSection,
   type PublicPresencePublicProjection,
   type ThemeConfig,
 } from '@tcrn/shared';
@@ -37,7 +38,8 @@ interface GroupedActionSection {
   type: 'groupedActionSection';
 }
 
-type RenderableSection = PublicPresenceProjectedSection | GroupedActionSection;
+type ProjectionSectionLike = PublicPresenceProjectedSection | PublicPresencePublicProjectedSection;
+type RenderableSection = ProjectionSectionLike | GroupedActionSection;
 
 function resolveBorderRadius(value: ThemeConfig['card']['borderRadius']) {
   switch (value) {
@@ -231,7 +233,7 @@ function resolveCountdownDescription(locale: string, description: string | null)
 }
 
 function resolveSectionTitle(
-  section: PublicPresenceProjectedSection,
+  section: ProjectionSectionLike,
   copy: PublicHomepageCopy,
   locale: string
 ) {
@@ -309,7 +311,7 @@ function resolveSectionTitle(
 }
 
 function resolveSectionDescription(
-  section: PublicPresenceProjectedSection,
+  section: ProjectionSectionLike,
   copy: PublicHomepageCopy,
   locale: string
 ) {
@@ -361,7 +363,7 @@ function resolveSectionDescription(
 }
 
 function renderSection(
-  section: PublicPresenceProjectedSection,
+  section: ProjectionSectionLike,
   theme: ThemeConfig,
   copy: PublicHomepageCopy,
   locale: string,
@@ -756,7 +758,7 @@ function renderSection(
 }
 
 function resolveGroupedActionKind(
-  section: PublicPresenceProjectedSection
+  section: ProjectionSectionLike
 ): GroupedActionKind | null {
   if (section.sectionType !== 'linkButton' || !section.action.href) {
     return null;
@@ -863,7 +865,7 @@ function resolveGroupedActionDescription(locale: string, kind: GroupedActionKind
   }
 }
 
-function buildRenderableSections(sections: PublicPresenceProjectedSection[]): RenderableSection[] {
+function buildRenderableSections(sections: ProjectionSectionLike[]): RenderableSection[] {
   const renderable: RenderableSection[] = [];
   let hasGroupedCurrentAction = false;
 

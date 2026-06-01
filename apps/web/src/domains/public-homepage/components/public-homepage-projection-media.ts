@@ -1,14 +1,16 @@
 import type {
   PublicPresenceProjectedSection,
   PublicPresenceProjection,
+  PublicPresencePublicProjectedSection,
   PublicPresencePublicProjection,
 } from '@tcrn/shared';
 
 type ProjectionLike = PublicPresenceProjection | PublicPresencePublicProjection | null | undefined;
+type ProjectionSectionLike = PublicPresenceProjectedSection | PublicPresencePublicProjectedSection;
 
 const preloadedProjectionMediaUrls = new Set<string>();
 
-function collectSectionImageUrls(section: PublicPresenceProjectedSection): string[] {
+function collectSectionImageUrls(section: ProjectionSectionLike): string[] {
   switch (section.sectionType) {
     case 'hero':
     case 'profileCard':

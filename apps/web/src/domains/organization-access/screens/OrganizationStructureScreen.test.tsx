@@ -143,6 +143,59 @@ describe('OrganizationStructureScreen', () => {
     expect(await screen.findByRole('button', { name: '关闭创建分目录抽屉' })).toBeInTheDocument();
   });
 
+  it('requires an explicit artist stage selection when creating a talent', async () => {
+    mockRequest.mockImplementation((path: string, init?: RequestInit) => {
+      if (path === '/api/v1/profile-stores?page=1&pageSize=20') {
+        return Promise.resolve(profileStoresResponse);
+      }
+
+      if (path === artistStageListPath) {
+        return Promise.resolve(artistStagesResponse);
+      }
+
+      if (path === '/api/v1/organization/tree?includeInactive=false') {
+        return Promise.resolve({
+          tenantId: 'tenant-1',
+          subsidiaries: [],
+          directTalents: [],
+        });
+      }
+
+      if (path === '/api/v1/talents' && init?.method === 'POST') {
+        throw new Error('Talent creation should not submit without an explicit artist stage.');
+      }
+
+      throw new Error(`Unexpected request: ${path}`);
+    });
+
+    render(<OrganizationStructureScreen tenantId="tenant-1" />);
+
+    expect(await screen.findByRole('heading', { name: 'Tenant Alpha' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Create talent' }));
+
+    await waitFor(() => {
+      expect((screen.getByLabelText('Profile store') as HTMLSelectElement).value).toBe('store-1');
+    });
+    expect((screen.getByLabelText('Artist stage') as HTMLSelectElement).value).toBe('');
+
+    fireEvent.change(screen.getByLabelText('Talent code'), {
+      target: { value: 'mio' },
+    });
+    fireEvent.change(screen.getByLabelText('Display name'), {
+      target: { value: 'Mio' },
+    });
+    fireEvent.change(screen.getByLabelText('Legal / English name'), {
+      target: { value: 'Ookami Mio' },
+    });
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Create talent' })[1]);
+
+    expect(
+      await screen.findByText('Select an artist stage before creating a talent.')
+    ).toBeInTheDocument();
+    expect(mockRequest).not.toHaveBeenCalledWith('/api/v1/talents', expect.anything());
+  });
+
   it('shows all tenant talents by default and narrows the inventory when a subsidiary scope is selected', async () => {
     mockRequest.mockImplementation((path: string) => {
       if (path === '/api/v1/profile-stores?page=1&pageSize=20') {
@@ -519,6 +572,9 @@ describe('OrganizationStructureScreen', () => {
     fireEvent.change(screen.getByLabelText('Legal / English name'), {
       target: { value: 'Ookami Mio' },
     });
+    fireEvent.change(screen.getByLabelText('Artist stage'), {
+      target: { value: 'stage-draft' },
+    });
 
     fireEvent.click(screen.getAllByRole('button', { name: 'Create talent' })[1]);
 
@@ -583,6 +639,9 @@ describe('OrganizationStructureScreen', () => {
       }
 
       if (path === '/api/v1/talents' && init?.method === 'POST') {
+        const payload = JSON.parse(String(init.body)) as Record<string, unknown>;
+        expect(payload.artistStageId).toBe('stage-draft');
+
         return Promise.resolve({
           id: 'talent-5',
           subsidiaryId: null,
@@ -625,6 +684,9 @@ describe('OrganizationStructureScreen', () => {
     });
     fireEvent.change(screen.getByLabelText('Legal / English name'), {
       target: { value: 'Suzu' },
+    });
+    fireEvent.change(screen.getByLabelText('Artist stage'), {
+      target: { value: 'stage-draft' },
     });
 
     fireEvent.click(screen.getAllByRole('button', { name: 'Create talent' })[1]);

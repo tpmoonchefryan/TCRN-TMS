@@ -12,6 +12,7 @@ describe('SettingsApplicationService', () => {
   let mockSettingsRepository: {
     findTenantBySchema: ReturnType<typeof vi.fn>;
     findSubsidiaryById: ReturnType<typeof vi.fn>;
+    listActiveSystemDictionaryItemCodes: ReturnType<typeof vi.fn>;
     listArtistStageCatalog: ReturnType<typeof vi.fn>;
     listSubsidiariesByCodes: ReturnType<typeof vi.fn>;
     findTalentById: ReturnType<typeof vi.fn>;
@@ -28,6 +29,7 @@ describe('SettingsApplicationService', () => {
     mockSettingsRepository = {
       findTenantBySchema: vi.fn(),
       findSubsidiaryById: vi.fn(),
+      listActiveSystemDictionaryItemCodes: vi.fn(),
       listArtistStageCatalog: vi.fn(),
       listSubsidiariesByCodes: vi.fn(),
       findTalentById: vi.fn(),
@@ -420,6 +422,46 @@ describe('SettingsApplicationService', () => {
           homepagePolicyByStage: [],
         })
       ).rejects.toThrow(BadRequestException);
+      expect(mockSettingsRepository.updateTenantSettings).not.toHaveBeenCalled();
+    });
+
+    it('rejects tenant flow updates when homepage template type codes are not active dictionary items', async () => {
+      mockSettingsRepository.findTenantBySchema.mockResolvedValue({
+        id: 'tenant-123',
+        settings: {},
+      });
+      mockSettingsRepository.listArtistStageCatalog.mockResolvedValue([
+        {
+          id: '11111111-1111-4111-8111-111111111111',
+          code: 'pre-debut',
+          isActive: true,
+        },
+      ]);
+      mockSettingsRepository.listActiveSystemDictionaryItemCodes.mockResolvedValue([
+        'pending-reveal',
+      ]);
+
+      await expect(
+        service.updateArtistLifecycleFlow(testSchema, {
+          nodes: [
+            {
+              stageId: '11111111-1111-4111-8111-111111111111',
+              stageCode: 'pre-debut',
+            },
+          ],
+          transitions: [],
+          homepagePolicyByStage: [
+            {
+              stageId: '11111111-1111-4111-8111-111111111111',
+              allowedTemplateTypeCodes: ['operating'],
+            },
+          ],
+        })
+      ).rejects.toMatchObject({
+        response: {
+          code: 'SETTINGS_ARTIST_LIFECYCLE_TEMPLATE_TYPE_INVALID',
+        },
+      });
       expect(mockSettingsRepository.updateTenantSettings).not.toHaveBeenCalled();
     });
   });
