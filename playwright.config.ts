@@ -19,15 +19,18 @@ const webPort = Number(process.env.E2E_WEB_PORT || 3100);
 const baseURL = process.env.E2E_BASE_URL || `http://127.0.0.1:${webPort}`;
 
 export default defineConfig({
-  testDir: './retired-browser-tests',
+  testDir: './tests/e2e',
+  testMatch: [
+    'p4-platform-tool-connections.spec.ts',
+    'p5-observability-adapter-foundation.spec.ts',
+    'p6-runtime-feature-flag-adapter.spec.ts',
+  ],
   fullyParallel: false,
   workers: 1,
   timeout: 60_000,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? [['github'], ['list']] : [['list']],
-  globalSetup: './retired-browser-tests/global.setup.ts',
-  globalTeardown: './retired-browser-tests/global.teardown.ts',
   use: {
     baseURL,
     trace: 'retain-on-failure',

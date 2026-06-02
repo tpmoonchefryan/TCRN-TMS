@@ -12,8 +12,8 @@
 
 <p align="center">
   <img alt="License" src="https://img.shields.io/badge/license-PolyForm%20NC-blue">
-  <img alt="Node" src="https://img.shields.io/badge/node-20%2B-green">
-  <img alt="TypeScript" src="https://img.shields.io/badge/typescript-5.9-blue">
+  <img alt="Node" src="https://img.shields.io/badge/node-24-green">
+  <img alt="TypeScript" src="https://img.shields.io/badge/typescript-6.0-blue">
   <img alt="PRs Welcome" src="https://img.shields.io/badge/PRs-welcome-brightgreen">
 </p>
 
@@ -281,23 +281,23 @@ End-to-end type-safe validation with Zod remains active in the shared/backend la
 
 ## 🛠️ Tech Stack
 
-| Layer                  | Technology     | Version |
-| ---------------------- | -------------- | ------- |
-| **API Runtime**        | NestJS         | 11.1.6  |
-|                        | TypeScript     | 5.9.3   |
-| **Worker Runtime**     | BullMQ         | 5.66.5  |
-| **Contracts / Schema** | Zod            | 4.x     |
-|                        | Prisma ORM     | 6.14.0  |
-| **Database**           | PostgreSQL     | 16      |
-|                        | Redis          | 8.6.3   |
-| **Storage**            | MinIO          | Latest  |
-| **Messaging**          | NATS JetStream | 2       |
-| **Observability**      | OpenTelemetry  | -       |
-|                        | Prometheus     | -       |
-|                        | Grafana Loki   | 2.9.0   |
-|                        | Grafana Tempo  | -       |
-| **Deployment**         | Docker         | -       |
-|                        | Kubernetes     | -       |
+| Layer                  | Technology     | Version            |
+| ---------------------- | -------------- | ------------------ |
+| **API Runtime**        | NestJS         | 11.1.23            |
+|                        | TypeScript     | 6.0.3              |
+| **Worker Runtime**     | BullMQ         | 5.77.2             |
+| **Contracts / Schema** | Zod            | 4.4.3              |
+|                        | Prisma ORM     | 7.8.0              |
+| **Database**           | PostgreSQL     | 16                 |
+|                        | Redis          | 8.6.3              |
+| **Storage**            | MinIO          | RELEASE.2025-09-07 |
+| **Messaging**          | NATS JetStream | 2                  |
+| **Observability**      | OpenTelemetry  | -                  |
+|                        | Prometheus     | -                  |
+|                        | Grafana Loki   | 2.9.0              |
+|                        | Grafana Tempo  | -                  |
+| **Deployment**         | Docker         | -                  |
+|                        | Kubernetes     | -                  |
 
 Current runtime status for the infrastructure above:
 
@@ -315,8 +315,8 @@ Current runtime status for the infrastructure above:
 
 ### Prerequisites
 
-- Node.js 20+ (LTS recommended)
-- pnpm 9.15.4+
+- Node.js 24 LTS
+- pnpm 11.3.0+
 - Docker & Docker Compose
 - PostgreSQL 16+ (or use Docker)
 - Redis 8+ (or use Docker)
@@ -378,7 +378,7 @@ Local development includes the repo-owned `apps/web` browser runtime on `http://
 
 ### Testing And Verification Boundary
 
-- The root browser validation entry remains `pnpm test:e2e`, backed by `playwright.config.ts` and the legacy-named `retired-browser-tests/*` directory as the current targeted deterministic Playwright browser proof suite.
+- The root browser validation entry remains `pnpm test:e2e`, backed by `playwright.config.ts` and the deterministic `tests/e2e/*` Playwright phase proof suite. Dedicated phase acceptance suites remain under `retired-browser-tests/<phase>` with their own Playwright config files.
 - For Dev acceptance, targeted CLI Playwright/Chrome proof is authoritative when Codex App browser sessions are unavailable or browser-extension plumbing is unstable.
 - `pnpm test:integration` at the repo root is an alias for `pnpm --filter @tcrn/api test:integration` and runs the API integration suite with `vitest.integration.config.ts`.
 - `pnpm test:isolation` at the repo root is an alias for `pnpm --filter @tcrn/api test:isolation` and runs the API isolation suite with the same Vitest integration config.

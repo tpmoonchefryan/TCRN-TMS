@@ -2,8 +2,6 @@
 # TCRN TMS Docker Compose - Staging Environment Override
 # Usage: docker compose -f docker-compose.yml -f docker-compose.staging.yml up -d
 
-version: '3.8'
-
 services:
   # Override PostgreSQL for staging
   postgres:

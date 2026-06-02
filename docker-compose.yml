@@ -2,8 +2,6 @@
 # TCRN TMS Docker Compose - Local Development Environment
 # PRD §4.4: 双网络隔离架构
 
-version: '3.8'
-
 networks:
   # Main application network
   app-network:

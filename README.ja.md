@@ -12,8 +12,8 @@
 
 <p align="center">
   <img alt="License" src="https://img.shields.io/badge/license-PolyForm%20NC-blue">
-  <img alt="Node" src="https://img.shields.io/badge/node-20%2B-green">
-  <img alt="TypeScript" src="https://img.shields.io/badge/typescript-5.9-blue">
+  <img alt="Node" src="https://img.shields.io/badge/node-24-green">
+  <img alt="TypeScript" src="https://img.shields.io/badge/typescript-6.0-blue">
   <img alt="PRs Welcome" src="https://img.shields.io/badge/PRs-welcome-brightgreen">
 </p>
 
@@ -281,23 +281,23 @@ Zod による型安全 validation は、現在も shared/backend 層で有効で
 
 ## 🛠️ 技術スタック
 
-| レイヤー               | 技術           | バージョン |
-| ---------------------- | -------------- | ---------- |
-| **API Runtime**        | NestJS         | 11.1.6     |
-|                        | TypeScript     | 5.9.3      |
-| **Worker Runtime**     | BullMQ         | 5.66.5     |
-| **契約 / Schema**      | Zod            | 4.x        |
-|                        | Prisma ORM     | 6.14.0     |
-| **データベース**       | PostgreSQL     | 16         |
-|                        | Redis          | 8.6.3      |
-| **ストレージ**         | MinIO          | Latest     |
-| **メッセージング**     | NATS JetStream | 2          |
-| **オブザーバビリティ** | OpenTelemetry  | -          |
-|                        | Prometheus     | -          |
-|                        | Grafana Loki   | 2.9.0      |
-|                        | Grafana Tempo  | -          |
-| **デプロイ**           | Docker         | -          |
-|                        | Kubernetes     | -          |
+| レイヤー               | 技術           | バージョン         |
+| ---------------------- | -------------- | ------------------ |
+| **API Runtime**        | NestJS         | 11.1.23            |
+|                        | TypeScript     | 6.0.3              |
+| **Worker Runtime**     | BullMQ         | 5.77.2             |
+| **契約 / Schema**      | Zod            | 4.4.3              |
+|                        | Prisma ORM     | 7.8.0              |
+| **データベース**       | PostgreSQL     | 16                 |
+|                        | Redis          | 8.6.3              |
+| **ストレージ**         | MinIO          | RELEASE.2025-09-07 |
+| **メッセージング**     | NATS JetStream | 2                  |
+| **オブザーバビリティ** | OpenTelemetry  | -                  |
+|                        | Prometheus     | -                  |
+|                        | Grafana Loki   | 2.9.0              |
+|                        | Grafana Tempo  | -                  |
+| **デプロイ**           | Docker         | -                  |
+|                        | Kubernetes     | -                  |
 
 上記インフラの現在のランタイム状態は次のとおりです。
 
@@ -315,8 +315,8 @@ Zod による型安全 validation は、現在も shared/backend 層で有効で
 
 ### 前提条件
 
-- Node.js 20+（LTS推奨）
-- pnpm 9.15.4+
+- Node.js 24 LTS
+- pnpm 11.3.0+
 - Docker & Docker Compose
 - PostgreSQL 16+（またはDockerを使用）
 - Redis 8+（またはDockerを使用）
@@ -377,7 +377,7 @@ pnpm dev
 
 ### テストと検証の境界
 
-- ルートのブラウザ検証エントリは引き続き `pnpm test:e2e` で、`playwright.config.ts` と `retired-browser-tests/*` を現在の targeted deterministic browser proof suite として使います。
+- ルートのブラウザ検証エントリは引き続き `pnpm test:e2e` で、`playwright.config.ts` と deterministic な `tests/e2e/*` Playwright phase proof suite を使います。専用フェーズ受け入れスイートは引き続き `retired-browser-tests/<phase>` に配置し、それぞれの Playwright config を使います。
 - ルートの `pnpm test:integration` は実際には `pnpm --filter @tcrn/api test:integration` のエイリアスで、`vitest.integration.config.ts` を使って API integration suite を実行します。
 - ルートの `pnpm test:isolation` は実際には `pnpm --filter @tcrn/api test:isolation` のエイリアスで、同じ Vitest integration 設定で API isolation suite を実行します。
 - schema 変更を含むリリースでは、`db:verify-schema-rollout` を通常のランタイム health check と組み合わせて実行してください。ブラウザ smoke check を direct schema rollout verification の代替にしないでください。

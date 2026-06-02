@@ -12,8 +12,8 @@
 
 <p align="center">
   <img alt="License" src="https://img.shields.io/badge/license-PolyForm%20NC-blue">
-  <img alt="Node" src="https://img.shields.io/badge/node-20%2B-green">
-  <img alt="TypeScript" src="https://img.shields.io/badge/typescript-5.9-blue">
+  <img alt="Node" src="https://img.shields.io/badge/node-24-green">
+  <img alt="TypeScript" src="https://img.shields.io/badge/typescript-6.0-blue">
   <img alt="PRs Welcome" src="https://img.shields.io/badge/PRs-welcome-brightgreen">
 </p>
 
@@ -281,23 +281,23 @@ Loki 集成支持跨所有日志的全文搜索。
 
 ## 🛠️ 技术栈
 
-| 层级              | 技术           | 版本   |
-| ----------------- | -------------- | ------ |
-| **API Runtime**   | NestJS         | 11.1.6 |
-|                   | TypeScript     | 5.9.3  |
-| **Worker**        | BullMQ         | 5.66.5 |
-| **契约 / Schema** | Zod            | 4.x    |
-|                   | Prisma ORM     | 6.14.0 |
-| **数据库**        | PostgreSQL     | 16     |
-|                   | Redis          | 8.6.3  |
-| **存储**          | MinIO          | Latest |
-| **消息**          | NATS JetStream | 2      |
-| **可观测性**      | OpenTelemetry  | -      |
-|                   | Prometheus     | -      |
-|                   | Grafana Loki   | 2.9.0  |
-|                   | Grafana Tempo  | -      |
-| **部署**          | Docker         | -      |
-|                   | Kubernetes     | -      |
+| 层级              | 技术           | 版本               |
+| ----------------- | -------------- | ------------------ |
+| **API Runtime**   | NestJS         | 11.1.23            |
+|                   | TypeScript     | 6.0.3              |
+| **Worker**        | BullMQ         | 5.77.2             |
+| **契约 / Schema** | Zod            | 4.4.3              |
+|                   | Prisma ORM     | 7.8.0              |
+| **数据库**        | PostgreSQL     | 16                 |
+|                   | Redis          | 8.6.3              |
+| **存储**          | MinIO          | RELEASE.2025-09-07 |
+| **消息**          | NATS JetStream | 2                  |
+| **可观测性**      | OpenTelemetry  | -                  |
+|                   | Prometheus     | -                  |
+|                   | Grafana Loki   | 2.9.0              |
+|                   | Grafana Tempo  | -                  |
+| **部署**          | Docker         | -                  |
+|                   | Kubernetes     | -                  |
 
 以上基础设施的当前运行状态如下：
 
@@ -315,8 +315,8 @@ Loki 集成支持跨所有日志的全文搜索。
 
 ### 环境要求
 
-- Node.js 20+（推荐 LTS 版本）
-- pnpm 9.15.4+
+- Node.js 24 LTS
+- pnpm 11.3.0+
 - Docker 和 Docker Compose
 - PostgreSQL 16+（或使用 Docker）
 - Redis 8+（或使用 Docker）
@@ -377,7 +377,7 @@ pnpm dev
 
 ### 测试与验证边界
 
-- 根目录的浏览器验证入口仍是 `pnpm test:e2e`，其底层使用 `playwright.config.ts` 与 `retired-browser-tests/*` 作为当前 targeted deterministic browser proof suite。
+- 根目录的浏览器验证入口仍是 `pnpm test:e2e`，其底层使用 `playwright.config.ts` 与 deterministic `tests/e2e/*` Playwright phase proof suite。专用阶段验收套件仍保留在 `retired-browser-tests/<phase>` 下，并使用各自的 Playwright 配置文件。
 - 根目录的 `pnpm test:integration` 实际等价于 `pnpm --filter @tcrn/api test:integration`，使用 `vitest.integration.config.ts` 运行 API integration suite。
 - 根目录的 `pnpm test:isolation` 实际等价于 `pnpm --filter @tcrn/api test:isolation`，使用同一套 Vitest integration 配置运行 API isolation suite。
 - 对包含 schema 变更的发布，应把 `db:verify-schema-rollout` 与常规运行时健康检查一起执行，不要把浏览器 smoke check 当作 direct schema rollout verification 的替代品。
