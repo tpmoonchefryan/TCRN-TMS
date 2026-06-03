@@ -120,6 +120,42 @@ const RBAC_ROLE_PERMISSION_ENTRIES = RBAC_ROLE_TEMPLATES.flatMap((role) =>
 
 const stringifyLocalizedText = (value: LocalizedText): string => JSON.stringify(value);
 
+const ARTIST_STAGE_FIXTURE_SEEDS = [
+  {
+    artistStatusCode: 'draft',
+    code: 'draft',
+    color: '#94A3B8',
+    description: createLocalizedText({
+      en: 'Default draft stage for tenant isolation fixtures.',
+    }),
+    homepageTemplateTypeCode: 'pending-reveal',
+    name: createLocalizedText({ en: 'Draft' }),
+    sortOrder: 10,
+  },
+  {
+    artistStatusCode: 'published',
+    code: 'published',
+    color: '#10B981',
+    description: createLocalizedText({
+      en: 'Default published stage for tenant isolation fixtures.',
+    }),
+    homepageTemplateTypeCode: 'operating',
+    name: createLocalizedText({ en: 'Published' }),
+    sortOrder: 20,
+  },
+  {
+    artistStatusCode: 'disabled',
+    code: 'disabled',
+    color: '#9CA3AF',
+    description: createLocalizedText({
+      en: 'Default disabled stage for tenant isolation fixtures.',
+    }),
+    homepageTemplateTypeCode: 'graduated',
+    name: createLocalizedText({ en: 'Disabled' }),
+    sortOrder: 30,
+  },
+] as const;
+
 function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
@@ -410,6 +446,68 @@ async function seedRbacContractIntoSchema(
   }
 }
 
+async function ensureTenantFixtureArtistStages(
+  prisma: {
+    $executeRawUnsafe: (query: string, ...values: unknown[]) => Promise<unknown>;
+  },
+  schemaName: string
+): Promise<void> {
+  for (const seed of ARTIST_STAGE_FIXTURE_SEEDS) {
+    await prisma.$executeRawUnsafe(
+      `
+      UPDATE "${schemaName}".artist_stage
+      SET code = $1::varchar,
+          name = $2::jsonb,
+          description = $3::jsonb,
+          sort_order = $4::integer,
+          is_active = true,
+          is_system = false,
+          color = $5::varchar,
+          artist_status_code = $6::varchar,
+          homepage_template_type_code = $7::varchar,
+          updated_at = NOW(),
+          version = 1
+      WHERE owner_type = 'tenant'
+        AND owner_id IS NULL
+        AND (code = $1::varchar OR artist_status_code = $6::varchar)
+    `,
+      seed.code,
+      stringifyLocalizedText(seed.name),
+      stringifyLocalizedText(seed.description),
+      seed.sortOrder,
+      seed.color,
+      seed.artistStatusCode,
+      seed.homepageTemplateTypeCode
+    );
+
+    await prisma.$executeRawUnsafe(
+      `
+      INSERT INTO "${schemaName}".artist_stage (
+        id, owner_type, owner_id, code, name, description, sort_order,
+        is_active, is_system, color, artist_status_code, homepage_template_type_code,
+        created_at, updated_at, created_by, updated_by, version
+      )
+      SELECT gen_random_uuid(), 'tenant', NULL, $1::varchar, $2::jsonb, $3::jsonb, $4::integer,
+        true, false, $5::varchar, $6::varchar, $7::varchar, NOW(), NOW(), NULL, NULL, 1
+      WHERE NOT EXISTS (
+        SELECT 1
+        FROM "${schemaName}".artist_stage
+        WHERE owner_type = 'tenant'
+          AND owner_id IS NULL
+          AND (code = $1::varchar OR artist_status_code = $6::varchar)
+      )
+    `,
+      seed.code,
+      stringifyLocalizedText(seed.name),
+      stringifyLocalizedText(seed.description),
+      seed.sortOrder,
+      seed.color,
+      seed.artistStatusCode,
+      seed.homepageTemplateTypeCode
+    );
+  }
+}
+
 async function cleanupTestTenantArtifacts(
   prisma: {
     tenant: {
@@ -664,6 +762,10 @@ export async function createTestTenantFixture(
         stringifyLocalizedText(profileStoreName),
         stringifyLocalizedText(profileStoreDescription)
       );
+    }
+
+    if (templateTables.some((item) => item.tablename === 'artist_stage')) {
+      await ensureTenantFixtureArtistStages(prisma, schemaName);
     }
 
     await seedRbacContractIntoSchema(prisma, schemaName);
@@ -996,7 +1098,7 @@ export async function createTestTalentInTenant(
       WHERE owner_type = 'tenant'
         AND owner_id IS NULL
         AND is_active = true
-        AND artist_status_code = $1
+        AND (artist_status_code = $1 OR code = $1)
       ORDER BY
         CASE WHEN artist_status_code = $1 THEN 0 ELSE 1 END,
         sort_order ASC,

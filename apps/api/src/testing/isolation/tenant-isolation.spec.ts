@@ -14,6 +14,7 @@ import {
   createTestTalentInTenant,
   createTestTenantFixture,
   createTestUserInTenant,
+  INITIAL_ADMIN_ROLE_CODE,
   type TenantFixture,
   type TestUser,
 } from '@tcrn/shared';
@@ -65,6 +66,33 @@ describe('Multi-Tenant Isolation Tests', () => {
   const listCustomers = (token: string, tenantId: string, talentId: string) =>
     withAuth(request(app.getHttpServer()).get(customerCollectionPath(talentId)), token, tenantId);
 
+  const enableTenantCapability = async (tenantId: string, capabilityCode: string) => {
+    await prisma.$executeRawUnsafe(
+      `
+        INSERT INTO public.tenant_capability_state (tenant_id, version, updated_at)
+        VALUES ($1::uuid, 1, NOW())
+        ON CONFLICT (tenant_id) DO NOTHING
+      `,
+      tenantId
+    );
+
+    await prisma.$executeRawUnsafe(
+      `
+        INSERT INTO public.tenant_capability_assignment (
+          tenant_id, capability_code, enabled, source, assigned_at, updated_at, note
+        )
+        VALUES ($1::uuid, $2, true, 'system', NOW(), NOW(), 'tenant isolation fixture')
+        ON CONFLICT (tenant_id, capability_code) DO UPDATE SET
+          enabled = true,
+          source = EXCLUDED.source,
+          updated_at = NOW(),
+          note = EXCLUDED.note
+      `,
+      tenantId,
+      capabilityCode
+    );
+  };
+
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
@@ -83,11 +111,16 @@ describe('Multi-Tenant Isolation Tests', () => {
     tenantA = await createTestTenantFixture(prisma, 'iso_a');
     tenantB = await createTestTenantFixture(prisma, 'iso_b');
 
+    await enableTenantCapability(tenantA.tenant.id, 'marshmallow.mailbox');
+    await enableTenantCapability(tenantB.tenant.id, 'marshmallow.mailbox');
+    await enableTenantCapability(tenantA.tenant.id, 'reports.mfr');
+    await enableTenantCapability(tenantB.tenant.id, 'reports.mfr');
+
     userA = await createTestUserInTenant(prisma, tenantA, `tenant_a_admin_${Date.now()}`, [
-      'ADMIN',
+      INITIAL_ADMIN_ROLE_CODE,
     ]);
     userB = await createTestUserInTenant(prisma, tenantB, `tenant_b_admin_${Date.now()}`, [
-      'ADMIN',
+      INITIAL_ADMIN_ROLE_CODE,
     ]);
 
     tokenA = tokenService.generateAccessToken({
