@@ -1,13 +1,12 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 import { BadRequestException } from '@nestjs/common';
+import { createLocalizedText } from '@tcrn/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { createLocalizedText } from '@tcrn/shared';
-
 import type { AuthenticatedUser } from '../../../common/decorators/current-user.decorator';
-import { PermissionSnapshotService } from '../permission-snapshot.service';
 import { PermissionController } from '../permission.controller';
 import { PermissionService } from '../permission.service';
+import { PermissionSnapshotService } from '../permission-snapshot.service';
 
 describe('PermissionController', () => {
   let controller: PermissionController;
@@ -67,10 +66,7 @@ describe('PermissionController', () => {
   });
 
   describe('checkPermissions', () => {
-    it('normalizes alias actions before refreshing stale denied snapshot checks', async () => {
-      (mockSnapshotService.checkPermission as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
-        false
-      );
+    it('normalizes alias actions before refreshing permission checks', async () => {
       (
         mockSnapshotService.refreshAndCheckPermission as ReturnType<typeof vi.fn>
       ).mockResolvedValueOnce(true);
@@ -79,14 +75,7 @@ describe('PermissionController', () => {
         checks: [{ resource: 'report.mfr', action: 'export' }],
       });
 
-      expect(mockSnapshotService.checkPermission).toHaveBeenCalledWith(
-        'tenant_test',
-        'user-1',
-        'report.mfr',
-        'execute',
-        undefined,
-        undefined
-      );
+      expect(mockSnapshotService.checkPermission).not.toHaveBeenCalled();
       expect(mockSnapshotService.refreshAndCheckPermission).toHaveBeenCalledWith(
         'tenant_test',
         'user-1',
@@ -111,14 +100,24 @@ describe('PermissionController', () => {
       });
     });
 
-    it('does not force refresh when the existing snapshot already allows the check', async () => {
-      (mockSnapshotService.checkPermission as ReturnType<typeof vi.fn>).mockResolvedValueOnce(true);
+    it('refreshes allowed checks to prevent stale grants after role contraction', async () => {
+      (
+        mockSnapshotService.refreshAndCheckPermission as ReturnType<typeof vi.fn>
+      ).mockResolvedValueOnce(true);
 
       const result = await controller.checkPermissions(user, {
         checks: [{ resource: 'system_user', action: 'admin' }],
       });
 
-      expect(mockSnapshotService.refreshAndCheckPermission).not.toHaveBeenCalled();
+      expect(mockSnapshotService.checkPermission).not.toHaveBeenCalled();
+      expect(mockSnapshotService.refreshAndCheckPermission).toHaveBeenCalledWith(
+        'tenant_test',
+        'user-1',
+        'system_user',
+        'admin',
+        undefined,
+        undefined
+      );
       expect(result.data.results[0]).toMatchObject({
         resource: 'system_user',
         action: 'admin',

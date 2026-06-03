@@ -2,19 +2,25 @@
 import {
   BadRequestException,
   ForbiddenException,
+  GoneException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-
 import { prisma } from '@tcrn/database';
 import {
   ErrorCodes,
   getRbacResourceDefinition,
+  INITIAL_ADMIN_ROLE_CODE,
   isCanonicalPermissionAction,
   type LocalizedText,
+  mergeRolePermissionStateInputs,
   type PartialLocalizedText,
+  type PermissionActionInput,
   pickLocalizedText,
+  resolveRbacPermission,
+  type RoleMutationPermissionsInput,
   type RolePermission,
+  type RoleRawPermissionStateInput,
 } from '@tcrn/shared';
 
 import { PermissionSnapshotService } from '../permission/permission-snapshot.service';
@@ -223,10 +229,19 @@ export class RoleService {
       code: string;
       name: LocalizedText;
       description?: string;
-      permissionIds: string[];
+      permissionIds?: string[];
+      permissionStates?: RoleMutationPermissionsInput;
+      permissions?: Array<{ resource: string; action: string; effect?: 'grant' | 'deny' }>;
     },
     userId: string
   ): Promise<RoleData> {
+    if (data.code === INITIAL_ADMIN_ROLE_CODE) {
+      throw new BadRequestException({
+        code: ErrorCodes.VALIDATION_FIELD_INVALID,
+        message: 'Initial Admin is a built-in role and cannot be created through the custom role API',
+      });
+    }
+
     // Check code uniqueness
     const existing = await this.findByCode(data.code, tenantSchema);
     if (existing) {
@@ -258,8 +273,8 @@ export class RoleService {
     const role = results[0];
 
     // Add permissions
-    if (data.permissionIds.length > 0) {
-      for (const permId of data.permissionIds) {
+    if ((data.permissionIds?.length ?? 0) > 0) {
+      for (const permId of data.permissionIds ?? []) {
         await prisma.$executeRawUnsafe(
           `
           INSERT INTO "${tenantSchema}".role_policy (id, role_id, policy_id, created_at)
@@ -269,6 +284,11 @@ export class RoleService {
           permId
         );
       }
+    }
+
+    const permissionStates = this.resolveRoleMutationPermissionStates(data);
+    if (permissionStates.length > 0) {
+      await this.applyPermissionStates(role.id, tenantSchema, permissionStates, false);
     }
 
     return role;
@@ -284,6 +304,8 @@ export class RoleService {
       name?: PartialLocalizedText;
       description?: string;
       version: number;
+      permissionStates?: RoleMutationPermissionsInput;
+      permissions?: Array<{ resource: string; action: string; effect?: 'grant' | 'deny' }>;
     },
     userId: string
   ): Promise<RoleData> {
@@ -299,6 +321,13 @@ export class RoleService {
       throw new BadRequestException({
         code: ErrorCodes.RES_VERSION_MISMATCH,
         message: 'Data has been modified. Please refresh and try again.',
+      });
+    }
+
+    if (current.code === INITIAL_ADMIN_ROLE_CODE || current.isSystem) {
+      throw new ForbiddenException({
+        code: ErrorCodes.PERM_ACCESS_DENIED,
+        message: 'Initial Admin is locked to prevent access loss',
       });
     }
 
@@ -319,7 +348,7 @@ export class RoleService {
     updates.push('updated_by = $2::uuid');
     updates.push('version = version + 1');
 
-    const results = await prisma.$queryRawUnsafe<RoleData[]>(
+    await prisma.$queryRawUnsafe<RoleData[]>(
       `
       UPDATE "${tenantSchema}".role
       SET ${updates.join(', ')}
@@ -332,7 +361,21 @@ export class RoleService {
       ...params
     );
 
-    return results[0];
+    const permissionStates = this.resolveRoleMutationPermissionStates(data);
+    if (permissionStates.length > 0) {
+      await this.applyPermissionStates(id, tenantSchema, permissionStates, true);
+      await this.snapshotService.refreshRoleSnapshots(tenantSchema, id);
+    }
+
+    const updated = await this.findById(id, tenantSchema);
+    if (!updated) {
+      throw new NotFoundException({
+        code: ErrorCodes.RES_NOT_FOUND,
+        message: 'Role not found after update',
+      });
+    }
+
+    return updated;
   }
 
   /**
@@ -353,10 +396,10 @@ export class RoleService {
       });
     }
 
-    if (current.isSystem) {
+    if (current.code === INITIAL_ADMIN_ROLE_CODE || current.isSystem) {
       throw new ForbiddenException({
         code: ErrorCodes.PERM_ACCESS_DENIED,
-        message: 'Cannot modify system role permissions',
+        message: 'Initial Admin permissions are locked',
       });
     }
 
@@ -411,15 +454,13 @@ export class RoleService {
     return { role: updatedRole, affectedUsers };
   }
 
-  /**
-   * Deactivate role
-   */
-  async deactivate(
+  async setPermissionStates(
     roleId: string,
     tenantSchema: string,
+    permissionInput: RoleMutationPermissionsInput,
     version: number,
     userId: string
-  ): Promise<RoleData> {
+  ): Promise<{ role: RoleData; affectedUsers: number }> {
     const current = await this.findById(roleId, tenantSchema);
     if (!current) {
       throw new NotFoundException({
@@ -428,10 +469,10 @@ export class RoleService {
       });
     }
 
-    if (current.isSystem) {
+    if (current.code === INITIAL_ADMIN_ROLE_CODE || current.isSystem) {
       throw new ForbiddenException({
         code: ErrorCodes.PERM_ACCESS_DENIED,
-        message: 'Cannot deactivate system role',
+        message: 'Initial Admin permissions are locked',
       });
     }
 
@@ -442,27 +483,49 @@ export class RoleService {
       });
     }
 
+    const permissionStates = mergeRolePermissionStateInputs(permissionInput);
+    await this.applyPermissionStates(roleId, tenantSchema, permissionStates, true);
+
     await prisma.$executeRawUnsafe(
       `
       UPDATE "${tenantSchema}".role
-      SET is_active = false, updated_at = now(), updated_by = $2::uuid, version = version + 1
-      WHERE id = $1
+      SET updated_at = now(), updated_by = $2::uuid, version = version + 1
+      WHERE id = $1::uuid
     `,
       roleId,
       userId
     );
 
-    // Refresh snapshots
-    await this.snapshotService.refreshRoleSnapshots(tenantSchema, roleId);
-
-    const deactivatedRole = await this.findById(roleId, tenantSchema);
-    if (!deactivatedRole) {
+    const affectedUsers = await this.snapshotService.refreshRoleSnapshots(tenantSchema, roleId);
+    const updatedRole = await this.findById(roleId, tenantSchema);
+    if (!updatedRole) {
       throw new NotFoundException({
         code: ErrorCodes.RES_NOT_FOUND,
-        message: 'Role not found after deactivation',
+        message: 'Role not found after update',
       });
     }
-    return deactivatedRole;
+
+    return { role: updatedRole, affectedUsers };
+  }
+
+  /**
+   * Deactivate role
+   */
+  async deactivate(
+    roleId: string,
+    tenantSchema: string,
+    version: number,
+    userId: string
+  ): Promise<RoleData> {
+    void roleId;
+    void tenantSchema;
+    void version;
+    void userId;
+    throw new GoneException({
+      code: 'ROLE_STATUS_MACHINE_REMOVED',
+      message:
+        'Roles do not have an active/inactive lifecycle. Remove assignments or change grant/deny/unset permission states.',
+    });
   }
 
   /**
@@ -474,41 +537,105 @@ export class RoleService {
     version: number,
     userId: string
   ): Promise<RoleData> {
-    const current = await this.findById(roleId, tenantSchema);
-    if (!current) {
-      throw new NotFoundException({
-        code: ErrorCodes.RES_NOT_FOUND,
-        message: 'Role not found',
+    void roleId;
+    void tenantSchema;
+    void version;
+    void userId;
+    throw new GoneException({
+      code: 'ROLE_STATUS_MACHINE_REMOVED',
+      message:
+        'Roles do not have an active/inactive lifecycle. Remove assignments or change grant/deny/unset permission states.',
+    });
+  }
+
+  private resolveRoleMutationPermissionStates(data: {
+    permissionStates?: RoleMutationPermissionsInput;
+    permissions?: Array<{ resource: string; action: string; effect?: 'grant' | 'deny' }>;
+  }): RoleRawPermissionStateInput[] {
+    const rawPermissionStates = data.permissions?.map((permission) => ({
+      resource: permission.resource as RoleRawPermissionStateInput['resource'],
+      action: permission.action as PermissionActionInput,
+      state: permission.effect ?? 'grant',
+    }));
+
+    return mergeRolePermissionStateInputs({
+      capabilityPackStates: data.permissionStates?.capabilityPackStates,
+      rawPermissionStates: [
+        ...(data.permissionStates?.rawPermissionStates ?? []),
+        ...(rawPermissionStates ?? []),
+      ],
+    });
+  }
+
+  private async applyPermissionStates(
+    roleId: string,
+    tenantSchema: string,
+    permissionStates: readonly RoleRawPermissionStateInput[],
+    replaceAll: boolean
+  ): Promise<void> {
+    if (replaceAll) {
+      await prisma.$executeRawUnsafe(
+        `
+        DELETE FROM "${tenantSchema}".role_policy WHERE role_id = $1::uuid
+      `,
+        roleId
+      );
+    }
+
+    const uniqueStates = new Map<string, RoleRawPermissionStateInput>();
+    for (const permissionState of permissionStates) {
+      const resolved = resolveRbacPermission(permissionState.resource, permissionState.action);
+      uniqueStates.set(`${resolved.resourceCode}:${resolved.checkedAction}`, {
+        resource: resolved.resourceCode,
+        action: resolved.checkedAction,
+        state: permissionState.state,
       });
     }
 
-    if (current.version !== version) {
-      throw new BadRequestException({
-        code: ErrorCodes.RES_VERSION_MISMATCH,
-        message: 'Data has been modified. Please refresh and try again.',
-      });
+    for (const permissionState of uniqueStates.values()) {
+      const policies = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
+        `
+        SELECT p.id
+        FROM "${tenantSchema}".policy p
+        JOIN "${tenantSchema}".resource r ON r.id = p.resource_id
+        WHERE r.code = $1 AND p.action = $2 AND p.is_active = true
+        LIMIT 1
+      `,
+        permissionState.resource,
+        permissionState.action
+      );
+
+      const policyId = policies[0]?.id;
+      if (!policyId) {
+        throw new BadRequestException({
+          code: ErrorCodes.RES_NOT_FOUND,
+          message: `Permission ${permissionState.resource}:${permissionState.action} is not available`,
+        });
+      }
+
+      await prisma.$executeRawUnsafe(
+        `
+        DELETE FROM "${tenantSchema}".role_policy
+        WHERE role_id = $1::uuid AND policy_id = $2::uuid
+      `,
+        roleId,
+        policyId
+      );
+
+      if (permissionState.state === 'unset') {
+        continue;
+      }
+
+      await prisma.$executeRawUnsafe(
+        `
+        INSERT INTO "${tenantSchema}".role_policy (id, role_id, policy_id, effect, created_at)
+        VALUES (gen_random_uuid(), $1::uuid, $2::uuid, $3, now())
+        ON CONFLICT (role_id, policy_id) DO UPDATE SET effect = EXCLUDED.effect
+      `,
+        roleId,
+        policyId,
+        permissionState.state
+      );
     }
-
-    await prisma.$executeRawUnsafe(
-      `
-      UPDATE "${tenantSchema}".role
-      SET is_active = true, updated_at = now(), updated_by = $2::uuid, version = version + 1
-      WHERE id = $1
-    `,
-      roleId,
-      userId
-    );
-
-    // Refresh snapshots
-    await this.snapshotService.refreshRoleSnapshots(tenantSchema, roleId);
-
-    const reactivatedRole = await this.findById(roleId, tenantSchema);
-    if (!reactivatedRole) {
-      throw new NotFoundException({
-        code: ErrorCodes.RES_NOT_FOUND,
-        message: 'Role not found after reactivation',
-      });
-    }
-    return reactivatedRole;
   }
 }

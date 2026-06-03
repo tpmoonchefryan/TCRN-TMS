@@ -1,7 +1,6 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-import { describe, expect, it } from 'vitest';
-
 import { CreateSystemRoleSchema, UpdateSystemRoleSchema } from '@tcrn/shared';
+import { describe, expect, it } from 'vitest';
 
 const roleName = {
   en: 'Export Deny',
@@ -29,16 +28,14 @@ describe('SystemRole contract schemas', () => {
     ]);
   });
 
-  it('does not require version in update payloads', () => {
+  it('treats update payloads as compatibility-only and strips mutation fields', () => {
     const result = UpdateSystemRoleSchema.parse({
+      compatibilityOnly: true,
       name: { en: 'Updated Role' },
       permissions: [{ resource: 'customer.export', action: 'read', effect: 'grant' }],
     });
 
-    expect(result).toEqual({
-      name: { en: 'Updated Role' },
-      permissions: [{ resource: 'customer.export', action: 'read', effect: 'grant' }],
-    });
+    expect(result).toEqual({ compatibilityOnly: true });
   });
 
   it('rejects resource codes outside the shared RBAC catalog', () => {

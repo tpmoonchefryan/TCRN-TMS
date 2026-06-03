@@ -2,9 +2,8 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
+import { INITIAL_ADMIN_ROLE_CODE, RBAC_ROLE_TEMPLATES } from '@tcrn/shared';
 import { describe, expect, it } from 'vitest';
-
-import { RBAC_ROLE_TEMPLATES } from '@tcrn/shared';
 
 const productRoot = path.resolve(__dirname, '../../../..');
 
@@ -36,19 +35,19 @@ describe('Runtime flag Swagger contract', () => {
     expect(dto).toContain('explicitConfirmation');
   });
 
-  it('keeps runtime flag permissions on AC platform-admin role templates only', () => {
-    const platformAdminTemplate = RBAC_ROLE_TEMPLATES.find(
-      (template) => template.code === 'PLATFORM_ADMIN'
+  it('keeps runtime flag permissions on Initial Admin only', () => {
+    const initialAdminTemplate = RBAC_ROLE_TEMPLATES.find(
+      (template) => template.code === INITIAL_ADMIN_ROLE_CODE
     );
     const nonPlatformAdminRuntimeFlagGrants = RBAC_ROLE_TEMPLATES.filter(
-      (template) => template.code !== 'PLATFORM_ADMIN'
+      (template) => template.code !== INITIAL_ADMIN_ROLE_CODE
     ).flatMap((template) =>
       template.permissions
         .filter((permission) => permission.resourceCode === 'platform.runtime_flag')
         .map((permission) => ({ roleCode: template.code, permission }))
     );
 
-    expect(platformAdminTemplate?.permissions).toEqual(
+    expect(initialAdminTemplate?.permissions).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
           resourceCode: 'platform.runtime_flag',

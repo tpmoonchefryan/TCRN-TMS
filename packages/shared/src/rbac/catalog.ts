@@ -131,6 +131,8 @@ export type RbacRolePolicyEffect = (typeof RBAC_ROLE_POLICY_EFFECTS)[number];
 export type RbacTenantTier = 'ac' | 'standard';
 export type RbacRoleScopeType = 'tenant' | 'subsidiary' | 'talent';
 
+export const INITIAL_ADMIN_ROLE_CODE = 'INITIAL_ADMIN' as const;
+
 interface LocalizedLabel {
   name: LocalizedText;
 }
@@ -969,215 +971,22 @@ const allActionsFor = (...resourceCodes: RbacResourceCode[]): RbacRolePermission
     permission(resourceCode, getRbacResourceActions(resourceCode))
   );
 
-const adminPermissions = [
-  ...allActionsFor(
-    'subsidiary',
-    'talent',
-    'system_user',
-    'role',
-    'customer.profile',
-    'customer.pii',
-    'customer.membership',
-    'customer.import',
-    'customer.export',
-    'config.pii_service',
-    'config.profile_store',
-    'config.dictionary',
-    'config.customer_status',
-    'config.membership',
-    'config.platform_registry',
-    'config.platform_settings',
-    'settings',
-    'talent.homepage',
-    'public_presence.document',
-    'public_presence.review',
-    'public_presence.publish',
-    'public_presence.rollback',
-    'public_presence.validation',
-    'public_presence.audit',
-    'public_presence.ai_patch',
-    'talent.marshmallow',
-    'report.mfr',
-    'integration.adapter',
-    'integration.webhook',
-    'integration.consumer',
-    'security.blocklist',
-    'security.ip_rules',
-    'security.external_blocklist',
-    'log.change_log',
-    'log.integration_log',
-    'log.search',
-    'log.tech_log',
-    'compliance.report',
-    'email.template'
-  ),
-] as const;
-
-const viewerReadableResources = RBAC_RESOURCES.filter(
-  (definition) =>
-    definition.supportedActions.includes('read') &&
-    definition.code !== 'tenant.manage' &&
-    definition.code !== 'customer.pii' &&
-    definition.code !== 'platform.api_gateway' &&
-    definition.code !== 'platform.api_registry' &&
-    definition.code !== 'platform.builder_registry' &&
-    definition.code !== 'platform.runtime_flag' &&
-    definition.code !== 'public_presence.audit' &&
-    !definition.code.startsWith('security.')
-).map((definition) => permission(definition.code, ['read']));
+const initialAdminPermissions = allActionsFor(...RBAC_RESOURCES.map((definition) => definition.code));
 
 export const RBAC_ROLE_TEMPLATES: readonly RbacRoleTemplate[] = [
   {
-    code: 'PLATFORM_ADMIN',
+    code: INITIAL_ADMIN_ROLE_CODE,
     name: {
-      en: 'Platform Administrator',
-      zh_HANS: '平台管理员',
-      zh_HANT: '平台管理员',
-      ja: 'プラットフォーム管理者',
-      ko: 'Platform Administrator',
-      fr: 'Platform Administrator',
+      en: 'Initial Admin',
+      zh_HANS: '初始管理员',
+      zh_HANT: '初始管理員',
+      ja: '初期管理者',
+      ko: 'Initial Admin',
+      fr: 'Initial Admin',
     },
-    description: 'AC tenant administrator with platform-wide access',
+    description: 'Built-in recovery role with every current RBAC permission',
     isSystem: true,
-    permissions: allActionsFor(...RBAC_RESOURCES.map((definition) => definition.code)),
-  },
-  {
-    code: 'ADMIN',
-    name: {
-      en: 'Administrator',
-      zh_HANS: '管理员',
-      zh_HANT: '管理员',
-      ja: '管理者',
-      ko: 'Administrator',
-      fr: 'Administrator',
-    },
-    description: 'Full access within assigned scope (tenant/subsidiary/talent)',
-    isSystem: true,
-    permissions: adminPermissions,
-  },
-  {
-    code: 'TENANT_ADMIN',
-    name: {
-      en: 'Tenant Administrator',
-      zh_HANS: '租户管理员',
-      zh_HANT: '租户管理员',
-      ja: 'テナント管理者',
-      ko: 'Tenant Administrator',
-      fr: 'Tenant Administrator',
-    },
-    description: 'Compatibility alias for ADMIN during RBAC contract migration',
-    isSystem: true,
-    aliasOf: 'ADMIN',
-    permissions: adminPermissions,
-  },
-  {
-    code: 'TALENT_MANAGER',
-    name: {
-      en: 'Talent Manager',
-      zh_HANS: '艺人经理',
-      zh_HANT: '艺人经理',
-      ja: 'タレントマネージャー',
-      ko: 'Talent Manager',
-      fr: 'Talent Manager',
-    },
-    description: 'Manage talent operations, organization structure, and scoped user assignments',
-    isSystem: false,
-    permissions: [
-      ...allActionsFor('subsidiary', 'talent'),
-      permission('system_user', ['read', 'write', 'admin']),
-      permission('role', ['read', 'write', 'admin']),
-      permission('config.customer_status', ['read']),
-      permission('config.membership', ['read']),
-      permission('config.platform_settings', ['read']),
-      permission('settings', ['read']),
-      permission('integration.consumer', ['read']),
-      permission('log.change_log', ['read']),
-    ],
-  },
-  {
-    code: 'CONTENT_MANAGER',
-    name: {
-      en: 'Content Manager',
-      zh_HANS: '内容管理员',
-      zh_HANT: '内容管理员',
-      ja: 'コンテンツマネージャー',
-      ko: 'Content Manager',
-      fr: 'Content Manager',
-    },
-    description: 'Homepage, marshmallow, and moderation content management',
-    isSystem: false,
-    permissions: [
-      ...allActionsFor('talent.homepage', 'talent.marshmallow', 'security.external_blocklist'),
-      permission('public_presence.document', ['read', 'write']),
-      permission('public_presence.review', ['read', 'write']),
-      permission('public_presence.publish', ['write']),
-      permission('public_presence.rollback', ['write']),
-      permission('public_presence.validation', ['read', 'write']),
-      permission('public_presence.audit', ['read']),
-      permission('config.platform_settings', ['read']),
-      permission('settings', ['read']),
-      permission('log.change_log', ['read']),
-    ],
-  },
-  {
-    code: 'CUSTOMER_MANAGER',
-    name: {
-      en: 'Customer Manager',
-      zh_HANS: '客户经理',
-      zh_HANT: '客户经理',
-      ja: '顧客マネージャー',
-      ko: 'Customer Manager',
-      fr: 'Customer Manager',
-    },
-    description: 'Customer profile, membership, import, export, and PII management',
-    isSystem: false,
-    permissions: [
-      permission('customer.profile', ['read', 'write', 'delete']),
-      permission('customer.pii', ['read', 'write']),
-      permission('customer.membership', ['read', 'write']),
-      permission('customer.import', ['read', 'write', 'delete']),
-      permission('customer.export', ['read', 'write', 'delete']),
-      permission('config.customer_status', ['read']),
-      permission('config.membership', ['read']),
-      permission('integration.consumer', ['read']),
-      permission('log.change_log', ['read']),
-    ],
-  },
-  {
-    code: 'VIEWER',
-    name: {
-      en: 'Viewer',
-      zh_HANS: '只读访问者',
-      zh_HANT: '只读访问者',
-      ja: '閲覧者',
-      ko: 'Viewer',
-      fr: 'Viewer',
-    },
-    description: 'Read-only access to non-sensitive resources within assigned scope',
-    isSystem: false,
-    permissions: [...viewerReadableResources, permission('customer.pii', ['read'], 'deny')],
-  },
-  {
-    code: 'INTEGRATION_MANAGER',
-    name: {
-      en: 'Integration Manager',
-      zh_HANS: '集成管理员',
-      zh_HANT: '集成管理员',
-      ja: '連携マネージャー',
-      ko: 'Integration Manager',
-      fr: 'Integration Manager',
-    },
-    description: 'Integration adapter, webhook, and consumer management',
-    isSystem: false,
-    permissions: [
-      ...allActionsFor(
-        'integration.adapter',
-        'integration.webhook',
-        'integration.consumer',
-        'config.platform_registry'
-      ),
-      permission('log.integration_log', ['read']),
-    ],
+    permissions: initialAdminPermissions,
   },
 ] as const;
 
@@ -1189,6 +998,10 @@ const DEFAULT_ROLE_WORKSPACE_AVAILABILITY: RbacRoleWorkspaceAvailability = {
 export const RBAC_ROLE_WORKSPACE_AVAILABILITY: Readonly<
   Record<string, RbacRoleWorkspaceAvailability>
 > = {
+  INITIAL_ADMIN: {
+    tenantTiers: ['ac', 'standard'],
+    scopeTypes: ['tenant'],
+  },
   PLATFORM_ADMIN: {
     tenantTiers: ['ac'],
     scopeTypes: ['tenant'],

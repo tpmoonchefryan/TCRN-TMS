@@ -2,6 +2,7 @@
 // AC (Admin Console) tenant seed data
 
 import { PrismaClient, Tenant } from '../../src/platform/prisma/client';
+import { INITIAL_ADMIN_ROLE_CODE } from '../../../shared/src/rbac/catalog';
 import { syncSeedTenantCapabilities } from './_module-capabilities';
 
 export interface AcTenantResult {
@@ -107,43 +108,44 @@ export async function seedAcAdminUser(prisma: PrismaClient, acTenant: AcTenantRe
 
   const schemaName = acTenant.schemaName;
 
-  // Get PLATFORM_ADMIN role from tenant schema (not public)
-  const platformAdminRoles = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
+  // Get Initial Admin role from tenant schema (not public)
+  const initialAdminRoles = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
     `SELECT id FROM "${schemaName}".role WHERE code = $1 LIMIT 1`,
-    'PLATFORM_ADMIN'
+    INITIAL_ADMIN_ROLE_CODE
   );
 
-  if (platformAdminRoles.length === 0) {
-    // Create PLATFORM_ADMIN role in the tenant schema if it doesn't exist
-    console.log('    → Creating PLATFORM_ADMIN role in tenant schema...');
+  if (initialAdminRoles.length === 0) {
+    // Create Initial Admin role in the tenant schema if the RBAC sync was skipped.
+    console.log('    → Creating INITIAL_ADMIN role in tenant schema...');
     await prisma.$executeRawUnsafe(
       `
         INSERT INTO "${schemaName}".role (id, code, name, description, is_system, is_active, created_at, updated_at, version)
-        VALUES (gen_random_uuid(), 'PLATFORM_ADMIN', $1::jsonb, 'Full platform-level administrative access', true, true, now(), now(), 1)
+        VALUES (gen_random_uuid(), $1, $2::jsonb, 'Built-in recovery role with every current RBAC permission', true, true, now(), now(), 1)
         ON CONFLICT (code) DO NOTHING
       `,
+      INITIAL_ADMIN_ROLE_CODE,
       JSON.stringify({
-        en: 'Platform Administrator',
-        zh_HANS: '平台管理员',
-        zh_HANT: '平台管理员',
-        ja: 'プラットフォーム管理者',
-        ko: 'Platform Administrator',
-        fr: 'Platform Administrator',
+        en: 'Initial Admin',
+        zh_HANS: '初始管理员',
+        zh_HANT: '初始管理员',
+        ja: '初期管理者',
+        ko: 'Initial Admin',
+        fr: 'Initial Admin',
       }),
     );
   }
 
-  const platformAdminRole = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
+  const initialAdminRole = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
     `SELECT id FROM "${schemaName}".role WHERE code = $1 LIMIT 1`,
-    'PLATFORM_ADMIN'
+    INITIAL_ADMIN_ROLE_CODE
   );
 
-  if (platformAdminRole.length === 0) {
-    console.log('    ⚠ Failed to create PLATFORM_ADMIN role, skipping AC admin user creation');
+  if (initialAdminRole.length === 0) {
+    console.log('    ⚠ Failed to create INITIAL_ADMIN role, skipping AC admin user creation');
     return;
   }
 
-  const roleId = platformAdminRole[0].id;
+  const roleId = initialAdminRole[0].id;
 
   // Create AC admin user directly in the tenant schema using raw SQL
   const existingUser = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
@@ -183,7 +185,7 @@ export async function seedAcAdminUser(prisma: PrismaClient, acTenant: AcTenantRe
     userId = result[0].id;
   }
 
-  // Assign PLATFORM_ADMIN role at AC tenant scope in the tenant schema
+  // Assign Initial Admin role at AC tenant scope in the tenant schema
   const existingRoleAssignment = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
     `SELECT id FROM "${schemaName}".user_role 
      WHERE user_id = $1::uuid AND role_id = $2::uuid AND scope_type = 'tenant'

@@ -7,7 +7,8 @@ import {
   RBAC_RESOURCE_CODES,
   RBAC_ROLE_POLICY_EFFECTS,
 } from '../../rbac/catalog';
-import { LocalizedTextSchema, PartialLocalizedTextSchema } from '../common.schema';
+import { LocalizedTextSchema } from '../common.schema';
+import { RoleMutationPermissionsInputSchema } from '../role-permissions';
 
 // ============================================================================
 // Schemas
@@ -22,15 +23,12 @@ export const CreateSystemRoleSchema = z.object({
   code: z.string().min(1).max(32),
   name: LocalizedTextSchema,
   description: z.string().optional(),
-  isActive: z.boolean().optional(),
   permissions: z.array(RolePermissionSchema).optional(),
+  permissionStates: RoleMutationPermissionsInputSchema.optional(),
 });
 
 export const UpdateSystemRoleSchema = z.object({
-  name: PartialLocalizedTextSchema.optional(),
-  description: z.string().optional(),
-  isActive: z.boolean().optional(),
-  permissions: z.array(RolePermissionSchema).optional(),
+  compatibilityOnly: z.literal(true).optional(),
 });
 
 export type RolePermissionInput = z.infer<typeof RolePermissionSchema>;

@@ -2,9 +2,11 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
+  MethodNotAllowedException,
   NotFoundException,
   Param,
   ParseUUIDPipe,
@@ -22,6 +24,14 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
+import {
+  ErrorCodes,
+  type LocalizedText,
+  type PartialLocalizedText,
+  pickLocalizedText,
+  type RoleMutationPermissionsInput,
+  SUPPORTED_UI_LOCALES,
+} from '@tcrn/shared';
 import { Type } from 'class-transformer';
 import {
   IsArray,
@@ -34,14 +44,6 @@ import {
   Min,
 } from 'class-validator';
 import { Request } from 'express';
-
-import {
-  ErrorCodes,
-  SUPPORTED_UI_LOCALES,
-  pickLocalizedText,
-  type LocalizedText,
-  type PartialLocalizedText,
-} from '@tcrn/shared';
 
 import { AuthenticatedUser, CurrentUser, RequirePermissions } from '../../common/decorators';
 import { getPrimaryAcceptLanguage } from '../../common/request-locale.util';
@@ -113,8 +115,26 @@ export class CreateRoleDto {
     example: ['perm-001', 'perm-002'],
   })
   @IsArray()
+  @IsOptional()
   @IsString({ each: true })
-  permissionIds: string[];
+  permissionIds?: string[];
+
+  @ApiPropertyOptional({
+    description: 'Raw permission states to set. Unset removes an explicit role decision.',
+    type: 'array',
+  })
+  @IsOptional()
+  @IsArray()
+  permissions?: Array<{ resource: string; action: string; effect?: 'grant' | 'deny' }>;
+
+  @ApiPropertyOptional({
+    description: 'Capability-pack and raw permission state payload.',
+    type: 'object',
+    additionalProperties: true,
+  })
+  @IsOptional()
+  @IsObject()
+  permissionStates?: RoleMutationPermissionsInput;
 }
 
 export class UpdateRoleDto {
@@ -139,6 +159,23 @@ export class UpdateRoleDto {
   @IsInt()
   @Min(1)
   version: number;
+
+  @ApiPropertyOptional({
+    description: 'Raw permission states to set. Unset removes an explicit role decision.',
+    type: 'array',
+  })
+  @IsOptional()
+  @IsArray()
+  permissions?: Array<{ resource: string; action: string; effect?: 'grant' | 'deny' }>;
+
+  @ApiPropertyOptional({
+    description: 'Capability-pack and raw permission state payload.',
+    type: 'object',
+    additionalProperties: true,
+  })
+  @IsOptional()
+  @IsObject()
+  permissionStates?: RoleMutationPermissionsInput;
 }
 
 export class SetPermissionsDto {
@@ -147,9 +184,19 @@ export class SetPermissionsDto {
     type: [String],
     example: ['perm-001', 'perm-002', 'perm-003'],
   })
+  @IsOptional()
   @IsArray()
   @IsString({ each: true })
-  permissionIds: string[];
+  permissionIds?: string[];
+
+  @ApiPropertyOptional({
+    description: 'Capability-pack and raw permission state payload.',
+    type: 'object',
+    additionalProperties: true,
+  })
+  @IsOptional()
+  @IsObject()
+  permissionStates?: RoleMutationPermissionsInput;
 
   @ApiProperty({ description: 'Optimistic lock version', example: 1, minimum: 1 })
   @IsInt()
@@ -417,23 +464,6 @@ const ROLE_PERMISSION_SET_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
   }
 );
 
-const ROLE_ACTIVATION_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
-  {
-    type: 'object',
-    properties: {
-      id: { type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440000' },
-      isActive: { type: 'boolean', example: false },
-      version: { type: 'integer', example: 3 },
-    },
-    required: ['id', 'isActive', 'version'],
-  },
-  {
-    id: '550e8400-e29b-41d4-a716-446655440000',
-    isActive: false,
-    version: 3,
-  }
-);
-
 const ROLE_BAD_REQUEST_SCHEMA = createErrorEnvelopeSchema(
   'RES_VERSION_MISMATCH',
   'Data has been modified. Please refresh and try again.'
@@ -449,6 +479,14 @@ const ROLE_NOT_FOUND_SCHEMA = createErrorEnvelopeSchema(ErrorCodes.RES_NOT_FOUND
 const ROLE_FORBIDDEN_SCHEMA = createErrorEnvelopeSchema(
   ErrorCodes.PERM_ACCESS_DENIED,
   'Cannot modify system role permissions'
+);
+const ROLE_STATUS_MACHINE_REMOVED_SCHEMA = createErrorEnvelopeSchema(
+  'ROLE_STATUS_MACHINE_REMOVED',
+  'Roles do not have an active/inactive lifecycle'
+);
+const ROLE_METHOD_NOT_ALLOWED_SCHEMA = createErrorEnvelopeSchema(
+  'ROLE_DELETE_NOT_ALLOWED',
+  'Roles are kept for audit history'
 );
 
 /**
@@ -551,6 +589,8 @@ export class RoleController {
         name: dto.name,
         description: dto.description,
         permissionIds: dto.permissionIds,
+        permissionStates: dto.permissionStates,
+        permissions: dto.permissions,
       },
       user.id
     );
@@ -732,13 +772,21 @@ export class RoleController {
   ) {
     const language = getPrimaryAcceptLanguage(req);
 
-    const { role, affectedUsers } = await this.roleService.setPermissions(
-      roleId,
-      user.tenantSchema,
-      dto.permissionIds,
-      dto.version,
-      user.id
-    );
+    const { role, affectedUsers } = dto.permissionStates
+      ? await this.roleService.setPermissionStates(
+          roleId,
+          user.tenantSchema,
+          dto.permissionStates,
+          dto.version,
+          user.id
+        )
+      : await this.roleService.setPermissions(
+          roleId,
+          user.tenantSchema,
+          dto.permissionIds ?? [],
+          dto.version,
+          user.id
+        );
 
     const permissions = await this.roleService.getRolePermissions(
       role.id,
@@ -769,29 +817,14 @@ export class RoleController {
     schema: { type: 'string', format: 'uuid' },
   })
   @ApiResponse({
-    status: 200,
-    description: 'Deactivates the role',
-    schema: ROLE_ACTIVATION_SUCCESS_SCHEMA,
-  })
-  @ApiResponse({
-    status: 400,
-    description: 'Role deactivation is invalid or the version mismatched',
-    schema: ROLE_BAD_REQUEST_SCHEMA,
+    status: 410,
+    description: 'Role active/inactive lifecycle has been removed',
+    schema: ROLE_STATUS_MACHINE_REMOVED_SCHEMA,
   })
   @ApiResponse({
     status: 401,
     description: 'Authentication is required to deactivate roles',
     schema: ROLE_UNAUTHORIZED_SCHEMA,
-  })
-  @ApiResponse({
-    status: 403,
-    description: 'System roles cannot be deactivated',
-    schema: ROLE_FORBIDDEN_SCHEMA,
-  })
-  @ApiResponse({
-    status: 404,
-    description: 'Role was not found',
-    schema: ROLE_NOT_FOUND_SCHEMA,
   })
   async deactivate(
     @CurrentUser() user: AuthenticatedUser,
@@ -826,34 +859,14 @@ export class RoleController {
     schema: { type: 'string', format: 'uuid' },
   })
   @ApiResponse({
-    status: 200,
-    description: 'Reactivates the role',
-    schema: {
-      ...ROLE_ACTIVATION_SUCCESS_SCHEMA,
-      example: {
-        success: true,
-        data: {
-          id: '550e8400-e29b-41d4-a716-446655440000',
-          isActive: true,
-          version: 4,
-        },
-      },
-    },
-  })
-  @ApiResponse({
-    status: 400,
-    description: 'Role reactivation is invalid or the version mismatched',
-    schema: ROLE_BAD_REQUEST_SCHEMA,
+    status: 410,
+    description: 'Role active/inactive lifecycle has been removed',
+    schema: ROLE_STATUS_MACHINE_REMOVED_SCHEMA,
   })
   @ApiResponse({
     status: 401,
     description: 'Authentication is required to reactivate roles',
     schema: ROLE_UNAUTHORIZED_SCHEMA,
-  })
-  @ApiResponse({
-    status: 404,
-    description: 'Role was not found',
-    schema: ROLE_NOT_FOUND_SCHEMA,
   })
   async reactivate(
     @CurrentUser() user: AuthenticatedUser,
@@ -871,6 +884,37 @@ export class RoleController {
       id: role.id,
       isActive: true,
       version: role.version,
+    });
+  }
+
+  /**
+   * DELETE /api/v1/roles/:roleId
+   * Role rows are retained for audit history.
+   */
+  @Delete(':roleId')
+  @RequirePermissions({ resource: 'role', action: 'delete' })
+  @ApiOperation({ summary: 'Role deletion is not allowed' })
+  @ApiParam({
+    name: 'roleId',
+    description: 'Role identifier',
+    schema: { type: 'string', format: 'uuid' },
+  })
+  @ApiResponse({
+    status: 405,
+    description: 'Role deletion is not allowed',
+    schema: ROLE_METHOD_NOT_ALLOWED_SCHEMA,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Authentication is required to delete roles',
+    schema: ROLE_UNAUTHORIZED_SCHEMA,
+  })
+  async remove(@Param('roleId', ParseUUIDPipe) roleId: string) {
+    void roleId;
+    throw new MethodNotAllowedException({
+      code: 'ROLE_DELETE_NOT_ALLOWED',
+      message:
+        'Roles are kept for audit history. Remove assignments or change grant/deny/unset states instead.',
     });
   }
 }

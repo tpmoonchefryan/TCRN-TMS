@@ -334,11 +334,11 @@ const COPY = {
         reactivateError: 'Failed to reactivate system user.',
       },
       roles: {
-        title: 'System roles',
+        title: 'Roles',
         description:
           'Review role coverage here, then open a dedicated role page when deeper changes are needed.',
         newRole: 'New role',
-        unavailableTitle: 'System roles unavailable',
+        unavailableTitle: 'Roles unavailable',
         emptyTitle: 'No active roles available',
         emptyDescription: (workspaceAccessLabel: string) =>
           `No active roles are currently available for ${workspaceAccessLabel}.`,
@@ -353,11 +353,11 @@ const COPY = {
         delete: 'Delete',
         deleteTitle: (name: string) => `Delete ${name}?`,
         deleteDescription:
-          'Only custom roles can be deleted here. Protected system roles stay read-only.',
+          'Role deletion is disabled. Remove assignments or change permission states instead.',
         deleteConfirm: 'Delete role',
         deletePending: 'Deleting role…',
         deleteSuccess: (name: string) => `${name} was deleted.`,
-        deleteError: 'Failed to delete system role.',
+        deleteError: 'Role deletion is disabled.',
       },
       delegation: {
         title: 'Delegated administration',
@@ -480,14 +480,14 @@ const COPY = {
       noDirectScopeAccessDescription: 'This user has no direct access rules.',
     },
     roleEditor: {
-      loading: 'Loading system role…',
-      unavailableTitle: 'System role unavailable',
-      loadError: 'Failed to load system role detail.',
-      createError: 'Failed to create system role.',
-      updateError: 'Failed to update system role.',
-      missingTargetError: 'Missing system role target.',
-      createTitle: 'Create system role',
-      titleFallback: 'System role',
+      loading: 'Loading role…',
+      unavailableTitle: 'Role unavailable',
+      loadError: 'Failed to load role detail.',
+      createError: 'Failed to create role.',
+      updateError: 'Failed to update role.',
+      missingTargetError: 'Missing role target.',
+      createTitle: 'Create role',
+      titleFallback: 'Role',
       backToInventory: 'Back to roles',
       badge: (workspaceLabel: string) => workspaceLabel,
       createDescription:
@@ -1568,11 +1568,11 @@ const COPY = {
         reactivateError: 'Failed to reactivate system user.',
       },
       roles: {
-        title: 'System roles',
+        title: 'Roles',
         description:
           'Review role coverage here, then open a dedicated role page when deeper changes are needed.',
         newRole: 'New role',
-        unavailableTitle: 'System roles unavailable',
+        unavailableTitle: 'Roles unavailable',
         emptyTitle: 'No active roles available',
         emptyDescription: (workspaceAccessLabel: string) =>
           `No active roles are currently available for ${workspaceAccessLabel}.`,
@@ -1587,11 +1587,11 @@ const COPY = {
         delete: 'Delete',
         deleteTitle: (name: string) => `Delete ${name}?`,
         deleteDescription:
-          'Only custom roles can be deleted here. Protected system roles stay read-only.',
+          'Role deletion is disabled. Remove assignments or change permission states instead.',
         deleteConfirm: 'Delete role',
         deletePending: 'Deleting role…',
         deleteSuccess: (name: string) => `${name} was deleted.`,
-        deleteError: 'Failed to delete system role.',
+        deleteError: 'Role deletion is disabled.',
       },
       delegation: {
         title: 'Delegated administration',
@@ -1714,14 +1714,14 @@ const COPY = {
       noDirectScopeAccessDescription: 'This user has no direct access rules.',
     },
     roleEditor: {
-      loading: 'Loading system role…',
-      unavailableTitle: 'System role unavailable',
-      loadError: 'Failed to load system role detail.',
-      createError: 'Failed to create system role.',
-      updateError: 'Failed to update system role.',
-      missingTargetError: 'Missing system role target.',
-      createTitle: 'Create system role',
-      titleFallback: 'System role',
+      loading: 'Loading role…',
+      unavailableTitle: 'Role unavailable',
+      loadError: 'Failed to load role detail.',
+      createError: 'Failed to create role.',
+      updateError: 'Failed to update role.',
+      missingTargetError: 'Missing role target.',
+      createTitle: 'Create role',
+      titleFallback: 'Role',
       backToInventory: 'Back to roles',
       badge: (workspaceLabel: string) => workspaceLabel,
       createDescription:
@@ -1894,11 +1894,11 @@ const COPY = {
         reactivateError: 'Failed to reactivate system user.',
       },
       roles: {
-        title: 'System roles',
+        title: 'Roles',
         description:
           'Review role coverage here, then open a dedicated role page when deeper changes are needed.',
         newRole: 'New role',
-        unavailableTitle: 'System roles unavailable',
+        unavailableTitle: 'Roles unavailable',
         emptyTitle: 'No active roles available',
         emptyDescription: (workspaceAccessLabel: string) =>
           `No active roles are currently available for ${workspaceAccessLabel}.`,
@@ -1913,11 +1913,11 @@ const COPY = {
         delete: 'Delete',
         deleteTitle: (name: string) => `Delete ${name}?`,
         deleteDescription:
-          'Only custom roles can be deleted here. Protected system roles stay read-only.',
+          'Role deletion is disabled. Remove assignments or change permission states instead.',
         deleteConfirm: 'Delete role',
         deletePending: 'Deleting role…',
         deleteSuccess: (name: string) => `${name} was deleted.`,
-        deleteError: 'Failed to delete system role.',
+        deleteError: 'Role deletion is disabled.',
       },
       delegation: {
         title: 'Delegated administration',
@@ -2040,14 +2040,14 @@ const COPY = {
       noDirectScopeAccessDescription: 'This user has no direct access rules.',
     },
     roleEditor: {
-      loading: 'Loading system role…',
-      unavailableTitle: 'System role unavailable',
-      loadError: 'Failed to load system role detail.',
-      createError: 'Failed to create system role.',
-      updateError: 'Failed to update system role.',
-      missingTargetError: 'Missing system role target.',
-      createTitle: 'Create system role',
-      titleFallback: 'System role',
+      loading: 'Loading role…',
+      unavailableTitle: 'Role unavailable',
+      loadError: 'Failed to load role detail.',
+      createError: 'Failed to create role.',
+      updateError: 'Failed to update role.',
+      missingTargetError: 'Missing role target.',
+      createTitle: 'Create role',
+      titleFallback: 'Role',
       backToInventory: 'Back to roles',
       badge: (workspaceLabel: string) => workspaceLabel,
       createDescription:

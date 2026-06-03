@@ -12,7 +12,6 @@ import {
   Query,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
-
 import { ErrorCodes } from '@tcrn/shared';
 
 import { AuthenticatedUser, CurrentUser, RequirePermissions } from '../../common/decorators';
@@ -184,18 +183,6 @@ const SYSTEM_ROLE_DETAIL_SCHEMA = {
   ],
 } as const;
 
-const SYSTEM_ROLE_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(SYSTEM_ROLE_SCHEMA, {
-  id: '550e8400-e29b-41d4-a716-446655440000',
-  code: 'EXPORT_DENY',
-  name: SYSTEM_ROLE_NAME_EXAMPLE,
-  displayName: 'Export Deny',
-  description: 'Denies export operations',
-  isSystem: true,
-  isActive: true,
-  createdAt: '2026-04-13T09:00:00.000Z',
-  updatedAt: '2026-04-13T09:00:00.000Z',
-});
-
 const SYSTEM_ROLE_LIST_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
   {
     type: 'array',
@@ -269,22 +256,6 @@ const SYSTEM_ROLE_DETAIL_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(SYSTEM_ROL
   ],
 });
 
-const SYSTEM_ROLE_DELETE_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
-  {
-    type: 'object',
-    properties: {
-      deleted: { type: 'boolean', example: true },
-    },
-    required: ['deleted'],
-  },
-  { deleted: true }
-);
-
-const SYSTEM_ROLE_BAD_REQUEST_SCHEMA = createErrorEnvelopeSchema(
-  'RES_CONFLICT',
-  'System role change is invalid for the current state'
-);
-
 const SYSTEM_ROLE_UNAUTHORIZED_SCHEMA = createErrorEnvelopeSchema(
   'AUTH_UNAUTHORIZED',
   'Authentication required'
@@ -293,6 +264,14 @@ const SYSTEM_ROLE_UNAUTHORIZED_SCHEMA = createErrorEnvelopeSchema(
 const SYSTEM_ROLE_NOT_FOUND_SCHEMA = createErrorEnvelopeSchema(
   'RES_NOT_FOUND',
   'System role not found'
+);
+const SYSTEM_ROLE_MUTATION_REMOVED_SCHEMA = createErrorEnvelopeSchema(
+  'SYSTEM_ROLE_MUTATION_REMOVED',
+  'System-role mutation routes are deprecated'
+);
+const SYSTEM_ROLE_METHOD_NOT_ALLOWED_SCHEMA = createErrorEnvelopeSchema(
+  'ROLE_DELETE_NOT_ALLOWED',
+  'Roles are kept for audit history'
 );
 
 @ApiTags('System - System Roles')
@@ -306,21 +285,16 @@ export class SystemRoleController {
 
   @Post()
   @RequirePermissions({ resource: 'role', action: 'create' })
-  @ApiOperation({ summary: 'Create system role' })
-  @ApiResponse({
-    status: 201,
-    description: 'Creates a system role',
-    schema: SYSTEM_ROLE_SUCCESS_SCHEMA,
-  })
-  @ApiResponse({
-    status: 400,
-    description: 'System role payload is invalid or conflicts with existing data',
-    schema: SYSTEM_ROLE_BAD_REQUEST_SCHEMA,
-  })
+  @ApiOperation({ summary: 'System-role creation is deprecated' })
   @ApiResponse({
     status: 401,
     description: 'Authentication is required to create system roles',
     schema: SYSTEM_ROLE_UNAUTHORIZED_SCHEMA,
+  })
+  @ApiResponse({
+    status: 410,
+    description: 'System-role mutation routes are deprecated; use /roles for custom roles',
+    schema: SYSTEM_ROLE_MUTATION_REMOVED_SCHEMA,
   })
   async create(@Body() createSystemRoleDto: CreateSystemRoleZodDto) {
     const role = await this.systemRoleService.create(createSystemRoleDto);
@@ -404,31 +378,21 @@ export class SystemRoleController {
 
   @Patch(':systemRoleId')
   @RequirePermissions({ resource: 'role', action: 'update' })
-  @ApiOperation({ summary: 'Update system role' })
+  @ApiOperation({ summary: 'System-role update is deprecated' })
   @ApiParam({
     name: 'systemRoleId',
     description: 'System role identifier',
     schema: { type: 'string', format: 'uuid' },
   })
   @ApiResponse({
-    status: 200,
-    description: 'Returns the updated system role',
-    schema: SYSTEM_ROLE_SUCCESS_SCHEMA,
-  })
-  @ApiResponse({
-    status: 400,
-    description: 'System role update is invalid',
-    schema: SYSTEM_ROLE_BAD_REQUEST_SCHEMA,
+    status: 410,
+    description: 'System-role mutation routes are deprecated; use /roles for custom roles',
+    schema: SYSTEM_ROLE_MUTATION_REMOVED_SCHEMA,
   })
   @ApiResponse({
     status: 401,
     description: 'Authentication is required to update system roles',
     schema: SYSTEM_ROLE_UNAUTHORIZED_SCHEMA,
-  })
-  @ApiResponse({
-    status: 404,
-    description: 'System role was not found',
-    schema: SYSTEM_ROLE_NOT_FOUND_SCHEMA,
   })
   async update(
     @Param('systemRoleId', ParseUUIDPipe) systemRoleId: string,
@@ -440,31 +404,21 @@ export class SystemRoleController {
 
   @Delete(':systemRoleId')
   @RequirePermissions({ resource: 'role', action: 'delete' })
-  @ApiOperation({ summary: 'Delete system role' })
+  @ApiOperation({ summary: 'System-role deletion is not allowed' })
   @ApiParam({
     name: 'systemRoleId',
     description: 'System role identifier',
     schema: { type: 'string', format: 'uuid' },
   })
   @ApiResponse({
-    status: 200,
-    description: 'Deletes the system role',
-    schema: SYSTEM_ROLE_DELETE_SUCCESS_SCHEMA,
-  })
-  @ApiResponse({
-    status: 400,
-    description: 'System role cannot be deleted in its current state',
-    schema: SYSTEM_ROLE_BAD_REQUEST_SCHEMA,
+    status: 405,
+    description: 'Role deletion is not allowed',
+    schema: SYSTEM_ROLE_METHOD_NOT_ALLOWED_SCHEMA,
   })
   @ApiResponse({
     status: 401,
     description: 'Authentication is required to delete system roles',
     schema: SYSTEM_ROLE_UNAUTHORIZED_SCHEMA,
-  })
-  @ApiResponse({
-    status: 404,
-    description: 'System role was not found',
-    schema: SYSTEM_ROLE_NOT_FOUND_SCHEMA,
   })
   async remove(@Param('systemRoleId', ParseUUIDPipe) systemRoleId: string) {
     await this.systemRoleService.remove(systemRoleId);

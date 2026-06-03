@@ -1,4 +1,5 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+import { GoneException, MethodNotAllowedException } from '@nestjs/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { DatabaseService } from '../../database/database.service';
@@ -210,72 +211,35 @@ describe('SystemRoleService', () => {
     expect(result.map((role) => role.code)).toEqual(['ADMIN']);
   });
 
-  it('preserves explicit effects and defaults missing effects to grant on create', async () => {
-    mockPrisma.role.findUnique.mockResolvedValue(null);
-    mockTx.role.create.mockResolvedValue({ id: 'role-1', name: roleName });
-    mockTx.policy.findMany.mockResolvedValue([
-      { id: 'policy-1', action: 'delete', resource: { code: 'customer.export' } },
-      { id: 'policy-2', action: 'read', resource: { code: 'customer.export' } },
-    ]);
-
-    await service.create({
-      code: 'EXPORT_MANAGER',
-      name: roleName,
-      permissions: [
-        { resource: 'customer.export', action: 'delete', effect: 'deny' },
-        { resource: 'customer.export', action: 'read' },
-      ],
-    });
-
-    expect(mockTx.rolePolicy.createMany).toHaveBeenCalledWith({
-      data: [
-        { roleId: 'role-1', policyId: 'policy-1', effect: 'deny' },
-        { roleId: 'role-1', policyId: 'policy-2', effect: 'grant' },
-      ],
-    });
-  });
-
-  it('stores role names as the canonical localized text JSON field', async () => {
-    mockPrisma.role.findUnique.mockResolvedValue(null);
-    mockTx.role.create.mockResolvedValue({
-      id: 'role-1',
-      code: 'EXPORT_MANAGER',
-      name: roleName,
-    });
-    mockTx.policy.findMany.mockResolvedValue([]);
-
-    await service.create({
-      code: 'EXPORT_MANAGER',
-      name: roleName,
-    });
-
-    expect(mockTx.role.create).toHaveBeenCalledWith({
-      data: expect.objectContaining({
-        code: 'EXPORT_MANAGER',
-        name: roleName,
-        isSystem: true,
-      }),
-    });
-  });
-
-  it('fails closed when a catalog-backed permission is missing from the database policy table', async () => {
-    mockPrisma.role.findUnique.mockResolvedValue(null);
-    mockTx.role.create.mockResolvedValue({ id: 'role-1' });
-    mockTx.policy.findMany.mockResolvedValue([
-      { id: 'policy-1', action: 'read', resource: { code: 'customer.export' } },
-    ]);
-
+  it('returns Gone for deprecated system-role creation', async () => {
     await expect(
       service.create({
         code: 'EXPORT_MANAGER',
         name: roleName,
         permissions: [
+          { resource: 'customer.export', action: 'delete', effect: 'deny' },
           { resource: 'customer.export', action: 'read' },
-          { resource: 'customer.export', action: 'delete' },
         ],
       })
-    ).rejects.toThrow('RBAC policy customer.export:delete is missing from the database contract');
+    ).rejects.toThrow(GoneException);
 
+    expect(mockPrisma.$transaction).not.toHaveBeenCalled();
+    expect(mockTx.role.create).not.toHaveBeenCalled();
     expect(mockTx.rolePolicy.createMany).not.toHaveBeenCalled();
+  });
+
+  it('returns Gone for deprecated system-role updates', async () => {
+    await expect(service.update('role-1', { compatibilityOnly: true })).rejects.toThrow(
+      GoneException
+    );
+
+    expect(mockPrisma.$transaction).not.toHaveBeenCalled();
+    expect(mockTx.role.update).not.toHaveBeenCalled();
+  });
+
+  it('returns MethodNotAllowed for system-role deletion', async () => {
+    await expect(service.remove('role-1')).rejects.toThrow(MethodNotAllowedException);
+
+    expect(mockPrisma.role.delete).not.toHaveBeenCalled();
   });
 });

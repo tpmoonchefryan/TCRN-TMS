@@ -1,7 +1,6 @@
+import type { SupportedUiLocale } from '@tcrn/shared';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-
-import type { SupportedUiLocale } from '@tcrn/shared';
 
 import { localizedFixture } from '@/domains/config-dictionary-settings/testing/localized-fixtures';
 import { RoleEditorScreen } from '@/domains/user-management/screens/RoleEditorScreen';
@@ -41,7 +40,7 @@ describe('RoleEditorScreen', () => {
 
   it('creates a role from the dedicated route-level editor and redirects to the role page', async () => {
     mockRequest.mockImplementation(async (path: string, init?: RequestInit) => {
-      if (path === '/api/v1/system-roles' && init?.method === 'POST') {
+      if (path === '/api/v1/roles' && init?.method === 'POST') {
         return {
           id: 'role-2',
           code: 'REVIEWER',
@@ -53,6 +52,7 @@ describe('RoleEditorScreen', () => {
           userCount: 0,
           createdAt: '2026-04-18T08:00:00.000Z',
           updatedAt: '2026-04-18T08:00:00.000Z',
+          version: 1,
         };
       }
 
@@ -75,7 +75,7 @@ describe('RoleEditorScreen', () => {
 
     await waitFor(() => {
       expect(mockRequest).toHaveBeenCalledWith(
-        '/api/v1/system-roles',
+        '/api/v1/roles',
         expect.objectContaining({
           method: 'POST',
           headers: {
@@ -84,7 +84,6 @@ describe('RoleEditorScreen', () => {
           body: JSON.stringify({
             code: 'REVIEWER',
             name: localizedFixture('Reviewer'),
-            isActive: true,
             permissions: [
               {
                 resource: 'system_user',
@@ -147,6 +146,7 @@ describe('RoleEditorScreen', () => {
       updatedAt: '2026-04-17T02:00:00.000Z',
       scopeBindings,
       assignedUsers,
+      version: 1,
     };
 
     mockRequest.mockImplementation(async (path: string, init?: RequestInit) => {
@@ -154,7 +154,7 @@ describe('RoleEditorScreen', () => {
         return detail;
       }
 
-      if (path === '/api/v1/system-roles/role-1' && init?.method === 'PATCH') {
+      if (path === '/api/v1/roles/role-1' && init?.method === 'PATCH') {
         detail = {
           ...detail,
           name: localizedFixture('Senior Editor'),
@@ -172,6 +172,7 @@ describe('RoleEditorScreen', () => {
           ],
           permissionCount: 2,
           updatedAt: '2026-04-18T09:00:00.000Z',
+          version: 2,
         };
 
         return {
@@ -185,6 +186,7 @@ describe('RoleEditorScreen', () => {
           userCount: 3,
           createdAt: '2026-04-17T01:00:00.000Z',
           updatedAt: '2026-04-18T09:00:00.000Z',
+          version: 2,
         };
       }
 
@@ -222,7 +224,7 @@ describe('RoleEditorScreen', () => {
 
     await waitFor(() => {
       expect(mockRequest).toHaveBeenCalledWith(
-        '/api/v1/system-roles/role-1',
+        '/api/v1/roles/role-1',
         expect.objectContaining({
           method: 'PATCH',
           headers: {
@@ -238,7 +240,6 @@ describe('RoleEditorScreen', () => {
               fr: 'Editor',
             },
             description: 'Can manage tenant content.',
-            isActive: true,
             permissions: [
               {
                 resource: 'system_user',
@@ -251,6 +252,7 @@ describe('RoleEditorScreen', () => {
                 effect: 'grant',
               },
             ],
+            version: 1,
           }),
         })
       );
@@ -275,6 +277,7 @@ describe('RoleEditorScreen', () => {
       updatedAt: '2026-04-17T02:00:00.000Z',
       scopeBindings: [],
       assignedUsers: [],
+      version: 1,
     };
 
     mockRequest.mockImplementation(async (path: string) => {

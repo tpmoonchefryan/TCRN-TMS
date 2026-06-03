@@ -5,10 +5,10 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-
 import { prisma } from '@tcrn/database';
 import {
   ErrorCodes,
+  INITIAL_ADMIN_ROLE_CODE,
   isRbacRoleAvailableForScopeType,
   isRbacRoleAvailableForTenantTier,
 } from '@tcrn/shared';
@@ -154,9 +154,13 @@ export class UserRoleService {
       return true; // Admin at tenant level can assign any role at any scope
     }
 
-    // Check if trying to assign high-privilege roles (ADMIN or PLATFORM_ADMIN)
+    // Check if trying to assign high-privilege roles.
     // Only admins can assign these roles
-    if (roleCode === 'ADMIN' || roleCode === 'PLATFORM_ADMIN') {
+    if (
+      roleCode === INITIAL_ADMIN_ROLE_CODE ||
+      roleCode === 'ADMIN' ||
+      roleCode === 'PLATFORM_ADMIN'
+    ) {
       return false;
     }
 
@@ -347,6 +351,10 @@ export class UserRoleService {
    * Remove role assignment
    */
   async removeAssignment(assignmentId: string, tenantSchema: string): Promise<void> {
+    await this.assertInitialAdminRescuePathRemains(tenantSchema, assignmentId, {
+      removing: true,
+    });
+
     // Get assignment to find user_id
     const assignments = await prisma.$queryRawUnsafe<Array<{ userId: string }>>(
       `
@@ -387,6 +395,10 @@ export class UserRoleService {
       expiresAt?: Date | null;
     }
   ): Promise<UserRoleAssignment> {
+    await this.assertInitialAdminRescuePathRemains(tenantSchema, assignmentId, {
+      expiresAt: data.expiresAt,
+    });
+
     // Get assignment
     const assignments = await prisma.$queryRawUnsafe<Array<{ userId: string }>>(
       `
@@ -440,5 +452,76 @@ export class UserRoleService {
       });
     }
     return updated;
+  }
+
+  private async assertInitialAdminRescuePathRemains(
+    tenantSchema: string,
+    assignmentId: string,
+    next: { removing?: boolean; expiresAt?: Date | null }
+  ): Promise<void> {
+    const assignments = await prisma.$queryRawUnsafe<
+      Array<{
+        id: string;
+        roleCode: string;
+        scopeType: ScopeType;
+        scopeId: string | null;
+        expiresAt: Date | null;
+      }>
+    >(
+      `
+      SELECT
+        ur.id,
+        r.code as "roleCode",
+        ur.scope_type as "scopeType",
+        ur.scope_id as "scopeId",
+        ur.expires_at as "expiresAt"
+      FROM "${tenantSchema}".user_role ur
+      JOIN "${tenantSchema}".role r ON r.id = ur.role_id
+      WHERE ur.id = CAST($1 AS uuid)
+      LIMIT 1
+    `,
+      assignmentId
+    );
+
+    const assignment = assignments[0];
+    if (!assignment || assignment.roleCode !== INITIAL_ADMIN_ROLE_CODE) {
+      return;
+    }
+
+    if (assignment.scopeType !== 'tenant') {
+      return;
+    }
+
+    const proposedExpiresAt =
+      next.expiresAt === undefined ? assignment.expiresAt : next.expiresAt;
+    const wouldNoLongerQualify =
+      next.removing === true ||
+      (proposedExpiresAt !== null && proposedExpiresAt.getTime() <= Date.now());
+
+    if (!wouldNoLongerQualify) {
+      return;
+    }
+
+    const remaining = await prisma.$queryRawUnsafe<Array<{ count: bigint }>>(
+      `
+      SELECT COUNT(*)::bigint as count
+      FROM "${tenantSchema}".user_role ur
+      JOIN "${tenantSchema}".role r ON r.id = ur.role_id
+      WHERE r.code = $1
+        AND ur.scope_type = 'tenant'
+        AND ur.id != CAST($2 AS uuid)
+        AND (ur.expires_at IS NULL OR ur.expires_at > now())
+    `,
+      INITIAL_ADMIN_ROLE_CODE,
+      assignmentId
+    );
+
+    if (Number(remaining[0]?.count ?? 0) === 0) {
+      throw new ForbiddenException({
+        code: 'INITIAL_ADMIN_RESCUE_REQUIRED',
+        message:
+          'Keep at least one active tenant-scope Initial Admin assignment before saving this change.',
+      });
+    }
   }
 }

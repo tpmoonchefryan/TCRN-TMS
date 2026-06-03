@@ -146,6 +146,8 @@ const LEGACY_RESOURCE_TARGETS: readonly LegacyResourceTarget[] = [
 ] as const;
 
 export const HISTORICAL_ROLE_CODES = [
+  'PLATFORM_ADMIN',
+  'ADMIN',
   'SUPER_ADMIN',
   'INTEGRATION_ADMIN',
   'INTEGRATION_VIEWER',

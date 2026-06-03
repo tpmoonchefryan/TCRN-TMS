@@ -45,3 +45,6 @@ export * from './security';
 
 // System Role Schemas
 export * from './system-role';
+
+// Role Permission Schemas
+export * from './role-permissions';

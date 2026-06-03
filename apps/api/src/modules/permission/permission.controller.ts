@@ -8,25 +8,24 @@ import {
   ApiPropertyOptional,
   ApiTags,
 } from '@nestjs/swagger';
+import {
+  type PermissionActionInput,
+  pickLocalizedText,
+  RBAC_ACTION_INPUTS,
+  RBAC_CANONICAL_ACTIONS,
+  RBAC_RESOURCE_CODES,
+  type RbacResourceCode,
+  resolveRbacPermission,
+} from '@tcrn/shared';
 import { Type } from 'class-transformer';
 import { IsArray, IsBoolean, IsIn, IsOptional, IsString, ValidateNested } from 'class-validator';
 import { Request } from 'express';
 
-import {
-  type PermissionActionInput,
-  RBAC_ACTION_INPUTS,
-  RBAC_CANONICAL_ACTIONS,
-  RBAC_RESOURCE_CODES,
-  pickLocalizedText,
-  type RbacResourceCode,
-  resolveRbacPermission,
-} from '@tcrn/shared';
-
 import { AuthenticatedUser, CurrentUser } from '../../common/decorators/current-user.decorator';
 import { getPrimaryAcceptLanguage } from '../../common/request-locale.util';
 import { success } from '../../common/response.util';
-import { PermissionSnapshotService, ScopeType } from './permission-snapshot.service';
 import { PermissionAction, PermissionService } from './permission.service';
+import { PermissionSnapshotService, ScopeType } from './permission-snapshot.service';
 
 type ApiOkResponseOptions = NonNullable<Parameters<typeof ApiOkResponse>[0]>;
 type OpenApiResponseSchema = Extract<ApiOkResponseOptions, { schema: unknown }>['schema'];
@@ -208,7 +207,7 @@ export class PermissionController {
           );
         }
 
-        const cachedAllowed = await this.snapshotService.checkPermission(
+        const allowed = await this.snapshotService.refreshAndCheckPermission(
           user.tenantSchema,
           user.id,
           resolvedPermission.resourceCode,
@@ -216,16 +215,6 @@ export class PermissionController {
           check.scopeType,
           check.scopeId
         );
-        const allowed = cachedAllowed
-          ? true
-          : await this.snapshotService.refreshAndCheckPermission(
-              user.tenantSchema,
-              user.id,
-              resolvedPermission.resourceCode,
-              resolvedPermission.checkedAction,
-              check.scopeType,
-              check.scopeId
-            );
         return {
           resource: resolvedPermission.resourceCode,
           action: check.action,

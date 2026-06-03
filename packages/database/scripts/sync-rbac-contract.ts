@@ -5,6 +5,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import {
+  INITIAL_ADMIN_ROLE_CODE,
   RBAC_POLICY_DEFINITIONS,
   RBAC_RESOURCES,
   RBAC_ROLE_PERMISSION_ENTRIES,
@@ -51,6 +52,8 @@ const REQUIRED_RBAC_TABLES: readonly RbacTableName[] = [
   'role',
   'role_policy',
 ] as const;
+
+const LEGACY_BUILT_IN_ROLE_CODES = ['PLATFORM_ADMIN', 'ADMIN', 'TENANT_ADMIN'] as const;
 
 function parseCliArgs(argv: string[]): CliOptions {
   const schemas: string[] = [];
@@ -260,6 +263,14 @@ export async function syncSchema(
             updated_at = now()
       `, role.code, JSON.stringify(role.name), role.description, role.isSystem);
     }
+
+    await tx.$executeRawUnsafe(`
+      UPDATE "${schemaName}".role
+      SET is_system = false,
+          updated_at = now()
+      WHERE code = ANY($1::text[])
+        AND code != $2
+    `, [...LEGACY_BUILT_IN_ROLE_CODES], INITIAL_ADMIN_ROLE_CODE);
 
     for (const entry of RBAC_ROLE_PERMISSION_ENTRIES) {
       await tx.$executeRawUnsafe(`

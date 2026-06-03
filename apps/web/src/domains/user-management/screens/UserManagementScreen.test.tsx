@@ -1,7 +1,6 @@
+import type { SupportedUiLocale } from '@tcrn/shared';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-
-import type { SupportedUiLocale } from '@tcrn/shared';
 
 import { localizedFixture } from '@/domains/config-dictionary-settings/testing/localized-fixtures';
 import { UserManagementScreen } from '@/domains/user-management/screens/UserManagementScreen';
@@ -401,9 +400,9 @@ describe('UserManagementScreen', () => {
 
     render(<UserManagementScreen />);
 
-    expect(await screen.findByText('System roles')).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Roles' })).toBeInTheDocument();
     expect(await screen.findByText('Editor')).toBeInTheDocument();
-    expect(screen.queryByRole('heading', { name: 'Create system role' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Create role' })).not.toBeInTheDocument();
 
     const newRoleLink = screen.getByRole('link', { name: 'New role' });
     const editLinks = await screen.findAllByRole('link', { name: 'Edit' });
@@ -467,7 +466,7 @@ describe('UserManagementScreen', () => {
 
     render(<UserManagementScreen />);
 
-    expect(await screen.findByText('System roles')).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Roles' })).toBeInTheDocument();
     expect(await screen.findByText('Administrator')).toBeInTheDocument();
     expect(screen.queryByText('Platform Administrator')).not.toBeInTheDocument();
   });

@@ -1,7 +1,7 @@
 {
   "registryVersion": "2026-05-31.phase-9",
-  "generatedAt": "2026-05-31T17:06:51.225Z",
-  "sourceCommit": "ce7c32464c1527f4da6402f12435e2eb74b2be0b",
+  "generatedAt": "2026-06-03T17:03:27.058Z",
+  "sourceCommit": "3630a0a325c06f7d59d40d16e18afa1ad96c50b4",
   "operations": [
     {
       "operationCode": "config.auth_controller_revoke_sso_account_link",
@@ -344,7 +344,7 @@
       "pathTemplate": "/system-roles/{systemRoleId}",
       "documentGroup": "config",
       "tag": "System - System Roles",
-      "summary": "Delete system role",
+      "summary": "System-role deletion is not allowed",
       "description": null,
       "ownerModuleCode": "core",
       "ownerCapabilityCode": "core.settings",
@@ -352,10 +352,8 @@
       "handlerName": "remove",
       "requestSchemaRef": null,
       "responseSchemaRefs": [
-        "inline:systemrolecontroller_remove:response:200:application_json",
-        "inline:systemrolecontroller_remove:response:400:application_json",
         "inline:systemrolecontroller_remove:response:401:application_json",
-        "inline:systemrolecontroller_remove:response:404:application_json"
+        "inline:systemrolecontroller_remove:response:405:application_json"
       ],
       "authMode": "bearer_jwt",
       "requiredPermissions": [
@@ -394,7 +392,7 @@
         "openapiFile": "openapi/openapi-config.json",
         "operationId": "SystemRoleController_remove",
         "controllerFile": "apps/api/src/modules/system-role/system-role.controller.ts",
-        "controllerLine": 441
+        "controllerLine": 405
       }
     },
     {
@@ -1856,7 +1854,7 @@
         "openapiFile": "openapi/openapi-config.json",
         "operationId": "ConfigController_list",
         "controllerFile": "apps/api/src/modules/config/config.controller.ts",
-        "controllerLine": 653
+        "controllerLine": 649
       }
     },
     {
@@ -1905,7 +1903,7 @@
         "openapiFile": "openapi/openapi-config.json",
         "operationId": "ConfigController_getById",
         "controllerFile": "apps/api/src/modules/config/config.controller.ts",
-        "controllerLine": 731
+        "controllerLine": 727
       }
     },
     {
@@ -1959,7 +1957,7 @@
         "openapiFile": "openapi/openapi-config.json",
         "operationId": "ConfigController_getEffectiveBlocklist",
         "controllerFile": "apps/api/src/modules/config/config.controller.ts",
-        "controllerLine": 1015
+        "controllerLine": 1011
       }
     },
     {
@@ -2013,7 +2011,7 @@
         "openapiFile": "openapi/openapi-config.json",
         "operationId": "ConfigController_getMembershipTypesByClass",
         "controllerFile": "apps/api/src/modules/config/config.controller.ts",
-        "controllerLine": 591
+        "controllerLine": 587
       }
     },
     {
@@ -2067,7 +2065,7 @@
         "openapiFile": "openapi/openapi-config.json",
         "operationId": "ConfigController_getMembershipTree",
         "controllerFile": "apps/api/src/modules/config/config.controller.ts",
-        "controllerLine": 567
+        "controllerLine": 563
       }
     },
     {
@@ -2121,7 +2119,7 @@
         "openapiFile": "openapi/openapi-config.json",
         "operationId": "ConfigController_getMembershipLevelsByType",
         "controllerFile": "apps/api/src/modules/config/config.controller.ts",
-        "controllerLine": 622
+        "controllerLine": 618
       }
     },
     {
@@ -5297,7 +5295,7 @@
         "openapiFile": "openapi/openapi-config.json",
         "operationId": "SystemRoleController_findAll",
         "controllerFile": "apps/api/src/modules/system-role/system-role.controller.ts",
-        "controllerLine": 330
+        "controllerLine": 304
       }
     },
     {
@@ -5355,7 +5353,7 @@
         "openapiFile": "openapi/openapi-config.json",
         "operationId": "SystemRoleController_findOne",
         "controllerFile": "apps/api/src/modules/system-role/system-role.controller.ts",
-        "controllerLine": 363
+        "controllerLine": 337
       }
     },
     {
@@ -6137,7 +6135,7 @@
         "openapiFile": "openapi/openapi-config.json",
         "operationId": "ConfigController_update",
         "controllerFile": "apps/api/src/modules/config/config.controller.ts",
-        "controllerLine": 764
+        "controllerLine": 760
       }
     },
     {
@@ -7054,7 +7052,7 @@
       "pathTemplate": "/system-roles/{systemRoleId}",
       "documentGroup": "config",
       "tag": "System - System Roles",
-      "summary": "Update system role",
+      "summary": "System-role update is deprecated",
       "description": null,
       "ownerModuleCode": "core",
       "ownerCapabilityCode": "core.settings",
@@ -7062,10 +7060,8 @@
       "handlerName": "update",
       "requestSchemaRef": "#/components/schemas/UpdateSystemRoleZodDto",
       "responseSchemaRefs": [
-        "inline:systemrolecontroller_update:response:200:application_json",
-        "inline:systemrolecontroller_update:response:400:application_json",
         "inline:systemrolecontroller_update:response:401:application_json",
-        "inline:systemrolecontroller_update:response:404:application_json"
+        "inline:systemrolecontroller_update:response:410:application_json"
       ],
       "authMode": "bearer_jwt",
       "requiredPermissions": [
@@ -7104,7 +7100,7 @@
         "openapiFile": "openapi/openapi-config.json",
         "operationId": "SystemRoleController_update",
         "controllerFile": "apps/api/src/modules/system-role/system-role.controller.ts",
-        "controllerLine": 405
+        "controllerLine": 379
       }
     },
     {
@@ -8327,7 +8323,7 @@
         "openapiFile": "openapi/openapi-config.json",
         "operationId": "ConfigController_create",
         "controllerFile": "apps/api/src/modules/config/config.controller.ts",
-        "controllerLine": 692
+        "controllerLine": 688
       }
     },
     {
@@ -8376,7 +8372,7 @@
         "openapiFile": "openapi/openapi-config.json",
         "operationId": "ConfigController_deactivate",
         "controllerFile": "apps/api/src/modules/config/config.controller.ts",
-        "controllerLine": 805
+        "controllerLine": 801
       }
     },
     {
@@ -8425,7 +8421,7 @@
         "openapiFile": "openapi/openapi-config.json",
         "operationId": "ConfigController_disable",
         "controllerFile": "apps/api/src/modules/config/config.controller.ts",
-        "controllerLine": 866
+        "controllerLine": 862
       }
     },
     {
@@ -8474,7 +8470,7 @@
         "openapiFile": "openapi/openapi-config.json",
         "operationId": "ConfigController_enable",
         "controllerFile": "apps/api/src/modules/config/config.controller.ts",
-        "controllerLine": 896
+        "controllerLine": 892
       }
     },
     {
@@ -8523,7 +8519,7 @@
         "openapiFile": "openapi/openapi-config.json",
         "operationId": "ConfigController_reactivate",
         "controllerFile": "apps/api/src/modules/config/config.controller.ts",
-        "controllerLine": 836
+        "controllerLine": 832
       }
     },
     {
@@ -8577,7 +8573,7 @@
         "openapiFile": "openapi/openapi-config.json",
         "operationId": "ConfigController_testBlocklist",
         "controllerFile": "apps/api/src/modules/config/config.controller.ts",
-        "controllerLine": 996
+        "controllerLine": 992
       }
     },
     {
@@ -8631,7 +8627,7 @@
         "openapiFile": "openapi/openapi-config.json",
         "operationId": "ConfigController_generateConsumerKey",
         "controllerFile": "apps/api/src/modules/config/config.controller.ts",
-        "controllerLine": 925
+        "controllerLine": 921
       }
     },
     {
@@ -8685,7 +8681,7 @@
         "openapiFile": "openapi/openapi-config.json",
         "operationId": "ConfigController_revokeConsumerKey",
         "controllerFile": "apps/api/src/modules/config/config.controller.ts",
-        "controllerLine": 977
+        "controllerLine": 973
       }
     },
     {
@@ -8739,7 +8735,7 @@
         "openapiFile": "openapi/openapi-config.json",
         "operationId": "ConfigController_rotateConsumerKey",
         "controllerFile": "apps/api/src/modules/config/config.controller.ts",
-        "controllerLine": 951
+        "controllerLine": 947
       }
     },
     {
@@ -9816,7 +9812,7 @@
       "pathTemplate": "/system-roles",
       "documentGroup": "config",
       "tag": "System - System Roles",
-      "summary": "Create system role",
+      "summary": "System-role creation is deprecated",
       "description": null,
       "ownerModuleCode": "core",
       "ownerCapabilityCode": "core.settings",
@@ -9824,9 +9820,8 @@
       "handlerName": "create",
       "requestSchemaRef": "#/components/schemas/CreateSystemRoleZodDto",
       "responseSchemaRefs": [
-        "inline:systemrolecontroller_create:response:201:application_json",
-        "inline:systemrolecontroller_create:response:400:application_json",
-        "inline:systemrolecontroller_create:response:401:application_json"
+        "inline:systemrolecontroller_create:response:401:application_json",
+        "inline:systemrolecontroller_create:response:410:application_json"
       ],
       "authMode": "bearer_jwt",
       "requiredPermissions": [
@@ -9865,7 +9860,7 @@
         "openapiFile": "openapi/openapi-config.json",
         "operationId": "SystemRoleController_create",
         "controllerFile": "apps/api/src/modules/system-role/system-role.controller.ts",
-        "controllerLine": 307
+        "controllerLine": 286
       }
     },
     {
@@ -11078,6 +11073,63 @@
         "operationId": "ReportController_cancelMfrJob",
         "controllerFile": "apps/api/src/modules/report/controllers/report.controller.ts",
         "controllerLine": 620
+      }
+    },
+    {
+      "operationCode": "operations.role_controller_remove",
+      "method": "DELETE",
+      "pathTemplate": "/roles/{roleId}",
+      "documentGroup": "operations",
+      "tag": "System - Roles",
+      "summary": "Role deletion is not allowed",
+      "description": null,
+      "ownerModuleCode": "core",
+      "ownerCapabilityCode": "core.user_access",
+      "controllerName": "RoleController",
+      "handlerName": "remove",
+      "requestSchemaRef": null,
+      "responseSchemaRefs": [
+        "inline:rolecontroller_remove:response:401:application_json",
+        "inline:rolecontroller_remove:response:405:application_json"
+      ],
+      "authMode": "bearer_jwt",
+      "requiredPermissions": [
+        {
+          "resource": "role",
+          "action": "delete"
+        }
+      ],
+      "dynamicPermissionResolver": {
+        "enabled": false,
+        "resolverName": null,
+        "source": null,
+        "runtimeProofRequired": false
+      },
+      "scopeType": "tenant",
+      "scopeSource": "default authenticated tenant scope",
+      "exposure": "tenant_private",
+      "stability": "stable",
+      "deprecation": {
+        "isDeprecated": false,
+        "reason": null,
+        "replacementOperationCode": null,
+        "sunsetAt": null
+      },
+      "piiClass": "reference",
+      "examplePolicy": "no_raw_secret_or_pii",
+      "gatewayEligible": true,
+      "builderExportEligible": true,
+      "auditEventTypes": [],
+      "metadataAuthority": {
+        "kind": "tcrn_api_registry_authority_snapshot",
+        "source": "apps/api/src/modules/api-registry/api-registry.authority.json",
+        "operationKey": "operations DELETE /roles/{roleId}"
+      },
+      "source": {
+        "openapiFile": "openapi/openapi-operations.json",
+        "operationId": "RoleController_remove",
+        "controllerFile": "apps/api/src/modules/role/role.controller.ts",
+        "controllerLine": 894
       }
     },
     {
@@ -12526,7 +12578,7 @@
         "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PermissionController_list",
         "controllerFile": "apps/api/src/modules/permission/permission.controller.ts",
-        "controllerLine": 144
+        "controllerLine": 143
       }
     },
     {
@@ -12577,7 +12629,7 @@
         "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PermissionController_getResources",
         "controllerFile": "apps/api/src/modules/permission/permission.controller.ts",
-        "controllerLine": 176
+        "controllerLine": 175
       }
     },
     {
@@ -13510,7 +13562,7 @@
         "openapiFile": "openapi/openapi-operations.json",
         "operationId": "RoleController_list",
         "controllerFile": "apps/api/src/modules/role/role.controller.ts",
-        "controllerLine": 475
+        "controllerLine": 513
       }
     },
     {
@@ -13568,7 +13620,7 @@
         "openapiFile": "openapi/openapi-operations.json",
         "operationId": "RoleController_getById",
         "controllerFile": "apps/api/src/modules/role/role.controller.ts",
-        "controllerLine": 580
+        "controllerLine": 620
       }
     },
     {
@@ -15176,7 +15228,7 @@
         "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PublicPresenceController_getWorkspace",
         "controllerFile": "apps/api/src/modules/homepage/controllers/public-presence.controller.ts",
-        "controllerLine": 83
+        "controllerLine": 85
       }
     },
     {
@@ -15232,7 +15284,7 @@
         "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PublicPresenceController_getDraftPreview",
         "controllerFile": "apps/api/src/modules/homepage/controllers/public-presence.controller.ts",
-        "controllerLine": 107
+        "controllerLine": 109
       }
     },
     {
@@ -15733,7 +15785,7 @@
         "openapiFile": "openapi/openapi-operations.json",
         "operationId": "RoleController_update",
         "controllerFile": "apps/api/src/modules/role/role.controller.ts",
-        "controllerLine": 643
+        "controllerLine": 683
       }
     },
     {
@@ -15793,7 +15845,7 @@
         "openapiFile": "openapi/openapi-operations.json",
         "operationId": "RoleController_setPermissions",
         "controllerFile": "apps/api/src/modules/role/role.controller.ts",
-        "controllerLine": 694
+        "controllerLine": 734
       }
     },
     {
@@ -16679,7 +16731,7 @@
         "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PublicPresenceController_saveDraft",
         "controllerFile": "apps/api/src/modules/homepage/controllers/public-presence.controller.ts",
-        "controllerLine": 166
+        "controllerLine": 168
       }
     },
     {
@@ -17685,7 +17737,7 @@
         "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PermissionController_checkPermissions",
         "controllerFile": "apps/api/src/modules/permission/permission.controller.ts",
-        "controllerLine": 197
+        "controllerLine": 196
       }
     },
     {
@@ -18452,7 +18504,7 @@
         "openapiFile": "openapi/openapi-operations.json",
         "operationId": "RoleController_create",
         "controllerFile": "apps/api/src/modules/role/role.controller.ts",
-        "controllerLine": 522
+        "controllerLine": 560
       }
     },
     {
@@ -18469,11 +18521,8 @@
       "handlerName": "deactivate",
       "requestSchemaRef": "#/components/schemas/RoleActivationDto",
       "responseSchemaRefs": [
-        "inline:rolecontroller_deactivate:response:200:application_json",
-        "inline:rolecontroller_deactivate:response:400:application_json",
         "inline:rolecontroller_deactivate:response:401:application_json",
-        "inline:rolecontroller_deactivate:response:403:application_json",
-        "inline:rolecontroller_deactivate:response:404:application_json"
+        "inline:rolecontroller_deactivate:response:410:application_json"
       ],
       "authMode": "bearer_jwt",
       "requiredPermissions": [
@@ -18512,7 +18561,7 @@
         "openapiFile": "openapi/openapi-operations.json",
         "operationId": "RoleController_deactivate",
         "controllerFile": "apps/api/src/modules/role/role.controller.ts",
-        "controllerLine": 762
+        "controllerLine": 810
       }
     },
     {
@@ -18529,10 +18578,8 @@
       "handlerName": "reactivate",
       "requestSchemaRef": "#/components/schemas/RoleActivationDto",
       "responseSchemaRefs": [
-        "inline:rolecontroller_reactivate:response:200:application_json",
-        "inline:rolecontroller_reactivate:response:400:application_json",
         "inline:rolecontroller_reactivate:response:401:application_json",
-        "inline:rolecontroller_reactivate:response:404:application_json"
+        "inline:rolecontroller_reactivate:response:410:application_json"
       ],
       "authMode": "bearer_jwt",
       "requiredPermissions": [
@@ -18571,7 +18618,7 @@
         "openapiFile": "openapi/openapi-operations.json",
         "operationId": "RoleController_reactivate",
         "controllerFile": "apps/api/src/modules/role/role.controller.ts",
-        "controllerLine": 819
+        "controllerLine": 852
       }
     },
     {
@@ -21011,7 +21058,7 @@
         "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PublicPresenceController_bootstrapDraft",
         "controllerFile": "apps/api/src/modules/homepage/controllers/public-presence.controller.ts",
-        "controllerLine": 137
+        "controllerLine": 139
       }
     },
     {
@@ -21065,7 +21112,7 @@
         "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PublicPresenceController_publishNow",
         "controllerFile": "apps/api/src/modules/homepage/controllers/public-presence.controller.ts",
-        "controllerLine": 260
+        "controllerLine": 263
       }
     },
     {
@@ -21119,7 +21166,7 @@
         "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PublicPresenceController_cancelScheduledPublish",
         "controllerFile": "apps/api/src/modules/homepage/controllers/public-presence.controller.ts",
-        "controllerLine": 303
+        "controllerLine": 306
       }
     },
     {
@@ -21173,7 +21220,7 @@
         "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PublicPresenceController_schedulePublish",
         "controllerFile": "apps/api/src/modules/homepage/controllers/public-presence.controller.ts",
-        "controllerLine": 282
+        "controllerLine": 285
       }
     },
     {
@@ -21227,7 +21274,7 @@
         "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PublicPresenceController_approve",
         "controllerFile": "apps/api/src/modules/homepage/controllers/public-presence.controller.ts",
-        "controllerLine": 238
+        "controllerLine": 241
       }
     },
     {
@@ -21281,7 +21328,7 @@
         "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PublicPresenceController_requestChanges",
         "controllerFile": "apps/api/src/modules/homepage/controllers/public-presence.controller.ts",
-        "controllerLine": 217
+        "controllerLine": 220
       }
     },
     {
@@ -21335,7 +21382,7 @@
         "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PublicPresenceController_submitForReview",
         "controllerFile": "apps/api/src/modules/homepage/controllers/public-presence.controller.ts",
-        "controllerLine": 195
+        "controllerLine": 198
       }
     },
     {
@@ -21389,7 +21436,7 @@
         "openapiFile": "openapi/openapi-operations.json",
         "operationId": "PublicPresenceController_createRollbackDraft",
         "controllerFile": "apps/api/src/modules/homepage/controllers/public-presence.controller.ts",
-        "controllerLine": 325
+        "controllerLine": 328
       }
     },
     {
@@ -22053,7 +22100,7 @@
   "groups": {
     "operations": {
       "title": "TCRN TMS - Operations API",
-      "operationCount": 193,
+      "operationCount": 194,
       "pathCount": 162,
       "schemaCount": 69
     },
@@ -22072,7 +22119,7 @@
   },
   "moduleLinks": {
     "core": {
-      "operationCount": 221,
+      "operationCount": 222,
       "documentationGroup": "core"
     },
     "platform": {
@@ -22102,7 +22149,7 @@
   },
   "capabilityLinks": {
     "core.user_access": {
-      "operationCount": 61,
+      "operationCount": 62,
       "moduleCode": "core"
     },
     "platform.ac_management": {
@@ -22181,7 +22228,7 @@
         "read",
         "update"
       ],
-      "operationCount": 12
+      "operationCount": 13
     },
     "platform.api_gateway": {
       "actions": [
@@ -22490,16 +22537,10 @@
     "inline:dictionarycontroller_deactivateitem:response:404:application_json": {
       "operationCount": 1
     },
-    "inline:systemrolecontroller_remove:response:200:application_json": {
-      "operationCount": 1
-    },
-    "inline:systemrolecontroller_remove:response:400:application_json": {
-      "operationCount": 1
-    },
     "inline:systemrolecontroller_remove:response:401:application_json": {
       "operationCount": 1
     },
-    "inline:systemrolecontroller_remove:response:404:application_json": {
+    "inline:systemrolecontroller_remove:response:405:application_json": {
       "operationCount": 1
     },
     "inline:apigatewayreadinesscontroller_getcutoverrunbook:response:200:application_json": {
@@ -23177,16 +23218,10 @@
     "#/components/schemas/UpdateSystemRoleZodDto": {
       "operationCount": 1
     },
-    "inline:systemrolecontroller_update:response:200:application_json": {
-      "operationCount": 1
-    },
-    "inline:systemrolecontroller_update:response:400:application_json": {
-      "operationCount": 1
-    },
     "inline:systemrolecontroller_update:response:401:application_json": {
       "operationCount": 1
     },
-    "inline:systemrolecontroller_update:response:404:application_json": {
+    "inline:systemrolecontroller_update:response:410:application_json": {
       "operationCount": 1
     },
     "#/components/schemas/UpdateUserDto": {
@@ -23591,13 +23626,10 @@
     "#/components/schemas/CreateSystemRoleZodDto": {
       "operationCount": 1
     },
-    "inline:systemrolecontroller_create:response:201:application_json": {
-      "operationCount": 1
-    },
-    "inline:systemrolecontroller_create:response:400:application_json": {
-      "operationCount": 1
-    },
     "inline:systemrolecontroller_create:response:401:application_json": {
+      "operationCount": 1
+    },
+    "inline:systemrolecontroller_create:response:410:application_json": {
       "operationCount": 1
     },
     "#/components/schemas/CreateUserDto": {
@@ -23775,6 +23807,12 @@
       "operationCount": 1
     },
     "inline:reportcontroller_cancelmfrjob:response:404:application_json": {
+      "operationCount": 1
+    },
+    "inline:rolecontroller_remove:response:401:application_json": {
+      "operationCount": 1
+    },
+    "inline:rolecontroller_remove:response:405:application_json": {
       "operationCount": 1
     },
     "inline:talentcontroller_deletetalent:response:200:application_json": {
@@ -24911,31 +24949,16 @@
     "#/components/schemas/RoleActivationDto": {
       "operationCount": 2
     },
-    "inline:rolecontroller_deactivate:response:200:application_json": {
-      "operationCount": 1
-    },
-    "inline:rolecontroller_deactivate:response:400:application_json": {
-      "operationCount": 1
-    },
     "inline:rolecontroller_deactivate:response:401:application_json": {
       "operationCount": 1
     },
-    "inline:rolecontroller_deactivate:response:403:application_json": {
-      "operationCount": 1
-    },
-    "inline:rolecontroller_deactivate:response:404:application_json": {
-      "operationCount": 1
-    },
-    "inline:rolecontroller_reactivate:response:200:application_json": {
-      "operationCount": 1
-    },
-    "inline:rolecontroller_reactivate:response:400:application_json": {
+    "inline:rolecontroller_deactivate:response:410:application_json": {
       "operationCount": 1
     },
     "inline:rolecontroller_reactivate:response:401:application_json": {
       "operationCount": 1
     },
-    "inline:rolecontroller_reactivate:response:404:application_json": {
+    "inline:rolecontroller_reactivate:response:410:application_json": {
       "operationCount": 1
     },
     "#/components/schemas/CreateSubsidiaryDto": {

@@ -64,6 +64,7 @@ export interface SystemRoleListItem {
   userCount: number;
   createdAt: string;
   updatedAt: string;
+  version: number;
 }
 
 export interface SystemRolePermissionRecord {
@@ -181,15 +182,14 @@ export interface CreateSystemRoleInput {
   code: string;
   name: LocalizedText;
   description?: string;
-  isActive?: boolean;
   permissions?: SystemRolePermissionRecord[];
 }
 
 export interface UpdateSystemRoleInput {
   name?: LocalizedText;
   description?: string;
-  isActive?: boolean;
   permissions?: SystemRolePermissionRecord[];
+  version?: number;
 }
 
 type RequestEnvelopeFn = <T>(path: string, init?: RequestInit) => Promise<ApiSuccessEnvelope<T>>;
@@ -391,7 +391,7 @@ export async function createSystemRole(
   request: <T>(path: string, init?: RequestInit) => Promise<T>,
   input: CreateSystemRoleInput
 ) {
-  return request<SystemRoleListItem>('/api/v1/system-roles', buildJsonRequestInit('POST', input));
+  return request<SystemRoleListItem>('/api/v1/roles', buildJsonRequestInit('POST', input));
 }
 
 export async function updateSystemRole(
@@ -400,7 +400,7 @@ export async function updateSystemRole(
   input: UpdateSystemRoleInput
 ) {
   return request<SystemRoleListItem>(
-    `/api/v1/system-roles/${systemRoleId}`,
+    `/api/v1/roles/${systemRoleId}`,
     buildJsonRequestInit('PATCH', input)
   );
 }

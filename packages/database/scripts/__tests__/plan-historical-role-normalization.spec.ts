@@ -114,14 +114,16 @@ describe('buildHistoricalRoleNormalizationPlan', () => {
     const plan = buildHistoricalRoleNormalizationPlan(summary, createOptions([]));
 
     assert.deepEqual(plan.filters.roles, [
+      'PLATFORM_ADMIN',
+      'ADMIN',
       'SUPER_ADMIN',
       'INTEGRATION_ADMIN',
       'INTEGRATION_VIEWER',
     ]);
-    assert.equal(plan.plans[0]?.roles.length, 3);
+    assert.equal(plan.plans[0]?.roles.length, 5);
   });
 
-  it('marks authored catalog aliases outside retirement scope', () => {
+  it('blocks assigned compatibility aliases that are no longer authored catalog roles', () => {
     const summary = createSummary({
       roleCode: 'TENANT_ADMIN',
       present: true,
@@ -137,9 +139,9 @@ describe('buildHistoricalRoleNormalizationPlan', () => {
       })
     );
 
-    assert.equal(plan.plans[0]?.roles[0]?.decision, 'authored_contract_role');
-    assert.equal(plan.plans[0]?.roles[0]?.authoredContractRole, true);
-    assert.equal(plan.plans[0]?.roles[0]?.aliasOf, 'ADMIN');
+    assert.equal(plan.plans[0]?.roles[0]?.decision, 'blocked_assigned_users');
+    assert.equal(plan.plans[0]?.roles[0]?.authoredContractRole, false);
+    assert.equal(plan.plans[0]?.roles[0]?.aliasOf, null);
   });
 
   it('marks non-authored missing roles as absent', () => {

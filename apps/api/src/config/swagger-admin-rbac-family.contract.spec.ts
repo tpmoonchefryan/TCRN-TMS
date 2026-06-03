@@ -1,4 +1,5 @@
 import 'reflect-metadata';
+
 import { describe, expect, it } from 'vitest';
 
 import { PERMISSIONS_KEY } from '../common/decorators/require-permissions.decorator';
@@ -72,14 +73,9 @@ describe('Swagger admin RBAC family contract', () => {
       '403',
       '404',
     ]);
-    expect(getResponseStatuses(RoleController, 'deactivate')).toEqual([
-      '200',
-      '400',
-      '401',
-      '403',
-      '404',
-    ]);
-    expect(getResponseStatuses(RoleController, 'reactivate')).toEqual(['200', '400', '401', '404']);
+    expect(getResponseStatuses(RoleController, 'deactivate')).toEqual(['401', '410']);
+    expect(getResponseStatuses(RoleController, 'reactivate')).toEqual(['401', '410']);
+    expect(getResponseStatuses(RoleController, 'remove')).toEqual(['401', '405']);
   });
 
   it('documents response status coverage for system-user routes', () => {
@@ -100,21 +96,11 @@ describe('Swagger admin RBAC family contract', () => {
   });
 
   it('documents response status coverage for system-role routes', () => {
-    expect(getResponseStatuses(SystemRoleController, 'create')).toEqual(['201', '400', '401']);
+    expect(getResponseStatuses(SystemRoleController, 'create')).toEqual(['401', '410']);
     expect(getResponseStatuses(SystemRoleController, 'findAll')).toEqual(['200', '401']);
     expect(getResponseStatuses(SystemRoleController, 'findOne')).toEqual(['200', '401', '404']);
-    expect(getResponseStatuses(SystemRoleController, 'update')).toEqual([
-      '200',
-      '400',
-      '401',
-      '404',
-    ]);
-    expect(getResponseStatuses(SystemRoleController, 'remove')).toEqual([
-      '200',
-      '400',
-      '401',
-      '404',
-    ]);
+    expect(getResponseStatuses(SystemRoleController, 'update')).toEqual(['401', '410']);
+    expect(getResponseStatuses(SystemRoleController, 'remove')).toEqual(['401', '405']);
   });
 
   it('documents path params for admin RBAC resource routes', () => {
@@ -123,6 +109,7 @@ describe('Swagger admin RBAC family contract', () => {
     expect(getPathParamNames(RoleController, 'setPermissions')).toEqual(['roleId']);
     expect(getPathParamNames(RoleController, 'deactivate')).toEqual(['roleId']);
     expect(getPathParamNames(RoleController, 'reactivate')).toEqual(['roleId']);
+    expect(getPathParamNames(RoleController, 'remove')).toEqual(['roleId']);
 
     expect(getPathParamNames(SystemUserController, 'getById')).toEqual(['systemUserId']);
     expect(getPathParamNames(SystemUserController, 'update')).toEqual(['systemUserId']);
@@ -144,9 +131,21 @@ describe('Swagger admin RBAC family contract', () => {
       'description',
       'name',
       'permissionIds',
+      'permissionStates',
+      'permissions',
     ]);
-    expect(getDocumentedDtoProperties(UpdateRoleDto)).toEqual(['description', 'name', 'version']);
-    expect(getDocumentedDtoProperties(SetPermissionsDto)).toEqual(['permissionIds', 'version']);
+    expect(getDocumentedDtoProperties(UpdateRoleDto)).toEqual([
+      'description',
+      'name',
+      'permissionStates',
+      'permissions',
+      'version',
+    ]);
+    expect(getDocumentedDtoProperties(SetPermissionsDto)).toEqual([
+      'permissionIds',
+      'permissionStates',
+      'version',
+    ]);
     expect(getDocumentedDtoProperties(RoleActivationDto)).toEqual(['version']);
 
     expect(getDocumentedDtoProperties(CreateUserDto)).toEqual([

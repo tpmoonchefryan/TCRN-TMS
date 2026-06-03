@@ -1,8 +1,12 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
+import {
+  BadRequestException,
+  ForbiddenException,
+  GoneException,
+  NotFoundException,
+} from '@nestjs/common';
 import { prisma } from '@tcrn/database';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { PermissionSnapshotService } from '../../permission/permission-snapshot.service';
 import { RoleData, RoleService } from '../role.service';
@@ -318,7 +322,8 @@ describe('RoleService', () => {
     it('should update role', async () => {
       mockPrisma.$queryRawUnsafe
         .mockResolvedValueOnce([mockRole]) // findById
-        .mockResolvedValueOnce([{ ...mockRole, name: { ...mockRole.name, en: 'Updated' } }]); // Update
+        .mockResolvedValueOnce([{ ...mockRole, name: { ...mockRole.name, en: 'Updated' } }]) // Update
+        .mockResolvedValueOnce([{ ...mockRole, name: { ...mockRole.name, en: 'Updated' } }]); // findById after
 
       const result = await service.update(
         'role-123',
@@ -384,71 +389,24 @@ describe('RoleService', () => {
   });
 
   describe('deactivate', () => {
-    it('should deactivate role and refresh snapshots', async () => {
-      mockPrisma.$queryRawUnsafe
-        .mockResolvedValueOnce([mockRole]) // findById before
-        .mockResolvedValueOnce([{ ...mockRole, isActive: false }]); // findById after
-      mockPrisma.$executeRawUnsafe.mockResolvedValue(1);
-
-      const result = await service.deactivate('role-123', testSchema, 1, 'user-123');
-
-      expect(result.isActive).toBe(false);
-      expect(mockSnapshotService.refreshRoleSnapshots).toHaveBeenCalled();
-    });
-
-    it('should throw ForbiddenException for system role', async () => {
-      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([mockSystemRole]);
-
-      await expect(
-        service.deactivate('system-role-123', testSchema, 1, 'user-123')
-      ).rejects.toThrow(ForbiddenException);
-    });
-
-    it('should throw NotFoundException for non-existent role', async () => {
-      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([]);
-
-      await expect(service.deactivate('nonexistent', testSchema, 1, 'user-123')).rejects.toThrow(
-        NotFoundException
+    it('returns Gone because roles do not have an active/inactive lifecycle', async () => {
+      await expect(service.deactivate('role-123', testSchema, 1, 'user-123')).rejects.toThrow(
+        GoneException
       );
-    });
-
-    it('should throw on version mismatch', async () => {
-      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([mockRole]);
-
-      await expect(service.deactivate('role-123', testSchema, 999, 'user-123')).rejects.toThrow(
-        BadRequestException
-      );
+      expect(mockPrisma.$queryRawUnsafe).not.toHaveBeenCalled();
+      expect(mockPrisma.$executeRawUnsafe).not.toHaveBeenCalled();
+      expect(mockSnapshotService.refreshRoleSnapshots).not.toHaveBeenCalled();
     });
   });
 
   describe('reactivate', () => {
-    it('should reactivate role and refresh snapshots', async () => {
-      const inactiveRole = { ...mockRole, isActive: false };
-      mockPrisma.$queryRawUnsafe
-        .mockResolvedValueOnce([inactiveRole]) // findById before
-        .mockResolvedValueOnce([mockRole]); // findById after
-      mockPrisma.$executeRawUnsafe.mockResolvedValue(1);
-
-      const result = await service.reactivate('role-123', testSchema, 1, 'user-123');
-
-      expect(result.isActive).toBe(true);
-      expect(mockSnapshotService.refreshRoleSnapshots).toHaveBeenCalled();
-    });
-
-    it('should throw NotFoundException for non-existent role', async () => {
-      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([]);
-
-      await expect(service.reactivate('nonexistent', testSchema, 1, 'user-123')).rejects.toThrow(
-        NotFoundException
+    it('returns Gone because roles do not have an active/inactive lifecycle', async () => {
+      await expect(service.reactivate('role-123', testSchema, 1, 'user-123')).rejects.toThrow(
+        GoneException
       );
-    });
-
-    it('should throw on version mismatch', async () => {
-      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([mockRole]);
-
-      await expect(service.reactivate('role-123', testSchema, 999, 'user-123')).rejects.toThrow(
-        BadRequestException
-      );
+      expect(mockPrisma.$queryRawUnsafe).not.toHaveBeenCalled();
+      expect(mockPrisma.$executeRawUnsafe).not.toHaveBeenCalled();
+      expect(mockSnapshotService.refreshRoleSnapshots).not.toHaveBeenCalled();
     });
   });
 });

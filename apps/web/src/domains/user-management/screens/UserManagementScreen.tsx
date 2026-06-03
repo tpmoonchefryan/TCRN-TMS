@@ -28,7 +28,6 @@ import {
   listSystemUsers,
   reactivateSystemUser,
   removeDelegatedAdmin,
-  removeSystemRole,
   type SystemRoleListItem,
   type SystemUserListItem,
 } from '@/domains/user-management/api/user-management.api';
@@ -59,7 +58,6 @@ import {
   formatUserManagementDateTime,
   getLocalizedDelegateTypeLabel,
   getLocalizedScopeTypeLabel,
-  pickLocalizedName,
   useUserManagementCopy,
 } from './user-management.copy';
 import { isRoleVisibleInWorkspace, UserManagementPaginationFooter } from './user-management.shared';
@@ -130,18 +128,6 @@ type DialogState =
       successMessage: string;
       errorFallback: string;
       intent: 'primary';
-    }
-  | {
-      kind: 'delete-role';
-      scope: 'roles';
-      id: string;
-      title: string;
-      description: string;
-      confirmText: string;
-      pendingText: string;
-      successMessage: string;
-      errorFallback: string;
-      intent: 'danger';
     }
   | {
       kind: 'remove-delegation';
@@ -670,9 +656,7 @@ export function UserManagementScreen({
         ? current.scopeId
         : (scopeOptions[0]?.id ?? '');
       const delegateOptions =
-        current.delegateType === 'user'
-          ? usersPanel.data
-          : rolesPanel.data.filter((role) => role.isActive);
+        current.delegateType === 'user' ? usersPanel.data : rolesPanel.data;
       const delegateId = delegateOptions.some((option) => option.id === current.delegateId)
         ? current.delegateId
         : (delegateOptions[0]?.id ?? '');
@@ -757,10 +741,6 @@ export function UserManagementScreen({
         case 'force-totp':
           await forceSystemUserTotp(request, currentDialog.id);
           break;
-        case 'delete-role':
-          await removeSystemRole(request, currentDialog.id);
-          await refreshRoles();
-          break;
         case 'remove-delegation':
           await removeDelegatedAdmin(request, currentDialog.id);
           await refreshDelegations();
@@ -799,7 +779,7 @@ export function UserManagementScreen({
   const delegationDelegateOptions: Array<SystemUserListItem | SystemRoleListItem> =
     delegationDraft.delegateType === 'user'
       ? usersPanel.data
-      : rolesPanel.data.filter((role) => role.isActive);
+      : rolesPanel.data;
 
   const allPanelsFailed =
     !usersPanel.loading &&
@@ -1228,14 +1208,6 @@ export function UserManagementScreen({
                                 : managementCopy.roles.custom
                             }
                           />
-                          <ToneBadge
-                            tone={role.isActive ? 'success' : 'warning'}
-                            label={
-                              role.isActive
-                                ? managementCopy.roles.active
-                                : managementCopy.roles.inactive
-                            }
-                          />
                         </div>
                       </td>
                       <td className="px-6 py-4 text-sm text-slate-600">
@@ -1256,32 +1228,7 @@ export function UserManagementScreen({
                           </Link>
                           {role.isSystem ? (
                             <ToneBadge tone="neutral" label={managementCopy.roles.protected} />
-                          ) : (
-                            <InlineActionButton
-                              tone="danger"
-                              onClick={() => {
-                                setDialogState({
-                                  kind: 'delete-role',
-                                  scope: 'roles',
-                                  id: role.id,
-                                  title: managementCopy.roles.deleteTitle(
-                                    role.localizedName || role.name.en || role.code
-                                  ),
-                                  description: managementCopy.roles.deleteDescription,
-                                  confirmText: managementCopy.roles.deleteConfirm,
-                                  pendingText: managementCopy.roles.deletePending,
-                                  successMessage: managementCopy.roles.deleteSuccess(
-                                    role.localizedName || role.name.en || role.code
-                                  ),
-                                  errorFallback: managementCopy.roles.deleteError,
-                                  intent: 'danger',
-                                });
-                              }}
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                              {managementCopy.roles.delete}
-                            </InlineActionButton>
-                          )}
+                          ) : null}
                         </div>
                       </td>
                     </tr>
@@ -1436,7 +1383,7 @@ export function UserManagementScreen({
                             const nextDelegateOptions =
                               delegateType === 'user'
                                 ? usersPanel.data
-                                : rolesPanel.data.filter((role) => role.isActive);
+                                : rolesPanel.data;
 
                             setDelegationDraft((current) => ({
                               ...current,

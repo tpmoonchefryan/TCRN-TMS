@@ -34,17 +34,19 @@ export * from './utils/i18n-helper';
 export * from './utils/string';
 
 // Feature schema - direct exports for non-conflicting modules
-export * from './homepage/public-routes';
 export * from './api-gateway-readiness';
 export * from './api-registry';
 export * from './builder-registry';
 export * from './event-backbone';
+export * from './homepage/public-routes';
 export * from './module-capability';
 export * from './observability-adapters';
 export * from './platform-tools';
-export * from './runtime-flags';
 export * from './public-presence';
 export * from './rbac/catalog';
+export * from './rbac/role-capability-packs';
+export * from './rbac/role-capability-utils';
+export * from './runtime-flags';
 export * from './types/config';
 export * from './types/homepage/presets';
 export * from './types/homepage/schema';
@@ -99,18 +101,18 @@ export type {
   IntegrationAdapterProtocolDefinition,
   IntegrationLocalizedText,
   IntegrationWebhookDefinition,
-  WebhookEventDefinition,
-  WebhookEventCatalogItem,
   WebhookDeliveryAdapterCatalogItem,
+  WebhookEventCatalogItem,
+  WebhookEventDefinition,
   WebhookPayloadEnvelopeDefinition,
   WebhookPiiClass,
 } from './types/integration/schema';
 export {
   ADAPTER_CONFIG_KEYS,
-  getWebhookEventCatalogItem,
   getIntegrationAdapterCreateDefinition,
   getIntegrationAdapterDefinition,
   getIntegrationWebhookDefinition,
+  getWebhookEventCatalogItem,
   INTEGRATION_ADAPTER_CREATE_DEFINITIONS,
   INTEGRATION_ADAPTER_DEFINITIONS,
   INTEGRATION_WEBHOOK_DEFINITIONS,

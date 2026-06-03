@@ -1,19 +1,19 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-
+import {
+  BadRequestException,
+  GoneException,
+  Injectable,
+  MethodNotAllowedException,
+} from '@nestjs/common';
 import { Prisma } from '@tcrn/database';
 import {
   type CreateSystemRoleInput,
-  ErrorCodes,
   isRbacRoleAvailableForTenantTier,
-  normalizeLocalizedText,
-  pickLocalizedText,
   type LocalizedText,
+  normalizeLocalizedText,
   type PartialLocalizedText,
-  type RbacRolePolicyEffect,
+  pickLocalizedText,
   type RbacTenantTier,
-  resolveRbacPermission,
-  type RolePermissionInput,
   type UpdateSystemRoleInput,
 } from '@tcrn/shared';
 
@@ -51,33 +51,10 @@ export class SystemRoleService {
   constructor(private db: DatabaseService) {}
 
   async create(createDto: CreateSystemRoleInput) {
-    const { permissions, ...roleData } = createDto;
-    const name = this.normalizeRoleName(createDto.name);
-
-    const existing = await this.db.getPrisma().role.findUnique({
-      where: { code: createDto.code },
-    });
-
-    if (existing) {
-      throw new BadRequestException(`Role code '${createDto.code}' already exists`);
-    }
-
-    return this.db.getPrisma().$transaction(async (tx) => {
-      // 1. Create Role
-      const role = await tx.role.create({
-        data: {
-          ...roleData,
-          isSystem: true,
-          name,
-        },
-      });
-
-      // 2. Handle Permissions
-      if (permissions && permissions.length > 0) {
-        await this.assignPermissions(tx, role.id, permissions);
-      }
-
-      return this.mapRoleRecord(role);
+    void createDto;
+    throw new GoneException({
+      code: 'SYSTEM_ROLE_MUTATION_REMOVED',
+      message: 'System-role mutation routes are deprecated. Use POST /roles for custom roles.',
     });
   }
 
@@ -302,159 +279,21 @@ export class SystemRoleService {
   }
 
   async update(id: string, updateDto: UpdateSystemRoleInput) {
-    const existing = await this.db.getPrisma().role.findUnique({
-      where: { id },
-    });
-
-    if (!existing) {
-      throw new NotFoundException({
-        code: ErrorCodes.RES_NOT_FOUND,
-        message: 'System role not found',
-      });
-    }
-
-    const { permissions, name: namePatch, ...roleData } = updateDto;
-    const name = namePatch
-      ? this.normalizeRoleName({ ...(existing.name as LocalizedText), ...namePatch })
-      : undefined;
-
-    return this.db.getPrisma().$transaction(async (tx) => {
-      // 1. Update Role basic info
-      const role = await tx.role.update({
-        where: { id },
-        data: {
-          ...roleData,
-          ...(name ? { name } : {}),
-        },
-      });
-
-      // 2. Update Permissions if provided
-      if (permissions) {
-        // Delete existing
-        await tx.rolePolicy.deleteMany({
-          where: { roleId: id },
-        });
-
-        // Assign new
-        if (permissions.length > 0) {
-          await this.assignPermissions(tx, id, permissions);
-        }
-      }
-
-      return this.mapRoleRecord(role);
+    void id;
+    void updateDto;
+    throw new GoneException({
+      code: 'SYSTEM_ROLE_MUTATION_REMOVED',
+      message: 'System-role mutation routes are deprecated. Use PATCH /roles/:id for custom roles.',
     });
   }
 
   async remove(id: string) {
-    // Check if role is in use
-    const role = await this.db.getPrisma().role.findUnique({
-      where: { id },
-      include: {
-        _count: {
-          select: { userRoles: true },
-        },
-      },
+    void id;
+    throw new MethodNotAllowedException({
+      code: 'ROLE_DELETE_NOT_ALLOWED',
+      message:
+        'Roles are kept for audit history. Remove assignments or change grant/deny/unset states instead.',
     });
-
-    if (!role) {
-      throw new NotFoundException({
-        code: ErrorCodes.RES_NOT_FOUND,
-        message: 'System role not found',
-      });
-    }
-
-    if (role && role._count.userRoles > 0) {
-      throw new BadRequestException('Cannot delete role that is assigned to users');
-    }
-
-    return this.db.getPrisma().role.delete({
-      where: { id },
-    });
-  }
-
-  /**
-   * Helper to resolve policies and create RolePolicy relations
-   * Now supports three-state permissions: grant, deny, unset
-   */
-  private async assignPermissions(
-    tx: Prisma.TransactionClient,
-    roleId: string,
-    permissions: RolePermissionInput[]
-  ) {
-    const normalizedPermissions = permissions.map((permission) => {
-      const resolved = resolveRbacPermission(permission.resource, permission.action);
-
-      return {
-        ...permission,
-        resource: resolved.resourceCode,
-        action: resolved.checkedAction,
-      };
-    });
-
-    // Find all matching policies (policy table no longer has effect field)
-    const policies = await tx.policy.findMany({
-      where: {
-        OR: normalizedPermissions.map((permission) => ({
-          action: permission.action,
-          resource: {
-            code: permission.resource,
-          },
-        })),
-      },
-      include: {
-        resource: { select: { code: true } },
-      },
-    });
-
-    if (policies.length !== normalizedPermissions.length) {
-      const availablePolicyKeys = new Set(
-        policies.map(
-          (policy: { action: string; resource: { code: string } }) =>
-            `${policy.resource.code}:${policy.action}`
-        )
-      );
-
-      const missingPermission = normalizedPermissions.find(
-        (permission) => !availablePolicyKeys.has(`${permission.resource}:${permission.action}`)
-      );
-
-      if (missingPermission) {
-        throw new BadRequestException(
-          `RBAC policy ${missingPermission.resource}:${missingPermission.action} is missing from the database contract`
-        );
-      }
-    }
-
-    // Create a map for quick lookup of policy by resource:action
-    const policyMap = new Map<string, string>();
-    for (const policy of policies) {
-      const key = `${policy.resource.code}:${policy.action}`;
-      policyMap.set(key, policy.id);
-    }
-
-    // Create RolePolicy entries with effect
-    const rolePolicyData: Array<{
-      roleId: string;
-      policyId: string;
-      effect: RbacRolePolicyEffect;
-    }> = [];
-    for (const permission of normalizedPermissions) {
-      const key = `${permission.resource}:${permission.action}`;
-      const policyId = policyMap.get(key);
-      if (policyId) {
-        rolePolicyData.push({
-          roleId,
-          policyId,
-          effect: permission.effect ?? 'grant',
-        });
-      }
-    }
-
-    if (rolePolicyData.length > 0) {
-      await tx.rolePolicy.createMany({
-        data: rolePolicyData,
-      });
-    }
   }
 
   private normalizeRoleName(name: PartialLocalizedText): LocalizedText {

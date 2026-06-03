@@ -1,16 +1,13 @@
 'use client';
 
+import {
+  INITIAL_ADMIN_ROLE_CODE,
+  RBAC_RESOURCES,
+} from '@tcrn/shared';
 import { ArrowLeft, Languages } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-
-import {
-  RBAC_CANONICAL_ACTIONS,
-  RBAC_MODULE_LABELS,
-  RBAC_RESOURCES,
-  type RbacRolePolicyEffect,
-} from '@tcrn/shared';
 
 import {
   createSystemRole,
@@ -42,13 +39,14 @@ import { useSession } from '@/platform/runtime/session/session-provider';
 import { AsyncSubmitButton, GlassSurface, StateView, TranslationDrawer } from '@/platform/ui';
 
 import {
+  RoleAdvancedPermissionMatrix,
+  type RolePermissionSelection,
+} from './RoleAdvancedPermissionMatrix';
+import { RoleCapabilityPackEditor } from './RoleCapabilityPackEditor';
+import {
   formatUserManagementDateTime,
   getLocalizedExplicitPermissionCountLabel,
-  getLocalizedRbacActionLabel,
-  getLocalizedRolePermissionOptionLabel,
-  getLocalizedRoleResourceColumnLabel,
   getLocalizedScopeTypeLabel,
-  pickLocalizedName,
   useUserManagementCopy,
 } from './user-management.copy';
 import {
@@ -60,14 +58,11 @@ import {
   UserManagementPaginationFooter,
 } from './user-management.shared';
 
-type RolePermissionSelection = RbacRolePolicyEffect | 'unset';
-
 interface RoleEditorDraft {
   code: string;
   nameBase: string;
   nameLocaleValues: Record<string, string>;
   description: string;
-  isActive: boolean;
   permissionStates: Record<string, RolePermissionSelection>;
 }
 
@@ -86,21 +81,12 @@ const EMPTY_ROLE_PERMISSION_STATES = Object.fromEntries(
   )
 ) as Record<string, RolePermissionSelection>;
 
-const ROLE_RESOURCE_GROUPS = Object.entries(RBAC_MODULE_LABELS)
-  .map(([moduleCode, labels]) => ({
-    moduleCode,
-    labels,
-    resources: RBAC_RESOURCES.filter((resource) => resource.module === moduleCode),
-  }))
-  .filter((group) => group.resources.length > 0);
-
 function createEmptyRoleEditorDraft(): RoleEditorDraft {
   return {
     code: '',
     nameBase: '',
     nameLocaleValues: {},
     description: '',
-    isActive: true,
     permissionStates: { ...EMPTY_ROLE_PERMISSION_STATES },
   };
 }
@@ -117,7 +103,6 @@ function buildRoleEditorDraft(detail?: SystemRoleDetailResponse | null): RoleEdi
     nameBase: detail?.name.en || '',
     nameLocaleValues: extractLocalizedTextPayload(detail?.name),
     description: detail?.description || '',
-    isActive: detail?.isActive ?? true,
     permissionStates,
   };
 }
@@ -318,6 +303,8 @@ export function RoleEditorScreen({
       (assignedUsersPagination.page - 1) * assignedUsersPagination.pageSize,
       assignedUsersPagination.page * assignedUsersPagination.pageSize
     ) ?? [];
+  const isInitialAdminReadOnly =
+    mode === 'edit' && (detail?.code === INITIAL_ADMIN_ROLE_CODE || detail?.isSystem === true);
 
   useEffect(() => {
     if (scopeBindingsPage !== scopeBindingsPagination.page) {
@@ -358,7 +345,6 @@ export function RoleEditorScreen({
           code: draft.code.trim().toUpperCase(),
           name: buildLocalizedTextPayload(draft.nameBase, draft.nameLocaleValues),
           description: normalizeOptionalString(draft.description),
-          isActive: draft.isActive,
           permissions,
         });
 
@@ -375,8 +361,8 @@ export function RoleEditorScreen({
       await updateSystemRole(request, targetRoleId, {
         name: buildLocalizedTextPayload(draft.nameBase, draft.nameLocaleValues),
         description: normalizeOptionalString(draft.description),
-        isActive: draft.isActive,
         permissions,
+        version: detail?.version,
       });
 
       const refreshed = await readSystemRoleDetail(request, targetRoleId);
@@ -467,6 +453,32 @@ export function RoleEditorScreen({
       ja: '（英語の基準値）',
       ko: '(영문 기본값)',
       fr: '(Valeur de base / anglais)',
+    }),
+  };
+  const permissionStateHelp = {
+    grant: pickLocaleText(locale, {
+      en: 'Grant: this role grants the selected permission when assigned in the matching scope.',
+      zh_HANS: '允许：此角色在匹配范围内被分配时授予所选权限。',
+      zh_HANT: '允許：此角色在匹配範圍內被分配時授予所選權限。',
+      ja: '許可: 一致するスコープで割り当てられると、このロールが権限を付与します。',
+      ko: 'Grant: this role grants the selected permission when assigned in the matching scope.',
+      fr: 'Grant: this role grants the selected permission when assigned in the matching scope.',
+    }),
+    deny: pickLocaleText(locale, {
+      en: 'Deny: this role denies the selected permission. Deny wins over grants from other roles.',
+      zh_HANS: '拒绝：此角色拒绝所选权限，并优先于其它角色的允许。',
+      zh_HANT: '拒絕：此角色拒絕所選權限，並優先於其它角色的允許。',
+      ja: '拒否: このロールが権限を拒否します。他のロールの許可より優先されます。',
+      ko: 'Deny: this role denies the selected permission. Deny wins over grants from other roles.',
+      fr: 'Deny: this role denies the selected permission. Deny wins over grants from other roles.',
+    }),
+    unset: pickLocaleText(locale, {
+      en: 'Unset: this role makes no decision. Another assigned role may still grant access unless any role denies it.',
+      zh_HANS: '未设置：此角色不做决定。其它已分配角色仍可授予访问，除非任一角色拒绝。',
+      zh_HANT: '未設定：此角色不做決定。其它已分配角色仍可授予存取，除非任一角色拒絕。',
+      ja: '未設定: このロールは判断しません。他のロールが拒否しない限り、別の割当ロールが許可できます。',
+      ko: 'Unset: this role makes no decision. Another assigned role may still grant access unless any role denies it.',
+      fr: 'Unset: this role makes no decision. Another assigned role may still grant access unless any role denies it.',
     }),
   };
 
@@ -703,7 +715,7 @@ export function RoleEditorScreen({
                     code: event.target.value.toUpperCase(),
                   }));
                 }}
-                disabled={mode === 'edit'}
+                disabled={mode === 'edit' || isInitialAdminReadOnly}
                 className={`${inputClassName} uppercase`}
               />
             </label>
@@ -722,13 +734,15 @@ export function RoleEditorScreen({
                         nameBase: event.target.value,
                       }));
                     }}
+                    disabled={isInitialAdminReadOnly}
                     className={inputClassName}
                   />
                 </label>
                 <button
                   type="button"
                   onClick={() => setTranslationDrawerOpen(true)}
-                  className="inline-flex items-center gap-2 rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
+                  disabled={isInitialAdminReadOnly}
+                  className="inline-flex items-center gap-2 rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
                   aria-label={roleEditorCopy.translationManagement.trigger}
                 >
                   <Languages className="h-4 w-4" />
@@ -751,7 +765,7 @@ export function RoleEditorScreen({
             </div>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_240px]">
+          <div className="grid gap-4">
             <label className="space-y-2">
               <span className="text-sm font-semibold text-slate-900">
                 {roleEditorCopy.fields.description}
@@ -766,30 +780,9 @@ export function RoleEditorScreen({
                     description: event.target.value,
                   }));
                 }}
+                disabled={isInitialAdminReadOnly}
                 className={inputClassName}
               />
-            </label>
-            <label className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
-              <input
-                aria-label={roleEditorCopy.fields.isActive}
-                type="checkbox"
-                checked={draft.isActive}
-                onChange={(event) => {
-                  setDraft((current) => ({
-                    ...current,
-                    isActive: event.target.checked,
-                  }));
-                }}
-                className="mt-1 h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-500"
-              />
-              <div className="space-y-1">
-                <p className="text-sm font-semibold text-slate-950">
-                  {roleEditorCopy.fields.isActive}
-                </p>
-                <p className="text-sm leading-6 text-slate-600">
-                  {roleEditorCopy.isActiveDescription}
-                </p>
-              </div>
             </label>
           </div>
 
@@ -813,93 +806,51 @@ export function RoleEditorScreen({
               />
             </div>
 
-            <div className="space-y-4">
-              {ROLE_RESOURCE_GROUPS.map((group) => (
-                <div
-                  key={group.moduleCode}
-                  className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
-                >
-                  <div className="border-b border-slate-200 bg-slate-50 px-4 py-3">
-                    <p className="text-sm font-semibold text-slate-900">{group.labels[locale]}</p>
-                  </div>
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full border-collapse">
-                      <thead className="bg-white">
-                        <tr>
-                          <th className="px-4 py-3 text-left text-xs font-semibold tracking-[0.18em] text-slate-500 uppercase">
-                            {getLocalizedRoleResourceColumnLabel(locale)}
-                          </th>
-                          {RBAC_CANONICAL_ACTIONS.map((action) => (
-                            <th
-                              key={`${group.moduleCode}-${action}`}
-                              className="px-4 py-3 text-left text-xs font-semibold tracking-[0.18em] text-slate-500 uppercase"
-                            >
-                              {getLocalizedRbacActionLabel(action, locale)}
-                            </th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {group.resources.map((resource) => (
-                          <tr key={resource.code} className="border-t border-slate-200 align-top">
-                            <th className="px-4 py-4 text-left">
-                              <div className="space-y-1">
-                                <p className="text-sm font-semibold text-slate-900">
-                                  {pickLocalizedName(resource, locale)}
-                                </p>
-                                <p className="text-xs tracking-[0.18em] text-slate-400 uppercase">
-                                  {resource.code}
-                                </p>
-                              </div>
-                            </th>
-                            {RBAC_CANONICAL_ACTIONS.map((action) => {
-                              const permissionKey = `${resource.code}:${action}`;
-                              const isSupported = resource.supportedActions.includes(action);
-
-                              return (
-                                <td key={permissionKey} className="px-4 py-4">
-                                  {isSupported ? (
-                                    <select
-                                      aria-label={`${pickLocalizedName(resource, locale)} ${getLocalizedRbacActionLabel(action, locale)}`}
-                                      value={draft.permissionStates[permissionKey]}
-                                      onChange={(event) => {
-                                        const nextValue = event.target
-                                          .value as RolePermissionSelection;
-
-                                        setDraft((current) => ({
-                                          ...current,
-                                          permissionStates: {
-                                            ...current.permissionStates,
-                                            [permissionKey]: nextValue,
-                                          },
-                                        }));
-                                      }}
-                                      className="w-full min-w-[120px] rounded-2xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm transition outline-none focus:border-slate-400"
-                                    >
-                                      {(['unset', 'grant', 'deny'] as const).map((option) => (
-                                        <option key={option} value={option}>
-                                          {getLocalizedRolePermissionOptionLabel(option, locale)}
-                                        </option>
-                                      ))}
-                                    </select>
-                                  ) : (
-                                    <span className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-400">
-                                      {roleEditorCopy.notAvailable}
-                                    </span>
-                                  )}
-                                </td>
-                              );
-                            })}
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              ))}
+            <div className="grid gap-3 md:grid-cols-3">
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-600">
+                {permissionStateHelp.grant}
+              </div>
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-600">
+                {permissionStateHelp.deny}
+              </div>
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-600">
+                {permissionStateHelp.unset}
+              </div>
             </div>
+
+            <RoleCapabilityPackEditor
+              permissionStates={draft.permissionStates}
+              locale={locale}
+              readOnly={isInitialAdminReadOnly}
+              onPermissionStateChange={(permissionKey, nextValue) => {
+                setDraft((current) => ({
+                  ...current,
+                  permissionStates: {
+                    ...current.permissionStates,
+                    [permissionKey]: nextValue,
+                  },
+                }));
+              }}
+            />
+
+            <RoleAdvancedPermissionMatrix
+              permissionStates={draft.permissionStates}
+              explicitPermissionCount={explicitPermissionCount}
+              locale={locale}
+              readOnly={isInitialAdminReadOnly}
+              onPermissionStateChange={(permissionKey, nextValue) => {
+                setDraft((current) => ({
+                  ...current,
+                  permissionStates: {
+                    ...current.permissionStates,
+                    [permissionKey]: nextValue,
+                  },
+                }));
+              }}
+            />
           </div>
 
+          {isInitialAdminReadOnly ? null : (
           <div className="flex justify-end">
             <AsyncSubmitButton
               type="button"
@@ -914,6 +865,7 @@ export function RoleEditorScreen({
               {mode === 'create' ? roleEditorCopy.submitCreate : roleEditorCopy.submitSave}
             </AsyncSubmitButton>
           </div>
+          )}
         </div>
       </GlassSurface>
 
