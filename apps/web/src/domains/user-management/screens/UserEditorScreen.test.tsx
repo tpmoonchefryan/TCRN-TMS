@@ -160,7 +160,7 @@ describe('UserEditorScreen', () => {
     expect(mockReplace).toHaveBeenCalledWith('/tenant/tenant-1/user-management/user-2');
   });
 
-  it('adds and removes scoped role assignments from the dedicated editor', async () => {
+  it('adds, updates, and removes scoped role assignments from the dedicated editor', async () => {
     const detail = {
       id: 'user-1',
       username: 'alice',
@@ -260,6 +260,15 @@ describe('UserEditorScreen', () => {
         };
       }
 
+      if (path === '/api/v1/users/user-1/roles/assignment-1' && init?.method === 'PATCH') {
+        return {
+          id: 'assignment-1',
+          inherit: false,
+          expiresAt: null,
+          snapshotUpdateQueued: true,
+        };
+      }
+
       if (path === '/api/v1/users/user-1/roles/assignment-1' && init?.method === 'DELETE') {
         detail.roleAssignments = [];
         return {
@@ -278,6 +287,14 @@ describe('UserEditorScreen', () => {
       screen.queryByRole('option', { name: 'Platform Administrator' })
     ).not.toBeInTheDocument();
     expect(screen.getByRole('option', { name: 'Administrator' })).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'Changing scope, inheritance, or expiration can expand or contract effective access. Review the before/after access summary before saving.'
+      )
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText('Permission version and snapshot refresh will be checked after save.')
+    ).toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText('Role'), {
       target: { value: 'role-1' },
@@ -303,7 +320,34 @@ describe('UserEditorScreen', () => {
     expect(await screen.findByText('Administrator was assigned.')).toBeInTheDocument();
     expect(await screen.findByText('ADMIN')).toBeInTheDocument();
 
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    expect(
+      await screen.findByText('Save changes to Administrator assignment?')
+    ).toBeInTheDocument();
+    expect(screen.getByText(/Role: Administrator. User: Alice. Scope: Tenant One./)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Save assignment' }));
+
+    await waitFor(() => {
+      expect(mockRequest).toHaveBeenCalledWith(
+        '/api/v1/users/user-1/roles/assignment-1',
+        expect.objectContaining({
+          method: 'PATCH',
+          body: JSON.stringify({
+            inherit: false,
+            expiresAt: null,
+          }),
+        })
+      );
+    });
+
     fireEvent.click(screen.getByRole('button', { name: 'Remove' }));
+    expect(await screen.findByText('Remove Administrator from Alice?')).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Removing this assignment may change the user's effective access. Review the affected scope, inheritance, expiration, and snapshot refresh result before saving."
+      )
+    ).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Remove assignment' }));
 
     await waitFor(() => {
       expect(mockRequest).toHaveBeenCalledWith(
@@ -315,6 +359,138 @@ describe('UserEditorScreen', () => {
     });
 
     expect(await screen.findByText('Role assignment was removed.')).toBeInTheDocument();
+  });
+
+  it('requires confirmation before assigning Initial Admin and shows no-last-admin warning copy', async () => {
+    const detail = {
+      id: 'user-1',
+      username: 'alice',
+      email: 'alice@example.com',
+      displayName: 'Alice',
+      phone: null,
+      avatarUrl: null,
+      preferredLanguage: 'en',
+      isActive: true,
+      isTotpEnabled: false,
+      forceReset: false,
+      lastLoginAt: null,
+      createdAt: '2026-04-17T03:00:00.000Z',
+      updatedAt: '2026-04-17T03:30:00.000Z',
+      roleAssignments: [] as Array<Record<string, unknown>>,
+      scopeAccess: [],
+    };
+
+    mockRequest.mockImplementation(async (path: string, init?: RequestInit) => {
+      if (path === '/api/v1/system-roles?isActive=true') {
+        return [
+          {
+            id: 'role-initial-admin',
+            code: 'INITIAL_ADMIN',
+            name: localizedFixture('Initial Admin', { zh_HANS: '初始管理员' }),
+            description: 'Built-in recovery role',
+            isSystem: true,
+            isActive: true,
+            permissionCount: 99,
+            userCount: 1,
+            createdAt: '2026-04-17T01:00:00.000Z',
+            updatedAt: '2026-04-17T02:00:00.000Z',
+          },
+        ];
+      }
+
+      if (path === '/api/v1/organization/tree?includeInactive=false') {
+        return organizationTreeResponse;
+      }
+
+      if (path === '/api/v1/permissions/check' && init?.method === 'POST') {
+        return {
+          results: [
+            {
+              resource: 'system_user',
+              action: 'admin',
+              checkedAction: 'admin',
+              allowed: true,
+            },
+          ],
+        };
+      }
+
+      if (path === '/api/v1/system-users/user-1' && !init) {
+        return detail;
+      }
+
+      if (path === '/api/v1/users/user-1/roles' && init?.method === 'POST') {
+        detail.roleAssignments = [
+          {
+            id: 'assignment-initial-admin',
+            roleId: 'role-initial-admin',
+            roleCode: 'INITIAL_ADMIN',
+            roleName: localizedFixture('Initial Admin'),
+            roleIsActive: true,
+            scopeType: 'tenant',
+            scopeId: null,
+            scopeName: 'Tenant One',
+            scopePath: null,
+            inherit: false,
+            grantedAt: '2026-04-18T09:00:00.000Z',
+            expiresAt: null,
+          },
+        ];
+
+        return {
+          id: 'assignment-initial-admin',
+          userId: 'user-1',
+          roleId: 'role-initial-admin',
+          scopeType: 'tenant',
+          scopeId: null,
+          inherit: false,
+          grantedAt: '2026-04-18T09:00:00.000Z',
+          snapshotUpdateQueued: true,
+        };
+      }
+
+      throw new Error(`Unhandled request: ${path}`);
+    });
+
+    render(<UserEditorScreen tenantId="tenant-1" systemUserId="user-1" mode="edit" />);
+
+    expect(await screen.findByRole('heading', { name: 'Alice' })).toBeInTheDocument();
+    expect(await screen.findByRole('option', { name: 'Initial Admin' })).toBeInTheDocument();
+    expect(
+      await screen.findByText(
+        'Initial Admin grants every permission in this tenant. Keep at least one active tenant-scope Initial Admin assignment before saving.'
+      )
+    ).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Assign role' }));
+
+    expect(await screen.findByText('Assign Initial Admin?')).toBeInTheDocument();
+    expect(
+      screen.getByText(/Role: Initial Admin. User: Alice. Scope: Tenant One./)
+    ).toBeInTheDocument();
+    expect(
+      mockRequest.mock.calls.filter(
+        ([path, init]) => path === '/api/v1/users/user-1/roles' && init?.method === 'POST'
+      )
+    ).toHaveLength(0);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Assign Initial Admin' }));
+
+    await waitFor(() => {
+      expect(mockRequest).toHaveBeenCalledWith(
+        '/api/v1/users/user-1/roles',
+        expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify({
+            roleCode: 'INITIAL_ADMIN',
+            scopeType: 'tenant',
+            scopeId: null,
+            inherit: false,
+            expiresAt: null,
+          }),
+        })
+      );
+    });
   });
 
   it('hides tenant-only business roles in AC user assignment flows', async () => {

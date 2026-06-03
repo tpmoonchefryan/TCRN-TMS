@@ -1,11 +1,23 @@
 'use client';
 
-import { ArrowLeft, KeyRound, ShieldCheck, Trash2, UserRoundPlus, Users } from 'lucide-react';
+import {
+  AlertTriangle,
+  ArrowLeft,
+  KeyRound,
+  ShieldCheck,
+  Trash2,
+  UserRoundPlus,
+  Users,
+} from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 
-import { SUPPORTED_UI_LOCALES, type SupportedUiLocale } from '@tcrn/shared';
+import {
+  INITIAL_ADMIN_ROLE_CODE,
+  SUPPORTED_UI_LOCALES,
+  type SupportedUiLocale,
+} from '@tcrn/shared';
 
 import { readOrganizationTree } from '@/domains/organization-access/api/organization.api';
 import {
@@ -33,7 +45,7 @@ import {
   type PageSizeOption,
 } from '@/platform/runtime/pagination/pagination';
 import { useSession } from '@/platform/runtime/session/session-provider';
-import { AsyncSubmitButton, GlassSurface, StateView } from '@/platform/ui';
+import { AsyncSubmitButton, ConfirmActionDialog, GlassSurface, StateView } from '@/platform/ui';
 
 import {
   formatUserManagementDateTime,
@@ -76,6 +88,25 @@ interface AssignmentDraft {
   inherit: boolean;
   expiresAt: string;
 }
+
+type AssignmentDialogState =
+  | {
+      kind: 'create';
+      title: string;
+      descriptionLines: string[];
+      confirmText: string;
+      pendingText: string;
+      intent: 'danger' | 'primary';
+    }
+  | {
+      kind: 'update' | 'remove';
+      assignmentId: string;
+      title: string;
+      descriptionLines: string[];
+      confirmText: string;
+      pendingText: string;
+      intent: 'danger' | 'primary';
+    };
 
 const EMPTY_USER_EDITOR_DRAFT: UserEditorDraft = {
   username: '',
@@ -158,6 +189,14 @@ function toIsoOrNull(value: string) {
   return Number.isNaN(date.getTime()) ? null : date.toISOString();
 }
 
+function formatAssignmentExpiry(value: string | null | undefined, fallback: string) {
+  if (!value) {
+    return fallback;
+  }
+
+  return value;
+}
+
 function buildAssignmentDrafts(detail: SystemUserDetailResponse | null) {
   return Object.fromEntries(
     (detail?.roleAssignments || []).map((assignment) => [
@@ -223,6 +262,10 @@ export function UserEditorScreen({
   });
   const [assignmentDrafts, setAssignmentDrafts] = useState<Record<string, AssignmentDraft>>({});
   const [assignmentSubmittingId, setAssignmentSubmittingId] = useState<string | null>(null);
+  const [assignmentDialogState, setAssignmentDialogState] = useState<AssignmentDialogState | null>(
+    null
+  );
+  const [assignmentDialogPending, setAssignmentDialogPending] = useState(false);
   const [assignmentPage, setAssignmentPage] = useState(1);
   const [assignmentPageSize, setAssignmentPageSize] = useState<PageSizeOption>(
     PAGE_SIZE_OPTIONS[0]
@@ -350,6 +393,18 @@ export function UserEditorScreen({
   const isAssignmentComposerBlocked =
     isTenantAssignmentBlocked || blockedAssignmentScopeKey === assignmentScopeKey;
   const scopeAccess = detail?.scopeAccess ?? [];
+  const selectedAssignmentRole = availableRoles.find(
+    (role) => role.id === assignmentComposer.roleId
+  );
+  const selectedAssignmentScope = scopeOptions.find(
+    (option) =>
+      option.type === assignmentComposer.scopeType &&
+      (assignmentComposer.scopeType === 'tenant'
+        ? option.id === 'tenant-root'
+        : option.id === assignmentComposer.scopeId)
+  );
+  const selectedAssignmentIsInitialAdmin =
+    selectedAssignmentRole?.code === INITIAL_ADMIN_ROLE_CODE;
   const assignmentPagination = buildPaginationMeta(
     roleAssignments.length,
     assignmentPage,
@@ -517,6 +572,29 @@ export function UserEditorScreen({
       return;
     }
 
+    if (selectedRole.code === INITIAL_ADMIN_ROLE_CODE && assignmentDialogState?.kind !== 'create') {
+      setAssignmentDialogState({
+        kind: 'create',
+        title: editorCopy.assignmentCreateInitialAdminTitle,
+        descriptionLines: [
+          editorCopy.assignmentInitialAdminWarning,
+          editorCopy.assignmentScopeWarning,
+          editorCopy.assignmentImpactSummary(
+            selectedRole.localizedName || selectedRole.name.en || selectedRole.code,
+            detail?.displayName || detail?.username || editorCopy.fields.username,
+            selectedAssignmentScope?.hint || sharedCopy.tenantRoot,
+            assignmentComposer.inherit ? sharedCopy.inherit : sharedCopy.unavailable,
+            formatAssignmentExpiry(assignmentComposer.expiresAt, sharedCopy.never)
+          ),
+          editorCopy.assignmentSnapshotRefreshExpectation,
+        ],
+        confirmText: editorCopy.assignmentCreateInitialAdminConfirm,
+        pendingText: editorCopy.assignmentPending,
+        intent: 'danger',
+      });
+      return;
+    }
+
     setAssignmentSubmittingId('create');
     setAssignmentNotice(null);
 
@@ -615,6 +693,94 @@ export function UserEditorScreen({
     } finally {
       setAssignmentSubmittingId(null);
     }
+  }
+
+  async function handleAssignmentDialogConfirm() {
+    if (!assignmentDialogState) {
+      return;
+    }
+
+    const currentDialog = assignmentDialogState;
+    setAssignmentDialogPending(true);
+
+    try {
+      if (currentDialog.kind === 'create') {
+        await handleCreateAssignment();
+      } else if (currentDialog.kind === 'update') {
+        await handleUpdateAssignment(currentDialog.assignmentId);
+      } else {
+        await handleRemoveAssignment(currentDialog.assignmentId);
+      }
+
+      setAssignmentDialogState(null);
+    } finally {
+      setAssignmentDialogPending(false);
+    }
+  }
+
+  function openUpdateAssignmentDialog(
+    assignment: SystemUserDetailResponse['roleAssignments'][number]
+  ) {
+    const draftForAssignment = assignmentDrafts[assignment.id] ?? {
+      inherit: assignment.inherit,
+      expiresAt: toDateTimeLocal(assignment.expiresAt),
+    };
+    const roleName = assignment.roleName?.en || assignment.roleCode;
+
+    setAssignmentDialogState({
+      kind: 'update',
+      assignmentId: assignment.id,
+      title: editorCopy.assignmentUpdateTitle(roleName),
+      descriptionLines: [
+        editorCopy.assignmentScopeWarning,
+        editorCopy.assignmentImpactSummary(
+          roleName,
+          detail?.displayName || detail?.username || editorCopy.fields.username,
+          resolveScopedLabel(assignment.scopeType, assignment.scopeName, sharedCopy),
+          draftForAssignment.inherit ? sharedCopy.inherit : sharedCopy.unavailable,
+          formatAssignmentExpiry(draftForAssignment.expiresAt, sharedCopy.never)
+        ),
+        assignment.roleCode === INITIAL_ADMIN_ROLE_CODE
+          ? editorCopy.assignmentInitialAdminWarning
+          : editorCopy.assignmentRemovalWarning,
+        editorCopy.assignmentSnapshotRefreshExpectation,
+      ],
+      confirmText: editorCopy.assignmentUpdateConfirm,
+      pendingText: editorCopy.assignmentUpdatePending,
+      intent: assignment.roleCode === INITIAL_ADMIN_ROLE_CODE ? 'danger' : 'primary',
+    });
+  }
+
+  function openRemoveAssignmentDialog(
+    assignment: SystemUserDetailResponse['roleAssignments'][number]
+  ) {
+    const roleName = assignment.roleName?.en || assignment.roleCode;
+
+    setAssignmentDialogState({
+      kind: 'remove',
+      assignmentId: assignment.id,
+      title: editorCopy.assignmentRemovalTitle(
+        roleName,
+        detail?.displayName || detail?.username || editorCopy.fields.username
+      ),
+      descriptionLines: [
+        editorCopy.assignmentRemovalWarning,
+        editorCopy.assignmentImpactSummary(
+          roleName,
+          detail?.displayName || detail?.username || editorCopy.fields.username,
+          resolveScopedLabel(assignment.scopeType, assignment.scopeName, sharedCopy),
+          assignment.inherit ? sharedCopy.inherit : sharedCopy.unavailable,
+          formatAssignmentExpiry(toDateTimeLocal(assignment.expiresAt), sharedCopy.never)
+        ),
+        assignment.roleCode === INITIAL_ADMIN_ROLE_CODE
+          ? editorCopy.assignmentInitialAdminWarning
+          : editorCopy.assignmentScopeWarning,
+        editorCopy.assignmentSnapshotRefreshExpectation,
+      ],
+      confirmText: editorCopy.assignmentRemovalConfirm,
+      pendingText: editorCopy.assignmentRemovalPending,
+      intent: 'danger',
+    });
   }
 
   if (mode === 'edit' && loading) {
@@ -975,6 +1141,32 @@ export function UserEditorScreen({
               </div>
 
               {!isAssignmentComposerBlocked ? (
+                <div
+                  className={`rounded-2xl border px-4 py-3 ${
+                    selectedAssignmentIsInitialAdmin
+                      ? 'border-amber-200 bg-amber-50 text-amber-900'
+                      : 'border-slate-200 bg-slate-50 text-slate-700'
+                  }`}
+                >
+                  <div className="flex gap-3">
+                    {selectedAssignmentIsInitialAdmin ? (
+                      <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+                    ) : (
+                      <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-slate-500" />
+                    )}
+                    <div className="space-y-1 text-sm leading-6">
+                      <p className="font-semibold">
+                        {selectedAssignmentIsInitialAdmin
+                          ? editorCopy.assignmentInitialAdminWarning
+                          : editorCopy.assignmentScopeWarning}
+                      </p>
+                      <p>{editorCopy.assignmentSnapshotRefreshExpectation}</p>
+                    </div>
+                  </div>
+                </div>
+              ) : null}
+
+              {!isAssignmentComposerBlocked ? (
                 <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
                   <label className="inline-flex items-center gap-3 text-sm font-medium text-slate-800">
                     <input
@@ -1063,7 +1255,7 @@ export function UserEditorScreen({
                         isPending={assignmentSubmittingId === assignment.id}
                         pendingText={editorCopy.assignmentSavePending}
                         onClick={() => {
-                          void handleUpdateAssignment(assignment.id);
+                          openUpdateAssignmentDialog(assignment);
                         }}
                       >
                         {sharedCopy.save}
@@ -1071,7 +1263,7 @@ export function UserEditorScreen({
                       <button
                         type="button"
                         onClick={() => {
-                          void handleRemoveAssignment(assignment.id);
+                          openRemoveAssignmentDialog(assignment);
                         }}
                         disabled={assignmentSubmittingId === assignment.id}
                         className="inline-flex items-center gap-2 rounded-full border border-rose-200 px-3 py-2 text-xs font-medium text-rose-700 transition hover:border-rose-300 hover:bg-rose-50 disabled:opacity-60"
@@ -1176,6 +1368,31 @@ export function UserEditorScreen({
           </GlassSurface>
         </>
       ) : null}
+
+      <ConfirmActionDialog
+        open={assignmentDialogState !== null}
+        title={assignmentDialogState?.title || sharedCopy.confirmAction}
+        description={
+          <div className="space-y-2">
+            {(assignmentDialogState?.descriptionLines || []).map((line) => (
+              <p key={line}>{line}</p>
+            ))}
+          </div>
+        }
+        confirmText={assignmentDialogState?.confirmText || sharedCopy.confirm}
+        pendingText={assignmentDialogState?.pendingText}
+        cancelText={sharedCopy.cancel}
+        intent={assignmentDialogState?.intent || 'primary'}
+        isPending={assignmentDialogPending}
+        onOpenChange={(open) => {
+          if (!open && !assignmentDialogPending) {
+            setAssignmentDialogState(null);
+          }
+        }}
+        onConfirm={() => {
+          void handleAssignmentDialogConfirm();
+        }}
+      />
     </div>
   );
 }

@@ -126,7 +126,6 @@ export function ApiRegistryScreen({ tenantId }: Readonly<{ tenantId: string }>) 
 
   useEffect(() => {
     void loadRegistry();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tenantId]);
 
   const filteredOperations = useMemo(() => {

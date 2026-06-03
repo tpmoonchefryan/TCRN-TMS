@@ -2,6 +2,7 @@
 
 import { PrismaClient } from '../../src/platform/prisma/client';
 import {
+  INITIAL_ADMIN_ROLE_CODE,
   RBAC_POLICY_DEFINITIONS,
   RBAC_RESOURCES,
   RBAC_ROLE_TEMPLATES,
@@ -10,6 +11,7 @@ import {
 } from '../../../shared/src/rbac/catalog';
 
 export {
+  INITIAL_ADMIN_ROLE_CODE,
   RBAC_POLICY_DEFINITIONS,
   RBAC_RESOURCES,
   RBAC_ROLE_TEMPLATES,

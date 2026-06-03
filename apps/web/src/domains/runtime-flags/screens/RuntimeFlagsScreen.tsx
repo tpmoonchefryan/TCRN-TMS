@@ -119,7 +119,6 @@ export function RuntimeFlagsScreen({ tenantId }: Readonly<RuntimeFlagsScreenProp
 
   useEffect(() => {
     void load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const provider = summary?.adapters.find(

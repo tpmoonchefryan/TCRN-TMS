@@ -168,7 +168,8 @@ export class UserRoleController {
         inherit: dto.inherit,
         expiresAt:
           dto.expiresAt === null ? null : dto.expiresAt ? new Date(dto.expiresAt) : undefined,
-      }
+      },
+      user.id
     );
 
     return success({
@@ -191,7 +192,7 @@ export class UserRoleController {
     @CurrentUser() user: AuthenticatedUser,
     @Param('assignmentId') assignmentId: string
   ) {
-    await this.userRoleService.removeAssignment(assignmentId, user.tenantSchema);
+    await this.userRoleService.removeAssignment(assignmentId, user.tenantSchema, user.id);
 
     return success({
       message: 'Role assignment removed',

@@ -32,12 +32,14 @@ export function RoleAdvancedPermissionMatrix({
   explicitPermissionCount,
   locale,
   readOnly,
+  permissionStateHelpId,
   onPermissionStateChange,
 }: Readonly<{
   permissionStates: Record<string, RolePermissionSelection>;
   explicitPermissionCount: number;
   locale: SupportedUiLocale;
   readOnly: boolean;
+  permissionStateHelpId?: string;
   onPermissionStateChange: (permissionKey: string, value: RolePermissionSelection) => void;
 }>) {
   return (
@@ -97,6 +99,7 @@ export function RoleAdvancedPermissionMatrix({
                             {isSupported ? (
                               <select
                                 aria-label={`${pickLocalizedName(resource, locale)} ${getLocalizedRbacActionLabel(action, locale)}`}
+                                aria-describedby={permissionStateHelpId}
                                 value={permissionStates[permissionKey]}
                                 disabled={readOnly}
                                 onChange={(event) => {

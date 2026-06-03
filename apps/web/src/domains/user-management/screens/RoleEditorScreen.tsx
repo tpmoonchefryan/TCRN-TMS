@@ -4,10 +4,10 @@ import {
   INITIAL_ADMIN_ROLE_CODE,
   RBAC_RESOURCES,
 } from '@tcrn/shared';
-import { ArrowLeft, Languages } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, Languages } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 
 import {
   createSystemRole,
@@ -166,6 +166,7 @@ export function RoleEditorScreen({
   const router = useRouter();
   const { request, requestEnvelope } = useSession();
   const { copy, locale } = useUserManagementCopy();
+  const permissionStateHelpId = useId();
   const isAcWorkspace = workspaceKind === 'ac';
   const sharedCopy = copy.shared;
   const roleEditorCopy = copy.roleEditor;
@@ -701,6 +702,19 @@ export function RoleEditorScreen({
 
       <GlassSurface className="p-6">
         <div className="space-y-6">
+          {isInitialAdminReadOnly ? (
+            <div
+              role="note"
+              className="flex gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"
+            >
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+              <div className="space-y-1">
+                <p className="font-semibold">{roleEditorCopy.initialAdminLockTitle}</p>
+                <p className="leading-6">{roleEditorCopy.initialAdminLockDescription}</p>
+              </div>
+            </div>
+          ) : null}
+
           <div className="grid gap-4 md:grid-cols-2">
             <label className="space-y-2">
               <span className="text-sm font-semibold text-slate-900">
@@ -806,7 +820,7 @@ export function RoleEditorScreen({
               />
             </div>
 
-            <div className="grid gap-3 md:grid-cols-3">
+            <div id={permissionStateHelpId} className="grid gap-3 md:grid-cols-3">
               <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-600">
                 {permissionStateHelp.grant}
               </div>
@@ -822,6 +836,7 @@ export function RoleEditorScreen({
               permissionStates={draft.permissionStates}
               locale={locale}
               readOnly={isInitialAdminReadOnly}
+              permissionStateHelpId={permissionStateHelpId}
               onPermissionStateChange={(permissionKey, nextValue) => {
                 setDraft((current) => ({
                   ...current,
@@ -838,6 +853,7 @@ export function RoleEditorScreen({
               explicitPermissionCount={explicitPermissionCount}
               locale={locale}
               readOnly={isInitialAdminReadOnly}
+              permissionStateHelpId={permissionStateHelpId}
               onPermissionStateChange={(permissionKey, nextValue) => {
                 setDraft((current) => ({
                   ...current,

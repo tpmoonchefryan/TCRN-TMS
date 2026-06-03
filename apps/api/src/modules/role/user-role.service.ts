@@ -21,6 +21,12 @@ import {
 import { PermissionSnapshotService, ScopeType } from '../permission/permission-snapshot.service';
 import { TenantService } from '../tenant/tenant.service';
 
+function stringifyJsonb(value: unknown): string {
+  return JSON.stringify(value, (_key, item) =>
+    typeof item === 'bigint' ? item.toString() : item
+  );
+}
+
 export interface UserRoleAssignment {
   id: string;
   userId: string;
@@ -339,26 +345,77 @@ export class UserRoleService {
       data.expiresAt || null
     );
 
+    const permissionVersion = await this.snapshotService.incrementPermissionVersion(tenantSchema);
+
     // Refresh permission snapshot
     await this.snapshotService.refreshUserSnapshots(tenantSchema, userId);
 
     // Get the created assignment
     const assignments = await this.getUserRoles(userId, tenantSchema);
+    const createdAssignment = assignments[0];
+    if (createdAssignment) {
+      await this.writeAssignmentAudit(tenantSchema, {
+        actorId: grantedBy,
+        assignmentId: createdAssignment.id,
+        actionType: 'role_assignment_create',
+        roleId,
+        roleCode,
+        affectedUserId: userId,
+        before: null,
+        after: {
+          scopeType: data.scopeType,
+          scopeId: normalizedScopeId,
+          inherit: data.inherit,
+          expiresAt: data.expiresAt ?? null,
+        },
+        permissionVersionBefore: Math.max(permissionVersion - 1, 0),
+        permissionVersionAfter: permissionVersion,
+        snapshotResult: { status: 'refreshed', userId },
+      });
+    }
     return assignments[0];
   }
 
   /**
    * Remove role assignment
    */
-  async removeAssignment(assignmentId: string, tenantSchema: string): Promise<void> {
+  async removeAssignment(
+    assignmentId: string,
+    tenantSchema: string,
+    actorId?: string
+  ): Promise<void> {
     await this.assertInitialAdminRescuePathRemains(tenantSchema, assignmentId, {
       removing: true,
     });
 
     // Get assignment to find user_id
-    const assignments = await prisma.$queryRawUnsafe<Array<{ userId: string }>>(
+    const assignments = await prisma.$queryRawUnsafe<
+      Array<{
+        id: string;
+        userId: string;
+        roleId: string;
+        roleCode: string;
+        scopeType: ScopeType;
+        scopeId: string | null;
+        inherit: boolean;
+        grantedBy: string | null;
+        expiresAt: Date | null;
+      }>
+    >(
       `
-      SELECT user_id as "userId" FROM "${tenantSchema}".user_role WHERE id = CAST($1 AS uuid)
+      SELECT
+        ur.id,
+        ur.user_id as "userId",
+        ur.role_id as "roleId",
+        r.code as "roleCode",
+        ur.scope_type as "scopeType",
+        ur.scope_id as "scopeId",
+        ur.inherit,
+        ur.granted_by as "grantedBy",
+        ur.expires_at as "expiresAt"
+      FROM "${tenantSchema}".user_role ur
+      JOIN "${tenantSchema}".role r ON r.id = ur.role_id
+      WHERE ur.id = CAST($1 AS uuid)
     `,
       assignmentId
     );
@@ -370,7 +427,8 @@ export class UserRoleService {
       });
     }
 
-    const userId = assignments[0].userId;
+    const assignment = assignments[0];
+    const userId = assignment.userId;
 
     // Delete assignment
     await prisma.$executeRawUnsafe(
@@ -380,8 +438,29 @@ export class UserRoleService {
       assignmentId
     );
 
+    const permissionVersion = await this.snapshotService.incrementPermissionVersion(tenantSchema);
+
     // Refresh permission snapshot
     await this.snapshotService.refreshUserSnapshots(tenantSchema, userId);
+
+    await this.writeAssignmentAudit(tenantSchema, {
+      actorId: actorId ?? assignment.grantedBy ?? null,
+      assignmentId,
+      actionType: 'role_assignment_remove',
+      roleId: assignment.roleId,
+      roleCode: assignment.roleCode,
+      affectedUserId: userId,
+      before: {
+        scopeType: assignment.scopeType,
+        scopeId: assignment.scopeId,
+        inherit: assignment.inherit,
+        expiresAt: assignment.expiresAt,
+      },
+      after: null,
+      permissionVersionBefore: Math.max(permissionVersion - 1, 0),
+      permissionVersionAfter: permissionVersion,
+      snapshotResult: { status: 'refreshed', userId },
+    });
   }
 
   /**
@@ -393,16 +472,41 @@ export class UserRoleService {
     data: {
       inherit?: boolean;
       expiresAt?: Date | null;
-    }
+    },
+    actorId?: string
   ): Promise<UserRoleAssignment> {
     await this.assertInitialAdminRescuePathRemains(tenantSchema, assignmentId, {
       expiresAt: data.expiresAt,
     });
 
     // Get assignment
-    const assignments = await prisma.$queryRawUnsafe<Array<{ userId: string }>>(
+    const assignments = await prisma.$queryRawUnsafe<
+      Array<{
+        id: string;
+        userId: string;
+        roleId: string;
+        roleCode: string;
+        scopeType: ScopeType;
+        scopeId: string | null;
+        inherit: boolean;
+        grantedBy: string | null;
+        expiresAt: Date | null;
+      }>
+    >(
       `
-      SELECT user_id as "userId" FROM "${tenantSchema}".user_role WHERE id = CAST($1 AS uuid)
+      SELECT
+        ur.id,
+        ur.user_id as "userId",
+        ur.role_id as "roleId",
+        r.code as "roleCode",
+        ur.scope_type as "scopeType",
+        ur.scope_id as "scopeId",
+        ur.inherit,
+        ur.granted_by as "grantedBy",
+        ur.expires_at as "expiresAt"
+      FROM "${tenantSchema}".user_role ur
+      JOIN "${tenantSchema}".role r ON r.id = ur.role_id
+      WHERE ur.id = CAST($1 AS uuid)
     `,
       assignmentId
     );
@@ -414,7 +518,8 @@ export class UserRoleService {
       });
     }
 
-    const userId = assignments[0].userId;
+    const assignment = assignments[0];
+    const userId = assignment.userId;
 
     const updates: string[] = [];
     const params: unknown[] = [assignmentId];
@@ -425,7 +530,7 @@ export class UserRoleService {
       params.push(data.inherit);
     }
     if (data.expiresAt !== undefined) {
-      updates.push(`expires_at = $${paramIndex++}`);
+      updates.push(`expires_at = $${paramIndex}`);
       params.push(data.expiresAt);
     }
 
@@ -439,8 +544,34 @@ export class UserRoleService {
         ...params
       );
 
+      const permissionVersion = await this.snapshotService.incrementPermissionVersion(tenantSchema);
+
       // Refresh permission snapshot
       await this.snapshotService.refreshUserSnapshots(tenantSchema, userId);
+
+      await this.writeAssignmentAudit(tenantSchema, {
+        actorId: actorId ?? assignment.grantedBy ?? null,
+        assignmentId,
+        actionType: 'role_assignment_update',
+        roleId: assignment.roleId,
+        roleCode: assignment.roleCode,
+        affectedUserId: userId,
+        before: {
+          scopeType: assignment.scopeType,
+          scopeId: assignment.scopeId,
+          inherit: assignment.inherit,
+          expiresAt: assignment.expiresAt,
+        },
+        after: {
+          scopeType: assignment.scopeType,
+          scopeId: assignment.scopeId,
+          inherit: data.inherit ?? assignment.inherit,
+          expiresAt: data.expiresAt === undefined ? assignment.expiresAt : data.expiresAt,
+        },
+        permissionVersionBefore: Math.max(permissionVersion - 1, 0),
+        permissionVersionAfter: permissionVersion,
+        snapshotResult: { status: 'refreshed', userId },
+      });
     }
 
     const updatedAssignments = await this.getUserRoles(userId, tenantSchema);
@@ -523,5 +654,45 @@ export class UserRoleService {
           'Keep at least one active tenant-scope Initial Admin assignment before saving this change.',
       });
     }
+  }
+
+  private async writeAssignmentAudit(
+    tenantSchema: string,
+    input: {
+      actorId: string | null;
+      assignmentId: string;
+      actionType: string;
+      roleId: string;
+      roleCode: string;
+      affectedUserId: string;
+      before: unknown;
+      after: unknown;
+      permissionVersionBefore: number;
+      permissionVersionAfter: number;
+      snapshotResult: unknown;
+    }
+  ): Promise<void> {
+    await prisma.$executeRawUnsafe(
+      `
+      INSERT INTO "${tenantSchema}".change_log
+        (id, operator_id, action, object_type, object_id, object_name, diff, occurred_at)
+      VALUES
+        (gen_random_uuid(), $1::uuid, $2, 'permission_governance_assignment', $3::uuid, $4, $5::jsonb, now())
+    `,
+      input.actorId,
+      input.actionType,
+      input.assignmentId,
+      input.roleCode,
+      stringifyJsonb({
+        roleId: input.roleId,
+        roleCode: input.roleCode,
+        affectedUserId: input.affectedUserId,
+        before: input.before,
+        after: input.after,
+        permissionVersionBefore: input.permissionVersionBefore,
+        permissionVersionAfter: input.permissionVersionAfter,
+        snapshotResult: input.snapshotResult,
+      })
+    );
   }
 }

@@ -68,7 +68,7 @@ const LABELS = {
     },
     scopeLabels: {
       tenant: '租户',
-      subsidiary: '子公司',
+      subsidiary: '分目录',
       talent: '艺人',
     },
     stabilityLabels: {
@@ -119,7 +119,7 @@ const LABELS = {
     },
     scopeLabels: {
       tenant: '租戶',
-      subsidiary: '子公司',
+      subsidiary: '分目錄',
       talent: '藝人',
     },
     stabilityLabels: {
@@ -170,7 +170,7 @@ const LABELS = {
     },
     scopeLabels: {
       tenant: 'テナント',
-      subsidiary: '子会社',
+      subsidiary: '子組織',
       talent: 'タレント',
     },
     stabilityLabels: {
@@ -221,7 +221,7 @@ const LABELS = {
     },
     scopeLabels: {
       tenant: '테넌트',
-      subsidiary: '자회사',
+      subsidiary: '하위 스코프',
       talent: '아티스트',
     },
     stabilityLabels: {
@@ -272,7 +272,7 @@ const LABELS = {
     },
     scopeLabels: {
       tenant: 'Tenant',
-      subsidiary: 'Filiale',
+      subsidiary: 'Portee secondaire',
       talent: 'Talent',
     },
     stabilityLabels: {

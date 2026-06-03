@@ -80,11 +80,13 @@ export function RoleCapabilityPackEditor({
   permissionStates,
   locale,
   readOnly,
+  permissionStateHelpId,
   onPermissionStateChange,
 }: Readonly<{
   permissionStates: Record<string, RolePermissionSelection>;
   locale: SupportedUiLocale;
   readOnly: boolean;
+  permissionStateHelpId?: string;
   onPermissionStateChange: (permissionKey: string, value: RolePermissionSelection) => void;
 }>) {
   const [category, setCategory] = useState<'all' | RoleCapabilityPackDefinition['category']>('all');
@@ -220,6 +222,7 @@ export function RoleCapabilityPackEditor({
                   <div className="space-y-2">
                     <select
                       aria-label={getLocalizedText(pack.label, locale)}
+                      aria-describedby={permissionStateHelpId}
                       value={controlValue}
                       disabled={readOnly}
                       onChange={(event) => {

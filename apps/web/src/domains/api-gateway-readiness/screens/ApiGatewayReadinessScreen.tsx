@@ -159,7 +159,6 @@ export function ApiGatewayReadinessScreen({ tenantId }: Readonly<{ tenantId: str
 
   useEffect(() => {
     void load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tenantId]);
 
   const visibleRoutes = useMemo(() => summary?.routePolicy.routes.slice(0, 12) ?? [], [summary]);

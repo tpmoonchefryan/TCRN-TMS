@@ -12,6 +12,8 @@ import { RedisService } from '../redis/redis.service';
 
 export type ScopeType = 'tenant' | 'subsidiary' | 'talent';
 
+const SNAPSHOT_PERMISSION_VERSION_FIELD = '__permission_version';
+
 interface RoleAssignment {
   roleId: string;
   scopeType: ScopeType;
@@ -110,6 +112,31 @@ export class PermissionSnapshotService {
     return false;
   }
 
+  private getPermissionVersionKey(tenantSchema: string): string {
+    return `perm:${tenantSchema}:version`;
+  }
+
+  async getCurrentPermissionVersion(tenantSchema: string): Promise<number> {
+    const value = await this.redisService.get(this.getPermissionVersionKey(tenantSchema));
+    const parsed = value ? Number.parseInt(value, 10) : 0;
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+  }
+
+  async incrementPermissionVersion(tenantSchema: string): Promise<number> {
+    return this.redisService.incr(this.getPermissionVersionKey(tenantSchema));
+  }
+
+  private async isSnapshotStale(tenantSchema: string, key: string): Promise<boolean> {
+    const currentVersion = await this.getCurrentPermissionVersion(tenantSchema);
+    if (currentVersion === 0) {
+      return false;
+    }
+
+    const snapshotVersionValue = await this.redisService.hget(key, SNAPSHOT_PERMISSION_VERSION_FIELD);
+    const snapshotVersion = snapshotVersionValue ? Number.parseInt(snapshotVersionValue, 10) : 0;
+    return snapshotVersion < currentVersion;
+  }
+
   /**
    * Check if user has permission
    *
@@ -132,8 +159,8 @@ export class PermissionSnapshotService {
     // Lazy load: Check if snapshot exists, if not calculate it
     // This handles cases where Redis was flushed or user permissions haven't been cached yet
     const exists = await this.redisService.exists(key);
-    if (!exists) {
-      this.logger.log(`Snapshot missing for ${key}, calculating...`);
+    if (!exists || (await this.isSnapshotStale(tenantSchema, key))) {
+      this.logger.log(`Snapshot missing or stale for ${key}, calculating...`);
       await this.calculateAndStoreSnapshot(
         tenantSchema,
         userId,
@@ -243,11 +270,13 @@ export class PermissionSnapshotService {
     const key = this.getSnapshotKey(tenantSchema, userId, scopeType, scopeId);
     await this.redisService.del(key);
 
-    if (Object.keys(permissions).length > 0) {
-      await this.redisService.hmset(key, permissions);
-      // Set TTL of 24 hours as a safety net
-      await this.redisService.expire(key, 86400);
-    }
+    const snapshotVersion = await this.getCurrentPermissionVersion(tenantSchema);
+    await this.redisService.hmset(key, {
+      ...permissions,
+      [SNAPSHOT_PERMISSION_VERSION_FIELD]: String(snapshotVersion),
+    });
+    // Set TTL of 24 hours as a safety net
+    await this.redisService.expire(key, 86400);
 
     this.logger.debug(`Updated permission snapshot: ${key}`);
   }

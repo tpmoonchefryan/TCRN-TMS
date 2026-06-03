@@ -8,6 +8,7 @@ describe('PermissionSnapshotService', () => {
   let service: PermissionSnapshotService;
   let redisService: Partial<RedisService>;
   let redisHashes: Map<string, Record<string, string>>;
+  let redisValues: Map<string, string>;
 
   // Helper function to get the correct key format
   const getKey = (
@@ -27,8 +28,17 @@ describe('PermissionSnapshotService', () => {
 
   beforeEach(() => {
     redisHashes = new Map();
+    redisValues = new Map();
 
     redisService = {
+      get: vi.fn().mockImplementation(async (key: string) => {
+        return redisValues.get(key) ?? null;
+      }),
+      incr: vi.fn().mockImplementation(async (key: string) => {
+        const next = Number.parseInt(redisValues.get(key) ?? '0', 10) + 1;
+        redisValues.set(key, String(next));
+        return next;
+      }),
       hget: vi.fn().mockImplementation(async (key: string, field: string) => {
         const hash = redisHashes.get(key);
         return hash?.[field] || null;

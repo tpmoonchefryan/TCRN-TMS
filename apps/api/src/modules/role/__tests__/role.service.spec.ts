@@ -70,6 +70,8 @@ describe('RoleService', () => {
 
     mockSnapshotService = {
       refreshRoleSnapshots: vi.fn().mockResolvedValue(5),
+      getCurrentPermissionVersion: vi.fn().mockResolvedValue(0),
+      incrementPermissionVersion: vi.fn().mockResolvedValue(7),
     };
 
     service = new RoleService(mockSnapshotService as PermissionSnapshotService);
@@ -262,6 +264,11 @@ describe('RoleService', () => {
 
       expect(result).toBeDefined();
       expect(result.code).toBe('ADMIN');
+      expect(mockPrisma.$executeRawUnsafe).toHaveBeenCalledWith(
+        expect.stringContaining('roleDefinitionRecord'),
+        'role-123',
+        expect.any(String)
+      );
     });
 
     it('should throw when code already exists', async () => {
@@ -292,7 +299,8 @@ describe('RoleService', () => {
         'user-123'
       );
 
-      expect(mockPrisma.$executeRawUnsafe).toHaveBeenCalledTimes(2);
+      expect(mockSnapshotService.incrementPermissionVersion).toHaveBeenCalledWith(testSchema);
+      expect(mockPrisma.$executeRawUnsafe).toHaveBeenCalledTimes(4);
     });
 
     it('should insert role code as text instead of uuid-casting it', async () => {
@@ -356,6 +364,8 @@ describe('RoleService', () => {
     it('should replace role permissions', async () => {
       mockPrisma.$queryRawUnsafe
         .mockResolvedValueOnce([mockRole]) // findById before
+        .mockResolvedValueOnce([]) // permission audit snapshot before
+        .mockResolvedValueOnce([]) // permission audit snapshot after
         .mockResolvedValueOnce([{ ...mockRole, version: 2 }]); // findById after
       mockPrisma.$executeRawUnsafe.mockResolvedValue(1);
 
@@ -368,7 +378,16 @@ describe('RoleService', () => {
       );
 
       expect(result.affectedUsers).toBe(5);
+      expect(mockSnapshotService.incrementPermissionVersion).toHaveBeenCalledWith(testSchema);
       expect(mockSnapshotService.refreshRoleSnapshots).toHaveBeenCalledWith(testSchema, 'role-123');
+      expect(mockPrisma.$executeRawUnsafe).toHaveBeenCalledWith(
+        expect.stringContaining('permission_governance_role'),
+        'user-123',
+        'role_permission_change',
+        'role-123',
+        'ADMIN',
+        expect.stringContaining('"permissionVersionAfter":7')
+      );
     });
 
     it('should throw ForbiddenException for system role', async () => {

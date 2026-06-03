@@ -25,11 +25,18 @@ import {
 
 import { PermissionSnapshotService } from '../permission/permission-snapshot.service';
 
+function stringifyJsonb(value: unknown): string {
+  return JSON.stringify(value, (_key, item) =>
+    typeof item === 'bigint' ? item.toString() : item
+  );
+}
+
 export interface RoleData {
   id: string;
   code: string;
   name: LocalizedText;
   description: string | null;
+  extraData?: Record<string, unknown> | null;
   isSystem: boolean;
   isActive: boolean;
   createdAt: Date;
@@ -71,7 +78,7 @@ export class RoleService {
       params.push(options.isSystem);
     }
     if (options.isActive !== undefined) {
-      whereClause += ` AND is_active = $${paramIndex++}`;
+      whereClause += ` AND is_active = $${paramIndex}`;
       params.push(options.isActive);
     }
 
@@ -92,7 +99,7 @@ export class RoleService {
       `
       SELECT 
         id, code, name,
-        description, is_system as "isSystem", is_active as "isActive",
+        description, extra_data as "extraData", is_system as "isSystem", is_active as "isActive",
         created_at as "createdAt", updated_at as "updatedAt", version
       FROM "${tenantSchema}".role
       WHERE ${whereClause}
@@ -138,7 +145,7 @@ export class RoleService {
       `
       SELECT 
         id, code, name,
-        description, is_system as "isSystem", is_active as "isActive",
+        description, extra_data as "extraData", is_system as "isSystem", is_active as "isActive",
         created_at as "createdAt", updated_at as "updatedAt", version
       FROM "${tenantSchema}".role
       WHERE id = $1::uuid
@@ -156,7 +163,7 @@ export class RoleService {
       `
       SELECT 
         id, code, name,
-        description, is_system as "isSystem", is_active as "isActive",
+        description, extra_data as "extraData", is_system as "isSystem", is_active as "isActive",
         created_at as "createdAt", updated_at as "updatedAt", version
       FROM "${tenantSchema}".role
       WHERE code = $1
@@ -291,6 +298,40 @@ export class RoleService {
       await this.applyPermissionStates(role.id, tenantSchema, permissionStates, false);
     }
 
+    const hasPermissionMutation = (data.permissionIds?.length ?? 0) > 0 || permissionStates.length > 0;
+    const permissionVersion = hasPermissionMutation
+      ? await this.snapshotService.incrementPermissionVersion(tenantSchema)
+      : await this.snapshotService.getCurrentPermissionVersion(tenantSchema);
+
+    await this.updateRoleDefinitionRecord(tenantSchema, role.id, {
+      createdBy: userId,
+      createdAt: role.createdAt.toISOString(),
+      lastChangedBy: userId,
+      lastChangedAt: role.createdAt.toISOString(),
+      assignedUserCount: 0,
+      lastPermissionVersion: permissionVersion,
+      lastSnapshotRefreshResult: hasPermissionMutation
+        ? { status: 'not_required', affectedUsers: 0, reason: 'role_created_without_assignments' }
+        : { status: 'not_required', affectedUsers: 0, reason: 'role_metadata_created' },
+    });
+
+    if (hasPermissionMutation) {
+      await this.writeRolePermissionAudit(tenantSchema, {
+        actorId: userId,
+        roleId: role.id,
+        roleCode: role.code,
+        actionType: 'role_permission_change',
+        beforePermissions: [],
+        afterPermissions: await this.readRolePermissionAuditSnapshot(tenantSchema, role.id),
+        submittedPermissionIds: data.permissionIds ?? [],
+        submittedPermissionStates: permissionStates,
+        affectedUsers: 0,
+        permissionVersionBefore: Math.max(permissionVersion - 1, 0),
+        permissionVersionAfter: permissionVersion,
+        snapshotResult: { status: 'not_required', affectedUsers: 0 },
+      });
+    }
+
     return role;
   }
 
@@ -340,7 +381,7 @@ export class RoleService {
       params.push(JSON.stringify(data.name));
     }
     if (data.description !== undefined) {
-      updates.push(`description = $${paramIndex++}`);
+      updates.push(`description = $${paramIndex}`);
       params.push(data.description);
     }
 
@@ -362,9 +403,39 @@ export class RoleService {
     );
 
     const permissionStates = this.resolveRoleMutationPermissionStates(data);
+    const beforePermissions =
+      permissionStates.length > 0 ? await this.readRolePermissionAuditSnapshot(tenantSchema, id) : [];
     if (permissionStates.length > 0) {
       await this.applyPermissionStates(id, tenantSchema, permissionStates, true);
-      await this.snapshotService.refreshRoleSnapshots(tenantSchema, id);
+      const permissionVersion = await this.snapshotService.incrementPermissionVersion(tenantSchema);
+      const affectedUsers = await this.snapshotService.refreshRoleSnapshots(tenantSchema, id);
+      const snapshotResult = { status: 'refreshed', affectedUsers };
+      await this.updateRoleDefinitionRecord(tenantSchema, id, {
+        lastChangedBy: userId,
+        lastChangedAt: new Date().toISOString(),
+        assignedUserCount: affectedUsers,
+        lastPermissionVersion: permissionVersion,
+        lastSnapshotRefreshResult: snapshotResult,
+      });
+      await this.writeRolePermissionAudit(tenantSchema, {
+        actorId: userId,
+        roleId: id,
+        roleCode: current.code,
+        actionType: 'role_permission_change',
+        beforePermissions,
+        afterPermissions: await this.readRolePermissionAuditSnapshot(tenantSchema, id),
+        submittedPermissionStates: permissionStates,
+        affectedUsers,
+        permissionVersionBefore: Math.max(permissionVersion - 1, 0),
+        permissionVersionAfter: permissionVersion,
+        snapshotResult,
+      });
+    } else {
+      await this.updateRoleDefinitionRecord(tenantSchema, id, {
+        lastChangedBy: userId,
+        lastChangedAt: new Date().toISOString(),
+        lastSnapshotRefreshResult: { status: 'not_required', reason: 'role_metadata_only' },
+      });
     }
 
     const updated = await this.findById(id, tenantSchema);
@@ -410,6 +481,8 @@ export class RoleService {
       });
     }
 
+    const beforePermissions = await this.readRolePermissionAuditSnapshot(tenantSchema, roleId);
+
     // Delete existing permissions
     await prisma.$executeRawUnsafe(
       `
@@ -430,6 +503,8 @@ export class RoleService {
       );
     }
 
+    const permissionVersion = await this.snapshotService.incrementPermissionVersion(tenantSchema);
+
     // Update role version
     await prisma.$executeRawUnsafe(
       `
@@ -443,6 +518,27 @@ export class RoleService {
 
     // Refresh permission snapshots for affected users
     const affectedUsers = await this.snapshotService.refreshRoleSnapshots(tenantSchema, roleId);
+    const snapshotResult = { status: 'refreshed', affectedUsers };
+    await this.updateRoleDefinitionRecord(tenantSchema, roleId, {
+      lastChangedBy: userId,
+      lastChangedAt: new Date().toISOString(),
+      assignedUserCount: affectedUsers,
+      lastPermissionVersion: permissionVersion,
+      lastSnapshotRefreshResult: snapshotResult,
+    });
+    await this.writeRolePermissionAudit(tenantSchema, {
+      actorId: userId,
+      roleId,
+      roleCode: current.code,
+      actionType: 'role_permission_change',
+      beforePermissions,
+      afterPermissions: await this.readRolePermissionAuditSnapshot(tenantSchema, roleId),
+      submittedPermissionIds: permissionIds,
+      affectedUsers,
+      permissionVersionBefore: Math.max(permissionVersion - 1, 0),
+      permissionVersionAfter: permissionVersion,
+      snapshotResult,
+    });
 
     const updatedRole = await this.findById(roleId, tenantSchema);
     if (!updatedRole) {
@@ -484,7 +580,10 @@ export class RoleService {
     }
 
     const permissionStates = mergeRolePermissionStateInputs(permissionInput);
+    const beforePermissions = await this.readRolePermissionAuditSnapshot(tenantSchema, roleId);
     await this.applyPermissionStates(roleId, tenantSchema, permissionStates, true);
+
+    const permissionVersion = await this.snapshotService.incrementPermissionVersion(tenantSchema);
 
     await prisma.$executeRawUnsafe(
       `
@@ -497,6 +596,27 @@ export class RoleService {
     );
 
     const affectedUsers = await this.snapshotService.refreshRoleSnapshots(tenantSchema, roleId);
+    const snapshotResult = { status: 'refreshed', affectedUsers };
+    await this.updateRoleDefinitionRecord(tenantSchema, roleId, {
+      lastChangedBy: userId,
+      lastChangedAt: new Date().toISOString(),
+      assignedUserCount: affectedUsers,
+      lastPermissionVersion: permissionVersion,
+      lastSnapshotRefreshResult: snapshotResult,
+    });
+    await this.writeRolePermissionAudit(tenantSchema, {
+      actorId: userId,
+      roleId,
+      roleCode: current.code,
+      actionType: 'role_permission_change',
+      beforePermissions,
+      afterPermissions: await this.readRolePermissionAuditSnapshot(tenantSchema, roleId),
+      submittedPermissionStates: permissionStates,
+      affectedUsers,
+      permissionVersionBefore: Math.max(permissionVersion - 1, 0),
+      permissionVersionAfter: permissionVersion,
+      snapshotResult,
+    });
     const updatedRole = await this.findById(roleId, tenantSchema);
     if (!updatedRole) {
       throw new NotFoundException({
@@ -637,5 +757,86 @@ export class RoleService {
         permissionState.state
       );
     }
+  }
+
+  private async readRolePermissionAuditSnapshot(
+    tenantSchema: string,
+    roleId: string
+  ): Promise<Array<{ resourceCode: string; action: string; effect: string }>> {
+    const rows = await prisma.$queryRawUnsafe<Array<{ resourceCode: string; action: string; effect: string }>>(
+      `
+      SELECT r.code as "resourceCode", p.action, rp.effect
+      FROM "${tenantSchema}".role_policy rp
+      JOIN "${tenantSchema}".policy p ON p.id = rp.policy_id
+      JOIN "${tenantSchema}".resource r ON r.id = p.resource_id
+      WHERE rp.role_id = $1::uuid
+      ORDER BY r.code, p.action
+    `,
+      roleId
+    );
+
+    return Array.isArray(rows) ? rows : [];
+  }
+
+  private async updateRoleDefinitionRecord(
+    tenantSchema: string,
+    roleId: string,
+    recordPatch: Record<string, unknown>
+  ): Promise<void> {
+    await prisma.$executeRawUnsafe(
+      `
+      UPDATE "${tenantSchema}".role
+      SET extra_data = jsonb_set(
+        COALESCE(extra_data, '{}'::jsonb),
+        '{roleDefinitionRecord}',
+        COALESCE(extra_data->'roleDefinitionRecord', '{}'::jsonb) || $2::jsonb,
+        true
+      )
+      WHERE id = $1::uuid
+    `,
+      roleId,
+      stringifyJsonb(recordPatch)
+    );
+  }
+
+  private async writeRolePermissionAudit(
+    tenantSchema: string,
+    input: {
+      actorId: string;
+      roleId: string;
+      roleCode: string;
+      actionType: string;
+      beforePermissions: unknown;
+      afterPermissions: unknown;
+      submittedPermissionIds?: string[];
+      submittedPermissionStates?: unknown;
+      affectedUsers: number;
+      permissionVersionBefore: number;
+      permissionVersionAfter: number;
+      snapshotResult: unknown;
+    }
+  ): Promise<void> {
+    await prisma.$executeRawUnsafe(
+      `
+      INSERT INTO "${tenantSchema}".change_log
+        (id, operator_id, action, object_type, object_id, object_name, diff, occurred_at)
+      VALUES
+        (gen_random_uuid(), $1::uuid, $2, 'permission_governance_role', $3::uuid, $4, $5::jsonb, now())
+    `,
+      input.actorId,
+      input.actionType,
+      input.roleId,
+      input.roleCode,
+      stringifyJsonb({
+        beforePermissions: input.beforePermissions,
+        afterPermissions: input.afterPermissions,
+        submittedPermissionIds: input.submittedPermissionIds ?? [],
+        submittedPermissionStates: input.submittedPermissionStates ?? [],
+        affectedUsers: input.affectedUsers,
+        permissionVersionBefore: input.permissionVersionBefore,
+        permissionVersionAfter: input.permissionVersionAfter,
+        snapshotResult: input.snapshotResult,
+      })
+    );
   }
 }

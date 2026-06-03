@@ -152,7 +152,6 @@ export function BuilderRegistryScreen({ tenantId }: Readonly<{ tenantId: string 
 
   useEffect(() => {
     void load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tenantId, locale]);
 
   const filteredRows = useMemo(() => {

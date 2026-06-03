@@ -23,6 +23,7 @@ describe('PermissionSnapshotService', () => {
   let service: PermissionSnapshotService;
   let mockRedisService: Partial<RedisService>;
   let redisHashes: Map<string, Record<string, string>>;
+  let redisValues: Map<string, string>;
 
   const testTenantSchema = 'tenant_abc123';
   const testUserId = '550e8400-e29b-41d4-a716-446655440001';
@@ -43,8 +44,17 @@ describe('PermissionSnapshotService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     redisHashes = new Map();
+    redisValues = new Map();
 
     mockRedisService = {
+      get: vi.fn().mockImplementation(async (key: string) => {
+        return redisValues.get(key) ?? null;
+      }),
+      incr: vi.fn().mockImplementation(async (key: string) => {
+        const next = Number.parseInt(redisValues.get(key) ?? '0', 10) + 1;
+        redisValues.set(key, String(next));
+        return next;
+      }),
       hget: vi.fn().mockImplementation(async (key: string, field: string) => {
         const hash = redisHashes.get(key);
         return hash?.[field] || null;
@@ -83,6 +93,7 @@ describe('PermissionSnapshotService', () => {
     it('should return true when permission is granted', async () => {
       // Set permission at tenant:null scope (default when no scope specified)
       redisHashes.set(getKey(testUserId, 'tenant'), {
+        __permission_version: '0',
         'customer.profile:read': 'grant',
       });
 
@@ -98,6 +109,7 @@ describe('PermissionSnapshotService', () => {
 
     it('should return false when permission is denied', async () => {
       redisHashes.set(getKey(testUserId, 'tenant'), {
+        __permission_version: '0',
         'customer.profile:delete': 'deny',
       });
 
@@ -127,6 +139,7 @@ describe('PermissionSnapshotService', () => {
 
     it('should return true when user has admin permission for resource', async () => {
       redisHashes.set(getKey(testUserId, 'tenant'), {
+        __permission_version: '0',
         'customer.profile:admin': 'grant',
       });
 
@@ -142,6 +155,7 @@ describe('PermissionSnapshotService', () => {
 
     it('should return true when user has global admin permission', async () => {
       redisHashes.set(getKey(testUserId, 'tenant'), {
+        __permission_version: '0',
         '*:admin': 'grant',
       });
 
@@ -157,6 +171,7 @@ describe('PermissionSnapshotService', () => {
 
     it('should use scope-specific key when scope is provided', async () => {
       redisHashes.set(getKey(testUserId, 'talent', testScopeId), {
+        __permission_version: '0',
         'customer.profile:read': 'grant',
       });
 
@@ -173,6 +188,35 @@ describe('PermissionSnapshotService', () => {
       expect(mockRedisService.hget).toHaveBeenCalledWith(
         getKey(testUserId, 'talent', testScopeId),
         'customer.profile:read'
+      );
+    });
+
+    it('recalculates a stale snapshot before reading a preserved grant', async () => {
+      redisValues.set(`perm:${testTenantSchema}:version`, '2');
+      redisHashes.set(getKey(testUserId, 'tenant'), {
+        __permission_version: '1',
+        'system_user:admin': 'grant',
+      });
+      mockPrisma.$queryRawUnsafe.mockResolvedValue([]);
+
+      const result = await service.checkPermission(
+        testTenantSchema,
+        testUserId,
+        'system_user',
+        'admin',
+        'tenant',
+        null
+      );
+
+      expect(result).toBe(false);
+      expect(mockRedisService.del).toHaveBeenCalledWith(
+        `perm:${testTenantSchema}:${testUserId}:tenant:null`
+      );
+      expect(mockRedisService.hmset).toHaveBeenCalledWith(
+        `perm:${testTenantSchema}:${testUserId}:tenant:null`,
+        {
+          __permission_version: '2',
+        }
       );
     });
   });
@@ -202,6 +246,7 @@ describe('PermissionSnapshotService', () => {
       expect(mockRedisService.hmset).toHaveBeenCalledWith(
         `perm:${testTenantSchema}:${testUserId}:tenant:null`,
         {
+          __permission_version: '0',
           'system_user:admin': 'grant',
         }
       );
@@ -211,6 +256,7 @@ describe('PermissionSnapshotService', () => {
   describe('getUserPermissions', () => {
     it('should return all permissions for a user', async () => {
       redisHashes.set(getKey(testUserId), {
+        __permission_version: '0',
         'customer.profile:read': 'grant',
         'customer.profile:write': 'grant',
         'customer.pii:read': 'deny',
@@ -233,6 +279,7 @@ describe('PermissionSnapshotService', () => {
 
     it('should filter out invalid permission values', async () => {
       redisHashes.set(getKey(testUserId), {
+        __permission_version: '0',
         'customer.profile:read': 'grant',
         'customer.profile:write': 'invalid_value',
         'customer.pii:read': 'deny',
@@ -248,6 +295,7 @@ describe('PermissionSnapshotService', () => {
 
     it('returns only canonical catalog-backed keys from outward permission snapshots', async () => {
       redisHashes.set(getKey(testUserId), {
+        __permission_version: '0',
         'customer.profile:read': 'grant',
         'customer.profile:admin': 'grant',
         'customer.profile:create': 'grant',
@@ -269,6 +317,7 @@ describe('PermissionSnapshotService', () => {
 
     it('keeps only reserved wildcard keys in outward permission snapshots', async () => {
       redisHashes.set(getKey(testUserId), {
+        __permission_version: '0',
         'customer.profile:*': 'grant',
         '*:read': 'grant',
         '*:delete': 'deny',
@@ -296,17 +345,26 @@ describe('PermissionSnapshotService', () => {
       await service.calculateAndStoreSnapshot(testTenantSchema, testUserId, 'tenant', null);
 
       expect(mockRedisService.del).toHaveBeenCalled();
-      expect(mockRedisService.hmset).toHaveBeenCalled();
+      expect(mockRedisService.hmset).toHaveBeenCalledWith(expect.any(String), {
+        __permission_version: '0',
+        'customer:read': 'grant',
+      });
       expect(mockRedisService.expire).toHaveBeenCalledWith(expect.any(String), 86400);
     });
 
-    it('should not store empty permissions', async () => {
+    it('stores version metadata for empty permission snapshots', async () => {
+      redisValues.set(`perm:${testTenantSchema}:version`, '3');
       mockPrisma.$queryRawUnsafe.mockResolvedValue([]); // No role assignments
 
       await service.calculateAndStoreSnapshot(testTenantSchema, testUserId, 'tenant', null);
 
       expect(mockRedisService.del).toHaveBeenCalled();
-      expect(mockRedisService.hmset).not.toHaveBeenCalled();
+      expect(mockRedisService.hmset).toHaveBeenCalledWith(
+        `perm:${testTenantSchema}:${testUserId}:tenant:null`,
+        {
+          __permission_version: '3',
+        }
+      );
     });
 
     it('stores legacy resource keys but drops unsupported actions for catalog-backed resources', async () => {
@@ -325,10 +383,22 @@ describe('PermissionSnapshotService', () => {
       expect(mockRedisService.hmset).toHaveBeenCalledWith(
         `perm:${testTenantSchema}:${testUserId}:tenant:null`,
         {
+          __permission_version: '0',
           'customer.profile:read': 'grant',
           'homepage:read': 'grant',
         }
       );
+    });
+  });
+
+  describe('incrementPermissionVersion', () => {
+    it('increments the tenant permission version key', async () => {
+      const first = await service.incrementPermissionVersion(testTenantSchema);
+      const second = await service.incrementPermissionVersion(testTenantSchema);
+
+      expect(first).toBe(1);
+      expect(second).toBe(2);
+      expect(mockRedisService.incr).toHaveBeenCalledWith(`perm:${testTenantSchema}:version`);
     });
   });
 

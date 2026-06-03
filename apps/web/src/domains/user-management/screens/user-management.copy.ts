@@ -253,8 +253,8 @@ const COPY = {
       roleInactive: 'Role Inactive',
       userActive: 'User Active',
       userInactive: 'User Inactive',
-      protectedRole: 'Protected',
-      customRole: 'Custom',
+      protectedRole: 'Built-in locked',
+      customRole: 'Custom role',
       save: 'Save',
       remove: 'Remove',
       noCompatibleRoles: 'No compatible roles',
@@ -345,8 +345,8 @@ const COPY = {
         columns: ['Role', 'Coverage', 'Users', 'State', 'Updated', 'Actions'],
         permissions: (count: number) => `${count} permissions`,
         assignedUsers: (count: number) => `${count} assigned users`,
-        protected: 'Protected',
-        custom: 'Custom',
+        protected: 'Built-in locked',
+        custom: 'Custom role',
         active: 'Active',
         inactive: 'Inactive',
         edit: 'Edit',
@@ -464,6 +464,31 @@ const COPY = {
       roleField: 'Role',
       expiresAtField: 'Expires at',
       assignmentInheritLabel: 'Inherit to child scopes when supported',
+      assignmentScopeWarning:
+        'Changing scope, inheritance, or expiration can expand or contract effective access. Review the before/after access summary before saving.',
+      assignmentInitialAdminWarning:
+        'Initial Admin grants every permission in this tenant. Keep at least one active tenant-scope Initial Admin assignment before saving.',
+      assignmentRemovalWarning:
+        "Removing this assignment may change the user's effective access. Review the affected scope, inheritance, expiration, and snapshot refresh result before saving.",
+      assignmentSnapshotRefreshExpectation:
+        'Permission version and snapshot refresh will be checked after save.',
+      assignmentImpactSummary: (
+        roleName: string,
+        userName: string,
+        scopeName: string,
+        inheritState: string,
+        expiresAt: string
+      ) =>
+        `Role: ${roleName}. User: ${userName}. Scope: ${scopeName}. Inherit: ${inheritState}. Expires: ${expiresAt}.`,
+      assignmentCreateInitialAdminTitle: 'Assign Initial Admin?',
+      assignmentCreateInitialAdminConfirm: 'Assign Initial Admin',
+      assignmentUpdateTitle: (roleName: string) => `Save changes to ${roleName} assignment?`,
+      assignmentUpdateConfirm: 'Save assignment',
+      assignmentUpdatePending: 'Saving assignment…',
+      assignmentRemovalTitle: (roleName: string, userName: string) =>
+        `Remove ${roleName} from ${userName}?`,
+      assignmentRemovalConfirm: 'Remove assignment',
+      assignmentRemovalPending: 'Removing assignment…',
       assignmentSubmit: 'Assign role',
       assignmentPending: 'Assigning role…',
       noAssignmentsTitle: 'No scoped roles assigned',
@@ -494,6 +519,9 @@ const COPY = {
         'Define role details and the explicit permissions required for this scope.',
       editDescription:
         'Review role details, explicit permissions, and where this role is assigned.',
+      initialAdminLockTitle: 'Initial Admin locked',
+      initialAdminLockDescription:
+        'Initial Admin is the built-in recovery role. Its name and permissions are locked to prevent access loss.',
       summaryExplicitPermissionsLabel: 'Explicit Permissions',
       summaryExplicitPermissionsHint:
         'Unset actions inherit the broader catalog defaults or remain unavailable.',
@@ -521,7 +549,7 @@ const COPY = {
       createHint:
         'Role code becomes the stable identifier after creation. Leave actions unset to avoid granting behavior you do not need.',
       editHint:
-        'Role code stays immutable after creation. Protected roles can still be edited here, but only custom roles can be deleted from the list.',
+        'Role code stays immutable after creation. Roles are kept for audit history; remove assignments or change Grant, Deny, and Unset states to change effective access.',
       permissionMatrixTitle: 'Permission matrix',
       permissionMatrixDescription: 'Explicit effects can be left unset, granted, or denied.',
       notAvailable: 'N/A',
@@ -579,8 +607,8 @@ const COPY = {
       roleInactive: '角色停用',
       userActive: '用户启用',
       userInactive: '用户停用',
-      protectedRole: '受保护',
-      customRole: '自定义',
+      protectedRole: '内置锁定',
+      customRole: '自定义角色',
       save: '保存',
       remove: '移除',
       noCompatibleRoles: '没有可分配角色',
@@ -665,14 +693,14 @@ const COPY = {
         columns: ['角色', '覆盖面', '用户数', '状态', '更新时间', '操作'],
         permissions: (count: number) => `${count} 条权限`,
         assignedUsers: (count: number) => `${count} 位分配用户`,
-        protected: '受保护',
-        custom: '自定义',
+        protected: '内置锁定',
+        custom: '自定义角色',
         active: '激活',
         inactive: '停用',
         edit: '编辑',
         delete: '删除',
         deleteTitle: (name: string) => `删除 ${name}？`,
-        deleteDescription: '这里只允许删除自定义角色；受保护的系统角色在列表中仅可查看。',
+        deleteDescription: '角色删除已禁用。请移除分配或调整权限状态来改变实际访问。',
         deleteConfirm: '删除角色',
         deletePending: '正在删除角色…',
         deleteSuccess: (name: string) => `${name} 已删除。`,
@@ -774,6 +802,29 @@ const COPY = {
       roleField: '角色',
       expiresAtField: '到期时间',
       assignmentInheritLabel: '在支持时继承到下级范围',
+      assignmentScopeWarning: '更改范围、继承或到期时间可能扩大或收缩有效访问权限，保存前请审查影响。',
+      assignmentInitialAdminWarning:
+        'Initial Admin 拥有该租户内全部权限。保存前必须保留至少一个有效的租户级 Initial Admin 分配。',
+      assignmentRemovalWarning:
+        '移除此分配可能改变用户有效访问权限。保存前请审查范围、继承、到期时间和快照刷新结果。',
+      assignmentSnapshotRefreshExpectation: '保存后会检查权限版本并刷新权限快照。',
+      assignmentImpactSummary: (
+        roleName: string,
+        userName: string,
+        scopeName: string,
+        inheritState: string,
+        expiresAt: string
+      ) =>
+        `角色：${roleName}。用户：${userName}。范围：${scopeName}。继承：${inheritState}。到期：${expiresAt}。`,
+      assignmentCreateInitialAdminTitle: '分配 Initial Admin？',
+      assignmentCreateInitialAdminConfirm: '分配 Initial Admin',
+      assignmentUpdateTitle: (roleName: string) => `保存 ${roleName} 分配变更？`,
+      assignmentUpdateConfirm: '保存分配',
+      assignmentUpdatePending: '正在保存分配…',
+      assignmentRemovalTitle: (roleName: string, userName: string) =>
+        `从 ${userName} 移除 ${roleName}？`,
+      assignmentRemovalConfirm: '移除分配',
+      assignmentRemovalPending: '正在移除分配…',
       assignmentSubmit: '分配角色',
       assignmentPending: '正在分配角色…',
       noAssignmentsTitle: '尚未分配范围角色',
@@ -800,6 +851,9 @@ const COPY = {
       badge: (workspaceLabel: string) => workspaceLabel,
       createDescription: '定义当前范围所需的角色信息与显式权限。',
       editDescription: '无需回到列表页即可审查角色信息、显式权限和当前范围覆盖。',
+      initialAdminLockTitle: 'Initial Admin 已锁定',
+      initialAdminLockDescription:
+        'Initial Admin 是内置救援角色。其名称和权限已锁定，以避免访问丢失。',
       summaryExplicitPermissionsLabel: '显式权限',
       summaryExplicitPermissionsHint: '未设置的动作将继承更宽的目录默认值，或保持不可用。',
       summaryAssignedUsersLabel: '已分配用户',
@@ -820,7 +874,7 @@ const COPY = {
       },
       isActiveDescription: '激活角色才可继续在当前范围中被分配。',
       createHint: '角色编码在创建后会成为稳定标识。将动作保持未设置，可避免授予不需要的行为。',
-      editHint: '角色编码在创建后不可修改。受保护角色仍可在此编辑，但只有自定义角色可删除。',
+      editHint: '角色编码在创建后不可修改。角色会保留用于审计；请移除分配或调整允许、拒绝、未设置状态来改变实际访问。',
       permissionMatrixTitle: '权限矩阵',
       permissionMatrixDescription: '显式效果可以设置为未设置、允许或拒绝。',
       notAvailable: '不适用',
@@ -876,8 +930,8 @@ const COPY = {
       roleInactive: '角色停用',
       userActive: '用户启用',
       userInactive: '用户停用',
-      protectedRole: '受保护',
-      customRole: '自定义',
+      protectedRole: '内置锁定',
+      customRole: '自定义角色',
       save: '保存',
       remove: '移除',
       noCompatibleRoles: '没有可分配角色',
@@ -962,14 +1016,14 @@ const COPY = {
         columns: ['角色', '覆盖面', '用户数', '状态', '更新时间', '操作'],
         permissions: (count: number) => `${count} 条权限`,
         assignedUsers: (count: number) => `${count} 位分配用户`,
-        protected: '受保护',
-        custom: '自定义',
+        protected: '内置锁定',
+        custom: '自定义角色',
         active: '激活',
         inactive: '停用',
         edit: '编辑',
         delete: '删除',
         deleteTitle: (name: string) => `删除 ${name}？`,
-        deleteDescription: '这里只允许删除自定义角色；受保护的系统角色在列表中仅可查看。',
+        deleteDescription: '角色删除已禁用。请移除分配或调整权限状态来改变实际访问。',
         deleteConfirm: '删除角色',
         deletePending: '正在删除角色…',
         deleteSuccess: (name: string) => `${name} 已删除。`,
@@ -1071,6 +1125,29 @@ const COPY = {
       roleField: '角色',
       expiresAtField: '到期时间',
       assignmentInheritLabel: '在支持时继承到下级范围',
+      assignmentScopeWarning: '更改范围、继承或到期时间可能扩大或收缩有效访问权限，保存前请审查影响。',
+      assignmentInitialAdminWarning:
+        'Initial Admin 拥有该租户内全部权限。保存前必须保留至少一个有效的租户级 Initial Admin 分配。',
+      assignmentRemovalWarning:
+        '移除此分配可能改变用户有效访问权限。保存前请审查范围、继承、到期时间和快照刷新结果。',
+      assignmentSnapshotRefreshExpectation: '保存后会检查权限版本并刷新权限快照。',
+      assignmentImpactSummary: (
+        roleName: string,
+        userName: string,
+        scopeName: string,
+        inheritState: string,
+        expiresAt: string
+      ) =>
+        `角色：${roleName}。用户：${userName}。范围：${scopeName}。继承：${inheritState}。到期：${expiresAt}。`,
+      assignmentCreateInitialAdminTitle: '分配 Initial Admin？',
+      assignmentCreateInitialAdminConfirm: '分配 Initial Admin',
+      assignmentUpdateTitle: (roleName: string) => `保存 ${roleName} 分配变更？`,
+      assignmentUpdateConfirm: '保存分配',
+      assignmentUpdatePending: '正在保存分配…',
+      assignmentRemovalTitle: (roleName: string, userName: string) =>
+        `从 ${userName} 移除 ${roleName}？`,
+      assignmentRemovalConfirm: '移除分配',
+      assignmentRemovalPending: '正在移除分配…',
       assignmentSubmit: '分配角色',
       assignmentPending: '正在分配角色…',
       noAssignmentsTitle: '尚未分配范围角色',
@@ -1097,6 +1174,9 @@ const COPY = {
       badge: (workspaceLabel: string) => workspaceLabel,
       createDescription: '定义当前范围所需的角色信息与显式权限。',
       editDescription: '无需回到列表页即可审查角色信息、显式权限和当前范围覆盖。',
+      initialAdminLockTitle: 'Initial Admin 已鎖定',
+      initialAdminLockDescription:
+        'Initial Admin 是內建救援角色。其名稱和權限已鎖定，以避免存取遺失。',
       summaryExplicitPermissionsLabel: '显式权限',
       summaryExplicitPermissionsHint: '未设置的动作将继承更宽的目录默认值，或保持不可用。',
       summaryAssignedUsersLabel: '已分配用户',
@@ -1117,7 +1197,7 @@ const COPY = {
       },
       isActiveDescription: '激活角色才可继续在当前范围中被分配。',
       createHint: '角色编码在创建后会成为稳定标识。将动作保持未设置，可避免授予不需要的行为。',
-      editHint: '角色编码在创建后不可修改。受保护角色仍可在此编辑，但只有自定义角色可删除。',
+      editHint: '角色编码在创建后不可修改。角色会保留用于审计；请移除分配或调整允许、拒绝、未设置状态来改变实际访问。',
       permissionMatrixTitle: '权限矩阵',
       permissionMatrixDescription: '显式效果可以设置为未设置、允许或拒绝。',
       notAvailable: '不适用',
@@ -1173,8 +1253,8 @@ const COPY = {
       roleInactive: 'ロール無効',
       userActive: 'ユーザー有効',
       userInactive: 'ユーザー無効',
-      protectedRole: '保護',
-      customRole: 'カスタム',
+      protectedRole: '組み込みロック',
+      customRole: 'カスタムロール',
       save: '保存',
       remove: '削除',
       noCompatibleRoles: '利用可能なロールがありません',
@@ -1261,15 +1341,15 @@ const COPY = {
         columns: ['ロール', '権限範囲', '割当ユーザー', '状態', '更新日時', '操作'],
         permissions: (count: number) => `${count} 件の権限`,
         assignedUsers: (count: number) => `${count} 人の割当ユーザー`,
-        protected: '保護',
-        custom: 'カスタム',
+        protected: '組み込みロック',
+        custom: 'カスタムロール',
         active: '有効',
         inactive: '無効',
         edit: '編集',
         delete: '削除',
         deleteTitle: (name: string) => `${name} を削除しますか？`,
         deleteDescription:
-          'ここで削除できるのはカスタムロールのみです。保護されたシステムロールは一覧で参照のみ可能です。',
+          'ロール削除は無効です。実効アクセスを変えるには、割当を削除するか権限状態を変更してください。',
         deleteConfirm: 'ロールを削除',
         deletePending: 'ロールを削除中…',
         deleteSuccess: (name: string) => `${name} を削除しました。`,
@@ -1375,6 +1455,31 @@ const COPY = {
       roleField: 'ロール',
       expiresAtField: '有効期限',
       assignmentInheritLabel: '対応時は下位範囲へ継承',
+      assignmentScopeWarning:
+        '範囲、継承、期限の変更は有効アクセスを拡大または縮小する可能性があります。保存前に影響を確認してください。',
+      assignmentInitialAdminWarning:
+        'Initial Admin はこのテナントのすべての権限を付与します。保存前に有効なテナント範囲の Initial Admin 割当を少なくとも 1 件残してください。',
+      assignmentRemovalWarning:
+        'この割当を削除するとユーザーの有効アクセスが変わる可能性があります。保存前に範囲、継承、期限、スナップショット更新結果を確認してください。',
+      assignmentSnapshotRefreshExpectation:
+        '保存後に権限バージョンと権限スナップショット更新を確認します。',
+      assignmentImpactSummary: (
+        roleName: string,
+        userName: string,
+        scopeName: string,
+        inheritState: string,
+        expiresAt: string
+      ) =>
+        `ロール: ${roleName}。ユーザー: ${userName}。範囲: ${scopeName}。継承: ${inheritState}。期限: ${expiresAt}。`,
+      assignmentCreateInitialAdminTitle: 'Initial Admin を割り当てますか？',
+      assignmentCreateInitialAdminConfirm: 'Initial Admin を割り当て',
+      assignmentUpdateTitle: (roleName: string) => `${roleName} の割当変更を保存しますか？`,
+      assignmentUpdateConfirm: '割当を保存',
+      assignmentUpdatePending: '割当を保存中…',
+      assignmentRemovalTitle: (roleName: string, userName: string) =>
+        `${userName} から ${roleName} を削除しますか？`,
+      assignmentRemovalConfirm: '割当を削除',
+      assignmentRemovalPending: '割当を削除中…',
       assignmentSubmit: 'ロールを割り当て',
       assignmentPending: 'ロールを割当て中…',
       noAssignmentsTitle: '範囲ロールが未設定です',
@@ -1403,6 +1508,9 @@ const COPY = {
       badge: (workspaceLabel: string) => workspaceLabel,
       createDescription: '現在の範囲で必要なロール情報と明示的な権限を定義します。',
       editDescription: '一覧に戻らずにロール情報、明示的権限、現在の範囲カバーを確認します。',
+      initialAdminLockTitle: 'Initial Admin はロック済み',
+      initialAdminLockDescription:
+        'Initial Admin は組み込みの復旧ロールです。アクセス喪失を防ぐため、名前と権限はロックされています。',
       summaryExplicitPermissionsLabel: '明示的権限',
       summaryExplicitPermissionsHint:
         '未設定の操作はカタログ既定値を継承するか、利用不可のまま残ります。',
@@ -1430,7 +1538,7 @@ const COPY = {
       createHint:
         'ロールコードは作成後の安定識別子になります。不要な挙動を避けるため、不要な操作は未設定のままにしてください。',
       editHint:
-        'ロールコードは作成後に変更できません。保護ロールもここで編集できますが、一覧で削除できるのはカスタムロールのみです。',
+        'ロールコードは作成後に変更できません。ロールは監査履歴のため保持されます。実効アクセスを変えるには割当を削除するか、許可、拒否、未設定を変更してください。',
       permissionMatrixTitle: '権限マトリクス',
       permissionMatrixDescription: '明示的効果は未設定、許可、拒否のいずれかを選べます。',
       notAvailable: '対象外',
@@ -1487,8 +1595,8 @@ const COPY = {
       roleInactive: 'Role Inactive',
       userActive: 'User Active',
       userInactive: 'User Inactive',
-      protectedRole: 'Protected',
-      customRole: 'Custom',
+      protectedRole: 'Built-in locked',
+      customRole: 'Custom role',
       save: 'Save',
       remove: 'Remove',
       noCompatibleRoles: 'No compatible roles',
@@ -1579,8 +1687,8 @@ const COPY = {
         columns: ['Role', 'Coverage', 'Users', 'State', 'Updated', 'Actions'],
         permissions: (count: number) => `${count} permissions`,
         assignedUsers: (count: number) => `${count} assigned users`,
-        protected: 'Protected',
-        custom: 'Custom',
+        protected: 'Built-in locked',
+        custom: 'Custom role',
         active: 'Active',
         inactive: 'Inactive',
         edit: 'Edit',
@@ -1698,6 +1806,31 @@ const COPY = {
       roleField: 'Role',
       expiresAtField: 'Expires at',
       assignmentInheritLabel: 'Inherit to child scopes when supported',
+      assignmentScopeWarning:
+        'Changing scope, inheritance, or expiration can expand or contract effective access. Review the before/after access summary before saving.',
+      assignmentInitialAdminWarning:
+        'Initial Admin grants every permission in this tenant. Keep at least one active tenant-scope Initial Admin assignment before saving.',
+      assignmentRemovalWarning:
+        "Removing this assignment may change the user's effective access. Review the affected scope, inheritance, expiration, and snapshot refresh result before saving.",
+      assignmentSnapshotRefreshExpectation:
+        'Permission version and snapshot refresh will be checked after save.',
+      assignmentImpactSummary: (
+        roleName: string,
+        userName: string,
+        scopeName: string,
+        inheritState: string,
+        expiresAt: string
+      ) =>
+        `Role: ${roleName}. User: ${userName}. Scope: ${scopeName}. Inherit: ${inheritState}. Expires: ${expiresAt}.`,
+      assignmentCreateInitialAdminTitle: 'Assign Initial Admin?',
+      assignmentCreateInitialAdminConfirm: 'Assign Initial Admin',
+      assignmentUpdateTitle: (roleName: string) => `Save changes to ${roleName} assignment?`,
+      assignmentUpdateConfirm: 'Save assignment',
+      assignmentUpdatePending: 'Saving assignment…',
+      assignmentRemovalTitle: (roleName: string, userName: string) =>
+        `Remove ${roleName} from ${userName}?`,
+      assignmentRemovalConfirm: 'Remove assignment',
+      assignmentRemovalPending: 'Removing assignment…',
       assignmentSubmit: 'Assign role',
       assignmentPending: 'Assigning role…',
       noAssignmentsTitle: 'No scoped roles assigned',
@@ -1728,6 +1861,9 @@ const COPY = {
         'Define role details and the explicit permissions required for this scope.',
       editDescription:
         'Review role details, explicit permissions, and where this role is assigned.',
+      initialAdminLockTitle: 'Initial Admin locked',
+      initialAdminLockDescription:
+        'Initial Admin is the built-in recovery role. Its name and permissions are locked to prevent access loss.',
       summaryExplicitPermissionsLabel: 'Explicit Permissions',
       summaryExplicitPermissionsHint:
         'Unset actions inherit the broader catalog defaults or remain unavailable.',
@@ -1755,7 +1891,7 @@ const COPY = {
       createHint:
         'Role code becomes the stable identifier after creation. Leave actions unset to avoid granting behavior you do not need.',
       editHint:
-        'Role code stays immutable after creation. Protected roles can still be edited here, but only custom roles can be deleted from the list.',
+        'Role code stays immutable after creation. Roles are kept for audit history; remove assignments or change Grant, Deny, and Unset states to change effective access.',
       permissionMatrixTitle: 'Permission matrix',
       permissionMatrixDescription: 'Explicit effects can be left unset, granted, or denied.',
       notAvailable: 'N/A',
@@ -1813,8 +1949,8 @@ const COPY = {
       roleInactive: 'Role Inactive',
       userActive: 'User Active',
       userInactive: 'User Inactive',
-      protectedRole: 'Protected',
-      customRole: 'Custom',
+      protectedRole: 'Built-in locked',
+      customRole: 'Custom role',
       save: 'Save',
       remove: 'Remove',
       noCompatibleRoles: 'No compatible roles',
@@ -1905,8 +2041,8 @@ const COPY = {
         columns: ['Role', 'Coverage', 'Users', 'State', 'Updated', 'Actions'],
         permissions: (count: number) => `${count} permissions`,
         assignedUsers: (count: number) => `${count} assigned users`,
-        protected: 'Protected',
-        custom: 'Custom',
+        protected: 'Built-in locked',
+        custom: 'Custom role',
         active: 'Active',
         inactive: 'Inactive',
         edit: 'Edit',
@@ -2024,6 +2160,31 @@ const COPY = {
       roleField: 'Role',
       expiresAtField: 'Expires at',
       assignmentInheritLabel: 'Inherit to child scopes when supported',
+      assignmentScopeWarning:
+        'Changing scope, inheritance, or expiration can expand or contract effective access. Review the before/after access summary before saving.',
+      assignmentInitialAdminWarning:
+        'Initial Admin grants every permission in this tenant. Keep at least one active tenant-scope Initial Admin assignment before saving.',
+      assignmentRemovalWarning:
+        "Removing this assignment may change the user's effective access. Review the affected scope, inheritance, expiration, and snapshot refresh result before saving.",
+      assignmentSnapshotRefreshExpectation:
+        'Permission version and snapshot refresh will be checked after save.',
+      assignmentImpactSummary: (
+        roleName: string,
+        userName: string,
+        scopeName: string,
+        inheritState: string,
+        expiresAt: string
+      ) =>
+        `Role: ${roleName}. User: ${userName}. Scope: ${scopeName}. Inherit: ${inheritState}. Expires: ${expiresAt}.`,
+      assignmentCreateInitialAdminTitle: 'Assign Initial Admin?',
+      assignmentCreateInitialAdminConfirm: 'Assign Initial Admin',
+      assignmentUpdateTitle: (roleName: string) => `Save changes to ${roleName} assignment?`,
+      assignmentUpdateConfirm: 'Save assignment',
+      assignmentUpdatePending: 'Saving assignment…',
+      assignmentRemovalTitle: (roleName: string, userName: string) =>
+        `Remove ${roleName} from ${userName}?`,
+      assignmentRemovalConfirm: 'Remove assignment',
+      assignmentRemovalPending: 'Removing assignment…',
       assignmentSubmit: 'Assign role',
       assignmentPending: 'Assigning role…',
       noAssignmentsTitle: 'No scoped roles assigned',
@@ -2054,6 +2215,9 @@ const COPY = {
         'Define role details and the explicit permissions required for this scope.',
       editDescription:
         'Review role details, explicit permissions, and where this role is assigned.',
+      initialAdminLockTitle: 'Initial Admin locked',
+      initialAdminLockDescription:
+        'Initial Admin is the built-in recovery role. Its name and permissions are locked to prevent access loss.',
       summaryExplicitPermissionsLabel: 'Explicit Permissions',
       summaryExplicitPermissionsHint:
         'Unset actions inherit the broader catalog defaults or remain unavailable.',
@@ -2081,7 +2245,7 @@ const COPY = {
       createHint:
         'Role code becomes the stable identifier after creation. Leave actions unset to avoid granting behavior you do not need.',
       editHint:
-        'Role code stays immutable after creation. Protected roles can still be edited here, but only custom roles can be deleted from the list.',
+        'Role code stays immutable after creation. Roles are kept for audit history; remove assignments or change Grant, Deny, and Unset states to change effective access.',
       permissionMatrixTitle: 'Permission matrix',
       permissionMatrixDescription: 'Explicit effects can be left unset, granted, or denied.',
       notAvailable: 'N/A',

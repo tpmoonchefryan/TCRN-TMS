@@ -17,6 +17,7 @@ import { loadRepoEnvFiles } from './load-repo-env';
 loadRepoEnvFiles(import.meta.url);
 
 type RbacTableName = 'resource' | 'policy' | 'role' | 'role_policy';
+type InitialAdminInvariantStatus = 'passed' | 'blocked' | 'not_applicable';
 
 export interface CliOptions {
   schemas: string[];
@@ -34,6 +35,7 @@ export interface RbacSchemaSyncResult {
   schemaName: string;
   before: SchemaCounts;
   after: SchemaCounts;
+  initialAdminReadback: InitialAdminCompatibilityReadback;
 }
 
 export interface SkippedSchemaSync {
@@ -54,6 +56,32 @@ const REQUIRED_RBAC_TABLES: readonly RbacTableName[] = [
 ] as const;
 
 const LEGACY_BUILT_IN_ROLE_CODES = ['PLATFORM_ADMIN', 'ADMIN', 'TENANT_ADMIN'] as const;
+
+interface QueryRunner {
+  $queryRawUnsafe<T = unknown>(query: string, ...values: unknown[]): Promise<T>;
+}
+
+export interface RoleDefinitionRecordReadback {
+  roleCode: string;
+  createdAt: Date | null;
+  updatedAt: Date | null;
+  roleDefinitionRecord: unknown;
+}
+
+export interface InitialAdminCompatibilityReadback {
+  schemaName: string;
+  systemRoleCount: number;
+  legacyBuiltInSystemRoleCount: number;
+  initialAdminAssignmentCount: number;
+  assignedLegacyRoleCount: number;
+  legacyCompatibilityRoleCount: number;
+  zeroDeletedRoleRows: boolean;
+  noLastAdminInvariant: {
+    status: InitialAdminInvariantStatus;
+    reason: string;
+  };
+  roleDefinitionRecords: RoleDefinitionRecordReadback[];
+}
 
 function parseCliArgs(argv: string[]): CliOptions {
   const schemas: string[] = [];
@@ -122,9 +150,9 @@ async function schemaExists(prisma: PrismaClient, schemaName: string): Promise<b
 }
 
 async function tableExists(
-  prisma: PrismaClient,
+  prisma: QueryRunner,
   schemaName: string,
-  tableName: RbacTableName,
+  tableName: string,
 ): Promise<boolean> {
   const rows = await prisma.$queryRawUnsafe<Array<{ exists: boolean }>>(
     `
@@ -140,6 +168,133 @@ async function tableExists(
   );
 
   return rows[0]?.exists ?? false;
+}
+
+export async function readInitialAdminCompatibilityReadback(
+  prisma: QueryRunner,
+  schemaName: string,
+): Promise<InitialAdminCompatibilityReadback> {
+  const [systemRoles, legacyBuiltInRoles, legacyCompatibilityRoles] = await Promise.all([
+    prisma.$queryRawUnsafe<Array<{ count: bigint }>>(
+      `SELECT COUNT(*)::bigint AS count FROM "${schemaName}".role WHERE is_system = true`,
+    ),
+    prisma.$queryRawUnsafe<Array<{ count: bigint }>>(
+      `
+        SELECT COUNT(*)::bigint AS count
+        FROM "${schemaName}".role
+        WHERE code = ANY($1::text[])
+          AND is_system = true
+      `,
+      [...LEGACY_BUILT_IN_ROLE_CODES],
+    ),
+    prisma.$queryRawUnsafe<Array<{ count: bigint }>>(
+      `
+        SELECT COUNT(*)::bigint AS count
+        FROM "${schemaName}".role
+        WHERE code = ANY($1::text[])
+          AND is_system = false
+      `,
+      [...LEGACY_BUILT_IN_ROLE_CODES],
+    ),
+  ]);
+
+  const hasUserRoleTable = await tableExists(prisma, schemaName, 'user_role');
+  let initialAdminAssignmentCount = 0;
+  let assignedLegacyRoleCount = 0;
+
+  if (hasUserRoleTable) {
+    const [initialAdminAssignments, assignedLegacyRoles] = await Promise.all([
+      prisma.$queryRawUnsafe<Array<{ count: bigint }>>(
+        `
+          SELECT COUNT(*)::bigint AS count
+          FROM "${schemaName}".user_role ur
+          JOIN "${schemaName}".role r ON r.id = ur.role_id
+          WHERE r.code = $1
+            AND ur.scope_type = 'tenant'
+            AND (ur.expires_at IS NULL OR ur.expires_at > now())
+        `,
+        INITIAL_ADMIN_ROLE_CODE,
+      ),
+      prisma.$queryRawUnsafe<Array<{ count: bigint }>>(
+        `
+          SELECT COUNT(*)::bigint AS count
+          FROM "${schemaName}".user_role ur
+          JOIN "${schemaName}".role r ON r.id = ur.role_id
+          WHERE r.code = ANY($1::text[])
+        `,
+        [...LEGACY_BUILT_IN_ROLE_CODES],
+      ),
+    ]);
+
+    initialAdminAssignmentCount = Number(initialAdminAssignments[0]?.count ?? 0);
+    assignedLegacyRoleCount = Number(assignedLegacyRoles[0]?.count ?? 0);
+  }
+
+  const legacyBuiltInSystemRoleCount = Number(legacyBuiltInRoles[0]?.count ?? 0);
+  let invariantStatus: InitialAdminInvariantStatus = 'not_applicable';
+  let invariantReason = 'No legacy built-in role relabeling is required.';
+
+  if (schemaName === 'tenant_template') {
+    invariantReason = 'tenant_template has no user assignments; runtime tenant readback is not applicable.';
+  } else if (legacyBuiltInSystemRoleCount > 0) {
+    if (!hasUserRoleTable) {
+      invariantStatus = 'blocked';
+      invariantReason = 'user_role table is unavailable for Initial Admin coverage readback.';
+    } else if (initialAdminAssignmentCount > 0) {
+      invariantStatus = 'passed';
+      invariantReason = 'At least one active tenant-scope Initial Admin assignment exists.';
+    } else {
+      invariantStatus = 'blocked';
+      invariantReason =
+        'Legacy built-in role relabeling requires an active tenant-scope Initial Admin assignment.';
+    }
+  }
+
+  const roleDefinitionRecords = await prisma.$queryRawUnsafe<RoleDefinitionRecordReadback[]>(
+    `
+      SELECT
+        code as "roleCode",
+        created_at as "createdAt",
+        updated_at as "updatedAt",
+        extra_data -> 'roleDefinitionRecord' as "roleDefinitionRecord"
+      FROM "${schemaName}".role
+      WHERE code = $1
+         OR code = ANY($2::text[])
+      ORDER BY code
+    `,
+    INITIAL_ADMIN_ROLE_CODE,
+    [...LEGACY_BUILT_IN_ROLE_CODES],
+  );
+
+  return {
+    schemaName,
+    systemRoleCount: Number(systemRoles[0]?.count ?? 0),
+    legacyBuiltInSystemRoleCount,
+    initialAdminAssignmentCount,
+    assignedLegacyRoleCount,
+    legacyCompatibilityRoleCount: Number(legacyCompatibilityRoles[0]?.count ?? 0),
+    zeroDeletedRoleRows: true,
+    noLastAdminInvariant: {
+      status: invariantStatus,
+      reason: invariantReason,
+    },
+    roleDefinitionRecords,
+  };
+}
+
+export async function assertInitialAdminCompatibilityReadback(
+  prisma: QueryRunner,
+  schemaName: string,
+): Promise<InitialAdminCompatibilityReadback> {
+  const readback = await readInitialAdminCompatibilityReadback(prisma, schemaName);
+
+  if (readback.noLastAdminInvariant.status === 'blocked') {
+    throw new Error(
+      `Cannot relabel legacy RBAC roles in ${schemaName}: ${readback.noLastAdminInvariant.reason}`,
+    );
+  }
+
+  return readback;
 }
 
 async function getMissingRequiredTables(
@@ -217,6 +372,8 @@ export async function syncSchema(
 
   const before = await getSchemaCounts(prisma, schemaName);
 
+  let initialAdminReadback: InitialAdminCompatibilityReadback | null = null;
+
   await prisma.$transaction(async (tx) => {
     for (const resource of RBAC_RESOURCES) {
       await tx.$executeRawUnsafe(`
@@ -264,6 +421,8 @@ export async function syncSchema(
       `, role.code, JSON.stringify(role.name), role.description, role.isSystem);
     }
 
+    initialAdminReadback = await assertInitialAdminCompatibilityReadback(tx, schemaName);
+
     await tx.$executeRawUnsafe(`
       UPDATE "${schemaName}".role
       SET is_system = false,
@@ -298,7 +457,11 @@ export async function syncSchema(
 
   const after = await getSchemaCounts(prisma, schemaName);
 
-  return { schemaName, before, after };
+  if (!initialAdminReadback) {
+    throw new Error(`Missing Initial Admin compatibility readback for ${schemaName}`);
+  }
+
+  return { schemaName, before, after, initialAdminReadback };
 }
 
 export async function resolveTargetSchemas(

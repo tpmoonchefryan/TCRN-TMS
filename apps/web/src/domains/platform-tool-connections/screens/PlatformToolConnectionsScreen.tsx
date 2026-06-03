@@ -185,7 +185,6 @@ export function PlatformToolConnectionsScreen({
 
   useEffect(() => {
     void load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [environment, family]);
 
   useEffect(() => {

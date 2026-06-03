@@ -78,6 +78,8 @@ type AdapterSummaryState = {
   error: string | null;
 };
 
+const SHOW_AC_READINESS_HANDOFF = false;
+
 interface FieldProps {
   label: string;
   hint?: string;
@@ -865,7 +867,6 @@ export function ObservabilityScreen({
     } else {
       setAdapterSummary({ data: [], loading: false, error: null });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAcWorkspace, request]);
 
   const activeCount = useMemo(() => {
@@ -1153,7 +1154,7 @@ export function ObservabilityScreen({
         </div>
       </GlassSurface>
 
-      {false && isAcWorkspace ? (
+      {SHOW_AC_READINESS_HANDOFF && isAcWorkspace ? (
         <GlassSurface
           className="space-y-4 p-4"
           data-observability-adapter-summary="ac-readiness-handoff"

@@ -35,6 +35,7 @@ describe('UserRoleService', () => {
       checkPermission: vi.fn(),
       refreshAndCheckPermission: vi.fn(),
       refreshUserSnapshots: vi.fn(),
+      incrementPermissionVersion: vi.fn().mockResolvedValue(4),
     };
 
     mockDelegatedAdminService = {
@@ -256,6 +257,15 @@ describe('UserRoleService', () => {
         null
       );
       expect(mockSnapshotService.refreshUserSnapshots).toHaveBeenCalledWith(testSchema, 'user-2');
+      expect(mockSnapshotService.incrementPermissionVersion).toHaveBeenCalledWith(testSchema);
+      expect(mockPrisma.$executeRawUnsafe).toHaveBeenCalledWith(
+        expect.stringContaining('permission_governance_assignment'),
+        grantorUserId,
+        'role_assignment_create',
+        'assignment-1',
+        'ADMIN',
+        expect.stringContaining('"permissionVersionAfter":4')
+      );
     });
 
     it('rejects workspace-incompatible roles before writing assignments', async () => {
@@ -280,6 +290,106 @@ describe('UserRoleService', () => {
 
       expect(mockSnapshotService.checkPermission).not.toHaveBeenCalled();
       expect(mockPrisma.$executeRawUnsafe).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('Initial Admin assignment rescue invariant', () => {
+    it('fails closed when removing the last active tenant-scope Initial Admin assignment', async () => {
+      mockPrisma.$queryRawUnsafe
+        .mockResolvedValueOnce([
+          {
+            id: 'assignment-initial-admin',
+            roleCode: 'INITIAL_ADMIN',
+            scopeType: 'tenant',
+            scopeId: null,
+            expiresAt: null,
+          },
+        ])
+        .mockResolvedValueOnce([{ count: 0n }]);
+
+      await expect(
+        service.removeAssignment('assignment-initial-admin', testSchema, grantorUserId)
+      ).rejects.toMatchObject({
+        response: expect.objectContaining({
+          code: 'INITIAL_ADMIN_RESCUE_REQUIRED',
+        }),
+      });
+
+      expect(mockPrisma.$executeRawUnsafe).not.toHaveBeenCalled();
+      expect(mockSnapshotService.incrementPermissionVersion).not.toHaveBeenCalled();
+      expect(mockSnapshotService.refreshUserSnapshots).not.toHaveBeenCalled();
+    });
+
+    it('fails closed when expiring the last active tenant-scope Initial Admin assignment', async () => {
+      mockPrisma.$queryRawUnsafe
+        .mockResolvedValueOnce([
+          {
+            id: 'assignment-initial-admin',
+            roleCode: 'INITIAL_ADMIN',
+            scopeType: 'tenant',
+            scopeId: null,
+            expiresAt: null,
+          },
+        ])
+        .mockResolvedValueOnce([{ count: 0n }]);
+
+      await expect(
+        service.updateAssignment(
+          'assignment-initial-admin',
+          testSchema,
+          {
+            expiresAt: new Date(Date.now() - 1000),
+          },
+          grantorUserId
+        )
+      ).rejects.toMatchObject({
+        response: expect.objectContaining({
+          code: 'INITIAL_ADMIN_RESCUE_REQUIRED',
+        }),
+      });
+
+      expect(mockPrisma.$executeRawUnsafe).not.toHaveBeenCalled();
+      expect(mockSnapshotService.incrementPermissionVersion).not.toHaveBeenCalled();
+      expect(mockSnapshotService.refreshUserSnapshots).not.toHaveBeenCalled();
+    });
+
+    it('uses the current operator as the assignment removal audit actor', async () => {
+      mockPrisma.$queryRawUnsafe
+        .mockResolvedValueOnce([
+          {
+            id: 'assignment-viewer',
+            roleCode: 'VIEWER',
+            scopeType: 'tenant',
+            scopeId: null,
+            expiresAt: null,
+          },
+        ])
+        .mockResolvedValueOnce([
+          {
+            id: 'assignment-viewer',
+            userId: 'user-2',
+            roleId: 'role-viewer',
+            roleCode: 'VIEWER',
+            scopeType: 'tenant',
+            scopeId: null,
+            inherit: false,
+            grantedBy: 'original-grantor',
+            expiresAt: null,
+          },
+        ]);
+
+      await service.removeAssignment('assignment-viewer', testSchema, grantorUserId);
+
+      expect(mockSnapshotService.incrementPermissionVersion).toHaveBeenCalledWith(testSchema);
+      expect(mockSnapshotService.refreshUserSnapshots).toHaveBeenCalledWith(testSchema, 'user-2');
+      expect(mockPrisma.$executeRawUnsafe).toHaveBeenCalledWith(
+        expect.stringContaining('permission_governance_assignment'),
+        grantorUserId,
+        'role_assignment_remove',
+        'assignment-viewer',
+        'VIEWER',
+        expect.stringContaining('"permissionVersionAfter":4')
+      );
     });
   });
 });
