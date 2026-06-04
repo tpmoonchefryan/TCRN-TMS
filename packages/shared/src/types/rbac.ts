@@ -56,7 +56,6 @@ export interface SystemRoleRecord {
   name: LocalizedText;
   description: string | null;
   isSystem: boolean;
-  isActive: boolean;
   createdAt?: string;
   updatedAt?: string;
   version?: number;
@@ -175,7 +174,6 @@ export interface RoleSummary {
   name: string;
   description: string | null;
   isSystem: boolean;
-  isActive: boolean;
   permissionCount: number;
   userCount: number;
   createdAt: string;
@@ -189,7 +187,6 @@ export interface RoleDetail {
   nameTranslations: LocalizedText;
   description: string | null;
   isSystem: boolean;
-  isActive: boolean;
   permissions: RolePermission[];
   createdAt: string;
   updatedAt: string;
