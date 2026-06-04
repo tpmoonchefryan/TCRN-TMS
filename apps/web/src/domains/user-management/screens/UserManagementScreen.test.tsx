@@ -110,7 +110,7 @@ describe('UserManagementScreen', () => {
     });
 
     mockRequest.mockImplementation(async (path: string) => {
-      if (path === '/api/v1/system-roles?isActive=true') {
+      if (path === '/api/v1/roles') {
         return [
           {
             id: 'role-1',
@@ -198,7 +198,7 @@ describe('UserManagementScreen', () => {
     });
 
     mockRequest.mockImplementation(async (path: string) => {
-      if (path === '/api/v1/system-roles?isActive=true') {
+      if (path === '/api/v1/roles') {
         return [];
       }
 
@@ -258,7 +258,7 @@ describe('UserManagementScreen', () => {
         };
       }
 
-      if (path === '/api/v1/system-roles?isActive=true') {
+      if (path === '/api/v1/roles') {
         return [];
       }
 
@@ -319,7 +319,7 @@ describe('UserManagementScreen', () => {
     });
 
     mockRequest.mockImplementation(async (path: string) => {
-      if (path === '/api/v1/system-roles?isActive=true') {
+      if (path === '/api/v1/roles') {
         return [];
       }
 
@@ -358,7 +358,7 @@ describe('UserManagementScreen', () => {
     });
 
     mockRequest.mockImplementation(async (path: string) => {
-      if (path === '/api/v1/system-roles?isActive=true') {
+      if (path === '/api/v1/roles') {
         return [
           {
             id: 'role-1',
@@ -424,7 +424,7 @@ describe('UserManagementScreen', () => {
     });
 
     mockRequest.mockImplementation(async (path: string) => {
-      if (path === '/api/v1/system-roles?isActive=true') {
+      if (path === '/api/v1/roles') {
         return [
           {
             id: 'role-1',
@@ -507,7 +507,7 @@ describe('UserManagementScreen', () => {
     });
 
     mockRequest.mockImplementation(async (path: string, init?: RequestInit) => {
-      if (path === '/api/v1/system-roles?isActive=true') {
+      if (path === '/api/v1/roles') {
         return [
           {
             id: 'role-1',
@@ -623,7 +623,7 @@ describe('UserManagementScreen', () => {
     });
 
     mockRequest.mockImplementation(async (path: string) => {
-      if (path === '/api/v1/system-roles?isActive=true') {
+      if (path === '/api/v1/roles') {
         return [];
       }
 
@@ -742,7 +742,7 @@ describe('UserManagementScreen', () => {
     });
 
     mockRequest.mockImplementation(async (path: string) => {
-      if (path === '/api/v1/system-roles?isActive=true') {
+      if (path === '/api/v1/roles') {
         return roleItems;
       }
 

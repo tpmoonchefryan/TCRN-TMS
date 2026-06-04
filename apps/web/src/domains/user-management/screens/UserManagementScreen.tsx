@@ -24,11 +24,11 @@ import {
   type DelegatedAdminListItem,
   forceSystemUserTotp,
   listDelegatedAdmins,
-  listSystemRoles,
+  listRoles,
   listSystemUsers,
   reactivateSystemUser,
   removeDelegatedAdmin,
-  type SystemRoleListItem,
+  type RoleListItem,
   type SystemUserListItem,
 } from '@/domains/user-management/api/user-management.api';
 import {
@@ -393,7 +393,7 @@ export function UserManagementScreen({
     loading: true,
     error: null,
   });
-  const [rolesPanel, setRolesPanel] = useState<PanelState<SystemRoleListItem>>({
+  const [rolesPanel, setRolesPanel] = useState<PanelState<RoleListItem>>({
     data: [],
     pagination: buildFallbackPagination(0, 1, PAGE_SIZE_OPTIONS[0]),
     loading: true,
@@ -530,7 +530,7 @@ export function UserManagementScreen({
     }));
 
     try {
-      const data = await listSystemRoles(request, { isActive: true });
+      const data = await listRoles(request);
       const visibleRoles = data.filter((role) =>
         isRoleVisibleInWorkspace(role, session?.tenantTier)
       );
@@ -776,7 +776,7 @@ export function UserManagementScreen({
   const delegationScopeOptions = scopeOptionsPanel.data.filter(
     (option) => option.type === delegationDraft.scopeType
   );
-  const delegationDelegateOptions: Array<SystemUserListItem | SystemRoleListItem> =
+  const delegationDelegateOptions: Array<SystemUserListItem | RoleListItem> =
     delegationDraft.delegateType === 'user'
       ? usersPanel.data
       : rolesPanel.data;
@@ -823,9 +823,9 @@ export function UserManagementScreen({
               hint={managementCopy.summaryVisibleUsersHint(workspaceSessionLabel)}
             />
             <SummaryCard
-              label={managementCopy.summaryActiveRolesLabel}
+              label={managementCopy.summaryRoleTemplatesLabel}
               value={String(rolesPanel.data.length)}
-              hint={managementCopy.summaryActiveRolesHint}
+              hint={managementCopy.summaryRoleTemplatesHint}
             />
             <SummaryCard
               label={managementCopy.summaryDelegationsLabel}

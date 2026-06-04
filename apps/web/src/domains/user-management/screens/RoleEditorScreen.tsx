@@ -1,8 +1,12 @@
 'use client';
 
 import {
+  deriveCapabilityPackState,
   INITIAL_ADMIN_ROLE_CODE,
   RBAC_RESOURCES,
+  ROLE_CAPABILITY_PACKS,
+  type RoleRawPermissionStateInput,
+  type SupportedUiLocale,
 } from '@tcrn/shared';
 import { AlertTriangle, ArrowLeft, Languages } from 'lucide-react';
 import Link from 'next/link';
@@ -10,11 +14,11 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useId, useState } from 'react';
 
 import {
-  createSystemRole,
-  readSystemRoleDetail,
-  type SystemRoleDetailResponse,
-  type SystemRolePermissionRecord,
-  updateSystemRole,
+  createRole,
+  readRoleDetail,
+  type RoleDetailResponse,
+  type RolePermissionRecord,
+  updateRole,
 } from '@/domains/user-management/api/user-management.api';
 import {
   buildAcRoleEditorPath,
@@ -36,7 +40,13 @@ import {
   type PageSizeOption,
 } from '@/platform/runtime/pagination/pagination';
 import { useSession } from '@/platform/runtime/session/session-provider';
-import { AsyncSubmitButton, GlassSurface, StateView, TranslationDrawer } from '@/platform/ui';
+import {
+  AsyncSubmitButton,
+  ConfirmActionDialog,
+  GlassSurface,
+  StateView,
+  TranslationDrawer,
+} from '@/platform/ui';
 
 import {
   RoleAdvancedPermissionMatrix,
@@ -72,6 +82,10 @@ interface TranslationOptionsState {
   loading: boolean;
 }
 
+interface RoleSaveImpactDialogState {
+  messages: string[];
+}
+
 const inputClassName =
   'w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400 disabled:cursor-not-allowed disabled:bg-slate-100';
 
@@ -91,7 +105,7 @@ function createEmptyRoleEditorDraft(): RoleEditorDraft {
   };
 }
 
-function buildRoleEditorDraft(detail?: SystemRoleDetailResponse | null): RoleEditorDraft {
+function buildRoleEditorDraft(detail?: RoleDetailResponse | null): RoleEditorDraft {
   const permissionStates = { ...EMPTY_ROLE_PERMISSION_STATES };
 
   detail?.permissions.forEach((permission) => {
@@ -108,7 +122,7 @@ function buildRoleEditorDraft(detail?: SystemRoleDetailResponse | null): RoleEdi
 }
 
 function buildRolePermissionPayload(permissionStates: Record<string, RolePermissionSelection>) {
-  const permissions: SystemRolePermissionRecord[] = [];
+  const permissions: RolePermissionRecord[] = [];
 
   RBAC_RESOURCES.forEach((resource) => {
     resource.supportedActions.forEach((action) => {
@@ -125,6 +139,85 @@ function buildRolePermissionPayload(permissionStates: Record<string, RolePermiss
   });
 
   return permissions;
+}
+
+function buildRoleRawPermissionStateInputs(
+  permissionStates: Record<string, RolePermissionSelection>
+): RoleRawPermissionStateInput[] {
+  return RBAC_RESOURCES.flatMap((resource) =>
+    resource.supportedActions.map((action) => ({
+      resource: resource.code,
+      action,
+      state: permissionStates[`${resource.code}:${action}`] || 'unset',
+    }))
+  );
+}
+
+function buildRoleSaveImpactMessages(
+  mode: 'create' | 'edit',
+  draft: RoleEditorDraft,
+  detail: RoleDetailResponse | null,
+  locale: SupportedUiLocale
+) {
+  const currentStates = buildRoleRawPermissionStateInputs(draft.permissionStates);
+  const previousStates = buildRoleRawPermissionStateInputs(
+    mode === 'edit' ? buildRoleEditorDraft(detail).permissionStates : EMPTY_ROLE_PERMISSION_STATES
+  );
+  const previousStateByKey = new Map(
+    previousStates.map((entry) => [`${entry.resource}:${entry.action}`, entry.state])
+  );
+  const affectedUsers = detail?.userCount ?? detail?.assignedUsers.length ?? 0;
+  const criticalGrantPacks = ROLE_CAPABILITY_PACKS.filter((pack) => {
+    if (pack.code === 'role.initial_admin.all' || pack.riskTier !== 'critical') {
+      return false;
+    }
+
+    const currentState = deriveCapabilityPackState(pack, currentStates);
+    const previousState = deriveCapabilityPackState(pack, previousStates);
+    return currentState === 'grant' && previousState !== 'grant';
+  });
+  const deniedPreviouslyGrantedPacks = ROLE_CAPABILITY_PACKS.filter((pack) => {
+    if (pack.code === 'role.initial_admin.all') {
+      return false;
+    }
+
+    const currentState = deriveCapabilityPackState(pack, currentStates);
+    const previousState = deriveCapabilityPackState(pack, previousStates);
+    return previousState === 'grant' && currentState === 'deny';
+  });
+  const contractedPermissionCount = currentStates.filter((entry) => {
+    const previousState = previousStateByKey.get(`${entry.resource}:${entry.action}`) ?? 'unset';
+    return previousState === 'grant' && entry.state !== 'grant';
+  }).length;
+  const messages: string[] = [];
+
+  if (criticalGrantPacks.length > 0) {
+    const packNames = criticalGrantPacks
+      .map((pack) => pickLocaleText(locale, pack.label))
+      .join(', ');
+    messages.push(`Critical capability grant: ${packNames}.`);
+  }
+
+  if (deniedPreviouslyGrantedPacks.length > 0) {
+    const packNames = deniedPreviouslyGrantedPacks
+      .map((pack) => pickLocaleText(locale, pack.label))
+      .join(', ');
+    messages.push(`Previously granted capabilities will be denied: ${packNames}.`);
+  }
+
+  if (contractedPermissionCount > 0) {
+    messages.push(
+      `${contractedPermissionCount} previously granted permission decision${contractedPermissionCount === 1 ? '' : 's'} will be changed to Deny or Unset.`
+    );
+  }
+
+  if (affectedUsers > 0 && messages.length > 0) {
+    messages.push(
+      `${affectedUsers} assigned user${affectedUsers === 1 ? '' : 's'} may have effective access changed after the permission version and snapshot refresh complete.`
+    );
+  }
+
+  return messages;
 }
 
 function normalizeOptionalString(value: string) {
@@ -180,11 +273,12 @@ export function RoleEditorScreen({
       ? buildAcRoleEditorPath(tenantId, roleId)
       : buildTenantRoleEditorPath(tenantId, roleId);
   const [draft, setDraft] = useState<RoleEditorDraft>(createEmptyRoleEditorDraft);
-  const [detail, setDetail] = useState<SystemRoleDetailResponse | null>(null);
+  const [detail, setDetail] = useState<RoleDetailResponse | null>(null);
   const [loading, setLoading] = useState(mode === 'edit');
   const [loadError, setLoadError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [notice, setNotice] = useState<{ tone: 'success' | 'error'; message: string } | null>(null);
+  const [saveImpactDialog, setSaveImpactDialog] = useState<RoleSaveImpactDialogState | null>(null);
   const [translationDrawerOpen, setTranslationDrawerOpen] = useState(false);
   const [translationOptionsState, setTranslationOptionsState] = useState<TranslationOptionsState>({
     data: [],
@@ -213,7 +307,7 @@ export function RoleEditorScreen({
       setLoadError(null);
 
       try {
-        const nextDetail = await readSystemRoleDetail(request, targetSystemRoleId);
+        const nextDetail = await readRoleDetail(request, targetSystemRoleId);
 
         if (cancelled) {
           return;
@@ -319,7 +413,7 @@ export function RoleEditorScreen({
     }
   }, [assignedUsersPage, assignedUsersPagination.page]);
 
-  async function handleSaveRole() {
+  async function submitRoleSave() {
     const validationError = validateRoleEditorDraft(mode, draft, roleEditorCopy);
 
     if (validationError) {
@@ -342,7 +436,7 @@ export function RoleEditorScreen({
 
     try {
       if (mode === 'create') {
-        const created = await createSystemRole(request, {
+        const created = await createRole(request, {
           code: draft.code.trim().toUpperCase(),
           name: buildLocalizedTextPayload(draft.nameBase, draft.nameLocaleValues),
           description: normalizeOptionalString(draft.description),
@@ -359,14 +453,14 @@ export function RoleEditorScreen({
         throw new Error(roleEditorCopy.missingTargetError);
       }
 
-      await updateSystemRole(request, targetRoleId, {
+      await updateRole(request, targetRoleId, {
         name: buildLocalizedTextPayload(draft.nameBase, draft.nameLocaleValues),
         description: normalizeOptionalString(draft.description),
         permissions,
         version: detail?.version,
       });
 
-      const refreshed = await readSystemRoleDetail(request, targetRoleId);
+      const refreshed = await readRoleDetail(request, targetRoleId);
       setDetail(refreshed);
       setDraft(buildRoleEditorDraft(refreshed));
       setNotice({
@@ -384,6 +478,27 @@ export function RoleEditorScreen({
     } finally {
       setSubmitting(false);
     }
+  }
+
+  function handleSaveRole() {
+    const validationError = validateRoleEditorDraft(mode, draft, roleEditorCopy);
+
+    if (validationError) {
+      setNotice({
+        tone: 'error',
+        message: validationError,
+      });
+      return;
+    }
+
+    const messages = buildRoleSaveImpactMessages(mode, draft, detail, locale);
+
+    if (messages.length > 0) {
+      setSaveImpactDialog({ messages });
+      return;
+    }
+
+    void submitRoleSave();
   }
 
   if (mode === 'edit' && loading) {
@@ -867,20 +982,18 @@ export function RoleEditorScreen({
           </div>
 
           {isInitialAdminReadOnly ? null : (
-          <div className="flex justify-end">
-            <AsyncSubmitButton
-              type="button"
-              isPending={submitting}
-              pendingText={
-                mode === 'create' ? roleEditorCopy.pendingCreate : roleEditorCopy.pendingSave
-              }
-              onClick={() => {
-                void handleSaveRole();
-              }}
-            >
-              {mode === 'create' ? roleEditorCopy.submitCreate : roleEditorCopy.submitSave}
-            </AsyncSubmitButton>
-          </div>
+            <div className="flex justify-end">
+              <AsyncSubmitButton
+                type="button"
+                isPending={submitting}
+                pendingText={
+                  mode === 'create' ? roleEditorCopy.pendingCreate : roleEditorCopy.pendingSave
+                }
+                onClick={handleSaveRole}
+              >
+                {mode === 'create' ? roleEditorCopy.submitCreate : roleEditorCopy.submitSave}
+              </AsyncSubmitButton>
+            </div>
           )}
         </div>
       </GlassSurface>
@@ -912,6 +1025,38 @@ export function RoleEditorScreen({
         }
         emptyTranslationsText={translationDrawerLabels.emptyTranslationsText}
         baseValueSuffix={translationDrawerLabels.baseValueSuffix}
+      />
+
+      <ConfirmActionDialog
+        open={saveImpactDialog !== null}
+        title="Review role permission impact"
+        description={
+          <div className="space-y-3">
+            <p>
+              Saving this role can change effective access. Review critical grants, Deny/Unset
+              contractions, assigned users, and snapshot refresh expectations before continuing.
+            </p>
+            <ul className="list-disc space-y-1 pl-5">
+              {saveImpactDialog?.messages.map((message) => (
+                <li key={message}>{message}</li>
+              ))}
+            </ul>
+          </div>
+        }
+        confirmText={mode === 'create' ? roleEditorCopy.submitCreate : roleEditorCopy.submitSave}
+        pendingText={mode === 'create' ? roleEditorCopy.pendingCreate : roleEditorCopy.pendingSave}
+        cancelText={sharedCopy.cancel}
+        intent="primary"
+        isPending={submitting}
+        onOpenChange={(open) => {
+          if (!open && !submitting) {
+            setSaveImpactDialog(null);
+          }
+        }}
+        onConfirm={async () => {
+          await submitRoleSave();
+          setSaveImpactDialog(null);
+        }}
       />
     </div>
   );

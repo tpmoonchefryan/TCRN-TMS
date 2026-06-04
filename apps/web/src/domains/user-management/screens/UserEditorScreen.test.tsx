@@ -79,7 +79,7 @@ describe('UserEditorScreen', () => {
 
   it('creates a user from the dedicated route-level editor and redirects to the editor page', async () => {
     mockRequest.mockImplementation(async (path: string, init?: RequestInit) => {
-      if (path === '/api/v1/system-roles?isActive=true') {
+      if (path === '/api/v1/roles') {
         return [];
       }
 
@@ -180,7 +180,7 @@ describe('UserEditorScreen', () => {
     };
 
     mockRequest.mockImplementation(async (path: string, init?: RequestInit) => {
-      if (path === '/api/v1/system-roles?isActive=true') {
+      if (path === '/api/v1/roles') {
         return [
           {
             id: 'role-1',
@@ -381,7 +381,7 @@ describe('UserEditorScreen', () => {
     };
 
     mockRequest.mockImplementation(async (path: string, init?: RequestInit) => {
-      if (path === '/api/v1/system-roles?isActive=true') {
+      if (path === '/api/v1/roles') {
         return [
           {
             id: 'role-initial-admin',
@@ -518,7 +518,7 @@ describe('UserEditorScreen', () => {
     };
 
     mockRequest.mockImplementation(async (path: string, init?: RequestInit) => {
-      if (path === '/api/v1/system-roles?isActive=true') {
+      if (path === '/api/v1/roles') {
         return [
           {
             id: 'role-1',
@@ -658,7 +658,7 @@ describe('UserEditorScreen', () => {
     };
 
     mockRequest.mockImplementation(async (path: string, init?: RequestInit) => {
-      if (path === '/api/v1/system-roles?isActive=true') {
+      if (path === '/api/v1/roles') {
         return [
           {
             id: 'role-1',

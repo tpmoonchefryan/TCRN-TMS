@@ -24,10 +24,10 @@ import {
   checkCurrentUserPermission,
   createSystemUser,
   createUserRoleAssignment,
-  listSystemRoles,
+  listRoles,
   readSystemUserDetail,
   removeUserRoleAssignment,
-  type SystemRoleListItem,
+  type RoleListItem,
   type SystemUserDetailResponse,
   updateSystemUser,
   updateUserRoleAssignment,
@@ -243,7 +243,7 @@ export function UserEditorScreen({
   } | null>(null);
   const [canAssignTenantRoles, setCanAssignTenantRoles] = useState<boolean | null>(null);
   const [blockedAssignmentScopeKey, setBlockedAssignmentScopeKey] = useState<string | null>(null);
-  const [roles, setRoles] = useState<SystemRoleListItem[]>([]);
+  const [roles, setRoles] = useState<RoleListItem[]>([]);
   const [roleLoadError, setRoleLoadError] = useState<string | null>(null);
   const [scopeOptions, setScopeOptions] = useState<OrganizationScopeOption[]>([
     {
@@ -281,7 +281,7 @@ export function UserEditorScreen({
     async function loadSupportingData() {
       try {
         const [availableRoles, organizationTree, canAssignTenantRole] = await Promise.all([
-          listSystemRoles(request, { isActive: true }),
+          listRoles(request),
           readOrganizationTree(request),
           checkCurrentUserPermission(request, {
             resource: 'system_user',

@@ -31,6 +31,17 @@ function stringifyJsonb(value: unknown): string {
   );
 }
 
+function assertTenantSchemaName(tenantSchema: string): string {
+  if (!/^[A-Za-z0-9_]+$/.test(tenantSchema)) {
+    throw new BadRequestException({
+      code: ErrorCodes.VALIDATION_FIELD_INVALID,
+      message: 'Invalid tenant schema',
+    });
+  }
+
+  return tenantSchema;
+}
+
 export interface RoleData {
   id: string;
   code: string;
@@ -42,6 +53,41 @@ export interface RoleData {
   createdAt: Date;
   updatedAt: Date;
   version: number;
+}
+
+export interface RoleScopeBindingData {
+  scopeType: string;
+  scopeId: string | null;
+  scopeName: string | null;
+  scopePath: string | null;
+  assignmentCount: number;
+  userCount: number;
+  inheritedAssignmentCount: number;
+}
+
+export interface RoleAssignedUserData {
+  assignmentId: string;
+  userId: string;
+  username: string;
+  email: string;
+  displayName: string | null;
+  avatarUrl: string | null;
+  isActive: boolean;
+  scopeType: string;
+  scopeId: string | null;
+  scopeName: string | null;
+  scopePath: string | null;
+  inherit: boolean;
+  grantedAt: Date;
+  expiresAt: Date | null;
+}
+
+export interface RoleDetailData extends RoleData {
+  permissions: RolePermission[];
+  permissionCount: number;
+  userCount: number;
+  scopeBindings: RoleScopeBindingData[];
+  assignedUsers: RoleAssignedUserData[];
 }
 
 /**
@@ -153,6 +199,141 @@ export class RoleService {
       id
     );
     return results[0] || null;
+  }
+
+  /**
+   * Find role detail by ID for the canonical /roles read path.
+   */
+  async findDetailById(
+    id: string,
+    tenantSchema: string,
+    language: string = 'en'
+  ): Promise<RoleDetailData | null> {
+    const safeTenantSchema = assertTenantSchemaName(tenantSchema);
+    const role = await this.findById(id, safeTenantSchema);
+
+    if (!role) {
+      return null;
+    }
+
+    const permissions = await this.getRolePermissions(id, safeTenantSchema, language);
+    const scopeBindings = await prisma.$queryRawUnsafe<RoleScopeBindingData[]>(
+      `
+      SELECT
+        ur.scope_type as "scopeType",
+        ur.scope_id as "scopeId",
+        CASE
+          WHEN ur.scope_type = 'tenant' THEN 'Tenant root'
+          WHEN ur.scope_type = 'subsidiary' THEN (
+            SELECT COALESCE(s.name->>'zh_HANS', s.name->>'en')
+            FROM "${safeTenantSchema}".subsidiary s
+            WHERE s.id = ur.scope_id
+          )
+          WHEN ur.scope_type = 'talent' THEN (
+            SELECT t.display_name
+            FROM "${safeTenantSchema}".talent t
+            WHERE t.id = ur.scope_id
+          )
+          ELSE NULL
+        END as "scopeName",
+        CASE
+          WHEN ur.scope_type = 'subsidiary' THEN (
+            SELECT s.path
+            FROM "${safeTenantSchema}".subsidiary s
+            WHERE s.id = ur.scope_id
+          )
+          WHEN ur.scope_type = 'talent' THEN (
+            SELECT t.path
+            FROM "${safeTenantSchema}".talent t
+            WHERE t.id = ur.scope_id
+          )
+          ELSE NULL
+        END as "scopePath",
+        COUNT(*)::int as "assignmentCount",
+        COUNT(DISTINCT ur.user_id)::int as "userCount",
+        SUM(CASE WHEN ur.inherit THEN 1 ELSE 0 END)::int as "inheritedAssignmentCount"
+      FROM "${safeTenantSchema}".user_role ur
+      WHERE ur.role_id = $1::uuid
+      GROUP BY ur.scope_type, ur.scope_id
+      ORDER BY
+        CASE ur.scope_type
+          WHEN 'tenant' THEN 0
+          WHEN 'subsidiary' THEN 1
+          WHEN 'talent' THEN 2
+          ELSE 3
+        END,
+        "scopeName" ASC NULLS FIRST
+      `,
+      id
+    );
+    const assignedUsers = await prisma.$queryRawUnsafe<RoleAssignedUserData[]>(
+      `
+      SELECT
+        ur.id as "assignmentId",
+        su.id as "userId",
+        su.username,
+        su.email,
+        su.display_name as "displayName",
+        su.avatar_url as "avatarUrl",
+        su.is_active as "isActive",
+        ur.scope_type as "scopeType",
+        ur.scope_id as "scopeId",
+        CASE
+          WHEN ur.scope_type = 'tenant' THEN 'Tenant root'
+          WHEN ur.scope_type = 'subsidiary' THEN (
+            SELECT COALESCE(s.name->>'zh_HANS', s.name->>'en')
+            FROM "${safeTenantSchema}".subsidiary s
+            WHERE s.id = ur.scope_id
+          )
+          WHEN ur.scope_type = 'talent' THEN (
+            SELECT t.display_name
+            FROM "${safeTenantSchema}".talent t
+            WHERE t.id = ur.scope_id
+          )
+          ELSE NULL
+        END as "scopeName",
+        CASE
+          WHEN ur.scope_type = 'subsidiary' THEN (
+            SELECT s.path
+            FROM "${safeTenantSchema}".subsidiary s
+            WHERE s.id = ur.scope_id
+          )
+          WHEN ur.scope_type = 'talent' THEN (
+            SELECT t.path
+            FROM "${safeTenantSchema}".talent t
+            WHERE t.id = ur.scope_id
+          )
+          ELSE NULL
+        END as "scopePath",
+        ur.inherit,
+        ur.granted_at as "grantedAt",
+        ur.expires_at as "expiresAt"
+      FROM "${safeTenantSchema}".user_role ur
+      JOIN "${safeTenantSchema}".system_user su ON su.id = ur.user_id
+      WHERE ur.role_id = $1::uuid
+      ORDER BY
+        CASE ur.scope_type
+          WHEN 'tenant' THEN 0
+          WHEN 'subsidiary' THEN 1
+          WHEN 'talent' THEN 2
+          ELSE 3
+        END,
+        COALESCE(su.display_name, su.username) ASC,
+        su.username ASC
+      `,
+      id
+    );
+    const distinctAssignedUserCount = new Set(assignedUsers.map((assignment) => assignment.userId))
+      .size;
+
+    return {
+      ...role,
+      permissions,
+      permissionCount: permissions.length,
+      userCount: distinctAssignedUserCount,
+      scopeBindings,
+      assignedUsers,
+    };
   }
 
   /**

@@ -245,6 +245,7 @@ export function RoleCapabilityPackEditor({
                     {packState === 'mixed' ? (
                       <p className="text-xs leading-5 text-amber-700">
                         This capability has different states across its underlying permissions.
+                        Open details to review each permission.
                       </p>
                     ) : null}
                   </div>

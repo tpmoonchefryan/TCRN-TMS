@@ -1,5 +1,5 @@
 import type { SupportedUiLocale } from '@tcrn/shared';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { localizedFixture } from '@/domains/config-dictionary-settings/testing/localized-fixtures';
@@ -150,7 +150,7 @@ describe('RoleEditorScreen', () => {
     };
 
     mockRequest.mockImplementation(async (path: string, init?: RequestInit) => {
-      if (path === '/api/v1/system-roles/role-1' && !init) {
+      if (path === '/api/v1/roles/role-1' && !init) {
         return detail;
       }
 
@@ -222,6 +222,21 @@ describe('RoleEditorScreen', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Save role' }));
 
+    const impactDialog = await screen.findByRole('dialog', {
+      name: 'Review role permission impact',
+    });
+    expect(
+      within(impactDialog).getByText(
+        '1 previously granted permission decision will be changed to Deny or Unset.'
+      )
+    ).toBeInTheDocument();
+    expect(
+      within(impactDialog).getByText(
+        '3 assigned users may have effective access changed after the permission version and snapshot refresh complete.'
+      )
+    ).toBeInTheDocument();
+    fireEvent.click(within(impactDialog).getByRole('button', { name: 'Save role' }));
+
     await waitFor(() => {
       expect(mockRequest).toHaveBeenCalledWith(
         '/api/v1/roles/role-1',
@@ -281,7 +296,7 @@ describe('RoleEditorScreen', () => {
     };
 
     mockRequest.mockImplementation(async (path: string) => {
-      if (path === '/api/v1/system-roles/role-1') {
+      if (path === '/api/v1/roles/role-1') {
         return detail;
       }
 

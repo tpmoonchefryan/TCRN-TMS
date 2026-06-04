@@ -268,23 +268,27 @@ const ROLE_LIST_ITEM_SCHEMA = {
     id: { type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440000' },
     code: { type: 'string', example: 'SALES_MANAGER' },
     name: { type: 'string', example: 'Sales Manager' },
+    localizedName: { type: 'string', example: 'Sales Manager' },
     description: { type: 'string', nullable: true, example: 'Manages sales operations' },
     isSystem: { type: 'boolean', example: false },
     isActive: { type: 'boolean', example: true },
     permissionCount: { type: 'integer', example: 12 },
     userCount: { type: 'integer', example: 3 },
     createdAt: { type: 'string', format: 'date-time', example: '2026-04-13T09:00:00.000Z' },
+    updatedAt: { type: 'string', format: 'date-time', example: '2026-04-13T09:30:00.000Z' },
     version: { type: 'integer', example: 1 },
   },
   required: [
     'id',
     'code',
     'name',
+    'localizedName',
     'isSystem',
     'isActive',
     'permissionCount',
     'userCount',
     'createdAt',
+    'updatedAt',
     'version',
   ],
 } as const;
@@ -314,6 +318,10 @@ const ROLE_DETAIL_SCHEMA = {
     isSystem: { type: 'boolean', example: false },
     isActive: { type: 'boolean', example: true },
     permissions: { type: 'array', items: ROLE_PERMISSION_SCHEMA },
+    permissionCount: { type: 'integer', example: 12 },
+    userCount: { type: 'integer', example: 3 },
+    scopeBindings: { type: 'array', items: { type: 'object' } },
+    assignedUsers: { type: 'array', items: { type: 'object' } },
     createdAt: { type: 'string', format: 'date-time', example: '2026-04-13T09:00:00.000Z' },
     updatedAt: { type: 'string', format: 'date-time', example: '2026-04-13T09:30:00.000Z' },
     version: { type: 'integer', example: 2 },
@@ -326,6 +334,10 @@ const ROLE_DETAIL_SCHEMA = {
     'isSystem',
     'isActive',
     'permissions',
+    'permissionCount',
+    'userCount',
+    'scopeBindings',
+    'assignedUsers',
     'createdAt',
     'updatedAt',
     'version',
@@ -339,12 +351,14 @@ const ROLE_LIST_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
       id: '550e8400-e29b-41d4-a716-446655440000',
       code: 'SALES_MANAGER',
       name: 'Sales Manager',
+      localizedName: 'Sales Manager',
       description: 'Manages sales operations',
       isSystem: false,
       isActive: true,
       permissionCount: 12,
       userCount: 3,
       createdAt: '2026-04-13T09:00:00.000Z',
+      updatedAt: '2026-04-13T09:30:00.000Z',
       version: 1,
     },
   ]
@@ -374,6 +388,10 @@ const ROLE_DETAIL_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(ROLE_DETAIL_SCHEM
       name: 'Customer Export',
     },
   ],
+  permissionCount: 1,
+  userCount: 3,
+  scopeBindings: [],
+  assignedUsers: [],
   createdAt: '2026-04-13T09:00:00.000Z',
   updatedAt: '2026-04-13T09:30:00.000Z',
   version: 2,
@@ -541,12 +559,14 @@ export class RoleController {
       id: role.id,
       code: role.code,
       name: getLocalizedName(role, language),
+      localizedName: getLocalizedName(role, language),
       description: role.description,
       isSystem: role.isSystem,
       isActive: role.isActive,
       permissionCount: role.permissionCount,
       userCount: role.userCount,
       createdAt: role.createdAt.toISOString(),
+      updatedAt: role.updatedAt.toISOString(),
       version: role.version,
     }));
 
@@ -647,19 +667,13 @@ export class RoleController {
   ) {
     const language = getPrimaryAcceptLanguage(req);
 
-    const role = await this.roleService.findById(roleId, user.tenantSchema);
+    const role = await this.roleService.findDetailById(roleId, user.tenantSchema, language);
     if (!role) {
       throw new NotFoundException({
         code: ErrorCodes.RES_NOT_FOUND,
         message: 'Role not found',
       });
     }
-
-    const permissions = await this.roleService.getRolePermissions(
-      roleId,
-      user.tenantSchema,
-      language
-    );
 
     return success({
       id: role.id,
@@ -669,7 +683,18 @@ export class RoleController {
       description: role.description,
       isSystem: role.isSystem,
       isActive: role.isActive,
-      permissions,
+      permissions: role.permissions.map((permission) => ({
+        ...permission,
+        resource: permission.resourceCode,
+      })),
+      permissionCount: role.permissionCount,
+      userCount: role.userCount,
+      scopeBindings: role.scopeBindings,
+      assignedUsers: role.assignedUsers.map((assignment) => ({
+        ...assignment,
+        grantedAt: assignment.grantedAt.toISOString(),
+        expiresAt: assignment.expiresAt?.toISOString() ?? null,
+      })),
       createdAt: role.createdAt.toISOString(),
       updatedAt: role.updatedAt.toISOString(),
       version: role.version,

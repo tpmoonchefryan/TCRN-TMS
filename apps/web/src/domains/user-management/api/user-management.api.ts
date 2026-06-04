@@ -52,7 +52,7 @@ export interface SystemUserScopeAccessDetail {
   grantedAt: string;
 }
 
-export interface SystemRoleListItem {
+export interface RoleListItem {
   id: string;
   code: string;
   name: LocalizedText;
@@ -67,21 +67,21 @@ export interface SystemRoleListItem {
   version: number;
 }
 
-export interface SystemRolePermissionRecord {
+export interface RolePermissionRecord {
   resource: string;
   action: string;
   effect: 'grant' | 'deny';
 }
 
-export interface SystemRoleDetailResponse extends Omit<SystemRoleListItem, 'permissionCount'> {
-  permissions: SystemRolePermissionRecord[];
+export interface RoleDetailResponse extends Omit<RoleListItem, 'permissionCount'> {
+  permissions: RolePermissionRecord[];
   permissionCount: number;
   userCount: number;
-  scopeBindings: SystemRoleScopeBinding[];
-  assignedUsers: SystemRoleAssignedUser[];
+  scopeBindings: RoleScopeBinding[];
+  assignedUsers: RoleAssignedUser[];
 }
 
-export interface SystemRoleScopeBinding {
+export interface RoleScopeBinding {
   scopeType: 'tenant' | 'subsidiary' | 'talent';
   scopeId: string | null;
   scopeName: string | null;
@@ -91,7 +91,7 @@ export interface SystemRoleScopeBinding {
   inheritedAssignmentCount: number;
 }
 
-export interface SystemRoleAssignedUser {
+export interface RoleAssignedUser {
   assignmentId: string;
   userId: string;
   username: string;
@@ -107,6 +107,12 @@ export interface SystemRoleAssignedUser {
   grantedAt: string;
   expiresAt: string | null;
 }
+
+export type SystemRoleListItem = RoleListItem;
+export type SystemRolePermissionRecord = RolePermissionRecord;
+export type SystemRoleDetailResponse = RoleDetailResponse;
+export type SystemRoleScopeBinding = RoleScopeBinding;
+export type SystemRoleAssignedUser = RoleAssignedUser;
 
 export interface DelegatedAdminListItem {
   id: string;
@@ -130,8 +136,8 @@ export interface ListSystemUsersOptions {
   isActive?: boolean;
 }
 
-export interface ListSystemRolesOptions {
-  isActive?: boolean;
+export interface ListRolesOptions {
+  search?: string;
 }
 
 export interface CreateSystemUserInput {
@@ -182,15 +188,18 @@ export interface CreateSystemRoleInput {
   code: string;
   name: LocalizedText;
   description?: string;
-  permissions?: SystemRolePermissionRecord[];
+  permissions?: RolePermissionRecord[];
 }
 
 export interface UpdateSystemRoleInput {
   name?: LocalizedText;
   description?: string;
-  permissions?: SystemRolePermissionRecord[];
+  permissions?: RolePermissionRecord[];
   version?: number;
 }
+
+export type CreateRoleInput = CreateSystemRoleInput;
+export type UpdateRoleInput = UpdateSystemRoleInput;
 
 type RequestEnvelopeFn = <T>(path: string, init?: RequestInit) => Promise<ApiSuccessEnvelope<T>>;
 
@@ -216,6 +225,89 @@ function buildJsonRequestInit(method: 'POST' | 'PATCH', body?: unknown): Request
       'Content-Type': 'application/json',
     },
     body: body === undefined ? undefined : JSON.stringify(body),
+  };
+}
+
+const ROLE_NAME_LOCALES: Array<keyof LocalizedText> = [
+  'en',
+  'zh_HANS',
+  'zh_HANT',
+  'ja',
+  'ko',
+  'fr',
+];
+
+type RawRolePermissionRecord = {
+  resource?: string;
+  resourceCode?: string;
+  action: string;
+  effect: 'grant' | 'deny';
+};
+
+type RawRoleListItem = Omit<RoleListItem, 'name' | 'localizedName' | 'updatedAt'> & {
+  name: LocalizedText | string;
+  localizedName?: string;
+  updatedAt?: string;
+};
+
+type RawRoleDetailResponse = Omit<
+  RoleDetailResponse,
+  'name' | 'localizedName' | 'permissions'
+> & {
+  name: LocalizedText | string;
+  nameTranslations?: LocalizedText;
+  localizedName?: string;
+  permissions: RawRolePermissionRecord[];
+};
+
+function normalizeRoleName(value: LocalizedText | string, fallback?: string): LocalizedText {
+  if (typeof value !== 'string') {
+    return value;
+  }
+
+  const text = value || fallback || '';
+  return Object.fromEntries(ROLE_NAME_LOCALES.map((locale) => [locale, text])) as LocalizedText;
+}
+
+function normalizeRoleListItem(role: RawRoleListItem): RoleListItem {
+  const localizedName =
+    role.localizedName || (typeof role.name === 'string' ? role.name : role.name.en) || role.code;
+
+  return {
+    ...role,
+    name: normalizeRoleName(role.name, localizedName),
+    localizedName,
+    updatedAt: role.updatedAt || role.createdAt,
+  };
+}
+
+function normalizeRoleDetail(role: RawRoleDetailResponse): RoleDetailResponse {
+  const localizedName =
+    role.localizedName ||
+    (typeof role.name === 'string' ? role.name : role.name.en) ||
+    role.nameTranslations?.en ||
+    role.code;
+  const name = normalizeRoleName(role.nameTranslations || role.name, localizedName);
+
+  return {
+    ...role,
+    name,
+    localizedName,
+    permissions: role.permissions.flatMap((permission) => {
+      const resource = permission.resource || permission.resourceCode;
+
+      if (!resource) {
+        return [];
+      }
+
+      return [
+        {
+          resource,
+          action: permission.action,
+          effect: permission.effect,
+        },
+      ];
+    }),
   };
 }
 
@@ -369,49 +461,44 @@ export async function checkCurrentUserPermission(
   return result.results[0]?.allowed ?? false;
 }
 
-export async function listSystemRoles(
+export async function listRoles(
   request: <T>(path: string, init?: RequestInit) => Promise<T>,
-  options: ListSystemRolesOptions = {}
+  options: ListRolesOptions = {}
 ) {
   const query = buildQueryString({
-    isActive: options.isActive,
+    search: options.search,
   });
 
-  return request<SystemRoleListItem[]>(`/api/v1/system-roles${query}`);
+  const roles = await request<RawRoleListItem[]>(`/api/v1/roles${query}`);
+  return roles.map(normalizeRoleListItem);
 }
 
-export async function readSystemRoleDetail(
+export async function readRoleDetail(
   request: <T>(path: string, init?: RequestInit) => Promise<T>,
-  systemRoleId: string
+  roleId: string
 ) {
-  return request<SystemRoleDetailResponse>(`/api/v1/system-roles/${systemRoleId}`);
+  const role = await request<RawRoleDetailResponse>(`/api/v1/roles/${roleId}`);
+  return normalizeRoleDetail(role);
 }
 
-export async function createSystemRole(
+export async function createRole(
   request: <T>(path: string, init?: RequestInit) => Promise<T>,
-  input: CreateSystemRoleInput
+  input: CreateRoleInput
 ) {
-  return request<SystemRoleListItem>('/api/v1/roles', buildJsonRequestInit('POST', input));
+  const role = await request<RawRoleListItem>('/api/v1/roles', buildJsonRequestInit('POST', input));
+  return normalizeRoleListItem(role);
 }
 
-export async function updateSystemRole(
+export async function updateRole(
   request: <T>(path: string, init?: RequestInit) => Promise<T>,
-  systemRoleId: string,
-  input: UpdateSystemRoleInput
+  roleId: string,
+  input: UpdateRoleInput
 ) {
-  return request<SystemRoleListItem>(
-    `/api/v1/roles/${systemRoleId}`,
+  const role = await request<RawRoleListItem>(
+    `/api/v1/roles/${roleId}`,
     buildJsonRequestInit('PATCH', input)
   );
-}
-
-export async function removeSystemRole(
-  request: <T>(path: string, init?: RequestInit) => Promise<T>,
-  systemRoleId: string
-) {
-  return request<{ deleted: boolean }>(`/api/v1/system-roles/${systemRoleId}`, {
-    method: 'DELETE',
-  });
+  return normalizeRoleListItem(role);
 }
 
 export async function listDelegatedAdmins(

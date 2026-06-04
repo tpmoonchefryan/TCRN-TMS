@@ -99,7 +99,7 @@ Unlike traditional Grant/Deny systems, TCRN TMS implements a three-state model:
 | **Grant** | Explicitly allowed   | Medium   |
 | **Unset** | Not configured       | Lowest   |
 
-Role governance now has one built-in recovery role, `INITIAL_ADMIN`. All day-to-day roles are custom roles edited through `/api/v1/roles` with capability packs and optional advanced resource/action overrides. Legacy `/api/v1/system-roles` reads remain for compatibility; mutation routes are deprecated or blocked, role deletion is disabled for audit history, and the role active/inactive lifecycle is removed.
+Role governance now has one built-in recovery role, `INITIAL_ADMIN`. All day-to-day roles are custom roles edited through `/api/v1/roles` with capability packs and optional advanced resource/action overrides. The role editor groups permission capability packs by user-facing category and includes keyword search across pack labels, descriptions, categories, risks, resources, and actions. Legacy `/api/v1/system-roles` reads remain for compatibility; mutation routes are deprecated or blocked, role deletion is disabled for audit history, and the role active/inactive lifecycle is removed.
 
 ### 🍡 Marshmallow Anonymous Q&A System
 

@@ -4,6 +4,7 @@ import {
   Controller,
   Delete,
   Get,
+  Header,
   NotFoundException,
   Param,
   ParseUUIDPipe,
@@ -302,6 +303,8 @@ export class SystemRoleController {
   }
 
   @Get()
+  @Header('Deprecation', 'true')
+  @Header('Link', '</api/v1/roles>; rel="successor-version"')
   @RequirePermissions({ resource: 'role', action: 'read' })
   @ApiOperation({ summary: 'List system roles' })
   @ApiResponse({
@@ -335,6 +338,8 @@ export class SystemRoleController {
   }
 
   @Get(':systemRoleId')
+  @Header('Deprecation', 'true')
+  @Header('Link', '</api/v1/roles/{systemRoleId}>; rel="successor-version"')
   @RequirePermissions({ resource: 'role', action: 'read' })
   @ApiOperation({ summary: 'Get system role detail' })
   @ApiParam({

@@ -12,7 +12,7 @@ import type {
   OrganizationTreeResponse,
 } from '@/domains/organization-access/api/organization.api';
 import type {
-  SystemRoleListItem,
+  RoleListItem,
   SystemUserRoleAssignment,
 } from '@/domains/user-management/api/user-management.api';
 import { type ApiPaginationMeta, ApiRequestError } from '@/platform/http/api';
@@ -102,7 +102,7 @@ export function resolveScopedLabel(
 
 export function resolveRoleDisplayName(
   detail: {
-    roleName: SystemRoleListItem['name'];
+    roleName: RoleListItem['name'];
   },
   locale: SupportedUiLocale
 ) {
@@ -110,17 +110,13 @@ export function resolveRoleDisplayName(
 }
 
 export function filterAssignableRoles(
-  roles: SystemRoleListItem[],
+  roles: RoleListItem[],
   tenantTier: string | null | undefined,
   scopeType: 'tenant' | 'subsidiary' | 'talent'
 ) {
   const normalizedTier: RbacTenantTier = tenantTier === 'ac' ? 'ac' : 'standard';
 
   return roles.filter((role) => {
-    if (!role.isActive) {
-      return false;
-    }
-
     return (
       isRbacRoleAvailableForTenantTier(role.code, normalizedTier) &&
       isRbacRoleAvailableForScopeType(role.code, scopeType)
@@ -129,7 +125,7 @@ export function filterAssignableRoles(
 }
 
 export function isRoleVisibleInWorkspace(
-  role: Pick<SystemRoleListItem, 'code'>,
+  role: Pick<RoleListItem, 'code'>,
   tenantTier: string | null | undefined
 ) {
   return isRbacRoleAvailableForTenantTier(role.code, tenantTier === 'ac' ? 'ac' : 'standard');
@@ -250,10 +246,6 @@ export function ScopeAssignmentCard({
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <ToneBadge
-            tone={assignment.roleIsActive ? 'success' : 'warning'}
-            label={assignment.roleIsActive ? sharedCopy.roleActive : sharedCopy.roleInactive}
-          />
           {assignment.inherit ? <ToneBadge tone="neutral" label={sharedCopy.inherit} /> : null}
         </div>
       </div>
