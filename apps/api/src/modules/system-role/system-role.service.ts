@@ -59,16 +59,12 @@ export class SystemRoleService {
   }
 
   async findAll(
-    filters?: { isActive?: boolean; isSystem?: boolean; search?: string },
+    filters?: { isSystem?: boolean; search?: string },
     tenantSchema?: string,
     tenantTier?: RbacTenantTier
   ) {
     // Build where clause based on filters
     const where: Prisma.RoleWhereInput = {};
-
-    if (filters?.isActive !== undefined) {
-      where.isActive = filters.isActive;
-    }
 
     if (filters?.isSystem !== undefined) {
       where.isSystem = filters.isSystem;
@@ -306,11 +302,12 @@ export class SystemRoleService {
     return normalized;
   }
 
-  private mapRoleRecord<T extends { name: Prisma.JsonValue }>(role: T) {
+  private mapRoleRecord<T extends { name: Prisma.JsonValue; isActive?: unknown }>(role: T) {
     const name = this.normalizeRoleName(role.name as PartialLocalizedText);
+    const { isActive: _isActive, ...roleWithoutStatus } = role;
 
     return {
-      ...role,
+      ...roleWithoutStatus,
       name,
       displayName: pickLocalizedText(name, 'en'),
     };

@@ -47,7 +47,6 @@ describe('RoleEditorScreen', () => {
           name: localizedFixture('Reviewer'),
           description: null,
           isSystem: false,
-          isActive: true,
           permissionCount: 1,
           userCount: 0,
           createdAt: '2026-04-18T08:00:00.000Z',
@@ -132,7 +131,6 @@ describe('RoleEditorScreen', () => {
       name: localizedFixture('Editor'),
       description: 'Can manage tenant content.',
       isSystem: false,
-      isActive: true,
       permissions: [
         {
           resource: 'system_user',
@@ -181,7 +179,6 @@ describe('RoleEditorScreen', () => {
           name: localizedFixture('Senior Editor'),
           description: 'Can manage tenant content.',
           isSystem: false,
-          isActive: true,
           permissionCount: 2,
           userCount: 3,
           createdAt: '2026-04-17T01:00:00.000Z',
@@ -284,7 +281,6 @@ describe('RoleEditorScreen', () => {
       name: localizedFixture('Editor'),
       description: 'Can manage tenant content.',
       isSystem: false,
-      isActive: true,
       permissions: [],
       permissionCount: 0,
       userCount: 0,

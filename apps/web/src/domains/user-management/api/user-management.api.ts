@@ -32,7 +32,6 @@ export interface SystemUserRoleAssignment {
   roleId: string;
   roleCode: string;
   roleName: LocalizedText;
-  roleIsActive: boolean;
   scopeType: 'tenant' | 'subsidiary' | 'talent';
   scopeId: string | null;
   scopeName: string | null;
@@ -59,7 +58,6 @@ export interface RoleListItem {
   localizedName: string;
   description: string | null;
   isSystem: boolean;
-  isActive: boolean;
   permissionCount: number;
   userCount: number;
   createdAt: string;

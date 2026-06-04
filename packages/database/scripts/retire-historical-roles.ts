@@ -1,11 +1,8 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-// Guarded retirement executor for tenant-local historical roles.
+// Disabled retirement executor for tenant-local historical roles.
 //
-// Default mode is dry-run only. Apply mode is intentionally strict:
-// - requires explicit schema selection
-// - requires explicit role selection
-// - reuses the read-only historical-role planner as the only source of candidates
-// - refuses when selected roles are authored, absent, assigned, active, or referenced by delegated_admin
+// Role rows are retained for audit history. This command preserves the
+// read-only historical-role planner output and refuses apply-mode hard deletion.
 
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -20,8 +17,6 @@ import {
 } from './plan-historical-role-normalization';
 
 loadRepoEnvFiles(import.meta.url);
-
-type PrismaQueryRunner = Pick<PrismaClient, '$queryRawUnsafe'>;
 
 export interface CliOptions {
   schemas: string[];
@@ -39,9 +34,9 @@ export interface SchemaHistoricalRoleRetirementPlan {
 
 export interface AppliedHistoricalRoleRetirement {
   roleCode: string;
-  roleId: string;
-  deletedRolePolicies: number;
-  deletedRoles: number;
+  roleId: string | null;
+  status: 'blocked';
+  reason: string;
 }
 
 export interface AppliedSchemaHistoricalRoleRetirement {
@@ -59,10 +54,6 @@ export interface HistoricalRoleRetirementSummary {
   plans: SchemaHistoricalRoleRetirementPlan[];
   skipped: HistoricalRoleNormalizationPlanSummary['skipped'];
   applied: AppliedSchemaHistoricalRoleRetirement[];
-}
-
-interface CountRow {
-  count: bigint;
 }
 
 function parseCliArgs(argv: string[]): CliOptions {
@@ -182,178 +173,25 @@ export function buildExecutionPlan(
 }
 
 function assertApplyAllowed(summary: HistoricalRoleRetirementSummary): void {
-  if (summary.filters.schemas.length === 0) {
-    throw new Error('Apply mode requires at least one explicit --schema.');
+  if (summary.mode !== 'apply') {
+    return;
   }
 
-  if (!summary.filters.explicitRoleSelection) {
-    throw new Error('Apply mode requires at least one explicit --role.');
-  }
-
-  if (summary.skipped.length > 0) {
-    throw new Error(
-      `Apply mode refused because some schemas were skipped: ${summary.skipped.map((item) => `${item.schemaName} (${item.reason})`).join(', ')}`,
-    );
-  }
-
-  const blockedEntries = summary.plans.flatMap((plan) =>
-    plan.blocked.map((rolePlan) => `${plan.schemaName}:${rolePlan.roleCode}[${rolePlan.decision}]`),
+  throw new Error(
+    'Role row hard deletion is disabled. Roles are retained for audit history; use the read-only historical-role normalization plan and an Owner-approved retention/migration plan instead.',
   );
-
-  if (blockedEntries.length > 0) {
-    throw new Error(
-      `Apply mode refused because selected roles are not retirement candidates: ${blockedEntries.join(', ')}`,
-    );
-  }
-
-  const absentEntries = summary.plans.flatMap((plan) =>
-    plan.absent.map((roleCode) => `${plan.schemaName}:${roleCode}`),
-  );
-
-  if (absentEntries.length > 0) {
-    throw new Error(
-      `Apply mode refused because selected roles are already absent: ${absentEntries.join(', ')}`,
-    );
-  }
-}
-
-async function countRows(
-  prisma: PrismaQueryRunner,
-  schemaName: string,
-  tableName: 'delegated_admin' | 'role_policy' | 'user_role',
-  roleId: string,
-): Promise<number> {
-  const rows = await prisma.$queryRawUnsafe<CountRow[]>(
-    tableName === 'delegated_admin'
-      ? `
-          SELECT COUNT(*)::bigint AS count
-          FROM "${schemaName}".delegated_admin
-          WHERE admin_role_id = CAST($1 AS uuid)
-        `
-      : `
-          SELECT COUNT(*)::bigint AS count
-          FROM "${schemaName}".${tableName}
-          WHERE role_id = CAST($1 AS uuid)
-        `,
-    roleId,
-  );
-
-  return Number(rows[0]?.count ?? 0n);
-}
-
-async function retireRole(
-  prisma: PrismaQueryRunner,
-  schemaName: string,
-  rolePlan: HistoricalRoleNormalizationPlan,
-): Promise<AppliedHistoricalRoleRetirement> {
-  if (!rolePlan.roleId) {
-    throw new Error(`Role ${schemaName}:${rolePlan.roleCode} is missing roleId and cannot be retired.`);
-  }
-
-  const rolePolicyCount = await countRows(prisma, schemaName, 'role_policy', rolePlan.roleId);
-
-  if (rolePolicyCount !== rolePlan.rolePolicyCount) {
-    throw new Error(
-      `Role ${schemaName}:${rolePlan.roleCode} changed since planning: expected ${rolePlan.rolePolicyCount} role_policy rows, found ${rolePolicyCount}.`,
-    );
-  }
-
-  const assignedUsers = await countRows(prisma, schemaName, 'user_role', rolePlan.roleId);
-
-  if (assignedUsers !== 0) {
-    throw new Error(
-      `Role ${schemaName}:${rolePlan.roleCode} still has ${assignedUsers} user_role rows and cannot be retired.`,
-    );
-  }
-
-  if (rolePlan.referenceAudit !== 'complete') {
-    throw new Error(
-      `Role ${schemaName}:${rolePlan.roleCode} has incomplete reference audit (${rolePlan.referenceAudit}) and cannot be retired.`,
-    );
-  }
-
-  const delegatedAdminCount = await countRows(prisma, schemaName, 'delegated_admin', rolePlan.roleId);
-
-  if (delegatedAdminCount !== 0) {
-    throw new Error(
-      `Role ${schemaName}:${rolePlan.roleCode} is still referenced by ${delegatedAdminCount} delegated_admin rows and cannot be retired.`,
-    );
-  }
-
-  const deletedRoleRows = await prisma.$queryRawUnsafe<CountRow[]>(
-    `
-      WITH deleted_rows AS (
-        DELETE FROM "${schemaName}".role
-        WHERE id = CAST($1 AS uuid)
-          AND code = $2
-          AND is_active = false
-          AND NOT EXISTS (
-            SELECT 1
-            FROM "${schemaName}".user_role
-            WHERE role_id = CAST($1 AS uuid)
-          )
-          AND NOT EXISTS (
-            SELECT 1
-            FROM "${schemaName}".delegated_admin
-            WHERE admin_role_id = CAST($1 AS uuid)
-          )
-        RETURNING id
-      )
-      SELECT COUNT(*)::bigint AS count
-      FROM deleted_rows
-    `,
-    rolePlan.roleId,
-    rolePlan.roleCode,
-  );
-
-  const deletedRoles = Number(deletedRoleRows[0]?.count ?? 0n);
-
-  if (deletedRoles !== 1) {
-    throw new Error(
-      `Expected to delete exactly one role row for ${schemaName}:${rolePlan.roleCode}, but deleted ${deletedRoles}.`,
-    );
-  }
-
-  return {
-    roleCode: rolePlan.roleCode,
-    roleId: rolePlan.roleId,
-    deletedRolePolicies: rolePolicyCount,
-    deletedRoles,
-  };
 }
 
 export async function executeRetirementPlan(
   prisma: PrismaClient,
   summary: HistoricalRoleRetirementSummary,
 ): Promise<HistoricalRoleRetirementSummary> {
+  void prisma;
   assertApplyAllowed(summary);
-
-  const applied: AppliedSchemaHistoricalRoleRetirement[] = [];
-
-  for (const plan of summary.plans) {
-    if (plan.candidates.length === 0) {
-      continue;
-    }
-
-    const roles = await prisma.$transaction(async (tx) => {
-      const appliedRoles: AppliedHistoricalRoleRetirement[] = [];
-
-      for (const rolePlan of plan.candidates) {
-        appliedRoles.push(await retireRole(tx, plan.schemaName, rolePlan));
-      }
-
-      return appliedRoles;
-    });
-
-    applied.push({
-      schemaName: plan.schemaName,
-      roles,
-    });
-  }
 
   return {
     ...summary,
-    applied,
+    applied: [],
   };
 }
 
@@ -416,20 +254,18 @@ function printSummary(summary: HistoricalRoleRetirementSummary): void {
       console.log(`- ${appliedSchema.schemaName}`);
 
       for (const role of appliedSchema.roles) {
-        console.log(
-          `  ${role.roleCode}: deletedRoles=${role.deletedRoles} deletedRolePolicies=${role.deletedRolePolicies}`,
-        );
+        console.log(`  ${role.roleCode}: ${role.status} (${role.reason})`);
       }
     }
 
     console.log(
-      '\nNext step: refresh snapshots only if affected users exist later, and rerun legacy-prune planning for previously blocked targets.',
+      '\nApply mode is disabled. Keep role rows retained and use an Owner-approved retention/migration plan for any future cleanup.',
     );
     return;
   }
 
   console.log(
-    '\nDry-run only. Apply mode requires explicit --schema and --role and refuses blocked, skipped, or absent selections.',
+    '\nDry-run only. Apply mode is disabled because role rows are retained for audit history.',
   );
 }
 

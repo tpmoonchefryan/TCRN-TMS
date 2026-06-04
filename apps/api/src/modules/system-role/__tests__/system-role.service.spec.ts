@@ -120,13 +120,12 @@ describe('SystemRoleService', () => {
     ]);
   });
 
-  it('builds typed list filters for system-role reads', async () => {
+  it('builds typed list filters for system-role reads without role status filtering', async () => {
     mockPrisma.role.findMany.mockResolvedValue([]);
     mockPrisma.$queryRawUnsafe.mockResolvedValue([]);
 
     await service.findAll(
       {
-        isActive: true,
         isSystem: true,
         search: 'export',
       },
@@ -136,7 +135,6 @@ describe('SystemRoleService', () => {
     expect(mockPrisma.role.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: {
-          isActive: true,
           isSystem: true,
           OR: [
             { code: { contains: 'export', mode: 'insensitive' } },

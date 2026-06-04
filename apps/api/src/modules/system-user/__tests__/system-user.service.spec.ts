@@ -160,7 +160,6 @@ describe('SystemUserService', () => {
               ko: '편집자',
               fr: 'Editeur',
             }),
-            roleIsActive: true,
             scopeType: 'talent',
             scopeId: 'talent-1',
             scopeName: 'Tokino Sora',

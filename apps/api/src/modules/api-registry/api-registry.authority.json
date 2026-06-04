@@ -4470,9 +4470,9 @@
       "exposure": "ac_only",
       "stability": "stable",
       "deprecation": {
-        "isDeprecated": false,
-        "reason": null,
-        "replacementOperationCode": null,
+        "isDeprecated": true,
+        "reason": "System-role mutation compatibility is removed; use the canonical custom-role API.",
+        "replacementOperationCode": "operations.role_controller_update",
         "sunsetAt": null
       },
       "piiClass": "reference",
@@ -6181,9 +6181,9 @@
       "exposure": "ac_only",
       "stability": "stable",
       "deprecation": {
-        "isDeprecated": false,
-        "reason": null,
-        "replacementOperationCode": null,
+        "isDeprecated": true,
+        "reason": "System-role mutation compatibility is removed; use the canonical custom-role API.",
+        "replacementOperationCode": "operations.role_controller_create",
         "sunsetAt": null
       },
       "piiClass": "reference",
@@ -11586,9 +11586,9 @@
       "exposure": "tenant_private",
       "stability": "stable",
       "deprecation": {
-        "isDeprecated": false,
-        "reason": null,
-        "replacementOperationCode": null,
+        "isDeprecated": true,
+        "reason": "Role active/inactive lifecycle is removed; remove assignments or change grant/deny/unset permission states.",
+        "replacementOperationCode": "operations.role_controller_update",
         "sunsetAt": null
       },
       "piiClass": "reference",
@@ -11622,9 +11622,9 @@
       "exposure": "tenant_private",
       "stability": "stable",
       "deprecation": {
-        "isDeprecated": false,
-        "reason": null,
-        "replacementOperationCode": null,
+        "isDeprecated": true,
+        "reason": "Role active/inactive lifecycle is removed; remove assignments or change grant/deny/unset permission states.",
+        "replacementOperationCode": "operations.role_controller_update",
         "sunsetAt": null
       },
       "piiClass": "reference",

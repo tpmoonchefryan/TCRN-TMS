@@ -106,7 +106,6 @@ export class RoleService {
     options: {
       search?: string;
       isSystem?: boolean;
-      isActive?: boolean;
       sort?: string;
     } = {}
   ): Promise<Array<RoleData & { permissionCount: number; userCount: number }>> {
@@ -120,12 +119,8 @@ export class RoleService {
       paramIndex++;
     }
     if (options.isSystem !== undefined) {
-      whereClause += ` AND is_system = $${paramIndex++}`;
+      whereClause += ` AND is_system = $${paramIndex}`;
       params.push(options.isSystem);
-    }
-    if (options.isActive !== undefined) {
-      whereClause += ` AND is_active = $${paramIndex}`;
-      params.push(options.isActive);
     }
 
     let orderBy = 'is_system DESC, code ASC';

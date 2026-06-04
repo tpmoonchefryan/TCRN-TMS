@@ -4,6 +4,7 @@ import {
   Controller,
   Delete,
   Get,
+  GoneException,
   HttpCode,
   HttpStatus,
   MethodNotAllowedException,
@@ -62,12 +63,6 @@ export class ListRolesQueryDto {
   @IsBoolean()
   @Type(() => Boolean)
   isSystem?: boolean;
-
-  @ApiPropertyOptional({ description: 'Filter by active status', example: true })
-  @IsOptional()
-  @IsBoolean()
-  @Type(() => Boolean)
-  isActive?: boolean;
 
   @ApiPropertyOptional({ description: 'Sort field', example: 'code' })
   @IsOptional()
@@ -271,7 +266,6 @@ const ROLE_LIST_ITEM_SCHEMA = {
     localizedName: { type: 'string', example: 'Sales Manager' },
     description: { type: 'string', nullable: true, example: 'Manages sales operations' },
     isSystem: { type: 'boolean', example: false },
-    isActive: { type: 'boolean', example: true },
     permissionCount: { type: 'integer', example: 12 },
     userCount: { type: 'integer', example: 3 },
     createdAt: { type: 'string', format: 'date-time', example: '2026-04-13T09:00:00.000Z' },
@@ -284,7 +278,6 @@ const ROLE_LIST_ITEM_SCHEMA = {
     'name',
     'localizedName',
     'isSystem',
-    'isActive',
     'permissionCount',
     'userCount',
     'createdAt',
@@ -316,7 +309,6 @@ const ROLE_DETAIL_SCHEMA = {
     name: { type: 'string', example: 'Sales Manager' },
     description: { type: 'string', nullable: true, example: 'Manages sales operations' },
     isSystem: { type: 'boolean', example: false },
-    isActive: { type: 'boolean', example: true },
     permissions: { type: 'array', items: ROLE_PERMISSION_SCHEMA },
     permissionCount: { type: 'integer', example: 12 },
     userCount: { type: 'integer', example: 3 },
@@ -332,7 +324,6 @@ const ROLE_DETAIL_SCHEMA = {
     'nameTranslations',
     'name',
     'isSystem',
-    'isActive',
     'permissions',
     'permissionCount',
     'userCount',
@@ -354,7 +345,6 @@ const ROLE_LIST_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
       localizedName: 'Sales Manager',
       description: 'Manages sales operations',
       isSystem: false,
-      isActive: true,
       permissionCount: 12,
       userCount: 3,
       createdAt: '2026-04-13T09:00:00.000Z',
@@ -378,7 +368,6 @@ const ROLE_DETAIL_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(ROLE_DETAIL_SCHEM
   name: 'Sales Manager',
   description: 'Manages sales operations',
   isSystem: false,
-  isActive: true,
   permissions: [
     {
       id: '550e8400-e29b-41d4-a716-446655440010',
@@ -426,19 +415,17 @@ const ROLE_CREATE_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
       code: { type: 'string', example: 'SALES_MANAGER' },
       name: { type: 'string', example: 'Sales Manager' },
       isSystem: { type: 'boolean', example: false },
-      isActive: { type: 'boolean', example: true },
       permissions: { type: 'array', items: ROLE_PERMISSION_SCHEMA },
       createdAt: { type: 'string', format: 'date-time', example: '2026-04-13T09:00:00.000Z' },
       version: { type: 'integer', example: 1 },
     },
-    required: ['id', 'code', 'name', 'isSystem', 'isActive', 'permissions', 'createdAt', 'version'],
+    required: ['id', 'code', 'name', 'isSystem', 'permissions', 'createdAt', 'version'],
   },
   {
     id: '550e8400-e29b-41d4-a716-446655440000',
     code: 'SALES_MANAGER',
     name: 'Sales Manager',
     isSystem: false,
-    isActive: true,
     permissions: [
       {
         id: '550e8400-e29b-41d4-a716-446655440010',
@@ -551,7 +538,6 @@ export class RoleController {
     const roles = await this.roleService.list(user.tenantSchema, {
       search: query.search,
       isSystem: query.isSystem,
-      isActive: query.isActive,
       sort: query.sort,
     });
 
@@ -562,7 +548,6 @@ export class RoleController {
       localizedName: getLocalizedName(role, language),
       description: role.description,
       isSystem: role.isSystem,
-      isActive: role.isActive,
       permissionCount: role.permissionCount,
       userCount: role.userCount,
       createdAt: role.createdAt.toISOString(),
@@ -626,7 +611,6 @@ export class RoleController {
       code: role.code,
       name: getLocalizedName(role, language),
       isSystem: role.isSystem,
-      isActive: role.isActive,
       permissions,
       createdAt: role.createdAt.toISOString(),
       version: role.version,
@@ -682,7 +666,6 @@ export class RoleController {
       name: getLocalizedName(role, language),
       description: role.description,
       isSystem: role.isSystem,
-      isActive: role.isActive,
       permissions: role.permissions.map((permission) => ({
         ...permission,
         resource: permission.resourceCode,
@@ -830,12 +813,12 @@ export class RoleController {
 
   /**
    * POST /api/v1/roles/:roleId/deactivate
-   * Deactivate role
+   * Legacy status route retained only to report removal.
    */
   @Post(':roleId/deactivate')
   @HttpCode(HttpStatus.OK)
   @RequirePermissions({ resource: 'role', action: 'update' })
-  @ApiOperation({ summary: 'Deactivate role' })
+  @ApiOperation({ summary: 'Role status lifecycle is removed', deprecated: true })
   @ApiParam({
     name: 'roleId',
     description: 'Role identifier',
@@ -848,7 +831,7 @@ export class RoleController {
   })
   @ApiResponse({
     status: 401,
-    description: 'Authentication is required to deactivate roles',
+    description: 'Authentication is required to use legacy role status routes',
     schema: ROLE_UNAUTHORIZED_SCHEMA,
   })
   async deactivate(
@@ -856,28 +839,24 @@ export class RoleController {
     @Param('roleId', ParseUUIDPipe) roleId: string,
     @Body() body: RoleActivationDto
   ) {
-    const role = await this.roleService.deactivate(
-      roleId,
-      user.tenantSchema,
-      body.version,
-      user.id
-    );
-
-    return success({
-      id: role.id,
-      isActive: false,
-      version: role.version,
+    void user;
+    void roleId;
+    void body;
+    throw new GoneException({
+      code: 'ROLE_STATUS_MACHINE_REMOVED',
+      message:
+        'Roles do not have an active/inactive lifecycle. Remove assignments or change grant/deny/unset permission states.',
     });
   }
 
   /**
    * POST /api/v1/roles/:roleId/reactivate
-   * Reactivate role
+   * Legacy status route retained only to report removal.
    */
   @Post(':roleId/reactivate')
   @HttpCode(HttpStatus.OK)
   @RequirePermissions({ resource: 'role', action: 'update' })
-  @ApiOperation({ summary: 'Reactivate role' })
+  @ApiOperation({ summary: 'Role status lifecycle is removed', deprecated: true })
   @ApiParam({
     name: 'roleId',
     description: 'Role identifier',
@@ -890,7 +869,7 @@ export class RoleController {
   })
   @ApiResponse({
     status: 401,
-    description: 'Authentication is required to reactivate roles',
+    description: 'Authentication is required to use legacy role status routes',
     schema: ROLE_UNAUTHORIZED_SCHEMA,
   })
   async reactivate(
@@ -898,17 +877,13 @@ export class RoleController {
     @Param('roleId', ParseUUIDPipe) roleId: string,
     @Body() body: RoleActivationDto
   ) {
-    const role = await this.roleService.reactivate(
-      roleId,
-      user.tenantSchema,
-      body.version,
-      user.id
-    );
-
-    return success({
-      id: role.id,
-      isActive: true,
-      version: role.version,
+    void user;
+    void roleId;
+    void body;
+    throw new GoneException({
+      code: 'ROLE_STATUS_MACHINE_REMOVED',
+      message:
+        'Roles do not have an active/inactive lifecycle. Remove assignments or change grant/deny/unset permission states.',
     });
   }
 

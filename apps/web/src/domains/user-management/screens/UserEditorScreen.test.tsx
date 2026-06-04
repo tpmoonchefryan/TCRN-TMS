@@ -1,7 +1,6 @@
+import type { SupportedUiLocale } from '@tcrn/shared';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-
-import type { SupportedUiLocale } from '@tcrn/shared';
 
 import { localizedFixture } from '@/domains/config-dictionary-settings/testing/localized-fixtures';
 import { UserEditorScreen } from '@/domains/user-management/screens/UserEditorScreen';
@@ -188,7 +187,6 @@ describe('UserEditorScreen', () => {
             name: localizedFixture('Administrator', { zh_HANS: '管理员' }),
             description: 'Full access',
             isSystem: true,
-            isActive: true,
             permissionCount: 1,
             userCount: 1,
             createdAt: '2026-04-17T01:00:00.000Z',
@@ -200,7 +198,6 @@ describe('UserEditorScreen', () => {
             name: localizedFixture('Platform Administrator', { zh_HANS: '平台管理员' }),
             description: 'AC only',
             isSystem: true,
-            isActive: true,
             permissionCount: 1,
             userCount: 0,
             createdAt: '2026-04-17T01:00:00.000Z',
@@ -237,7 +234,6 @@ describe('UserEditorScreen', () => {
             roleId: 'role-1',
             roleCode: 'ADMIN',
             roleName: localizedFixture('Administrator', { zh_HANS: '管理员' }),
-            roleIsActive: true,
             scopeType: 'tenant',
             scopeId: null,
             scopeName: 'Tenant One',
@@ -389,7 +385,6 @@ describe('UserEditorScreen', () => {
             name: localizedFixture('Initial Admin', { zh_HANS: '初始管理员' }),
             description: 'Built-in recovery role',
             isSystem: true,
-            isActive: true,
             permissionCount: 99,
             userCount: 1,
             createdAt: '2026-04-17T01:00:00.000Z',
@@ -426,7 +421,6 @@ describe('UserEditorScreen', () => {
             roleId: 'role-initial-admin',
             roleCode: 'INITIAL_ADMIN',
             roleName: localizedFixture('Initial Admin'),
-            roleIsActive: true,
             scopeType: 'tenant',
             scopeId: null,
             scopeName: 'Tenant One',
@@ -526,7 +520,6 @@ describe('UserEditorScreen', () => {
             name: localizedFixture('Platform Administrator', { zh_HANS: '平台管理员' }),
             description: 'AC only',
             isSystem: true,
-            isActive: true,
             permissionCount: 1,
             userCount: 1,
             createdAt: '2026-04-17T01:00:00.000Z',
@@ -538,7 +531,6 @@ describe('UserEditorScreen', () => {
             name: localizedFixture('Talent Manager', { zh_HANS: '艺人经理' }),
             description: 'Tenant business role',
             isSystem: false,
-            isActive: true,
             permissionCount: 1,
             userCount: 0,
             createdAt: '2026-04-17T01:00:00.000Z',
@@ -575,7 +567,6 @@ describe('UserEditorScreen', () => {
             roleId: 'tenant-role-platform-admin',
             roleCode: 'PLATFORM_ADMIN',
             roleName: localizedFixture('Platform Administrator', { zh_HANS: '平台管理员' }),
-            roleIsActive: true,
             scopeType: 'tenant',
             scopeId: null,
             scopeName: 'AC Tenant',
@@ -666,7 +657,6 @@ describe('UserEditorScreen', () => {
             name: localizedFixture('Administrator', { zh_HANS: '管理员' }),
             description: 'Full access',
             isSystem: true,
-            isActive: true,
             permissionCount: 1,
             userCount: 1,
             createdAt: '2026-04-17T01:00:00.000Z',

@@ -1,6 +1,7 @@
-import { RequestMethod } from '@nestjs/common';
-import { METHOD_METADATA, PATH_METADATA } from '@nestjs/common/constants';
 import 'reflect-metadata';
+
+import { GoneException, MethodNotAllowedException, RequestMethod } from '@nestjs/common';
+import { METHOD_METADATA, PATH_METADATA } from '@nestjs/common/constants';
 import { describe, expect, it } from 'vitest';
 
 import { PERMISSIONS_KEY } from '../../common/decorators/require-permissions.decorator';
@@ -138,6 +139,45 @@ describe('Role route contracts', () => {
     expect(getMethodPermissions(SystemRoleController, 'remove')).toEqual([
       { resource: 'role', action: 'delete' },
     ]);
+  });
+
+  it('rejects role deletion through the canonical controller path', async () => {
+    const controller = new RoleController({} as never);
+
+    await expect(controller.remove('550e8400-e29b-41d4-a716-446655440000')).rejects.toThrow(
+      MethodNotAllowedException
+    );
+  });
+
+  it('rejects legacy role status routes directly from the controller', async () => {
+    const controller = new RoleController({} as never);
+
+    await expect(
+      controller.deactivate(
+        {} as never,
+        '550e8400-e29b-41d4-a716-446655440000',
+        { version: 1 }
+      )
+    ).rejects.toThrow(GoneException);
+    await expect(
+      controller.reactivate(
+        {} as never,
+        '550e8400-e29b-41d4-a716-446655440000',
+        { version: 1 }
+      )
+    ).rejects.toThrow(GoneException);
+  });
+
+  it('rejects system-role mutations directly from the compatibility controller', async () => {
+    const controller = new SystemRoleController({} as never, {} as never);
+
+    await expect(controller.create({} as never)).rejects.toThrow(GoneException);
+    await expect(
+      controller.update('550e8400-e29b-41d4-a716-446655440000', {} as never)
+    ).rejects.toThrow(GoneException);
+    await expect(controller.remove('550e8400-e29b-41d4-a716-446655440000')).rejects.toThrow(
+      MethodNotAllowedException
+    );
   });
 
   it('uses explicit systemRoleId path params on system role endpoints', () => {

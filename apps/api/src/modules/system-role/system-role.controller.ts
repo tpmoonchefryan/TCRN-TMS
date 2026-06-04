@@ -4,7 +4,9 @@ import {
   Controller,
   Delete,
   Get,
+  GoneException,
   Header,
+  MethodNotAllowedException,
   NotFoundException,
   Param,
   ParseUUIDPipe,
@@ -82,11 +84,10 @@ const SYSTEM_ROLE_SCHEMA = {
     displayName: { type: 'string', example: 'Export Deny' },
     description: { type: 'string', nullable: true, example: 'Denies export operations' },
     isSystem: { type: 'boolean', example: true },
-    isActive: { type: 'boolean', example: true },
     createdAt: { type: 'string', format: 'date-time', example: '2026-04-13T09:00:00.000Z' },
     updatedAt: { type: 'string', format: 'date-time', example: '2026-04-13T09:00:00.000Z' },
   },
-  required: ['id', 'code', 'name', 'isSystem', 'isActive', 'createdAt', 'updatedAt'],
+  required: ['id', 'code', 'name', 'isSystem', 'createdAt', 'updatedAt'],
 } as const;
 
 const SYSTEM_ROLE_DETAIL_SCHEMA = {
@@ -204,7 +205,6 @@ const SYSTEM_ROLE_LIST_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(
       displayName: 'Export Deny',
       description: 'Denies export operations',
       isSystem: true,
-      isActive: true,
       createdAt: '2026-04-13T09:00:00.000Z',
       updatedAt: '2026-04-13T09:00:00.000Z',
       permissionCount: 1,
@@ -220,7 +220,6 @@ const SYSTEM_ROLE_DETAIL_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(SYSTEM_ROL
   displayName: 'Export Deny',
   description: 'Denies export operations',
   isSystem: true,
-  isActive: true,
   createdAt: '2026-04-13T09:00:00.000Z',
   updatedAt: '2026-04-13T09:00:00.000Z',
   permissions: [{ resource: 'customer.export', action: 'read', effect: 'deny' }],
@@ -298,8 +297,11 @@ export class SystemRoleController {
     schema: SYSTEM_ROLE_MUTATION_REMOVED_SCHEMA,
   })
   async create(@Body() createSystemRoleDto: CreateSystemRoleZodDto) {
-    const role = await this.systemRoleService.create(createSystemRoleDto);
-    return success(role);
+    void createSystemRoleDto;
+    throw new GoneException({
+      code: 'SYSTEM_ROLE_MUTATION_REMOVED',
+      message: 'System-role mutation routes are deprecated. Use POST /roles for custom roles.',
+    });
   }
 
   @Get()
@@ -319,13 +321,11 @@ export class SystemRoleController {
   })
   async findAll(
     @CurrentUser() user: AuthenticatedUser,
-    @Query('isActive') isActive?: string,
     @Query('isSystem') isSystem?: string,
     @Query('search') search?: string
   ) {
     const tenant = await this.tenantService.getTenantById(user.tenantId);
     const filters = {
-      isActive: isActive === 'true' ? true : isActive === 'false' ? false : undefined,
       isSystem: isSystem === 'true' ? true : isSystem === 'false' ? false : undefined,
       search,
     };
@@ -403,8 +403,12 @@ export class SystemRoleController {
     @Param('systemRoleId', ParseUUIDPipe) systemRoleId: string,
     @Body() updateSystemRoleDto: UpdateSystemRoleZodDto
   ) {
-    const role = await this.systemRoleService.update(systemRoleId, updateSystemRoleDto);
-    return success(role);
+    void systemRoleId;
+    void updateSystemRoleDto;
+    throw new GoneException({
+      code: 'SYSTEM_ROLE_MUTATION_REMOVED',
+      message: 'System-role mutation routes are deprecated. Use PATCH /roles/:id for custom roles.',
+    });
   }
 
   @Delete(':systemRoleId')
@@ -426,7 +430,11 @@ export class SystemRoleController {
     schema: SYSTEM_ROLE_UNAUTHORIZED_SCHEMA,
   })
   async remove(@Param('systemRoleId', ParseUUIDPipe) systemRoleId: string) {
-    await this.systemRoleService.remove(systemRoleId);
-    return success({ deleted: true });
+    void systemRoleId;
+    throw new MethodNotAllowedException({
+      code: 'ROLE_DELETE_NOT_ALLOWED',
+      message:
+        'Roles are kept for audit history. Remove assignments or change grant/deny/unset states instead.',
+    });
   }
 }

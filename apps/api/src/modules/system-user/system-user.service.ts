@@ -1,6 +1,4 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-import * as crypto from 'crypto';
-
 import {
   BadRequestException,
   forwardRef,
@@ -8,9 +6,9 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-
 import { prisma } from '@tcrn/database';
 import { ErrorCodes, type LocalizedText } from '@tcrn/shared';
+import * as crypto from 'crypto';
 
 import { PasswordService } from '../auth/password.service';
 import { PermissionSnapshotService } from '../permission/permission-snapshot.service';
@@ -36,7 +34,6 @@ export interface SystemUserRoleAssignmentData {
   roleId: string;
   roleCode: string;
   roleName: LocalizedText;
-  roleIsActive: boolean;
   scopeType: string;
   scopeId: string | null;
   scopeName: string | null;
@@ -109,7 +106,7 @@ export class SystemUserService {
       params.push(isTotpEnabled);
     }
     if (roleId) {
-      whereClause += ` AND id IN (SELECT user_id FROM "${tenantSchema}".user_role WHERE role_id = $${paramIndex++})`;
+      whereClause += ` AND id IN (SELECT user_id FROM "${tenantSchema}".user_role WHERE role_id = $${paramIndex})`;
       params.push(roleId);
     }
 
@@ -192,7 +189,6 @@ export class SystemUserService {
         r.id as "roleId",
         r.code as "roleCode",
         r.name as "roleName",
-        r.is_active as "roleIsActive",
         ur.scope_type as "scopeType",
         ur.scope_id as "scopeId",
         CASE
@@ -416,7 +412,7 @@ export class SystemUserService {
       params.push(data.preferredLanguage);
     }
     if (data.avatarUrl !== undefined) {
-      updates.push(`avatar_url = $${paramIndex++}`);
+      updates.push(`avatar_url = $${paramIndex}`);
       params.push(data.avatarUrl);
     }
 

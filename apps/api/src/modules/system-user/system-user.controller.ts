@@ -21,6 +21,7 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
+import { ErrorCodes, SUPPORTED_UI_LOCALES, type SupportedUiLocale } from '@tcrn/shared';
 import { Type } from 'class-transformer';
 import {
   IsBoolean,
@@ -32,8 +33,6 @@ import {
   Min,
   MinLength,
 } from 'class-validator';
-
-import { ErrorCodes, SUPPORTED_UI_LOCALES, type SupportedUiLocale } from '@tcrn/shared';
 
 import { AuthenticatedUser, CurrentUser, RequirePermissions } from '../../common/decorators';
 import { paginated, success } from '../../common/response.util';
@@ -311,7 +310,6 @@ const SYSTEM_USER_DETAIL_SCHEMA = {
               fr: 'Editor',
             },
           },
-          roleIsActive: { type: 'boolean', example: true },
           scopeType: { type: 'string', example: 'talent' },
           scopeId: {
             type: 'string',
@@ -330,7 +328,6 @@ const SYSTEM_USER_DETAIL_SCHEMA = {
           'roleId',
           'roleCode',
           'roleName',
-          'roleIsActive',
           'scopeType',
           'inherit',
           'grantedAt',
@@ -465,7 +462,6 @@ const SYSTEM_USER_DETAIL_SUCCESS_SCHEMA = createSuccessEnvelopeSchema(SYSTEM_USE
         ko: 'Editor',
         fr: 'Editor',
       },
-      roleIsActive: true,
       scopeType: 'talent',
       scopeId: '550e8400-e29b-41d4-a716-446655440030',
       scopeName: 'Tokino Sora',
@@ -766,7 +762,6 @@ export class SystemUserController {
         roleId: assignment.roleId,
         roleCode: assignment.roleCode,
         roleName: assignment.roleName,
-        roleIsActive: assignment.roleIsActive,
         scopeType: assignment.scopeType,
         scopeId: assignment.scopeId,
         scopeName: assignment.scopeName,

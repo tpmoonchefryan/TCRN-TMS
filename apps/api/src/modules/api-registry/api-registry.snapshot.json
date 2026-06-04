@@ -7081,9 +7081,9 @@
       "exposure": "ac_only",
       "stability": "stable",
       "deprecation": {
-        "isDeprecated": false,
-        "reason": null,
-        "replacementOperationCode": null,
+        "isDeprecated": true,
+        "reason": "System-role mutation compatibility is removed; use the canonical custom-role API.",
+        "replacementOperationCode": "operations.role_controller_update",
         "sunsetAt": null
       },
       "piiClass": "reference",
@@ -9841,9 +9841,9 @@
       "exposure": "ac_only",
       "stability": "stable",
       "deprecation": {
-        "isDeprecated": false,
-        "reason": null,
-        "replacementOperationCode": null,
+        "isDeprecated": true,
+        "reason": "System-role mutation compatibility is removed; use the canonical custom-role API.",
+        "replacementOperationCode": "operations.role_controller_create",
         "sunsetAt": null
       },
       "piiClass": "reference",
@@ -18513,7 +18513,7 @@
       "pathTemplate": "/roles/{roleId}/deactivate",
       "documentGroup": "operations",
       "tag": "System - Roles",
-      "summary": "Deactivate role",
+      "summary": "Role status lifecycle is removed",
       "description": null,
       "ownerModuleCode": "core",
       "ownerCapabilityCode": "core.user_access",
@@ -18542,9 +18542,9 @@
       "exposure": "tenant_private",
       "stability": "stable",
       "deprecation": {
-        "isDeprecated": false,
-        "reason": null,
-        "replacementOperationCode": null,
+        "isDeprecated": true,
+        "reason": "Role active/inactive lifecycle is removed; remove assignments or change grant/deny/unset permission states.",
+        "replacementOperationCode": "operations.role_controller_update",
         "sunsetAt": null
       },
       "piiClass": "reference",
@@ -18570,7 +18570,7 @@
       "pathTemplate": "/roles/{roleId}/reactivate",
       "documentGroup": "operations",
       "tag": "System - Roles",
-      "summary": "Reactivate role",
+      "summary": "Role status lifecycle is removed",
       "description": null,
       "ownerModuleCode": "core",
       "ownerCapabilityCode": "core.user_access",
@@ -18599,9 +18599,9 @@
       "exposure": "tenant_private",
       "stability": "stable",
       "deprecation": {
-        "isDeprecated": false,
-        "reason": null,
-        "replacementOperationCode": null,
+        "isDeprecated": true,
+        "reason": "Role active/inactive lifecycle is removed; remove assignments or change grant/deny/unset permission states.",
+        "replacementOperationCode": "operations.role_controller_update",
         "sunsetAt": null
       },
       "piiClass": "reference",

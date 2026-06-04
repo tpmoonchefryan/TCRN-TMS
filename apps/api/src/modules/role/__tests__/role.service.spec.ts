@@ -122,14 +122,13 @@ describe('RoleService', () => {
       );
     });
 
-    it('should filter by isActive', async () => {
+    it('does not expose role active/inactive filtering in the canonical list path', async () => {
       mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([]);
 
-      await service.list(testSchema, { isActive: false });
+      await service.list(testSchema);
 
       expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalledWith(
-        expect.stringContaining('is_active'),
-        false
+        expect.not.stringContaining('AND is_active')
       );
     });
 
