@@ -10,6 +10,7 @@ const mockRequest = vi.fn();
 const mockRequestEnvelope = vi.fn();
 const mockReplace = vi.fn();
 let searchQuery = '';
+let mockPathname = '/tenant/tenant-1/user-management';
 const localeState = {
   locale: 'en' as SupportedUiLocale,
 };
@@ -60,7 +61,7 @@ function buildSuccessEnvelope<T>(data: T, pagination?: ApiPaginationMeta): ApiSu
 }
 
 vi.mock('next/navigation', () => ({
-  usePathname: () => '/tenant/tenant-1/user-management',
+  usePathname: () => mockPathname,
   useRouter: () => ({
     replace: mockReplace,
   }),
@@ -81,6 +82,7 @@ vi.mock('@/platform/runtime/locale/locale-provider', () => ({
 describe('UserManagementScreen', () => {
   beforeEach(() => {
     searchQuery = '';
+    mockPathname = '/tenant/tenant-1/user-management';
     localeState.locale = 'en';
     mockReplace.mockReset();
     mockRequest.mockReset();
@@ -161,7 +163,7 @@ describe('UserManagementScreen', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /Roles/i }));
 
-    expect(mockReplace).toHaveBeenCalledWith('/tenant/tenant-1/user-management?tab=roles');
+    expect(mockReplace).toHaveBeenCalledWith('/tenant/tenant-1/user-management/roles?tab=roles');
     expect(await screen.findByText('EDITOR')).toBeInTheDocument();
     expect(screen.getByText('Can manage tenant content.')).toBeInTheDocument();
 
@@ -345,8 +347,8 @@ describe('UserManagementScreen', () => {
     expect(editLink).toHaveAttribute('href', '/tenant/tenant-1/user-management/user-1');
   });
 
-  it('keeps the role inventory focused and links role create/edit to dedicated routes', async () => {
-    searchQuery = 'tab=roles';
+  it('opens the first-class tenant role route and links role create/edit without nested role paths', async () => {
+    mockPathname = '/tenant/tenant-1/user-management/roles';
 
     mockRequestEnvelope.mockImplementation(async (path: string) => {
       if (path === '/api/v1/system-users?page=1&pageSize=20') {
@@ -397,7 +399,7 @@ describe('UserManagementScreen', () => {
 
     render(<UserManagementScreen />);
 
-    expect(await screen.findByRole('heading', { name: 'Roles' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Role Management' })).toBeInTheDocument();
     expect(await screen.findByText('Editor')).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'Create role' })).not.toBeInTheDocument();
 
@@ -407,6 +409,60 @@ describe('UserManagementScreen', () => {
     expect(newRoleLink).toHaveAttribute('href', '/tenant/tenant-1/user-management/roles/new');
     expect(editLinks[0]).toHaveAttribute('href', '/tenant/tenant-1/user-management/roles/role-1');
     expect(editLinks[1]).toHaveAttribute('href', '/tenant/tenant-1/user-management/roles/role-2');
+    expect(newRoleLink.getAttribute('href')).not.toContain('/roles/roles/');
+    expect(editLinks[0].getAttribute('href')).not.toContain('/roles/roles/');
+  });
+
+  it('opens the first-class AC role route and builds AC role links without nested role paths', async () => {
+    mockPathname = '/ac/tenant-1/user-management/roles';
+
+    mockRequestEnvelope.mockImplementation(async (path: string) => {
+      if (path === '/api/v1/system-users?page=1&pageSize=20') {
+        return buildSuccessEnvelope([]);
+      }
+
+      throw new Error(`Unhandled requestEnvelope: ${path}`);
+    });
+
+    mockRequest.mockImplementation(async (path: string) => {
+      if (path === '/api/v1/roles') {
+        return [
+          {
+            id: 'role-1',
+            code: 'EDITOR',
+            name: localizedFixture('Editor'),
+            description: 'Can manage AC role templates.',
+            isSystem: false,
+            permissionCount: 12,
+            userCount: 3,
+            createdAt: '2026-04-17T01:00:00.000Z',
+            updatedAt: '2026-04-17T02:00:00.000Z',
+          },
+        ];
+      }
+
+      if (path === '/api/v1/delegated-admins') {
+        return [];
+      }
+
+      if (path === '/api/v1/organization/tree?includeInactive=false') {
+        return organizationTreeResponse;
+      }
+
+      throw new Error(`Unhandled request: ${path}`);
+    });
+
+    render(<UserManagementScreen workspaceKind="ac" />);
+
+    expect(await screen.findByRole('heading', { name: 'Role Management' })).toBeInTheDocument();
+
+    const newRoleLink = screen.getByRole('link', { name: 'New role' });
+    const editLink = await screen.findByRole('link', { name: 'Edit' });
+
+    expect(newRoleLink).toHaveAttribute('href', '/ac/tenant-1/user-management/roles/new');
+    expect(editLink).toHaveAttribute('href', '/ac/tenant-1/user-management/roles/role-1');
+    expect(newRoleLink.getAttribute('href')).not.toContain('/roles/roles/');
+    expect(editLink.getAttribute('href')).not.toContain('/roles/roles/');
   });
 
   it('keeps tenant role inventory filtered to roles valid for the current workspace', async () => {
@@ -425,12 +481,23 @@ describe('UserManagementScreen', () => {
         return [
           {
             id: 'role-1',
-            code: 'ADMIN',
-            name: localizedFixture('Administrator', { zh_HANS: '管理员' }),
-            description: 'Tenant administrator',
+            code: 'INITIAL_ADMIN',
+            name: localizedFixture('Initial Admin', { zh_HANS: '初始管理员' }),
+            description: 'Built-in recovery role',
             isSystem: true,
             permissionCount: 12,
             userCount: 3,
+            createdAt: '2026-04-17T01:00:00.000Z',
+            updatedAt: '2026-04-17T02:00:00.000Z',
+          },
+          {
+            id: 'role-legacy-admin',
+            code: 'ADMIN',
+            name: localizedFixture('Administrator', { zh_HANS: '管理员' }),
+            description: 'Legacy compatibility role',
+            isSystem: false,
+            permissionCount: 12,
+            userCount: 0,
             createdAt: '2026-04-17T01:00:00.000Z',
             updatedAt: '2026-04-17T02:00:00.000Z',
           },
@@ -462,7 +529,8 @@ describe('UserManagementScreen', () => {
     render(<UserManagementScreen />);
 
     expect(await screen.findByRole('heading', { name: 'Roles' })).toBeInTheDocument();
-    expect(await screen.findByText('Administrator')).toBeInTheDocument();
+    expect(await screen.findByText('Initial Admin')).toBeInTheDocument();
+    expect(screen.queryByText('Administrator')).not.toBeInTheDocument();
     expect(screen.queryByText('Platform Administrator')).not.toBeInTheDocument();
   });
 

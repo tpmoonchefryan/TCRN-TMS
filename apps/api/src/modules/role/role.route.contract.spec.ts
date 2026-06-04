@@ -2,11 +2,13 @@ import 'reflect-metadata';
 
 import { GoneException, MethodNotAllowedException, RequestMethod } from '@nestjs/common';
 import { METHOD_METADATA, PATH_METADATA } from '@nestjs/common/constants';
-import { describe, expect, it } from 'vitest';
+import { plainToInstance } from 'class-transformer';
+import { validate } from 'class-validator';
+import { describe, expect, it, vi } from 'vitest';
 
 import { PERMISSIONS_KEY } from '../../common/decorators/require-permissions.decorator';
 import { SystemRoleController } from '../system-role/system-role.controller';
-import { RoleController } from './role.controller';
+import { ListRolesQueryDto, RoleController } from './role.controller';
 import { UserRoleController } from './user-role.controller';
 
 interface ControllerRoute {
@@ -147,6 +149,50 @@ describe('Role route contracts', () => {
     await expect(controller.remove('550e8400-e29b-41d4-a716-446655440000')).rejects.toThrow(
       MethodNotAllowedException
     );
+  });
+
+  it('parses false role-list boolean query values without enabling compatibility rows', async () => {
+    const dto = plainToInstance(ListRolesQueryDto, {
+      isSystem: 'false',
+      includeCompatibility: 'false',
+    });
+
+    await expect(validate(dto)).resolves.toEqual([]);
+    expect(dto).toMatchObject({
+      isSystem: false,
+      includeCompatibility: false,
+    });
+  });
+
+  it('passes explicit false role-list query values to the role service as false', async () => {
+    const roleService = {
+      list: vi.fn().mockResolvedValue([]),
+    };
+    const controller = new RoleController(roleService as never);
+
+    await controller.list(
+      {
+        tenantSchema: 'tenant_test',
+      } as never,
+      {
+        isSystem: true,
+        includeCompatibility: true,
+      },
+      {
+        headers: {},
+        query: {
+          isSystem: 'false',
+          includeCompatibility: 'false',
+        },
+      } as never
+    );
+
+    expect(roleService.list).toHaveBeenCalledWith('tenant_test', {
+      search: undefined,
+      isSystem: false,
+      includeCompatibility: false,
+      sort: undefined,
+    });
   });
 
   it('rejects legacy role status routes directly from the controller', async () => {

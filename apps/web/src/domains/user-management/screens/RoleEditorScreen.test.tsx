@@ -60,6 +60,11 @@ describe('RoleEditorScreen', () => {
 
     render(<RoleEditorScreen tenantId="tenant-1" mode="create" />);
 
+    expect(screen.getByRole('link', { name: 'Back to roles' })).toHaveAttribute(
+      'href',
+      '/tenant/tenant-1/user-management/roles'
+    );
+
     fireEvent.change(screen.getByLabelText('Role code'), {
       target: { value: 'reviewer' },
     });
@@ -96,6 +101,15 @@ describe('RoleEditorScreen', () => {
     });
 
     expect(mockReplace).toHaveBeenCalledWith('/tenant/tenant-1/user-management/roles/role-2');
+  });
+
+  it('links back to the first-class AC role route from the AC editor', () => {
+    render(<RoleEditorScreen tenantId="tenant-ac" mode="create" workspaceKind="ac" />);
+
+    expect(screen.getByRole('link', { name: 'Back to roles' })).toHaveAttribute(
+      'href',
+      '/ac/tenant-ac/user-management/roles'
+    );
   });
 
   it('loads role detail and updates role permissions from the dedicated editor route', async () => {

@@ -21,10 +21,10 @@ import {
   updateRole,
 } from '@/domains/user-management/api/user-management.api';
 import {
+  buildAcRoleManagementPath,
   buildAcRoleEditorPath,
-  buildAcUserManagementPath,
+  buildTenantRoleManagementPath,
   buildTenantRoleEditorPath,
-  buildTenantUserManagementPath,
 } from '@/platform/routing/workspace-paths';
 import {
   buildLocalizedTextPayload,
@@ -264,10 +264,9 @@ export function RoleEditorScreen({
   const sharedCopy = copy.shared;
   const roleEditorCopy = copy.roleEditor;
   const workspaceDisplayLabel = isAcWorkspace ? sharedCopy.acWorkspace : sharedCopy.tenantWorkspace;
-  const inventoryBaseHref = isAcWorkspace
-    ? buildAcUserManagementPath(tenantId)
-    : buildTenantUserManagementPath(tenantId);
-  const inventoryHref = `${inventoryBaseHref}?tab=roles`;
+  const inventoryHref = isAcWorkspace
+    ? buildAcRoleManagementPath(tenantId)
+    : buildTenantRoleManagementPath(tenantId);
   const buildRoleHref = (roleId: string) =>
     isAcWorkspace
       ? buildAcRoleEditorPath(tenantId, roleId)

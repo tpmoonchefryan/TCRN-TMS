@@ -50,11 +50,19 @@ async function main() {
     await syncRbacContractSchemas(prisma, {
       schemas: [acTenant.schemaName],
       skipTemplate: true,
+      mode: 'definitions',
     });
 
     // Phase 3: AC Admin user (after roles are created)
     console.log('\n📌 Phase 3: AC Admin User');
     await seedAcAdminUser(prisma, acTenant);
+
+    console.log('\n📌 Phase 3b: AC Initial Admin Contract');
+    await syncRbacContractSchemas(prisma, {
+      schemas: [acTenant.schemaName],
+      skipTemplate: true,
+      mode: 'full',
+    });
 
     // Phase 4: System Dictionaries (public schema)
     console.log('\n📌 Phase 4: System Dictionaries');

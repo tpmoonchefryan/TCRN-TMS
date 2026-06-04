@@ -36,6 +36,13 @@ import {
   ApiRequestError,
   buildFallbackPagination,
 } from '@/platform/http/api';
+import { pickLocaleText } from '@/platform/runtime/locale/locale-text';
+import {
+  buildAcRoleManagementPath,
+  buildAcUserManagementPath,
+  buildTenantRoleManagementPath,
+  buildTenantUserManagementPath,
+} from '@/platform/routing/workspace-paths';
 import { useFadeSwapState } from '@/platform/runtime/motion/use-fade-swap-state';
 import {
   buildPaginationMeta,
@@ -204,6 +211,10 @@ function resolveInitialTab(tab: string | null): ManagementTab {
   return 'users';
 }
 
+function isRoleManagementRoute(pathname: string): boolean {
+  return /\/user-management\/roles\/?$/.test(pathname);
+}
+
 function buildDelegationScopeOptions(tree: OrganizationTreeResponse, tenantRootLabel: string) {
   const options: DelegationScopeOption[] = [];
 
@@ -360,14 +371,27 @@ export function UserManagementScreen({
   const workspaceDirectoryLabel = isAcWorkspace
     ? sharedCopy.acDirectoryLabel
     : sharedCopy.tenantDirectoryLabel;
-  const userManagementPath = pathname.split('?')[0];
+  const normalizedPathname = pathname.split('?')[0];
+  const tenantId = session?.tenantId ?? '';
+  const userManagementPath = tenantId
+    ? isAcWorkspace
+      ? buildAcUserManagementPath(tenantId)
+      : buildTenantUserManagementPath(tenantId)
+    : normalizedPathname.replace(/\/user-management\/roles(?:\/.*)?$/, '/user-management');
+  const roleManagementPath = tenantId
+    ? isAcWorkspace
+      ? buildAcRoleManagementPath(tenantId)
+      : buildTenantRoleManagementPath(tenantId)
+    : `${userManagementPath}/roles`;
   const userCreateHref = `${userManagementPath}/new`;
   const buildUserEditorHref = (systemUserId: string) => `${userManagementPath}/${systemUserId}`;
-  const roleCreateHref = `${userManagementPath}/roles/new`;
+  const roleCreateHref = `${roleManagementPath}/new`;
   const buildRoleEditorHref = (systemRoleId: string) =>
-    `${userManagementPath}/roles/${systemRoleId}`;
+    `${roleManagementPath}/${systemRoleId}`;
 
-  const currentSearchParamsTab = resolveInitialTab(searchParams.get('tab'));
+  const currentSearchParamsTab = isRoleManagementRoute(normalizedPathname)
+    ? 'roles'
+    : resolveInitialTab(searchParams.get('tab'));
   const urlUserSearch = searchParams.get('search') ?? '';
   const urlUserStatusFilter = parseUserStatusFilter(searchParams.get('status'));
   const urlUsersPage = parsePageParam(searchParams.get('page'));
@@ -485,7 +509,9 @@ export function UserManagementScreen({
       return;
     }
 
-    router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname);
+    const targetPath = nextTab === 'roles' ? roleManagementPath : userManagementPath;
+
+    router.replace(nextQuery ? `${targetPath}?${nextQuery}` : targetPath);
   }
 
   async function refreshUsers() {
@@ -791,6 +817,17 @@ export function UserManagementScreen({
     usersPanel.data.length === 0 &&
     rolesPanel.data.length === 0 &&
     delegationsPanel.data.length === 0;
+  const pageHeading =
+    currentSearchParamsTab === 'roles'
+      ? pickLocaleText(locale, {
+          en: 'Role Management',
+          zh_HANS: '角色管理',
+          zh_HANT: '角色管理',
+          ja: 'ロール管理',
+          ko: '역할 관리',
+          fr: 'Gestion des rôles',
+        })
+      : managementCopy.title;
 
   if (allPanelsFailed) {
     return (
@@ -810,7 +847,7 @@ export function UserManagementScreen({
             <p className="text-xs font-semibold tracking-[0.24em] text-slate-500 uppercase">
               {managementCopy.badge(workspaceDisplayLabel)}
             </p>
-            <h1 className="text-3xl font-semibold text-slate-950">{managementCopy.title}</h1>
+            <h1 className="text-3xl font-semibold text-slate-950">{pageHeading}</h1>
             <p className="max-w-3xl text-sm leading-6 text-slate-600">
               {managementCopy.description}
             </p>

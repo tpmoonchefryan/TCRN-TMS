@@ -34,8 +34,10 @@ import {
 } from '@/domains/user-management/api/user-management.api';
 import { ApiRequestError } from '@/platform/http/api';
 import {
+  buildAcRoleManagementPath,
   buildAcUserEditorPath,
   buildAcUserManagementPath,
+  buildTenantRoleManagementPath,
   buildTenantUserEditorPath,
   buildTenantUserManagementPath,
 } from '@/platform/routing/workspace-paths';
@@ -197,6 +199,15 @@ function formatAssignmentExpiry(value: string | null | undefined, fallback: stri
   return value;
 }
 
+function isCurrentRoleAssignment(assignment: SystemUserDetailResponse['roleAssignments'][number]) {
+  if (!assignment.expiresAt) {
+    return true;
+  }
+
+  const expiresAt = new Date(assignment.expiresAt);
+  return Number.isNaN(expiresAt.getTime()) || expiresAt.getTime() > Date.now();
+}
+
 function buildAssignmentDrafts(detail: SystemUserDetailResponse | null) {
   return Object.fromEntries(
     (detail?.roleAssignments || []).map((assignment) => [
@@ -230,6 +241,9 @@ export function UserEditorScreen({
   const managementHref = isAcWorkspace
     ? buildAcUserManagementPath(tenantId)
     : buildTenantUserManagementPath(tenantId);
+  const roleManagementHref = isAcWorkspace
+    ? buildAcRoleManagementPath(tenantId)
+    : buildTenantRoleManagementPath(tenantId);
 
   const [draft, setDraft] = useState<UserEditorDraft>(EMPTY_USER_EDITOR_DRAFT);
   const [detail, setDetail] = useState<SystemUserDetailResponse | null>(null);
@@ -357,7 +371,10 @@ export function UserEditorScreen({
     };
   }, [editorCopy.loadError, mode, request, systemUserId]);
 
-  const roleAssignments = detail?.roleAssignments ?? [];
+  const roleAssignments = useMemo(
+    () => (detail?.roleAssignments ?? []).filter(isCurrentRoleAssignment),
+    [detail?.roleAssignments]
+  );
   const availableRoles = useMemo(() => {
     const normalizedScopeId =
       assignmentComposer.scopeType === 'tenant' ? null : assignmentComposer.scopeId;
@@ -828,7 +845,7 @@ export function UserEditorScreen({
             <div className="grid gap-3 sm:grid-cols-3">
               <SummaryCard
                 label={editorCopy.summaryRoleAssignmentsLabel}
-                value={String(detail.roleAssignments.length)}
+                value={String(roleAssignments.length)}
                 hint={editorCopy.summaryRoleAssignmentsHint}
               />
               <SummaryCard
@@ -1040,10 +1057,19 @@ export function UserEditorScreen({
                     {editorCopy.scopedAssignmentsDescription}
                   </p>
                 </div>
-                <ToneBadge
-                  tone="info"
-                  label={sharedCopy.assignLinks(detail.roleAssignments.length)}
-                />
+                <div className="flex flex-wrap items-center gap-2">
+                  <ToneBadge
+                    tone="info"
+                    label={sharedCopy.assignLinks(roleAssignments.length)}
+                  />
+                  <Link
+                    href={roleManagementHref}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+                  >
+                    <ShieldCheck className="h-3.5 w-3.5" />
+                    {editorCopy.manageRoleTemplates}
+                  </Link>
+                </div>
               </div>
 
               {roleLoadError ? <NoticeBanner tone="error" message={roleLoadError} /> : null}

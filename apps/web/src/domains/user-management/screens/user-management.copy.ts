@@ -448,6 +448,7 @@ const COPY = {
       scopedAssignmentsTitle: 'Scoped role assignments',
       scopedAssignmentsDescription:
         'Assign roles at tenant, subsidiary, or talent scope from this page. The list page stays focused on browsing.',
+      manageRoleTemplates: 'Manage role templates',
       scopeField: 'Scope',
       roleField: 'Role',
       expiresAtField: 'Expires at',
@@ -773,6 +774,7 @@ const COPY = {
       scopedAssignmentsTitle: '范围角色分配',
       scopedAssignmentsDescription:
         '可在此按租户、分目录或艺人范围直接分配角色，列表页仅保留浏览。',
+      manageRoleTemplates: '管理角色模板',
       scopeField: '范围',
       roleField: '角色',
       expiresAtField: '到期时间',
@@ -1083,6 +1085,7 @@ const COPY = {
       scopedAssignmentsTitle: '范围角色分配',
       scopedAssignmentsDescription:
         '可在此按租户、分目录或艺人范围直接分配角色，列表页仅保留浏览。',
+      manageRoleTemplates: '管理角色模板',
       scopeField: '范围',
       roleField: '角色',
       expiresAtField: '到期时间',
@@ -1399,6 +1402,7 @@ const COPY = {
       scopedAssignmentsTitle: '範囲ロール割当て',
       scopedAssignmentsDescription:
         'テナント、配下スコープ、タレント範囲でロールを直接割り当てます。一覧ページは閲覧に集中させます。',
+      manageRoleTemplates: 'ロールテンプレートを管理',
       scopeField: '範囲',
       roleField: 'ロール',
       expiresAtField: '有効期限',
@@ -1736,6 +1740,7 @@ const COPY = {
       scopedAssignmentsTitle: 'Scoped role assignments',
       scopedAssignmentsDescription:
         'Assign roles at tenant, subsidiary, or talent scope from this page. The list page stays focused on browsing.',
+      manageRoleTemplates: 'Manage role templates',
       scopeField: 'Scope',
       roleField: 'Role',
       expiresAtField: 'Expires at',
@@ -2076,6 +2081,7 @@ const COPY = {
       scopedAssignmentsTitle: 'Scoped role assignments',
       scopedAssignmentsDescription:
         'Assign roles at tenant, subsidiary, or talent scope from this page. The list page stays focused on browsing.',
+      manageRoleTemplates: 'Manage role templates',
       scopeField: 'Scope',
       roleField: 'Role',
       expiresAtField: 'Expires at',

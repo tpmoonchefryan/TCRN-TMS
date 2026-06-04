@@ -267,6 +267,28 @@ describe('AcShell', () => {
     expect(screen.getAllByText('API Client Management').length).toBeGreaterThan(0);
   });
 
+  it('highlights only Role Management on the first-class AC role route', () => {
+    mockPathname = '/ac/tenant-ac/user-management/roles';
+
+    render(
+      <UiLocaleProvider>
+        <AcShell tenantId="tenant-ac">
+          <div>AC role management</div>
+        </AcShell>
+      </UiLocaleProvider>
+    );
+
+    const navigation = screen.getByRole('navigation', { name: 'Main navigation' });
+    const roleLink = within(navigation).getByRole('link', { name: 'Role Management' });
+    const userLink = within(navigation).getByRole('link', { name: 'User Management' });
+
+    expect(roleLink).toHaveAttribute('href', '/ac/tenant-ac/user-management/roles');
+    expect(roleLink).toHaveAttribute('aria-current', 'page');
+    expect(userLink).not.toHaveAttribute('aria-current');
+    expect(within(navigation).getAllByRole('link', { current: 'page' })).toHaveLength(1);
+    expect(screen.getAllByText('Role Management').length).toBeGreaterThan(1);
+  });
+
   it('places Builder Registry after API Gateway and before Observability', () => {
     mockPathname = '/ac/tenant-ac/platform-tools';
 

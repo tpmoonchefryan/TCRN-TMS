@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 
 import {
+  isLegacyAdminCompatibilityRoleCode,
   isRbacRoleAvailableForScopeType,
   isRbacRoleAvailableForTenantTier,
   type RbacTenantTier,
@@ -118,6 +119,7 @@ export function filterAssignableRoles(
 
   return roles.filter((role) => {
     return (
+      !isLegacyAdminCompatibilityRoleCode(role.code) &&
       isRbacRoleAvailableForTenantTier(role.code, normalizedTier) &&
       isRbacRoleAvailableForScopeType(role.code, scopeType)
     );
@@ -128,7 +130,10 @@ export function isRoleVisibleInWorkspace(
   role: Pick<RoleListItem, 'code'>,
   tenantTier: string | null | undefined
 ) {
-  return isRbacRoleAvailableForTenantTier(role.code, tenantTier === 'ac' ? 'ac' : 'standard');
+  return (
+    !isLegacyAdminCompatibilityRoleCode(role.code) &&
+    isRbacRoleAvailableForTenantTier(role.code, tenantTier === 'ac' ? 'ac' : 'standard')
+  );
 }
 
 export function ToneBadge({

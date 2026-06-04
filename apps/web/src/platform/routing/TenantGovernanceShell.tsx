@@ -1,9 +1,10 @@
 'use client';
 
-import { Activity, Building2, Cable, ShieldCheck, Users, Webhook } from 'lucide-react';
+import { Activity, Building2, Cable, KeyRound, ShieldCheck, Users, Webhook } from 'lucide-react';
 import { useState } from 'react';
 
 import {
+  buildTenantRoleManagementPath,
   buildTenantProfilePath,
   buildTenantProfileSecurityPath,
 } from '@/platform/routing/workspace-paths';
@@ -33,6 +34,7 @@ function getTenantGovernancePageTitle(
     observability: string;
     organizationStructure: string;
     profile: string;
+    roleManagement: string;
     security: string;
     subsidiarySettings: string;
     tenantSettings: string;
@@ -43,6 +45,10 @@ function getTenantGovernancePageTitle(
 ) {
   if (pathname === `/tenant/${tenantId}`) {
     return titles.workspaceLanding;
+  }
+
+  if (pathname.includes('/user-management/roles')) {
+    return titles.roleManagement;
   }
 
   if (pathname.includes('/user-management')) {
@@ -126,6 +132,14 @@ export function TenantGovernanceShell({
       ko: '웹훅 관리',
       fr: 'Gestion des webhooks',
     }),
+    roleManagement: pickLocaleText(locale, {
+      en: 'Role Management',
+      zh_HANS: '角色管理',
+      zh_HANT: '角色管理',
+      ja: 'ロール管理',
+      ko: '역할 관리',
+      fr: 'Gestion des rôles',
+    }),
   };
 
   const navItems: Array<{
@@ -147,8 +161,16 @@ export function TenantGovernanceShell({
       key: 'users',
       label: copy.tenantGovernance.nav.userManagement,
       href: `/tenant/${tenantId}/user-management`,
-      isActive: pathname.includes('/user-management'),
+      isActive:
+        pathname.includes('/user-management') && !pathname.includes('/user-management/roles'),
       icon: <Users className="h-4 w-4" />,
+    },
+    {
+      key: 'roles',
+      label: integrationLabels.roleManagement,
+      href: buildTenantRoleManagementPath(tenantId),
+      isActive: pathname.includes('/user-management/roles'),
+      icon: <KeyRound className="h-4 w-4" />,
     },
     {
       key: 'interface-management',
@@ -192,6 +214,7 @@ export function TenantGovernanceShell({
   const pageTitle = getTenantGovernancePageTitle(tenantId, pathname, {
     ...copy.tenantGovernance.titles,
     interfaceManagement: integrationLabels.interfaceManagement,
+    roleManagement: integrationLabels.roleManagement,
     webhookManagement: integrationLabels.webhookManagement,
   });
   const shellA11y = {

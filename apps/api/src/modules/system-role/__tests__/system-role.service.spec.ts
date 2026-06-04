@@ -180,6 +180,17 @@ describe('SystemRoleService', () => {
   it('filters workspace-incompatible roles from the list', async () => {
     mockPrisma.role.findMany.mockResolvedValue([
       {
+        id: 'role-0',
+        code: 'INITIAL_ADMIN',
+        name: roleName,
+        isSystem: true,
+        isActive: true,
+        _count: {
+          userRoles: 0,
+          rolePolicies: 1,
+        },
+      },
+      {
         id: 'role-1',
         code: 'PLATFORM_ADMIN',
         name: roleName,
@@ -206,7 +217,7 @@ describe('SystemRoleService', () => {
 
     const result = await service.findAll({}, 'tenant_test123', 'standard');
 
-    expect(result.map((role) => role.code)).toEqual(['ADMIN']);
+    expect(result.map((role) => role.code)).toEqual(['INITIAL_ADMIN']);
   });
 
   it('returns Gone for deprecated system-role creation', async () => {

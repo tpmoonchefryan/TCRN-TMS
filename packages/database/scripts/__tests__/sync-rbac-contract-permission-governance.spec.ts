@@ -4,6 +4,7 @@ import { describe, it } from 'node:test';
 import {
   assertInitialAdminCompatibilityReadback,
   readInitialAdminCompatibilityReadback,
+  syncSchema,
 } from '../sync-rbac-contract';
 
 type QueryResult = Array<Record<string, unknown>>;
@@ -24,6 +25,83 @@ function createQueryRunner(results: QueryResult[]) {
   };
 }
 
+function createFailClosedContractRunner() {
+  const queries: string[] = [];
+  const executes: string[] = [];
+
+  return {
+    queries,
+    executes,
+    async $transaction<T>(callback: (tx: typeof this) => Promise<T>): Promise<T> {
+      return callback(this);
+    },
+    async $executeRawUnsafe(query: string, ..._values: unknown[]): Promise<number> {
+      executes.push(query);
+      return 1;
+    },
+    async $queryRawUnsafe<T = unknown>(query: string, ..._values: unknown[]): Promise<T> {
+      queries.push(query);
+
+      if (query.includes('information_schema.schemata')) {
+        return [{ exists: true }] as T;
+      }
+
+      if (query.includes('information_schema.tables')) {
+        return [{ exists: true }] as T;
+      }
+
+      if (query.includes('FROM "tenant_acme".resource')) {
+        return [{ count: 0n }] as T;
+      }
+
+      if (query.includes('FROM "tenant_acme".policy')) {
+        return [{ count: 0n }] as T;
+      }
+
+      if (
+        query.includes('FROM "tenant_acme".role_policy') &&
+        !query.includes('JOIN "tenant_acme".role')
+      ) {
+        return [{ count: 0n }] as T;
+      }
+
+      if (query.includes('SELECT id FROM "tenant_acme".role WHERE code = $1 LIMIT 1')) {
+        return [{ id: 'initial-admin-role' }] as T;
+      }
+
+      if (query.includes('SELECT su.id')) {
+        return [] as T;
+      }
+
+      if (query.includes('WHERE is_system = true')) {
+        return [{ count: 4n }] as T;
+      }
+
+      if (query.includes('AND is_system = true')) {
+        return [{ count: 3n }] as T;
+      }
+
+      if (query.includes('AND is_system = false')) {
+        return [{ count: 0n }] as T;
+      }
+
+      if (query.includes('JOIN "tenant_acme".role r ON r.id = ur.role_id')) {
+        return [{ count: 0n }] as T;
+      }
+
+      if (query.includes('extra_data')) {
+        return [] as T;
+      }
+
+      if (query.includes('FROM "tenant_acme".role')) {
+        return [{ count: 4n }] as T;
+      }
+
+      throw new Error(`Unexpected query: ${query}`);
+    },
+  };
+}
+
 describe('permission governance RBAC sync contract', () => {
   it('blocks legacy built-in role relabeling without active tenant-scope Initial Admin coverage', async () => {
     const runner = createQueryRunner([
@@ -39,6 +117,30 @@ describe('permission governance RBAC sync contract', () => {
     await assert.rejects(
       assertInitialAdminCompatibilityReadback(runner, 'tenant_acme'),
       /active tenant-scope Initial Admin assignment/,
+    );
+  });
+
+  it('fails closed instead of granting Initial Admin to an arbitrary active non-admin user', async () => {
+    const runner = createFailClosedContractRunner();
+
+    await assert.rejects(
+      syncSchema(runner as never, 'tenant_acme', 'contract'),
+      /active tenant-scope Initial Admin assignment/,
+    );
+
+    assert.equal(
+      runner.queries.some(
+        (query) =>
+          query.includes('FROM "tenant_acme".system_user') &&
+          !query.includes('JOIN "tenant_acme".user_role'),
+      ),
+      false,
+    );
+    assert.equal(
+      runner.executes.some(
+        (query) => query.includes('UPDATE "tenant_acme".role') && query.includes('is_system = false'),
+      ),
+      false,
     );
   });
 

@@ -76,6 +76,10 @@ export function buildTenantUserManagementPath(tenantId: string) {
   return `/tenant/${tenantId}/user-management`;
 }
 
+export function buildTenantRoleManagementPath(tenantId: string) {
+  return `${buildTenantUserManagementPath(tenantId)}/roles`;
+}
+
 export function buildTenantBusinessPath(tenantId: string) {
   return `/tenant/${tenantId}/business`;
 }
@@ -110,11 +114,11 @@ export function buildTenantUserEditorPath(tenantId: string, systemUserId: string
 }
 
 export function buildTenantRoleCreatePath(tenantId: string) {
-  return `${buildTenantUserManagementPath(tenantId)}/roles/new`;
+  return `${buildTenantRoleManagementPath(tenantId)}/new`;
 }
 
 export function buildTenantRoleEditorPath(tenantId: string, systemRoleId: string) {
-  return `${buildTenantUserManagementPath(tenantId)}/roles/${systemRoleId}`;
+  return `${buildTenantRoleManagementPath(tenantId)}/${systemRoleId}`;
 }
 
 export function buildTenantProfilePath(tenantId: string) {
@@ -262,6 +266,10 @@ export function buildAcUserManagementPath(tenantId: string) {
   return `/ac/${tenantId}/user-management`;
 }
 
+export function buildAcRoleManagementPath(tenantId: string) {
+  return `${buildAcUserManagementPath(tenantId)}/roles`;
+}
+
 export function buildAcUserCreatePath(tenantId: string) {
   return `${buildAcUserManagementPath(tenantId)}/new`;
 }
@@ -271,11 +279,11 @@ export function buildAcUserEditorPath(tenantId: string, systemUserId: string) {
 }
 
 export function buildAcRoleCreatePath(tenantId: string) {
-  return `${buildAcUserManagementPath(tenantId)}/roles/new`;
+  return `${buildAcRoleManagementPath(tenantId)}/new`;
 }
 
 export function buildAcRoleEditorPath(tenantId: string, systemRoleId: string) {
-  return `${buildAcUserManagementPath(tenantId)}/roles/${systemRoleId}`;
+  return `${buildAcRoleManagementPath(tenantId)}/${systemRoleId}`;
 }
 
 export function buildAcProfilePath(tenantId: string) {

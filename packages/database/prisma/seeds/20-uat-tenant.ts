@@ -10,6 +10,8 @@ import {
 } from '../../src/platform/tenancy/template-bootstrap';
 import { syncSeedTenantCapabilities } from './_module-capabilities';
 
+const RBAC_TEMPLATE_TABLES = new Set(['resource', 'role', 'policy', 'role_policy']);
+
 export interface UatTenantResult {
   corpTenant: Tenant;
   soloTenant: Tenant;
@@ -95,7 +97,11 @@ async function ensureTenantSchema(prisma: PrismaClient, schemaName: string): Pro
     console.log(`    ✓ Created ${tables.length} tables in ${schemaName}`);
   }
 
-  await copyTenantTemplateSeedData(prisma, schemaName, tableNames);
+  await copyTenantTemplateSeedData(
+    prisma,
+    schemaName,
+    tableNames.filter((tableName) => !RBAC_TEMPLATE_TABLES.has(tableName))
+  );
   await copyTenantTemplateForeignKeys(prisma, schemaName, tableNames);
   await alignTenantTemplateConstraintNames(prisma, schemaName, tableNames);
   await alignTenantTemplateIndexNames(prisma, schemaName, tableNames);
@@ -222,6 +228,7 @@ async function copyRolesToTenantSchema(prisma: PrismaClient, schemaName: string)
       ON CONFLICT (code) DO UPDATE SET 
         name = EXCLUDED.name,
         description = EXCLUDED.description,
+        is_system = EXCLUDED.is_system,
         is_active = EXCLUDED.is_active
     `, role.id, role.code, JSON.stringify(role.name), role.description || null, role.isSystem, role.isActive);
   }

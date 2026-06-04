@@ -103,9 +103,11 @@ describe('RoleService', () => {
 
       await service.list(testSchema, { search: 'admin' });
 
-      expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalledWith(
+      expect(mockPrisma.$queryRawUnsafe).toHaveBeenNthCalledWith(
+        1,
         expect.stringContaining('ILIKE'),
-        '%admin%'
+        '%admin%',
+        expect.arrayContaining(['ADMIN', 'PLATFORM_ADMIN', 'TENANT_ADMIN'])
       );
     });
 
@@ -116,9 +118,11 @@ describe('RoleService', () => {
 
       await service.list(testSchema, { isSystem: true });
 
-      expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalledWith(
+      expect(mockPrisma.$queryRawUnsafe).toHaveBeenNthCalledWith(
+        1,
         expect.stringContaining('is_system'),
-        true
+        true,
+        expect.arrayContaining(['ADMIN', 'PLATFORM_ADMIN', 'TENANT_ADMIN'])
       );
     });
 
@@ -127,8 +131,10 @@ describe('RoleService', () => {
 
       await service.list(testSchema);
 
-      expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalledWith(
-        expect.not.stringContaining('AND is_active')
+      expect(mockPrisma.$queryRawUnsafe).toHaveBeenNthCalledWith(
+        1,
+        expect.not.stringContaining('AND is_active'),
+        expect.arrayContaining(['ADMIN', 'PLATFORM_ADMIN', 'TENANT_ADMIN'])
       );
     });
 
@@ -137,8 +143,10 @@ describe('RoleService', () => {
 
       await service.list(testSchema, { sort: '-name' });
 
-      expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalledWith(
-        expect.stringContaining("name->>'en' DESC")
+      expect(mockPrisma.$queryRawUnsafe).toHaveBeenNthCalledWith(
+        1,
+        expect.stringContaining("name->>'en' DESC"),
+        expect.arrayContaining(['ADMIN', 'PLATFORM_ADMIN', 'TENANT_ADMIN'])
       );
     });
   });

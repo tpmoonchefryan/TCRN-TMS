@@ -183,10 +183,10 @@ describe('UserEditorScreen', () => {
         return [
           {
             id: 'role-1',
-            code: 'ADMIN',
-            name: localizedFixture('Administrator', { zh_HANS: '管理员' }),
-            description: 'Full access',
-            isSystem: true,
+            code: 'VIEWER',
+            name: localizedFixture('Viewer', { zh_HANS: '查看者' }),
+            description: 'Read-only access',
+            isSystem: false,
             permissionCount: 1,
             userCount: 1,
             createdAt: '2026-04-17T01:00:00.000Z',
@@ -198,6 +198,28 @@ describe('UserEditorScreen', () => {
             name: localizedFixture('Platform Administrator', { zh_HANS: '平台管理员' }),
             description: 'AC only',
             isSystem: true,
+            permissionCount: 1,
+            userCount: 0,
+            createdAt: '2026-04-17T01:00:00.000Z',
+            updatedAt: '2026-04-17T02:00:00.000Z',
+          },
+          {
+            id: 'role-3',
+            code: 'ADMIN',
+            name: localizedFixture('Administrator', { zh_HANS: '管理员' }),
+            description: 'Legacy admin compatibility row',
+            isSystem: false,
+            permissionCount: 1,
+            userCount: 0,
+            createdAt: '2026-04-17T01:00:00.000Z',
+            updatedAt: '2026-04-17T02:00:00.000Z',
+          },
+          {
+            id: 'role-4',
+            code: 'TENANT_ADMIN',
+            name: localizedFixture('Tenant Administrator', { zh_HANS: '租户管理员' }),
+            description: 'Legacy tenant admin compatibility row',
+            isSystem: false,
             permissionCount: 1,
             userCount: 0,
             createdAt: '2026-04-17T01:00:00.000Z',
@@ -232,8 +254,8 @@ describe('UserEditorScreen', () => {
           {
             id: 'assignment-1',
             roleId: 'role-1',
-            roleCode: 'ADMIN',
-            roleName: localizedFixture('Administrator', { zh_HANS: '管理员' }),
+            roleCode: 'VIEWER',
+            roleName: localizedFixture('Viewer', { zh_HANS: '查看者' }),
             scopeType: 'tenant',
             scopeId: null,
             scopeName: 'Tenant One',
@@ -282,7 +304,13 @@ describe('UserEditorScreen', () => {
     expect(
       screen.queryByRole('option', { name: 'Platform Administrator' })
     ).not.toBeInTheDocument();
-    expect(screen.getByRole('option', { name: 'Administrator' })).toBeInTheDocument();
+    expect(screen.queryByRole('option', { name: 'Administrator' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('option', { name: 'Tenant Administrator' })).not.toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Viewer' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Manage role templates' })).toHaveAttribute(
+      'href',
+      '/tenant/tenant-1/user-management/roles'
+    );
     expect(
       screen.getByText(
         'Changing scope, inheritance, or expiration can expand or contract effective access. Review the before/after access summary before saving.'
@@ -303,7 +331,7 @@ describe('UserEditorScreen', () => {
         expect.objectContaining({
           method: 'POST',
           body: JSON.stringify({
-            roleCode: 'ADMIN',
+            roleCode: 'VIEWER',
             scopeType: 'tenant',
             scopeId: null,
             inherit: false,
@@ -313,14 +341,12 @@ describe('UserEditorScreen', () => {
       );
     });
 
-    expect(await screen.findByText('Administrator was assigned.')).toBeInTheDocument();
-    expect(await screen.findByText('ADMIN')).toBeInTheDocument();
+    expect(await screen.findByText('Viewer was assigned.')).toBeInTheDocument();
+    expect(await screen.findByText('VIEWER')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
-    expect(
-      await screen.findByText('Save changes to Administrator assignment?')
-    ).toBeInTheDocument();
-    expect(screen.getByText(/Role: Administrator. User: Alice. Scope: Tenant One./)).toBeInTheDocument();
+    expect(await screen.findByText('Save changes to Viewer assignment?')).toBeInTheDocument();
+    expect(screen.getByText(/Role: Viewer. User: Alice. Scope: Tenant One./)).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Save assignment' }));
 
     await waitFor(() => {
@@ -337,7 +363,7 @@ describe('UserEditorScreen', () => {
     });
 
     fireEvent.click(screen.getByRole('button', { name: 'Remove' }));
-    expect(await screen.findByText('Remove Administrator from Alice?')).toBeInTheDocument();
+    expect(await screen.findByText('Remove Viewer from Alice?')).toBeInTheDocument();
     expect(
       screen.getByText(
         "Removing this assignment may change the user's effective access. Review the affected scope, inheritance, expiration, and snapshot refresh result before saving."
@@ -355,6 +381,179 @@ describe('UserEditorScreen', () => {
     });
 
     expect(await screen.findByText('Role assignment was removed.')).toBeInTheDocument();
+  });
+
+  it('hides expired legacy admin assignments from the active assignment list', async () => {
+    const detail = {
+      id: 'user-1',
+      username: 'alice',
+      email: 'alice@example.com',
+      displayName: 'Alice',
+      phone: null,
+      avatarUrl: null,
+      preferredLanguage: 'en',
+      isActive: true,
+      isTotpEnabled: false,
+      forceReset: false,
+      lastLoginAt: null,
+      createdAt: '2026-04-17T03:00:00.000Z',
+      updatedAt: '2026-04-17T03:30:00.000Z',
+      roleAssignments: [
+        {
+          id: 'assignment-initial-admin',
+          roleId: 'role-initial-admin',
+          roleCode: 'INITIAL_ADMIN',
+          roleName: localizedFixture('Initial Admin', { zh_HANS: '初始管理员' }),
+          scopeType: 'tenant',
+          scopeId: null,
+          scopeName: 'Tenant One',
+          scopePath: null,
+          inherit: true,
+          grantedAt: '2026-04-18T09:00:00.000Z',
+          expiresAt: null,
+        },
+        {
+          id: 'assignment-admin',
+          roleId: 'role-admin',
+          roleCode: 'ADMIN',
+          roleName: localizedFixture('Administrator', { zh_HANS: '管理员' }),
+          scopeType: 'tenant',
+          scopeId: null,
+          scopeName: 'Tenant One',
+          scopePath: null,
+          inherit: true,
+          grantedAt: '2026-04-17T09:00:00.000Z',
+          expiresAt: '2026-04-18T00:00:00.000Z',
+        },
+        {
+          id: 'assignment-platform-admin',
+          roleId: 'role-platform-admin',
+          roleCode: 'PLATFORM_ADMIN',
+          roleName: localizedFixture('Platform Administrator', { zh_HANS: '平台管理员' }),
+          scopeType: 'tenant',
+          scopeId: null,
+          scopeName: 'Tenant One',
+          scopePath: null,
+          inherit: true,
+          grantedAt: '2026-04-17T09:00:00.000Z',
+          expiresAt: '2026-04-18T00:00:00.000Z',
+        },
+        {
+          id: 'assignment-tenant-admin',
+          roleId: 'role-tenant-admin',
+          roleCode: 'TENANT_ADMIN',
+          roleName: localizedFixture('Tenant Administrator', { zh_HANS: '租户管理员' }),
+          scopeType: 'tenant',
+          scopeId: null,
+          scopeName: 'Tenant One',
+          scopePath: null,
+          inherit: true,
+          grantedAt: '2026-04-17T09:00:00.000Z',
+          expiresAt: '2026-04-18T00:00:00.000Z',
+        },
+      ],
+      scopeAccess: [],
+    };
+
+    mockRequest.mockImplementation(async (path: string, init?: RequestInit) => {
+      if (path === '/api/v1/roles') {
+        return [
+          {
+            id: 'role-initial-admin',
+            code: 'INITIAL_ADMIN',
+            name: localizedFixture('Initial Admin', { zh_HANS: '初始管理员' }),
+            description: 'Built-in recovery role',
+            isSystem: true,
+            permissionCount: 140,
+            userCount: 1,
+            createdAt: '2026-04-17T01:00:00.000Z',
+            updatedAt: '2026-04-17T02:00:00.000Z',
+          },
+          {
+            id: 'role-viewer',
+            code: 'VIEWER',
+            name: localizedFixture('Viewer', { zh_HANS: '查看者' }),
+            description: 'Read-only access',
+            isSystem: false,
+            permissionCount: 1,
+            userCount: 0,
+            createdAt: '2026-04-17T01:00:00.000Z',
+            updatedAt: '2026-04-17T02:00:00.000Z',
+          },
+          {
+            id: 'role-admin',
+            code: 'ADMIN',
+            name: localizedFixture('Administrator', { zh_HANS: '管理员' }),
+            description: 'Legacy admin compatibility row',
+            isSystem: false,
+            permissionCount: 1,
+            userCount: 0,
+            createdAt: '2026-04-17T01:00:00.000Z',
+            updatedAt: '2026-04-17T02:00:00.000Z',
+          },
+          {
+            id: 'role-platform-admin',
+            code: 'PLATFORM_ADMIN',
+            name: localizedFixture('Platform Administrator', { zh_HANS: '平台管理员' }),
+            description: 'Legacy platform admin compatibility row',
+            isSystem: false,
+            permissionCount: 1,
+            userCount: 0,
+            createdAt: '2026-04-17T01:00:00.000Z',
+            updatedAt: '2026-04-17T02:00:00.000Z',
+          },
+          {
+            id: 'role-tenant-admin',
+            code: 'TENANT_ADMIN',
+            name: localizedFixture('Tenant Administrator', { zh_HANS: '租户管理员' }),
+            description: 'Legacy tenant admin compatibility row',
+            isSystem: false,
+            permissionCount: 1,
+            userCount: 0,
+            createdAt: '2026-04-17T01:00:00.000Z',
+            updatedAt: '2026-04-17T02:00:00.000Z',
+          },
+        ];
+      }
+
+      if (path === '/api/v1/organization/tree?includeInactive=false') {
+        return organizationTreeResponse;
+      }
+
+      if (path === '/api/v1/permissions/check' && init?.method === 'POST') {
+        return {
+          results: [
+            {
+              resource: 'system_user',
+              action: 'admin',
+              checkedAction: 'admin',
+              allowed: true,
+            },
+          ],
+        };
+      }
+
+      if (path === '/api/v1/system-users/user-1' && !init) {
+        return detail;
+      }
+
+      throw new Error(`Unhandled request: ${path}`);
+    });
+
+    render(<UserEditorScreen tenantId="tenant-1" systemUserId="user-1" mode="edit" />);
+
+    expect(await screen.findByRole('heading', { name: 'Alice' })).toBeInTheDocument();
+    expect(screen.getByText('1 active links')).toBeInTheDocument();
+    expect(screen.getByText('INITIAL_ADMIN')).toBeInTheDocument();
+    expect(screen.queryByText('ADMIN')).not.toBeInTheDocument();
+    expect(screen.queryByText('PLATFORM_ADMIN')).not.toBeInTheDocument();
+    expect(screen.queryByText('TENANT_ADMIN')).not.toBeInTheDocument();
+    expect(screen.queryByRole('option', { name: 'Administrator' })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('option', { name: 'Platform Administrator' })
+    ).not.toBeInTheDocument();
+    expect(screen.queryByRole('option', { name: 'Tenant Administrator' })).not.toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Viewer' })).toBeInTheDocument();
   });
 
   it('requires confirmation before assigning Initial Admin and shows no-last-admin warning copy', async () => {
@@ -516,9 +715,9 @@ describe('UserEditorScreen', () => {
         return [
           {
             id: 'role-1',
-            code: 'PLATFORM_ADMIN',
-            name: localizedFixture('Platform Administrator', { zh_HANS: '平台管理员' }),
-            description: 'AC only',
+            code: 'INITIAL_ADMIN',
+            name: localizedFixture('Initial Admin', { zh_HANS: '初始管理员' }),
+            description: 'Built-in recovery role',
             isSystem: true,
             permissionCount: 1,
             userCount: 1,
@@ -564,9 +763,9 @@ describe('UserEditorScreen', () => {
         detail.roleAssignments = [
           {
             id: 'assignment-1',
-            roleId: 'tenant-role-platform-admin',
-            roleCode: 'PLATFORM_ADMIN',
-            roleName: localizedFixture('Platform Administrator', { zh_HANS: '平台管理员' }),
+            roleId: 'tenant-role-initial-admin',
+            roleCode: 'INITIAL_ADMIN',
+            roleName: localizedFixture('Initial Admin', { zh_HANS: '初始管理员' }),
             scopeType: 'tenant',
             scopeId: null,
             scopeName: 'AC Tenant',
@@ -580,7 +779,7 @@ describe('UserEditorScreen', () => {
         return {
           id: 'assignment-1',
           userId: 'user-1',
-          roleId: 'tenant-role-platform-admin',
+          roleId: 'tenant-role-initial-admin',
           scopeType: 'tenant',
           scopeId: null,
           inherit: false,
@@ -597,13 +796,16 @@ describe('UserEditorScreen', () => {
     );
 
     expect(await screen.findByRole('heading', { name: 'Alice' })).toBeInTheDocument();
-    expect(screen.getByRole('option', { name: 'Platform Administrator' })).toBeInTheDocument();
+    expect(screen.queryByRole('option', { name: 'Platform Administrator' })).not.toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Initial Admin' })).toBeInTheDocument();
     expect(screen.queryByRole('option', { name: 'Talent Manager' })).not.toBeInTheDocument();
     await waitFor(() => {
       expect(screen.getByLabelText('Role')).toHaveValue('role-1');
     });
 
     fireEvent.click(screen.getByRole('button', { name: 'Assign role' }));
+    expect(await screen.findByText('Assign Initial Admin?')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Assign Initial Admin' }));
 
     await waitFor(() => {
       expect(mockRequest).toHaveBeenCalledWith(
@@ -611,7 +813,7 @@ describe('UserEditorScreen', () => {
         expect.objectContaining({
           method: 'POST',
           body: JSON.stringify({
-            roleCode: 'PLATFORM_ADMIN',
+            roleCode: 'INITIAL_ADMIN',
             scopeType: 'tenant',
             scopeId: null,
             inherit: false,
@@ -621,7 +823,7 @@ describe('UserEditorScreen', () => {
       );
     });
 
-    expect(await screen.findByText('Platform Administrator was assigned.')).toBeInTheDocument();
+    expect(await screen.findByText('Initial Admin was assigned.')).toBeInTheDocument();
     expect(
       screen.queryByRole('option', { name: 'Platform Administrator' })
     ).not.toBeInTheDocument();

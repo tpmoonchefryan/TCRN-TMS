@@ -2,6 +2,7 @@
 // UAT Test Users - Creates users with different roles for testing
 
 import { PrismaClient } from '../../src/platform/prisma/client';
+import { INITIAL_ADMIN_ROLE_CODE } from '../../../shared/src/rbac/catalog';
 import { UatTenantResult } from './20-uat-tenant';
 import { UatOrganizationResult } from './21-uat-organization';
 
@@ -103,7 +104,8 @@ export async function seedUatUsers(
 
   // Get role IDs from the tenant schema (using new unified roles)
   const corpRoles = await prisma.$queryRawUnsafe<Array<{ id: string; code: string }>>(
-    `SELECT id, code FROM "${corpSchema}".role WHERE code IN ('ADMIN', 'TALENT_MANAGER', 'CUSTOMER_MANAGER', 'CONTENT_MANAGER', 'VIEWER')`
+    `SELECT id, code FROM "${corpSchema}".role WHERE code IN ($1, 'TALENT_MANAGER', 'CUSTOMER_MANAGER', 'CONTENT_MANAGER', 'VIEWER')`,
+    INITIAL_ADMIN_ROLE_CODE,
   );
   const corpRoleMap: Record<string, string> = {};
   for (const role of corpRoles) {
@@ -111,13 +113,13 @@ export async function seedUatUsers(
   }
 
   const corpUsersList: SeedUserAssignment[] = [
-    // Tenant Admins (2) - ADMIN at tenant scope
-    { username: 'corp_admin', email: 'corp.admin@uat.test', displayName: 'Corp Admin', role: 'ADMIN', scopeType: 'tenant', scopeId: null },
-    { username: 'corp_admin2', email: 'corp.admin2@uat.test', displayName: 'Corp Admin 2', role: 'ADMIN', scopeType: 'tenant', scopeId: null },
+    // Tenant rescue admins (2) - Initial Admin at tenant scope
+    { username: 'corp_admin', email: 'corp.admin@uat.test', displayName: 'Corp Admin', role: INITIAL_ADMIN_ROLE_CODE, scopeType: 'tenant', scopeId: null },
+    { username: 'corp_admin2', email: 'corp.admin2@uat.test', displayName: 'Corp Admin 2', role: INITIAL_ADMIN_ROLE_CODE, scopeType: 'tenant', scopeId: null },
     
-    // Subsidiary Managers (2) - ADMIN at subsidiary scope
-    { username: 'gaming_manager', email: 'gaming.manager@uat.test', displayName: 'Gaming Division Manager', role: 'ADMIN', scopeType: 'subsidiary', scopeId: uatOrg.subsidiaries['BU_GAMING'] },
-    { username: 'music_manager', email: 'music.manager@uat.test', displayName: 'Music Division Manager', role: 'ADMIN', scopeType: 'subsidiary', scopeId: uatOrg.subsidiaries['BU_MUSIC'] },
+    // Subsidiary Managers (2) - custom fixture role at subsidiary scope
+    { username: 'gaming_manager', email: 'gaming.manager@uat.test', displayName: 'Gaming Division Manager', role: 'TALENT_MANAGER', scopeType: 'subsidiary', scopeId: uatOrg.subsidiaries['BU_GAMING'] },
+    { username: 'music_manager', email: 'music.manager@uat.test', displayName: 'Music Division Manager', role: 'TALENT_MANAGER', scopeType: 'subsidiary', scopeId: uatOrg.subsidiaries['BU_MUSIC'] },
     
     // Talent Managers (3) - TALENT_MANAGER at talent scope
     { username: 'sakura_manager', email: 'sakura.manager@uat.test', displayName: 'Sakura Manager', role: 'TALENT_MANAGER', scopeType: 'talent', scopeId: uatOrg.talents['TALENT_SAKURA'] },
@@ -164,7 +166,8 @@ export async function seedUatUsers(
 
   // Get role IDs from the solo tenant schema (using new unified roles)
   const soloRoles = await prisma.$queryRawUnsafe<Array<{ id: string; code: string }>>(
-    `SELECT id, code FROM "${soloSchema}".role WHERE code IN ('ADMIN', 'TALENT_MANAGER', 'CONTENT_MANAGER', 'VIEWER')`
+    `SELECT id, code FROM "${soloSchema}".role WHERE code IN ($1, 'TALENT_MANAGER', 'CONTENT_MANAGER', 'VIEWER')`,
+    INITIAL_ADMIN_ROLE_CODE,
   );
   const soloRoleMap: Record<string, string> = {};
   for (const role of soloRoles) {
@@ -172,8 +175,8 @@ export async function seedUatUsers(
   }
 
   const soloUsersList: SeedUserAssignment[] = [
-    // Owner (Admin at tenant scope)
-    { username: 'solo_owner', email: 'solo.owner@uat.test', displayName: 'Solo Owner', role: 'ADMIN', scopeType: 'tenant', scopeId: null },
+    // Owner (Initial Admin at tenant scope)
+    { username: 'solo_owner', email: 'solo.owner@uat.test', displayName: 'Solo Owner', role: INITIAL_ADMIN_ROLE_CODE, scopeType: 'tenant', scopeId: null },
     
     // Content Manager at talent scope
     { username: 'solo_content', email: 'solo.content@uat.test', displayName: 'Solo Content Manager', role: 'CONTENT_MANAGER', scopeType: 'talent', scopeId: uatOrg.talents['TALENT_SOLO_STAR'] },

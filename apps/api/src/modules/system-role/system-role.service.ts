@@ -8,6 +8,7 @@ import {
 import { Prisma } from '@tcrn/database';
 import {
   type CreateSystemRoleInput,
+  isLegacyAdminCompatibilityRoleCode,
   isRbacRoleAvailableForTenantTier,
   type LocalizedText,
   normalizeLocalizedText,
@@ -109,7 +110,8 @@ export class SystemRoleService {
 
     return roles
       .filter((role) =>
-        tenantTier ? isRbacRoleAvailableForTenantTier(role.code, tenantTier) : true
+        !isLegacyAdminCompatibilityRoleCode(role.code) &&
+        (tenantTier ? isRbacRoleAvailableForTenantTier(role.code, tenantTier) : true)
       )
       .map((role) => ({
         ...this.mapRoleRecord(role),
@@ -137,7 +139,10 @@ export class SystemRoleService {
 
     if (!role) return null;
 
-    if (tenantTier && !isRbacRoleAvailableForTenantTier(role.code, tenantTier)) {
+    if (
+      isLegacyAdminCompatibilityRoleCode(role.code) ||
+      (tenantTier && !isRbacRoleAvailableForTenantTier(role.code, tenantTier))
+    ) {
       return null;
     }
 

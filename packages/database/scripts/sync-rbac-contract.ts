@@ -18,10 +18,12 @@ loadRepoEnvFiles(import.meta.url);
 
 type RbacTableName = 'resource' | 'policy' | 'role' | 'role_policy';
 type InitialAdminInvariantStatus = 'passed' | 'blocked' | 'not_applicable';
+export type RbacSyncMode = 'definitions' | 'contract' | 'full';
 
 export interface CliOptions {
   schemas: string[];
   skipTemplate: boolean;
+  mode?: RbacSyncMode;
 }
 
 export interface SchemaCounts {
@@ -61,6 +63,10 @@ interface QueryRunner {
   $queryRawUnsafe<T = unknown>(query: string, ...values: unknown[]): Promise<T>;
 }
 
+interface MutationRunner extends QueryRunner {
+  $executeRawUnsafe(query: string, ...values: unknown[]): Promise<number>;
+}
+
 export interface RoleDefinitionRecordReadback {
   roleCode: string;
   createdAt: Date | null;
@@ -86,6 +92,7 @@ export interface InitialAdminCompatibilityReadback {
 function parseCliArgs(argv: string[]): CliOptions {
   const schemas: string[] = [];
   let skipTemplate = false;
+  let mode: RbacSyncMode = 'full';
 
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
@@ -111,12 +118,25 @@ function parseCliArgs(argv: string[]): CliOptions {
       continue;
     }
 
+    if (arg === '--mode') {
+      const value = argv[index + 1];
+
+      if (value !== 'definitions' && value !== 'contract' && value !== 'full') {
+        throw new Error('Missing or invalid value for --mode: expected definitions, contract, or full');
+      }
+
+      mode = value;
+      index += 1;
+      continue;
+    }
+
     throw new Error(`Unknown argument: ${arg}`);
   }
 
   return {
     schemas,
     skipTemplate,
+    mode,
   };
 }
 
@@ -221,6 +241,7 @@ export async function readInitialAdminCompatibilityReadback(
           FROM "${schemaName}".user_role ur
           JOIN "${schemaName}".role r ON r.id = ur.role_id
           WHERE r.code = ANY($1::text[])
+            AND (ur.expires_at IS NULL OR ur.expires_at > now())
         `,
         [...LEGACY_BUILT_IN_ROLE_CODES],
       ),
@@ -297,6 +318,129 @@ export async function assertInitialAdminCompatibilityReadback(
   return readback;
 }
 
+async function ensureInitialAdminRescueAssignment(
+  prisma: MutationRunner,
+  schemaName: string,
+): Promise<void> {
+  if (schemaName === 'tenant_template') {
+    return;
+  }
+
+  const [hasUserRoleTable, hasSystemUserTable] = await Promise.all([
+    tableExists(prisma, schemaName, 'user_role'),
+    tableExists(prisma, schemaName, 'system_user'),
+  ]);
+
+  if (!hasUserRoleTable || !hasSystemUserTable) {
+    return;
+  }
+
+  const [initialAdminRoles, existingAssignments] = await Promise.all([
+    prisma.$queryRawUnsafe<Array<{ id: string }>>(
+      `SELECT id FROM "${schemaName}".role WHERE code = $1 LIMIT 1`,
+      INITIAL_ADMIN_ROLE_CODE,
+    ),
+    prisma.$queryRawUnsafe<Array<{ count: bigint }>>(
+      `
+        SELECT COUNT(*)::bigint AS count
+        FROM "${schemaName}".user_role ur
+        JOIN "${schemaName}".role r ON r.id = ur.role_id
+        WHERE r.code = $1
+          AND ur.scope_type = 'tenant'
+          AND (ur.expires_at IS NULL OR ur.expires_at > now())
+      `,
+      INITIAL_ADMIN_ROLE_CODE,
+    ),
+  ]);
+
+  if (initialAdminRoles.length === 0 || Number(existingAssignments[0]?.count ?? 0) > 0) {
+    return;
+  }
+
+  const rescueUsers = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
+    `
+      SELECT su.id
+      FROM "${schemaName}".system_user su
+      JOIN "${schemaName}".user_role ur ON ur.user_id = su.id
+      JOIN "${schemaName}".role r ON r.id = ur.role_id
+      WHERE su.is_active = true
+        AND r.code = ANY($1::text[])
+        AND ur.scope_type = 'tenant'
+        AND (ur.expires_at IS NULL OR ur.expires_at > now())
+      GROUP BY su.id, su.username
+      ORDER BY
+        CASE su.username
+          WHEN 'ac_admin' THEN 0
+          WHEN 'corp_admin' THEN 1
+          WHEN 'corp_admin2' THEN 2
+          WHEN 'solo_owner' THEN 3
+          ELSE 10
+        END,
+        su.username ASC
+      LIMIT 1
+    `,
+    [...LEGACY_BUILT_IN_ROLE_CODES],
+  );
+
+  const rescueUser = rescueUsers[0];
+
+  if (!rescueUser) {
+    return;
+  }
+
+  await prisma.$executeRawUnsafe(
+    `
+      INSERT INTO "${schemaName}".user_role (
+        id, user_id, role_id, scope_type, scope_id, inherit, granted_at, expires_at
+      )
+      SELECT gen_random_uuid(), $1::uuid, $2::uuid, 'tenant', NULL, true, now(), NULL
+      WHERE NOT EXISTS (
+        SELECT 1
+        FROM "${schemaName}".user_role
+        WHERE user_id = $1::uuid
+          AND role_id = $2::uuid
+          AND scope_type = 'tenant'
+          AND (expires_at IS NULL OR expires_at > now())
+      )
+    `,
+    rescueUser.id,
+    initialAdminRoles[0].id,
+  );
+}
+
+async function expireActiveLegacyAdminAssignments(
+  prisma: MutationRunner,
+  schemaName: string,
+): Promise<void> {
+  if (!(await tableExists(prisma, schemaName, 'user_role'))) {
+    return;
+  }
+
+  const readback = await readInitialAdminCompatibilityReadback(prisma, schemaName);
+
+  if (readback.assignedLegacyRoleCount === 0) {
+    return;
+  }
+
+  if (readback.initialAdminAssignmentCount === 0) {
+    throw new Error(
+      `Cannot contract active legacy admin assignments in ${schemaName}: Initial Admin rescue assignment is missing.`,
+    );
+  }
+
+  await prisma.$executeRawUnsafe(
+    `
+      UPDATE "${schemaName}".user_role ur
+      SET expires_at = now() - interval '1 second'
+      FROM "${schemaName}".role r
+      WHERE r.id = ur.role_id
+        AND r.code = ANY($1::text[])
+        AND (ur.expires_at IS NULL OR ur.expires_at > now())
+    `,
+    [...LEGACY_BUILT_IN_ROLE_CODES],
+  );
+}
+
 async function getMissingRequiredTables(
   prisma: PrismaClient,
   schemaName: string,
@@ -364,9 +508,100 @@ export async function getSchemaCounts(
   };
 }
 
+async function syncSchemaDefinitions(prisma: MutationRunner, schemaName: string): Promise<void> {
+  for (const resource of RBAC_RESOURCES) {
+    await prisma.$executeRawUnsafe(`
+      INSERT INTO "${schemaName}".resource (
+        id, code, module, name, sort_order, is_active, created_at, updated_at
+      )
+      VALUES (gen_random_uuid(), $1, $2, $3::jsonb, $4, true, now(), now())
+      ON CONFLICT (code) DO UPDATE
+      SET module = EXCLUDED.module,
+          name = EXCLUDED.name,
+          sort_order = EXCLUDED.sort_order,
+          is_active = true,
+          updated_at = now()
+    `, resource.code, resource.module, JSON.stringify(resource.name), resource.sortOrder);
+  }
+
+  for (const policy of RBAC_POLICY_DEFINITIONS) {
+    await prisma.$executeRawUnsafe(`
+      WITH resource_lookup AS (
+        SELECT id FROM "${schemaName}".resource WHERE code = $1
+      )
+      INSERT INTO "${schemaName}".policy (
+        id, resource_id, action, is_active, created_at, updated_at
+      )
+      SELECT gen_random_uuid(), r.id, $2, true, now(), now()
+      FROM resource_lookup r
+      ON CONFLICT (resource_id, action) DO UPDATE
+      SET is_active = true,
+          updated_at = now()
+    `, policy.resourceCode, policy.action);
+  }
+
+  for (const role of RBAC_ROLE_TEMPLATES) {
+    await prisma.$executeRawUnsafe(`
+      INSERT INTO "${schemaName}".role (
+        id, code, name, description, is_system, is_active, created_at, updated_at, version
+      )
+      VALUES (gen_random_uuid(), $1, $2::jsonb, $3, $4, true, now(), now(), 1)
+      ON CONFLICT (code) DO UPDATE
+      SET name = EXCLUDED.name,
+          description = EXCLUDED.description,
+          is_system = EXCLUDED.is_system,
+          is_active = true,
+          updated_at = now()
+    `, role.code, JSON.stringify(role.name), role.description, role.isSystem);
+  }
+
+  for (const entry of RBAC_ROLE_PERMISSION_ENTRIES) {
+    await prisma.$executeRawUnsafe(`
+      WITH role_lookup AS (
+        SELECT id FROM "${schemaName}".role WHERE code = $1
+      ),
+      policy_lookup AS (
+        SELECT p.id
+        FROM "${schemaName}".policy p
+        JOIN "${schemaName}".resource r ON r.id = p.resource_id
+        WHERE r.code = $2
+          AND p.action = $3
+      )
+      INSERT INTO "${schemaName}".role_policy (
+        id, role_id, policy_id, effect, created_at
+      )
+      SELECT gen_random_uuid(), rl.id, pl.id, $4, now()
+      FROM role_lookup rl
+      CROSS JOIN policy_lookup pl
+      ON CONFLICT (role_id, policy_id) DO UPDATE
+      SET effect = EXCLUDED.effect
+    `, entry.roleCode, entry.resourceCode, entry.action, entry.effect);
+  }
+}
+
+async function syncSchemaContract(
+  prisma: MutationRunner,
+  schemaName: string,
+): Promise<InitialAdminCompatibilityReadback> {
+  await ensureInitialAdminRescueAssignment(prisma, schemaName);
+  await assertInitialAdminCompatibilityReadback(prisma, schemaName);
+  await expireActiveLegacyAdminAssignments(prisma, schemaName);
+
+  await prisma.$executeRawUnsafe(`
+    UPDATE "${schemaName}".role
+    SET is_system = false,
+        updated_at = now()
+    WHERE code = ANY($1::text[])
+      AND code != $2
+  `, [...LEGACY_BUILT_IN_ROLE_CODES], INITIAL_ADMIN_ROLE_CODE);
+
+  return readInitialAdminCompatibilityReadback(prisma, schemaName);
+}
+
 export async function syncSchema(
   prisma: PrismaClient,
   schemaName: string,
+  mode: RbacSyncMode = 'full',
 ): Promise<RbacSchemaSyncResult> {
   await ensureSchemaIsSyncable(prisma, schemaName);
 
@@ -375,84 +610,14 @@ export async function syncSchema(
   let initialAdminReadback: InitialAdminCompatibilityReadback | null = null;
 
   await prisma.$transaction(async (tx) => {
-    for (const resource of RBAC_RESOURCES) {
-      await tx.$executeRawUnsafe(`
-        INSERT INTO "${schemaName}".resource (
-          id, code, module, name, sort_order, is_active, created_at, updated_at
-        )
-        VALUES (gen_random_uuid(), $1, $2, $3::jsonb, $4, true, now(), now())
-        ON CONFLICT (code) DO UPDATE
-        SET module = EXCLUDED.module,
-            name = EXCLUDED.name,
-            sort_order = EXCLUDED.sort_order,
-            is_active = true,
-            updated_at = now()
-      `, resource.code, resource.module, JSON.stringify(resource.name), resource.sortOrder);
+    if (mode === 'definitions' || mode === 'full') {
+      await syncSchemaDefinitions(tx, schemaName);
     }
 
-    for (const policy of RBAC_POLICY_DEFINITIONS) {
-      await tx.$executeRawUnsafe(`
-        WITH resource_lookup AS (
-          SELECT id FROM "${schemaName}".resource WHERE code = $1
-        )
-        INSERT INTO "${schemaName}".policy (
-          id, resource_id, action, is_active, created_at, updated_at
-        )
-        SELECT gen_random_uuid(), r.id, $2, true, now(), now()
-        FROM resource_lookup r
-        ON CONFLICT (resource_id, action) DO UPDATE
-        SET is_active = true,
-            updated_at = now()
-      `, policy.resourceCode, policy.action);
-    }
-
-    for (const role of RBAC_ROLE_TEMPLATES) {
-      await tx.$executeRawUnsafe(`
-        INSERT INTO "${schemaName}".role (
-          id, code, name, description, is_system, is_active, created_at, updated_at, version
-        )
-        VALUES (gen_random_uuid(), $1, $2::jsonb, $3, $4, true, now(), now(), 1)
-        ON CONFLICT (code) DO UPDATE
-        SET name = EXCLUDED.name,
-            description = EXCLUDED.description,
-            is_system = EXCLUDED.is_system,
-            is_active = true,
-            updated_at = now()
-      `, role.code, JSON.stringify(role.name), role.description, role.isSystem);
-    }
-
-    initialAdminReadback = await assertInitialAdminCompatibilityReadback(tx, schemaName);
-
-    await tx.$executeRawUnsafe(`
-      UPDATE "${schemaName}".role
-      SET is_system = false,
-          updated_at = now()
-      WHERE code = ANY($1::text[])
-        AND code != $2
-    `, [...LEGACY_BUILT_IN_ROLE_CODES], INITIAL_ADMIN_ROLE_CODE);
-
-    for (const entry of RBAC_ROLE_PERMISSION_ENTRIES) {
-      await tx.$executeRawUnsafe(`
-        WITH role_lookup AS (
-          SELECT id FROM "${schemaName}".role WHERE code = $1
-        ),
-        policy_lookup AS (
-          SELECT p.id
-          FROM "${schemaName}".policy p
-          JOIN "${schemaName}".resource r ON r.id = p.resource_id
-          WHERE r.code = $2
-            AND p.action = $3
-        )
-        INSERT INTO "${schemaName}".role_policy (
-          id, role_id, policy_id, effect, created_at
-        )
-        SELECT gen_random_uuid(), rl.id, pl.id, $4, now()
-        FROM role_lookup rl
-        CROSS JOIN policy_lookup pl
-        ON CONFLICT (role_id, policy_id) DO UPDATE
-        SET effect = EXCLUDED.effect
-      `, entry.roleCode, entry.resourceCode, entry.action, entry.effect);
-    }
+    initialAdminReadback =
+      mode === 'definitions'
+        ? await readInitialAdminCompatibilityReadback(tx, schemaName)
+        : await syncSchemaContract(tx, schemaName);
   });
 
   const after = await getSchemaCounts(prisma, schemaName);
@@ -513,7 +678,7 @@ export async function syncRbacContractSchemasWithReport(
       continue;
     }
 
-    synced.push(await syncSchema(prisma, schemaName));
+    synced.push(await syncSchema(prisma, schemaName, options.mode ?? 'full'));
   }
 
   return {

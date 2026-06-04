@@ -11,6 +11,7 @@ import {
   KeyRound,
   Network,
   PlugZap,
+  ShieldCheck,
   Users,
   Webhook,
 } from 'lucide-react';
@@ -18,6 +19,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 import {
+  buildAcRoleManagementPath,
   buildAcProfilePath,
   buildAcProfileSecurityPath,
   buildAcWorkspacePath,
@@ -49,12 +51,17 @@ function getAcPageTitle(
     platformToolConnections: string;
     profile: string;
     runtimeFlags: string;
+    roleManagement: string;
     systemDictionary: string;
     tenantManagement: string;
     userManagement: string;
     webhookManagement: string;
   }
 ) {
+  if (pathname.includes('/user-management/roles')) {
+    return titles.roleManagement;
+  }
+
   if (pathname.includes('/user-management')) {
     return titles.userManagement;
   }
@@ -188,6 +195,14 @@ export function AcShell({
       ja: 'ランタイムフラグ',
       ko: '런타임 플래그',
       fr: 'Flags runtime',
+    }),
+    roleManagement: pickLocaleText(locale, {
+      en: 'Role Management',
+      zh_HANS: '角色管理',
+      zh_HANT: '角色管理',
+      ja: 'ロール管理',
+      ko: '역할 관리',
+      fr: 'Gestion des rôles',
     }),
   };
   const loadingCopy = {
@@ -329,8 +344,16 @@ export function AcShell({
       key: 'users',
       label: copy.ac.nav.userManagement,
       href: `/ac/${tenantId}/user-management`,
-      isActive: pathname.includes('/user-management'),
+      isActive:
+        pathname.includes('/user-management') && !pathname.includes('/user-management/roles'),
       icon: <Users className="h-4 w-4" />,
+    },
+    {
+      key: 'roles',
+      label: integrationLabels.roleManagement,
+      href: buildAcRoleManagementPath(tenantId),
+      isActive: pathname.includes('/user-management/roles'),
+      icon: <ShieldCheck className="h-4 w-4" />,
     },
     {
       key: 'interface-management',
@@ -415,6 +438,7 @@ export function AcShell({
     interfaceManagement: integrationLabels.interfaceManagement,
     platformToolConnections: integrationLabels.platformToolConnections,
     runtimeFlags: integrationLabels.runtimeFlags,
+    roleManagement: integrationLabels.roleManagement,
     webhookManagement: integrationLabels.webhookManagement,
   });
   const shellA11y = {

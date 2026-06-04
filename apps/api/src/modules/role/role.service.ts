@@ -12,6 +12,7 @@ import {
   getRbacResourceDefinition,
   INITIAL_ADMIN_ROLE_CODE,
   isCanonicalPermissionAction,
+  LEGACY_ADMIN_COMPATIBILITY_ROLE_CODES,
   type LocalizedText,
   mergeRolePermissionStateInputs,
   type PartialLocalizedText,
@@ -106,6 +107,7 @@ export class RoleService {
     options: {
       search?: string;
       isSystem?: boolean;
+      includeCompatibility?: boolean;
       sort?: string;
     } = {}
   ): Promise<Array<RoleData & { permissionCount: number; userCount: number }>> {
@@ -121,6 +123,11 @@ export class RoleService {
     if (options.isSystem !== undefined) {
       whereClause += ` AND is_system = $${paramIndex}`;
       params.push(options.isSystem);
+      paramIndex++;
+    }
+    if (!options.includeCompatibility) {
+      whereClause += ` AND NOT (code = ANY($${paramIndex}::text[]))`;
+      params.push([...LEGACY_ADMIN_COMPATIBILITY_ROLE_CODES]);
     }
 
     let orderBy = 'is_system DESC, code ASC';

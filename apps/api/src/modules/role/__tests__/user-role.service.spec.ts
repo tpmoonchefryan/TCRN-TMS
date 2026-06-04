@@ -202,9 +202,9 @@ describe('UserRoleService', () => {
       const assignment = {
         id: 'assignment-1',
         userId: 'user-2',
-        roleId: 'tenant-role-admin',
-        roleCode: 'ADMIN',
-        roleName: 'Administrator',
+        roleId: 'tenant-role-viewer',
+        roleCode: 'VIEWER',
+        roleName: 'Viewer',
         scopeType: 'tenant',
         scopeId: null,
         scopeName: null,
@@ -217,7 +217,7 @@ describe('UserRoleService', () => {
       };
 
       mockPrisma.$queryRawUnsafe
-        .mockResolvedValueOnce([{ id: 'tenant-role-admin', code: 'ADMIN' }])
+        .mockResolvedValueOnce([{ id: 'tenant-role-viewer', code: 'VIEWER' }])
         .mockResolvedValueOnce([])
         .mockResolvedValueOnce([assignment]);
       (mockSnapshotService.checkPermission as ReturnType<typeof vi.fn>).mockResolvedValueOnce(true);
@@ -233,7 +233,7 @@ describe('UserRoleService', () => {
         'user-2',
         testSchema,
         {
-          roleCode: 'ADMIN',
+          roleCode: 'VIEWER',
           scopeType: 'tenant',
           inherit: false,
         },
@@ -244,12 +244,12 @@ describe('UserRoleService', () => {
       expect(mockPrisma.$queryRawUnsafe).toHaveBeenNthCalledWith(
         1,
         expect.stringContaining('WHERE code = $1 AND is_active = true'),
-        'ADMIN'
+        'VIEWER'
       );
       expect(mockPrisma.$executeRawUnsafe).toHaveBeenCalledWith(
         expect.stringContaining('INSERT INTO "tenant_test123".user_role'),
         'user-2',
-        'tenant-role-admin',
+        'tenant-role-viewer',
         'tenant',
         null,
         false,
@@ -263,12 +263,12 @@ describe('UserRoleService', () => {
         grantorUserId,
         'role_assignment_create',
         'assignment-1',
-        'ADMIN',
+        'VIEWER',
         expect.stringContaining('"permissionVersionAfter":4')
       );
     });
 
-    it('rejects workspace-incompatible roles before writing assignments', async () => {
+    it('rejects legacy admin compatibility roles before writing assignments', async () => {
       mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([{ id: 'role-1', code: 'PLATFORM_ADMIN' }]);
 
       await expect(
@@ -284,7 +284,31 @@ describe('UserRoleService', () => {
         )
       ).rejects.toMatchObject({
         response: expect.objectContaining({
-          code: 'PERM_ACCESS_DENIED',
+          code: 'LEGACY_ADMIN_ROLE_ASSIGNMENT_REMOVED',
+        }),
+      });
+
+      expect(mockSnapshotService.checkPermission).not.toHaveBeenCalled();
+      expect(mockPrisma.$executeRawUnsafe).not.toHaveBeenCalled();
+    });
+
+    it('rejects legacy admin compatibility roles resolved by roleId', async () => {
+      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([{ id: 'role-1', code: 'ADMIN' }]);
+
+      await expect(
+        service.assignRole(
+          'user-2',
+          testSchema,
+          {
+            roleId: 'role-1',
+            scopeType: 'tenant',
+            inherit: false,
+          },
+          grantorUserId
+        )
+      ).rejects.toMatchObject({
+        response: expect.objectContaining({
+          code: 'LEGACY_ADMIN_ROLE_ASSIGNMENT_REMOVED',
         }),
       });
 

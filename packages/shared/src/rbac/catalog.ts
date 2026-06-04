@@ -132,6 +132,15 @@ export type RbacTenantTier = 'ac' | 'standard';
 export type RbacRoleScopeType = 'tenant' | 'subsidiary' | 'talent';
 
 export const INITIAL_ADMIN_ROLE_CODE = 'INITIAL_ADMIN' as const;
+export const LEGACY_ADMIN_COMPATIBILITY_ROLE_CODES = [
+  'PLATFORM_ADMIN',
+  'ADMIN',
+  'TENANT_ADMIN',
+] as const;
+
+export function isLegacyAdminCompatibilityRoleCode(roleCode: string): boolean {
+  return (LEGACY_ADMIN_COMPATIBILITY_ROLE_CODES as readonly string[]).includes(roleCode);
+}
 
 interface LocalizedLabel {
   name: LocalizedText;

@@ -2,7 +2,10 @@
 // AC (Admin Console) tenant seed data
 
 import { PrismaClient, Tenant } from '../../src/platform/prisma/client';
-import { INITIAL_ADMIN_ROLE_CODE } from '../../../shared/src/rbac/catalog';
+import {
+  INITIAL_ADMIN_ROLE_CODE,
+  LEGACY_ADMIN_COMPATIBILITY_ROLE_CODES,
+} from '../../../shared/src/rbac/catalog';
 import { syncSeedTenantCapabilities } from './_module-capabilities';
 
 export interface AcTenantResult {
@@ -202,6 +205,20 @@ export async function seedAcAdminUser(prisma: PrismaClient, acTenant: AcTenantRe
       roleId
     );
   }
+
+  await prisma.$executeRawUnsafe(
+    `
+      UPDATE "${schemaName}".user_role ur
+      SET expires_at = now() - interval '1 second'
+      FROM "${schemaName}".role r
+      WHERE ur.user_id = $1::uuid
+        AND r.id = ur.role_id
+        AND r.code = ANY($2::text[])
+        AND (ur.expires_at IS NULL OR ur.expires_at > now())
+    `,
+    userId,
+    [...LEGACY_ADMIN_COMPATIBILITY_ROLE_CODES],
+  );
 
   console.log('    ✓ AC administrator user created');
   console.log('    📝 AC Admin credentials:');

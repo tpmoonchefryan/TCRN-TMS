@@ -33,7 +33,7 @@ import {
   type RoleMutationPermissionsInput,
   SUPPORTED_UI_LOCALES,
 } from '@tcrn/shared';
-import { Type } from 'class-transformer';
+import { Transform } from 'class-transformer';
 import {
   IsArray,
   IsBoolean,
@@ -51,6 +51,48 @@ import { getPrimaryAcceptLanguage } from '../../common/request-locale.util';
 import { success } from '../../common/response.util';
 import { RoleService } from './role.service';
 
+function toBooleanQueryValue(value: unknown): unknown {
+  if (typeof value === 'boolean') {
+    return value;
+  }
+
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase();
+
+    if (normalized === 'true') {
+      return true;
+    }
+
+    if (normalized === 'false') {
+      return false;
+    }
+  }
+
+  return value;
+}
+
+function parseBooleanQueryValue(value: unknown, fallback?: boolean): boolean | undefined {
+  const selectedValue = Array.isArray(value) ? value[0] : value;
+
+  if (typeof selectedValue === 'boolean') {
+    return selectedValue;
+  }
+
+  if (typeof selectedValue === 'string') {
+    const normalized = selectedValue.trim().toLowerCase();
+
+    if (normalized === 'true') {
+      return true;
+    }
+
+    if (normalized === 'false') {
+      return false;
+    }
+  }
+
+  return fallback;
+}
+
 // DTOs
 export class ListRolesQueryDto {
   @ApiPropertyOptional({ description: 'Search by role code or name', example: 'admin' })
@@ -61,8 +103,17 @@ export class ListRolesQueryDto {
   @ApiPropertyOptional({ description: 'Filter by system roles only', example: false })
   @IsOptional()
   @IsBoolean()
-  @Type(() => Boolean)
+  @Transform(({ value }) => toBooleanQueryValue(value))
   isSystem?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'Include legacy admin compatibility rows for audit/debug readback only',
+    example: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  @Transform(({ value }) => toBooleanQueryValue(value))
+  includeCompatibility?: boolean;
 
   @ApiPropertyOptional({ description: 'Sort field', example: 'code' })
   @IsOptional()
@@ -534,10 +585,15 @@ export class RoleController {
     @Req() req: Request
   ) {
     const language = getPrimaryAcceptLanguage(req);
+    const rawQuery = req.query as Record<string, unknown>;
 
     const roles = await this.roleService.list(user.tenantSchema, {
       search: query.search,
-      isSystem: query.isSystem,
+      isSystem: parseBooleanQueryValue(rawQuery.isSystem, query.isSystem),
+      includeCompatibility: parseBooleanQueryValue(
+        rawQuery.includeCompatibility,
+        query.includeCompatibility
+      ),
       sort: query.sort,
     });
 

@@ -9,6 +9,7 @@ import { prisma } from '@tcrn/database';
 import {
   ErrorCodes,
   INITIAL_ADMIN_ROLE_CODE,
+  isLegacyAdminCompatibilityRoleCode,
   isRbacRoleAvailableForScopeType,
   isRbacRoleAvailableForTenantTier,
 } from '@tcrn/shared';
@@ -164,8 +165,7 @@ export class UserRoleService {
     // Only admins can assign these roles
     if (
       roleCode === INITIAL_ADMIN_ROLE_CODE ||
-      roleCode === 'ADMIN' ||
-      roleCode === 'PLATFORM_ADMIN'
+      isLegacyAdminCompatibilityRoleCode(roleCode)
     ) {
       return false;
     }
@@ -241,6 +241,15 @@ export class UserRoleService {
 
     const roleId = roles[0].id;
     const roleCode = roles[0].code;
+
+    if (isLegacyAdminCompatibilityRoleCode(roleCode)) {
+      throw new BadRequestException({
+        code: 'LEGACY_ADMIN_ROLE_ASSIGNMENT_REMOVED',
+        message:
+          'Legacy admin compatibility roles cannot be assigned. Assign Initial Admin or a custom role instead.',
+      });
+    }
+
     const tenant = await this.tenantService.getTenantBySchemaName(tenantSchema);
     const tenantTier = tenant?.tier === 'ac' ? 'ac' : 'standard';
 

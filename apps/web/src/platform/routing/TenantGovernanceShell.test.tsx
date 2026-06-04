@@ -171,4 +171,30 @@ describe('TenantGovernanceShell', () => {
     ).not.toHaveAttribute('aria-current');
     expect(screen.getAllByText('Webhook Management').length).toBeGreaterThan(0);
   });
+
+  it('highlights only Role Management on the first-class tenant role route', () => {
+    render(
+      <UiLocaleProvider>
+        <TenantGovernanceShell
+          tenantId="tenant-1"
+          pathname="/tenant/tenant-1/user-management/roles"
+          session={baseSession}
+          onNavigate={vi.fn()}
+          onSignOut={vi.fn().mockResolvedValue(undefined)}
+        >
+          <div>Tenant role management</div>
+        </TenantGovernanceShell>
+      </UiLocaleProvider>
+    );
+
+    const navigation = screen.getByRole('navigation', { name: 'Main navigation' });
+    const roleLink = within(navigation).getByRole('link', { name: 'Role Management' });
+    const userLink = within(navigation).getByRole('link', { name: 'User Management' });
+
+    expect(roleLink).toHaveAttribute('href', '/tenant/tenant-1/user-management/roles');
+    expect(roleLink).toHaveAttribute('aria-current', 'page');
+    expect(userLink).not.toHaveAttribute('aria-current');
+    expect(within(navigation).getAllByRole('link', { current: 'page' })).toHaveLength(1);
+    expect(screen.getAllByText('Role Management').length).toBeGreaterThan(1);
+  });
 });
