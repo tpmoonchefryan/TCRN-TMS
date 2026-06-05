@@ -27,9 +27,20 @@
 
 ---
 
+## 📚 文档
+
+- [User Guide](./docs/user-guide/README.md)：当前状态下的详细操作指南
+- [GitHub Wiki Draft](./docs/wiki-draft/Home.md)：轻量 Wiki 导航草稿
+- [Known Limitations](./docs/wiki-draft/Known-Limitations.md)：当前审计中不能被过度宣称的已知限制
+
+若 README、截图、生成摘要或历史交接说明与源码/当前 UI 证据冲突，以源码实现和当前 UI 证据为准。
+
+---
+
 ## 📖 目录
 
 - [待办事项](#-待办事项)
+- [文档](#-文档)
 - [项目简介](#-项目简介)
 - [功能亮点](#-功能亮点)
 - [核心模块](#-核心模块)
@@ -60,7 +71,7 @@
 
 - **隐私优先架构**：PII 流程已外置到独立的 `TCRN_PII_PLATFORM`，不再由本仓库内置运行时承载
 - **多租户隔离**：每个租户拥有独立的 PostgreSQL Schema，实现完全数据隔离
-- **三语言支持**：完整的中文、英文、日文界面本地化
+- **三语言界面标签**：支持中文、英文、日文界面标签与文案覆盖，但语言元数据可访问性验收仍记录在 Known Limitations 中
 - **VTuber 专属功能**：棉花糖（匿名问答）、可定制艺人主页、会员追踪
 
 ---
@@ -101,15 +112,19 @@
 
 权限治理现在只有一个内置救援角色：`INITIAL_ADMIN`。日常角色均为自定义角色，通过 `/api/v1/roles` 使用能力包和可选的高级资源/动作覆盖进行编辑。角色编辑器会按面向用户的权限分类组织能力包，并支持按能力包名称、说明、分类、风险、资源和动作进行关键词搜索。旧的 `/api/v1/system-roles` 读取端点保留为兼容面；写入端点已废弃或阻止，角色删除因审计历史被禁用，角色激活/停用生命周期已移除。
 
-### 🍡 棉花糖匿名问答系统
+当前 UI 审计提示：至少一处本地 AC 租户证据仍显示额外默认角色分配，因此 User Guide 会把 `INITIAL_ADMIN` only 的角色基线记录为已知限制，直到源码/UI 复验关闭 `GAP-P2-RBAC-001`。
 
-灵感来自日本"棉花糖"服务的完整匿名提问箱系统：
+### 🍡 棉花糖匿名问答领域
 
-- **智能验证码**：三种模式（始终/从不/自动），带信任评分
-- **内容审核**：多语言脏话过滤器，带风险评分
-- **外部屏蔽词**：屏蔽 URL、域名和关键词模式
-- **表情反应**：粉丝可对已审核消息进行表情反应
-- **导出功能**：支持导出消息为 CSV/JSON/XLSX
+灵感来自日本“棉花糖”服务的匿名提问箱领域与管理概念：
+
+- **智能验证码概念**：三种模式（始终/从不/自动），带信任评分
+- **内容审核概念**：多语言脏话过滤器，带风险评分
+- **外部屏蔽词概念**：屏蔽 URL、域名和关键词模式
+- **表情反应概念**：对已审核消息进行表情反应
+- **导出概念**：将消息导出为 CSV/JSON/XLSX
+
+当前 UI 审计提示：公开访客提交、验证码、列表加载、更多加载、表情反应和恢复流程在 `GAP-P2-PUBLIC-VISITOR-002` 关闭前，不能作为已可用流程宣称。
 
 <p align="center">
   <img src=".github/readme-assets/marshmallow/marshmallow_preview_externalpage.png" alt="Marshmallow 预览" width="600">
@@ -797,8 +812,8 @@ curl -X POST /api/v1/auth/login \
 |            | `POST /subsidiaries`                      | 创建分级目录         |
 |            | `POST /talents`                           | 创建艺人             |
 | **棉花糖** | `GET /public/marshmallow/{path}/messages` | 获取公开消息         |
-|            | `POST /public/marshmallow/{path}/submit`  | 提交匿名问题         |
-|            | `POST /marshmallow/messages/{id}/approve` | 审核通过消息         |
+|            | `POST /public/marshmallow/{path}/submit`  | 提交端点表面         |
+|            | `POST /marshmallow/messages/{id}/approve` | 审核端点表面         |
 | **报表**   | `POST /reports/mfr/jobs`                  | 启动 MFR 生成        |
 |            | `GET /reports/mfr/jobs/{id}`              | 获取任务状态         |
 |            | `GET /reports/mfr/jobs/{id}/download`     | 获取下载 URL         |
@@ -807,6 +822,8 @@ curl -X POST /api/v1/auth/login \
 |            | `GET /logs/search`                        | Loki 全文搜索        |
 | **合规**   | `GET /compliance/data-map`                | 数据映射报告         |
 |            | `GET /compliance/privacy-impact`          | 隐私影响评估         |
+
+棉花糖 API 提示：这些端点描述 API 表面。公开访客提交、验证码、列表加载、更多加载、表情反应、恢复以及审核/导出操作流程在相关 Known Limitations 关闭前，只能按当前状态描述。
 
 ### 响应格式
 

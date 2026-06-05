@@ -27,9 +27,20 @@
 
 ---
 
+## 📚 Documentation
+
+- [User Guide](./docs/user-guide/README.md) - detailed current-state operator guide
+- [GitHub Wiki Draft](./docs/wiki-draft/Home.md) - lightweight wiki navigation draft
+- [Known Limitations](./docs/wiki-draft/Known-Limitations.md) - current audit limitations that must not be overclaimed
+
+Source implementation and current UI proof take priority over older README text, screenshots, generated summaries, and prior handoff notes.
+
+---
+
 ## 📖 Table of Contents
 
 - [To Do](#-to-do)
+- [Documentation](#-documentation)
 - [Introduction](#-introduction)
 - [Feature Highlights](#-feature-highlights)
 - [Core Modules](#-core-modules)
@@ -60,7 +71,7 @@
 
 - **Privacy-First Architecture**: PII flows are delegated to an external TCRN PII Platform instead of a repo-owned runtime
 - **Multi-Tenant Isolation**: Each tenant has its own PostgreSQL schema for complete data isolation
-- **Three-Language Support**: Full UI localization for English, Chinese, and Japanese
+- **Three-Language UI Labels**: English, Chinese, and Japanese UI label coverage with open language-metadata accessibility proof tracked in Known Limitations
 - **VTuber-Specific Features**: Marshmallow (anonymous Q&A), customizable talent homepages, membership tracking
 
 ---
@@ -101,15 +112,19 @@ Unlike traditional Grant/Deny systems, TCRN TMS implements a three-state model:
 
 Role governance now has one built-in recovery role, `INITIAL_ADMIN`. All day-to-day roles are custom roles edited through `/api/v1/roles` with capability packs and optional advanced resource/action overrides. The role editor groups permission capability packs by user-facing category and includes keyword search across pack labels, descriptions, categories, risks, resources, and actions. Legacy `/api/v1/system-roles` reads remain for compatibility; mutation routes are deprecated or blocked, role deletion is disabled for audit history, and the role active/inactive lifecycle is removed.
 
-### 🍡 Marshmallow Anonymous Q&A System
+Current UI audit note: at least one local AC-tenant proof still showed additional default role assignments, so the User Guide records the `INITIAL_ADMIN`-only role baseline as a known limitation until source/UI recheck closes `GAP-P2-RBAC-001`.
 
-A complete anonymous question box system inspired by Japanese "Marshmallow" service:
+### 🍡 Marshmallow Anonymous Q&A Domain
 
-- **Smart CAPTCHA**: Three modes (Always/Never/Auto) with trust scoring
-- **Content Moderation**: Multi-language profanity filter with risk scoring
-- **External Blocklist**: Block URLs, domains, and keyword patterns
-- **Emoji Reactions**: Fans can react to approved messages
-- **Export Capability**: Export messages to CSV/JSON/XLSX
+Anonymous question box domain and management concepts inspired by the Japanese "Marshmallow" service:
+
+- **Smart CAPTCHA Concept**: Three modes (Always/Never/Auto) with trust scoring
+- **Content Moderation Concept**: Multi-language profanity filter with risk scoring
+- **External Blocklist Concept**: Block URLs, domains, and keyword patterns
+- **Emoji Reaction Concept**: Reactions for approved messages
+- **Export Concept**: Export messages to CSV/JSON/XLSX
+
+Current UI audit note: public visitor submission, captcha, feed, load-more, reaction, and recovery workflows are not accepted as available procedures until `GAP-P2-PUBLIC-VISITOR-002` is closed.
 
 <p align="center">
   <img src=".github/readme-assets/marshmallow/marshmallow_preview_externalpage.png" alt="Marshmallow Preview" width="600">
@@ -799,8 +814,8 @@ curl -X POST /api/v1/auth/login \
 |                  | `POST /subsidiaries`                      | Create subsidiary              |
 |                  | `POST /talents`                           | Create talent                  |
 | **Marshmallow**  | `GET /public/marshmallow/{path}/messages` | Get public messages            |
-|                  | `POST /public/marshmallow/{path}/submit`  | Submit anonymous question      |
-|                  | `POST /marshmallow/messages/{id}/approve` | Approve message                |
+|                  | `POST /public/marshmallow/{path}/submit`  | Submit endpoint surface        |
+|                  | `POST /marshmallow/messages/{id}/approve` | Approve endpoint surface       |
 | **Reports**      | `POST /reports/mfr/jobs`                  | Start MFR generation           |
 |                  | `GET /reports/mfr/jobs/{id}`              | Get job status                 |
 |                  | `GET /reports/mfr/jobs/{id}/download`     | Get download URL               |
@@ -809,6 +824,8 @@ curl -X POST /api/v1/auth/login \
 |                  | `GET /logs/search`                        | Loki full-text search          |
 | **Compliance**   | `GET /compliance/data-map`                | Data mapping report            |
 |                  | `GET /compliance/privacy-impact`          | Privacy impact assessment      |
+
+Marshmallow API note: these endpoints describe the API surface. Public visitor submission, captcha, feed, load-more, reaction, recovery, and moderation/export operating procedures remain current-state only until the linked Known Limitations are closed.
 
 ### Response Format
 
