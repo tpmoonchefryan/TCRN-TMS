@@ -1,0 +1,75 @@
+name: Tooling Advisory
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/**"
+      - ".storybook/**"
+      - "apps/**"
+      - "bruno/**"
+      - "knip.json"
+      - "lighthouserc.cjs"
+      - "package.json"
+      - "packages/**"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "renovate.json"
+      - "scripts/tooling/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tooling-advisory-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  advisory:
+    name: Advisory tooling
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          persist-credentials: false
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@d15e628ca66d93ee5f352c71671a7bc6a97af5c9
+        with:
+          version: 11.3.0
+
+      - name: Setup Node
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
+        with:
+          node-version: "24"
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Local advisory
+        continue-on-error: true
+        run: pnpm tooling:local-advisory
+
+      - name: OpenAPI advisory
+        continue-on-error: true
+        run: pnpm tooling:openapi:diff
+
+      - name: Supply-chain advisory
+        continue-on-error: true
+        run: |
+          pnpm tooling:osv
+          pnpm tooling:trivy
+          pnpm tooling:syft
+
+      - name: Tool readiness advisory
+        continue-on-error: true
+        run: |
+          pnpm tooling:codeql:resolve
+          pnpm tooling:bruno:version
+          pnpm tooling:storybook:version
+          pnpm tooling:lhci:version
+          pnpm tooling:codegraph:version

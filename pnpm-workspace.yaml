@@ -9,16 +9,20 @@ allowBuilds:
   '@scarf/scarf': false
   '@swc/core': true
   argon2: true
+  core-js-pure: false
   esbuild: true
   msgpackr-extract: true
+  msw: false
   prisma: true
   protobufjs: true
   sharp: true
   unrs-resolver: true
+  vue-demi: false
 
 minimumReleaseAgeExclude:
   - bullmq@5.77.2
   - nodemailer@8.0.8
+  - knip@6.16.1
 
 overrides:
   diff@>=4.0.0 <4.0.4: 4.0.4

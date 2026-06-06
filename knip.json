@@ -1,0 +1,89 @@
+{
+  "ignoreIssues": {
+    "packages/database/src/generated/**": [
+      "exports",
+      "types"
+    ]
+  },
+  "workspaces": {
+    ".": {
+      "entry": [
+        "scripts/**/*.{js,mjs,ts}",
+        "*.{config,setup}.{js,mjs,ts}",
+        "turbo.json"
+      ],
+      "project": [
+        "scripts/**/*.{js,mjs,ts}",
+        "*.{config,setup}.{js,mjs,ts}"
+      ]
+    },
+    "apps/api": {
+      "entry": [
+        "src/main.ts",
+        "src/bootstrap.ts",
+        "src/**/*.module.ts",
+        "scripts/**/*.{js,mjs,ts}"
+      ],
+      "project": [
+        "src/**/*.ts",
+        "test/**/*.ts",
+        "scripts/**/*.{js,mjs,ts}",
+        "*.config.ts"
+      ]
+    },
+    "apps/web": {
+      "entry": [
+        "src/app/**/*.{ts,tsx}",
+        "src/platform/routing/**/*.{ts,tsx}",
+        "scripts/**/*.{js,mjs,ts}",
+        "next.config.js"
+      ],
+      "project": [
+        "src/**/*.{ts,tsx}",
+        "scripts/**/*.{js,mjs,ts}",
+        "*.config.{js,mjs,ts}"
+      ]
+    },
+    "apps/worker": {
+      "entry": [
+        "src/main.ts",
+        "src/jobs/index.ts",
+        "src/queues/index.ts"
+      ],
+      "project": [
+        "src/**/*.ts",
+        "*.config.ts"
+      ]
+    },
+    "packages/database": {
+      "entry": [
+        "src/index.ts",
+        "scripts/**/*.{js,mjs,ts}",
+        "prisma/seeds/**/*.{js,mjs,ts}"
+      ],
+      "project": [
+        "src/**/*.ts",
+        "scripts/**/*.{js,mjs,ts}",
+        "prisma/**/*.{js,mjs,ts}",
+        "*.config.ts"
+      ]
+    },
+    "packages/shared": {
+      "entry": [
+        "src/index.ts",
+        "src/*/index.ts"
+      ],
+      "project": [
+        "src/**/*.ts"
+      ]
+    },
+    "packages/eslint-config": {
+      "entry": [
+        "index.js"
+      ],
+      "project": [
+        "**/*.js"
+      ]
+    }
+  }
+}

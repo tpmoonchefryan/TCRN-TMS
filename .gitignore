@@ -85,6 +85,7 @@ technical_fingerprinting.md
 *.pfx
 
 # Temporary files
+.tmp
 tmp
 temp
 *.tmp
