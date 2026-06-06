@@ -1481,6 +1481,10 @@ export function ProfileScreen({
                 <div className="grid gap-4 lg:grid-cols-2">
                   {ssoAccountLinks.map((link) => {
                     const providerLabel = link.providerCode;
+                    const identityLabel = [link.displayName, link.email].filter(Boolean).join(' / ');
+                    const revokeTargetLabel = identityLabel
+                      ? `${providerLabel} (${identityLabel})`
+                      : providerLabel;
                     const isRevoked = Boolean(link.revokedAt);
 
                     return (
@@ -1533,9 +1537,10 @@ export function ProfileScreen({
                         <button
                           type="button"
                           disabled={isRevoked}
+                          aria-label={ssoCopy.revokeTitle(revokeTargetLabel)}
                           onClick={() =>
                             setDialogState({
-                              title: ssoCopy.revokeTitle(providerLabel),
+                              title: ssoCopy.revokeTitle(revokeTargetLabel),
                               description: ssoCopy.revokeDescription,
                               confirmText: ssoCopy.revoke,
                               onConfirm: async () => {
@@ -1673,6 +1678,7 @@ export function ProfileScreen({
                       <button
                         type="button"
                         disabled={entry.isCurrent}
+                        aria-label={copy.sessions.revokeDialogTitle(entry.deviceInfo || entry.id)}
                         onClick={() =>
                           setDialogState({
                             title: copy.sessions.revokeDialogTitle(entry.deviceInfo || entry.id),

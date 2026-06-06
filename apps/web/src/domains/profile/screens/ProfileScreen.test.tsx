@@ -463,10 +463,16 @@ describe('ProfileScreen', () => {
     expect(screen.getByText('mock-sso')).toBeInTheDocument();
     expect(screen.getByText('Alice IdP / alice.idp@example.com')).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Revoke connection' }));
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: 'Revoke mock-sso (Alice IdP / alice.idp@example.com) SSO connection?',
+      })
+    );
 
-    expect(await screen.findByText('Revoke mock-sso SSO connection?')).toBeInTheDocument();
-    fireEvent.click(screen.getAllByRole('button', { name: 'Revoke connection' })[1]);
+    expect(
+      await screen.findByText('Revoke mock-sso (Alice IdP / alice.idp@example.com) SSO connection?')
+    ).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Revoke connection' }));
 
     await waitFor(() => {
       expect(mockRequest).toHaveBeenCalledWith(
@@ -908,7 +914,7 @@ describe('ProfileScreen', () => {
 
     expect(await screen.findByText('iPhone Safari')).toBeInTheDocument();
 
-    fireEvent.click(screen.getAllByRole('button', { name: 'Revoke' })[1]);
+    fireEvent.click(screen.getByRole('button', { name: 'Revoke session iPhone Safari?' }));
 
     expect(await screen.findByText('Revoke session iPhone Safari?')).toBeInTheDocument();
 
