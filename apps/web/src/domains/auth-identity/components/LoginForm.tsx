@@ -7,8 +7,8 @@ import { type CSSProperties, startTransition, useEffect, useMemo, useRef, useSta
 import {
   type AuthenticatedSessionResult,
   forceResetPassword,
-  login,
   listSsoProviders,
+  login,
   readPostLoginOrganizationTree,
   type SsoProviderDiscovery,
   startSsoLogin,
@@ -304,6 +304,18 @@ export function LoginForm() {
   const heroDescription = loginCopy.heroDescription.trim();
   const heroDescriptionCharacters = useMemo(() => Array.from(heroDescription), [heroDescription]);
   const surfaceNote = loginCopy.surfaceNote.trim();
+  const skipToSignInLabel = useMemo(
+    () =>
+      pickLocaleText(locale, {
+        en: 'Skip to sign-in form',
+        zh_HANS: '跳至登录表单',
+        zh_HANT: '跳至登入表單',
+        ja: 'サインインフォームへ移動',
+        ko: '로그인 양식으로 건너뛰기',
+        fr: 'Aller au formulaire de connexion',
+      }),
+    [locale]
+  );
 
   async function resolvePostLoginTarget(result: AuthenticatedSessionResult) {
     const tenantId = result.user.tenant.id;
@@ -439,6 +451,14 @@ export function LoginForm() {
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(148,163,184,0.18),_transparent_32%),linear-gradient(180deg,#f8fafc_0%,#eef2ff_52%,#f8fafc_100%)]">
+      <a
+        href="#login-main"
+        className="sr-only rounded-md bg-slate-950 px-4 py-2 text-sm font-semibold text-white focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:ring-2 focus:ring-slate-950 focus:ring-offset-2 focus:outline-none"
+        style={{ backgroundColor: '#020617', color: '#fff' }}
+      >
+        {skipToSignInLabel}
+      </a>
+
       <div className="mx-auto flex w-full max-w-6xl justify-end px-6 pt-6">
         <LocaleSwitcher
           locale={locale}
@@ -450,7 +470,11 @@ export function LoginForm() {
         />
       </div>
 
-      <div className="mx-auto grid min-h-[calc(100vh-5rem)] w-full max-w-6xl gap-10 px-6 pt-4 pb-12 lg:grid-cols-[minmax(0,1.1fr)_minmax(22rem,28rem)] lg:items-center">
+      <main
+        id="login-main"
+        tabIndex={-1}
+        className="mx-auto grid min-h-[calc(100vh-5rem)] w-full max-w-6xl gap-10 px-6 pt-4 pb-12 outline-none lg:grid-cols-[minmax(0,1.1fr)_minmax(22rem,28rem)] lg:items-center"
+      >
         <section className="space-y-6">
           {loginCopy.brandEyebrow ? (
             <div className="inline-flex items-center rounded-full border border-slate-200 bg-white/70 px-4 py-2 text-xs font-semibold tracking-[0.24em] text-slate-600 uppercase shadow-sm backdrop-blur">
@@ -725,7 +749,7 @@ export function LoginForm() {
             </button>
           </form>
         </section>
-      </div>
+      </main>
 
       {talentSelector ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-4 py-6">

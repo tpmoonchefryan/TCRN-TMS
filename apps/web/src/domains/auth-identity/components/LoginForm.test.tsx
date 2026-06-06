@@ -240,6 +240,16 @@ describe('LoginForm', () => {
     expect(screen.getByLabelText('密码')).toBeInTheDocument();
   });
 
+  it('exposes a main landmark and skip link for keyboard entry', () => {
+    render(<LoginForm />);
+
+    expect(screen.getByRole('main')).toHaveAttribute('id', 'login-main');
+    expect(screen.getByRole('link', { name: 'Skip to sign-in form' })).toHaveAttribute(
+      'href',
+      '#login-main'
+    );
+  });
+
   it('renders the login hero description with a hydration-stable typewriter effect', () => {
     const heroDescription = 'Record every drop of sweat behind the spotlight.';
     localeState.copy.auth.login = buildLoginCopy({
