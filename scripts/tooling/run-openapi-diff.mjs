@@ -128,9 +128,14 @@ try {
     const baseline = path.join(baselineDir, documentName);
     const current = path.join(currentDir, documentName);
 
-    if (!existsSync(baseline) || !existsSync(current)) {
+    const missing = [
+      !existsSync(baseline) ? 'baseline' : null,
+      !existsSync(current) ? 'current' : null,
+    ].filter(Boolean);
+
+    if (missing.length > 0) {
       console.warn(
-        `[tooling:openapi] SKIP ${documentName}: baseline or current document is missing.`
+        `[tooling:openapi] SKIP ${documentName}: missing ${missing.join(' and ')} document.`
       );
       worstStatus = worstStatus || 1;
       continue;
