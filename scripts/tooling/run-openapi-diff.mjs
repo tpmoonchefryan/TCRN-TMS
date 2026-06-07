@@ -122,6 +122,8 @@ try {
   }
   if (exportResult.status !== 0) {
     worstStatus = exportResult.status ?? 1;
+    console.warn(`[tooling:openapi] export exited with status ${worstStatus}; skipping diff.`);
+    throw new Error(`openapi export failed with status ${worstStatus}`);
   }
 
   for (const documentName of documents) {

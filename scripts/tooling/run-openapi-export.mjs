@@ -11,7 +11,6 @@ const outDirIndex = rawArgs.indexOf('--out-dir');
 const requestedOutDir =
   outDirIndex >= 0 && rawArgs[outDirIndex + 1] ? rawArgs[outDirIndex + 1] : '.tmp/openapi-current';
 const absoluteOutDir = path.resolve(productRoot, requestedOutDir);
-const apiRelativeOutDir = path.relative(apiRoot, absoluteOutDir);
 const expectedDocuments = ['openapi-operations.json', 'openapi-config.json', 'openapi-public.json'];
 const toolingEnv = {
   ...process.env,
@@ -46,7 +45,7 @@ if (process.env.TCRN_OPENAPI_SKIP_WORKSPACE_PREPARE !== '1') {
 
 run(
   'pnpm',
-  ['exec', 'ts-node', 'scripts/api-registry-openapi-export.ts', '--out-dir', apiRelativeOutDir],
+  ['exec', 'ts-node', 'scripts/api-registry-openapi-export.ts', '--out-dir', absoluteOutDir],
   { cwd: apiRoot }
 );
 
@@ -56,7 +55,11 @@ const missingDocuments = expectedDocuments.filter((documentName) => {
 
 if (missingDocuments.length > 0) {
   console.error(
-    `[tooling:openapi] ERROR: export missing current document(s): ${missingDocuments.join(', ')}`
+    `[tooling:openapi] ERROR: export missing current document(s): ${missingDocuments.join(
+      ', '
+    )} in ${absoluteOutDir}`
   );
   process.exit(1);
 }
+
+console.log(`[tooling:openapi] export OK: ${absoluteOutDir}`);
