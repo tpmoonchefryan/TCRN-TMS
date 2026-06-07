@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
+import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
 import path from 'node:path';
-import { spawnSync } from 'node:child_process';
 
 const productRoot = process.cwd();
 const shouldGenerate = process.env.TCRN_GENERATE_SBOM === '1';
@@ -36,7 +36,8 @@ const result = spawnSync(
     cwd: productRoot,
     env: process.env,
     shell: false,
-    stdio: 'inherit',
+    stdio: ['ignore', 'pipe', 'pipe'],
+    encoding: 'utf8',
   }
 );
 
@@ -49,18 +50,31 @@ if (result.error) {
 }
 
 let packageCount = null;
+let parseFailed = false;
 if (existsSync(sbomPath)) {
-  const sbom = JSON.parse(readFileSync(sbomPath, 'utf8'));
-  packageCount = Array.isArray(sbom.artifacts) ? sbom.artifacts.length : null;
+  try {
+    const sbom = JSON.parse(readFileSync(sbomPath, 'utf8'));
+    packageCount = Array.isArray(sbom.artifacts) ? sbom.artifacts.length : null;
+  } catch {
+    parseFailed = true;
+  }
 }
 
 if (!keepSbom) {
   rmSync(sbomDir, { force: true, recursive: true });
 }
 
+if (parseFailed) {
+  console.warn(
+    `[tooling:syft] ADVISORY_EXIT=1: unable to parse SBOM output stderr_lines=${result.stderr.split('\n').filter(Boolean).length} ` +
+      (keepSbom ? `sbom=${sbomPath}` : 'sbom=cleaned')
+  );
+  process.exit(requireTool ? 1 : 0);
+}
+
 if (result.status !== 0) {
   console.warn(
-    `[tooling:syft] ADVISORY_EXIT=${result.status}. ` +
+    `[tooling:syft] ADVISORY_EXIT=${result.status} stderr_lines=${result.stderr.split('\n').filter(Boolean).length}. ` +
       'The result is non-blocking unless TCRN_TOOLING_REQUIRE=1 is set.'
   );
   process.exit(requireTool ? result.status : 0);

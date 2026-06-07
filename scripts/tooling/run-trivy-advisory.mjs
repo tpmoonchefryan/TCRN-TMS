@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
+import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
 import path from 'node:path';
-import { spawnSync } from 'node:child_process';
 
 const productRoot = process.cwd();
 const requireTool = process.env.TCRN_TOOLING_REQUIRE === '1';
@@ -55,19 +55,24 @@ const summary = {
   misconfigurations: {},
   targets: 0,
 };
+let parseFailed = false;
 
 if (existsSync(trivyPath)) {
-  const report = JSON.parse(readFileSync(trivyPath, 'utf8'));
-  for (const item of report.Results ?? []) {
-    summary.targets += 1;
-    for (const vulnerability of item.Vulnerabilities ?? []) {
-      const severity = vulnerability.Severity ?? 'UNKNOWN';
-      summary.vulnerabilities[severity] = (summary.vulnerabilities[severity] ?? 0) + 1;
+  try {
+    const report = JSON.parse(readFileSync(trivyPath, 'utf8'));
+    for (const item of report.Results ?? []) {
+      summary.targets += 1;
+      for (const vulnerability of item.Vulnerabilities ?? []) {
+        const severity = vulnerability.Severity ?? 'UNKNOWN';
+        summary.vulnerabilities[severity] = (summary.vulnerabilities[severity] ?? 0) + 1;
+      }
+      for (const misconfiguration of item.Misconfigurations ?? []) {
+        const severity = misconfiguration.Severity ?? 'UNKNOWN';
+        summary.misconfigurations[severity] = (summary.misconfigurations[severity] ?? 0) + 1;
+      }
     }
-    for (const misconfiguration of item.Misconfigurations ?? []) {
-      const severity = misconfiguration.Severity ?? 'UNKNOWN';
-      summary.misconfigurations[severity] = (summary.misconfigurations[severity] ?? 0) + 1;
-    }
+  } catch {
+    parseFailed = true;
   }
 }
 
@@ -75,13 +80,17 @@ if (!keepTrivy) {
   rmSync(trivyDir, { force: true, recursive: true });
 }
 
-if (result.stderr) {
-  process.stderr.write(result.stderr);
+if (parseFailed) {
+  console.warn(
+    `[tooling:trivy] ADVISORY_EXIT=1: unable to parse JSON report stderr_lines=${result.stderr.split('\n').filter(Boolean).length} ` +
+      (keepTrivy ? `report=${trivyPath}` : 'report=cleaned')
+  );
+  process.exit(requireTool ? 1 : 0);
 }
 
 if (result.status !== 0) {
   console.warn(
-    `[tooling:trivy] ADVISORY_EXIT=${result.status}. ` +
+    `[tooling:trivy] ADVISORY_EXIT=${result.status} stderr_lines=${result.stderr.split('\n').filter(Boolean).length}. ` +
       'The result is non-blocking unless TCRN_TOOLING_REQUIRE=1 is set.'
   );
   process.exit(requireTool ? result.status : 0);

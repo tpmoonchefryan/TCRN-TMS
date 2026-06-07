@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
+import { spawnSync } from 'node:child_process';
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
-import { spawnSync } from 'node:child_process';
 
 const productRoot = process.cwd();
 const requireTool = process.env.TCRN_TOOLING_REQUIRE === '1';
@@ -10,17 +10,13 @@ const keepZizmor = process.env.TCRN_KEEP_ZIZMOR === '1';
 const reportDir = path.join(productRoot, '.tmp/zizmor');
 const reportPath = path.join(reportDir, 'tcrn-tms-zizmor.json');
 
-const result = spawnSync(
-  'zizmor',
-  ['--format', 'json', '--no-progress', '.github/workflows'],
-  {
-    cwd: productRoot,
-    env: process.env,
-    shell: false,
-    stdio: ['ignore', 'pipe', 'pipe'],
-    encoding: 'utf8',
-  }
-);
+const result = spawnSync('zizmor', ['--format', 'json', '--no-progress', '.github/workflows'], {
+  cwd: productRoot,
+  env: process.env,
+  shell: false,
+  stdio: ['ignore', 'pipe', 'pipe'],
+  encoding: 'utf8',
+});
 
 if (result.error?.code === 'ENOENT') {
   console.warn('[tooling:zizmor] SKIP: zizmor is not installed on PATH.');
@@ -34,9 +30,13 @@ let findings = [];
 try {
   findings = JSON.parse(result.stdout || '[]');
 } catch {
-  process.stderr.write(result.stderr ?? '');
-  process.stdout.write(result.stdout ?? '');
-  console.warn('[tooling:zizmor] ADVISORY_EXIT=1: unable to parse JSON output.');
+  if (!keepZizmor) {
+    rmSync(reportDir, { force: true, recursive: true });
+  }
+  console.warn(
+    `[tooling:zizmor] ADVISORY_EXIT=1: unable to parse JSON output stdout_bytes=${result.stdout.length} stderr_bytes=${result.stderr.length} ` +
+      (keepZizmor ? `report=${reportPath}` : 'report=cleaned')
+  );
   process.exit(requireTool ? 1 : 0);
 }
 
