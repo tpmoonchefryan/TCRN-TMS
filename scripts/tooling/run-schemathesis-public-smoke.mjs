@@ -5,6 +5,7 @@ import { spawnSync } from 'node:child_process';
 const baseUrl = process.env.TCRN_SCHEMATHESIS_BASE_URL;
 const requireTool = process.env.TCRN_TOOLING_REQUIRE === '1';
 const defaultIncludePathRegex = '^/api/v1/health(/(live|ready))?$';
+const timeoutMs = Number.parseInt(process.env.TCRN_SCHEMATHESIS_TIMEOUT_MS ?? '30000', 10);
 
 function failOrSkip(message, code = 2) {
   console.warn(`[tooling:schemathesis] SKIP: ${message}`);
@@ -94,12 +95,22 @@ const result = spawnSync(
     env: process.env,
     shell: false,
     stdio: 'inherit',
+    timeout: Number.isFinite(timeoutMs) ? timeoutMs : 30000,
+    killSignal: 'SIGTERM',
   }
 );
 
 if (result.error?.code === 'ENOENT') {
   console.warn('[tooling:schemathesis] SKIP: schemathesis is not installed on PATH.');
   process.exit(requireTool ? 127 : 0);
+}
+
+if (result.error?.code === 'ETIMEDOUT') {
+  console.warn(
+    `[tooling:schemathesis] ADVISORY_TIMEOUT after ${timeoutMs}ms. ` +
+      'The result is non-blocking unless TCRN_TOOLING_REQUIRE=1 is set.'
+  );
+  process.exit(requireTool ? 124 : 0);
 }
 
 if (result.error) {
