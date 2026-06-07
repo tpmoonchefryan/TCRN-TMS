@@ -86,6 +86,7 @@ technical_fingerprinting.md
 
 # Temporary files
 .tmp
+.lighthouseci/
 tmp
 temp
 *.tmp

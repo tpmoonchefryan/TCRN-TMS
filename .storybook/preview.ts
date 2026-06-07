@@ -1,5 +1,7 @@
 import type { Preview } from '@storybook/nextjs';
 
+import '../apps/web/src/styles/globals.css';
+
 const preview: Preview = {
   parameters: {
     controls: {

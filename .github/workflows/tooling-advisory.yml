@@ -10,11 +10,13 @@ on:
       - 'knip.json'
       - 'lighthouserc.cjs'
       - 'package.json'
+      - 'playwright.ui-evidence.config.ts'
       - 'packages/**'
       - 'pnpm-lock.yaml'
       - 'pnpm-workspace.yaml'
       - 'renovate.json'
       - 'scripts/tooling/**'
+      - 'tests/ui-evidence/**'
   workflow_dispatch:
 
 permissions:
@@ -83,3 +85,10 @@ jobs:
           pnpm tooling:storybook:version
           pnpm tooling:lhci:version
           pnpm tooling:codegraph:version
+
+      - name: UI evidence advisory
+        continue-on-error: true
+        run: |
+          pnpm tooling:storybook:build
+          pnpm tooling:ui-evidence:axe
+          TCRN_LHCI_START_STORYBOOK=1 pnpm tooling:lhci:storybook
