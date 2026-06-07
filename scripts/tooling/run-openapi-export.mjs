@@ -12,12 +12,17 @@ const requestedOutDir =
   outDirIndex >= 0 && rawArgs[outDirIndex + 1] ? rawArgs[outDirIndex + 1] : '.tmp/openapi-current';
 const absoluteOutDir = path.resolve(productRoot, requestedOutDir);
 const expectedDocuments = ['openapi-operations.json', 'openapi-config.json', 'openapi-public.json'];
+const openApiDatabaseUrl =
+  process.env.TCRN_OPENAPI_DATABASE_URL ||
+  process.env.TCRN_OPENAPI_DATABASE_URL_PLACEHOLDER ||
+  'postgresql://tcrn_openapi:tcrn_openapi@127.0.0.1:5432/tcrn_openapi?schema=public';
+const openApiJwtSecret =
+  process.env.TCRN_OPENAPI_JWT_SECRET ||
+  'tcrn_openapi_placeholder_jwt_secret_for_static_contract_generation';
 const toolingEnv = {
   ...process.env,
-  DATABASE_URL:
-    process.env.DATABASE_URL ||
-    process.env.TCRN_OPENAPI_DATABASE_URL_PLACEHOLDER ||
-    'postgresql://tcrn_openapi:tcrn_openapi@127.0.0.1:5432/tcrn_openapi?schema=public',
+  DATABASE_URL: openApiDatabaseUrl,
+  JWT_SECRET: openApiJwtSecret,
   NODE_ENV: process.env.NODE_ENV || 'test',
 };
 
