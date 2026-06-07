@@ -91,7 +91,7 @@ const tools = [
     asset: 'oasdiff_1.18.4_linux_amd64.tar.gz',
     binary: 'oasdiff',
     type: 'tar',
-    versionArgs: ['version'],
+    versionArgs: ['--version'],
   },
 ];
 
