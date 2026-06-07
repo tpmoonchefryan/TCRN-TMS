@@ -3,18 +3,18 @@ name: Tooling Advisory
 on:
   pull_request:
     paths:
-      - ".github/workflows/**"
-      - ".storybook/**"
-      - "apps/**"
-      - "bruno/**"
-      - "knip.json"
-      - "lighthouserc.cjs"
-      - "package.json"
-      - "packages/**"
-      - "pnpm-lock.yaml"
-      - "pnpm-workspace.yaml"
-      - "renovate.json"
-      - "scripts/tooling/**"
+      - '.github/workflows/**'
+      - '.storybook/**'
+      - 'apps/**'
+      - 'bruno/**'
+      - 'knip.json'
+      - 'lighthouserc.cjs'
+      - 'package.json'
+      - 'packages/**'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - 'renovate.json'
+      - 'scripts/tooling/**'
   workflow_dispatch:
 
 permissions:
@@ -44,11 +44,21 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
         with:
-          node-version: "24"
+          node-version: '24'
           cache: pnpm
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Install advisory binaries
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          TOOLING_BIN="${RUNNER_TEMP}/tcrn-tooling-bin"
+          mkdir -p "${TOOLING_BIN}"
+          echo "${TOOLING_BIN}" >> "${GITHUB_PATH}"
+          echo "TRIVY_CACHE_DIR=${RUNNER_TEMP}/trivy-cache" >> "${GITHUB_ENV}"
+          node scripts/tooling/install-advisory-binaries.mjs "${TOOLING_BIN}"
 
       - name: Local advisory
         continue-on-error: true
