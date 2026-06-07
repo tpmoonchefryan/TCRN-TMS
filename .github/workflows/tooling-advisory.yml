@@ -89,6 +89,7 @@ jobs:
       - name: UI evidence advisory
         continue-on-error: true
         run: |
+          pnpm exec playwright install --with-deps chromium
           pnpm tooling:storybook:build
           pnpm tooling:ui-evidence:axe
           TCRN_LHCI_START_STORYBOOK=1 pnpm tooling:lhci:storybook
