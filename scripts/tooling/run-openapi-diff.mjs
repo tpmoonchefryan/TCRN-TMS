@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
+import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
-import { spawnSync } from 'node:child_process';
 
 const productRoot = process.cwd();
 const currentDir = path.join(productRoot, '.tmp/openapi-current');
@@ -111,14 +111,10 @@ function normalizeOpenApiDocument(inputPath, outputPath) {
 let worstStatus = 0;
 
 try {
-  const exportResult = run('pnpm', [
-    '--dir',
-    'apps/api',
-    'exec',
-    'ts-node',
-    'scripts/api-registry-openapi-export.ts',
+  const exportResult = run(process.execPath, [
+    'scripts/tooling/run-openapi-export.mjs',
     '--out-dir',
-    '../../.tmp/openapi-current',
+    '.tmp/openapi-current',
   ]);
 
   if (exportResult.error) {
@@ -133,7 +129,9 @@ try {
     const current = path.join(currentDir, documentName);
 
     if (!existsSync(baseline) || !existsSync(current)) {
-      console.warn(`[tooling:openapi] SKIP ${documentName}: baseline or current document is missing.`);
+      console.warn(
+        `[tooling:openapi] SKIP ${documentName}: baseline or current document is missing.`
+      );
       worstStatus = worstStatus || 1;
       continue;
     }

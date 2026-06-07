@@ -4,12 +4,63 @@ import { spawnSync } from 'node:child_process';
 
 const baseUrl = process.env.TCRN_SCHEMATHESIS_BASE_URL;
 const requireTool = process.env.TCRN_TOOLING_REQUIRE === '1';
+const defaultIncludePathRegex = '^/api/v1/health(/(live|ready))?$';
+
+function failOrSkip(message, code = 2) {
+  console.warn(`[tooling:schemathesis] SKIP: ${message}`);
+  process.exit(requireTool ? code : 0);
+}
+
+function normalizedHost(rawUrl) {
+  let parsed;
+  try {
+    parsed = new URL(rawUrl);
+  } catch {
+    failOrSkip('TCRN_SCHEMATHESIS_BASE_URL must be a valid http:// or https:// URL.');
+  }
+
+  if (!['http:', 'https:'].includes(parsed.protocol)) {
+    failOrSkip('TCRN_SCHEMATHESIS_BASE_URL must use http:// or https://.');
+  }
+
+  return parsed.hostname.replace(/^\[|\]$/g, '').toLowerCase();
+}
+
+function assertAllowedBaseUrl(rawUrl) {
+  const host = normalizedHost(rawUrl);
+  const localHosts = new Set(['localhost', '127.0.0.1', '::1']);
+  const privateHosts = new Set(
+    (process.env.TCRN_CONTRACT_PRIVATE_HOSTS ?? '')
+      .split(',')
+      .map((item) => item.trim().toLowerCase())
+      .filter(Boolean)
+  );
+
+  if (localHosts.has(host) || privateHosts.has(host)) {
+    return;
+  }
+
+  failOrSkip(
+    `refusing Schemathesis smoke against unapproved host "${host}". Use localhost/127.0.0.1 or exact TCRN_CONTRACT_PRIVATE_HOSTS.`
+  );
+}
 
 if (!baseUrl) {
-  console.warn(
-    '[tooling:schemathesis] SKIP: set TCRN_SCHEMATHESIS_BASE_URL to a local/test API base URL to run public contract smoke.'
+  failOrSkip(
+    'set TCRN_SCHEMATHESIS_BASE_URL to a local/test API base URL to run public contract smoke.'
   );
-  process.exit(requireTool ? 2 : 0);
+}
+
+assertAllowedBaseUrl(baseUrl);
+
+const includePathRegex =
+  process.env.TCRN_SCHEMATHESIS_INCLUDE_PATH_REGEX || defaultIncludePathRegex;
+
+if (
+  includePathRegex !== defaultIncludePathRegex &&
+  process.env.TCRN_SCHEMATHESIS_ROUTE_PACKET_ACCEPTED !== '1'
+) {
+  failOrSkip('custom Schemathesis route regex requires TCRN_SCHEMATHESIS_ROUTE_PACKET_ACCEPTED=1.');
 }
 
 const result = spawnSync(
@@ -24,7 +75,7 @@ const result = spawnSync(
     '--checks',
     'not_a_server_error,status_code_conformance,content_type_conformance,response_schema_conformance',
     '--include-path-regex',
-    '^/api/v1/(health|public)',
+    includePathRegex,
     '--rate-limit',
     process.env.TCRN_SCHEMATHESIS_RATE_LIMIT || '30/m',
     '--max-examples',
