@@ -1179,4 +1179,37 @@ describe('OrganizationStructureScreen', () => {
     expect(screen.getByText('Talent 21')).toBeInTheDocument();
     expect(screen.queryByText('Talent 01')).not.toBeInTheDocument();
   });
+
+  it('preserves scoped empty-search URL state when the selected scope is filtered out', async () => {
+    currentSearch = 'scopeId=subsidiary-1&search=zzzz-no-scope-match&inactive=true&page=2&pageSize=20';
+
+    mockRequest.mockImplementation((path: string) => {
+      if (path === '/api/v1/profile-stores?page=1&pageSize=20') {
+        return Promise.resolve(profileStoresResponse);
+      }
+
+      if (
+        path ===
+        '/api/v1/organization/tree?includeInactive=true&search=zzzz-no-scope-match'
+      ) {
+        return Promise.resolve({
+          tenantId: 'tenant-1',
+          subsidiaries: [],
+          directTalents: [],
+        });
+      }
+
+      throw new Error(`Unexpected request: ${path}`);
+    });
+
+    render(<OrganizationStructureScreen tenantId="tenant-1" />);
+
+    expect(await screen.findByText('No talents in this branch')).toBeInTheDocument();
+    await waitFor(() =>
+      expect(mockRequest).toHaveBeenCalledWith(
+        '/api/v1/organization/tree?includeInactive=true&search=zzzz-no-scope-match'
+      )
+    );
+    expect(replace).not.toHaveBeenCalled();
+  });
 });

@@ -218,12 +218,14 @@ function buildOrganizationStructureQueryState({
   showInactive,
   page,
   pageSize,
+  preserveDefaultPageSize = false,
 }: {
   scopeId: string | null;
   search: string;
   showInactive: boolean;
   page: number;
   pageSize: PageSizeOption;
+  preserveDefaultPageSize?: boolean;
 }) {
   const params = new URLSearchParams();
   const normalizedSearch = search.trim();
@@ -244,7 +246,7 @@ function buildOrganizationStructureQueryState({
     params.set('page', String(page));
   }
 
-  if (pageSize !== PAGE_SIZE_OPTIONS[0]) {
+  if (pageSize !== PAGE_SIZE_OPTIONS[0] || preserveDefaultPageSize) {
     params.set('pageSize', String(pageSize));
   }
 
@@ -569,6 +571,7 @@ export function OrganizationStructureScreen({
   const urlShowInactive = searchParams.get('inactive') === 'true';
   const urlInventoryPage = parsePageParam(searchParams.get('page'));
   const urlInventoryPageSize = parsePageSizeParam(searchParams.get('pageSize'));
+  const urlHasInventoryPageSize = searchParams.has('pageSize');
   const { locale, copy } = useOrganizationStructureCopy();
   const { request, requestEnvelope, session } = useSession();
   const [data, setData] = useState<OrganizationTreeResponse | null>(null);
@@ -612,6 +615,8 @@ export function OrganizationStructureScreen({
   const [preparingTalentId, setPreparingTalentId] = useState<string | null>(null);
   const [inventoryPage, setInventoryPage] = useState(urlInventoryPage);
   const [inventoryPageSize, setInventoryPageSize] = useState<PageSizeOption>(urlInventoryPageSize);
+  const [preserveDefaultInventoryPageSize, setPreserveDefaultInventoryPageSize] =
+    useState(urlHasInventoryPageSize);
   const [translationOptionsState, setTranslationOptionsState] = useState<TranslationOptionsState>({
     data: [],
     error: null,
@@ -630,7 +635,17 @@ export function OrganizationStructureScreen({
     setInventoryPageSize((current) =>
       current === urlInventoryPageSize ? current : urlInventoryPageSize
     );
-  }, [urlInventoryPage, urlInventoryPageSize, urlSearch, urlSelectedSubsidiaryId, urlShowInactive]);
+    setPreserveDefaultInventoryPageSize((current) =>
+      current === urlHasInventoryPageSize ? current : urlHasInventoryPageSize
+    );
+  }, [
+    urlHasInventoryPageSize,
+    urlInventoryPage,
+    urlInventoryPageSize,
+    urlSearch,
+    urlSelectedSubsidiaryId,
+    urlShowInactive,
+  ]);
 
   function applyQueryState(
     nextState: Partial<{
@@ -646,6 +661,8 @@ export function OrganizationStructureScreen({
     const nextShowInactive = nextState.showInactive ?? showInactive;
     const nextPage = nextState.page ?? inventoryPage;
     const nextPageSize = nextState.pageSize ?? inventoryPageSize;
+    const nextPreserveDefaultPageSize =
+      nextState.pageSize === undefined ? preserveDefaultInventoryPageSize : false;
 
     if (nextState.selectedSubsidiaryId !== undefined) {
       setSelectedSubsidiaryId(nextSelectedSubsidiaryId);
@@ -665,6 +682,7 @@ export function OrganizationStructureScreen({
 
     if (nextState.pageSize !== undefined) {
       setInventoryPageSize(nextPageSize);
+      setPreserveDefaultInventoryPageSize(false);
     }
 
     const nextQueryString = buildOrganizationStructureQueryState({
@@ -673,6 +691,7 @@ export function OrganizationStructureScreen({
       showInactive: nextShowInactive,
       page: nextPage,
       pageSize: nextPageSize,
+      preserveDefaultPageSize: nextPreserveDefaultPageSize,
     });
     const currentQueryString = buildOrganizationStructureQueryState({
       scopeId: selectedSubsidiaryId,
@@ -680,6 +699,7 @@ export function OrganizationStructureScreen({
       showInactive,
       page: inventoryPage,
       pageSize: inventoryPageSize,
+      preserveDefaultPageSize: preserveDefaultInventoryPageSize,
     });
 
     if (nextQueryString === currentQueryString) {
@@ -871,6 +891,10 @@ export function OrganizationStructureScreen({
     }
 
     if (!findNodeById(data.subsidiaries, selectedSubsidiaryId)) {
+      if (search.trim()) {
+        return;
+      }
+
       const nextPage = 1;
       setSelectedSubsidiaryId(null);
       setInventoryPage(nextPage);
@@ -881,6 +905,7 @@ export function OrganizationStructureScreen({
         showInactive,
         page: nextPage,
         pageSize: inventoryPageSize,
+        preserveDefaultPageSize: preserveDefaultInventoryPageSize,
       });
       const currentQueryString = buildOrganizationStructureQueryState({
         scopeId: selectedSubsidiaryId,
@@ -888,6 +913,7 @@ export function OrganizationStructureScreen({
         showInactive,
         page: inventoryPage,
         pageSize: inventoryPageSize,
+        preserveDefaultPageSize: preserveDefaultInventoryPageSize,
       });
 
       if (nextQueryString !== currentQueryString) {
@@ -904,6 +930,7 @@ export function OrganizationStructureScreen({
     inventoryPageSize,
     loading,
     pathname,
+    preserveDefaultInventoryPageSize,
     router,
     search,
     selectedSubsidiaryId,
@@ -1169,7 +1196,12 @@ export function OrganizationStructureScreen({
     : null;
 
   useEffect(() => {
-    if (!loading && data && inventoryPage > inventoryPagination.totalPages) {
+    if (
+      !loading &&
+      data &&
+      inventoryPage > inventoryPagination.totalPages &&
+      !(selectedSubsidiaryId && !selectedNode && search.trim())
+    ) {
       const nextPage = inventoryPagination.totalPages;
       setInventoryPage(nextPage);
 
@@ -1179,6 +1211,7 @@ export function OrganizationStructureScreen({
         showInactive,
         page: nextPage,
         pageSize: inventoryPageSize,
+        preserveDefaultPageSize: preserveDefaultInventoryPageSize,
       });
       const currentQueryString = buildOrganizationStructureQueryState({
         scopeId: selectedSubsidiaryId,
@@ -1186,6 +1219,7 @@ export function OrganizationStructureScreen({
         showInactive,
         page: inventoryPage,
         pageSize: inventoryPageSize,
+        preserveDefaultPageSize: preserveDefaultInventoryPageSize,
       });
 
       if (nextQueryString !== currentQueryString) {
@@ -1202,9 +1236,11 @@ export function OrganizationStructureScreen({
     inventoryPagination.totalPages,
     loading,
     pathname,
+    preserveDefaultInventoryPageSize,
     router,
     search,
     selectedSubsidiaryId,
+    selectedNode,
     showInactive,
   ]);
 
