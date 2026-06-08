@@ -1,23 +1,22 @@
 'use client';
 
+import type { SupportedUiLocale } from '@tcrn/shared';
 import { Activity, ExternalLink, RefreshCw, ShieldCheck } from 'lucide-react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
-
-import type { SupportedUiLocale } from '@tcrn/shared';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import {
   type ChangeLogRecord,
   type IntegrationLogRecord,
   listChangeLogs,
   listIntegrationLogs,
+  listObservabilityAdapterSummary,
   listTechEvents,
   type LogSearchEntry,
-  type ObservabilityTab,
   type ObservabilityAdapterSummary,
-  searchLogs,
-  listObservabilityAdapterSummary,
+  type ObservabilityTab,
   readObservabilityAdapterDeepLink,
+  searchLogs,
   type TechEventRecord,
 } from '@/domains/observability/api/observability.api';
 import {
@@ -376,17 +375,19 @@ function buildObservabilityQuery({
   page,
   pageSize,
   limit,
+  includeDefaultLimit = false,
 }: {
   tab: ObservabilityTab;
   page: number;
   pageSize: PageSizeOption;
   limit: PageSizeOption;
+  includeDefaultLimit?: boolean;
 }) {
   const params = new URLSearchParams();
   params.set('tab', tab);
 
   if (tab === 'log-search') {
-    if (limit !== PAGE_SIZE_OPTIONS[0]) {
+    if (includeDefaultLimit || limit !== PAGE_SIZE_OPTIONS[0]) {
       params.set('limit', String(limit));
     }
 
@@ -484,6 +485,7 @@ export function ObservabilityScreen({
   const urlPage = parsePageParam(searchParams.get('page'));
   const urlPageSize = parsePageSizeParam(searchParams.get('pageSize'));
   const urlSearchLimit = parsePageSizeParam(searchParams.get('limit'));
+  const hasExplicitSearchLimitParam = currentTab === 'log-search' && searchParams.has('limit');
 
   const [activeTab, setActiveTab] = useState<ObservabilityTab>(currentTab);
   const { displayedValue: displayedTab, transitionClassName: tabTransitionClassName } =
@@ -544,6 +546,9 @@ export function ObservabilityScreen({
   const [openingAdapterCode, setOpeningAdapterCode] = useState<string | null>(null);
   const [selectedChangeLog, setSelectedChangeLog] = useState<ChangeLogRecord | null>(null);
   const [selectedTechEvent, setSelectedTechEvent] = useState<TechEventRecord | null>(null);
+  const previousChangeFilters = useRef(changeFilters);
+  const previousTechFilters = useRef(techFilters);
+  const previousIntegrationFilters = useRef(integrationFilters);
 
   useEffect(() => {
     setActiveTab(currentTab);
@@ -592,6 +597,7 @@ export function ObservabilityScreen({
         page: activePage,
         pageSize: activePageSize,
         limit: searchLimit,
+        includeDefaultLimit: hasExplicitSearchLimitParam,
       })}`
     );
   }, [
@@ -602,6 +608,7 @@ export function ObservabilityScreen({
     integrationPageSize,
     pathname,
     router,
+    hasExplicitSearchLimitParam,
     searchLimit,
     techPage,
     techPageSize,
@@ -815,14 +822,29 @@ export function ObservabilityScreen({
   }
 
   useEffect(() => {
+    if (previousChangeFilters.current === changeFilters) {
+      return;
+    }
+
+    previousChangeFilters.current = changeFilters;
     setChangePage(1);
   }, [changeFilters]);
 
   useEffect(() => {
+    if (previousTechFilters.current === techFilters) {
+      return;
+    }
+
+    previousTechFilters.current = techFilters;
     setTechPage(1);
   }, [techFilters]);
 
   useEffect(() => {
+    if (previousIntegrationFilters.current === integrationFilters) {
+      return;
+    }
+
+    previousIntegrationFilters.current = integrationFilters;
     setIntegrationPage(1);
   }, [integrationFilters]);
 

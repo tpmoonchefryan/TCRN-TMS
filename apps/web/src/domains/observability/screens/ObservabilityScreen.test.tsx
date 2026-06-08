@@ -1,7 +1,6 @@
+import type { SupportedUiLocale } from '@tcrn/shared';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-
-import type { SupportedUiLocale } from '@tcrn/shared';
 
 import { ObservabilityScreen } from '@/domains/observability/screens/ObservabilityScreen';
 
@@ -348,6 +347,11 @@ describe('ObservabilityScreen', () => {
     await waitFor(() => {
       expect(mockRequest).toHaveBeenCalledWith('/api/v1/logs/integrations?page=2&pageSize=50');
     });
+    await waitFor(() => {
+      expect(mockReplace).toHaveBeenCalledWith(
+        '/tenant/tenant-1/observability?tab=integration-logs&page=2&pageSize=50'
+      );
+    });
     expect(screen.getByRole('tab', { name: 'Integration Logs' })).toHaveAttribute(
       'aria-selected',
       'true'
@@ -361,6 +365,45 @@ describe('ObservabilityScreen', () => {
         '/tenant/tenant-1/observability?tab=integration-logs&pageSize=50'
       );
     });
+  });
+
+  it('preserves an explicit default log-search limit from the URL', async () => {
+    searchQuery = 'tab=log-search&limit=20';
+
+    mockRequest.mockImplementation(async (path: string) => {
+      if (path === '/api/v1/logs/search?limit=20&timeRange=24h') {
+        return {
+          entries: [
+            {
+              timestamp: '2026-04-17T10:05:00.000Z',
+              labels: {
+                app: 'tcrn-tms',
+                stream: 'integration_log',
+                severity: 'warn',
+              },
+              data: {
+                message: 'Webhook delivery delayed',
+              },
+            },
+          ],
+          stats: null,
+        };
+      }
+
+      throw new Error(`Unhandled request: ${path}`);
+    });
+
+    render(<ObservabilityScreen tenantId="tenant-1" />);
+
+    await waitFor(() => {
+      expect(mockRequest).toHaveBeenCalledWith('/api/v1/logs/search?limit=20&timeRange=24h');
+    });
+    await waitFor(() => {
+      expect(mockReplace).toHaveBeenCalledWith(
+        '/tenant/tenant-1/observability?tab=log-search&limit=20'
+      );
+    });
+    expect(await screen.findByText('Webhook delivery delayed')).toBeInTheDocument();
   });
 
   it('renders localized zh copy for the header chrome', async () => {
