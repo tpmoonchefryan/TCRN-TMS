@@ -341,7 +341,7 @@ describe('UserManagementScreen', () => {
     expect(screen.queryByRole('heading', { name: 'Create system user' })).not.toBeInTheDocument();
 
     const createLink = screen.getByRole('link', { name: 'New user' });
-    const editLink = screen.getByRole('link', { name: 'Edit' });
+    const editLink = screen.getByRole('link', { name: 'Edit Alice' });
 
     expect(createLink).toHaveAttribute('href', '/tenant/tenant-1/user-management/new');
     expect(editLink).toHaveAttribute('href', '/tenant/tenant-1/user-management/user-1');
@@ -404,13 +404,14 @@ describe('UserManagementScreen', () => {
     expect(screen.queryByRole('heading', { name: 'Create role' })).not.toBeInTheDocument();
 
     const newRoleLink = screen.getByRole('link', { name: 'New role' });
-    const editLinks = await screen.findAllByRole('link', { name: 'Edit' });
+    const editorLink = await screen.findByRole('link', { name: 'Edit Editor' });
+    const viewerLink = await screen.findByRole('link', { name: 'Edit Viewer' });
 
     expect(newRoleLink).toHaveAttribute('href', '/tenant/tenant-1/user-management/roles/new');
-    expect(editLinks[0]).toHaveAttribute('href', '/tenant/tenant-1/user-management/roles/role-1');
-    expect(editLinks[1]).toHaveAttribute('href', '/tenant/tenant-1/user-management/roles/role-2');
+    expect(editorLink).toHaveAttribute('href', '/tenant/tenant-1/user-management/roles/role-1');
+    expect(viewerLink).toHaveAttribute('href', '/tenant/tenant-1/user-management/roles/role-2');
     expect(newRoleLink.getAttribute('href')).not.toContain('/roles/roles/');
-    expect(editLinks[0].getAttribute('href')).not.toContain('/roles/roles/');
+    expect(editorLink.getAttribute('href')).not.toContain('/roles/roles/');
   });
 
   it('opens the first-class AC role route and builds AC role links without nested role paths', async () => {
@@ -457,12 +458,63 @@ describe('UserManagementScreen', () => {
     expect(await screen.findByRole('heading', { name: 'Role Management' })).toBeInTheDocument();
 
     const newRoleLink = screen.getByRole('link', { name: 'New role' });
-    const editLink = await screen.findByRole('link', { name: 'Edit' });
+    const editLink = await screen.findByRole('link', { name: 'Edit Editor' });
 
     expect(newRoleLink).toHaveAttribute('href', '/ac/tenant-1/user-management/roles/new');
     expect(editLink).toHaveAttribute('href', '/ac/tenant-1/user-management/roles/role-1');
     expect(newRoleLink.getAttribute('href')).not.toContain('/roles/roles/');
     expect(editLink.getAttribute('href')).not.toContain('/roles/roles/');
+  });
+
+  it('normalizes partial pagination metadata before rendering summaries and live ranges', async () => {
+    mockRequestEnvelope.mockImplementation(async (path: string) => {
+      if (path === '/api/v1/system-users?page=1&pageSize=20') {
+        return buildSuccessEnvelope(
+          [
+            {
+              id: 'user-1',
+              username: 'alice',
+              email: 'alice@example.com',
+              displayName: 'Alice',
+              avatarUrl: null,
+              isActive: true,
+              isTotpEnabled: false,
+              forceReset: false,
+              lastLoginAt: null,
+              createdAt: '2026-04-17T03:00:00.000Z',
+            },
+          ],
+          {
+            page: 1,
+            pageSize: 20,
+          } as ApiPaginationMeta
+        );
+      }
+
+      throw new Error(`Unhandled requestEnvelope: ${path}`);
+    });
+
+    mockRequest.mockImplementation(async (path: string) => {
+      if (path === '/api/v1/roles') {
+        return [];
+      }
+
+      if (path === '/api/v1/delegated-admins') {
+        return [];
+      }
+
+      if (path === '/api/v1/organization/tree?includeInactive=false') {
+        return organizationTreeResponse;
+      }
+
+      throw new Error(`Unhandled request: ${path}`);
+    });
+
+    render(<UserManagementScreen />);
+
+    expect(await screen.findByText('alice@example.com')).toBeInTheDocument();
+    expect(screen.getByText('Showing 1-1 of 1')).toBeInTheDocument();
+    expect(document.body.textContent).not.toContain('undefined');
   });
 
   it('keeps tenant role inventory filtered to roles valid for the current workspace', async () => {

@@ -36,13 +36,13 @@ import {
   ApiRequestError,
   buildFallbackPagination,
 } from '@/platform/http/api';
-import { pickLocaleText } from '@/platform/runtime/locale/locale-text';
 import {
   buildAcRoleManagementPath,
   buildAcUserManagementPath,
   buildTenantRoleManagementPath,
   buildTenantUserManagementPath,
 } from '@/platform/routing/workspace-paths';
+import { pickLocaleText } from '@/platform/runtime/locale/locale-text';
 import { useFadeSwapState } from '@/platform/runtime/motion/use-fade-swap-state';
 import {
   buildPaginationMeta,
@@ -1045,6 +1045,9 @@ export function UserManagementScreen({
                         <div className="flex flex-wrap gap-2">
                           <Link
                             href={buildUserEditorHref(user.id)}
+                            aria-label={`${managementCopy.users.edit} ${
+                              user.displayName || user.username
+                            }`}
                             className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:border-slate-300 hover:bg-white"
                           >
                             <Pencil className="h-3.5 w-3.5" />
@@ -1258,6 +1261,9 @@ export function UserManagementScreen({
                         <div className="flex flex-wrap gap-2">
                           <Link
                             href={buildRoleEditorHref(role.id)}
+                            aria-label={`${managementCopy.roles.edit} ${
+                              role.localizedName || role.name.en || role.code
+                            }`}
                             className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:border-slate-300 hover:bg-white"
                           >
                             <Pencil className="h-3.5 w-3.5" />

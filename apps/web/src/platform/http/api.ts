@@ -96,16 +96,18 @@ export function buildFallbackPagination(
   page: number,
   pageSize: number
 ): ApiPaginationMeta {
-  const totalCount = itemCount;
-  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+  const safePageSize = normalizePositiveInteger(pageSize, Math.max(itemCount, 1));
+  const totalCount = normalizeNonNegativeInteger(itemCount, 0);
+  const totalPages = Math.max(1, Math.ceil(totalCount / safePageSize));
+  const safePage = Math.min(normalizePositiveInteger(page, 1), totalPages);
 
   return {
-    page,
-    pageSize,
+    page: safePage,
+    pageSize: safePageSize,
     totalCount,
     totalPages,
-    hasNext: page < totalPages,
-    hasPrev: page > 1,
+    hasNext: safePage < totalPages,
+    hasPrev: safePage > 1,
   };
 }
 
@@ -115,7 +117,56 @@ export function resolveApiPagination(
   pageSize: number,
   itemCount: number
 ): ApiPaginationMeta {
-  return meta?.pagination ?? buildFallbackPagination(itemCount, page, pageSize);
+  const fallback = buildFallbackPagination(itemCount, page, pageSize);
+  const rawPagination = meta?.pagination as Partial<ApiPaginationMeta> | undefined;
+
+  if (!rawPagination) {
+    return fallback;
+  }
+
+  const safePageSize = normalizePositiveInteger(rawPagination.pageSize, fallback.pageSize);
+  const safeTotalCount = normalizeNonNegativeInteger(rawPagination.totalCount, fallback.totalCount);
+  const derivedTotalPages = Math.max(1, Math.ceil(safeTotalCount / safePageSize));
+  const safeTotalPages = normalizePositiveInteger(rawPagination.totalPages, derivedTotalPages);
+  const safePage = Math.min(
+    normalizePositiveInteger(rawPagination.page, fallback.page),
+    safeTotalPages
+  );
+
+  return {
+    page: safePage,
+    pageSize: safePageSize,
+    totalCount: safeTotalCount,
+    totalPages: safeTotalPages,
+    hasNext:
+      typeof rawPagination.hasNext === 'boolean'
+        ? rawPagination.hasNext
+        : safePage < safeTotalPages,
+    hasPrev:
+      typeof rawPagination.hasPrev === 'boolean'
+        ? rawPagination.hasPrev
+        : safePage > 1,
+  };
+}
+
+function normalizePositiveInteger(value: unknown, fallback: number): number {
+  const numericValue = Number(value);
+
+  if (Number.isInteger(numericValue) && numericValue > 0) {
+    return numericValue;
+  }
+
+  return Math.max(1, fallback);
+}
+
+function normalizeNonNegativeInteger(value: unknown, fallback: number): number {
+  const numericValue = Number(value);
+
+  if (Number.isInteger(numericValue) && numericValue >= 0) {
+    return numericValue;
+  }
+
+  return Math.max(0, fallback);
 }
 
 export function withBrowserPublicConsumerHeaders(headers?: HeadersInit): Headers {
