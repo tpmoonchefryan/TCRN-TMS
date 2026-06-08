@@ -282,11 +282,13 @@ function ToneBadge({
 }
 
 function InlineActionButton({
+  ariaLabel,
   children,
   tone = 'neutral',
   disabled = false,
   onClick,
 }: Readonly<{
+  ariaLabel?: string;
   children: React.ReactNode;
   tone?: 'neutral' | 'danger' | 'primary';
   disabled?: boolean;
@@ -302,6 +304,7 @@ function InlineActionButton({
   return (
     <button
       type="button"
+      aria-label={ariaLabel}
       onClick={onClick}
       disabled={disabled}
       className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition ${toneClasses} disabled:cursor-not-allowed disabled:opacity-50`}
@@ -511,7 +514,14 @@ export function UserManagementScreen({
 
     const targetPath = nextTab === 'roles' ? roleManagementPath : userManagementPath;
 
-    router.replace(nextQuery ? `${targetPath}?${nextQuery}` : targetPath);
+    const targetHref = nextQuery ? `${targetPath}?${nextQuery}` : targetPath;
+
+    if (nextState.tab !== undefined) {
+      router.push(targetHref);
+      return;
+    }
+
+    router.replace(targetHref);
   }
 
   async function refreshUsers() {
@@ -1055,6 +1065,9 @@ export function UserManagementScreen({
                           </Link>
                           {!user.isTotpEnabled ? (
                             <InlineActionButton
+                              ariaLabel={managementCopy.users.requireTotpTitle(
+                                user.displayName || user.username
+                              )}
                               tone="primary"
                               onClick={() => {
                                 setDialogState({
@@ -1081,6 +1094,9 @@ export function UserManagementScreen({
                           ) : null}
                           {user.isActive ? (
                             <InlineActionButton
+                              ariaLabel={managementCopy.users.deactivateTitle(
+                                user.displayName || user.username
+                              )}
                               tone="danger"
                               onClick={() => {
                                 setDialogState({
@@ -1109,6 +1125,9 @@ export function UserManagementScreen({
                             </InlineActionButton>
                           ) : (
                             <InlineActionButton
+                              ariaLabel={managementCopy.users.reactivateTitle(
+                                user.displayName || user.username
+                              )}
                               tone="primary"
                               onClick={() => {
                                 setDialogState({
@@ -1536,6 +1555,9 @@ export function UserManagementScreen({
                       </td>
                       <td className="px-6 py-4">
                         <InlineActionButton
+                          ariaLabel={managementCopy.delegation.removeTitle(
+                            `${delegation.delegateName} / ${delegation.scopeName}`
+                          )}
                           tone="danger"
                           onClick={() => {
                             setDialogState({

@@ -8,6 +8,7 @@ import type { ApiPaginationMeta, ApiSuccessEnvelope } from '@/platform/http/api'
 
 const mockRequest = vi.fn();
 const mockRequestEnvelope = vi.fn();
+const mockPush = vi.fn();
 const mockReplace = vi.fn();
 let searchQuery = '';
 let mockPathname = '/tenant/tenant-1/user-management';
@@ -63,6 +64,7 @@ function buildSuccessEnvelope<T>(data: T, pagination?: ApiPaginationMeta): ApiSu
 vi.mock('next/navigation', () => ({
   usePathname: () => mockPathname,
   useRouter: () => ({
+    push: mockPush,
     replace: mockReplace,
   }),
   useSearchParams: () => new URLSearchParams(searchQuery),
@@ -84,6 +86,7 @@ describe('UserManagementScreen', () => {
     searchQuery = '';
     mockPathname = '/tenant/tenant-1/user-management';
     localeState.locale = 'en';
+    mockPush.mockReset();
     mockReplace.mockReset();
     mockRequest.mockReset();
     mockRequestEnvelope.mockReset();
@@ -163,15 +166,18 @@ describe('UserManagementScreen', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /Roles/i }));
 
-    expect(mockReplace).toHaveBeenCalledWith('/tenant/tenant-1/user-management/roles?tab=roles');
+    expect(mockPush).toHaveBeenCalledWith('/tenant/tenant-1/user-management/roles?tab=roles');
     expect(await screen.findByText('EDITOR')).toBeInTheDocument();
     expect(screen.getByText('Can manage tenant content.')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: /Delegation/i }));
 
-    expect(mockReplace).toHaveBeenCalledWith('/tenant/tenant-1/user-management?tab=delegation');
+    expect(mockPush).toHaveBeenCalledWith('/tenant/tenant-1/user-management?tab=delegation');
     expect(await screen.findByText('Operator Alice')).toBeInTheDocument();
     expect(screen.getByText('Tokino Sora')).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Remove Operator Alice / Tokino Sora?' })
+    ).toBeInTheDocument();
   });
 
   it('uses 分目录 wording in zh copy for delegation scope instead of 子公司', async () => {
@@ -218,7 +224,7 @@ describe('UserManagementScreen', () => {
 
     fireEvent.click(await screen.findByRole('button', { name: /委派/ }));
 
-    expect(mockReplace).toHaveBeenCalledWith('/tenant/tenant-1/user-management?tab=delegation');
+    expect(mockPush).toHaveBeenCalledWith('/tenant/tenant-1/user-management?tab=delegation');
     expect(
       await screen.findByText('委派记录继续以分目录或艺人为目标范围进行管理。')
     ).toBeInTheDocument();
@@ -278,7 +284,9 @@ describe('UserManagementScreen', () => {
 
     expect(await screen.findByText('alice@example.com')).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Deactivate' }));
+    expect(screen.getByRole('button', { name: 'Require TOTP for Alice?' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Deactivate Alice?' }));
 
     expect(await screen.findByText('Deactivate Alice?')).toBeInTheDocument();
 
@@ -294,7 +302,7 @@ describe('UserManagementScreen', () => {
     });
 
     expect(await screen.findByText('Alice was deactivated.')).toBeInTheDocument();
-    expect(await screen.findByRole('button', { name: 'Reactivate' })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: 'Reactivate Alice?' })).toBeInTheDocument();
   });
 
   it('keeps the inventory page focused and links user create/edit to dedicated routes', async () => {
