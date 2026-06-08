@@ -1,6 +1,5 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-
 import type { SupportedUiLocale } from '@tcrn/shared';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 import { TenantManagementScreen } from '@/domains/platform-tenant-management/screens/TenantManagementScreen';
 
@@ -174,6 +173,9 @@ describe('TenantManagementScreen', () => {
     render(<TenantManagementScreen acTenantId="tenant-ac" />);
 
     expect(await screen.findByRole('heading', { name: 'Tenant Management' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('searchbox', { name: 'Search tenant code or name' })
+    ).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Create tenant' })).toHaveAttribute(
       'href',
       '/ac/tenant-ac/tenants/new'

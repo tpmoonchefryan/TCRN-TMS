@@ -9,11 +9,11 @@ import {
   activateTenant,
   createTenant,
   deactivateTenant,
+  type ManagedSendingDomain,
+  type ManagedSendingDomainStatus,
   type ModuleCapabilityDefinition,
   type ModuleCapabilityRegistry,
   readModuleCapabilityRegistry,
-  type ManagedSendingDomain,
-  type ManagedSendingDomainStatus,
   readTenant,
   readTenantCapabilities,
   readTenantSendingDomains,
@@ -76,6 +76,9 @@ export function TenantEditorScreen({
   const [sendingDomainsNotice, setSendingDomainsNotice] = useState<string | null>(null);
   const [savingSendingDomains, setSavingSendingDomains] = useState(false);
   const [newSendingDomain, setNewSendingDomain] = useState('');
+  const [lifecycleConfirmation, setLifecycleConfirmation] = useState<
+    'activate' | 'deactivate' | null
+  >(null);
   const [tenantState, setTenantState] = useState<{
     id: string;
     name: string;
@@ -293,6 +296,7 @@ export function TenantEditorScreen({
       });
     } finally {
       setSubmitting(false);
+      setLifecycleConfirmation(null);
     }
   }
 
@@ -527,6 +531,30 @@ export function TenantEditorScreen({
   const enabledCapabilityLabels = capabilityRows
     .filter((capability) => capability.assignable && capability.enabled)
     .map((capability) => pickLocaleText(locale, capability.label));
+  const sectionCopy = {
+    identityTitle:
+      mode === 'create' ? 'Step 1: Tenant identity and limits' : 'Tenant identity and limits',
+    capabilityTitle:
+      mode === 'create' ? `Step 2: ${editorCopy.capabilitiesLabel}` : editorCopy.capabilitiesLabel,
+    initialAdminTitle: 'Step 3: Initial administrator provisioning',
+    lifecycleTitle: 'Lifecycle actions',
+  };
+  const lifecycleAction = lifecycleConfirmation
+    ? {
+        title:
+          lifecycleConfirmation === 'activate'
+            ? `${editorCopy.reactivateSubmit}: ${tenantState?.name ?? editorCopy.newTenant}?`
+            : `${editorCopy.deactivateSubmit}: ${tenantState?.name ?? editorCopy.newTenant}?`,
+        description:
+          lifecycleConfirmation === 'activate'
+            ? editorCopy.reactivateDescription
+            : editorCopy.deactivateDescription,
+        submit:
+          lifecycleConfirmation === 'activate'
+            ? editorCopy.reactivateSubmit
+            : editorCopy.deactivateSubmit,
+      }
+    : null;
 
   return (
     <div className="space-y-6">
@@ -577,67 +605,85 @@ export function TenantEditorScreen({
       {notice ? <NoticeBanner tone={notice.tone} message={notice.message} /> : null}
 
       <GlassSurface className="p-6">
-        <div className="grid gap-4 md:grid-cols-2">
-          <Field
-            label={editorCopy.tenantCodeLabel}
-            hint={
-              mode === 'create' ? editorCopy.tenantCodeHintCreate : editorCopy.tenantCodeHintEdit
-            }
-          >
-            <input
-              aria-label={editorCopy.tenantCodeLabel}
-              value={draft.code}
-              onChange={(event) =>
-                setDraft((current) => ({ ...current, code: event.target.value.toUpperCase() }))
-              }
-              disabled={mode === 'edit'}
-              className={inputClassName}
-              placeholder={editorCopy.tenantCodePlaceholder}
-            />
-          </Field>
-
-          <Field label={editorCopy.tenantNameLabel}>
-            <input
-              aria-label={editorCopy.tenantNameLabel}
-              value={draft.name}
-              onChange={(event) =>
-                setDraft((current) => ({ ...current, name: event.target.value }))
-              }
-              className={inputClassName}
-              placeholder={editorCopy.tenantNamePlaceholder}
-            />
-          </Field>
-
-          <Field label={editorCopy.maxTalentsLabel} hint={editorCopy.quotaHelper}>
-            <input
-              aria-label={editorCopy.maxTalentsLabel}
-              value={draft.maxTalents}
-              onChange={(event) =>
-                setDraft((current) => ({ ...current, maxTalents: event.target.value }))
-              }
-              className={inputClassName}
-              inputMode="numeric"
-              placeholder={editorCopy.maxTalentsPlaceholder}
-            />
-          </Field>
-
-          <Field label={editorCopy.maxCustomersLabel} hint={editorCopy.quotaHelper}>
-            <input
-              aria-label={editorCopy.maxCustomersLabel}
-              value={draft.maxCustomersPerTalent}
-              onChange={(event) =>
-                setDraft((current) => ({ ...current, maxCustomersPerTalent: event.target.value }))
-              }
-              className={inputClassName}
-              inputMode="numeric"
-              placeholder={editorCopy.maxCustomersPlaceholder}
-            />
-          </Field>
-
-          <div className="space-y-3 md:col-span-2">
+        <div className="space-y-6">
+          <section aria-labelledby="tenant-identity-section" className="space-y-4">
             <div>
-              <h2 className="text-sm font-semibold text-slate-900">
-                {editorCopy.capabilitiesLabel}
+              <h2 id="tenant-identity-section" className="text-lg font-semibold text-slate-950">
+                {sectionCopy.identityTitle}
+              </h2>
+              <p className="mt-1 max-w-3xl text-sm leading-6 text-slate-600">
+                {mode === 'create' ? editorCopy.createDescription : editorCopy.editDescription}
+              </p>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <Field
+                label={editorCopy.tenantCodeLabel}
+                hint={
+                  mode === 'create'
+                    ? editorCopy.tenantCodeHintCreate
+                    : editorCopy.tenantCodeHintEdit
+                }
+              >
+                <input
+                  aria-label={editorCopy.tenantCodeLabel}
+                  value={draft.code}
+                  onChange={(event) =>
+                    setDraft((current) => ({ ...current, code: event.target.value.toUpperCase() }))
+                  }
+                  disabled={mode === 'edit'}
+                  className={inputClassName}
+                  placeholder={editorCopy.tenantCodePlaceholder}
+                />
+              </Field>
+
+              <Field label={editorCopy.tenantNameLabel}>
+                <input
+                  aria-label={editorCopy.tenantNameLabel}
+                  value={draft.name}
+                  onChange={(event) =>
+                    setDraft((current) => ({ ...current, name: event.target.value }))
+                  }
+                  className={inputClassName}
+                  placeholder={editorCopy.tenantNamePlaceholder}
+                />
+              </Field>
+
+              <Field label={editorCopy.maxTalentsLabel} hint={editorCopy.quotaHelper}>
+                <input
+                  aria-label={editorCopy.maxTalentsLabel}
+                  value={draft.maxTalents}
+                  onChange={(event) =>
+                    setDraft((current) => ({ ...current, maxTalents: event.target.value }))
+                  }
+                  className={inputClassName}
+                  inputMode="numeric"
+                  placeholder={editorCopy.maxTalentsPlaceholder}
+                />
+              </Field>
+
+              <Field label={editorCopy.maxCustomersLabel} hint={editorCopy.quotaHelper}>
+                <input
+                  aria-label={editorCopy.maxCustomersLabel}
+                  value={draft.maxCustomersPerTalent}
+                  onChange={(event) =>
+                    setDraft((current) => ({
+                      ...current,
+                      maxCustomersPerTalent: event.target.value,
+                    }))
+                  }
+                  className={inputClassName}
+                  inputMode="numeric"
+                  placeholder={editorCopy.maxCustomersPlaceholder}
+                />
+              </Field>
+            </div>
+          </section>
+
+          <section aria-labelledby="tenant-capabilities-section" className="space-y-3">
+            <div>
+              <h2 id="tenant-capabilities-section" className="text-lg font-semibold text-slate-950">
+                {sectionCopy.capabilityTitle}
               </h2>
               <p className="mt-1 max-w-3xl text-xs leading-5 text-slate-500">
                 {editorCopy.capabilitiesHint}
@@ -655,9 +701,7 @@ export function TenantEditorScreen({
               </div>
             ) : null}
 
-            {capabilitiesError ? (
-              <NoticeBanner tone="error" message={capabilitiesError} />
-            ) : null}
+            {capabilitiesError ? <NoticeBanner tone="error" message={capabilitiesError} /> : null}
 
             {mode === 'edit' ? (
               <button
@@ -718,143 +762,218 @@ export function TenantEditorScreen({
                 })}
               </div>
             </div>
-          </div>
+          </section>
 
-          <div className="rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-4">
-            <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
-              <Building2 className="h-4 w-4 text-slate-500" />
-              {editorCopy.currentSelection}
-            </div>
-            <div className="mt-3 space-y-2 text-sm text-slate-600">
-              <p>
-                {editorCopy.tenantSelectionLabel}: {tenantState?.name || editorCopy.newTenant}
-              </p>
-              <p>
-                {editorCopy.tenantCodeLabel}:{' '}
-                {tenantState?.code || draft.code || editorCopy.newTenant}
-              </p>
-              <p>
-                {editorCopy.selectionTierLabel}:{' '}
-                {tenantState
-                  ? tenantState.tier === 'ac'
-                    ? editorCopy.acTierLabel
-                    : editorCopy.standardTierLabel
-                  : editorCopy.standardTierLabel}
-              </p>
-              {tenantState ? (
+          <section aria-labelledby="tenant-selection-section">
+            <div className="rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-4">
+              <div
+                id="tenant-selection-section"
+                className="flex items-center gap-2 text-sm font-semibold text-slate-900"
+              >
+                <Building2 className="h-4 w-4 text-slate-500" />
+                {editorCopy.currentSelection}
+              </div>
+              <div className="mt-3 space-y-2 text-sm text-slate-600">
                 <p>
-                  {editorCopy.updatedLabel}:{' '}
-                  {formatTenantDateTime(tenantState.updatedAt, locale, editorCopy.updatedLabel)}
+                  {editorCopy.tenantSelectionLabel}: {tenantState?.name || editorCopy.newTenant}
                 </p>
-              ) : null}
+                <p>
+                  {editorCopy.tenantCodeLabel}:{' '}
+                  {tenantState?.code || draft.code || editorCopy.newTenant}
+                </p>
+                <p>
+                  {editorCopy.selectionTierLabel}:{' '}
+                  {tenantState
+                    ? tenantState.tier === 'ac'
+                      ? editorCopy.acTierLabel
+                      : editorCopy.standardTierLabel
+                    : editorCopy.standardTierLabel}
+                </p>
+                {tenantState ? (
+                  <p>
+                    {editorCopy.updatedLabel}:{' '}
+                    {formatTenantDateTime(tenantState.updatedAt, locale, editorCopy.updatedLabel)}
+                  </p>
+                ) : null}
+              </div>
             </div>
-          </div>
+          </section>
 
           {mode === 'create' ? (
-            <>
-              <Field label={editorCopy.adminUsernameLabel}>
-                <input
-                  aria-label={editorCopy.adminUsernameLabel}
-                  value={draft.adminUsername}
-                  onChange={(event) =>
-                    setDraft((current) => ({ ...current, adminUsername: event.target.value }))
-                  }
-                  className={inputClassName}
-                  placeholder={editorCopy.adminUsernamePlaceholder}
-                />
-              </Field>
+            <section aria-labelledby="tenant-initial-admin-section" className="space-y-4">
+              <div>
+                <h2
+                  id="tenant-initial-admin-section"
+                  className="text-lg font-semibold text-slate-950"
+                >
+                  {sectionCopy.initialAdminTitle}
+                </h2>
+                <p className="mt-1 max-w-3xl text-sm leading-6 text-slate-600">
+                  {editorCopy.createDescription}
+                </p>
+              </div>
+              <div className="grid gap-4 md:grid-cols-2">
+                <Field label={editorCopy.adminUsernameLabel}>
+                  <input
+                    aria-label={editorCopy.adminUsernameLabel}
+                    value={draft.adminUsername}
+                    onChange={(event) =>
+                      setDraft((current) => ({ ...current, adminUsername: event.target.value }))
+                    }
+                    className={inputClassName}
+                    placeholder={editorCopy.adminUsernamePlaceholder}
+                  />
+                </Field>
 
-              <Field label={editorCopy.adminEmailLabel}>
-                <input
-                  aria-label={editorCopy.adminEmailLabel}
-                  value={draft.adminEmail}
-                  onChange={(event) =>
-                    setDraft((current) => ({ ...current, adminEmail: event.target.value }))
-                  }
-                  className={inputClassName}
-                  placeholder={editorCopy.adminEmailPlaceholder}
-                />
-              </Field>
+                <Field label={editorCopy.adminEmailLabel}>
+                  <input
+                    aria-label={editorCopy.adminEmailLabel}
+                    value={draft.adminEmail}
+                    onChange={(event) =>
+                      setDraft((current) => ({ ...current, adminEmail: event.target.value }))
+                    }
+                    className={inputClassName}
+                    placeholder={editorCopy.adminEmailPlaceholder}
+                  />
+                </Field>
 
-              <Field label={editorCopy.adminPasswordLabel}>
-                <input
-                  aria-label={editorCopy.adminPasswordLabel}
-                  type="password"
-                  value={draft.adminPassword}
-                  onChange={(event) =>
-                    setDraft((current) => ({ ...current, adminPassword: event.target.value }))
-                  }
-                  className={inputClassName}
-                  placeholder={editorCopy.adminPasswordPlaceholder}
-                />
-              </Field>
+                <Field label={editorCopy.adminPasswordLabel}>
+                  <input
+                    aria-label={editorCopy.adminPasswordLabel}
+                    type="password"
+                    value={draft.adminPassword}
+                    onChange={(event) =>
+                      setDraft((current) => ({ ...current, adminPassword: event.target.value }))
+                    }
+                    className={inputClassName}
+                    placeholder={editorCopy.adminPasswordPlaceholder}
+                  />
+                </Field>
 
-              <Field label={editorCopy.adminDisplayNameLabel}>
-                <input
-                  aria-label={editorCopy.adminDisplayNameLabel}
-                  value={draft.adminDisplayName}
-                  onChange={(event) =>
-                    setDraft((current) => ({ ...current, adminDisplayName: event.target.value }))
-                  }
-                  className={inputClassName}
-                  placeholder={editorCopy.adminDisplayNamePlaceholder}
-                />
-              </Field>
-            </>
+                <Field label={editorCopy.adminDisplayNameLabel}>
+                  <input
+                    aria-label={editorCopy.adminDisplayNameLabel}
+                    value={draft.adminDisplayName}
+                    onChange={(event) =>
+                      setDraft((current) => ({ ...current, adminDisplayName: event.target.value }))
+                    }
+                    className={inputClassName}
+                    placeholder={editorCopy.adminDisplayNamePlaceholder}
+                  />
+                </Field>
+              </div>
+            </section>
           ) : null}
-        </div>
 
-        {tenantState ? (
-          <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
-            <div className="flex flex-wrap items-center gap-2">
-              <ToneBadge
-                tone={tenantState.tier === 'ac' ? 'info' : 'neutral'}
-                label={
-                  tenantState.tier === 'ac' ? editorCopy.acTierLabel : editorCopy.standardTierLabel
-                }
-              />
-              <ToneBadge
-                tone={tenantState.isActive ? 'success' : 'warning'}
-                label={tenantState.isActive ? editorCopy.activeStatus : editorCopy.inactiveStatus}
-              />
-              <p className="text-sm text-slate-600">
-                {editorCopy.createdLabel}{' '}
-                {formatDateTime(tenantState.createdAt, locale, editorCopy.createdLabel)}
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {tenantState.isActive ? (
-                <button
-                  type="button"
-                  onClick={() => void handleLifecycle('deactivate')}
-                  disabled={submitting}
-                  className="rounded-full border border-rose-200 px-3 py-1.5 text-xs font-medium text-rose-700 transition hover:border-rose-300 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
+          {tenantState ? (
+            <section aria-labelledby="tenant-lifecycle-section" className="space-y-4">
+              <div>
+                <h2 id="tenant-lifecycle-section" className="text-lg font-semibold text-slate-950">
+                  {sectionCopy.lifecycleTitle}
+                </h2>
+                <p className="mt-1 max-w-3xl text-sm leading-6 text-slate-600">
+                  {tenantState.isActive
+                    ? editorCopy.deactivateDescription
+                    : editorCopy.reactivateDescription}
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+                <div className="flex flex-wrap items-center gap-2">
+                  <ToneBadge
+                    tone={tenantState.tier === 'ac' ? 'info' : 'neutral'}
+                    label={
+                      tenantState.tier === 'ac'
+                        ? editorCopy.acTierLabel
+                        : editorCopy.standardTierLabel
+                    }
+                  />
+                  <ToneBadge
+                    tone={tenantState.isActive ? 'success' : 'warning'}
+                    label={
+                      tenantState.isActive ? editorCopy.activeStatus : editorCopy.inactiveStatus
+                    }
+                  />
+                  <p className="text-sm text-slate-600">
+                    {editorCopy.createdLabel}{' '}
+                    {formatDateTime(tenantState.createdAt, locale, editorCopy.createdLabel)}
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {tenantState.isActive ? (
+                    <button
+                      type="button"
+                      onClick={() => setLifecycleConfirmation('deactivate')}
+                      disabled={submitting}
+                      className="rounded-full border border-rose-200 px-3 py-1.5 text-xs font-medium text-rose-700 transition hover:border-rose-300 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {editorCopy.deactivateSubmit}
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setLifecycleConfirmation('activate')}
+                      disabled={submitting}
+                      className="rounded-full border border-emerald-200 px-3 py-1.5 text-xs font-medium text-emerald-700 transition hover:border-emerald-300 hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {editorCopy.reactivateSubmit}
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {lifecycleAction ? (
+                <div
+                  role="dialog"
+                  aria-modal="true"
+                  aria-labelledby="tenant-lifecycle-confirm-title"
+                  className="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm"
                 >
-                  {editorCopy.deactivateSubmit}
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => void handleLifecycle('activate')}
-                  disabled={submitting}
-                  className="rounded-full border border-emerald-200 px-3 py-1.5 text-xs font-medium text-emerald-700 transition hover:border-emerald-300 hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {editorCopy.reactivateSubmit}
-                </button>
-              )}
-            </div>
+                  <h3
+                    id="tenant-lifecycle-confirm-title"
+                    className="text-sm font-semibold text-slate-950"
+                  >
+                    {lifecycleAction.title}
+                  </h3>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">
+                    {lifecycleAction.description}
+                  </p>
+                  <div className="mt-4 flex flex-wrap justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setLifecycleConfirmation(null)}
+                      disabled={submitting}
+                      className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {copy.cancelAction}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (lifecycleConfirmation) {
+                          void handleLifecycle(lifecycleConfirmation);
+                        }
+                      }}
+                      disabled={submitting}
+                      className="rounded-full border border-rose-200 px-3 py-1.5 text-xs font-medium text-rose-700 transition hover:border-rose-300 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {lifecycleAction.submit}
+                    </button>
+                  </div>
+                </div>
+              ) : null}
+            </section>
+          ) : null}
+
+          <div className="flex justify-end">
+            <AsyncSubmitButton
+              type="button"
+              isPending={submitting}
+              pendingText={mode === 'create' ? editorCopy.createSubmit : editorCopy.savePending}
+              onClick={() => void handleSubmit()}
+            >
+              {mode === 'create' ? editorCopy.createSubmit : editorCopy.saveSubmit}
+            </AsyncSubmitButton>
           </div>
-        ) : null}
-
-        <div className="mt-6 flex justify-end">
-          <AsyncSubmitButton
-            type="button"
-            isPending={submitting}
-            pendingText={mode === 'create' ? editorCopy.createSubmit : editorCopy.savePending}
-            onClick={() => void handleSubmit()}
-          >
-            {mode === 'create' ? editorCopy.createSubmit : editorCopy.saveSubmit}
-          </AsyncSubmitButton>
         </div>
       </GlassSurface>
 

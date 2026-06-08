@@ -1,6 +1,5 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-
 import type { SupportedUiLocale } from '@tcrn/shared';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 
 import { TenantEditorScreen } from '@/domains/platform-tenant-management/screens/TenantEditorScreen';
 
@@ -224,7 +223,13 @@ describe('TenantEditorScreen', () => {
 
     render(<TenantEditorScreen acTenantId="tenant-ac" mode="create" />);
 
-    expect(await screen.findByText('Capabilities')).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { name: 'Step 1: Tenant identity and limits' })
+    ).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Step 2: Capabilities' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: 'Step 3: Initial administrator provisioning' })
+    ).toBeInTheDocument();
     expect(screen.getByLabelText('Enable Homepage Studio')).toBeChecked();
     expect(screen.getByLabelText('Enable Settings')).toBeDisabled();
     expect(screen.queryByLabelText('Enabled features')).not.toBeInTheDocument();
@@ -373,6 +378,9 @@ describe('TenantEditorScreen', () => {
     render(<TenantEditorScreen acTenantId="tenant-ac" managedTenantId="tenant-1" mode="edit" />);
 
     expect(await screen.findByRole('heading', { name: 'Alpha Entertainment' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Tenant identity and limits' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Capabilities' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Lifecycle actions' })).toBeInTheDocument();
     expect(screen.getByLabelText('Tenant code')).toHaveValue('ALPHA');
     expect(screen.getByText('Tier: Standard')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Email sending domains' })).toBeInTheDocument();
@@ -559,5 +567,83 @@ describe('TenantEditorScreen', () => {
     });
 
     expect(await screen.findByText('发件域名已保存。')).toBeInTheDocument();
+  });
+
+  it('confirms lifecycle changes before mutating the tenant', async () => {
+    mockRequest.mockImplementation(async (path: string, init?: RequestInit) => {
+      if (path === '/api/v1/module-capabilities/registry' && !init) {
+        return capabilityRegistryResponse;
+      }
+
+      if (path === '/api/v1/tenants/tenant-1/capabilities' && !init) {
+        return capabilityReadbackResponse;
+      }
+
+      if (path === '/api/v1/tenants/tenant-1' && !init) {
+        return {
+          id: 'tenant-1',
+          code: 'ALPHA',
+          name: 'Alpha Entertainment',
+          schemaName: 'tenant_alpha',
+          tier: 'standard',
+          isActive: true,
+          settings: {
+            maxTalents: 10,
+            maxCustomersPerTalent: 200,
+          },
+          capabilities: tenantCapabilitiesDigest,
+          stats: {
+            subsidiaryCount: 1,
+            talentCount: 4,
+            userCount: 5,
+          },
+          createdAt: '2026-04-17T00:00:00.000Z',
+          updatedAt: '2026-04-17T01:00:00.000Z',
+        };
+      }
+
+      if (path === '/api/v1/email/tenants/tenant-1/sending-domains' && !init) {
+        return {
+          tenantId: 'tenant-1',
+          domains: [],
+          defaultDomainId: null,
+        };
+      }
+
+      if (path === '/api/v1/tenants/tenant-1/deactivate' && init?.method === 'POST') {
+        return {
+          id: 'tenant-1',
+          isActive: false,
+        };
+      }
+
+      throw new Error(`Unhandled request: ${path}`);
+    });
+
+    render(<TenantEditorScreen acTenantId="tenant-ac" managedTenantId="tenant-1" mode="edit" />);
+
+    expect(await screen.findByRole('heading', { name: 'Alpha Entertainment' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Deactivate tenant' }));
+
+    const confirmationDialog = screen.getByRole('dialog', {
+      name: 'Deactivate tenant: Alpha Entertainment?',
+    });
+    expect(confirmationDialog).toBeInTheDocument();
+    expect(mockRequest).not.toHaveBeenCalledWith(
+      '/api/v1/tenants/tenant-1/deactivate',
+      expect.anything()
+    );
+
+    fireEvent.click(within(confirmationDialog).getByRole('button', { name: 'Deactivate tenant' }));
+
+    await waitFor(() => {
+      expect(mockRequest).toHaveBeenCalledWith(
+        '/api/v1/tenants/tenant-1/deactivate',
+        expect.objectContaining({
+          method: 'POST',
+        })
+      );
+    });
   });
 });
