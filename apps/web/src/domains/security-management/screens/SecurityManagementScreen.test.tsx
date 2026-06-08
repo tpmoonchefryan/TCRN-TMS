@@ -1,7 +1,6 @@
+import type { SupportedUiLocale } from '@tcrn/shared';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-
-import type { SupportedUiLocale } from '@tcrn/shared';
 
 import { localizedFixture } from '@/domains/config-dictionary-settings/testing/localized-fixtures';
 import { SecurityManagementScreen } from '@/domains/security-management/screens/SecurityManagementScreen';
@@ -1038,12 +1037,12 @@ describe('SecurityManagementScreen', () => {
     expect(await screen.findByRole('heading', { name: 'Security' })).toBeInTheDocument();
     expect(await screen.findByText('Discord Invite Filter')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Edit' }).closest('div')).toHaveClass(
-      'flex-nowrap',
-      'whitespace-nowrap'
+      'min-w-0',
+      'flex-wrap'
     );
     expect(screen.getByText('active').closest('div')).toHaveClass(
-      'flex-nowrap',
-      'whitespace-nowrap'
+      'min-w-0',
+      'flex-wrap'
     );
     expect(mockReplace).not.toHaveBeenCalledWith(
       '/tenant/tenant-1/security?tab=external-blocklist&scopeType=subsidiary&scopeId=sub-1'

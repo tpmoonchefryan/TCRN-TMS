@@ -91,10 +91,7 @@ export const SettingsLayout: React.FC<SettingsLayoutProps> = ({
         className="min-w-0 rounded-lg border border-slate-200 bg-white/78 p-2 shadow-sm focus:ring-2 focus:ring-indigo-500/50 focus:outline-none"
         aria-label={ariaLabel}
       >
-        <div
-          className="flex min-w-0 gap-2 overflow-x-auto pb-1"
-          onKeyDown={handleSectionNavKeyDown}
-        >
+        <div className="flex min-w-0 flex-wrap gap-2 pb-1" onKeyDown={handleSectionNavKeyDown}>
           {sections.map((section) => {
             const isActive = section.id === activeSectionId;
 
@@ -108,7 +105,7 @@ export const SettingsLayout: React.FC<SettingsLayoutProps> = ({
                 onClick={() => onSectionChange(section.id)}
                 aria-current={isActive ? 'page' : undefined}
                 tabIndex={section.id === focusableSectionId ? 0 : -1}
-                className={`inline-flex min-h-11 flex-none items-center gap-3 rounded-md px-3 py-2 text-left text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+                className={`inline-flex min-h-11 max-w-full flex-none items-center gap-3 rounded-md px-3 py-2 text-left text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
                   isActive
                     ? 'bg-slate-950 text-white shadow-sm'
                     : `text-slate-600 hover:bg-slate-100 hover:text-slate-900 ${tokens.motion.transitionStandard} motion-reduce:transition-none`
@@ -122,7 +119,7 @@ export const SettingsLayout: React.FC<SettingsLayoutProps> = ({
                     {section.icon}
                   </span>
                 ) : null}
-                <span className="whitespace-nowrap">{section.label}</span>
+                <span className="break-words">{section.label}</span>
               </button>
             );
           })}

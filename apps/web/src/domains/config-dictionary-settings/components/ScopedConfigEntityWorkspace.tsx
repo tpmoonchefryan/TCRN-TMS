@@ -1,10 +1,9 @@
 'use client';
 
+import type { SupportedUiLocale } from '@tcrn/shared';
 import { Plus, RefreshCcw } from 'lucide-react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { startTransition, useEffect, useMemo, useRef, useState } from 'react';
-
-import type { LocalizedText, SupportedUiLocale } from '@tcrn/shared';
 
 import {
   type ConfigEntityRecord,
@@ -23,6 +22,13 @@ import {
   type UpdateConfigEntityInput,
 } from '@/domains/config-dictionary-settings/api/settings.api';
 import { listDictionaryItems } from '@/domains/config-dictionary-settings/api/system-dictionary.api';
+import {
+  CONFIG_ENTITY_CATALOG,
+  CONFIG_ENTITY_ORDER,
+  type ConfigEntityCatalogEntry,
+  type ConfigEntityFieldDefinition,
+  DEFAULT_CONFIG_ENTITY_TYPE,
+} from '@/domains/config-dictionary-settings/components/config-entity-catalog';
 import { CustomDomainConfigEntityWorkspace } from '@/domains/config-dictionary-settings/components/CustomDomainConfigEntityWorkspace';
 import { PublicPresenceAssetWorkspace } from '@/domains/config-dictionary-settings/components/PublicPresenceAssetWorkspace';
 import {
@@ -32,13 +38,6 @@ import {
   TranslationManagementDrawer,
   TranslationManagementTrigger,
 } from '@/domains/config-dictionary-settings/components/TranslationManagement';
-import {
-  CONFIG_ENTITY_CATALOG,
-  CONFIG_ENTITY_ORDER,
-  type ConfigEntityCatalogEntry,
-  type ConfigEntityFieldDefinition,
-  DEFAULT_CONFIG_ENTITY_TYPE,
-} from '@/domains/config-dictionary-settings/components/config-entity-catalog';
 import { type ApiPaginationMeta, ApiRequestError } from '@/platform/http/api';
 import { formatLocaleDateTime, pickLocaleText } from '@/platform/runtime/locale/locale-text';
 import {
@@ -67,6 +66,7 @@ interface ScopedConfigEntityWorkspaceProps {
   locale?: SupportedUiLocale;
   copy?: ScopedConfigEntityWorkspaceCopy;
   catalog?: Record<ScopedConfigEntityType, ConfigEntityCatalogEntry>;
+  retainDefaultQueryState?: boolean;
 }
 
 type DraftValue = string | boolean;
@@ -332,6 +332,7 @@ function buildScopedConfigEntityQueryState(
     includeInactive,
     page,
     pageSize,
+    retainDefaultQueryState = false,
     search,
     selectedType,
   }: {
@@ -339,11 +340,15 @@ function buildScopedConfigEntityQueryState(
     includeInactive: boolean;
     page: number;
     pageSize: PageSizeOption;
+    retainDefaultQueryState?: boolean;
     search: string;
     selectedType: ScopedConfigEntityType;
   }
 ) {
   const params = new URLSearchParams(searchParams.toString());
+  const shouldRetainType = retainDefaultQueryState && params.has('configEntityType');
+  const shouldRetainPage = retainDefaultQueryState && params.has('configEntityPage');
+  const shouldRetainPageSize = retainDefaultQueryState && params.has('configEntityPageSize');
   const normalizedSearch = search.trim();
 
   params.delete('configEntityType');
@@ -353,7 +358,7 @@ function buildScopedConfigEntityQueryState(
   params.delete('configEntityPage');
   params.delete('configEntityPageSize');
 
-  if (selectedType !== DEFAULT_CONFIG_ENTITY_TYPE) {
+  if (selectedType !== DEFAULT_CONFIG_ENTITY_TYPE || shouldRetainType) {
     params.set('configEntityType', selectedType);
   }
 
@@ -369,11 +374,11 @@ function buildScopedConfigEntityQueryState(
     params.set('configEntityInactive', 'true');
   }
 
-  if (page > 1) {
+  if (page > 1 || shouldRetainPage) {
     params.set('configEntityPage', String(page));
   }
 
-  if (pageSize !== PAGE_SIZE_OPTIONS[0]) {
+  if (pageSize !== PAGE_SIZE_OPTIONS[0] || shouldRetainPageSize) {
     params.set('configEntityPageSize', String(pageSize));
   }
 
@@ -880,6 +885,7 @@ export function ScopedConfigEntityWorkspace({
   locale = 'en',
   copy = DEFAULT_COPY,
   catalog = CONFIG_ENTITY_CATALOG,
+  retainDefaultQueryState = false,
 }: Readonly<ScopedConfigEntityWorkspaceProps>) {
   const resolvedCopy = copy;
   const pathname = usePathname();
@@ -1134,6 +1140,7 @@ export function ScopedConfigEntityWorkspace({
       includeInactive: nextIncludeInactive,
       page: nextPage,
       pageSize: nextPageSize,
+      retainDefaultQueryState,
       search: nextSearch,
       selectedType: nextSelectedType,
     });
@@ -1142,6 +1149,7 @@ export function ScopedConfigEntityWorkspace({
       includeInactive,
       page,
       pageSize,
+      retainDefaultQueryState,
       search,
       selectedType,
     });
@@ -1163,7 +1171,11 @@ export function ScopedConfigEntityWorkspace({
   }, [currentScopeOnly, supportsLocalScopeOnly]);
 
   useEffect(() => {
-    if (!loading && page !== pagination.page) {
+    if (
+      !loading &&
+      page !== pagination.page &&
+      !(retainDefaultQueryState && searchParams.has('configEntityPage'))
+    ) {
       const nextPage = pagination.page;
       setPage(nextPage);
 
@@ -1172,6 +1184,7 @@ export function ScopedConfigEntityWorkspace({
         includeInactive,
         page: nextPage,
         pageSize,
+        retainDefaultQueryState,
         search,
         selectedType,
       });
@@ -1180,6 +1193,7 @@ export function ScopedConfigEntityWorkspace({
         includeInactive,
         page,
         pageSize,
+        retainDefaultQueryState,
         search,
         selectedType,
       });
@@ -1199,6 +1213,7 @@ export function ScopedConfigEntityWorkspace({
     pageSize,
     pagination.page,
     pathname,
+    retainDefaultQueryState,
     router,
     search,
     searchParams,
@@ -1771,9 +1786,9 @@ export function ScopedConfigEntityWorkspace({
   }
 
   return (
-    <div className="space-y-5">
-      <div className="grid gap-6 xl:grid-cols-[minmax(16rem,20rem)_1fr]">
-        <div className="space-y-3">
+    <div className="min-w-0 space-y-5">
+      <div className="grid min-w-0 gap-6 xl:grid-cols-[minmax(16rem,20rem)_1fr]">
+        <div className="min-w-0 space-y-3">
           {CONFIG_ENTITY_ORDER.map((entityType) => {
             const entry = catalog[entityType];
             const isActive = entityType === selectedType;
@@ -1783,31 +1798,33 @@ export function ScopedConfigEntityWorkspace({
                 key={entityType}
                 type="button"
                 onClick={() => applyScopedConfigQueryState({ page: 1, selectedType: entityType })}
-                className={`w-full rounded-2xl border px-4 py-4 text-left transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+                className={`w-full min-w-0 rounded-2xl border px-4 py-4 text-left transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
                   isActive
                     ? 'border-indigo-200 bg-indigo-50 text-indigo-950 shadow-sm'
                     : 'border-slate-200 bg-white/80 text-slate-900 hover:border-slate-300 hover:bg-white'
                 }`}
               >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="space-y-1">
-                    <p className="text-sm font-semibold">{entry.label}</p>
-                    <p className="text-xs tracking-[0.18em] text-slate-500 uppercase">
+                <div className="flex min-w-0 items-start justify-between gap-3">
+                  <div className="min-w-0 space-y-1">
+                    <p className="text-sm font-semibold break-words">{entry.label}</p>
+                    <p className="text-xs break-all tracking-[0.18em] text-slate-500 uppercase">
                       {entry.type}
                     </p>
                   </div>
                 </div>
-                <p className="mt-3 text-sm leading-6 text-slate-600">{entry.description}</p>
+                <p className="mt-3 text-sm leading-6 break-words text-slate-600">
+                  {entry.description}
+                </p>
               </button>
             );
           })}
         </div>
 
-        <div className="space-y-5">
+        <div className="min-w-0 space-y-5">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="space-y-2">
               <p className="text-lg font-semibold text-slate-950">{selectedEntry.label}</p>
-              <p className="max-w-3xl text-sm leading-6 text-slate-600">
+              <p className="max-w-3xl text-sm leading-6 break-words text-slate-600">
                 {selectedEntry.description}
               </p>
             </div>
@@ -1886,7 +1903,7 @@ export function ScopedConfigEntityWorkspace({
 
               <div className="rounded-2xl border border-slate-200 bg-white/85 p-4 shadow-sm">
                 <div className="flex flex-wrap items-center gap-3">
-                  <label className="relative block min-w-[18rem] flex-1">
+                  <label className="relative block min-w-0 flex-1 basis-full sm:basis-72">
                     <span className="sr-only">{resolvedCopy.searchLabel}</span>
                     <input
                       aria-label={resolvedCopy.searchAriaLabel}
@@ -1984,6 +2001,7 @@ export function ScopedConfigEntityWorkspace({
                 <>
                   <TableShell
                     ariaLabel={resolvedCopy.visibleRecordsLabel}
+                    tableClassName="table-fixed [overflow-wrap:anywhere]"
                     columns={[
                       resolvedCopy.codeColumn,
                       resolvedCopy.nameColumn,
@@ -2039,10 +2057,10 @@ export function ScopedConfigEntityWorkspace({
                         >
                           <td className="px-6 py-4 align-top">
                             <div className="space-y-2">
-                              <p className="font-mono text-sm font-semibold text-slate-950">
+                              <p className="font-mono text-sm font-semibold break-all text-slate-950">
                                 {entity.code || resolvedCopy.noCodeLabel}
                               </p>
-                              <p className="text-xs leading-5 text-slate-500">
+                              <p className="text-xs leading-5 break-words text-slate-500">
                                 {resolvedCopy.createdAtLabel(
                                   formatDateTime(locale, entity.createdAt)
                                 )}
@@ -2051,11 +2069,11 @@ export function ScopedConfigEntityWorkspace({
                           </td>
                           <td className="px-6 py-4 align-top">
                             <div className="space-y-2">
-                              <p className="text-sm font-semibold text-slate-950">
+                              <p className="text-sm font-semibold break-words text-slate-950">
                                 {entity.localizedName}
                               </p>
                               {entity.localizedDescription ? (
-                                <p className="text-sm leading-6 text-slate-600">
+                                <p className="text-sm leading-6 break-words text-slate-600">
                                   {entity.localizedDescription}
                                 </p>
                               ) : null}
@@ -2086,13 +2104,13 @@ export function ScopedConfigEntityWorkspace({
                             </div>
                           </td>
                           <td className="px-6 py-4 align-top">
-                            <div className="flex flex-wrap justify-end gap-2">
+                            <div className="flex min-w-0 flex-wrap justify-end gap-2">
                               {canEditOwnedRecord ? (
                                 <>
                                   <button
                                     type="button"
                                     onClick={() => beginEdit(entity)}
-                                    className="rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold tracking-[0.16em] text-slate-700 uppercase transition hover:border-slate-300 hover:bg-slate-50"
+                                    className="max-w-full rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold tracking-[0.16em] break-words text-slate-700 uppercase transition hover:border-slate-300 hover:bg-slate-50"
                                     aria-label={`${resolvedCopy.editLabel} ${entity.code ?? entity.localizedName}`}
                                   >
                                     {resolvedCopy.editLabel}
@@ -2101,7 +2119,7 @@ export function ScopedConfigEntityWorkspace({
                                     type="button"
                                     onClick={() => queueToggle(entity)}
                                     disabled={entity.isSystem}
-                                    className="rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold tracking-[0.16em] text-slate-700 uppercase transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                    className="max-w-full rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold tracking-[0.16em] break-words text-slate-700 uppercase transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
                                     aria-label={`${entity.isActive ? resolvedCopy.deactivateLabel : resolvedCopy.reactivateLabel} ${entity.code ?? entity.localizedName}`}
                                   >
                                     {entity.isActive
@@ -2113,7 +2131,7 @@ export function ScopedConfigEntityWorkspace({
                                 <button
                                   type="button"
                                   onClick={() => queueToggle(entity)}
-                                  className="rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold tracking-[0.16em] text-slate-700 uppercase transition hover:border-slate-300 hover:bg-slate-50"
+                                  className="max-w-full rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold tracking-[0.16em] break-words text-slate-700 uppercase transition hover:border-slate-300 hover:bg-slate-50"
                                   aria-label={`${entity.isDisabledHere ? resolvedCopy.enableHereLabel : resolvedCopy.disableHereLabel} ${entity.code ?? entity.localizedName}`}
                                 >
                                   {entity.isDisabledHere

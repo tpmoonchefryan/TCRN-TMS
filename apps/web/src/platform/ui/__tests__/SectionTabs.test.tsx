@@ -21,6 +21,8 @@ describe('SectionTabs', () => {
     );
 
     expect(screen.getByRole('tablist')).toHaveAttribute('aria-label', 'Workspace sections');
+    expect(screen.getByRole('tablist')).toHaveClass('flex-wrap');
+    expect(screen.getByRole('tablist')).not.toHaveClass('overflow-x-auto');
     expect(screen.getByRole('tab', { name: 'Overview 2' })).toHaveAttribute(
       'aria-selected',
       'true'

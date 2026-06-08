@@ -89,7 +89,7 @@ export const SectionTabs: React.FC<SectionTabsProps> = ({
     <div
       role="tablist"
       aria-label={ariaLabel}
-      className={`flex min-w-0 gap-2 overflow-x-auto rounded-[1.5rem] border border-slate-200 bg-white/70 p-2 shadow-sm ${className}`}
+      className={`flex min-w-0 flex-wrap gap-2 rounded-[1.5rem] border border-slate-200 bg-white/70 p-2 shadow-sm ${className}`}
       onKeyDown={handleKeyDown}
     >
       {items.map((item) => {
@@ -109,9 +109,9 @@ export const SectionTabs: React.FC<SectionTabsProps> = ({
             tabIndex={isActive ? 0 : -1}
             disabled={item.disabled}
             onClick={() => onChange(item.id)}
-            className={`inline-flex flex-none items-center gap-2 rounded-[1rem] px-4 py-2 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-50 ${isActive ? 'bg-slate-950 text-white shadow-sm' : `text-slate-600 hover:bg-slate-100 hover:text-slate-900 ${tokens.motion.transitionStandard} motion-reduce:transition-none`}`}
+            className={`inline-flex max-w-full flex-none items-center gap-2 rounded-[1rem] px-4 py-2 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-50 ${isActive ? 'bg-slate-950 text-white shadow-sm' : `text-slate-600 hover:bg-slate-100 hover:text-slate-900 ${tokens.motion.transitionStandard} motion-reduce:transition-none`}`}
           >
-            <span>{item.label}</span>
+            <span className="break-words">{item.label}</span>
             {typeof item.count === 'number' ? (
               <span
                 className={`rounded-full px-2 py-0.5 text-xs ${isActive ? 'bg-white/15 text-white' : 'bg-slate-100 text-slate-500'}`}

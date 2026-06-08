@@ -1,10 +1,9 @@
 'use client';
 
+import type { SupportedUiLocale } from '@tcrn/shared';
 import { Search } from 'lucide-react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Fragment, startTransition, useEffect, useMemo, useState } from 'react';
-
-import type { SupportedUiLocale } from '@tcrn/shared';
 
 import {
   type DictionaryItemRecord,
@@ -117,6 +116,7 @@ function buildDictionaryExplorerQueryState(
     includeInactiveDefault,
     page,
     pageSize,
+    retainDefaultQueryState = false,
     search,
     typeCode,
   }: {
@@ -125,11 +125,15 @@ function buildDictionaryExplorerQueryState(
     includeInactiveDefault: boolean;
     page: number;
     pageSize: PageSizeOption;
+    retainDefaultQueryState?: boolean;
     search: string;
     typeCode: string | null;
   }
 ) {
   const params = new URLSearchParams(searchParams.toString());
+  const shouldRetainType = retainDefaultQueryState && params.has('dictionaryType');
+  const shouldRetainPage = retainDefaultQueryState && params.has('dictionaryPage');
+  const shouldRetainPageSize = retainDefaultQueryState && params.has('dictionaryPageSize');
   const normalizedSearch = search.trim();
 
   params.delete('dictionaryType');
@@ -138,7 +142,7 @@ function buildDictionaryExplorerQueryState(
   params.delete('dictionaryPage');
   params.delete('dictionaryPageSize');
 
-  if (typeCode && typeCode !== defaultTypeCode) {
+  if (typeCode && (typeCode !== defaultTypeCode || shouldRetainType)) {
     params.set('dictionaryType', typeCode);
   }
 
@@ -150,11 +154,11 @@ function buildDictionaryExplorerQueryState(
     params.set('dictionaryInactive', String(includeInactive));
   }
 
-  if (page > 1) {
+  if (page > 1 || shouldRetainPage) {
     params.set('dictionaryPage', String(page));
   }
 
-  if (pageSize !== PAGE_SIZE_OPTIONS[0]) {
+  if (pageSize !== PAGE_SIZE_OPTIONS[0] || shouldRetainPageSize) {
     params.set('dictionaryPageSize', String(pageSize));
   }
 
@@ -176,6 +180,7 @@ export interface DictionaryExplorerPanelProps {
   refreshToken?: number;
   includeInactiveByDefault?: boolean;
   allowIncludeInactiveToggle?: boolean;
+  retainDefaultQueryState?: boolean;
 }
 
 export function DictionaryExplorerPanel({
@@ -193,6 +198,7 @@ export function DictionaryExplorerPanel({
   refreshToken = 0,
   includeInactiveByDefault = false,
   allowIncludeInactiveToggle = false,
+  retainDefaultQueryState = false,
 }: Readonly<DictionaryExplorerPanelProps>) {
   const pathname = usePathname();
   const router = useRouter();
@@ -283,6 +289,7 @@ export function DictionaryExplorerPanel({
       includeInactiveDefault: includeInactiveByDefault,
       page: nextPage,
       pageSize: nextPageSize,
+      retainDefaultQueryState,
       search: nextSearch,
       typeCode: nextTypeCode,
     });
@@ -292,6 +299,7 @@ export function DictionaryExplorerPanel({
       includeInactiveDefault: includeInactiveByDefault,
       page,
       pageSize,
+      retainDefaultQueryState,
       search,
       typeCode: selectedTypeCode,
     });
@@ -314,7 +322,8 @@ export function DictionaryExplorerPanel({
     if (
       !itemsPanel.loading &&
       itemsPanel.dictionaryTypeCode === selectedType?.type &&
-      page !== itemsPanel.pagination.page
+      page !== itemsPanel.pagination.page &&
+      !(retainDefaultQueryState && searchParams.has('dictionaryPage'))
     ) {
       const nextPage = itemsPanel.pagination.page;
       setPage(nextPage);
@@ -325,6 +334,7 @@ export function DictionaryExplorerPanel({
         includeInactiveDefault: includeInactiveByDefault,
         page: nextPage,
         pageSize,
+        retainDefaultQueryState,
         search,
         typeCode: selectedTypeCode,
       });
@@ -334,6 +344,7 @@ export function DictionaryExplorerPanel({
         includeInactiveDefault: includeInactiveByDefault,
         page,
         pageSize,
+        retainDefaultQueryState,
         search,
         typeCode: selectedTypeCode,
       });
@@ -355,6 +366,7 @@ export function DictionaryExplorerPanel({
     page,
     pageSize,
     pathname,
+    retainDefaultQueryState,
     router,
     search,
     searchParams,
@@ -517,11 +529,11 @@ export function DictionaryExplorerPanel({
     : [copy.codeColumn, copy.localizedNameColumn, copy.statusColumn, copy.updatedColumn];
 
   return (
-    <div className="space-y-5">
-      {intro ? <div className="text-sm leading-6 text-slate-600">{intro}</div> : null}
+    <div className="min-w-0 space-y-5">
+      {intro ? <div className="min-w-0 text-sm leading-6 break-words text-slate-600">{intro}</div> : null}
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(16rem,20rem)_1fr]">
-        <div className="space-y-3">
+      <div className="grid min-w-0 gap-6 xl:grid-cols-[minmax(16rem,20rem)_1fr]">
+        <div className="min-w-0 space-y-3">
           {types.map((dictionaryType) => {
             const isActive = dictionaryType.type === selectedTypeCode;
 
@@ -532,25 +544,25 @@ export function DictionaryExplorerPanel({
                 onClick={() => {
                   applyDictionaryQueryState({ page: 1, typeCode: dictionaryType.type });
                 }}
-                className={`w-full rounded-2xl border px-4 py-4 text-left transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+                className={`w-full min-w-0 rounded-2xl border px-4 py-4 text-left transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
                   isActive
                     ? 'border-indigo-200 bg-indigo-50 text-indigo-950 shadow-sm'
                     : 'border-slate-200 bg-white/80 text-slate-900 hover:border-slate-300 hover:bg-white'
                 }`}
               >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="space-y-1">
-                    <p className="text-sm font-semibold">{dictionaryType.name}</p>
-                    <p className="text-xs tracking-[0.18em] text-slate-500 uppercase">
+                <div className="flex min-w-0 items-start justify-between gap-3">
+                  <div className="min-w-0 space-y-1">
+                    <p className="text-sm font-semibold break-words">{dictionaryType.name}</p>
+                    <p className="text-xs break-all tracking-[0.18em] text-slate-500 uppercase">
                       {dictionaryType.type}
                     </p>
                   </div>
-                  <span className="rounded-full border border-slate-200 bg-white/80 px-2.5 py-1 text-xs font-semibold whitespace-nowrap text-slate-600">
+                  <span className="max-w-full rounded-full border border-slate-200 bg-white/80 px-2.5 py-1 text-xs font-semibold text-slate-600">
                     {dictionaryType.count}
                   </span>
                 </div>
                 {dictionaryType.description ? (
-                  <p className="mt-3 text-sm leading-6 text-slate-600">
+                  <p className="mt-3 text-sm leading-6 break-words text-slate-600">
                     {dictionaryType.description}
                   </p>
                 ) : null}
@@ -559,23 +571,25 @@ export function DictionaryExplorerPanel({
           })}
         </div>
 
-        <div className="space-y-4">
+        <div className="min-w-0 space-y-4">
           <div className="flex flex-wrap items-start justify-between gap-4">
-            <div className="space-y-1">
+            <div className="min-w-0 space-y-1">
               <p className="text-lg font-semibold text-slate-950">
                 {selectedType?.name || copy.defaultItemsTitle}
               </p>
-              <p className="text-sm leading-6 text-slate-600">
+              <p className="text-sm leading-6 break-words text-slate-600">
                 {selectedType?.description || copy.defaultItemsDescription}
               </p>
             </div>
             {renderToolbar ? (
-              <div className="flex flex-wrap items-center gap-3">{renderToolbar(selectedType)}</div>
+              <div className="flex min-w-0 flex-wrap items-center gap-3">
+                {renderToolbar(selectedType)}
+              </div>
             ) : null}
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            <label className="relative block min-w-[18rem] flex-1">
+            <label className="relative block min-w-0 flex-1 basis-full sm:basis-72">
               <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <input
                 aria-label={copy.searchAriaLabel}
@@ -615,6 +629,7 @@ export function DictionaryExplorerPanel({
               <TableShell
                 ariaLabel={copy.defaultItemsTitle}
                 columns={columns}
+                tableClassName="table-fixed [overflow-wrap:anywhere]"
                 dataLength={itemsPanel.data.length}
                 isLoading={itemsPanel.loading}
                 isEmpty={!itemsPanel.loading && itemsPanel.data.length === 0}
@@ -629,8 +644,8 @@ export function DictionaryExplorerPanel({
                   <tr key={item.id} className="align-top">
                     <td className="px-6 py-4">
                       <div className="space-y-1">
-                        <p className="text-sm font-semibold text-slate-950">{item.code}</p>
-                        <p className="text-xs tracking-[0.18em] text-slate-500 uppercase">
+                        <p className="text-sm font-semibold break-all text-slate-950">{item.code}</p>
+                        <p className="text-xs tracking-[0.18em] break-words text-slate-500 uppercase">
                           {copy.versionPrefix}
                           {item.version}
                         </p>
@@ -638,10 +653,12 @@ export function DictionaryExplorerPanel({
                     </td>
                     <td className="px-6 py-4">
                       <div className="space-y-1">
-                        <p className="text-sm font-semibold text-slate-950">{item.localizedName}</p>
-                        <p className="text-xs text-slate-500">{item.name.en}</p>
+                        <p className="text-sm font-semibold break-words text-slate-950">
+                          {item.localizedName}
+                        </p>
+                        <p className="text-xs break-words text-slate-500">{item.name.en}</p>
                         {item.localizedDescription ? (
-                          <p className="text-sm leading-6 text-slate-600">
+                          <p className="text-sm leading-6 break-words text-slate-600">
                             {item.localizedDescription}
                           </p>
                         ) : null}

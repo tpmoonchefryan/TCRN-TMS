@@ -65,6 +65,8 @@ describe('SettingsLayout', () => {
     const nav = screen.getByRole('navigation', { name: 'Settings sections' });
     expect(nav).not.toHaveClass('lg:sticky');
     expect(nav.firstElementChild).not.toHaveClass('lg:flex-col');
+    expect(nav.firstElementChild).toHaveClass('flex-wrap');
+    expect(nav.firstElementChild).not.toHaveClass('overflow-x-auto');
     expect(screen.getByRole('button', { name: 'Details' })).toBeInTheDocument();
     expect(
       screen.getByRole('button', { name: 'Configuration Entity Management' })

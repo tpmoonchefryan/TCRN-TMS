@@ -1,5 +1,6 @@
 'use client';
 
+import type { PartialLocalizedText, SupportedUiLocale } from '@tcrn/shared';
 import {
   Activity,
   Fingerprint,
@@ -12,8 +13,6 @@ import {
 } from 'lucide-react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
-
-import type { PartialLocalizedText, SupportedUiLocale } from '@tcrn/shared';
 
 import {
   type OrganizationNode,
@@ -611,7 +610,9 @@ function ToneBadge({
             : 'bg-slate-100 text-slate-700';
 
   return (
-    <span className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${toneClasses}`}>
+    <span
+      className={`inline-flex max-w-full rounded-full px-2.5 py-1 text-[11px] font-medium break-words ${toneClasses}`}
+    >
       {label}
     </span>
   );
@@ -640,7 +641,7 @@ function InlineActionButton({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`inline-flex flex-nowrap items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium whitespace-nowrap transition ${toneClasses} disabled:cursor-not-allowed disabled:opacity-50`}
+      className={`inline-flex max-w-full flex-wrap items-center justify-center gap-1.5 rounded-full border px-3 py-1.5 text-center text-xs font-medium break-words transition ${toneClasses} disabled:cursor-not-allowed disabled:opacity-50`}
     >
       {children}
     </button>
@@ -1985,10 +1986,10 @@ export function SecurityManagementScreen({
   const blockedIpCount = rateLimitPanel.data?.summary.currentlyBlocked ?? 0;
 
   return (
-    <div className="space-y-6">
-      <GlassSurface className="p-8">
-        <div className="flex flex-wrap items-start justify-between gap-6">
-          <div className="space-y-4">
+    <div className="min-w-0 space-y-6">
+      <GlassSurface className="min-w-0 p-8">
+        <div className="flex min-w-0 flex-wrap items-start justify-between gap-6">
+          <div className="min-w-0 space-y-4">
             <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-xs font-semibold tracking-[0.18em] text-slate-600 uppercase">
               <ShieldCheck className="h-3.5 w-3.5" />
               {workspaceName}
@@ -2001,7 +2002,7 @@ export function SecurityManagementScreen({
             </div>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <SummaryCard
               label={copy.summary.scopeLensLabel}
               value={activeScopeLabel}
@@ -2039,8 +2040,8 @@ export function SecurityManagementScreen({
         </div>
       </GlassSurface>
 
-      <GlassSurface className="p-6">
-        <div className="flex flex-wrap items-center justify-between gap-4">
+      <GlassSurface className="min-w-0 p-6">
+        <div className="flex min-w-0 flex-wrap items-center justify-between gap-4">
           <SectionTabs
             items={[
               { id: 'blocklist', label: copy.tabs.blocklist },
@@ -2058,7 +2059,7 @@ export function SecurityManagementScreen({
             ariaLabel={copy.header.title}
           />
 
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid min-w-0 gap-3 sm:grid-cols-2">
             <Field label={copy.scopeLens.scopeType}>
               <select
                 aria-label={copy.scopeLens.scopeTypeAriaLabel}
@@ -2145,12 +2146,12 @@ export function SecurityManagementScreen({
       <div className={tabTransitionClassName}>
         {displayedTab === 'blocklist' ? (
           <>
-            <GlassSurface className="p-6">
+            <GlassSurface className="min-w-0 p-6">
               <FormSection
                 title={copy.sections.blocklistList.title}
                 description={copy.sections.blocklistList.description}
               >
-                <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_auto_auto_auto]">
+                <div className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1fr)_auto_auto_auto]">
                   <Field label={copy.sections.blocklistList.quickAddLabel}>
                     <input
                       aria-label={copy.sections.blocklistList.quickAddLabel}
@@ -2172,7 +2173,7 @@ export function SecurityManagementScreen({
                     disabled={
                       blocklistQuickAddPending || blocklistQuickAddPattern.trim().length === 0
                     }
-                    className="inline-flex items-center justify-center rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700 transition hover:border-emerald-300 hover:bg-emerald-100 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400"
+                    className="inline-flex min-w-0 items-center justify-center rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-center text-sm font-medium break-words text-emerald-700 transition hover:border-emerald-300 hover:bg-emerald-100 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400"
                   >
                     {blocklistQuickAddPending
                       ? copy.sections.blocklistList.quickAddPending
@@ -2181,14 +2182,14 @@ export function SecurityManagementScreen({
                   <button
                     type="button"
                     onClick={() => setBlocklistBatchDrawerOpen(true)}
-                    className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
+                    className="inline-flex min-w-0 items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-3 text-center text-sm font-medium break-words text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
                   >
                     {copy.sections.blocklistList.batchAddAction}
                   </button>
                   <button
                     type="button"
                     onClick={openBlocklistCreateDrawer}
-                    className="inline-flex items-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-medium text-indigo-700 transition hover:border-indigo-300 hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                    className="inline-flex min-w-0 items-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-medium break-words text-indigo-700 transition hover:border-indigo-300 hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
                   >
                     {copy.sections.blocklistEditor.newRule}
                   </button>
@@ -2204,6 +2205,7 @@ export function SecurityManagementScreen({
                     <TableShell
                       ariaLabel={copy.sections.blocklistList.title}
                       columns={[...copy.sections.blocklistList.columns]}
+                      tableClassName="table-fixed [overflow-wrap:anywhere]"
                       dataLength={blocklistPanel.data.length}
                       isLoading={blocklistPanel.loading}
                       isEmpty={!blocklistPanel.loading && blocklistPanel.data.length === 0}
@@ -2215,16 +2217,18 @@ export function SecurityManagementScreen({
 
                         return (
                           <tr key={entry.id} className="align-top">
-                            <td className="px-6 py-4">
-                              <div className="space-y-1">
-                                <p className="text-sm font-semibold text-slate-900">{entryName}</p>
-                                <p className="text-xs text-slate-500">{entry.pattern}</p>
+                            <td className="px-4 py-4 align-top">
+                              <div className="min-w-0 space-y-1">
+                                <p className="text-sm font-semibold break-words text-slate-900">
+                                  {entryName}
+                                </p>
+                                <p className="text-xs break-all text-slate-500">{entry.pattern}</p>
                               </div>
                             </td>
-                            <td className="px-6 py-4 text-sm text-slate-700">
+                            <td className="px-4 py-4 align-top text-sm break-words text-slate-700">
                               {resolveScopeLabel(entry.ownerType, entry.ownerId)}
                             </td>
-                            <td className="px-6 py-4">
+                            <td className="px-4 py-4 align-top">
                               <ToneBadge
                                 tone={
                                   entry.severity === 'high'
@@ -2236,11 +2240,11 @@ export function SecurityManagementScreen({
                                 label={getSecuritySeverityLabel(locale, entry.severity)}
                               />
                             </td>
-                            <td className="px-6 py-4 text-sm text-slate-700">
+                            <td className="px-4 py-4 align-top text-sm break-words text-slate-700">
                               {entry.scope.join(', ') || copy.common.all}
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="flex flex-nowrap gap-2 whitespace-nowrap">
+                            <td className="px-4 py-4 align-top">
+                              <div className="flex min-w-0 flex-wrap gap-2">
                                 <ToneBadge
                                   tone={entry.isActive ? 'success' : 'neutral'}
                                   label={entry.isActive ? copy.common.active : copy.common.inactive}
@@ -2253,8 +2257,8 @@ export function SecurityManagementScreen({
                                 ) : null}
                               </div>
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="flex flex-nowrap gap-2 whitespace-nowrap">
+                            <td className="px-4 py-4 align-top">
+                              <div className="flex min-w-0 flex-wrap gap-2">
                                 <InlineActionButton
                                   onClick={() => void openBlocklistEditor(entry.id)}
                                 >
@@ -2922,7 +2926,7 @@ export function SecurityManagementScreen({
               </div>
             </ActionDrawer>
 
-            <GlassSurface className="p-6">
+            <GlassSurface className="min-w-0 p-6">
               <FormSection
                 title={copy.sections.blocklistTest.title}
                 description={copy.sections.blocklistTest.description}
@@ -2964,7 +2968,7 @@ export function SecurityManagementScreen({
 
         {displayedTab === 'external-blocklist' ? (
           <>
-            <GlassSurface className="p-6">
+            <GlassSurface className="min-w-0 p-6">
               <FormSection
                 title={copy.sections.externalList.title}
                 description={copy.sections.externalList.description}
@@ -2998,11 +3002,11 @@ export function SecurityManagementScreen({
                   ) : null
                 }
               >
-                <div className="flex justify-end">
+                <div className="flex min-w-0 justify-end">
                   <button
                     type="button"
                     onClick={openExternalCreateDrawer}
-                    className="inline-flex items-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-medium text-indigo-700 transition hover:border-indigo-300 hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                    className="inline-flex min-w-0 items-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-medium break-words text-indigo-700 transition hover:border-indigo-300 hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
                   >
                     {copy.sections.externalEditor.newPattern}
                   </button>
@@ -3018,6 +3022,7 @@ export function SecurityManagementScreen({
                     <TableShell
                       ariaLabel={copy.sections.externalList.title}
                       columns={[...copy.sections.externalList.columns]}
+                      tableClassName="table-fixed [overflow-wrap:anywhere]"
                       dataLength={externalPanel.data.length}
                       isLoading={externalPanel.loading}
                       isEmpty={!externalPanel.loading && externalPanel.data.length === 0}
@@ -3029,16 +3034,18 @@ export function SecurityManagementScreen({
 
                         return (
                           <tr key={entry.id} className="align-top">
-                            <td className="px-6 py-4">
-                              <div className="space-y-1">
-                                <p className="text-sm font-semibold text-slate-900">{entryName}</p>
-                                <p className="text-xs text-slate-500">{entry.pattern}</p>
+                            <td className="px-4 py-4 align-top">
+                              <div className="min-w-0 space-y-1">
+                                <p className="text-sm font-semibold break-words text-slate-900">
+                                  {entryName}
+                                </p>
+                                <p className="text-xs break-all text-slate-500">{entry.pattern}</p>
                               </div>
                             </td>
-                            <td className="px-6 py-4 text-sm text-slate-700">
+                            <td className="px-4 py-4 align-top text-sm break-words text-slate-700">
                               {resolveScopeLabel(entry.ownerType, entry.ownerId)}
                             </td>
-                            <td className="px-6 py-4">
+                            <td className="px-4 py-4 align-top">
                               <ToneBadge
                                 tone={
                                   entry.severity === 'high'
@@ -3050,8 +3057,8 @@ export function SecurityManagementScreen({
                                 label={getSecuritySeverityLabel(locale, entry.severity)}
                               />
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="flex flex-nowrap gap-2 whitespace-nowrap">
+                            <td className="px-4 py-4 align-top">
+                              <div className="flex min-w-0 flex-wrap gap-2">
                                 <ToneBadge
                                   tone={entry.isActive ? 'success' : 'neutral'}
                                   label={entry.isActive ? copy.common.active : copy.common.inactive}
@@ -3064,8 +3071,8 @@ export function SecurityManagementScreen({
                                 ) : null}
                               </div>
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="flex flex-nowrap gap-2 whitespace-nowrap">
+                            <td className="px-4 py-4 align-top">
+                              <div className="flex min-w-0 flex-wrap gap-2">
                                 <InlineActionButton
                                   onClick={() => void openExternalEditor(entry.id)}
                                 >
@@ -3523,7 +3530,7 @@ export function SecurityManagementScreen({
 
         {displayedTab === 'ip-access' ? (
           <>
-            <GlassSurface className="p-6">
+            <GlassSurface className="min-w-0 p-6">
               <FormSection
                 title={copy.sections.ipRules.listTitle}
                 description={copy.sections.ipRules.listDescription}
@@ -3532,7 +3539,7 @@ export function SecurityManagementScreen({
                   <button
                     type="button"
                     onClick={openIpRuleCreateDrawer}
-                    className="inline-flex items-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-medium text-indigo-700 transition hover:border-indigo-300 hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                    className="inline-flex min-w-0 items-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-medium break-words text-indigo-700 transition hover:border-indigo-300 hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
                   >
                     {copy.sections.ipRules.newRule}
                   </button>
@@ -3548,6 +3555,7 @@ export function SecurityManagementScreen({
                     <TableShell
                       ariaLabel={copy.sections.ipRules.listTitle}
                       columns={[...copy.sections.ipRules.columns]}
+                      tableClassName="table-fixed [overflow-wrap:anywhere]"
                       dataLength={ipRulesPanel.data.length}
                       isLoading={ipRulesPanel.loading}
                       isEmpty={!ipRulesPanel.loading && ipRulesPanel.data.length === 0}
@@ -3556,35 +3564,35 @@ export function SecurityManagementScreen({
                     >
                       {ipRulesPanel.data.map((rule) => (
                         <tr key={rule.id}>
-                          <td className="px-6 py-4">
-                            <div className="space-y-1">
-                              <p className="text-sm font-semibold text-slate-900">
+                          <td className="px-4 py-4 align-top">
+                            <div className="min-w-0 space-y-1">
+                              <p className="text-sm font-semibold break-all text-slate-900">
                                 {rule.ipPattern}
                               </p>
-                              <p className="text-xs text-slate-500">
+                              <p className="text-xs break-words text-slate-500">
                                 {rule.reason || copy.common.noReason}
                               </p>
                             </div>
                           </td>
-                          <td className="px-6 py-4">
+                          <td className="px-4 py-4 align-top">
                             <ToneBadge
                               tone={rule.ruleType === 'blacklist' ? 'danger' : 'success'}
                               label={getSecurityIpRuleTypeLabel(locale, rule.ruleType)}
                             />
                           </td>
-                          <td className="px-6 py-4 text-sm text-slate-700">
+                          <td className="px-4 py-4 align-top text-sm break-words text-slate-700">
                             {getSecurityIpRuleScopeLabel(locale, rule.scope)}
                           </td>
-                          <td className="px-6 py-4 text-sm text-slate-700">
+                          <td className="px-4 py-4 align-top text-sm break-words text-slate-700">
                             {formatSecurityRuleHits(locale, rule.hitCount, rule.lastHitAt)}
                           </td>
-                          <td className="px-6 py-4">
+                          <td className="px-4 py-4 align-top">
                             <ToneBadge
                               tone={rule.isActive ? 'success' : 'neutral'}
                               label={rule.isActive ? copy.common.active : copy.common.inactive}
                             />
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
+                          <td className="px-4 py-4 align-top">
                             <InlineActionButton
                               tone="danger"
                               onClick={() =>
@@ -3761,13 +3769,13 @@ export function SecurityManagementScreen({
                 title={copy.sections.runtimeSignals.title}
                 description={copy.sections.runtimeSignals.description}
               >
-                <div className="grid gap-4 xl:grid-cols-2">
-                  <div className="rounded-2xl border border-slate-200 bg-white/80 px-5 py-5 shadow-sm">
-                    <div className="flex items-center gap-3">
+                <div className="grid min-w-0 gap-4 xl:grid-cols-2">
+                  <div className="min-w-0 rounded-2xl border border-slate-200 bg-white/80 px-5 py-5 shadow-sm">
+                    <div className="flex min-w-0 items-center gap-3">
                       <div className="rounded-2xl bg-rose-50 p-3 text-rose-700">
                         <ShieldAlert className="h-5 w-5" />
                       </div>
-                      <div>
+                      <div className="min-w-0">
                         <p className="text-sm font-semibold text-slate-900">
                           {copy.sections.runtimeSignals.activeBlocksTitle}
                         </p>
@@ -3798,12 +3806,12 @@ export function SecurityManagementScreen({
                     ) : null}
                   </div>
 
-                  <div className="rounded-2xl border border-slate-200 bg-white/80 px-5 py-5 shadow-sm">
-                    <div className="flex items-center gap-3">
+                  <div className="min-w-0 rounded-2xl border border-slate-200 bg-white/80 px-5 py-5 shadow-sm">
+                    <div className="flex min-w-0 items-center gap-3">
                       <div className="rounded-2xl bg-blue-50 p-3 text-blue-700">
                         <SearchCheck className="h-5 w-5" />
                       </div>
-                      <div>
+                      <div className="min-w-0">
                         <p className="text-sm font-semibold text-slate-900">
                           {copy.sections.runtimeSignals.policyProbeTitle}
                         </p>
@@ -3812,7 +3820,7 @@ export function SecurityManagementScreen({
                         </p>
                       </div>
                     </div>
-                    <div className="mt-4 grid gap-4 md:grid-cols-[1fr_1fr_auto]">
+                    <div className="mt-4 grid min-w-0 gap-4 md:grid-cols-[1fr_1fr_auto]">
                       <Field label={copy.fields.probeIp}>
                         <input
                           aria-label={copy.fields.probeIp}
@@ -3835,7 +3843,7 @@ export function SecurityManagementScreen({
                           <option value="global">{copy.options.ipRuleScope.global}</option>
                         </select>
                       </Field>
-                      <div className="flex items-end">
+                      <div className="flex min-w-0 items-end">
                         <AsyncSubmitButton
                           onClick={() => void runIpCheck()}
                           isPending={ipCheckPending}
@@ -3857,12 +3865,12 @@ export function SecurityManagementScreen({
                     ) : null}
                   </div>
 
-                  <div className="rounded-2xl border border-slate-200 bg-white/80 px-5 py-5 shadow-sm">
-                    <div className="flex items-center gap-3">
+                  <div className="min-w-0 rounded-2xl border border-slate-200 bg-white/80 px-5 py-5 shadow-sm">
+                    <div className="flex min-w-0 items-center gap-3">
                       <div className="rounded-2xl bg-indigo-50 p-3 text-indigo-700">
                         <Fingerprint className="h-5 w-5" />
                       </div>
-                      <div>
+                      <div className="min-w-0">
                         <p className="text-sm font-semibold text-slate-900">
                           {copy.sections.runtimeSignals.fingerprintTitle}
                         </p>
@@ -3905,12 +3913,12 @@ export function SecurityManagementScreen({
                     ) : null}
                   </div>
 
-                  <div className="rounded-2xl border border-slate-200 bg-white/80 px-5 py-5 shadow-sm">
-                    <div className="flex items-center gap-3">
+                  <div className="min-w-0 rounded-2xl border border-slate-200 bg-white/80 px-5 py-5 shadow-sm">
+                    <div className="flex min-w-0 items-center gap-3">
                       <div className="rounded-2xl bg-amber-50 p-3 text-amber-700">
                         <Activity className="h-5 w-5" />
                       </div>
-                      <div>
+                      <div className="min-w-0">
                         <p className="text-sm font-semibold text-slate-900">
                           {copy.sections.runtimeSignals.rateLimitTitle}
                         </p>
@@ -3941,12 +3949,12 @@ export function SecurityManagementScreen({
                     ) : null}
                   </div>
 
-                  <div className="rounded-2xl border border-slate-200 bg-white/80 px-5 py-5 shadow-sm">
-                    <div className="flex items-center gap-3">
+                  <div className="min-w-0 rounded-2xl border border-slate-200 bg-white/80 px-5 py-5 shadow-sm">
+                    <div className="flex min-w-0 items-center gap-3">
                       <div className="rounded-2xl bg-emerald-50 p-3 text-emerald-700">
                         <ShieldEllipsis className="h-5 w-5" />
                       </div>
-                      <div>
+                      <div className="min-w-0">
                         <p className="text-sm font-semibold text-slate-900">
                           {copy.sections.runtimeSignals.complianceTitle}
                         </p>
@@ -3979,7 +3987,7 @@ export function SecurityManagementScreen({
               </FormSection>
             </GlassSurface>
 
-            <GlassSurface className="p-6">
+            <GlassSurface className="min-w-0 p-6">
               <FormSection
                 title={copy.sections.runtimeSignals.endpointsTitle}
                 description={copy.sections.runtimeSignals.endpointsDescription}
@@ -3994,6 +4002,7 @@ export function SecurityManagementScreen({
                   <TableShell
                     ariaLabel={copy.sections.runtimeSignals.endpointsTitle}
                     columns={[...copy.sections.runtimeSignals.endpointsColumns]}
+                    tableClassName="table-fixed [overflow-wrap:anywhere]"
                     dataLength={rateLimitPanel.data?.topEndpoints.length || 0}
                     isLoading={rateLimitPanel.loading}
                     isEmpty={
@@ -4005,13 +4014,13 @@ export function SecurityManagementScreen({
                   >
                     {rateLimitPanel.data?.topEndpoints.map((item) => (
                       <tr key={`${item.method}-${item.endpoint}`}>
-                        <td className="px-6 py-4 text-sm font-semibold text-slate-900">
+                        <td className="px-4 py-4 align-top text-sm font-semibold break-all text-slate-900">
                           {item.endpoint}
                         </td>
-                        <td className="px-6 py-4 text-sm text-slate-700">{item.method}</td>
-                        <td className="px-6 py-4 text-sm text-slate-700">{item.current}</td>
-                        <td className="px-6 py-4 text-sm text-slate-700">{item.limit}</td>
-                        <td className="px-6 py-4 text-sm text-slate-700">
+                        <td className="px-4 py-4 align-top text-sm break-words text-slate-700">{item.method}</td>
+                        <td className="px-4 py-4 align-top text-sm break-words text-slate-700">{item.current}</td>
+                        <td className="px-4 py-4 align-top text-sm break-words text-slate-700">{item.limit}</td>
+                        <td className="px-4 py-4 align-top text-sm break-words text-slate-700">
                           {formatSecurityResetIn(locale, item.resetIn)}
                         </td>
                       </tr>
@@ -4021,15 +4030,16 @@ export function SecurityManagementScreen({
               </FormSection>
             </GlassSurface>
 
-            <GlassSurface className="p-6">
+            <GlassSurface className="min-w-0 p-6">
               <FormSection
                 title={copy.sections.runtimeSignals.topIpsTitle}
                 description={copy.sections.runtimeSignals.topIpsDescription}
               >
-                <div className="grid gap-6 xl:grid-cols-[1.5fr_1fr]">
+                <div className="grid min-w-0 gap-6 xl:grid-cols-[1.5fr_1fr]">
                   <TableShell
                     ariaLabel={copy.sections.runtimeSignals.topIpsTitle}
                     columns={[...copy.sections.runtimeSignals.topIpsColumns]}
+                    tableClassName="table-fixed [overflow-wrap:anywhere]"
                     dataLength={rateLimitPanel.data?.topIPs.length || 0}
                     isLoading={rateLimitPanel.loading}
                     isEmpty={
@@ -4040,22 +4050,22 @@ export function SecurityManagementScreen({
                   >
                     {rateLimitPanel.data?.topIPs.map((item) => (
                       <tr key={item.ip}>
-                        <td className="px-6 py-4 text-sm font-semibold text-slate-900">
+                        <td className="px-4 py-4 align-top text-sm font-semibold break-all text-slate-900">
                           {item.ip}
                         </td>
-                        <td className="px-6 py-4 text-sm text-slate-700">{item.requests}</td>
-                        <td className="px-6 py-4">
+                        <td className="px-4 py-4 align-top text-sm break-words text-slate-700">{item.requests}</td>
+                        <td className="px-4 py-4 align-top">
                           <ToneBadge
                             tone={item.blocked ? 'danger' : 'success'}
                             label={item.blocked ? copy.common.blocked : copy.common.allowed}
                           />
                         </td>
-                        <td className="px-6 py-4 text-sm text-slate-700">{item.lastSeen}</td>
+                        <td className="px-4 py-4 align-top text-sm break-words text-slate-700">{item.lastSeen}</td>
                       </tr>
                     ))}
                   </TableShell>
 
-                  <div className="space-y-3">
+                  <div className="min-w-0 space-y-3">
                     {profileStorePanel.error ? (
                       <StateView
                         status="denied"
@@ -4066,14 +4076,14 @@ export function SecurityManagementScreen({
                       profileStorePanel.data.map((store) => (
                         <div
                           key={store.id}
-                          className="rounded-2xl border border-slate-200 bg-white/80 px-4 py-4 shadow-sm"
+                          className="min-w-0 rounded-2xl border border-slate-200 bg-white/80 px-4 py-4 shadow-sm"
                         >
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="space-y-1">
-                              <p className="text-sm font-semibold text-slate-900">
+                          <div className="flex min-w-0 items-start justify-between gap-3">
+                            <div className="min-w-0 space-y-1">
+                              <p className="text-sm font-semibold break-words text-slate-900">
                                 {pickSecurityLocalizedName(locale, store, store.code)}
                               </p>
-                              <p className="text-xs tracking-[0.18em] text-slate-500 uppercase">
+                              <p className="text-xs break-all tracking-[0.18em] text-slate-500 uppercase">
                                 {store.code}
                               </p>
                             </div>

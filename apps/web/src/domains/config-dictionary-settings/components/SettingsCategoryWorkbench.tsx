@@ -72,7 +72,7 @@ export function SettingsCategoryWorkbench({
         aria-label={ariaLabel}
       >
         <div
-          className="flex min-w-0 gap-2 overflow-x-auto pb-1 lg:flex-col lg:overflow-visible lg:pb-0"
+          className="flex min-w-0 flex-wrap gap-2 pb-1 lg:flex-col lg:flex-nowrap lg:pb-0"
           onKeyDown={handleCategoryNavKeyDown}
         >
           {categories.map((category) => {
@@ -88,7 +88,7 @@ export function SettingsCategoryWorkbench({
                 onClick={() => onCategoryChange?.(category.id)}
                 aria-current={isActive ? 'page' : undefined}
                 tabIndex={category.id === focusableCategoryId ? 0 : -1}
-                className={`inline-flex min-h-11 flex-none items-center gap-3 rounded-md px-3 py-2 text-left text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 lg:w-full ${
+                className={`inline-flex min-h-11 max-w-full flex-none items-center gap-3 rounded-md px-3 py-2 text-left text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 lg:w-full ${
                   isActive
                     ? 'bg-slate-950 text-white shadow-sm'
                     : `text-slate-600 hover:bg-slate-100 hover:text-slate-900 ${tokens.motion.transitionStandard} motion-reduce:transition-none`
@@ -102,7 +102,7 @@ export function SettingsCategoryWorkbench({
                     {category.icon}
                   </span>
                 ) : null}
-                <span className="whitespace-nowrap lg:whitespace-normal">{category.label}</span>
+                <span className="break-words">{category.label}</span>
               </button>
             );
           })}

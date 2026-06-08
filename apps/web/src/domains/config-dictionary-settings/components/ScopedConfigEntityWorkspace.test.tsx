@@ -1,7 +1,6 @@
+import type { SupportedUiLocale } from '@tcrn/shared';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-
-import type { SupportedUiLocale } from '@tcrn/shared';
 
 import type { ConfigEntityRecord } from '@/domains/config-dictionary-settings/api/settings.api';
 import { ScopedConfigEntityWorkspace } from '@/domains/config-dictionary-settings/components/ScopedConfigEntityWorkspace';
@@ -135,6 +134,44 @@ describe('ScopedConfigEntityWorkspace', () => {
     expect(mockRouterReplace).toHaveBeenCalledWith(
       '/tenant/tenant-1/settings?foo=1&configEntitySearch=music&configEntityScopeOnly=true&configEntityInactive=true'
     );
+  });
+
+  it('retains explicit default config entity query params when requested by the tenant settings route', async () => {
+    currentSearch =
+      'configEntityType=business-segment&configEntitySearch=music&configEntityInactive=true&configEntityPage=2&configEntityPageSize=20&foo=1';
+
+    mockRequestEnvelope.mockImplementation(async (path: string) => {
+      if (
+        path ===
+        '/api/v1/configuration-entity/business-segment?scopeType=tenant&includeInherited=true&includeDisabled=true&includeInactive=true&ownerOnly=false&search=music&page=2&pageSize=20&sort=sortOrder'
+      ) {
+        return buildEnvelope([
+          buildConfigEntityRecord({
+            code: 'MUSIC_VIP',
+            name: localizedFixture('VIP Music'),
+            localizedName: 'VIP Music',
+          }),
+        ]);
+      }
+
+      throw new Error(`Unhandled request: ${path}`);
+    });
+
+    render(
+      <ScopedConfigEntityWorkspace
+        request={mockRequest}
+        requestEnvelope={mockRequestEnvelope}
+        scopeType="tenant"
+        retainDefaultQueryState
+      />
+    );
+
+    expect(await screen.findByText('VIP Music')).toBeInTheDocument();
+    expect(mockRequestEnvelope).toHaveBeenCalledWith(
+      '/api/v1/configuration-entity/business-segment?scopeType=tenant&includeInherited=true&includeDisabled=true&includeInactive=true&ownerOnly=false&search=music&page=2&pageSize=20&sort=sortOrder',
+      expect.anything()
+    );
+    expect(mockRouterReplace).not.toHaveBeenCalled();
   });
 
   it('clears stale config rows while loading a newly selected entity family', async () => {

@@ -967,7 +967,7 @@ export function TenantSettingsScreen({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="min-w-0 space-y-6">
       <SettingsLayout
         title={text({
           en: 'Tenant Settings',
@@ -1000,10 +1000,10 @@ export function TenantSettingsScreen({
       >
         <div className={sectionTransitionClassName}>
           {displayedSectionId === 'details' ? (
-            <div className="space-y-6">
-              <GlassSurface className="p-8">
-                <div className="flex flex-wrap items-start justify-between gap-6">
-                  <div className="space-y-4">
+            <div className="min-w-0 space-y-6">
+              <GlassSurface className="min-w-0 p-8">
+                <div className="flex min-w-0 flex-wrap items-start justify-between gap-6">
+                  <div className="min-w-0 space-y-4">
                     <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-xs font-semibold tracking-[0.18em] text-slate-600 uppercase">
                       <Building2 className="h-3.5 w-3.5" />
                       {text({
@@ -1017,7 +1017,7 @@ export function TenantSettingsScreen({
                     </div>
                   </div>
 
-                  <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                  <div className="grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-4">
                     <FieldRow
                       label={text('Tenant', '租户', 'テナント')}
                       value={session?.tenantName || common.currentTenant}
@@ -1038,7 +1038,7 @@ export function TenantSettingsScreen({
                 </div>
               </GlassSurface>
 
-              <GlassSurface className="p-6">
+              <GlassSurface className="min-w-0 p-6">
                 <FormSection
                   title={common.details}
                   description={text(
@@ -1047,7 +1047,7 @@ export function TenantSettingsScreen({
                     'テナント識別情報と関連管理ページへの入口を確認します。'
                   )}
                 >
-                  <div className="grid gap-4 lg:grid-cols-2">
+                  <div className="grid min-w-0 gap-4 lg:grid-cols-2">
                     <FieldRow
                       label={text('Tenant Tier', '租户层级', 'テナント階層')}
                       value={session?.tenantTier || common.unknown}
@@ -1068,7 +1068,7 @@ export function TenantSettingsScreen({
                     />
                   </div>
 
-                  <div className="grid gap-4 lg:grid-cols-2">
+                  <div className="grid min-w-0 gap-4 lg:grid-cols-2">
                     <SectionEntryLink
                       title={text('Business Workspace', '业务工作区', '業務ワークスペース')}
                       description={text(
@@ -1114,8 +1114,8 @@ export function TenantSettingsScreen({
           ) : null}
 
           {displayedSectionId === 'config-entities' ? (
-            <div className="space-y-6">
-              <GlassSurface className="p-6">
+            <div className="min-w-0 space-y-6">
+              <GlassSurface className="min-w-0 p-6">
                 <FormSection
                   title={common.configEntities}
                   description={text({
@@ -1135,6 +1135,7 @@ export function TenantSettingsScreen({
                     locale={locale}
                     copy={scopedConfigCopy}
                     catalog={localizedConfigEntityCatalog}
+                    retainDefaultQueryState
                   />
                 </FormSection>
               </GlassSurface>
@@ -1142,7 +1143,7 @@ export function TenantSettingsScreen({
           ) : null}
 
           {displayedSectionId === 'settings' ? (
-            <GlassSurface className="p-6">
+            <GlassSurface className="min-w-0 p-6">
               <FormSection
                 title={common.settings}
                 description={
@@ -1833,7 +1834,7 @@ export function TenantSettingsScreen({
                   />
                 ) : dictionaryPanel.data ? (
                   <>
-                    <div className="grid gap-4 xl:grid-cols-3">
+                    <div className="grid min-w-0 gap-4 xl:grid-cols-3">
                       <FieldRow
                         label={text(
                           'Visible Dictionary Types',
@@ -1858,6 +1859,7 @@ export function TenantSettingsScreen({
                       locale={locale}
                       copy={dictionaryExplorerCopy}
                       allowIncludeInactiveToggle
+                      retainDefaultQueryState
                       intro={
                         <>
                           <p>
