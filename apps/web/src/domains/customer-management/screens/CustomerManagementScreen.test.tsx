@@ -210,7 +210,7 @@ describe('CustomerManagementScreen', () => {
     render(<CustomerManagementScreen tenantId="tenant-1" talentId="talent-1" />);
 
     expect(await screen.findByRole('heading', { name: '客户管理' })).toBeInTheDocument();
-    expect(screen.getByRole('columnheader', { name: '客户' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Aki' })).toBeInTheDocument();
     expect(screen.getByText('查看该艺人的客户列表。')).toBeInTheDocument();
     expect(screen.getByText('客户档案统一在这里管理。')).toBeInTheDocument();
     expect(

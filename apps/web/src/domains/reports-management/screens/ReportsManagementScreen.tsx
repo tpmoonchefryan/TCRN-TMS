@@ -379,10 +379,10 @@ function SummaryCard({
   hint: string;
 }>) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white/80 px-4 py-4 shadow-sm">
+    <div className="min-w-0 rounded-2xl border border-slate-200 bg-white/80 px-4 py-4 shadow-sm">
       <p className="text-xs font-semibold tracking-[0.2em] text-slate-500 uppercase">{label}</p>
-      <p className="mt-2 text-2xl font-semibold text-slate-950">{value}</p>
-      <p className="mt-2 text-xs leading-5 text-slate-500">{hint}</p>
+      <p className="mt-2 truncate text-2xl font-semibold text-slate-950">{value}</p>
+      <p className="mt-2 text-xs leading-5 break-words text-slate-500">{hint}</p>
     </div>
   );
 }
@@ -476,7 +476,7 @@ function SecondaryButton({
       onClick={onClick}
       disabled={disabled}
       aria-label={ariaLabel}
-      className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white/85 px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:border-slate-300 hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
+      className="inline-flex max-w-full items-center justify-center gap-1.5 rounded-full border border-slate-200 bg-white/85 px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:border-slate-300 hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
     >
       {children}
     </button>
@@ -996,6 +996,31 @@ export function ReportsManagementScreen({
   const [portalHandoff, setPortalHandoff] = useState<PiiPlatformReportCreateResponse | null>(null);
   const [activeView, setActiveView] = useState<ReportsView>(urlActiveView);
   const [optionPicker, setOptionPicker] = useState<OptionPickerState | null>(null);
+  const [usesDesktopLedger, setUsesDesktopLedger] = useState(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+      return true;
+    }
+
+    return window.matchMedia('(min-width: 1280px)').matches;
+  });
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+      return undefined;
+    }
+
+    const mediaQuery = window.matchMedia('(min-width: 1280px)');
+    const syncLedgerMode = () => {
+      setUsesDesktopLedger(mediaQuery.matches);
+    };
+
+    syncLedgerMode();
+    mediaQuery.addEventListener('change', syncLedgerMode);
+
+    return () => {
+      mediaQuery.removeEventListener('change', syncLedgerMode);
+    };
+  }, []);
 
   useEffect(() => {
     setActiveView((current) => (current === urlActiveView ? current : urlActiveView));
@@ -1988,86 +2013,211 @@ export function ReportsManagementScreen({
                   description={jobsPanel.error}
                 />
               ) : (
-                <TableShell
-                  ariaLabel={copy.ledger.title}
-                  columns={[...copy.ledger.tableColumns]}
-                  dataLength={jobsPanel.data.length}
-                  isLoading={jobsPanel.loading}
-                  isEmpty={!jobsPanel.loading && jobsPanel.data.length === 0}
-                  emptyTitle={copy.ledger.emptyTitle}
-                  emptyDescription={copy.ledger.emptyDescription}
-                >
-                  {jobsPanel.data.map((job) => {
-                    const canDownload = job.status === 'success' || job.status === 'consumed';
-                    const canCancel = job.status === 'pending' || job.status === 'failed';
+                <>
+                  {!usesDesktopLedger ? (
+                    <div className="space-y-3">
+                      {jobsPanel.data.length === 0 ? (
+                        <StateView
+                          status="empty"
+                          title={copy.ledger.emptyTitle}
+                          description={copy.ledger.emptyDescription}
+                        />
+                      ) : (
+                        jobsPanel.data.map((job) => {
+                          const canDownload = job.status === 'success' || job.status === 'consumed';
+                          const canCancel = job.status === 'pending' || job.status === 'failed';
 
-                    return (
-                      <tr key={job.id} className="align-top">
-                        <td className="px-6 py-4">
-                          <div className="space-y-1">
-                            <p className="text-sm font-semibold text-slate-900">
-                              {job.fileName || copy.ledger.pendingFileAssignment}
-                            </p>
-                            <p className="text-xs text-slate-500">{job.id}</p>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <StatusBadge
-                            status={job.status}
-                            label={getReportsJobStatusLabel(locale, job.status)}
-                          />
-                        </td>
-                        <td className="px-6 py-4 text-sm text-slate-700">
-                          {formatReportsNumber(locale, job.totalRows, copy.ledger.pendingRows)}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-slate-700">
-                          {formatReportsDateTime(locale, job.createdAt, copy.common.never)}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-slate-700">
-                          {formatReportsDateTime(locale, job.completedAt, copy.common.never)}
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex flex-wrap gap-2">
-                            <SecondaryButton
-                              onClick={() => void openJobDetail(job)}
-                              disabled={detailPanel.loading}
-                              ariaLabel={copy.ledger.detailsAriaLabel(job.fileName || job.id)}
+                          return (
+                            <article
+                              key={job.id}
+                              className="min-w-0 rounded-2xl border border-slate-200 bg-white/85 px-4 py-4 shadow-sm"
                             >
-                              <Eye className="h-3.5 w-3.5" />
-                              {copy.ledger.details}
-                            </SecondaryButton>
-                            <SecondaryButton
-                              onClick={() => void handleDownload(job)}
-                              disabled={!canDownload || downloadJobId === job.id}
-                              ariaLabel={copy.ledger.downloadAriaLabel(job.fileName || job.id)}
-                            >
-                              <Download className="h-3.5 w-3.5" />
-                              {copy.ledger.download}
-                            </SecondaryButton>
-                            <SecondaryButton
-                              onClick={() =>
-                                setDialogState({
-                                  jobId: job.id,
-                                  fileName: job.fileName,
-                                  title: copy.ledger.cancelDialogTitle,
-                                  description: copy.ledger.cancelDialogDescription,
-                                  confirmText: copy.ledger.cancelDialogConfirm,
-                                  successMessage: `${job.fileName || copy.state.cancelSuccessFallback} ${copy.state.cancelSuccessSuffix}`,
-                                  errorFallback: copy.state.cancelError,
-                                })
-                              }
-                              disabled={!canCancel}
-                              ariaLabel={copy.ledger.cancelAriaLabel(job.fileName || job.id)}
-                            >
-                              <XCircle className="h-3.5 w-3.5" />
-                              {copy.ledger.cancel}
-                            </SecondaryButton>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </TableShell>
+                              <div className="flex flex-wrap items-start justify-between gap-3">
+                                <div className="min-w-0 space-y-1">
+                                  <h2 className="text-sm font-semibold break-words text-slate-900">
+                                    {job.fileName || copy.ledger.pendingFileAssignment}
+                                  </h2>
+                                  <p className="text-xs break-all text-slate-500">{job.id}</p>
+                                </div>
+                                <StatusBadge
+                                  status={job.status}
+                                  label={getReportsJobStatusLabel(locale, job.status)}
+                                />
+                              </div>
+
+                              <dl className="mt-4 grid gap-3 sm:grid-cols-2">
+                                <div className="min-w-0">
+                                  <dt className="text-xs font-semibold tracking-[0.16em] text-slate-500 uppercase">
+                                    {copy.ledger.tableColumns[2]}
+                                  </dt>
+                                  <dd className="mt-1 text-sm break-words text-slate-700">
+                                    {formatReportsNumber(
+                                      locale,
+                                      job.totalRows,
+                                      copy.ledger.pendingRows
+                                    )}
+                                  </dd>
+                                </div>
+                                <div className="min-w-0">
+                                  <dt className="text-xs font-semibold tracking-[0.16em] text-slate-500 uppercase">
+                                    {copy.ledger.tableColumns[3]}
+                                  </dt>
+                                  <dd className="mt-1 text-sm break-words text-slate-700">
+                                    {formatReportsDateTime(
+                                      locale,
+                                      job.createdAt,
+                                      copy.common.never
+                                    )}
+                                  </dd>
+                                </div>
+                                <div className="min-w-0 sm:col-span-2">
+                                  <dt className="text-xs font-semibold tracking-[0.16em] text-slate-500 uppercase">
+                                    {copy.ledger.tableColumns[4]}
+                                  </dt>
+                                  <dd className="mt-1 text-sm break-words text-slate-700">
+                                    {formatReportsDateTime(
+                                      locale,
+                                      job.completedAt,
+                                      copy.common.never
+                                    )}
+                                  </dd>
+                                </div>
+                              </dl>
+
+                              <div className="mt-4 flex flex-wrap justify-end gap-2">
+                                <SecondaryButton
+                                  onClick={() => void openJobDetail(job)}
+                                  disabled={detailPanel.loading}
+                                  ariaLabel={copy.ledger.detailsAriaLabel(job.fileName || job.id)}
+                                >
+                                  <Eye className="h-3.5 w-3.5" />
+                                  {copy.ledger.details}
+                                </SecondaryButton>
+                                <SecondaryButton
+                                  onClick={() => void handleDownload(job)}
+                                  disabled={!canDownload || downloadJobId === job.id}
+                                  ariaLabel={copy.ledger.downloadAriaLabel(job.fileName || job.id)}
+                                >
+                                  <Download className="h-3.5 w-3.5" />
+                                  {copy.ledger.download}
+                                </SecondaryButton>
+                                <SecondaryButton
+                                  onClick={() =>
+                                    setDialogState({
+                                      jobId: job.id,
+                                      fileName: job.fileName,
+                                      title: copy.ledger.cancelDialogTitle,
+                                      description: copy.ledger.cancelDialogDescription,
+                                      confirmText: copy.ledger.cancelDialogConfirm,
+                                      successMessage: `${job.fileName || copy.state.cancelSuccessFallback} ${copy.state.cancelSuccessSuffix}`,
+                                      errorFallback: copy.state.cancelError,
+                                    })
+                                  }
+                                  disabled={!canCancel}
+                                  ariaLabel={copy.ledger.cancelAriaLabel(job.fileName || job.id)}
+                                >
+                                  <XCircle className="h-3.5 w-3.5" />
+                                  {copy.ledger.cancel}
+                                </SecondaryButton>
+                              </div>
+                            </article>
+                          );
+                        })
+                      )}
+                    </div>
+                  ) : null}
+
+                  {usesDesktopLedger ? (
+                    <div>
+                      <TableShell
+                        ariaLabel={copy.ledger.title}
+                        columns={[...copy.ledger.tableColumns]}
+                        dataLength={jobsPanel.data.length}
+                        isLoading={jobsPanel.loading}
+                        isEmpty={!jobsPanel.loading && jobsPanel.data.length === 0}
+                        emptyTitle={copy.ledger.emptyTitle}
+                        emptyDescription={copy.ledger.emptyDescription}
+                      >
+                        {jobsPanel.data.map((job) => {
+                          const canDownload = job.status === 'success' || job.status === 'consumed';
+                          const canCancel = job.status === 'pending' || job.status === 'failed';
+
+                          return (
+                            <tr key={job.id} className="align-top">
+                              <td className="px-6 py-4">
+                                <div className="space-y-1">
+                                  <p className="text-sm font-semibold text-slate-900">
+                                    {job.fileName || copy.ledger.pendingFileAssignment}
+                                  </p>
+                                  <p className="text-xs text-slate-500">{job.id}</p>
+                                </div>
+                              </td>
+                              <td className="px-6 py-4">
+                                <StatusBadge
+                                  status={job.status}
+                                  label={getReportsJobStatusLabel(locale, job.status)}
+                                />
+                              </td>
+                              <td className="px-6 py-4 text-sm text-slate-700">
+                                {formatReportsNumber(
+                                  locale,
+                                  job.totalRows,
+                                  copy.ledger.pendingRows
+                                )}
+                              </td>
+                              <td className="px-6 py-4 text-sm text-slate-700">
+                                {formatReportsDateTime(locale, job.createdAt, copy.common.never)}
+                              </td>
+                              <td className="px-6 py-4 text-sm text-slate-700">
+                                {formatReportsDateTime(locale, job.completedAt, copy.common.never)}
+                              </td>
+                              <td className="px-6 py-4">
+                                <div className="flex flex-wrap gap-2">
+                                  <SecondaryButton
+                                    onClick={() => void openJobDetail(job)}
+                                    disabled={detailPanel.loading}
+                                    ariaLabel={copy.ledger.detailsAriaLabel(job.fileName || job.id)}
+                                  >
+                                    <Eye className="h-3.5 w-3.5" />
+                                    {copy.ledger.details}
+                                  </SecondaryButton>
+                                  <SecondaryButton
+                                    onClick={() => void handleDownload(job)}
+                                    disabled={!canDownload || downloadJobId === job.id}
+                                    ariaLabel={copy.ledger.downloadAriaLabel(
+                                      job.fileName || job.id
+                                    )}
+                                  >
+                                    <Download className="h-3.5 w-3.5" />
+                                    {copy.ledger.download}
+                                  </SecondaryButton>
+                                  <SecondaryButton
+                                    onClick={() =>
+                                      setDialogState({
+                                        jobId: job.id,
+                                        fileName: job.fileName,
+                                        title: copy.ledger.cancelDialogTitle,
+                                        description: copy.ledger.cancelDialogDescription,
+                                        confirmText: copy.ledger.cancelDialogConfirm,
+                                        successMessage: `${job.fileName || copy.state.cancelSuccessFallback} ${copy.state.cancelSuccessSuffix}`,
+                                        errorFallback: copy.state.cancelError,
+                                      })
+                                    }
+                                    disabled={!canCancel}
+                                    ariaLabel={copy.ledger.cancelAriaLabel(job.fileName || job.id)}
+                                  >
+                                    <XCircle className="h-3.5 w-3.5" />
+                                    {copy.ledger.cancel}
+                                  </SecondaryButton>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </TableShell>
+                    </div>
+                  ) : null}
+                </>
               )}
 
               {!jobsPanel.error ? (

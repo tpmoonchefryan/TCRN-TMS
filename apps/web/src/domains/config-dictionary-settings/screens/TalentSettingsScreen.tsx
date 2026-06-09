@@ -1629,6 +1629,12 @@ export function TalentSettingsScreen({
                   })
                 : null,
           };
+  const settingsDrawerInitialFocusRef =
+    activeFocus === 'homepage-routing'
+      ? homepageRoutingRef
+      : activeFocus === 'marshmallow-routing'
+        ? marshmallowRoutingRef
+        : undefined;
 
   return (
     <div className="space-y-6">
@@ -1726,7 +1732,7 @@ export function TalentSettingsScreen({
                     '変更前にタレントの識別情報、所属、スコープ情報を確認します。'
                   )}
                 >
-                  <div className="grid gap-4 xl:grid-cols-2">
+                  <div className="grid min-w-0 gap-4 xl:grid-cols-2">
                     <FieldRow
                       label={text('Talent Code', '艺人代码', 'タレントコード')}
                       value={detail.code}
@@ -2307,6 +2313,7 @@ export function TalentSettingsScreen({
                   'スコープ既定値、ホームページルート、カスタムドメイン、公開マシュマロの可用性を編集します。'
                 )}
                 size="xl"
+                initialFocusRef={settingsDrawerInitialFocusRef}
                 closeButtonAriaLabel={text(
                   'Close talent settings drawer',
                   '关闭艺人设置抽屉',
@@ -2367,7 +2374,7 @@ export function TalentSettingsScreen({
                     <div
                       ref={homepageRoutingRef}
                       tabIndex={-1}
-                      className={`rounded-2xl border bg-white/85 px-5 py-5 shadow-sm transition outline-none ${
+                      className={`min-w-0 scroll-mt-6 overflow-hidden rounded-2xl border bg-white/85 px-5 py-5 shadow-sm transition outline-none ${
                         activeFocus === 'homepage-routing'
                           ? 'border-indigo-300 ring-2 ring-indigo-200'
                           : 'border-slate-200'
@@ -2416,7 +2423,7 @@ export function TalentSettingsScreen({
                         />
                       </div>
 
-                      <div className="mt-4 space-y-4 rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
+                      <div className="mt-4 min-w-0 space-y-4 rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
                         <div className="space-y-1">
                           <p className="text-sm font-semibold text-slate-950">
                             {text('Shared-domain routes', '共享域路径', '共有ドメインルート')}
@@ -2488,7 +2495,7 @@ export function TalentSettingsScreen({
                         ) : null}
                       </div>
 
-                      <div className="mt-4 space-y-4 rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
+                      <div className="mt-4 min-w-0 space-y-4 rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
                         <div className="space-y-1">
                           <p className="text-sm font-semibold text-slate-950">
                             {text('Custom Domain', '自定义域名', 'カスタムドメイン')}
@@ -2513,7 +2520,7 @@ export function TalentSettingsScreen({
                           />
                         ) : customDomainPanel.data ? (
                           <>
-                            <div className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50/85 px-4 py-4">
+                            <div className="min-w-0 space-y-4 rounded-2xl border border-slate-200 bg-slate-50/85 px-4 py-4">
                               <div className="space-y-1">
                                 <p className="text-xs font-semibold tracking-[0.18em] text-slate-500 uppercase">
                                   {text('Step 1', '步骤 1', 'ステップ 1')}
@@ -2609,7 +2616,7 @@ export function TalentSettingsScreen({
                             </div>
 
                             {customDomainPanel.data.domains.length > 0 ? (
-                              <div className="space-y-4 rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
+                              <div className="min-w-0 space-y-4 rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
                                 <div className="space-y-1">
                                   <p className="text-xs font-semibold tracking-[0.18em] text-slate-500 uppercase">
                                     {text('Domain inventory', '域名清单', 'ドメイン一覧')}
@@ -2642,7 +2649,7 @@ export function TalentSettingsScreen({
                                     return (
                                       <div
                                         key={domain.id}
-                                        className="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-4"
+                                        className="min-w-0 rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-4"
                                       >
                                         <div className="flex flex-wrap items-start justify-between gap-3">
                                           <div className="min-w-0 space-y-1">
@@ -2741,7 +2748,7 @@ export function TalentSettingsScreen({
                                                 `継承ドメイン ${domain.hostname} を選択`
                                               )}
                                             />
-                                            <span className="space-y-1">
+                                            <span className="min-w-0 space-y-1">
                                               <span className="block font-semibold text-slate-900">
                                                 {text(
                                                   'Publish this inherited domain for the talent',
@@ -2811,7 +2818,7 @@ export function TalentSettingsScreen({
                             ) : null}
 
                             {customDomainPanel.data.customDomain ? (
-                              <div className="space-y-4 rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
+                              <div className="min-w-0 space-y-4 rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
                                 <div className="space-y-1">
                                   <p className="text-xs font-semibold tracking-[0.18em] text-slate-500 uppercase">
                                     {text('Step 2', '步骤 2', 'ステップ 2')}
@@ -2913,7 +2920,7 @@ export function TalentSettingsScreen({
                             )}
 
                             {customDomainPanel.data.customDomain ? (
-                              <div className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50/85 px-4 py-4">
+                              <div className="min-w-0 space-y-4 rounded-2xl border border-slate-200 bg-slate-50/85 px-4 py-4">
                                 <div className="space-y-1">
                                   <p className="text-xs font-semibold tracking-[0.18em] text-slate-500 uppercase">
                                     {text('Step 3', '步骤 3', 'ステップ 3')}
@@ -2964,7 +2971,7 @@ export function TalentSettingsScreen({
                             ) : null}
 
                             {customDomainPanel.data.customDomain ? (
-                              <div className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50/85 px-4 py-4">
+                              <div className="min-w-0 space-y-4 rounded-2xl border border-slate-200 bg-slate-50/85 px-4 py-4">
                                 <div className="space-y-1">
                                   <p className="text-xs font-semibold tracking-[0.18em] text-slate-500 uppercase">
                                     {text('Step 4', '步骤 4', 'ステップ 4')}
@@ -3059,7 +3066,7 @@ export function TalentSettingsScreen({
                     <div
                       ref={marshmallowRoutingRef}
                       tabIndex={-1}
-                      className={`rounded-2xl border bg-white/85 px-5 py-5 shadow-sm transition outline-none ${
+                      className={`min-w-0 scroll-mt-6 overflow-hidden rounded-2xl border bg-white/85 px-5 py-5 shadow-sm transition outline-none ${
                         activeFocus === 'marshmallow-routing'
                           ? 'border-indigo-300 ring-2 ring-indigo-200'
                           : 'border-slate-200'
@@ -3095,7 +3102,7 @@ export function TalentSettingsScreen({
                         </div>
                       ) : marshmallowPanel.data && marshmallowEnabledDraft !== null ? (
                         <>
-                          <label className="mt-4 flex items-start gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
+                          <label className="mt-4 flex min-w-0 items-start gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
                             <input
                               aria-label={text(
                                 'Enable public marshmallow route',

@@ -252,10 +252,10 @@ function SummaryCard({
   hint: string;
 }>) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white/80 px-4 py-4 shadow-sm">
+    <div className="min-w-0 rounded-2xl border border-slate-200 bg-white/80 px-4 py-4 shadow-sm">
       <p className="text-xs font-semibold tracking-[0.2em] text-slate-500 uppercase">{label}</p>
-      <p className="mt-2 text-2xl font-semibold text-slate-950">{value}</p>
-      <p className="mt-2 text-xs leading-5 text-slate-500">{hint}</p>
+      <p className="mt-2 truncate text-2xl font-semibold text-slate-950">{value}</p>
+      <p className="mt-2 text-xs leading-5 break-words text-slate-500">{hint}</p>
     </div>
   );
 }
@@ -306,7 +306,7 @@ function ActionButton({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition ${toneClasses} disabled:cursor-not-allowed disabled:opacity-50`}
+      className={`inline-flex max-w-full items-center justify-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition ${toneClasses} disabled:cursor-not-allowed disabled:opacity-50`}
     >
       {children}
     </button>
@@ -368,6 +368,31 @@ export function CustomerManagementScreen({
   const [dialogPending, setDialogPending] = useState(false);
   const [preparingCustomerId, setPreparingCustomerId] = useState<string | null>(null);
   const [canCreateCustomer, setCanCreateCustomer] = useState<boolean | null>(null);
+  const [usesDesktopLedger, setUsesDesktopLedger] = useState(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+      return true;
+    }
+
+    return window.matchMedia('(min-width: 1280px)').matches;
+  });
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+      return undefined;
+    }
+
+    const mediaQuery = window.matchMedia('(min-width: 1280px)');
+    const syncLedgerMode = () => {
+      setUsesDesktopLedger(mediaQuery.matches);
+    };
+
+    syncLedgerMode();
+    mediaQuery.addEventListener('change', syncLedgerMode);
+
+    return () => {
+      mediaQuery.removeEventListener('change', syncLedgerMode);
+    };
+  }, []);
 
   useEffect(() => {
     setSearch((current) => (current === urlSearch ? current : urlSearch));
@@ -857,149 +882,312 @@ export function CustomerManagementScreen({
             />
           ) : (
             <>
-              <TableShell
-                ariaLabel={customerCopy.title}
-                columns={[
-                  customerCopy.customerColumn,
-                  customerCopy.profileTypeColumn,
-                  customerCopy.statusColumn,
-                  customerCopy.membershipColumn,
-                  customerCopy.updatedColumn,
-                  customerCopy.actionsColumn,
-                ]}
-                dataLength={panel.data.length}
-                isLoading={panel.loading}
-                isEmpty={!panel.loading && panel.data.length === 0}
-                emptyTitle={customerCopy.emptyTitle}
-                emptyDescription={customerCopy.emptyDescription}
-              >
-                {panel.data.map((customer) => (
-                  <tr key={customer.id} className="align-top">
-                    <td className="px-6 py-4 text-sm text-slate-700">
-                      <div className="space-y-1">
-                        <p className="font-semibold text-slate-900">{customer.nickname}</p>
-                        <p className="text-xs text-slate-500">
-                          {customer.companyShortName ||
-                            customer.originTalent?.displayName ||
-                            customerCopy.directCustomerRecord}
-                        </p>
+              {!usesDesktopLedger ? (
+                <div className="space-y-3">
+                  {panel.data.length === 0 ? (
+                    <StateView
+                      status="empty"
+                      title={customerCopy.emptyTitle}
+                      description={customerCopy.emptyDescription}
+                    />
+                  ) : (
+                    panel.data.map((customer) => (
+                      <article
+                        key={customer.id}
+                        className="min-w-0 rounded-2xl border border-slate-200 bg-white/85 px-4 py-4 shadow-sm"
+                      >
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                          <div className="min-w-0 space-y-1">
+                            <h2 className="text-sm font-semibold break-words text-slate-900">
+                              {customer.nickname}
+                            </h2>
+                            <p className="text-xs break-words text-slate-500">
+                              {customer.companyShortName ||
+                                customer.originTalent?.displayName ||
+                                customerCopy.directCustomerRecord}
+                            </p>
+                          </div>
+                          <StatusBadge
+                            tone={customer.isActive ? 'success' : 'danger'}
+                            label={
+                              customer.status?.name ||
+                              (customer.isActive
+                                ? customerCopy.statusActive
+                                : customerCopy.statusInactive)
+                            }
+                          />
+                        </div>
+
                         {customer.tags.length > 0 ? (
-                          <div className="flex flex-wrap gap-1.5 pt-1">
+                          <div className="mt-3 flex flex-wrap gap-1.5">
                             {customer.tags.slice(0, 3).map((tag) => (
                               <span
                                 key={tag}
-                                className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600"
+                                className="max-w-full truncate rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600"
                               >
                                 {tag}
                               </span>
                             ))}
                           </div>
                         ) : null}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <StatusBadge
-                        tone={customer.profileType === 'company' ? 'warning' : 'neutral'}
-                        label={
-                          customer.profileType === 'company'
-                            ? customerCopy.profileTypeCompany
-                            : customerCopy.profileTypeIndividual
-                        }
-                      />
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="space-y-2">
-                        <StatusBadge
-                          tone={customer.isActive ? 'success' : 'danger'}
-                          label={
-                            customer.status?.name ||
-                            (customer.isActive
-                              ? customerCopy.statusActive
-                              : customerCopy.statusInactive)
-                          }
-                        />
-                        <p className="text-xs text-slate-500">
-                          {customer.primaryLanguage || customerCopy.languageUnset}
-                        </p>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-slate-600">
-                      {customer.membershipSummary ? (
-                        <div className="space-y-1">
-                          <p className="font-medium text-slate-900">
-                            {customer.membershipSummary.highestLevel.platformName}{' '}
-                            {customer.membershipSummary.highestLevel.levelName}
-                          </p>
-                          <p className="text-xs text-slate-500">
-                            {formatMembershipSummary(
-                              customer.membershipSummary.activeCount,
-                              customer.membershipSummary.totalCount,
-                              locale
-                            )}
-                          </p>
-                        </div>
-                      ) : (
-                        <span className="text-xs font-medium text-slate-500">
-                          {customerCopy.membershipNone}
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-slate-600">
-                      <div className="space-y-1">
-                        <p>
-                          {formatLocaleDateTime(
-                            locale,
-                            customer.updatedAt,
-                            getDateTimeFallback(locale)
+
+                        <dl className="mt-4 grid gap-3 sm:grid-cols-2">
+                          <div className="min-w-0">
+                            <dt className="text-xs font-semibold tracking-[0.16em] text-slate-500 uppercase">
+                              {customerCopy.profileTypeColumn}
+                            </dt>
+                            <dd className="mt-1">
+                              <StatusBadge
+                                tone={customer.profileType === 'company' ? 'warning' : 'neutral'}
+                                label={
+                                  customer.profileType === 'company'
+                                    ? customerCopy.profileTypeCompany
+                                    : customerCopy.profileTypeIndividual
+                                }
+                              />
+                            </dd>
+                          </div>
+                          <div className="min-w-0">
+                            <dt className="text-xs font-semibold tracking-[0.16em] text-slate-500 uppercase">
+                              {customerCopy.statusColumn}
+                            </dt>
+                            <dd className="mt-1 text-sm break-words text-slate-700">
+                              {customer.primaryLanguage || customerCopy.languageUnset}
+                            </dd>
+                          </div>
+                          <div className="min-w-0">
+                            <dt className="text-xs font-semibold tracking-[0.16em] text-slate-500 uppercase">
+                              {customerCopy.membershipColumn}
+                            </dt>
+                            <dd className="mt-1 text-sm break-words text-slate-700">
+                              {customer.membershipSummary ? (
+                                <>
+                                  <span className="font-medium text-slate-900">
+                                    {customer.membershipSummary.highestLevel.platformName}{' '}
+                                    {customer.membershipSummary.highestLevel.levelName}
+                                  </span>
+                                  <span className="mt-1 block text-xs text-slate-500">
+                                    {formatMembershipSummary(
+                                      customer.membershipSummary.activeCount,
+                                      customer.membershipSummary.totalCount,
+                                      locale
+                                    )}
+                                  </span>
+                                </>
+                              ) : (
+                                customerCopy.membershipNone
+                              )}
+                            </dd>
+                          </div>
+                          <div className="min-w-0">
+                            <dt className="text-xs font-semibold tracking-[0.16em] text-slate-500 uppercase">
+                              {customerCopy.updatedColumn}
+                            </dt>
+                            <dd className="mt-1 text-sm break-words text-slate-700">
+                              {formatLocaleDateTime(
+                                locale,
+                                customer.updatedAt,
+                                getDateTimeFallback(locale)
+                              )}
+                              <span className="mt-1 block text-xs text-slate-500">
+                                {formatCreatedAt(customer.createdAt, locale)}
+                              </span>
+                            </dd>
+                          </div>
+                        </dl>
+
+                        <div className="mt-4 flex flex-wrap justify-end gap-2">
+                          {customer.isActive ? (
+                            <ActionButton
+                              tone="danger"
+                              disabled={preparingCustomerId === customer.id}
+                              onClick={() => void prepareDeactivateDialog(customer)}
+                            >
+                              <UserMinus className="h-3.5 w-3.5" />
+                              {preparingCustomerId === customer.id
+                                ? customerCopy.deactivatePending
+                                : customerCopy.deactivateLabel}
+                            </ActionButton>
+                          ) : (
+                            <ActionButton
+                              tone="primary"
+                              onClick={() =>
+                                setDialogState({
+                                  kind: 'reactivate',
+                                  customerId: customer.id,
+                                  customerName: customer.nickname,
+                                  title: formatActionTitle('reactivate', customer.nickname, locale),
+                                  description: customerCopy.reactivateDescription,
+                                  confirmText: customerCopy.reactivateConfirm,
+                                  pendingText: customerCopy.reactivatePending,
+                                  successMessage: formatActionSuccess(
+                                    'reactivate',
+                                    customer.nickname,
+                                    locale
+                                  ),
+                                  errorFallback: customerCopy.reactivateRequestFallback,
+                                  intent: 'primary',
+                                })
+                              }
+                            >
+                              <UserRoundCheck className="h-3.5 w-3.5" />
+                              {customerCopy.reactivateLabel}
+                            </ActionButton>
                           )}
-                        </p>
-                        <p className="text-xs text-slate-500">
-                          {formatCreatedAt(customer.createdAt, locale)}
-                        </p>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      {customer.isActive ? (
-                        <ActionButton
-                          tone="danger"
-                          disabled={preparingCustomerId === customer.id}
-                          onClick={() => void prepareDeactivateDialog(customer)}
-                        >
-                          <UserMinus className="h-3.5 w-3.5" />
-                          {preparingCustomerId === customer.id
-                            ? customerCopy.deactivatePending
-                            : customerCopy.deactivateLabel}
-                        </ActionButton>
-                      ) : (
-                        <ActionButton
-                          tone="primary"
-                          onClick={() =>
-                            setDialogState({
-                              kind: 'reactivate',
-                              customerId: customer.id,
-                              customerName: customer.nickname,
-                              title: formatActionTitle('reactivate', customer.nickname, locale),
-                              description: customerCopy.reactivateDescription,
-                              confirmText: customerCopy.reactivateConfirm,
-                              pendingText: customerCopy.reactivatePending,
-                              successMessage: formatActionSuccess(
-                                'reactivate',
-                                customer.nickname,
-                                locale
-                              ),
-                              errorFallback: customerCopy.reactivateRequestFallback,
-                              intent: 'primary',
-                            })
-                          }
-                        >
-                          <UserRoundCheck className="h-3.5 w-3.5" />
-                          {customerCopy.reactivateLabel}
-                        </ActionButton>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </TableShell>
+                        </div>
+                      </article>
+                    ))
+                  )}
+                </div>
+              ) : null}
+
+              {usesDesktopLedger ? (
+                <div>
+                  <TableShell
+                    ariaLabel={customerCopy.title}
+                    columns={[
+                      customerCopy.customerColumn,
+                      customerCopy.profileTypeColumn,
+                      customerCopy.statusColumn,
+                      customerCopy.membershipColumn,
+                      customerCopy.updatedColumn,
+                      customerCopy.actionsColumn,
+                    ]}
+                    dataLength={panel.data.length}
+                    isLoading={panel.loading}
+                    isEmpty={!panel.loading && panel.data.length === 0}
+                    emptyTitle={customerCopy.emptyTitle}
+                    emptyDescription={customerCopy.emptyDescription}
+                  >
+                    {panel.data.map((customer) => (
+                      <tr key={customer.id} className="align-top">
+                        <td className="px-6 py-4 text-sm text-slate-700">
+                          <div className="space-y-1">
+                            <p className="font-semibold text-slate-900">{customer.nickname}</p>
+                            <p className="text-xs text-slate-500">
+                              {customer.companyShortName ||
+                                customer.originTalent?.displayName ||
+                                customerCopy.directCustomerRecord}
+                            </p>
+                            {customer.tags.length > 0 ? (
+                              <div className="flex flex-wrap gap-1.5 pt-1">
+                                {customer.tags.slice(0, 3).map((tag) => (
+                                  <span
+                                    key={tag}
+                                    className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600"
+                                  >
+                                    {tag}
+                                  </span>
+                                ))}
+                              </div>
+                            ) : null}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <StatusBadge
+                            tone={customer.profileType === 'company' ? 'warning' : 'neutral'}
+                            label={
+                              customer.profileType === 'company'
+                                ? customerCopy.profileTypeCompany
+                                : customerCopy.profileTypeIndividual
+                            }
+                          />
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="space-y-2">
+                            <StatusBadge
+                              tone={customer.isActive ? 'success' : 'danger'}
+                              label={
+                                customer.status?.name ||
+                                (customer.isActive
+                                  ? customerCopy.statusActive
+                                  : customerCopy.statusInactive)
+                              }
+                            />
+                            <p className="text-xs text-slate-500">
+                              {customer.primaryLanguage || customerCopy.languageUnset}
+                            </p>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-slate-600">
+                          {customer.membershipSummary ? (
+                            <div className="space-y-1">
+                              <p className="font-medium text-slate-900">
+                                {customer.membershipSummary.highestLevel.platformName}{' '}
+                                {customer.membershipSummary.highestLevel.levelName}
+                              </p>
+                              <p className="text-xs text-slate-500">
+                                {formatMembershipSummary(
+                                  customer.membershipSummary.activeCount,
+                                  customer.membershipSummary.totalCount,
+                                  locale
+                                )}
+                              </p>
+                            </div>
+                          ) : (
+                            <span className="text-xs font-medium text-slate-500">
+                              {customerCopy.membershipNone}
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-slate-600">
+                          <div className="space-y-1">
+                            <p>
+                              {formatLocaleDateTime(
+                                locale,
+                                customer.updatedAt,
+                                getDateTimeFallback(locale)
+                              )}
+                            </p>
+                            <p className="text-xs text-slate-500">
+                              {formatCreatedAt(customer.createdAt, locale)}
+                            </p>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          {customer.isActive ? (
+                            <ActionButton
+                              tone="danger"
+                              disabled={preparingCustomerId === customer.id}
+                              onClick={() => void prepareDeactivateDialog(customer)}
+                            >
+                              <UserMinus className="h-3.5 w-3.5" />
+                              {preparingCustomerId === customer.id
+                                ? customerCopy.deactivatePending
+                                : customerCopy.deactivateLabel}
+                            </ActionButton>
+                          ) : (
+                            <ActionButton
+                              tone="primary"
+                              onClick={() =>
+                                setDialogState({
+                                  kind: 'reactivate',
+                                  customerId: customer.id,
+                                  customerName: customer.nickname,
+                                  title: formatActionTitle('reactivate', customer.nickname, locale),
+                                  description: customerCopy.reactivateDescription,
+                                  confirmText: customerCopy.reactivateConfirm,
+                                  pendingText: customerCopy.reactivatePending,
+                                  successMessage: formatActionSuccess(
+                                    'reactivate',
+                                    customer.nickname,
+                                    locale
+                                  ),
+                                  errorFallback: customerCopy.reactivateRequestFallback,
+                                  intent: 'primary',
+                                })
+                              }
+                            >
+                              <UserRoundCheck className="h-3.5 w-3.5" />
+                              {customerCopy.reactivateLabel}
+                            </ActionButton>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </TableShell>
+                </div>
+              ) : null}
 
               <PaginationFooter
                 pagination={panel.pagination}

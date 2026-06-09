@@ -1027,6 +1027,13 @@ describe('TalentSettingsScreen', () => {
     ).toBeInTheDocument();
     expect(await screen.findByLabelText('Enable public marshmallow route')).toBeChecked();
 
+    fireEvent.click(screen.getByRole('button', { name: 'Close talent settings drawer' }));
+    await waitFor(() => {
+      expect(
+        screen.queryByRole('dialog', { name: 'Configure talent settings' })
+      ).not.toBeInTheDocument();
+    });
+
     fireEvent.click(screen.getByRole('button', { name: 'Details' }));
 
     await waitFor(() => {
@@ -1043,6 +1050,11 @@ describe('TalentSettingsScreen', () => {
     expect(
       screen.queryByRole('button', { name: 'Save custom-domain paths' })
     ).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Configure routes' }));
+    expect(
+      await screen.findByRole('dialog', { name: 'Configure talent settings' })
+    ).toBeInTheDocument();
     expect(await screen.findByText('/tenant_test/sora/homepage')).toBeInTheDocument();
     expect(await screen.findByText('/tenant_test/sora/marshmallow')).toBeInTheDocument();
 

@@ -398,6 +398,9 @@ describe('ReportsManagementScreen', () => {
     fireEvent.click(await screen.findByRole('checkbox', { name: /YouTube/i }));
     fireEvent.click(screen.getByRole('button', { name: 'Done' }));
     expect(await screen.findByText('YouTube')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'Select Platforms' })).not.toBeInTheDocument();
+    });
     fireEvent.click(screen.getByRole('button', { name: 'Preview rows' }));
 
     await waitFor(() => {
@@ -913,9 +916,7 @@ describe('ReportsManagementScreen', () => {
     expect(
       await screen.findByRole('heading', { name: 'Loading report job detail…' })
     ).toBeInTheDocument();
-    expect(
-      screen.getByRole('button', { name: 'View details for MFR_loading.xlsx' })
-    ).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Loading report job detail…' })).toBeDisabled();
 
     resolveDetail({
       id: 'job-pending-detail',

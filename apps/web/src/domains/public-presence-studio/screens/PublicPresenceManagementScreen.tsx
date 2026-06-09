@@ -1179,12 +1179,18 @@ export function PublicPresenceManagementScreen({
           </div>
           <div className="grid gap-4" data-testid="management-version-list">
             {workspace.pageVersions.map((pageVersion) => {
+              const pageVersionTemplateId =
+                pageVersion.templateId ??
+                pageVersion.latestVersion?.id ??
+                pageVersion.liveVersion?.id ??
+                pageVersion.scheduledVersion?.id ??
+                'unknown-template';
               const template = workspace.templates.find(
-                (entry) => entry.templateId === pageVersion.templateId
+                (entry) => entry.templateId === pageVersionTemplateId
               ) ?? {
-                label: pageVersion.templateId,
-                templateId: pageVersion.templateId,
-                useCase: pageVersion.templateId,
+                label: pageVersionTemplateId,
+                templateId: pageVersionTemplateId,
+                useCase: pageVersionTemplateId,
               };
               const validationSnapshot = pageVersion.latestVersion?.validationSnapshot ?? null;
               const validationSummary = formatPublicPresenceStudioValidationSummary(
@@ -1195,7 +1201,7 @@ export function PublicPresenceManagementScreen({
               const latestEvent = getLatestWorkflowEvent(workspace, pageVersion);
               const versionName = getPublicPresenceTemplateLabel(locale, template);
               const editLabel =
-                pageVersion.templateId === 'activeTalentHub'
+                pageVersionTemplateId === 'activeTalentHub'
                   ? pickLocaleText(locale, {
                       en: 'Edit Active Hub',
                       zh_HANS: '编辑 Active Hub',
@@ -1213,7 +1219,7 @@ export function PublicPresenceManagementScreen({
                       fr: 'Editer Debut / Reveal',
                     });
               const previewLabel =
-                pageVersion.templateId === 'activeTalentHub'
+                pageVersionTemplateId === 'activeTalentHub'
                   ? pickLocaleText(locale, {
                       en: 'Preview Active Hub',
                       zh_HANS: '预览 Active Hub',
@@ -1249,7 +1255,7 @@ export function PublicPresenceManagementScreen({
 
               return (
                 <div
-                  key={pageVersion.templateId}
+                  key={pageVersionTemplateId}
                   className="space-y-4 rounded-3xl border border-slate-200 bg-white/80 p-4"
                 >
                   <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
@@ -1297,7 +1303,7 @@ export function PublicPresenceManagementScreen({
                         href={buildPublicPresenceStudioEditorPath(
                           tenantId,
                           talentId,
-                          pageVersion.templateId
+                          pageVersionTemplateId
                         )}
                         icon={<LayoutTemplate className="h-4 w-4" aria-hidden="true" />}
                         label={editLabel}
@@ -1307,7 +1313,7 @@ export function PublicPresenceManagementScreen({
                         href={buildPublicPresenceStudioPreviewPath(
                           tenantId,
                           talentId,
-                          pageVersion.templateId
+                          pageVersionTemplateId
                         )}
                         icon={<MonitorPlay className="h-4 w-4" aria-hidden="true" />}
                         label={previewLabel}
@@ -1316,18 +1322,18 @@ export function PublicPresenceManagementScreen({
                         href={buildPublicPresenceStudioEditorPath(
                           tenantId,
                           talentId,
-                          pageVersion.templateId,
+                          pageVersionTemplateId,
                           'release'
                         )}
                         icon={<Rocket className="h-4 w-4" aria-hidden="true" />}
                         label={setLiveLabel}
                       />
-                      {pageVersion.templateId === 'debutReveal' ? (
+                      {pageVersionTemplateId === 'debutReveal' ? (
                         <ManagementActionLink
                           href={buildPublicPresenceStudioEditorPath(
                             tenantId,
                             talentId,
-                            pageVersion.templateId,
+                            pageVersionTemplateId,
                             'countdown'
                           )}
                           icon={<CalendarClock className="h-4 w-4" aria-hidden="true" />}
@@ -1392,7 +1398,7 @@ export function PublicPresenceManagementScreen({
                     />
                     <SummaryCard
                       label={
-                        pageVersion.templateId === 'debutReveal'
+                        pageVersionTemplateId === 'debutReveal'
                           ? pickLocaleText(locale, {
                               en: 'Debut / Reveal phase',
                               zh_HANS: 'Debut / Reveal 阶段',
@@ -1411,7 +1417,7 @@ export function PublicPresenceManagementScreen({
                             })
                       }
                       value={
-                        pageVersion.templateId === 'debutReveal'
+                        pageVersionTemplateId === 'debutReveal'
                           ? countdownPhase
                             ? getPublicPresencePreviewPhaseLabel(locale, countdownPhase as never)
                             : pickLocaleText(locale, {
@@ -1428,7 +1434,7 @@ export function PublicPresenceManagementScreen({
                             )
                       }
                       hint={
-                        pageVersion.templateId === 'debutReveal'
+                        pageVersionTemplateId === 'debutReveal'
                           ? pageVersion.revealAutoSwitchAt
                             ? formatPublicPresenceStudioDateTime(
                                 locale,
@@ -1502,7 +1508,7 @@ export function PublicPresenceManagementScreen({
                         fr: 'Gérer les assets de homepage',
                       })}
                     />
-                    {pageVersion.templateId === 'debutReveal' ? (
+                    {pageVersionTemplateId === 'debutReveal' ? (
                       <ManagementActionLink
                         href={buildPublicPresenceStudioEditorPath(
                           tenantId,

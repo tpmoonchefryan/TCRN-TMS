@@ -62,6 +62,63 @@ const sizeClasses = {
   full: 'max-w-full sm:max-w-[calc(100vw-2rem)]',
 };
 
+const isolatedSiblingState = new Map<
+  HTMLElement,
+  {
+    ariaHidden: string | null;
+    inert: string | null;
+  }
+>();
+let isolatedDrawerDepth = 0;
+
+function isolateBodySiblings(container: HTMLElement) {
+  isolatedDrawerDepth += 1;
+
+  for (const child of Array.from(document.body.children)) {
+    if (
+      !(child instanceof HTMLElement) ||
+      child.contains(container) ||
+      child.matches('[data-action-drawer-root="true"]')
+    ) {
+      continue;
+    }
+
+    if (!isolatedSiblingState.has(child)) {
+      isolatedSiblingState.set(child, {
+        ariaHidden: child.getAttribute('aria-hidden'),
+        inert: child.getAttribute('inert'),
+      });
+    }
+
+    child.setAttribute('aria-hidden', 'true');
+    child.setAttribute('inert', '');
+  }
+
+  return () => {
+    isolatedDrawerDepth = Math.max(0, isolatedDrawerDepth - 1);
+
+    if (isolatedDrawerDepth > 0) {
+      return;
+    }
+
+    for (const [element, previous] of isolatedSiblingState.entries()) {
+      if (previous.ariaHidden === null) {
+        element.removeAttribute('aria-hidden');
+      } else {
+        element.setAttribute('aria-hidden', previous.ariaHidden);
+      }
+
+      if (previous.inert === null) {
+        element.removeAttribute('inert');
+      } else {
+        element.setAttribute('inert', previous.inert);
+      }
+    }
+
+    isolatedSiblingState.clear();
+  };
+}
+
 export const ActionDrawer: React.FC<ActionDrawerProps> = ({
   open,
   onOpenChange,
@@ -133,6 +190,18 @@ export const ActionDrawer: React.FC<ActionDrawerProps> = ({
     initialFocusRef,
     restoreFocus,
   });
+  useEffect(() => {
+    if (!isMounted || !open || typeof document === 'undefined') {
+      return undefined;
+    }
+
+    const drawerElement = drawerRef.current;
+    if (!drawerElement) {
+      return undefined;
+    }
+
+    return isolateBodySiblings(drawerElement);
+  }, [isMounted, open]);
 
   if (!isMounted) {
     return null;
@@ -141,7 +210,7 @@ export const ActionDrawer: React.FC<ActionDrawerProps> = ({
   const animationClass = isExiting ? tokens.motion.drawerExit : tokens.motion.drawerEnter;
 
   return createPortal(
-    <div className="fixed inset-0 z-[100]">
+    <div className="fixed inset-0 z-[100]" data-action-drawer-root="true">
       {/* Backdrop */}
       <button
         type="button"
