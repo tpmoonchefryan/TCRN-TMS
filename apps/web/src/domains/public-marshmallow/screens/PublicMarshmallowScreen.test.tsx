@@ -1,8 +1,7 @@
+import { BROWSER_PUBLIC_CONSUMER_CODE, BROWSER_PUBLIC_CONSUMER_HEADER } from '@tcrn/shared';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { ReactElement } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
-import { BROWSER_PUBLIC_CONSUMER_CODE, BROWSER_PUBLIC_CONSUMER_HEADER } from '@tcrn/shared';
 
 import { localizedFixture } from '@/domains/config-dictionary-settings/testing/localized-fixtures';
 import { PublicMarshmallowScreen } from '@/domains/public-marshmallow/screens/PublicMarshmallowScreen';
@@ -34,6 +33,7 @@ describe('PublicMarshmallowScreen', () => {
     mockFetch.mockReset();
     vi.stubGlobal('fetch', mockFetch);
     window.localStorage.clear();
+    document.documentElement.lang = 'zh-Hans';
     Object.defineProperty(window.navigator, 'language', {
       configurable: true,
       value: 'en-US',
@@ -41,6 +41,7 @@ describe('PublicMarshmallowScreen', () => {
   });
 
   afterEach(() => {
+    document.documentElement.lang = 'zh-Hans';
     vi.unstubAllGlobals();
   });
 
@@ -146,9 +147,12 @@ describe('PublicMarshmallowScreen', () => {
       throw new Error(`Unhandled request: ${url}`);
     });
 
-    renderWithLocale(<PublicMarshmallowScreen path="aki-mailbox" turnstileSiteKey="" />);
+    const view = renderWithLocale(
+      <PublicMarshmallowScreen path="aki-mailbox" turnstileSiteKey="" />
+    );
 
     expect(await screen.findByRole('heading', { name: 'Ask Aki' })).toBeInTheDocument();
+    expect(document.documentElement.lang).toBe('en');
     expect(screen.getByText('Public Marshmallow')).toBeInTheDocument();
     expect(screen.getByText('1 message loaded so far')).toBeInTheDocument();
     expect(screen.getByText('What inspires your next stream theme?')).toBeInTheDocument();
@@ -179,6 +183,9 @@ describe('PublicMarshmallowScreen', () => {
       )?.[1]?.headers
     );
     expect(headers.get(BROWSER_PUBLIC_CONSUMER_HEADER)).toBe(BROWSER_PUBLIC_CONSUMER_CODE);
+
+    view.unmount();
+    expect(document.documentElement.lang).toBe('zh-Hans');
   });
 
   it('disables public submission when Turnstile is required but runtime config is incomplete', async () => {
@@ -533,6 +540,8 @@ describe('PublicMarshmallowScreen', () => {
     renderWithLocale(<PublicMarshmallowScreen path="missing-mailbox" turnstileSiteKey="" />);
 
     expect(await screen.findByText('Public marshmallow unavailable')).toBeInTheDocument();
+    expect(document.documentElement.lang).toBe('en');
+    expect(screen.getByRole('button', { name: 'Try again' })).toBeInTheDocument();
     expect(
       screen.getByText(
         'The public marshmallow page is not published, not enabled, or no longer reachable.'
@@ -575,6 +584,8 @@ describe('PublicMarshmallowScreen', () => {
     renderWithLocale(<PublicMarshmallowScreen path="missing-mailbox" turnstileSiteKey="" />);
 
     expect(await screen.findByText('公开棉花糖不可用')).toBeInTheDocument();
+    expect(document.documentElement.lang).toBe('zh-Hans');
+    expect(screen.getByRole('button', { name: '重试' })).toBeInTheDocument();
     expect(
       screen.getByText('当前公开棉花糖页面尚未发布、未启用，或暂时不可达。')
     ).toBeInTheDocument();

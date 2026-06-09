@@ -1,12 +1,11 @@
 'use client';
 
-import { createContext, startTransition, useContext, useEffect, useMemo, useState } from 'react';
-
 import {
-  SUPPORTED_UI_LOCALES,
   normalizeSupportedUiLocale,
+  SUPPORTED_UI_LOCALES,
   type SupportedUiLocale,
 } from '@tcrn/shared';
+import { createContext, startTransition, useContext, useEffect, useMemo, useState } from 'react';
 
 import { useSession } from '@/platform/runtime/session/session-provider';
 
@@ -198,6 +197,7 @@ export interface UiLocaleCopy {
     privacyLabel: string;
     reactionUpdateFailed: string;
     replyLabel: string;
+    retryAction: string;
     sendButton: string;
     sendButtonPending: string;
     sendSectionEyebrow: string;
@@ -475,6 +475,7 @@ const enUiLocaleCopy: UiLocaleCopy = {
     privacyLabel: 'Privacy',
     reactionUpdateFailed: 'Failed to update the reaction.',
     replyLabel: 'Reply',
+    retryAction: 'Try again',
     sendButton: 'Send message',
     sendButtonPending: 'Sending…',
     sendSectionEyebrow: 'Send a message',
@@ -732,6 +733,7 @@ const zhHansUiLocaleCopy: UiLocaleCopy = {
     privacyLabel: '隐私说明',
     reactionUpdateFailed: '更新互动反应失败。',
     replyLabel: '回复',
+    retryAction: '重试',
     sendButton: '发送消息',
     sendButtonPending: '发送中…',
     sendSectionEyebrow: '发送一条消息',
@@ -988,6 +990,7 @@ const jaUiLocaleCopy: UiLocaleCopy = {
     privacyLabel: 'プライバシー',
     reactionUpdateFailed: 'リアクションの更新に失敗しました。',
     replyLabel: '返信',
+    retryAction: 'もう一度試す',
     sendButton: 'メッセージを送信',
     sendButtonPending: '送信中…',
     sendSectionEyebrow: 'メッセージを送る',
@@ -1314,6 +1317,7 @@ const LOCALE_COPY: Record<SupportedUiLocale, UiLocaleCopy> = {
       privacyLabel: '隱私說明',
       reactionUpdateFailed: '更新互動反應失敗。',
       replyLabel: '回覆',
+      retryAction: '重試',
       sendButton: '送出訊息',
       sendButtonPending: '送出中…',
       sendSectionEyebrow: '送出一則訊息',
@@ -1494,6 +1498,7 @@ const LOCALE_COPY: Record<SupportedUiLocale, UiLocaleCopy> = {
       privacyLabel: '개인정보',
       reactionUpdateFailed: '반응 업데이트에 실패했습니다.',
       replyLabel: '답글',
+      retryAction: '다시 시도',
       sendButton: '메시지 보내기',
       sendButtonPending: '전송 중…',
       sendSectionEyebrow: '메시지 보내기',
@@ -1675,6 +1680,7 @@ const LOCALE_COPY: Record<SupportedUiLocale, UiLocaleCopy> = {
       privacyLabel: 'Confidentialité',
       reactionUpdateFailed: 'Impossible de mettre à jour la réaction.',
       replyLabel: 'Réponse',
+      retryAction: 'Réessayer',
       sendButton: 'Envoyer le message',
       sendButtonPending: 'Envoi…',
       sendSectionEyebrow: 'Envoyer un message',

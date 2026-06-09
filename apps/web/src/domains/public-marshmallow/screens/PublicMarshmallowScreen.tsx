@@ -1,9 +1,8 @@
 'use client';
 
+import { type SupportedUiLocale, toIntlLocale } from '@tcrn/shared';
 import { Send, Sparkles } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
-
-import type { SupportedUiLocale } from '@tcrn/shared';
 
 import {
   type PublicMarshmallowConfigResponse,
@@ -172,6 +171,7 @@ export function PublicMarshmallowScreen({
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [turnstileResetSignal, setTurnstileResetSignal] = useState(0);
   const messageFeedFailedRef = useRef(copy.publicMarshmallow.messageFeedFailed);
+  const documentLocale = toIntlLocale(locale);
 
   useEffect(() => {
     setFingerprint(readOrCreateFingerprint(path));
@@ -180,6 +180,15 @@ export function PublicMarshmallowScreen({
   useEffect(() => {
     messageFeedFailedRef.current = copy.publicMarshmallow.messageFeedFailed;
   }, [copy.publicMarshmallow.messageFeedFailed]);
+
+  useEffect(() => {
+    const previousLang = document.documentElement.lang;
+    document.documentElement.lang = documentLocale;
+
+    return () => {
+      document.documentElement.lang = previousLang;
+    };
+  }, [documentLocale]);
 
   useEffect(() => {
     let cancelled = false;
@@ -439,6 +448,15 @@ export function PublicMarshmallowScreen({
             isUnavailable
               ? copy.publicMarshmallow.unavailableDescription
               : error || copy.publicMarshmallow.failedDescription
+          }
+          actions={
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="inline-flex items-center justify-center rounded-md border border-rose-200 bg-white/80 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-rose-300 hover:bg-white focus:ring-2 focus:ring-rose-200 focus:outline-none motion-reduce:transition-none"
+            >
+              {copy.publicMarshmallow.retryAction}
+            </button>
           }
         />
       </PublicPresenceShell>
