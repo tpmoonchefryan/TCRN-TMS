@@ -3,7 +3,7 @@
 import { Sparkles } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
-import { DEFAULT_THEME, type ThemeConfig } from '@tcrn/shared';
+import { DEFAULT_THEME, type ThemeConfig, toIntlLocale } from '@tcrn/shared';
 
 import {
   type PublicHomepageResponse,
@@ -43,6 +43,8 @@ export function PublicHomepageScreen({
   const [error, setError] = useState<string | null>(null);
   const [isUnavailable, setIsUnavailable] = useState(false);
 
+  const documentLocale = toIntlLocale(data?.metadata.locale ?? 'en');
+
   useEffect(() => {
     let cancelled = false;
 
@@ -81,6 +83,15 @@ export function PublicHomepageScreen({
       cancelled = true;
     };
   }, [path]);
+
+  useEffect(() => {
+    const previousLang = document.documentElement.lang;
+    document.documentElement.lang = documentLocale;
+
+    return () => {
+      document.documentElement.lang = previousLang;
+    };
+  }, [documentLocale]);
 
   const pageTheme: ThemeConfig = data?.appearance.theme || DEFAULT_THEME;
   const canvasStyle = useMemo(() => getHomepageCanvasStyle(pageTheme), [pageTheme]);

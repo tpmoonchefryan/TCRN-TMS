@@ -32,6 +32,7 @@ describe('PublicHomepageScreen', () => {
   beforeEach(() => {
     mockFetch.mockReset();
     vi.stubGlobal('fetch', mockFetch);
+    document.documentElement.lang = 'zh-Hans';
     Object.defineProperty(window.navigator, 'language', {
       configurable: true,
       value: 'en-US',
@@ -39,6 +40,7 @@ describe('PublicHomepageScreen', () => {
   });
 
   afterEach(() => {
+    document.documentElement.lang = 'zh-Hans';
     vi.unstubAllGlobals();
   });
 
@@ -62,7 +64,7 @@ describe('PublicHomepageScreen', () => {
             canonicalPath: '/p/aki-home',
             ogImage: null,
             ogImageAlt: null,
-            locale: null,
+            locale: 'en',
           },
           appearance: {
             theme: {
@@ -167,11 +169,12 @@ describe('PublicHomepageScreen', () => {
       })
     );
 
-    renderWithLocale(<PublicHomepageScreen path="aki-home" />);
+    const view = renderWithLocale(<PublicHomepageScreen path="aki-home" />);
 
     expect(
       await screen.findByRole('heading', { level: 1, name: 'Aki Rosenthal' })
     ).toBeInTheDocument();
+    expect(document.documentElement.lang).toBe('en');
     expect(screen.getAllByRole('link', { name: 'YouTube' })[0]).toHaveAttribute(
       'href',
       'https://youtube.com/@aki'
@@ -190,6 +193,9 @@ describe('PublicHomepageScreen', () => {
 
     const headers = new Headers(mockFetch.mock.calls[0]?.[1]?.headers);
     expect(headers.get(BROWSER_PUBLIC_CONSUMER_HEADER)).toBe(BROWSER_PUBLIC_CONSUMER_CODE);
+
+    view.unmount();
+    expect(document.documentElement.lang).toBe('zh-Hans');
   });
 
   it('shows the unavailable state when the public homepage is not published', async () => {
@@ -209,6 +215,7 @@ describe('PublicHomepageScreen', () => {
     renderWithLocale(<PublicHomepageScreen path="missing-home" />);
 
     expect(await screen.findByText('Fan page unavailable')).toBeInTheDocument();
+    expect(document.documentElement.lang).toBe('en');
     expect(
       screen.getByText(
         'This fan page is not live yet, is not reachable right now, or has been turned off.'
@@ -238,6 +245,7 @@ describe('PublicHomepageScreen', () => {
     renderWithLocale(<PublicHomepageScreen path="missing-home" />);
 
     expect(await screen.findByText('粉丝页不可用')).toBeInTheDocument();
+    expect(document.documentElement.lang).toBe('en');
     expect(screen.getByText('当前粉丝页尚未上线、暂时不可达，或已被关闭。')).toBeInTheDocument();
   });
 });
