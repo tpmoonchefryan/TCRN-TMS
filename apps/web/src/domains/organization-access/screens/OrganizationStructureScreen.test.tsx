@@ -100,6 +100,10 @@ function getTreeCallCount() {
   ).length;
 }
 
+async function findCreateTalentDrawer() {
+  return screen.findByRole('dialog', { name: 'Create tenant-root talent' });
+}
+
 describe('OrganizationStructureScreen', () => {
   beforeEach(() => {
     localeState.locale = 'en';
@@ -172,23 +176,26 @@ describe('OrganizationStructureScreen', () => {
 
     expect(await screen.findByRole('heading', { name: 'Tenant Alpha' })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Create talent' }));
+    const createDrawer = await findCreateTalentDrawer();
 
     await waitFor(() => {
-      expect((screen.getByLabelText('Profile store') as HTMLSelectElement).value).toBe('store-1');
+      expect((within(createDrawer).getByLabelText('Profile store') as HTMLSelectElement).value).toBe(
+        'store-1'
+      );
     });
-    expect((screen.getByLabelText('Artist stage') as HTMLSelectElement).value).toBe('');
+    expect((within(createDrawer).getByLabelText('Artist stage') as HTMLSelectElement).value).toBe('');
 
-    fireEvent.change(screen.getByLabelText('Talent code'), {
+    fireEvent.change(within(createDrawer).getByLabelText('Talent code'), {
       target: { value: 'mio' },
     });
-    fireEvent.change(screen.getByLabelText('Display name'), {
+    fireEvent.change(within(createDrawer).getByLabelText('Display name'), {
       target: { value: 'Mio' },
     });
-    fireEvent.change(screen.getByLabelText('Legal / English name'), {
+    fireEvent.change(within(createDrawer).getByLabelText('Legal / English name'), {
       target: { value: 'Ookami Mio' },
     });
 
-    fireEvent.click(screen.getAllByRole('button', { name: 'Create talent' })[1]);
+    fireEvent.click(within(createDrawer).getByRole('button', { name: 'Create talent' }));
 
     expect(
       await screen.findByText('Select an artist stage before creating a talent.')
@@ -558,25 +565,28 @@ describe('OrganizationStructureScreen', () => {
     expect(screen.queryByLabelText('Talent code')).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Create talent' }));
+    const createDrawer = await findCreateTalentDrawer();
 
     await waitFor(() => {
-      expect((screen.getByLabelText('Profile store') as HTMLSelectElement).value).toBe('store-1');
+      expect((within(createDrawer).getByLabelText('Profile store') as HTMLSelectElement).value).toBe(
+        'store-1'
+      );
     });
 
-    fireEvent.change(screen.getByLabelText('Talent code'), {
+    fireEvent.change(within(createDrawer).getByLabelText('Talent code'), {
       target: { value: 'mio' },
     });
-    fireEvent.change(screen.getByLabelText('Display name'), {
+    fireEvent.change(within(createDrawer).getByLabelText('Display name'), {
       target: { value: 'Mio' },
     });
-    fireEvent.change(screen.getByLabelText('Legal / English name'), {
+    fireEvent.change(within(createDrawer).getByLabelText('Legal / English name'), {
       target: { value: 'Ookami Mio' },
     });
-    fireEvent.change(screen.getByLabelText('Artist stage'), {
+    fireEvent.change(within(createDrawer).getByLabelText('Artist stage'), {
       target: { value: 'stage-draft' },
     });
 
-    fireEvent.click(screen.getAllByRole('button', { name: 'Create talent' })[1]);
+    fireEvent.click(within(createDrawer).getByRole('button', { name: 'Create talent' }));
 
     await waitFor(() => {
       expect(createPayload).toEqual({
@@ -671,25 +681,28 @@ describe('OrganizationStructureScreen', () => {
     expect(await screen.findByRole('heading', { name: 'Tenant Alpha' })).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Create talent' }));
+    const createDrawer = await findCreateTalentDrawer();
 
     await waitFor(() => {
-      expect((screen.getByLabelText('Profile store') as HTMLSelectElement).value).toBe('store-1');
+      expect((within(createDrawer).getByLabelText('Profile store') as HTMLSelectElement).value).toBe(
+        'store-1'
+      );
     });
 
-    fireEvent.change(screen.getByLabelText('Talent code'), {
+    fireEvent.change(within(createDrawer).getByLabelText('Talent code'), {
       target: { value: 'suzu' },
     });
-    fireEvent.change(screen.getByLabelText('Display name'), {
+    fireEvent.change(within(createDrawer).getByLabelText('Display name'), {
       target: { value: 'Suzu' },
     });
-    fireEvent.change(screen.getByLabelText('Legal / English name'), {
+    fireEvent.change(within(createDrawer).getByLabelText('Legal / English name'), {
       target: { value: 'Suzu' },
     });
-    fireEvent.change(screen.getByLabelText('Artist stage'), {
+    fireEvent.change(within(createDrawer).getByLabelText('Artist stage'), {
       target: { value: 'stage-draft' },
     });
 
-    fireEvent.click(screen.getAllByRole('button', { name: 'Create talent' })[1]);
+    fireEvent.click(within(createDrawer).getByRole('button', { name: 'Create talent' }));
 
     await waitFor(() => {
       expect(treeCalls).toBe(2);
@@ -743,13 +756,14 @@ describe('OrganizationStructureScreen', () => {
     expect(await screen.findByRole('heading', { name: 'Tenant Alpha' })).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Create talent' }));
+    const createDrawer = await findCreateTalentDrawer();
 
     expect(
       await screen.findByText(
         'No active artist stages are available yet. Add one in tenant settings before creating a talent.'
       )
     ).toBeInTheDocument();
-    expect(screen.getAllByRole('button', { name: 'Create talent' })[1]).toBeDisabled();
+    expect(within(createDrawer).getByRole('button', { name: 'Create talent' })).toBeDisabled();
   });
 
   it('can disable and re-enable a talent when inactive workspaces are shown', async () => {

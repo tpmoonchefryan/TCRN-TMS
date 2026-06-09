@@ -535,7 +535,6 @@ describe('SystemDictionaryScreen', () => {
     fireEvent.change(screen.getByLabelText('Dictionary item English name'), {
       target: { value: 'Inactive customer' },
     });
-    fireEvent.click(screen.getByRole('button', { name: /Membership Level/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Create item' }));
 
     await waitFor(() => {

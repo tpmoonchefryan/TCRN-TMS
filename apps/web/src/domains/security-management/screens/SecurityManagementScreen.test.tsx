@@ -354,6 +354,40 @@ describe('SecurityManagementScreen', () => {
   it('tests the current blocklist draft with the real payload contract and guards missing inputs', async () => {
     searchQuery = 'tab=blocklist&scopeType=tenant';
 
+    const savedBlocklistEntry = {
+      id: 'entry-1',
+      ownerType: 'tenant',
+      ownerId: null,
+      pattern: 'badword',
+      patternType: 'keyword',
+      name: localizedFixture('Profanity rule'),
+      description: null,
+      category: 'profanity',
+      severity: 'high',
+      action: 'reject',
+      replacement: '***',
+      scope: ['marshmallow'],
+      scopeSummary: {
+        tokens: ['marshmallow'],
+        structuredScope: {
+          entries: [{ category: 'surface', value: 'marshmallow' }],
+        },
+        unsupported: [],
+      },
+      inherit: true,
+      sortOrder: 0,
+      isActive: true,
+      isForceUse: false,
+      isSystem: false,
+      matchCount: 0,
+      lastMatchedAt: null,
+      createdAt: '2026-04-20T10:00:00.000Z',
+      createdBy: 'user-1',
+      updatedAt: '2026-04-20T10:00:00.000Z',
+      updatedBy: 'user-1',
+      version: 1,
+    };
+
     mockRequest.mockImplementation(async (path: string, init?: RequestInit) => {
       if (path === '/api/v1/organization/tree?includeInactive=true') {
         return organizationTreeResponse;
@@ -361,9 +395,13 @@ describe('SecurityManagementScreen', () => {
 
       if (path.startsWith('/api/v1/blocklist-entries?')) {
         return {
-          items: [],
-          meta: { total: 0 },
+          items: [savedBlocklistEntry],
+          meta: { total: 1 },
         };
+      }
+
+      if (path === '/api/v1/blocklist-entries/entry-1') {
+        return savedBlocklistEntry;
       }
 
       if (path === '/api/v1/blocklist-entries/test' && init?.method === 'POST') {
@@ -449,10 +487,6 @@ describe('SecurityManagementScreen', () => {
     render(<SecurityManagementScreen tenantId="tenant-1" />);
 
     await screen.findByRole('heading', { name: 'Security' });
-    fireEvent.click(screen.getByRole('button', { name: 'Add rule' }));
-
-    const ruleDrawer = await screen.findByRole('dialog', { name: 'Create Blocklist Rule' });
-
     fireEvent.click(screen.getByRole('button', { name: 'Test rule' }));
     expect(await screen.findByText('Enter a pattern before testing the rule.')).toBeInTheDocument();
     expect(mockRequest).not.toHaveBeenCalledWith(
@@ -460,9 +494,14 @@ describe('SecurityManagementScreen', () => {
       expect.anything()
     );
 
-    fireEvent.change(within(ruleDrawer).getByLabelText('Pattern'), {
-      target: { value: 'badword' },
+    expect(await screen.findByText('Profanity rule')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
+    const ruleDrawer = await screen.findByRole('dialog', { name: 'Update Blocklist Rule' });
+    fireEvent.click(within(ruleDrawer).getByRole('button', { name: 'Close blocklist rule drawer' }));
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'Update Blocklist Rule' })).not.toBeInTheDocument();
     });
+
     fireEvent.click(screen.getByRole('button', { name: 'Test rule' }));
     expect(
       await screen.findByText('Enter sample text before testing the rule.')
@@ -898,11 +937,15 @@ describe('SecurityManagementScreen', () => {
       await screen.findByRole('dialog', { name: 'Create Blocklist Rule' })
     ).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('tab', { name: 'IP Access' }));
+    fireEvent.click(within(ruleDrawer).getByRole('button', { name: 'Close blocklist rule drawer' }));
     const tabGuard = await screen.findByRole('dialog', {
       name: 'Discard unsaved security changes?',
     });
     fireEvent.click(within(tabGuard).getByRole('button', { name: 'Discard changes' }));
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'Create Blocklist Rule' })).not.toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByRole('tab', { name: 'IP Access' }));
 
     expect(await screen.findByRole('button', { name: 'Add IP rule' })).toBeInTheDocument();
     expect(screen.queryByRole('dialog', { name: 'Create Blocklist Rule' })).not.toBeInTheDocument();

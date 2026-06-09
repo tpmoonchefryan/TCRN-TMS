@@ -271,6 +271,8 @@ async function openAdapterSecrets(
     'aria-selected',
     'true'
   );
+
+  return drawer;
 }
 
 HTMLDialogElement.prototype.showModal = vi.fn(function mockShowModal(this: HTMLDialogElement) {
@@ -865,7 +867,8 @@ describe('IntegrationManagementScreen', () => {
     expect(screen.queryByRole('button', { name: 'Generate key' })).not.toBeInTheDocument();
 
     await openRowAction(user, 'CRM_SYNC', 'Open');
-    expect(await screen.findByRole('dialog', { name: 'API Client Detail' })).toBeInTheDocument();
+    const apiClientDrawer = await screen.findByRole('dialog', { name: 'API Client Detail' });
+    expect(apiClientDrawer).toBeInTheDocument();
 
     await user.click(await screen.findByRole('button', { name: 'Generate key' }));
     expect(await screen.findByText('Generate API key for CRM_SYNC?')).toBeInTheDocument();
@@ -891,6 +894,12 @@ describe('IntegrationManagementScreen', () => {
     );
     expect(await screen.findByText('tcrn_pk_live_secret_value')).toBeInTheDocument();
 
+    await user.click(
+      within(apiClientDrawer).getByRole('button', { name: 'Close API client detail drawer' })
+    );
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'API Client Detail' })).not.toBeInTheDocument();
+    });
     await user.click(screen.getByRole('tab', { name: 'Email' }));
 
     expect(mockReplace).toHaveBeenCalledWith('/ac/tenant-ac/integration-management?tab=email');
@@ -1589,7 +1598,7 @@ describe('IntegrationManagementScreen', () => {
     expect(screen.queryByRole('button', { name: 'New template' })).not.toBeInTheDocument();
   });
 
-  it('guards dirty adapter metadata before switching adapter rows', async () => {
+  it('guards dirty adapter metadata before closing and opening another adapter row', async () => {
     const user = userEvent.setup();
 
     mockRequest.mockImplementation(async (path: string) => {
@@ -1722,25 +1731,35 @@ describe('IntegrationManagementScreen', () => {
     await user.clear(adapterNameInput);
     await user.type(adapterNameInput, 'Changed PII Relay');
 
-    await user.click((await screen.findAllByRole('button', { name: /Tokyo Branch/i }))[0]);
+    await user.click(
+      within(drawer).getByRole('button', { name: 'Close adapter configure drawer' })
+    );
     expect(
       await screen.findByRole('dialog', { name: 'Discard unsaved changes?' })
     ).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Keep editing' }));
+    await user.click(
+      within(screen.getByRole('dialog', { name: 'Discard unsaved changes?' })).getByRole('button', {
+        name: 'Keep editing',
+      })
+    );
     expect(screen.getByDisplayValue('Changed PII Relay')).toBeInTheDocument();
+
+    await user.click(
+      within(drawer).getByRole('button', { name: 'Close adapter configure drawer' })
+    );
+    await user.click(
+      within(await screen.findByRole('dialog', { name: 'Discard unsaved changes?' })).getByRole(
+        'button',
+        { name: 'Discard changes' }
+      )
+    );
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'Configure Adapter' })).not.toBeInTheDocument();
+    });
 
     const chatRow = screen.getByText('CHAT_EXPORT').closest('tr');
     expect(chatRow).not.toBeNull();
     await user.click(within(chatRow as HTMLTableRowElement).getByRole('button', { name: 'Open' }));
-
-    expect(
-      await screen.findByRole('dialog', { name: 'Discard unsaved changes?' })
-    ).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Keep editing' }));
-    expect(screen.getByDisplayValue('Changed PII Relay')).toBeInTheDocument();
-
-    await user.click(within(chatRow as HTMLTableRowElement).getByRole('button', { name: 'Open' }));
-    await user.click(await screen.findByRole('button', { name: 'Discard changes' }));
 
     expect(await screen.findByDisplayValue('Chat Relay')).toBeInTheDocument();
   });
@@ -1863,34 +1882,59 @@ describe('IntegrationManagementScreen', () => {
     expect(await screen.findByText('TCRN_PII_PLATFORM')).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'Adapter Profile' })).not.toBeInTheDocument();
 
-    await openAdapterSecrets(user);
+    const readOnlySecretDrawer = await openAdapterSecrets(user);
     expect(await screen.findByDisplayValue('******')).toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: 'Reveal' }));
+    await user.click(within(readOnlySecretDrawer).getByRole('button', { name: 'Reveal' }));
     expect(await screen.findByDisplayValue('revealed-secret-value')).toBeInTheDocument();
 
-    await user.click(screen.getByRole('tab', { name: 'Webhooks' }));
-    expect(await screen.findByText('Webhook Endpoints')).toBeInTheDocument();
+    await user.click(
+      within(readOnlySecretDrawer).getByRole('button', { name: 'Close adapter configure drawer' })
+    );
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'Configure Adapter' })).not.toBeInTheDocument();
+    });
     expect(
       screen.queryByRole('dialog', { name: 'Discard unsaved changes?' })
     ).not.toBeInTheDocument();
+    await user.click(screen.getByRole('tab', { name: 'Webhooks' }));
+    expect(await screen.findByText('Webhook Endpoints')).toBeInTheDocument();
 
     await user.click(screen.getByRole('tab', { name: 'Adapters' }));
-    await openAdapterSecrets(user);
+    const dirtySecretDrawer = await openAdapterSecrets(user);
 
-    const baseUrlInput = await screen.findByDisplayValue('https://old.example.com');
+    const baseUrlInput = await within(dirtySecretDrawer).findByDisplayValue(
+      'https://old.example.com'
+    );
     await user.clear(baseUrlInput);
     await user.type(baseUrlInput, 'https://new.example.com');
 
-    await user.click(screen.getByRole('tab', { name: 'Webhooks' }));
+    await user.click(
+      within(dirtySecretDrawer).getByRole('button', { name: 'Close adapter configure drawer' })
+    );
     expect(
       await screen.findByRole('dialog', { name: 'Discard unsaved changes?' })
     ).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Keep editing' }));
+    await user.click(
+      within(screen.getByRole('dialog', { name: 'Discard unsaved changes?' })).getByRole('button', {
+        name: 'Keep editing',
+      })
+    );
     expect(screen.getByDisplayValue('https://new.example.com')).toBeInTheDocument();
 
+    await user.click(
+      within(dirtySecretDrawer).getByRole('button', { name: 'Close adapter configure drawer' })
+    );
+    await user.click(
+      within(await screen.findByRole('dialog', { name: 'Discard unsaved changes?' })).getByRole(
+        'button',
+        { name: 'Discard changes' }
+      )
+    );
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'Configure Adapter' })).not.toBeInTheDocument();
+    });
     await user.click(screen.getByRole('tab', { name: 'Webhooks' }));
-    await user.click(await screen.findByRole('button', { name: 'Discard changes' }));
     expect(await screen.findByText('Webhook Endpoints')).toBeInTheDocument();
   }, 10_000);
 
