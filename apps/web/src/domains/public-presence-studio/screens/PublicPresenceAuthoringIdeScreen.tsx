@@ -3799,7 +3799,7 @@ export function PublicPresenceAuthoringIdeScreen({
 
         <div className={`relative grid min-h-[calc(100vh-4.75rem)] gap-2 ${ideGridClass}`}>
           <PublicPresenceSurface
-            className="md:backdrop-blur-0 !fixed bottom-4 left-1/2 z-30 flex -translate-x-1/2 flex-row items-center gap-2 rounded-full border border-slate-200/90 bg-white/97 px-2 py-2 shadow-lg backdrop-blur md:!static md:bottom-auto md:left-auto md:z-auto md:h-full md:translate-x-0 md:flex-col md:rounded-[2rem] md:border-transparent md:bg-white md:px-1 md:py-2 md:shadow-none"
+            className="flex w-full max-w-full flex-row items-center gap-2 self-start overflow-x-auto rounded-2xl border border-slate-200/90 bg-white/97 px-2 py-2 shadow-sm md:h-full md:w-auto md:flex-col md:overflow-visible md:rounded-[2rem] md:border-transparent md:bg-white md:px-1 md:py-2 md:shadow-none"
             data-overlay-scope="true"
             data-testid="ide-file-rail"
             variant="inset"

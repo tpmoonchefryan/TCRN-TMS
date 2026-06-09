@@ -61,6 +61,9 @@ describe('TalentBusinessAccessGate', () => {
     );
 
     expect(screen.getByText('Checking talent availability')).toBeInTheDocument();
+    expect(screen.getByRole('main')).toContainElement(
+      screen.getByText('Checking talent availability')
+    );
 
     expect(await screen.findByText('Published workspace content')).toBeInTheDocument();
     expect(mockReadTalentDetail).toHaveBeenCalledWith(mockRequest, 'talent-1');
@@ -79,6 +82,7 @@ describe('TalentBusinessAccessGate', () => {
     );
 
     expect(await screen.findByText('Talent not published')).toBeInTheDocument();
+    expect(screen.getByRole('main')).toContainElement(screen.getByText('Talent not published'));
     expect(
       screen.getByText(
         'Draft talents stay in organization structure until they are published. Business pages remain unavailable.'
@@ -120,6 +124,7 @@ describe('TalentBusinessAccessGate', () => {
     );
 
     expect(await screen.findByText('Talent disabled')).toBeInTheDocument();
+    expect(screen.getByRole('main')).toContainElement(screen.getByText('Talent disabled'));
     expect(
       screen.getByText(
         'Disabled talents stay out of business pages until someone re-enables them in organization structure.'
@@ -144,6 +149,7 @@ describe('TalentBusinessAccessGate', () => {
     );
 
     expect(await screen.findByText('Talent unavailable')).toBeInTheDocument();
+    expect(screen.getByRole('main')).toContainElement(screen.getByText('Talent unavailable'));
     expect(screen.getByText('Talent detail lookup failed.')).toBeInTheDocument();
     await waitFor(() => {
       expect(screen.queryByText('Hidden workspace content')).not.toBeInTheDocument();
@@ -172,6 +178,9 @@ describe('TalentBusinessAccessGate', () => {
     );
 
     expect(screen.getByText('Checking talent availability')).toBeInTheDocument();
+    expect(screen.getByRole('main')).toContainElement(
+      screen.getByText('Checking talent availability')
+    );
 
     expect(await screen.findByText('Recovered workspace content')).toBeInTheDocument();
     expect(mockRecoverSession).toHaveBeenCalledWith({

@@ -30,6 +30,12 @@ function getErrorMessage(reason: unknown, fallback: string) {
   return reason instanceof ApiRequestError ? reason.message : fallback;
 }
 
+function renderGateFallback(content: React.ReactNode) {
+  return (
+    <main className="min-h-screen px-5 py-8 sm:px-6 sm:py-10 lg:px-10 lg:py-14">{content}</main>
+  );
+}
+
 export function TalentBusinessAccessGate({
   allowDraft = false,
   tenantId,
@@ -136,7 +142,7 @@ export function TalentBusinessAccessGate({
   }, [hasAttemptedRecovery, request, locale, status, talentId]);
 
   if (state.loading) {
-    return (
+    return renderGateFallback(
       <StateView
         status="unavailable"
         title={pickLocaleText(locale, {
@@ -160,7 +166,7 @@ export function TalentBusinessAccessGate({
   }
 
   if (state.error || !state.detail) {
-    return (
+    return renderGateFallback(
       <StateView
         status="error"
         title={pickLocaleText(locale, {
@@ -230,7 +236,7 @@ export function TalentBusinessAccessGate({
           fr: 'Les talents désactivés restent hors des pages métier jusqu’à leur réactivation dans la structure d’organisation.',
         });
 
-  return (
+  return renderGateFallback(
     <StateView
       status="denied"
       title={title}

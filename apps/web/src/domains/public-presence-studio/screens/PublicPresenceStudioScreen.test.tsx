@@ -607,6 +607,38 @@ describe('PublicPresenceStudioScreen', () => {
     });
   });
 
+  it('retains reviewed entry-focus and preview query state while syncing the Studio URL', async () => {
+    currentSearch = 'templateId=activeTalentHub&focus=release&phase=current&previewFocus=true';
+
+    mockRequest.mockImplementation(async (path: string) => {
+      if (isWorkspaceRequest(path)) {
+        return buildWorkspace();
+      }
+
+      if (isPreviewRequest(path)) {
+        return buildPreview();
+      }
+
+      throw new Error(`Unhandled request: ${path}`);
+    });
+
+    render(<PublicPresenceStudioScreen tenantId="tenant-1" talentId="talent-1" />);
+
+    await screen.findByTestId('canvas-stage', {}, { timeout: STUDIO_RENDER_TIMEOUT });
+    await waitFor(() => {
+      const syncedParams = new URLSearchParams(currentSearch);
+
+      expect(syncedParams.get('templateId')).toBe('activeTalentHub');
+      expect(syncedParams.get('focus')).toBe('release');
+      expect(syncedParams.get('phase')).toBe('current');
+      expect(syncedParams.get('previewFocus')).toBe('true');
+    });
+    expect(screen.getAllByRole('button', { name: 'Preview focus' })[0]).toHaveAttribute(
+      'aria-pressed',
+      'true'
+    );
+  });
+
   it('exposes desktop drawer semantics and initial focus for workbench panels', async () => {
     Object.defineProperty(window, 'innerWidth', {
       configurable: true,

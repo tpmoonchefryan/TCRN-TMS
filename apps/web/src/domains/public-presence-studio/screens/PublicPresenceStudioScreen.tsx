@@ -123,6 +123,11 @@ type PendingStagePanelState = StagePanelState | 'closed';
 type StudioEntryFocus = 'countdown' | 'overview' | 'release';
 
 const STUDIO_VIEWPORT_QUERY_VALUES = ['desktop', 'mobile'] as const;
+const STUDIO_ENTRY_FOCUS_QUERY_VALUES = [
+  'countdown',
+  'overview',
+  'release',
+] as const satisfies readonly StudioEntryFocus[];
 const LEFT_DRAWER_QUERY_VALUES = ['sections', 'release', 'persona'] as const;
 const MOBILE_SHEET_QUERY_VALUES = ['manage', 'preview-tools'] as const;
 const STAGE_PANEL_MODE_QUERY_VALUES = ['configure', 'edit', 'inspect'] as const;
@@ -1253,14 +1258,19 @@ function PublicPresenceStudioScreenInner({
   const rightDrawerId = useId();
 
   const queryState = useMemo(() => {
+    const previewFocusQueryValue = searchParams.get('previewFocus');
+    const entryFocusValue = parseEnumSearchParam(
+      searchParams.get('focus'),
+      STUDIO_ENTRY_FOCUS_QUERY_VALUES
+    );
     const previewViewportValue =
       parseEnumSearchParam(searchParams.get('viewport'), STUDIO_VIEWPORT_QUERY_VALUES) ?? 'desktop';
-    const previewPhaseValue =
-      parseEnumSearchParam(searchParams.get('phase'), [
-        'current',
-        ...PUBLIC_PRESENCE_PREVIEW_PHASES,
-      ] as const) ?? 'current';
-    const previewFocusValue = parseBooleanSearchParam(searchParams.get('previewFocus')) ?? false;
+    const parsedPreviewPhaseValue = parseEnumSearchParam(searchParams.get('phase'), [
+      'current',
+      ...PUBLIC_PRESENCE_PREVIEW_PHASES,
+    ] as const);
+    const previewPhaseValue = parsedPreviewPhaseValue ?? 'current';
+    const previewFocusValue = parseBooleanSearchParam(previewFocusQueryValue) ?? false;
     const leftDrawerValue = parseEnumSearchParam(
       searchParams.get('leftPanel'),
       LEFT_DRAWER_QUERY_VALUES
@@ -1272,6 +1282,7 @@ function PublicPresenceStudioScreenInner({
     const stagePanelValue = parseStagePanelSearchParam(searchParams.get('stagePanel'));
 
     return {
+      entryFocus: entryFocusValue,
       hasExplicitWorkbenchState: [
         'viewport',
         'previewFocus',
@@ -1280,10 +1291,12 @@ function PublicPresenceStudioScreenInner({
         'stagePanel',
         'sheet',
       ].some((key) => searchParams.has(key)),
+      hasPhaseQuery: parsedPreviewPhaseValue !== null,
       hasLeftPanelQuery: searchParams.has('leftPanel'),
       leftDrawerMode: leftDrawerValue,
       mobileSheet: mobileSheetValue,
       previewFocus: previewFocusValue,
+      previewFocusQueryValue: previewFocusValue ? previewFocusQueryValue : null,
       previewPhase: previewPhaseValue,
       previewViewport: previewViewportValue,
       stagePanel: stagePanelValue,
@@ -4314,10 +4327,10 @@ function PublicPresenceStudioScreenInner({
       leftDrawerOpen && (isDesktopWorkbench || !effectiveStagePanel) ? leftDrawerMode : null;
 
     const nextSearch = mergeUrlSearchParams(searchParams, {
-      focus: null,
+      focus: queryState.entryFocus,
       leftPanel: syncedLeftPanel,
-      phase: previewPhase === 'current' ? null : previewPhase,
-      previewFocus: previewFocus ? '1' : null,
+      phase: previewPhase === 'current' && !queryState.hasPhaseQuery ? null : previewPhase,
+      previewFocus: previewFocus ? (queryState.previewFocusQueryValue ?? '1') : null,
       sheet: mobileManageOpen ? 'manage' : mobilePreviewToolsOpen ? 'preview-tools' : null,
       stagePanel: serializeStagePanelSearchParam(effectiveStagePanel),
       templateId: persistTemplateQuery ? selectedTemplateId : null,
@@ -4343,6 +4356,9 @@ function PublicPresenceStudioScreenInner({
     previewFocus,
     previewPhase,
     previewViewport,
+    queryState.entryFocus,
+    queryState.hasPhaseQuery,
+    queryState.previewFocusQueryValue,
     router,
     searchKey,
     searchParams,

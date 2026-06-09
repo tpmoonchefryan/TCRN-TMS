@@ -416,6 +416,8 @@ describe('PublicPresenceAuthoringIdeScreen', () => {
     expect(screen.getAllByText('Template IDE')[0]).toBeInTheDocument();
     expect(screen.getByTestId('ide-topbar')).toBeInTheDocument();
     expect(screen.getByTestId('ide-mobile-actions-button')).toBeInTheDocument();
+    expect(screen.getByTestId('ide-file-rail').className).not.toMatch(/(?:^|\s)!?fixed(?:\s|$)/);
+    expect(screen.getByTestId('ide-file-rail').className).not.toContain('bottom-4');
     expect(screen.getByTestId('monaco-editor-host')).toBeInTheDocument();
     expect(screen.getByTestId('monaco-editor-stub')).toBeInTheDocument();
     fireEvent.click(screen.getAllByRole('button', { name: 'Files' })[0]);
