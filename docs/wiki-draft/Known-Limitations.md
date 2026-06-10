@@ -4,6 +4,16 @@ Validation baseline: 2026-06-05.
 
 This page keeps limitation visibility high so guide and wiki wording does not overclaim current product behavior.
 
+## How To Use This Page
+
+Use this page as a routing aid, not as a workaround catalog. Each limitation means one of three things:
+
+- the feature is visible but not proven as a complete customer workflow;
+- the feature is intentionally excluded from clean docs until a security, permission, accessibility, or runtime proof exists;
+- the owner has accepted a known limitation and the guide must describe the impact honestly.
+
+When a limitation is later resolved, update the linked guide/wiki section with Best Practice, a realistic scenario, and proof-backed operating steps. Until then, keep the clean claim out of customer-facing procedures.
+
 ## Blocker-Level Limitation
 
 - `GAP-P2-PUBLIC-VISITOR-002`: Public Marshmallow visitor submission and related visitor workflows are not accepted as available procedures.

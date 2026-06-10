@@ -18,6 +18,20 @@ Use current visible state only. Do not claim that editor, preview, Studio, or qu
 
 Public pages are visitor-facing and can include talent profile content, short links, and Marshmallow entry points. During the current audit, public Marshmallow visitor submission and related visitor workflows were not accepted as available procedures because an error/unavailable state remained open.
 
+## Best Practice
+
+Separate authoring, preview, and public output:
+
+1. Author content in the private talent or public-presence workspace.
+2. Use preview to review layout and editorial intent, but do not treat preview as public proof.
+3. Verify public visitor routes separately when a page is intended for fans or external audiences.
+4. Keep media and locale expectations explicit; public output can differ from internal editor state.
+5. Do not document Marshmallow submission or reaction workflows as accepted until the blocker-level visitor limitation is resolved.
+
+## Example Scenario
+
+A talent manager is preparing a homepage before a tour announcement. They should update content in the private authoring surface, review preview state, then verify the public route separately. If Marshmallow questions are part of the campaign, the guide should still mark public submission as limited until the visitor submission proof is accepted.
+
 ## Marshmallow
 
 The product has Marshmallow concepts such as anonymous questions, moderation, captcha, reactions, and export. The current guide must not describe public submission, captcha, feed, load-more, reaction, recovery, moderation, config, or export procedures as accepted workflows until the relevant gaps are fixed or re-dispositioned.
@@ -30,4 +44,3 @@ The product has Marshmallow concepts such as anonymous questions, moderation, ca
 - Marshmallow moderation/config/export procedures are excluded until API/unavailable states are fixed or dispositioned.
 
 Related gap IDs: `GAP-P2-PUBLIC-VISITOR-002`, `GAP-P2-PUBLIC-PRESENCE-001`, `GAP-P2-PUBLIC-PRESENCE-002`, `GAP-P2-PUBLIC-PRESENCE-003`.
-

@@ -14,6 +14,20 @@ Observability pages can show logs, metrics, status, and diagnostic views. Curren
 
 System Dictionary surfaces can be operationally sensitive. This guide does not promote destructive or maintenance procedures until bounded proof and owner disposition exist.
 
+## Best Practice
+
+Use operations pages for diagnosis and controlled change:
+
+1. Start with observability to understand whether an issue is isolated or platform-wide.
+2. Use runtime flags only when the intended behavior, rollback path, and affected scope are clear.
+3. Treat System Dictionary changes as governed configuration, not casual content editing.
+4. Capture sanitized evidence for incidents; do not store secrets, raw tokens, or customer-sensitive payloads in documentation.
+5. After a change, recheck the affected tenant, talent, or public route rather than assuming global success.
+
+## Example Scenario
+
+If public pages become unavailable after a release, first use observability to determine whether failures are route-specific, tenant-specific, or platform-wide. Runtime flags may be relevant only when the incident owner confirms the affected feature and rollback path. Do not edit System Dictionary entries as a workaround unless the dictionary row is clearly the source of the issue and bounded proof exists.
+
 ## Current Limitations
 
 - Observability and Runtime Flags are not accepted as clean while hidden 403 or unavailable states remain.
@@ -21,4 +35,3 @@ System Dictionary surfaces can be operationally sensitive. This guide does not p
 - Operational pages should not be documented as stable if route-specific hidden failures remain open.
 
 Related gap IDs: `GAP-P2-AC-OPS-001`, `GAP-P2-AC-OPS-003`.
-

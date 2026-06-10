@@ -17,3 +17,8 @@ The detailed guide is maintained in the repository:
 
 Use [Known Limitations](./Known-Limitations.md) before converting any current-state note into an operating procedure.
 
+## Best-Practice Use
+
+Start from the user's job, not from the menu label. For example, a tenant administrator preparing a talent campaign should read Getting Started to confirm scope, Talent Workspace to understand customer/report context, and Public Presence to understand the authoring-to-public-output boundary.
+
+If the task involves credentials, role changes, public publishing, exports, or destructive operations, verify the limitation status before treating the workflow as accepted.

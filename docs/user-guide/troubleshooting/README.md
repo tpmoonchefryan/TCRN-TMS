@@ -2,6 +2,16 @@
 
 This chapter maps common current-state failures to operator-safe responses.
 
+## Triage Pattern
+
+Use this order before escalating:
+
+1. Identify the active scope: AC, tenant, subsidiary, talent, or public visitor.
+2. Identify the action type: read, configure, publish, export, credential/security, or destructive.
+3. Check whether the guide marks the feature as clean, blocker-aware, or excluded.
+4. Capture route, viewport, user, workspace, and sanitized error state.
+5. Continue with other feature checks if this issue blocks only one workflow.
+
 ## Hidden 403 Or Denied State
 
 Symptom: a page appears navigable but internal content or API-backed data is denied.
@@ -51,3 +61,6 @@ Response:
 - Record the page as current-state only.
 - Recheck with a focused accessibility proof packet.
 
+## Example Scenario
+
+An operator can open a tenant integration route, but the table content does not load. Treat it as a possible hidden 403 or unavailable state, not as a completed integration workflow. Capture the tenant, route, viewport, and role; then check whether the same issue appears in AC integration readiness. Continue reviewing unrelated guide sections while the integration blocker is tracked.

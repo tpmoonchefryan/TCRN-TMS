@@ -29,6 +29,22 @@ Role editing should support:
 - Grant, deny, and unset states.
 - Optional advanced resource/action overrides where needed.
 
+## Best Practice
+
+Design roles around jobs, not people. Keep `INITIAL_ADMIN` as the recovery/admin baseline, then create custom roles for recurring work patterns such as tenant operator, talent manager, integration maintainer, or observability reviewer.
+
+Recommended pattern:
+
+1. Start with the narrowest scope that matches the job.
+2. Grant only the permissions needed for the role's normal workflow.
+3. Use deny deliberately when a role must never perform a sensitive action, even if another role grants it.
+4. Leave permissions unset when the role should not decide the outcome.
+5. Review assignments by user and scope before changing permission packs.
+
+## Example Scenario
+
+A tenant wants one teammate to manage customer reports for a talent but not change tenant security settings. Create or select a talent-scoped custom role for report/customer work, keep tenant security permissions unset or denied, and assign it only for the relevant talent scope. Do not use AC platform roles or tenant-wide admin roles for that day-to-day task.
+
 ## User Role Assignment
 
 User detail pages can show role assignment by scope, inheritance, and optional expiry. Current proof shows this as a grouped editor. The page may combine identity fields, scoped role assignment, inheritance controls, expiry inputs, and access information.
@@ -41,4 +57,3 @@ User detail pages can show role assignment by scope, inheritance, and optional e
 - Role deletion is disabled for audit history; use role governance procedures rather than deletion assumptions.
 
 Related gap IDs: `GAP-P2-RBAC-001`, `GAP-P2-RBAC-002`, `GAP-P2-RBAC-003`, `GAP-P2-RBAC-004`, `GAP-P2-AC-USER-MGMT-001`, `GAP-P2-FORM-001`, `GAP-P2-FORM-002`.
-

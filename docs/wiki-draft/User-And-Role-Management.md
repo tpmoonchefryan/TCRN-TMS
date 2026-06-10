@@ -8,5 +8,10 @@ TCRN TMS uses a three-state role permission model:
 
 The intended built-in recovery role is `INITIAL_ADMIN`. Day-to-day roles are user-created custom roles. Current UI proof still showed additional default role assignments in at least the AC tenant, so this baseline is recorded as a known limitation until rechecked.
 
-Detailed guide: [User and Role Management](../user-guide/user-and-role-management/README.md).
+## Best-Practice Summary
 
+Create roles around recurring jobs and the narrowest scope. Use `grant` for work the role should perform, `deny` for actions the role must never perform, and `unset` when another assigned role should decide.
+
+Example: a talent report reviewer should receive a talent-scoped custom role for reports and customers, not a tenant-wide admin role.
+
+Detailed guide: [User and Role Management](../user-guide/user-and-role-management/README.md).

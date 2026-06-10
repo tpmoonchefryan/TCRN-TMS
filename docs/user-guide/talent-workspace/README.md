@@ -18,6 +18,20 @@ Confirm the active tenant, subsidiary, and talent scope before interpreting perm
 
 Customer and report pages should be treated as current-state visible surfaces unless a focused proof run confirms the route is permission-clean for the selected tenant and talent. Current proof found a runtime error in one UAT solo customer-list path.
 
+## Best Practice
+
+Use the talent workspace for day-to-day creator operations:
+
+1. Confirm the active tenant and talent before reviewing customers or reports.
+2. Keep talent-specific customer/report work separate from tenant-wide configuration.
+3. Use talent settings only for the selected creator scope.
+4. Escalate to tenant admin when the task changes users, roles, integrations, or organization settings.
+5. Escalate to Public Presence only when the task affects public-facing output.
+
+## Example Scenario
+
+A talent manager wants to review customer engagement before deciding whether to update a public campaign page. They should start in the talent workspace, check the relevant customer/report context, then move to Public Presence only if the campaign output needs authoring. They should not request tenant-wide admin permissions for a talent-scoped review task.
+
 ## Current Limitations
 
 - Customer, report, and settings routes are not accepted as permission-clean while hidden failures remain.
@@ -25,4 +39,3 @@ Customer and report pages should be treated as current-state visible surfaces un
 - Any customer PII claim must respect the external PII platform boundary described in the README and reference chapter.
 
 Related gap IDs: `GAP-P2-TALENT-WORKSPACE-001`, `GAP-P2-TALENT-WORKSPACE-002`.
-

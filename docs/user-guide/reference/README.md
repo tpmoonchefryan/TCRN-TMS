@@ -19,6 +19,8 @@ This reference defines terms used across the guide and maps product route famili
 | Scope | Workspace, tenant, subsidiary, or talent boundary where access applies |
 | Hidden 403 | A route is visible or navigable but internal content/API access is denied |
 | Known limitation | Current-source or UI limitation that must be documented without overclaiming |
+| Clean procedure | A workflow whose product behavior, permissions, accessibility, and docs claim are all backed by accepted proof |
+| Blocker-aware procedure | A workflow that can be described only with limitation language because at least one linked proof row is still open, deferred, or owner-pending |
 
 ## Route Family Index
 
@@ -37,6 +39,17 @@ This reference defines terms used across the guide and maps product route famili
 ## Maintenance Reference
 
 Dependency maintenance remains documented separately in [`../../dependency-maintenance.md`](../../dependency-maintenance.md). That document is an engineering maintenance reference, not a user-facing product guide.
+
+## Proof Status Model
+
+Use these states when interpreting guide and wiki language:
+
+| Status | Meaning | Customer Impact |
+| --- | --- | --- |
+| Clean | The linked source/runtime proof supports the procedure. | The guide may give operational steps and Best Practice. |
+| Blocker-aware | The feature exists, but one or more proof rows remain open or deferred. | The guide may explain current behavior and safe boundaries, but should not promise complete workflow success. |
+| Owner-accepted limitation | A limitation is known and accepted for now. | The guide may describe the limitation, impact, and safe workaround if one exists. |
+| Excluded | The procedure is not customer-ready or is too sensitive without proof. | The guide should not teach the procedure as available. |
 
 ## Open Limitation Index
 
