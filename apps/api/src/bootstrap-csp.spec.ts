@@ -1,5 +1,10 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+
+vi.hoisted(() => {
+  process.env.DATABASE_URL ??= 'postgresql://tcrn:tcrn@localhost:5432/tcrn_tms';
+  process.env.JWT_SECRET ??= '12345678901234567890123456789012';
+});
 
 import { STRICT_API_CSP_DIRECTIVES, SWAGGER_CSP_DIRECTIVES } from './bootstrap';
 
