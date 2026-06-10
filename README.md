@@ -49,7 +49,7 @@ Source implementation and current UI proof take priority over older README text,
 - [Quick Start](#-quick-start)
 - [Production Deployment](#-production-deployment)
 - [Custom Domain Setup](#-custom-domain-setup)
-- [External PII Platform Integration](#-external-pii-platform-integration)
+- [External PII Platform Boundary](#-external-pii-platform-boundary)
 - [API Reference](#-api-reference)
 - [Security](#-security)
 - [License](#-license)
@@ -83,8 +83,8 @@ Source implementation and current UI proof take priority over older README text,
 Sensitive customer fields are handled through an external `TCRN_PII_PLATFORM` integration:
 
 - **Adapter-Gated Capability**: effective `integration_adapter` resolution is the only enablement truth
-- **Write-Through Only**: create/edit flows can send PII server-to-server, but TMS does not read it back
-- **Portal Retrieval**: users view PII in the external platform after SSO and permission checks
+- **Proof-Gated Write Path**: source supports adapter-gated external PII handoff, but live write-through operation needs separate environment proof
+- **Portal Boundary**: PII viewing remains on the external platform; do not document SSO or portal success as accepted TMS procedure without redacted fixture proof
 - **Archive Isolation Boundary**: `profileStoreId` remains the talent-level customer archive isolation/sharing boundary
 
 ### 🏢 Multi-Tenant Organization Structure
@@ -287,8 +287,8 @@ End-to-end type-safe validation with Zod remains active in the shared/backend la
 1. **External Browser Runtime** → **API Gateway** (NestJS) for all business operations
 2. **API** validates JWT and checks Redis permission snapshots
 3. Non-PII data stored in tenant-specific PostgreSQL schema
-4. When effective `TCRN_PII_PLATFORM` is active, customer create/edit sends PII write-through payloads with `customerId`
-5. PII viewing happens by portal redirect and SSO on the external platform; TMS does not read PII back
+4. Source supports `TCRN_PII_PLATFORM` handoff keyed by `customerId` when an effective adapter exists; live write-through success is proof-gated
+5. PII viewing remains an external-platform portal boundary; TMS does not read PII back and this README does not verify external SSO success
 6. Background jobs processed by BullMQ Workers
 7. Files stored in MinIO with presigned URL downloads
 
@@ -363,7 +363,7 @@ pnpm db:sync-schemas
 pnpm db:seed
 cd ../..
 
-# 5b. Optional: configure an external `TCRN_PII_PLATFORM` adapter in TMS
+# 5b. Optional: review the external `TCRN_PII_PLATFORM` proof boundary
 # This repository no longer starts or migrates a local standalone PII service.
 
 # 6. Start development servers
@@ -453,8 +453,8 @@ MINIO_ROOT_PASSWORD=$(openssl rand -hex 32)
 MINIO_ENDPOINT=http://minio:9000
 
 # External PII Platform
-# Configure `TCRN_PII_PLATFORM` through tenant/subsidiary/talent integration adapters.
-# No repo-owned PII runtime env is required in this repository.
+# This repo records the adapter-gated boundary only.
+# External adapter credentials, SSO, portal, and write-through proof stay outside this README.
 
 # Application
 NODE_ENV=production
@@ -611,8 +611,6 @@ If you deploy `apps/web` behind its own reverse proxy, keep that browser origin 
 - [ ] MinIO with HTTPS
 - [ ] JWT secrets generated (min 32 characters)
 - [ ] Fingerprint key configured
-- [ ] External `TCRN_PII_PLATFORM` adapter activated at the intended scope
-- [ ] External portal and SSO reachability verified
 - [ ] Email service credentials configured
 - [ ] Backup strategy implemented
 - [ ] Monitoring and alerting configured
@@ -738,7 +736,7 @@ Customer-side steps:
 
 ---
 
-## 🔒 External PII Platform Integration
+## 🔒 External PII Platform Boundary
 
 TCRN TMS no longer ships a repo-owned standalone PII runtime. Sensitive fields are handled by an externally deployed `TCRN_PII_PLATFORM`, operated as a separate project and integrated back into TMS.
 
@@ -749,23 +747,18 @@ TCRN TMS no longer ships a repo-owned standalone PII runtime. Sensitive fields a
 - TMS owns non-PII customer core data and cross-system `customerId`.
 - The external platform owns sensitive-field storage, portal viewing, and PII report generation.
 
-### Runtime Flow
+### Runtime Boundary
 
-1. Deploy and operate the external PII platform outside this repository.
-2. Configure SSO, permissions, and adapter credentials in that platform and in TMS integration settings.
-3. Activate the `TCRN_PII_PLATFORM` adapter at the tenant, subsidiary, or talent scope that should expose PII entry.
-4. Customer create/edit in TMS shows the PII section only when the adapter is effective, then sends overwrite-style write-through payloads keyed by `customerId`.
-5. Customer viewing uses the `Retrieve PII Data` portal redirect flow; TMS does not read PII back into its own UI.
-6. PII report requests hand off `customerId[] + request metadata` to the external platform; report binaries remain on the platform side.
+1. Source supports an adapter-gated external PII handoff outside this repository.
+2. Live adapter credentials, SSO, portal access, and external permission checks are not validated by this README.
+3. Customer create/edit write-through, portal redirect, and PII report handoff are proof-gated external-platform workflows.
+4. TMS remains the non-PII customer core system and does not read external PII back into its own UI.
 
-### Operator Checklist
+### Operator Proof Boundary
 
-- [ ] External PII platform is deployed and reachable from end users
-- [ ] SSO login and permission checks work on the platform portal
-- [ ] The intended TMS scope has an active `TCRN_PII_PLATFORM` adapter
-- [ ] Customer create/edit write-through succeeds with overwrite semantics
-- [ ] `Retrieve PII Data` redirects correctly into the external portal
-- [ ] PII report generation works through platform-side handoff
+- Do not use this README as an adapter setup checklist.
+- Do not publish SSO, portal, write-through, or report-handoff procedures until a focused external-platform proof run records disposable fixture setup, redaction, negative checks, cleanup, and readback.
+- Keep integration credentials, auth headers, cookies, session ids, payloads, and customer-sensitive data out of screenshots and support tickets.
 
 ### Local Development Note
 
@@ -776,7 +769,7 @@ This repository no longer contains:
 - `pii-migrate`
 - repo-owned PII Dockerfiles or local PII bootstrap scripts
 
-Local development only needs the main TMS runtime. To exercise PII-enabled flows, connect TMS to a real external platform environment and activate the adapter at the correct scope.
+Local development only needs the main TMS runtime. Exercises for PII-enabled external flows remain outside the accepted guide until the required proof boundary is met.
 
 ---
 
@@ -869,11 +862,7 @@ Marshmallow API note: these endpoints describe the API surface. Public visitor s
 
 ### Two-Factor Authentication
 
-TOTP-based 2FA with recovery codes:
-
-- 10 one-time recovery codes generated on setup
-- Recovery codes stored as SHA256 hashes
-- Tenant admins can enforce 2FA for all users
+TOTP setup, disable, recovery-code handling, and tenant enforcement remain proof-gated sensitive procedures under `OKL-G19-ACCOUNT-TOTP-001`. Do not treat visible UI or source support as an accepted operating procedure until redacted setup, recovery, cleanup, and accessibility proof exists.
 
 ### Data Protection
 

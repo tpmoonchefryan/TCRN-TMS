@@ -2,9 +2,9 @@
 
 Talent workspaces are scoped to creator operations such as customer views, reports, public presence, and settings.
 
-## Current Caveat
+## Current Boundary
 
-Some customer, report, and settings routes are current-state only because hidden failures or runtime errors remain open in audit proof.
+Customer, report, and settings routes are accepted only for the represented G13 proof slices. Use the active Known Limitations page for any sensitive mutation, PII, or cross-scope claim that was not part of those slices.
 
 ## Best Practice Summary
 

@@ -6,7 +6,7 @@ TCRN TMS uses a three-state role permission model:
 - `grant`: explicitly allowed unless another assigned role denies it.
 - `unset`: this role does not decide the permission.
 
-The intended built-in recovery role is `INITIAL_ADMIN`. Day-to-day roles are user-created custom roles. Current UI proof still showed additional default role assignments in at least the AC tenant, so this baseline is recorded as a known limitation until rechecked.
+The intended built-in recovery role is `INITIAL_ADMIN`. Day-to-day roles are user-created custom roles. Historical default-role audit rows are archived in the G04/G05/G07 proof slices; do not re-present them as active customer limitations unless a later proof run reopens the role-baseline issue.
 
 ## Best-Practice Summary
 

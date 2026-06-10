@@ -31,7 +31,7 @@ A tenant administrator needs to prepare a new subsidiary for a regional team. Th
 
 ## Tenant Security
 
-Tenant security surfaces can include create, import, delete, batch, or test actions. These actions were not accepted as normal guide procedures during the current audit because proof was incomplete and some states expose hidden failures.
+Tenant security surfaces can include create, import, delete, batch, or test actions. These actions are not accepted as normal guide procedures without disposable tenant, rollback, direct API negative, and accessibility proof.
 
 ## Form Composition Guidance
 
@@ -39,10 +39,10 @@ If a page combines unrelated security, settings, import, test, and destructive a
 
 ## Current Limitations
 
-- Tenant security management is not permission-clean while hidden 403 and partial unavailable states remain.
-- Tenant root redirects can produce page errors.
+- Tenant security management and destructive settings remain proof-gated under `OKL-G19-TENANT-SECURITY-001`.
+- Tenant root and wrong-tier redirect behavior remains outside any sensitive operation claim unless the exact route has proof.
 - Security create/import/delete/batch/test procedures are excluded until focused proof or owner disposition exists.
-- Tenant integration redirects can produce page errors.
+- Tenant integration lifecycle procedures remain excluded unless a focused proof run closes the linked adapter/secret boundary.
 - Tenant settings, security, and organization tables/repeated row actions need stronger accessible-name, keyboard, focus, and status-announcement proof before accessibility acceptance.
 
-Related gap IDs: `GAP-P2-TENANT-CORE-001`, `GAP-P2-TENANT-CORE-002`, `GAP-P2-FORM-007`, `GAP-P2-A11Y-006`, `GAP-P2-TENANT-INTEGRATION-001`.
+Related active limitation IDs: `OKL-G19-TENANT-SECURITY-001`, `OKL-G19-ADMIN-INTEGRATION-001`.

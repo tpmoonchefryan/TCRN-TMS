@@ -58,7 +58,7 @@ This is not a blanket acceptance of the full authentication lifecycle. Password 
 ## Current Limitations
 
 - Full auth lifecycle beyond the G19 credential URL-safety boundary remains excluded pending bounded proof.
-- Some root redirects and wrong-tier route redirects can produce page errors. Use visible workspace navigation when possible.
+- Some root redirects and wrong-tier route redirects remain outside the accepted login URL-safety slice. Use visible workspace navigation when possible.
 - Login/root accessibility proof is current-state only and should not be described as fully accepted.
 
-Related gap or limitation IDs: `OKL-G19-AUTH-LIFECYCLE-001`, `OKL-G19-AUTH-LIFECYCLE-SSO-001`, `GAP-P2-A11Y-001`, `GAP-P2-A11Y-002`, `GAP-P2-AC-TENANT-002`, `GAP-P2-TENANT-CORE-002`.
+Related active limitation IDs: `OKL-G19-AUTH-LIFECYCLE-001`, `OKL-G19-AUTH-LIFECYCLE-SSO-001`.

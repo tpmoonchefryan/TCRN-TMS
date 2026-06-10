@@ -38,4 +38,4 @@ A tenant operator notices that their display name is outdated before a live camp
 - Profile and security controls may be mixed in one page or flow.
 - Accessibility claims remain limited where language metadata, landmarks, skip links, focus behavior, or status announcements are not proven.
 
-Related gap or limitation IDs: `OKL-G19-AUTH-PASSWORD-001`, `OKL-G19-ACCOUNT-TOTP-001`, `OKL-G19-AUTH-LIFECYCLE-SSO-001`, `OKL-G19-ACCOUNT-SESSION-001`, `OKL-G19-ACCOUNT-PROFILE-001`, `GAP-P2-PROFILE-001`, `GAP-P2-PROFILE-002`, `GAP-P2-A11Y-001`, `GAP-P2-A11Y-002`.
+Related active limitation IDs: `OKL-G19-AUTH-PASSWORD-001`, `OKL-G19-ACCOUNT-TOTP-001`, `OKL-G19-AUTH-LIFECYCLE-SSO-001`, `OKL-G19-ACCOUNT-SESSION-001`, `OKL-G19-ACCOUNT-PROFILE-001`.
