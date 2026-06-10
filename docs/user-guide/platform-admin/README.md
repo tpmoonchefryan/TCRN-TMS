@@ -17,7 +17,7 @@ The AC admin console currently exposes route families for:
 - Observability.
 - System dictionary.
 
-Use the visible AC navigation to enter these areas. Some direct redirects and wrong-tier routes currently produce page errors.
+Use the visible AC navigation to enter these areas. If a direct URL is rejected, re-enter from the visible navigation and confirm the tenant tier and role before escalating.
 
 ## Best Practice
 
@@ -44,9 +44,8 @@ AC user management includes user browsing and user detail editing. The user deta
 
 ## Current Limitations
 
-- AC user-management query and tab states are not accepted as clean.
-- Tenant capability and email-domain editing should not be described as fully clean while hidden 403s remain.
-- Some AC integration and operations routes expose hidden denied or unavailable states.
-- Destructive or sensitive platform maintenance actions require bounded proof before guide promotion.
+- AC tenant, user-management, integration, and operations visible states are accepted only for the represented G06/G08/G09 proof slices.
+- Adapter creation, webhook/API secrets, runtime-flag mutation, System Dictionary maintenance, and tenant-destructive operations require bounded proof before guide promotion.
+- AC access must not be used as a shortcut around tenant/talent permission boundaries.
 
-Related gap IDs: `GAP-P2-AC-USER-MGMT-001`, `GAP-P2-AC-TENANT-001`, `GAP-P2-AC-TENANT-002`, `GAP-P2-FORM-001`, `GAP-P2-FORM-003`, `GAP-P2-AC-INTEGRATION-001`, `GAP-P2-AC-OPS-001`, `GAP-P2-AC-OPS-003`.
+Related limitation IDs: `OKL-G19-ADMIN-INTEGRATION-001`, `OKL-G19-DICTIONARY-RUNTIME-001`, `OKL-G19-TENANT-SECURITY-001`.

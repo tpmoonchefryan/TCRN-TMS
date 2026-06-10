@@ -8,7 +8,7 @@ The account profile area is intended for identity details such as display name, 
 
 ## Security Entry Points
 
-Security surfaces may expose entries for password, multi-factor, SSO, sessions, email, or avatar-related actions. During the current audit, these were not accepted as fully proven mutation workflows.
+Security surfaces may expose entries for password, multi-factor, SSO, sessions, email, or avatar-related actions. G19 accepted only the narrow login credential URL-safety repair. These account-security mutations are not accepted as fully proven workflows.
 
 ## Operator Guidance
 
@@ -38,4 +38,4 @@ A tenant operator notices that their display name is outdated before a live camp
 - Profile and security controls may be mixed in one page or flow.
 - Accessibility claims remain limited where language metadata, landmarks, skip links, focus behavior, or status announcements are not proven.
 
-Related gap IDs: `GAP-P2-PROFILE-001`, `GAP-P2-PROFILE-002`, `GAP-P2-AUTH-001`, `GAP-P2-A11Y-001`, `GAP-P2-A11Y-002`.
+Related gap or limitation IDs: `OKL-G19-AUTH-PASSWORD-001`, `OKL-G19-ACCOUNT-TOTP-001`, `OKL-G19-AUTH-LIFECYCLE-SSO-001`, `OKL-G19-ACCOUNT-SESSION-001`, `OKL-G19-ACCOUNT-PROFILE-001`, `GAP-P2-PROFILE-001`, `GAP-P2-PROFILE-002`, `GAP-P2-A11Y-001`, `GAP-P2-A11Y-002`.

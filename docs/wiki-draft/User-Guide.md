@@ -21,4 +21,4 @@ Use [Known Limitations](./Known-Limitations.md) before converting any current-st
 
 Start from the user's job, not from the menu label. For example, a tenant administrator preparing a talent campaign should read Getting Started to confirm scope, Talent Workspace to understand customer/report context, and Public Presence to understand the authoring-to-public-output boundary.
 
-If the task involves credentials, role changes, public publishing, exports, or destructive operations, verify the limitation status before treating the workflow as accepted.
+If the task involves credentials, role changes, public publishing, exports, or destructive operations, verify the limitation status before treating the workflow as accepted. G19 repaired the narrow login credential URL-safety boundary, but account-security mutations, integration secrets, tenant destructive settings, System Dictionary maintenance, and public Marshmallow submit/reaction writes remain limitation-aware.

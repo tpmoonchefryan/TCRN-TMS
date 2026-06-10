@@ -1,6 +1,6 @@
 # Getting Started
 
-This chapter explains the current entry and navigation model. It avoids sensitive authentication procedures that were not fully proven in the 2026-06-05 UI sweep.
+This chapter explains the current entry and navigation model. It avoids sensitive authentication procedures that are still outside G19 terminal proof.
 
 ## Entry Points
 
@@ -49,10 +49,16 @@ If a tenant operator wants to check why a public page is not showing the expecte
 
 The UI supports English, Simplified Chinese, and Japanese labels. Current audit evidence found open language metadata limitations, so do not treat the HTML language metadata as fully accepted for every localized screen yet.
 
+## Login Credential Boundary
+
+The sign-in form is safe to describe for credential submission at a narrow URL-boundary level: the G19 proof pass repaired the native form fallback to use `POST /api/v1/auth/login`, and the hydrated JavaScript path also posts to `/api/v1/auth/login`. Credential field values must not appear in the browser URL, browser history, request path, screenshots, docs examples, or retained proof artifacts.
+
+This is not a blanket acceptance of the full authentication lifecycle. Password reset/change, account recovery, TOTP, SSO callback/linking, session revocation, email change, and avatar mutation still need separate fixture-safe proof before they become operating procedures.
+
 ## Current Limitations
 
-- Full sign-in lifecycle, password reset, TOTP, SSO success/linking, and external-next sanitization remain excluded pending bounded proof.
+- Full auth lifecycle beyond the G19 credential URL-safety boundary remains excluded pending bounded proof.
 - Some root redirects and wrong-tier route redirects can produce page errors. Use visible workspace navigation when possible.
 - Login/root accessibility proof is current-state only and should not be described as fully accepted.
 
-Related gap IDs: `GAP-P2-AUTH-001`, `GAP-P2-A11Y-001`, `GAP-P2-A11Y-002`, `GAP-P2-AC-TENANT-002`, `GAP-P2-TENANT-CORE-002`.
+Related gap or limitation IDs: `OKL-G19-AUTH-LIFECYCLE-001`, `OKL-G19-AUTH-LIFECYCLE-SSO-001`, `GAP-P2-A11Y-001`, `GAP-P2-A11Y-002`, `GAP-P2-AC-TENANT-002`, `GAP-P2-TENANT-CORE-002`.

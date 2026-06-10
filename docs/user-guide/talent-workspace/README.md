@@ -16,7 +16,7 @@ Confirm the active tenant, subsidiary, and talent scope before interpreting perm
 
 ## Customer And Report Surfaces
 
-Customer and report pages should be treated as current-state visible surfaces unless a focused proof run confirms the route is permission-clean for the selected tenant and talent. Current proof found a runtime error in one UAT solo customer-list path.
+Customer and report pages are accepted for the represented G13 proof slices. Confirm the selected tenant and talent before interpreting customer, report, or settings data.
 
 ## Best Practice
 
@@ -34,8 +34,8 @@ A talent manager wants to review customer engagement before deciding whether to 
 
 ## Current Limitations
 
-- Customer, report, and settings routes are not accepted as permission-clean while hidden failures remain.
-- UAT solo customer-list browsing is not accepted as clean while the runtime error remains reproducible.
+- Keep talent work scoped to the selected creator; do not use tenant-wide or AC roles for day-to-day talent tasks.
 - Any customer PII claim must respect the external PII platform boundary described in the README and reference chapter.
+- Mutation claims outside the represented G13 customer/report/settings proof slices need row-specific proof before guide promotion.
 
-Related gap IDs: `GAP-P2-TALENT-WORKSPACE-001`, `GAP-P2-TALENT-WORKSPACE-002`.
+Related proof: G13 Talent Workspace post-repair proof and G17 representative accessibility proof.

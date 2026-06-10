@@ -73,6 +73,37 @@ describe('auth api', () => {
     expect(headers.get(BROWSER_PUBLIC_CONSUMER_HEADER)).toBe(BROWSER_PUBLIC_CONSUMER_CODE);
   });
 
+  it('posts login credentials without serializing secrets into the request URL', async () => {
+    const testPassword = 'url-proof-password-123';
+    const fetchSpy = vi.fn().mockResolvedValue(
+      buildFetchResponse({
+        totpRequired: true,
+        sessionToken: 'totp-session',
+        expiresIn: 300,
+      })
+    );
+    vi.stubGlobal('fetch', fetchSpy);
+
+    await login({
+      tenantCode: 'AC',
+      login: 'admin@example.com',
+      password: testPassword,
+      rememberMe: true,
+    });
+
+    const [requestUrl, requestInit] = fetchSpy.mock.calls[0] ?? [];
+    expect(requestUrl).toBe('/api/v1/auth/login');
+    expect(String(requestUrl)).not.toContain(testPassword);
+    expect(String(requestUrl)).not.toContain('admin%40example.com');
+    expect(String(requestUrl)).not.toContain('tenantCode');
+    expect(requestInit).toEqual(
+      expect.objectContaining({
+        method: 'POST',
+        credentials: 'include',
+      })
+    );
+  });
+
   it('maps a TOTP-required login envelope into the totp branch', async () => {
     vi.stubGlobal(
       'fetch',

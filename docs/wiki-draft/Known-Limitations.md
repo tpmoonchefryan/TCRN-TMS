@@ -1,6 +1,6 @@
 # Known Limitations
 
-Validation baseline: 2026-06-05.
+Validation baseline: 2026-06-10 G19 clean-docs staging.
 
 This page keeps limitation visibility high so guide and wiki wording does not overclaim current product behavior.
 
@@ -14,46 +14,35 @@ Use this page as a routing aid, not as a workaround catalog. Each limitation mea
 
 When a limitation is later resolved, update the linked guide/wiki section with Best Practice, a realistic scenario, and proof-backed operating steps. Until then, keep the clean claim out of customer-facing procedures.
 
-## Blocker-Level Limitation
+## Active G19 Limitations
 
-- `GAP-P2-PUBLIC-VISITOR-002`: Public Marshmallow visitor submission and related visitor workflows are not accepted as available procedures.
+| ID | Area | Customer impact | Current safe wording |
+| --- | --- | --- | --- |
+| `OKL-G19-AUTH-LIFECYCLE-001` | Auth lifecycle | Login URL safety is repaired, but password reset/change, account recovery, full redirect lifecycle, and external-next submit behavior are not accepted as complete operating procedures. | Document only basic sign-in and safe redirect boundaries. |
+| `OKL-G19-AUTH-LIFECYCLE-SSO-001` | SSO | Discovery/start UI can be described, but callback, account linking, unlinking, replay, and cross-tenant failure cases need redacted fixture proof. | Keep SSO lifecycle procedure wording excluded. |
+| `OKL-G19-AUTH-PASSWORD-001` | Password mutation | Password reset/change/recovery still lack resettable fixture and cleanup proof. | Keep password mutation as a focused support/security procedure outside the public guide. |
+| `OKL-G19-ACCOUNT-TOTP-001` | TOTP and recovery codes | TOTP setup, disable, QR secret handling, and recovery-code regeneration need redacted proof. | Do not publish TOTP setup/recovery procedures. |
+| `OKL-G19-ACCOUNT-SESSION-001` | Session revoke | Current-session and other-session revoke flows need disposable session proof. | Do not publish session-revoke procedures. |
+| `OKL-G19-ACCOUNT-PROFILE-001` | Email/avatar/profile sensitive updates | Profile UI can be used for orientation, but email and avatar mutations need raw-media/email redaction and cleanup proof. | Keep sensitive profile mutation procedures excluded. |
+| `OKL-G19-ADMIN-INTEGRATION-001` | Adapters, webhooks, and API secrets | Integration pages are visible and unit-tested, but creation, secret display, rotation, revoke, and cleanup need disposable integration proof. | Keep adapter and secret mutation procedures blocker-aware. |
+| `OKL-G19-TENANT-SECURITY-001` | Tenant security and destructive settings | Destructive or lockout-sensitive tenant actions need disposable tenant, last-admin, rollback, and direct API negative proof. | Keep tenant security/destructive procedures excluded. |
+| `OKL-G19-DICTIONARY-RUNTIME-001` | System Dictionary and runtime flags | Maintenance operations need rollback, audit, and denied-role proof. | Describe governance and triage only. |
+| `OKL-G19-PUBLIC-WRITE-001` | Public Marshmallow submit/reaction writes | Public route/form display is accepted for the proofed read-only scope, but submit/reaction writes need disposable public fixture and cleanup proof. | Do not publish public submit/reaction procedures. |
+| `OKL-G19-WIKI-REMOTE-001` | Remote GitHub Wiki | The repository wiki draft is staged locally, but `.wiki.git` publication remains unavailable/deferred. | Use `docs/wiki-draft/**` as the staging source only. |
 
-## Role And Permission Limitations
+## Resolved Or Narrowed Historical Rows
 
-- `GAP-P2-RBAC-001`: Current UI proof still showed additional default roles in at least the AC tenant, so the `INITIAL_ADMIN`-only baseline is not accepted as clean.
-- `GAP-P2-RBAC-002`, `GAP-P2-RBAC-003`, `GAP-P2-RBAC-004`: Tenant user and role routes can expose hidden 403 or current-state-only behavior.
-- `GAP-P2-FORM-001`, `GAP-P2-FORM-002`: Some user/role pages mix different task families in one surface.
+The older `GAP-P2-*` rows for G04-G16 are no longer listed as active limitations when their represented proof slice is terminal green. The linked evidence remains the source of truth for scope:
 
-## Admin And Tenant Limitations
+- RBAC, Initial Admin, hidden-403, and user-management represented slices: G04, G05, and G07 proof.
+- AC tenant, AC integrations, and AC operations represented slices: G06, G08, and G09 proof.
+- Tenant root/settings/integration/organization represented slices: G10, G11, and G12 proof.
+- Talent Workspace represented slices: G13 proof.
+- Public Presence authoring/preview/public-output represented slices: G14 and G15 proof.
+- Public Marshmallow route/form/language/focus represented read-only slices: G16 proof.
 
-- `GAP-P2-AC-USER-MGMT-001`: AC user-management query/tab states are not accepted as clean.
-- `GAP-P2-AC-TENANT-001`, `GAP-P2-AC-TENANT-002`: Tenant editing and root/wrong-tier routing can expose hidden 403 or page-error states.
-- `GAP-P2-FORM-003`: Tenant create/edit sections are current-state only; do not present the mixed create/edit surface as clean task separation until it is split or re-dispositioned.
-- `GAP-P2-A11Y-003`: AC tenant list filters, table summaries, and repeated tenant row actions need stronger accessible-name and keyboard proof.
-- `GAP-P2-TENANT-CORE-001`, `GAP-P2-TENANT-CORE-002`, `GAP-P2-TENANT-CORE-003`, `GAP-P2-FORM-007`: Tenant security management, tenant root redirects, and organization query-state behavior are not accepted as clean.
-- `GAP-P2-FORM-006`: Tenant settings config-entity and dictionary workbenches need stronger task-family separation or owner disposition.
-- `GAP-P2-A11Y-006`: Tenant settings/security/organization tables and repeated row actions need stronger accessible-name, keyboard, focus, and status-announcement proof before accessibility acceptance.
+These rows should not be reintroduced as active limitations unless a later proof run reopens them.
 
-## Integration And Operations Limitations
+## Accessibility Boundaries
 
-- `GAP-P2-AC-INTEGRATION-001`, `GAP-P2-AC-INTEGRATION-002`, `GAP-P2-AC-INTEGRATION-003`, `GAP-P2-A11Y-004`: AC integration/API surfaces have hidden denied, unavailable, viewport-parity, redirect, or registry-table accessibility limitations.
-- `GAP-P2-FORM-004`: Adapter create is not accepted as a usable workflow.
-- `GAP-P2-TENANT-INTEGRATION-001`, `GAP-P2-TENANT-INTEGRATION-002`, `GAP-P2-TENANT-INTEGRATION-003`: Tenant integration redirects, module availability copy, and observability query-state behavior remain open.
-- `GAP-P2-FORM-008`: Tenant interface, adapter, and webhook workspaces need stronger task-family separation proof.
-- `GAP-P2-A11Y-007`: Tenant integration tables, route states, and language metadata need focused accessibility proof.
-- `GAP-P2-AC-OPS-001`, `GAP-P2-AC-OPS-002`, `GAP-P2-AC-OPS-003`: Operations and System Dictionary maintenance procedures and deep links are restricted pending proof.
-- `GAP-P2-FORM-005`, `GAP-P2-A11Y-005`: System Dictionary and Observability workbenches need stronger task separation, row-action names, keyboard, focus, and status proof.
-
-## Public Presence And Talent Limitations
-
-- `GAP-P2-PUBLIC-PRESENCE-001`, `GAP-P2-PUBLIC-PRESENCE-002`, `GAP-P2-PUBLIC-PRESENCE-003`: Private authoring, editor/preview/Studio, and Marshmallow management routes remain current-state only where hidden failures or unavailable states remain.
-- `GAP-P2-FORM-010`, `GAP-P2-FORM-011`, `GAP-P2-A11Y-009`: Public Presence authoring, asset IDE, preview, Marshmallow configuration/export, and panel/form accessibility are not accepted as complete workflows.
-- `GAP-P2-PUBLIC-VISITOR-001`, `GAP-P2-PUBLIC-VISITOR-003`, `GAP-P2-FORM-012`, `GAP-P2-A11Y-010`: Public homepage and Marshmallow visitor routes need unavailable/error/external-media, form, language metadata, keyboard, and status proof before clean public guide claims.
-- `GAP-P2-TALENT-WORKSPACE-001`, `GAP-P2-TALENT-WORKSPACE-002`, `GAP-P2-TALENT-WORKSPACE-003`: Talent customer/report/settings routes and one solo customer-list state are not accepted as clean.
-- `GAP-P2-FORM-009`, `GAP-P2-A11Y-008`: Talent settings and talent workspace tables/forms need stronger task-family separation, row-action naming, keyboard, focus, and language metadata proof.
-
-## Account, Auth, And Accessibility Limitations
-
-- `GAP-P2-AUTH-001`: Full auth lifecycle, password reset, TOTP, SSO success/linking, and external-next sanitization are excluded pending bounded proof.
-- `GAP-P2-PROFILE-001`, `GAP-P2-PROFILE-002`: Profile/security surfaces and sensitive mutations are not fully accepted.
-- `GAP-P2-A11Y-001`, `GAP-P2-A11Y-002`, `GAP-P2-A11Y-011`: Language metadata, login/root accessibility, profile/security drawer focus, repeated account actions, status announcements, and broader accessibility acceptance remain limited.
+`GAP-P2-A11Y-001`, `GAP-P2-A11Y-002`, and `GAP-P2-A11Y-011` remain residual accessibility boundaries for broad language metadata and account/profile security flows. Do not claim keyboard, screen-reader, mobile, or focus support for a sensitive flow unless the exact flow has matching proof.

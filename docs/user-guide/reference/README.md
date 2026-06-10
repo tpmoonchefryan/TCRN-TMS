@@ -51,17 +51,16 @@ Use these states when interpreting guide and wiki language:
 | Owner-accepted limitation | A limitation is known and accepted for now. | The guide may describe the limitation, impact, and safe workaround if one exists. |
 | Excluded | The procedure is not customer-ready or is too sensitive without proof. | The guide should not teach the procedure as available. |
 
-## Open Limitation Index
+## Active Limitation Index
 
-The 2026-06-05 UI/UX audit keeps the following additional current-state limitations open. Guide procedures should treat these as constraints, not as accepted end-to-end workflows.
+The G19 clean-docs staging pass keeps the following limitations active. Historical `GAP-P2-*` rows for represented G04-G16 proof slices are archived in the initiative evidence instead of repeated here as active customer limitations.
 
-| Area | Open Gap IDs | Documentation Boundary |
+| Area | Limitation IDs | Documentation Boundary |
 | --- | --- | --- |
-| AC tenant management and registries | `GAP-P2-A11Y-003`, `GAP-P2-A11Y-004` | Table captions, filters, and repeated row actions need stronger accessible-name and keyboard proof. |
-| AC operations and system dictionary | `GAP-P2-AC-OPS-002`, `GAP-P2-FORM-005`, `GAP-P2-A11Y-005` | Observability query-state behavior and dictionary/operations workbench separation remain current-state only. |
-| Tenant core operations | `GAP-P2-TENANT-CORE-003`, `GAP-P2-FORM-006` | Organization/settings deep links and large settings workbenches should not be documented as clean, stable procedures. |
-| Tenant integrations | `GAP-P2-TENANT-INTEGRATION-002`, `GAP-P2-TENANT-INTEGRATION-003`, `GAP-P2-FORM-008`, `GAP-P2-A11Y-007` | Module availability, query-state persistence, integration workbench separation, and table/action accessibility remain open. |
-| Talent workspace | `GAP-P2-TALENT-WORKSPACE-003`, `GAP-P2-FORM-009`, `GAP-P2-A11Y-008` | Talent settings/report/customer list workflows need clearer procedure proof and accessibility validation. |
-| Public presence authoring | `GAP-P2-FORM-010`, `GAP-P2-FORM-011`, `GAP-P2-A11Y-009` | Studio, asset, Marshmallow management, preview, export, and authoring accessibility are not accepted as complete workflows. |
-| Public visitor routes | `GAP-P2-PUBLIC-VISITOR-001`, `GAP-P2-PUBLIC-VISITOR-003`, `GAP-P2-FORM-012`, `GAP-P2-A11Y-010` | Public homepage and Marshmallow docs must preserve unavailable/error/external-media and accessibility boundaries. |
-| Account security accessibility | `GAP-P2-A11Y-011` | Profile and security drawers, repeated actions, status announcements, and language metadata need focused accessibility proof. |
+| Auth lifecycle | `OKL-G19-AUTH-LIFECYCLE-001`, `OKL-G19-AUTH-LIFECYCLE-SSO-001` | Login credential URL safety is repaired; full lifecycle, SSO callback/link/revoke, and account recovery remain proof-gated. |
+| Account security | `OKL-G19-AUTH-PASSWORD-001`, `OKL-G19-ACCOUNT-TOTP-001`, `OKL-G19-ACCOUNT-SESSION-001`, `OKL-G19-ACCOUNT-PROFILE-001` | Password, TOTP, session, email, and avatar mutations need resettable fixture, cleanup, redaction, and exact-flow accessibility proof. |
+| Integrations | `OKL-G19-ADMIN-INTEGRATION-001` | Adapter, webhook, API secret, and credential-adjacent mutations need disposable fixture and redacted cleanup proof. |
+| Tenant security | `OKL-G19-TENANT-SECURITY-001` | Destructive or lockout-sensitive settings need last-admin, rollback, and direct API negative proof. |
+| Operations | `OKL-G19-DICTIONARY-RUNTIME-001` | System Dictionary and runtime-flag maintenance need audit and rollback proof. |
+| Public visitor writes | `OKL-G19-PUBLIC-WRITE-001` | Public Marshmallow submit/reaction writes need disposable public fixture and cleanup proof. |
+| Wiki publication | `OKL-G19-WIKI-REMOTE-001` | `docs/wiki-draft/**` is staging only until remote Wiki publication is separately approved and read back. |

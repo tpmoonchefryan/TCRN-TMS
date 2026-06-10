@@ -2,9 +2,9 @@
 
 This draft is the GitHub Wiki navigation layer for TCRN TMS. The repository User Guide remains the detailed source of truth: [docs/user-guide](../user-guide/README.md).
 
-Validation baseline: 2026-06-05. Source implementation and current UI proof take priority over older README text, screenshots, and generated summaries.
+Validation baseline: 2026-06-10 G19 clean-docs staging. Source implementation and current UI proof take priority over older README text, screenshots, and generated summaries.
 
-Current publication state: draft only. Remote GitHub Wiki publication remains deferred until no-overclaim review, blocker disposition, and Wiki remote readback are accepted.
+Current publication state: draft only. Remote GitHub Wiki publication remains deferred until no-overclaim review, blocker disposition, facts routing, product/platform remote proof, and Wiki remote readback are accepted.
 
 ## Wiki Pages
 

@@ -112,7 +112,7 @@
 
 权限治理现在只有一个内置救援角色：`INITIAL_ADMIN`。日常角色均为自定义角色，通过 `/api/v1/roles` 使用能力包和可选的高级资源/动作覆盖进行编辑。角色编辑器会按面向用户的权限分类组织能力包，并支持按能力包名称、说明、分类、风险、资源和动作进行关键词搜索。旧的 `/api/v1/system-roles` 读取端点保留为兼容面；写入端点已废弃或阻止，角色删除因审计历史被禁用，角色激活/停用生命周期已移除。
 
-当前 UI 审计提示：至少一处本地 AC 租户证据仍显示额外默认角色分配，因此 User Guide 会把 `INITIAL_ADMIN` only 的角色基线记录为已知限制，直到源码/UI 复验关闭 `GAP-P2-RBAC-001`。
+当前指南提示：G04/G05/G07 证明已接受代表性 `INITIAL_ADMIN` 与自定义角色切片。不要通过扩大权限或使用通配角色来绕过拒绝状态。
 
 ### 🍡 棉花糖匿名问答领域
 
@@ -124,7 +124,7 @@
 - **表情反应概念**：对已审核消息进行表情反应
 - **导出概念**：将消息导出为 CSV/JSON/XLSX
 
-当前 UI 审计提示：公开访客提交、验证码、列表加载、更多加载、表情反应和恢复流程在 `GAP-P2-PUBLIC-VISITOR-002` 关闭前，不能作为已可用流程宣称。
+当前指南提示：G16 证明已接受代表性公开棉花糖路由/表单展示。公开提交和表情反应写入仍需 `OKL-G19-PUBLIC-WRITE-001` 的一次性 fixture 与清理证明后才能写成可用流程。
 
 <p align="center">
   <img src=".github/readme-assets/marshmallow/marshmallow_preview_externalpage.png" alt="Marshmallow 预览" width="600">

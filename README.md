@@ -112,7 +112,7 @@ Unlike traditional Grant/Deny systems, TCRN TMS implements a three-state model:
 
 Role governance now has one built-in recovery role, `INITIAL_ADMIN`. All day-to-day roles are custom roles edited through `/api/v1/roles` with capability packs and optional advanced resource/action overrides. The role editor groups permission capability packs by user-facing category and includes keyword search across pack labels, descriptions, categories, risks, resources, and actions. Legacy `/api/v1/system-roles` reads remain for compatibility; mutation routes are deprecated or blocked, role deletion is disabled for audit history, and the role active/inactive lifecycle is removed.
 
-Current UI audit note: at least one local AC-tenant proof still showed additional default role assignments, so the User Guide records the `INITIAL_ADMIN`-only role baseline as a known limitation until source/UI recheck closes `GAP-P2-RBAC-001`.
+Current guide note: G04/G05/G07 proof accepts the represented `INITIAL_ADMIN` and custom-role slices. Do not broaden permissions or use wildcard roles to bypass denied states.
 
 ### 🍡 Marshmallow Anonymous Q&A Domain
 
@@ -124,7 +124,7 @@ Anonymous question box domain and management concepts inspired by the Japanese "
 - **Emoji Reaction Concept**: Reactions for approved messages
 - **Export Concept**: Export messages to CSV/JSON/XLSX
 
-Current UI audit note: public visitor submission, captcha, feed, load-more, reaction, and recovery workflows are not accepted as available procedures until `GAP-P2-PUBLIC-VISITOR-002` is closed.
+Current guide note: G16 proof accepts represented public Marshmallow route/form display. Public submit/reaction writes remain excluded until `OKL-G19-PUBLIC-WRITE-001` has disposable fixture and cleanup proof.
 
 <p align="center">
   <img src=".github/readme-assets/marshmallow/marshmallow_preview_externalpage.png" alt="Marshmallow Preview" width="600">

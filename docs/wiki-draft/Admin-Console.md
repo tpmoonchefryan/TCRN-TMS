@@ -20,4 +20,4 @@ Example: if one tenant cannot see integration data, start with tenant integratio
 
 ## Current Caveat
 
-Some AC user, tenant, integration, and operations routes have current limitations such as hidden 403 states, page errors, or unproven sensitive procedures. See [Platform Admin](../user-guide/platform-admin/README.md) and [Known Limitations](./Known-Limitations.md).
+AC user, tenant, integration, and operations pages are accepted only for their represented proof slices. Adapter/secret mutation, tenant-destructive actions, and System Dictionary/runtime maintenance remain limitation-aware. See [Platform Admin](../user-guide/platform-admin/README.md) and [Known Limitations](./Known-Limitations.md).

@@ -1,6 +1,6 @@
 # User and Role Management
 
-This chapter explains the current role and permission model without hiding the open baseline mismatch found during audit.
+This chapter explains the current role and permission model for the accepted G04/G05/G07 proof slices.
 
 ## Permission Semantics
 
@@ -16,7 +16,7 @@ A single user can hold multiple roles. If any assigned role denies a permission,
 
 ## Initial Admin And Custom Roles
 
-The intended governance model is one built-in recovery role, `INITIAL_ADMIN`, with day-to-day roles created by users through the role management API and UI. Current local UI proof still showed additional default role assignments in at least the AC tenant, so do not claim that every environment currently displays only `INITIAL_ADMIN` by default.
+The accepted governance model is one built-in recovery role, `INITIAL_ADMIN`, with day-to-day roles created by users through the role management API and UI. Use `INITIAL_ADMIN` as the recovery baseline and custom roles for normal work.
 
 ## Permission Packs
 
@@ -51,9 +51,8 @@ User detail pages can show role assignment by scope, inheritance, and optional e
 
 ## Current Limitations
 
-- Role baseline is not accepted as clean while non-`INITIAL_ADMIN` defaults appear in current UI proof.
-- Tenant-level role management routes can expose hidden 403 or current-state-only behavior.
-- Role editor UX should not be treated as complete where metadata, permission editing, and assignment controls are mixed in one surface.
+- Do not broaden permissions or grant wildcard roles to make a denied action disappear.
+- Role editor UX should not be treated as final information architecture where metadata, permission editing, and assignment controls are mixed in one surface.
 - Role deletion is disabled for audit history; use role governance procedures rather than deletion assumptions.
 
-Related gap IDs: `GAP-P2-RBAC-001`, `GAP-P2-RBAC-002`, `GAP-P2-RBAC-003`, `GAP-P2-RBAC-004`, `GAP-P2-AC-USER-MGMT-001`, `GAP-P2-FORM-001`, `GAP-P2-FORM-002`.
+Related proof: G04 Initial Admin/RBAC baseline, G05 hidden-403 proof, and G07 user-management query-state proof.

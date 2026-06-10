@@ -2,7 +2,7 @@
 
 This guide describes the current TCRN TMS product surfaces for operators, tenant administrators, talent teams, and public-presence editors.
 
-Validation baseline: 2026-06-05. Source implementation and current UI proof take priority over older README text, screenshots, generated summaries, and prior handoff notes. When this guide mentions a limitation, the limitation is intentionally visible instead of being hidden behind an optimistic procedure.
+Validation baseline: 2026-06-10 G19 clean-docs staging. Source implementation and current UI proof take priority over older README text, screenshots, generated summaries, and prior handoff notes. When this guide mentions a limitation, the limitation is intentionally visible instead of being hidden behind an optimistic procedure.
 
 ## How To Use This Guide
 
@@ -56,8 +56,10 @@ The following procedure families remain intentionally limited until bounded proo
 - Password, TOTP, SSO success/linking, session revoke, email change, avatar upload, and other sensitive account mutations.
 - Tenant security create/import/delete/batch/test operations.
 - System Dictionary destructive or maintenance operations.
-- Adapter creation and advanced integration mutations where the UI currently exposes unavailable or denied states.
-- Any page marked by the UX audit as hidden 403, page error, mixed-form composition, or unresolved accessibility proof.
+- Adapter creation, webhook/API secret workflows, and advanced integration mutations.
+- Accessibility, keyboard, screen-reader, mobile, or focus claims for sensitive flows without exact proof.
+
+The G19 proof pass repaired the login form native fallback so credential fields are posted to the login endpoint instead of being serialized into the URL when JavaScript submit handling is unavailable. That proof is narrow: it does not turn the full auth lifecycle into a documented procedure.
 
 ## Documentation Model
 

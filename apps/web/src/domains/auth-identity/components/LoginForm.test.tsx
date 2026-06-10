@@ -321,6 +321,40 @@ describe('LoginForm', () => {
     expect(confirmInput).toHaveAttribute('autocomplete', 'new-password');
   });
 
+  it('keeps credential fields out of the native fallback URL', () => {
+    window.history.pushState({}, '', '/login?next=%2Ftenant%2Ftenant-1%2Fprofile');
+    const { container } = render(<LoginForm />);
+    const form = container.querySelector('form');
+    const testPassword = 'native-fallback-password-123';
+
+    expect(form).toBeInstanceOf(HTMLFormElement);
+    expect(form).toHaveAttribute('method', 'post');
+    expect(form).toHaveAttribute('action', '/api/v1/auth/login');
+
+    fireEvent.change(screen.getByLabelText('Tenant code'), {
+      target: { value: 'moon' },
+    });
+    fireEvent.change(screen.getByLabelText('Username or email'), {
+      target: { value: 'alice@example.com' },
+    });
+    fireEvent.change(screen.getByLabelText('Password'), {
+      target: { value: testPassword },
+    });
+
+    expect(window.location.href).not.toContain(testPassword);
+    expect(window.location.href).not.toContain('alice%40example.com');
+    expect(window.location.href).not.toContain('tenantCode');
+    expect(window.location.href).not.toContain('password');
+
+    const fallbackAction = new URL((form as HTMLFormElement).action);
+    expect(fallbackAction.pathname).toBe('/api/v1/auth/login');
+    expect(fallbackAction.search).toBe('');
+    expect(fallbackAction.href).not.toContain(testPassword);
+    expect(fallbackAction.href).not.toContain('alice%40example.com');
+    expect(fallbackAction.href).not.toContain('tenantCode');
+    expect(fallbackAction.href).not.toContain('password');
+  });
+
   it('moves focus to the first active field for each login step', async () => {
     mocks.login.mockResolvedValueOnce({
       kind: 'totp_required',

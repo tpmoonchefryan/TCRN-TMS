@@ -6,12 +6,12 @@ Integration surfaces cover interfaces, adapters, webhooks, API clients, registri
 
 | Family | Current Guide Position |
 | --- | --- |
-| Interface management | Visible management surface; permission-clean status not fully accepted |
+| Interface management | Visible management surface for accepted G08/G11 proof slices |
 | Webhook management | Visible management surface; mutation proof depends on focused validation |
-| API clients | Visible management surface; access and viewport parity need current proof |
-| API registry | Visible registry surface; desktop/mobile parity remains limited in some states |
-| API gateway readiness | Visible readiness surface; use current-state wording |
-| Builder registry | Visible registry surface; desktop/mobile parity remains limited in some states |
+| API clients | Visible management surface; credential mutation needs focused proof |
+| API registry | Visible registry surface for accepted proof slices |
+| API gateway readiness | Visible readiness surface |
+| Builder registry | Visible registry surface for accepted proof slices |
 | Platform tool connections | Visible operations surface; avoid overclaiming mutation readiness |
 | Adapters | Adapter creation is not accepted as a usable guide procedure yet |
 
@@ -35,9 +35,8 @@ A tenant wants to receive ticketing-system updates through a webhook. The safe w
 
 ## Current Limitations
 
-- AC integration and API pages are not permission-clean while hidden 403 or denied states remain.
-- API Registry and Builder Registry desktop/mobile access parity is not fully accepted.
-- Some AC and tenant integration redirects can produce page errors.
-- Adapter create is currently documented only as unavailable/current-state, not as a supported procedure.
+- Adapter creation and configuration need disposable integration fixture and cleanup proof.
+- Webhook/API secret display, rotation, revoke, and deletion need redacted proof.
+- Keep secrets, auth headers, cookies, session ids, payload details, and customer-sensitive data out of screenshots and support tickets.
 
-Related gap IDs: `GAP-P2-AC-INTEGRATION-001`, `GAP-P2-AC-INTEGRATION-002`, `GAP-P2-AC-INTEGRATION-003`, `GAP-P2-FORM-004`, `GAP-P2-TENANT-INTEGRATION-001`.
+Related limitation ID: `OKL-G19-ADMIN-INTEGRATION-001`.

@@ -12,11 +12,11 @@ Private authoring routes can include:
 - Asset or page component editing.
 - Marshmallow management and moderation entry points.
 
-Use current visible state only. Do not claim that editor, preview, Studio, or query-state workflows are stable when route-specific gaps remain open.
+Use the accepted G14/G15 proof slices for authoring, preview, and public-output wording. Preview still does not count as public visitor proof.
 
 ## Public Visitor Surfaces
 
-Public pages are visitor-facing and can include talent profile content, short links, and Marshmallow entry points. During the current audit, public Marshmallow visitor submission and related visitor workflows were not accepted as available procedures because an error/unavailable state remained open.
+Public pages are visitor-facing and can include talent profile content, short links, and Marshmallow entry points. Public Marshmallow route/form display is accepted for the represented read-only G16 proof slice. Submit and reaction writes are still excluded pending disposable public fixture proof.
 
 ## Best Practice
 
@@ -26,7 +26,7 @@ Separate authoring, preview, and public output:
 2. Use preview to review layout and editorial intent, but do not treat preview as public proof.
 3. Verify public visitor routes separately when a page is intended for fans or external audiences.
 4. Keep media and locale expectations explicit; public output can differ from internal editor state.
-5. Do not document Marshmallow submission or reaction workflows as accepted until the blocker-level visitor limitation is resolved.
+5. Do not document Marshmallow submission or reaction workflows as accepted until `OKL-G19-PUBLIC-WRITE-001` is resolved.
 
 ## Example Scenario
 
@@ -38,9 +38,8 @@ The product has Marshmallow concepts such as anonymous questions, moderation, ca
 
 ## Current Limitations
 
-- Public Marshmallow visitor submission is a blocker-level limitation.
-- Private public-presence authoring routes are not permission-clean while hidden failures remain.
-- Editor, preview, Studio, and query-state workflows are current-state only.
-- Marshmallow moderation/config/export procedures are excluded until API/unavailable states are fixed or dispositioned.
+- Public Marshmallow submit/reaction writes remain excluded pending disposable fixture and cleanup proof.
+- Preview screenshots must be labeled as preview and must not be used as public-output proof.
+- Marshmallow moderation/config/export procedures need API, redaction, cleanup, and accessibility proof before guide promotion.
 
-Related gap IDs: `GAP-P2-PUBLIC-VISITOR-002`, `GAP-P2-PUBLIC-PRESENCE-001`, `GAP-P2-PUBLIC-PRESENCE-002`, `GAP-P2-PUBLIC-PRESENCE-003`.
+Related limitation ID: `OKL-G19-PUBLIC-WRITE-001`.

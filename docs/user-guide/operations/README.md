@@ -8,7 +8,7 @@ Runtime flags expose operational switch state. Use them as a visible management 
 
 ## Observability
 
-Observability pages can show logs, metrics, status, and diagnostic views. Current audit findings require current-state wording where hidden 403 or unavailable states remain.
+Observability pages can show logs, metrics, status, and diagnostic views for the accepted G09/G17 proof slices.
 
 ## System Dictionary
 
@@ -30,8 +30,8 @@ If public pages become unavailable after a release, first use observability to d
 
 ## Current Limitations
 
-- Observability and Runtime Flags are not accepted as clean while hidden 403 or unavailable states remain.
+- Runtime flag mutation requires a known affected scope and rollback proof.
 - System Dictionary maintenance procedures are excluded pending bounded proof or owner disposition.
-- Operational pages should not be documented as stable if route-specific hidden failures remain open.
+- Operational evidence must remain sanitized; do not retain secrets, tokens, raw payloads, or customer-sensitive diagnostics.
 
-Related gap IDs: `GAP-P2-AC-OPS-001`, `GAP-P2-AC-OPS-003`.
+Related limitation ID: `OKL-G19-DICTIONARY-RUNTIME-001`.

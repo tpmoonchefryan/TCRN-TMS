@@ -541,7 +541,12 @@ export function LoginForm() {
             </div>
           </div>
 
-          <form className="mt-8 space-y-5" onSubmit={handlePrimarySubmit}>
+          <form
+            action="/api/v1/auth/login"
+            method="post"
+            className="mt-8 space-y-5"
+            onSubmit={handlePrimarySubmit}
+          >
             {step === 'credentials' && (
               <>
                 <label className="block space-y-2">

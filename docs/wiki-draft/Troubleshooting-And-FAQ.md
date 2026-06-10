@@ -20,6 +20,6 @@ Some root, wrong-tier, redirect, and mobile states can produce page errors. Re-e
 
 ## Can I document a visible sensitive action as supported?
 
-Only after bounded proof exists. Sensitive account, tenant security, dictionary maintenance, adapter creation, and public visitor workflows are restricted when the guide marks them as current-state only or excluded.
+Only after bounded proof exists. G19 repaired the narrow login credential URL-safety boundary. Sensitive account mutations, tenant security, dictionary maintenance, adapter/secret creation, and public visitor write workflows are still restricted when the guide marks them as current-state only or excluded.
 
 Detailed guide: [Troubleshooting](../user-guide/troubleshooting/README.md).
