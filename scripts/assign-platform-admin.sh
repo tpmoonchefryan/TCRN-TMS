@@ -8,7 +8,7 @@
 #   ./scripts/assign-platform-admin.sh AC ac_admin
 #   ./scripts/assign-platform-admin.sh demo admin tcrn-postgres tcrn_tms tcrn $POSTGRES_PASSWORD
 
-set -e
+set -euo pipefail
 
 if [ $# -lt 2 ]; then
   echo "错误: 参数不足"
@@ -33,10 +33,20 @@ USERNAME=$2
 CONTAINER_NAME=${3:-tcrn-postgres}
 DB_NAME=${4:-tcrn_tms}
 DB_USER=${5:-tcrn}
-DB_PASSWORD=${6:-${POSTGRES_PASSWORD}}
+DB_PASSWORD=${6:-${POSTGRES_PASSWORD:-}}
 
 if [ -z "$DB_PASSWORD" ]; then
   echo "错误: 请提供数据库密码作为第6个参数，或设置 POSTGRES_PASSWORD 环境变量"
+  exit 1
+fi
+
+if [[ ! "$TENANT_CODE" =~ ^[A-Za-z0-9_-]{1,64}$ ]]; then
+  echo "错误: tenant_code 只能包含字母、数字、下划线和短横线，长度 1-64"
+  exit 1
+fi
+
+if [[ -z "$USERNAME" || ${#USERNAME} -gt 255 || "$USERNAME" == *$'\n'* || "$USERNAME" == *$'\r'* ]]; then
+  echo "错误: username 不能为空、不能超过 255 字符，且不能包含换行控制字符"
   exit 1
 fi
 
@@ -55,24 +65,28 @@ echo "数据库用户: $DB_USER"
 echo ""
 
 # 检查容器是否存在
-if ! docker ps --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
+if ! docker ps --format '{{.Names}}' | grep -Fxq "$CONTAINER_NAME"; then
   echo "错误: 容器 '$CONTAINER_NAME' 不存在或未运行"
   exit 1
 fi
 
-# 创建临时 SQL 文件，替换变量
-TEMP_SQL=$(mktemp)
-sed "s/:tenant_code/'${TENANT_CODE}'/g; s/:username/'${USERNAME}'/g" "$SQL_FILE" > "$TEMP_SQL"
+REMOTE_SQL="/tmp/assign-platform-admin.sql"
 
-# 复制 SQL 文件到容器并执行
-docker cp "$TEMP_SQL" "${CONTAINER_NAME}:/tmp/assign-platform-admin-temp.sql"
+cleanup() {
+  docker exec "$CONTAINER_NAME" rm -f "$REMOTE_SQL" >/dev/null 2>&1 || true
+}
+trap cleanup EXIT
+
+# 复制参数化 SQL 文件到容器并执行。psql -v + :'var' 负责 SQL 字面量转义。
+docker cp "$SQL_FILE" "${CONTAINER_NAME}:${REMOTE_SQL}"
 
 docker exec -e PGPASSWORD="$DB_PASSWORD" "$CONTAINER_NAME" \
-  psql -U "$DB_USER" -d "$DB_NAME" -f /tmp/assign-platform-admin-temp.sql
-
-# 清理临时文件
-rm -f "$TEMP_SQL"
-docker exec "$CONTAINER_NAME" rm -f /tmp/assign-platform-admin-temp.sql
+  psql \
+    -v "tenant_code=$TENANT_CODE" \
+    -v "username=$USERNAME" \
+    -U "$DB_USER" \
+    -d "$DB_NAME" \
+    -f "$REMOTE_SQL"
 
 echo ""
 echo "操作完成!"

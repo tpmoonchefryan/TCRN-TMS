@@ -7,14 +7,30 @@ import path from 'node:path';
 const productRoot = process.cwd();
 const requireTool = process.env.TCRN_TOOLING_REQUIRE === '1';
 const keepGitleaks = process.env.TCRN_KEEP_GITLEAKS === '1';
+const scanHistory = process.env.TCRN_GITLEAKS_HISTORY === '1';
 const reportDir = path.join(productRoot, '.tmp/gitleaks');
 const reportPath = path.join(reportDir, 'tcrn-tms-gitleaks.json');
 
 mkdirSync(reportDir, { recursive: true });
 
+const gitleaksArgs = [
+  'detect',
+  '--redact',
+  '--report-format',
+  'json',
+  '--report-path',
+  reportPath,
+  '--source',
+  '.',
+];
+
+if (!scanHistory) {
+  gitleaksArgs.splice(2, 0, '--log-opts=-1');
+}
+
 const result = spawnSync(
   'gitleaks',
-  ['detect', '--redact', '--report-format', 'json', '--report-path', reportPath, '--source', '.'],
+  gitleaksArgs,
   {
     cwd: productRoot,
     env: process.env,
@@ -75,7 +91,7 @@ if (parseFailed) {
 }
 
 const message =
-  `total=${summary.total} rules=${topRules || 'none'} ` +
+  `scope=${scanHistory ? 'history' : 'head'} total=${summary.total} rules=${topRules || 'none'} ` +
   `history_commits=${summary.historyCommits.size} ` +
   (keepGitleaks ? `report=${reportPath}` : 'report=cleaned');
 

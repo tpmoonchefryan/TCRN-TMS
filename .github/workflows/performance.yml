@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v6.0.2
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
 
       - name: Install k6
         run: |
@@ -28,16 +28,26 @@ jobs:
           sudo apt-get update
           sudo apt-get install k6
 
-      - name: Run k6 ${{ github.event.inputs.scenario }} test
-        run: k6 run k6/scenarios/${{ github.event.inputs.scenario }}.js
+      - name: Run k6 scenario
+        run: |
+          set -euo pipefail
+          case "$SCENARIO" in
+            smoke | load | stress) ;;
+            *)
+              echo "Unsupported scenario: $SCENARIO" >&2
+              exit 1
+              ;;
+          esac
+          k6 run "k6/scenarios/${SCENARIO}.js"
         env:
           BASE_URL: ${{ secrets.PERF_TEST_BASE_URL }}
+          SCENARIO: ${{ github.event.inputs.scenario }}
           TEST_PASSWORD: ${{ secrets.PERF_TEST_PASSWORD }}
 
       - name: Upload results
         if: always()
-        uses: actions/upload-artifact@v7.0.1
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
-          name: k6-${{ github.event.inputs.scenario }}-results
+          name: k6-results
           path: k6-results.json
           if-no-files-found: ignore

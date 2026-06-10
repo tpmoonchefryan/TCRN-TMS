@@ -21,6 +21,12 @@ import { MarshmallowReactionService } from './marshmallow-reaction.service';
 import { ProfanityFilterService } from './profanity-filter.service';
 import { TrustScoreService } from './trust-score.service';
 
+const BILIBILI_PREVIEW_TIMEOUT_MS = 5000;
+const BILIBILI_PREVIEW_MAX_RESPONSE_BYTES = 512 * 1024;
+const MARSHMALLOW_SELECTED_IMAGE_MAX_COUNT = 9;
+const MARSHMALLOW_SELECTED_IMAGE_MAX_TOTAL_LENGTH = 4096;
+const BILIBILI_IMAGE_HOST_PATTERN = /^(?:i\d+|bfs)\.hdslb\.com$/i;
+
 @Injectable()
 export class PublicMarshmallowService {
   private static readonly PUBLIC_REPLY_FALLBACK = 'Staff';
@@ -37,6 +43,63 @@ export class PublicMarshmallowService {
   ) {}
 
   private readonly logger = new Logger(PublicMarshmallowService.name);
+
+  private normalizeResolverIssuedImageUrl(url: string): string | null {
+    const normalized = this.normalizeBilibiliUrl(url.trim());
+    try {
+      const parsed = new URL(normalized);
+      if (
+        parsed.protocol !== 'https:' ||
+        parsed.username ||
+        parsed.password ||
+        !BILIBILI_IMAGE_HOST_PATTERN.test(parsed.hostname) ||
+        !parsed.pathname.startsWith('/bfs/')
+      ) {
+        return null;
+      }
+
+      return parsed.href;
+    } catch {
+      return null;
+    }
+  }
+
+  private normalizeResolverIssuedImageUrls(urls: string[]): string[] {
+    if (urls.length > MARSHMALLOW_SELECTED_IMAGE_MAX_COUNT) {
+      throw new BadRequestException({
+        code: ErrorCodes.VALIDATION_FAILED,
+        message: 'Too many selected images',
+      });
+    }
+
+    const totalLength = urls.reduce((total, url) => total + url.length, 0);
+    if (totalLength > MARSHMALLOW_SELECTED_IMAGE_MAX_TOTAL_LENGTH) {
+      throw new BadRequestException({
+        code: ErrorCodes.VALIDATION_FAILED,
+        message: 'Selected images payload is too large',
+      });
+    }
+
+    const normalized = urls.map((url) => this.normalizeResolverIssuedImageUrl(url));
+    if (normalized.some((url) => !url)) {
+      throw new BadRequestException({
+        code: ErrorCodes.VALIDATION_FAILED,
+        message: 'Selected images must come from the trusted image resolver',
+      });
+    }
+
+    return Array.from(new Set(normalized.filter((url): url is string => Boolean(url))));
+  }
+
+  private filterResolverIssuedImageUrls(urls: string[]): string[] {
+    return Array.from(
+      new Set(
+        urls
+          .map((url) => this.normalizeResolverIssuedImageUrl(url))
+          .filter((url): url is string => Boolean(url))
+      )
+    ).slice(0, MARSHMALLOW_SELECTED_IMAGE_MAX_COUNT);
+  }
 
   private buildPublicReplyAuthor(
     displayName: string | null,
@@ -575,7 +638,7 @@ export class PublicMarshmallowService {
     const socialLink: string | null = dto.socialLink || null;
 
     if (dto.selectedImageUrls && dto.selectedImageUrls.length > 0) {
-      imageUrls = dto.selectedImageUrls;
+      imageUrls = this.normalizeResolverIssuedImageUrls(dto.selectedImageUrls);
       imageUrl = imageUrls[0];
     } else if (dto.socialLink) {
       try {
@@ -942,13 +1005,21 @@ export class PublicMarshmallowService {
     // 1. Extract Dynamic ID
     let dynamicId: string | null = null;
 
-    // Match opus/<ID> or t.bilibili.com/<ID>
-    const match = url.match(/(?:opus\/|t\.bilibili\.com\/)(\d+)/);
-    if (match) {
-      dynamicId = match[1];
+    try {
+      const parsedUrl = new URL(url);
+      const host = parsedUrl.hostname.toLowerCase();
+      const pathSegments = parsedUrl.pathname.split('/').filter(Boolean);
+
+      if ((host === 'www.bilibili.com' || host === 'bilibili.com') && pathSegments[0] === 'opus') {
+        dynamicId = pathSegments[1] ?? null;
+      } else if (host === 't.bilibili.com') {
+        dynamicId = pathSegments[0] ?? null;
+      }
+    } catch {
+      return [];
     }
 
-    if (!dynamicId) return [];
+    if (!dynamicId || !/^\d+$/.test(dynamicId)) return [];
 
     // 2. Fetch Dynamic Details from Bilibili API
     // API: https://api.bilibili.com/x/polymer/web-dynamic/v1/detail?id=<ID>
@@ -957,6 +1028,10 @@ export class PublicMarshmallowService {
         this.httpService.get(
           `https://api.bilibili.com/x/polymer/web-dynamic/v1/detail?id=${dynamicId}`,
           {
+            maxBodyLength: BILIBILI_PREVIEW_MAX_RESPONSE_BYTES,
+            maxContentLength: BILIBILI_PREVIEW_MAX_RESPONSE_BYTES,
+            maxRedirects: 0,
+            timeout: BILIBILI_PREVIEW_TIMEOUT_MS,
             headers: {
               'User-Agent':
                 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -967,8 +1042,10 @@ export class PublicMarshmallowService {
 
       if (data?.code === 0 && data?.data?.item) {
         const item = data.data.item;
-        const images = extractBilibiliImagesFromModules(item.modules, (imageUrl) =>
-          this.normalizeBilibiliUrl(imageUrl)
+        const images = this.filterResolverIssuedImageUrls(
+          extractBilibiliImagesFromModules(item.modules, (imageUrl) =>
+            this.normalizeBilibiliUrl(imageUrl)
+          )
         );
         if (images.length > 0) return images;
       }
@@ -990,9 +1067,14 @@ export class PublicMarshmallowService {
    * Fallback: Scrape Opus page for __INITIAL_STATE__
    */
   private async resolveBilibiliImagesFromPage(dynamicId: string): Promise<string[]> {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), BILIBILI_PREVIEW_TIMEOUT_MS);
+
     try {
       // Use native fetch to match the behavior of the successful debug script
       const response = await fetch(`https://www.bilibili.com/opus/${dynamicId}`, {
+        redirect: 'error',
+        signal: controller.signal,
         headers: {
           'User-Agent':
             'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -1004,7 +1086,7 @@ export class PublicMarshmallowService {
         return [];
       }
 
-      const html = await response.text();
+      const html = await this.readResponseTextWithLimit(response);
       this.logger.log(`Bilibili fallback HTML length: ${html.length}`);
 
       // Regex to extract __INITIAL_STATE__
@@ -1018,8 +1100,10 @@ export class PublicMarshmallowService {
       const state = JSON.parse(stateMatch[1]);
       const modules = state.detail?.modules;
 
-      const images = extractBilibiliImagesFromModules(modules, (imageUrl) =>
-        this.normalizeBilibiliUrl(imageUrl)
+      const images = this.filterResolverIssuedImageUrls(
+        extractBilibiliImagesFromModules(modules, (imageUrl) =>
+          this.normalizeBilibiliUrl(imageUrl)
+        )
       );
       if (images.length > 0) return images;
 
@@ -1031,7 +1115,10 @@ export class PublicMarshmallowService {
       );
       const regexImages: string[] = [];
       for (const match of regexMatches) {
-        regexImages.push(this.normalizeBilibiliUrl(match[0]));
+        const normalized = this.normalizeResolverIssuedImageUrl(match[0]);
+        if (normalized) {
+          regexImages.push(normalized);
+        }
       }
 
       if (regexImages.length > 0) {
@@ -1045,11 +1132,48 @@ export class PublicMarshmallowService {
     } catch (error) {
       this.logger.error(`Error scraping Bilibili page ${dynamicId}: ${error}`);
       return [];
+    } finally {
+      clearTimeout(timeout);
     }
+  }
+
+  private async readResponseTextWithLimit(response: Response): Promise<string> {
+    const contentLength = Number(response.headers.get('content-length') ?? '0');
+    if (Number.isFinite(contentLength) && contentLength > BILIBILI_PREVIEW_MAX_RESPONSE_BYTES) {
+      throw new Error('Bilibili fallback response is too large');
+    }
+
+    if (!response.body) {
+      return '';
+    }
+
+    const reader = response.body.getReader();
+    const chunks: Buffer[] = [];
+    let received = 0;
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) {
+        break;
+      }
+      if (!value) {
+        continue;
+      }
+      received += value.byteLength;
+      if (received > BILIBILI_PREVIEW_MAX_RESPONSE_BYTES) {
+        throw new Error('Bilibili fallback response is too large');
+      }
+      chunks.push(Buffer.from(value));
+    }
+
+    return Buffer.concat(chunks).toString('utf8');
   }
 
   private normalizeBilibiliUrl(url: string): string {
     if (!url) return '';
+    if (url.startsWith('//')) {
+      return `https:${url}`;
+    }
     if (url.startsWith('http://')) {
       return url.replace('http://', 'https://');
     }

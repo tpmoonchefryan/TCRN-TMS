@@ -58,6 +58,7 @@
     "tooling:osv": "node scripts/tooling/run-osv-scan.mjs",
     "tooling:trivy": "node scripts/tooling/run-trivy-advisory.mjs",
     "tooling:syft": "node scripts/tooling/run-syft-sbom.mjs",
+    "security:check": "pnpm tooling:actionlint && pnpm tooling:zizmor && pnpm tooling:gitleaks && pnpm tooling:openapi:diff && pnpm tooling:osv && pnpm tooling:trivy && TCRN_GENERATE_SBOM=1 pnpm tooling:syft",
     "tooling:codeql:resolve": "node scripts/tooling/run-advisory-tool.mjs codeql -- resolve languages",
     "tooling:bruno:version": "node scripts/tooling/run-advisory-tool.mjs bru -- --version",
     "tooling:bruno:health": "node scripts/tooling/run-bruno-health-smoke.mjs",

@@ -6,6 +6,7 @@ import { prisma } from '@tcrn/database';
 
 import { PermissionSnapshotService } from '../../permission/permission-snapshot.service';
 import { TenantService } from '../../tenant/tenant.service';
+import { AuthFailureLimiterService } from '../auth-failure-limiter.service';
 import { AuthService } from '../auth.service';
 import { PasswordService } from '../password.service';
 import { SessionService } from '../session.service';
@@ -33,6 +34,7 @@ describe('AuthService', () => {
   let mockSessionService: Partial<SessionService>;
   let mockTenantService: Partial<TenantService>;
   let mockPermissionSnapshotService: Partial<PermissionSnapshotService>;
+  let mockAuthFailureLimiter: Partial<AuthFailureLimiterService>;
 
   const mockTenant = {
     id: 'tenant-123',
@@ -90,6 +92,11 @@ describe('AuthService', () => {
         .mockReturnValue({ token: 'reset_session_token', expiresIn: 300 }),
       verifyTotpSessionToken: vi.fn(),
       verifyAccessToken: vi.fn(),
+      verifyRefreshToken: vi.fn().mockResolvedValue({
+        userId: mockUser.id,
+        tokenId: 'refresh-token-123',
+        schema: mockTenant.schemaName,
+      }),
     };
 
     mockSessionService = {
@@ -101,10 +108,24 @@ describe('AuthService', () => {
     mockTenantService = {
       getTenantByCode: vi.fn().mockResolvedValue(mockTenant),
       getTenantById: vi.fn().mockResolvedValue(mockTenant),
+      getTenantBySchemaName: vi.fn().mockResolvedValue(mockTenant),
     };
 
     mockPermissionSnapshotService = {
       refreshUserSnapshots: vi.fn().mockResolvedValue(undefined),
+    };
+
+    mockAuthFailureLimiter = {
+      assertCanAttempt: vi.fn().mockResolvedValue(undefined),
+      recordFailure: vi.fn().mockResolvedValue(undefined),
+      clearFailures: vi.fn().mockResolvedValue(undefined),
+      normalizeFailure: vi.fn(
+        () =>
+          new UnauthorizedException({
+            code: 'AUTH_INVALID_CREDENTIALS',
+            message: 'Invalid username or password',
+          })
+      ),
     };
 
     service = new AuthService(
@@ -113,7 +134,8 @@ describe('AuthService', () => {
       mockTokenService as TokenService,
       mockSessionService as SessionService,
       mockTenantService as TenantService,
-      mockPermissionSnapshotService as PermissionSnapshotService
+      mockPermissionSnapshotService as PermissionSnapshotService,
+      mockAuthFailureLimiter as AuthFailureLimiterService
     );
   });
 
@@ -139,6 +161,7 @@ describe('AuthService', () => {
         undefined,
         '127.0.0.1'
       );
+      expect(mockAuthFailureLimiter.clearFailures).toHaveBeenCalledWith('127.0.0.1');
     });
 
     it('fails closed before issuing an SSO session when permission snapshots cannot refresh', async () => {
@@ -290,6 +313,23 @@ describe('AuthService', () => {
       await expect(
         service.login('TEST', 'testuser', 'wrong_password', '127.0.0.1')
       ).rejects.toThrow(UnauthorizedException);
+      expect(mockAuthFailureLimiter.recordFailure).toHaveBeenCalledWith('127.0.0.1');
+    });
+
+    it('fails before tenant lookup when the auth failure limiter has locked out the IP', async () => {
+      (mockAuthFailureLimiter.assertCanAttempt as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
+        new UnauthorizedException({
+          code: 'AUTH_ACCOUNT_LOCKED',
+          message: 'Too many failed login attempts. Please try again later.',
+        })
+      );
+
+      await expect(service.login('TEST', 'testuser', 'password', '127.0.0.1')).rejects.toThrow(
+        UnauthorizedException
+      );
+
+      expect(mockTenantService.getTenantByCode).not.toHaveBeenCalled();
+      expect(mockPrisma.$queryRawUnsafe).not.toHaveBeenCalled();
     });
 
     it('should return totp_required when TOTP is enabled', async () => {
@@ -493,6 +533,59 @@ describe('AuthService', () => {
         expect.stringContaining('WHERE id = $1::uuid'),
         userId
       );
+    });
+  });
+
+  describe('refreshAccessToken', () => {
+    it('uses trusted tenant metadata instead of token-returned schema for user lookup', async () => {
+      (mockTokenService.verifyRefreshToken as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+        userId: mockUser.id,
+        tokenId: 'refresh-token-123',
+        schema: 'tenant_attacker',
+      });
+      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([
+        {
+          id: mockUser.id,
+          username: mockUser.username,
+          email: mockUser.email,
+          is_active: true,
+        },
+      ]);
+
+      const result = await service.refreshAccessToken('rt_opaque_refresh_token', mockTenant.schemaName);
+
+      expect(result).toEqual({
+        accessToken: 'access_token',
+        tokenType: 'Bearer',
+        expiresIn: 900,
+      });
+      expect(mockTenantService.getTenantBySchemaName).toHaveBeenCalledWith(mockTenant.schemaName);
+      expect(mockTokenService.verifyRefreshToken).toHaveBeenCalledWith(
+        'rt_opaque_refresh_token',
+        mockTenant.schemaName
+      );
+      expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalledWith(
+        expect.stringContaining('FROM "tenant_test123".system_user'),
+        mockUser.id
+      );
+      expect(mockTokenService.generateAccessToken).toHaveBeenCalledWith(
+        expect.objectContaining({
+          sub: mockUser.id,
+          tid: mockTenant.id,
+          tsc: mockTenant.schemaName,
+        })
+      );
+    });
+
+    it('fails closed before token lookup when tenant metadata is unavailable', async () => {
+      (mockTenantService.getTenantBySchemaName as ReturnType<typeof vi.fn>).mockResolvedValueOnce(null);
+
+      await expect(
+        service.refreshAccessToken('rt_opaque_refresh_token', mockTenant.schemaName)
+      ).rejects.toThrow(UnauthorizedException);
+
+      expect(mockTokenService.verifyRefreshToken).not.toHaveBeenCalled();
+      expect(mockPrisma.$queryRawUnsafe).not.toHaveBeenCalled();
     });
   });
 });

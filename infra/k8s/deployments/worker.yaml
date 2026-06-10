@@ -26,11 +26,25 @@ spec:
         app.kubernetes.io/part-of: tcrn-tms
     spec:
       terminationGracePeriodSeconds: 30
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
       # registry-secret-placeholder
       containers:
         - name: worker
           image: ghcr.io/tpmoonchefryan/tcrn-tms/worker:replace-me
           imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
           resources:
             requests:
               cpu: 100m
@@ -73,3 +87,9 @@ spec:
           envFrom:
             - secretRef:
                 name: tcrn-runtime-env
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}

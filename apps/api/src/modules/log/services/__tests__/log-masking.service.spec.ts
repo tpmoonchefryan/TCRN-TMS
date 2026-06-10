@@ -99,5 +99,39 @@ describe('LogMaskingService', () => {
       expect(result?.customerId).toBe('cust-123');
       expect(result?.metadata).toBeDefined();
     });
+
+    it('recursively redacts secret fields in nested objects and arrays', () => {
+      const body = {
+        token: 'top-level-token',
+        nested: {
+          password: 'secret-password',
+          apiKey: 'provider-key',
+          profile: {
+            client_secret: 'oauth-secret',
+          },
+        },
+        attempts: [
+          { refreshToken: 'refresh-token' },
+          { safe: 'value', credentials: [{ privateKey: 'private-key' }] },
+        ],
+      };
+
+      const result = service.maskIntegrationLogBody(body);
+
+      expect(result).toEqual({
+        token: '[redacted]',
+        nested: {
+          password: '[redacted]',
+          apiKey: '[redacted]',
+          profile: {
+            client_secret: '[redacted]',
+          },
+        },
+        attempts: [
+          { refreshToken: '[redacted]' },
+          { safe: 'value', credentials: [{ privateKey: '[redacted]' }] },
+        ],
+      });
+    });
   });
 });

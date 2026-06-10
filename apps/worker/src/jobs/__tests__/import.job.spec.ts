@@ -90,6 +90,9 @@ describe('importJobProcessor', () => {
     membershipRecordRows = [];
 
     mockPrisma.$queryRawUnsafe.mockImplementation(async (query: string) => {
+      if (query.includes('FROM public.tenant')) {
+        return [{ id: 'tenant-1', schemaName: 'tenant_test', isActive: true }];
+      }
       if (query.includes('"tenant_test"."social_platform"')) {
         return platformRows;
       }
@@ -162,6 +165,30 @@ describe('importJobProcessor', () => {
     expect(mockPrisma.$executeRawUnsafe.mock.calls[1]?.[0]).toContain('failed_rows = $6');
     expect(mockPrisma.$executeRawUnsafe.mock.calls[1]?.[0]).toContain('warning_rows = $7');
     expect(mockPrisma.$executeRawUnsafe.mock.calls[1]?.[1]).toBe('success');
+  });
+
+  it('rejects a poisoned tenant schema before tenant SQL or MinIO IO', async () => {
+    mockJob.data.tenantSchemaName = 'tenant_test";DROP';
+
+    await expect(importJobProcessor(mockJob)).rejects.toThrow(
+      'Worker job tenant schema is invalid'
+    );
+
+    expect(mockPrisma.$queryRawUnsafe).not.toHaveBeenCalled();
+    expect(mockPrisma.$executeRawUnsafe).not.toHaveBeenCalled();
+    expect(mockMinioClient.getObject).not.toHaveBeenCalled();
+  });
+
+  it('rejects a queued import object path that does not belong to the tenant job', async () => {
+    mockJob.data.filePath = 'tenant_other/import-job-1.csv';
+
+    await expect(importJobProcessor(mockJob)).rejects.toThrow(
+      'Worker job object path does not match tenant and job ownership'
+    );
+
+    expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalledTimes(1);
+    expect(mockPrisma.$executeRawUnsafe).not.toHaveBeenCalled();
+    expect(mockMinioClient.getObject).not.toHaveBeenCalled();
   });
 
   it('uses defaultProfileType=company to create company customers instead of silently defaulting to individual', async () => {

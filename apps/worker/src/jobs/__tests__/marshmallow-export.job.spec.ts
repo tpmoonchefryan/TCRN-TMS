@@ -75,19 +75,29 @@ describe('marshmallowExportJobProcessor', () => {
       },
     } as Job<MarshmallowExportJobData, MarshmallowExportJobResult>;
 
-    mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([{ count: 1 }]).mockResolvedValueOnce([
-      {
-        id: 'message-1',
-        content: 'Hello "world"',
-        senderName: 'Test Sender',
-        isAnonymous: false,
-        status: 'approved',
-        replyContent: 'Reply content',
-        createdAt: new Date('2026-03-26T00:00:00.000Z'),
-        moderatedAt: new Date('2026-03-26T01:00:00.000Z'),
-        reactionCounts: { heart: 3 },
-      },
-    ]);
+    mockPrisma.$queryRawUnsafe.mockImplementation(async (query: string) => {
+      if (query.includes('FROM public.tenant')) {
+        return [{ id: 'tenant-1', schemaName: 'tenant_test', isActive: true }];
+      }
+
+      if (query.includes('COUNT(*)')) {
+        return [{ count: 1 }];
+      }
+
+      return [
+        {
+          id: 'message-1',
+          content: 'Hello "world"',
+          senderName: 'Test Sender',
+          isAnonymous: false,
+          status: 'approved',
+          replyContent: 'Reply content',
+          createdAt: new Date('2026-03-26T00:00:00.000Z'),
+          moderatedAt: new Date('2026-03-26T01:00:00.000Z'),
+          reactionCounts: { heart: 3 },
+        },
+      ];
+    });
     mockPrisma.$executeRawUnsafe.mockResolvedValue(1);
     mockPrisma.$disconnect.mockResolvedValue(undefined);
     mockMinioClient.bucketExists.mockResolvedValue(true);
@@ -115,7 +125,7 @@ describe('marshmallowExportJobProcessor', () => {
       { 'Content-Type': 'text/csv' }
     );
 
-    expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalledTimes(2);
+    expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalledTimes(3);
     expect(mockPrisma.$executeRawUnsafe).toHaveBeenCalledTimes(2);
     expect(
       mockPrisma.$executeRawUnsafe.mock.calls.every((call) => {
@@ -147,6 +157,51 @@ describe('marshmallowExportJobProcessor', () => {
     expect(mockPrisma.$executeRawUnsafe.mock.calls[2]?.[0]).toContain('marshmallow_export_job');
     expect(mockPrisma.$executeRawUnsafe.mock.calls[3]?.[0]).toContain('export_job');
     expect(mockPrisma.$executeRawUnsafe.mock.calls[3]?.[0]).toContain('job_type = $6');
+  });
+
+  it('rejects a poisoned tenant schema before SQL or MinIO IO', async () => {
+    mockJob.data.tenantSchema = 'tenant_bad";DROP';
+
+    await expect(marshmallowExportJobProcessor(mockJob)).rejects.toThrow(
+      'Worker job tenant schema is invalid'
+    );
+
+    expect(mockPrisma.$queryRawUnsafe).not.toHaveBeenCalled();
+    expect(mockPrisma.$executeRawUnsafe).not.toHaveBeenCalled();
+    expect(mockMinioClient.putObject).not.toHaveBeenCalled();
+  });
+
+  it('neutralizes spreadsheet formula prefixes in marshmallow CSV exports', async () => {
+    mockJob.data.format = 'csv';
+    mockPrisma.$queryRawUnsafe.mockImplementation(async (query: string) => {
+      if (query.includes('FROM public.tenant')) {
+        return [{ id: 'tenant-1', schemaName: 'tenant_test', isActive: true }];
+      }
+
+      if (query.includes('COUNT(*)')) {
+        return [{ count: 1 }];
+      }
+
+      return [
+        {
+          id: 'message-1',
+          content: '=cmd',
+          senderName: '+sender',
+          isAnonymous: false,
+          status: '-approved',
+          replyContent: '@reply',
+          createdAt: new Date('2026-03-26T00:00:00.000Z'),
+          moderatedAt: new Date('2026-03-26T01:00:00.000Z'),
+          reactionCounts: { heart: 3 },
+        },
+      ];
+    });
+
+    await marshmallowExportJobProcessor(mockJob);
+
+    const csvContent = String(mockFs.writeFileSync.mock.calls[0]?.[1]);
+    expect(csvContent).toContain("message-1,'=cmd,'+sender");
+    expect(csvContent).toContain("'-approved,'@reply");
   });
 
   it('creates the temp-reports bucket before upload when it does not exist', async () => {

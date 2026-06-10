@@ -16,6 +16,8 @@ import {
   RESOLVED_PERMISSIONS_KEY,
 } from '../decorators/require-permissions.decorator';
 
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
 /**
  * Permission Guard
  * Checks if user has required permissions for the endpoint
@@ -106,6 +108,11 @@ export class PermissionGuard implements CanActivate {
       };
     }
 
+    const exportTalentHeader = this.resolveExportTalentHeaderScope(request);
+    if (exportTalentHeader) {
+      return exportTalentHeader;
+    }
+
     if (params.subsidiaryId) {
       return {
         scopeType: 'subsidiary',
@@ -140,6 +147,26 @@ export class PermissionGuard implements CanActivate {
     const originalUrl = request.originalUrl ?? '';
 
     return path.includes('/builder-registry') || originalUrl.includes('/builder-registry');
+  }
+
+  private resolveExportTalentHeaderScope(request: Request): {
+    scopeType: ScopeType;
+    scopeId: string;
+  } | null {
+    const path = request.path ?? request.originalUrl ?? '';
+    if (!/(^|\/)exports(?:$|\?)/.test(path) && !/\/exports(?:$|\?)/.test(path)) {
+      return null;
+    }
+
+    const headerTalentId = this.getSingleValue(request.headers['x-talent-id']);
+    if (!headerTalentId || !UUID_PATTERN.test(headerTalentId)) {
+      return null;
+    }
+
+    return {
+      scopeType: 'talent',
+      scopeId: headerTalentId.toLowerCase(),
+    };
   }
 
   private getSingleValue(value: unknown): string | undefined {

@@ -2,6 +2,8 @@
 import { Injectable } from '@nestjs/common';
 import { format } from 'date-fns';
 
+import { escapeCsvCell } from '@tcrn/shared';
+
 // Excel column definitions for MFR report
 export const MFR_COLUMNS = [
   { header: '全局昵称', key: 'nickname', width: 20 },
@@ -191,15 +193,7 @@ export class ExcelBuilderService {
    * Escape CSV field (handle commas, quotes, newlines)
    */
   private escapeCsvField(field: string): string {
-    if (
-      field.includes(',') ||
-      field.includes('"') ||
-      field.includes('\n') ||
-      field.includes('\r')
-    ) {
-      return `"${field.replace(/"/g, '""')}"`;
-    }
-    return field;
+    return escapeCsvCell(field);
   }
 
   /**

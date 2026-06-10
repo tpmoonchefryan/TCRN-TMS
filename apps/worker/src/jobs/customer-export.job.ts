@@ -9,8 +9,14 @@ import ExcelJS from 'exceljs';
 import * as Minio from 'minio';
 
 import { PrismaClient } from '@tcrn/database';
+import { escapeCsvCell } from '@tcrn/shared';
 
 import { reportLogger as logger } from '../logger';
+import {
+  assertSafeTenantSchema,
+  assertWorkerTenantMetadata,
+  buildWorkerObjectPath,
+} from './worker-security';
 
 const TEMP_REPORTS_BUCKET = 'temp-reports';
 
@@ -126,14 +132,6 @@ function projectRow(
   fields: readonly CustomerExportField[]
 ): Record<string, string | number> {
   return Object.fromEntries(fields.map((field) => [field, row[field]]));
-}
-
-function escapeCsv(value: string | number): string {
-  const normalized = String(value);
-  if (/["\n,]/.test(normalized)) {
-    return `"${normalized.replace(/"/g, '""')}"`;
-  }
-  return normalized;
 }
 
 function getContentType(format: CustomerExportJobData['format']): string {
@@ -406,9 +404,9 @@ async function writeCustomerExportFile(
   }
 
   if (format === 'csv') {
-    const headerLine = fields.join(',');
+    const headerLine = fields.map((field) => escapeCsvCell(field)).join(',');
     const bodyLines = projectedRows.map((row) =>
-      fields.map((field) => escapeCsv(row[field] ?? '')).join(',')
+      fields.map((field) => escapeCsvCell(row[field] ?? '')).join(',')
     );
     fs.writeFileSync(filePath, [headerLine, ...bodyLines].join('\n'), 'utf8');
     return { filePath, fileName };
@@ -446,7 +444,7 @@ async function uploadCustomerExportFile(
 ): Promise<{ objectPath: string; fileSize: number }> {
   const stats = fs.statSync(localFilePath);
   const minioClient = createMinioClient();
-  const objectPath = `${tenantSchema}/${jobId}/${fileName}`;
+  const objectPath = buildWorkerObjectPath(tenantSchema, jobId, fileName);
 
   const bucketExists = await minioClient.bucketExists(TEMP_REPORTS_BUCKET);
   if (!bucketExists) {
@@ -471,15 +469,20 @@ export const customerExportJobProcessor: Processor<
   CustomerExportJobData,
   CustomerExportJobResult
 > = async (job: Job<CustomerExportJobData, CustomerExportJobResult>) => {
-  const { jobId, tenantSchema, talentId, format, filters } = job.data;
+  const { jobId, tenantSchema: queuedTenantSchema, talentId, format, filters } = job.data;
+  let tenantSchema = assertSafeTenantSchema(queuedTenantSchema);
   const startTime = Date.now();
   const prisma = new PrismaClient();
   let localFilePath: string | null = null;
+  let tenantSchemaValidated = false;
 
   logger.info(`Processing customer export job ${jobId} for talent ${talentId}`);
   logger.info(`Filters: ${JSON.stringify(filters)}`);
 
   try {
+    tenantSchema = await assertWorkerTenantMetadata(prisma, { tenantSchema });
+    tenantSchemaValidated = true;
+
     if (filters.includePii) {
       throw new Error('Customer export does not support includePii yet');
     }
@@ -518,7 +521,9 @@ export const customerExportJobProcessor: Processor<
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     logger.error(`Customer export job ${jobId} failed: ${errorMessage}`);
-    await updateJobFailed(prisma, tenantSchema, jobId, errorMessage);
+    if (tenantSchemaValidated) {
+      await updateJobFailed(prisma, tenantSchema, jobId, errorMessage);
+    }
     throw error;
   } finally {
     if (localFilePath && fs.existsSync(localFilePath)) {

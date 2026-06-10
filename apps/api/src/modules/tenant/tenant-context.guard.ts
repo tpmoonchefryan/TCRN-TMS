@@ -41,6 +41,8 @@ export class TenantContextGuard implements CanActivate {
       });
     }
 
+    this.assertCompatibleRequestedTenant(request, tenant);
+
     // Set tenant schema context
     await this.tenantService.setTenantContext(tenant.schemaName);
 
@@ -53,5 +55,42 @@ export class TenantContextGuard implements CanActivate {
     };
 
     return true;
+  }
+
+  private assertCompatibleRequestedTenant(
+    request: Request,
+    tenant: { id: string; code: string; schemaName: string }
+  ): void {
+    const requestedTenant = this.readSingleHeader(request.headers['x-tenant-id']);
+    const middlewareTenantContext = request.tenantContext;
+
+    const allowedTenantIdentifiers = new Set(
+      [tenant.id, tenant.code, tenant.schemaName].map((value) => value.toLowerCase())
+    );
+
+    if (requestedTenant && !allowedTenantIdentifiers.has(requestedTenant.toLowerCase())) {
+      this.throwTenantMismatch();
+    }
+
+    if (
+      middlewareTenantContext &&
+      (middlewareTenantContext.tenantId !== tenant.id ||
+        middlewareTenantContext.schemaName !== tenant.schemaName)
+    ) {
+      this.throwTenantMismatch();
+    }
+  }
+
+  private readSingleHeader(value: string | string[] | undefined): string | null {
+    const raw = Array.isArray(value) ? value[0] : value;
+    const normalized = raw?.trim();
+    return normalized || null;
+  }
+
+  private throwTenantMismatch(): never {
+    throw new ForbiddenException({
+      code: ErrorCodes.PERM_ACCESS_DENIED,
+      message: 'Requested tenant context does not match the authenticated tenant',
+    });
   }
 }

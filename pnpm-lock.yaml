@@ -13,6 +13,7 @@ overrides:
   picomatch@>=4.0.0 <4.0.4: 4.0.4
   postcss@<8.5.15: 8.5.15
   qs@<6.15.2: 6.15.2
+  tmp@>=0.2.0 <0.2.6: 0.2.7
   uuid@<11.1.1: 11.1.1
   '@hono/node-server@<1.19.13': 1.19.13
   effect@<3.20.0: 3.21.2
@@ -46,7 +47,7 @@ importers:
         version: 1.60.0
       '@scalar/api-reference':
         specifier: 1.58.0
-        version: 1.58.0(axios@1.13.6(debug@4.4.3))(qrcode@1.5.4)(tailwindcss@4.3.0)(typescript@6.0.3)(zod@4.4.3)
+        version: 1.58.0(axios@1.13.6)(qrcode@1.5.4)(tailwindcss@4.3.0)(typescript@6.0.3)(zod@4.4.3)
       '@storybook/nextjs':
         specifier: 10.4.2
         version: 10.4.2(@types/react-dom@19.2.3(@types/react@19.2.15))(@types/react@19.2.15)(esbuild@0.28.0)(next@16.2.6(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.60.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(storybook@10.4.2(@testing-library/dom@10.4.1)(@types/react@19.2.15)(prettier@3.8.3)(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(type-fest@4.6.0)(typescript@6.0.3)(webpack-hot-middleware@2.26.1)(webpack@5.106.0(esbuild@0.28.0)(postcss@8.5.15))
@@ -478,10 +479,10 @@ importers:
         version: 6.0.3
       vite:
         specifier: 8.0.14
-        version: 8.0.14(@types/node@24.12.4)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.48.0)(tsx@4.22.3)(yaml@2.9.0)
+        version: 8.0.14(@types/node@24.12.4)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.22.3)(yaml@2.9.0)
       vitest:
         specifier: 4.1.7
-        version: 4.1.7(@opentelemetry/api@1.9.1)(@types/node@24.12.4)(@vitest/coverage-v8@4.1.7)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.14.6(@types/node@24.12.4)(typescript@6.0.3))(vite@8.0.14(@types/node@24.12.4)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.48.0)(tsx@4.22.3)(yaml@2.9.0))
+        version: 4.1.7(@opentelemetry/api@1.9.1)(@types/node@24.12.4)(@vitest/coverage-v8@4.1.7)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.14.6(@types/node@24.12.4)(typescript@6.0.3))(vite@8.0.14(@types/node@24.12.4)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.22.3)(yaml@2.9.0))
 
   packages/database:
     dependencies:
@@ -577,10 +578,10 @@ importers:
         version: 6.0.3
       vite:
         specifier: 8.0.14
-        version: 8.0.14(@types/node@24.12.4)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.22.3)(yaml@2.9.0)
+        version: 8.0.14(@types/node@24.12.4)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.48.0)(tsx@4.22.3)(yaml@2.9.0)
       vitest:
         specifier: 4.1.7
-        version: 4.1.7(@opentelemetry/api@1.9.1)(@types/node@24.12.4)(@vitest/coverage-v8@4.1.7)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.14.6(@types/node@24.12.4)(typescript@6.0.3))(vite@8.0.14(@types/node@24.12.4)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.22.3)(yaml@2.9.0))
+        version: 4.1.7(@opentelemetry/api@1.9.1)(@types/node@24.12.4)(@vitest/coverage-v8@4.1.7)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.14.6(@types/node@24.12.4)(typescript@6.0.3))(vite@8.0.14(@types/node@24.12.4)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.48.0)(tsx@4.22.3)(yaml@2.9.0))
       vitest-mock-extended:
         specifier: 4.0.0
         version: 4.0.0(typescript@6.0.3)(vitest@4.1.7)
@@ -10576,10 +10577,6 @@ packages:
     resolution: {integrity: sha512-J7Z2K08jbGcdA1kkQpJSqLF6T0tdQqpR2pnSUXsIchbPdTI9v3e85cLW0d6WDhwuAleOV71j2xWs8qMPfK7nKw==}
     engines: {node: '>=6'}
 
-  tmp@0.2.5:
-    resolution: {integrity: sha512-voyz6MApa1rQGUxT3E+BK7/ROe8itEx7vD8/HEvt4xwXucvQ5G5oeEiHkmHZJuBO21RpOf+YYm9MOivj709jow==}
-    engines: {node: '>=14.14'}
-
   tmp@0.2.7:
     resolution: {integrity: sha512-e0votIpp4Uo2AJYSzVHV6xCcawuiez3DzqDAbrTc3YxBkplN6e+dM13ZeIcZnDg/QpSuU2zfZ3rzwY8ukEnaXw==}
     engines: {node: '>=14.14'}
@@ -15175,10 +15172,10 @@ snapshots:
   '@rollup/rollup-win32-x64-msvc@4.60.4':
     optional: true
 
-  '@scalar/agent-chat@0.12.6(axios@1.13.6(debug@4.4.3))(qrcode@1.5.4)(tailwindcss@4.3.0)(typescript@6.0.3)(zod@4.4.3)':
+  '@scalar/agent-chat@0.12.6(axios@1.13.6)(qrcode@1.5.4)(tailwindcss@4.3.0)(typescript@6.0.3)(zod@4.4.3)':
     dependencies:
       '@ai-sdk/vue': 3.0.33(vue@3.5.35(typescript@6.0.3))(zod@4.4.3)
-      '@scalar/api-client': 3.9.0(axios@1.13.6(debug@4.4.3))(qrcode@1.5.4)(tailwindcss@4.3.0)(typescript@6.0.3)
+      '@scalar/api-client': 3.9.0(axios@1.13.6)(qrcode@1.5.4)(tailwindcss@4.3.0)(typescript@6.0.3)
       '@scalar/components': 0.26.1(tailwindcss@4.3.0)(typescript@6.0.3)
       '@scalar/helpers': 0.8.1
       '@scalar/icons': 0.7.3(typescript@6.0.3)
@@ -15213,7 +15210,7 @@ snapshots:
       - universal-cookie
       - zod
 
-  '@scalar/api-client@3.9.0(axios@1.13.6(debug@4.4.3))(qrcode@1.5.4)(tailwindcss@4.3.0)(typescript@6.0.3)':
+  '@scalar/api-client@3.9.0(axios@1.13.6)(qrcode@1.5.4)(tailwindcss@4.3.0)(typescript@6.0.3)':
     dependencies:
       '@headlessui/tailwindcss': 0.2.2(tailwindcss@4.3.0)
       '@headlessui/vue': 1.7.23(vue@3.5.35(typescript@6.0.3))
@@ -15234,7 +15231,7 @@ snapshots:
       '@scalar/workspace-store': 0.53.0(typescript@6.0.3)
       '@types/har-format': 1.2.16
       '@vueuse/core': 13.9.0(vue@3.5.35(typescript@6.0.3))
-      '@vueuse/integrations': 13.9.0(axios@1.13.6(debug@4.4.3))(focus-trap@7.8.0)(fuse.js@7.4.1)(qrcode@1.5.4)(vue@3.5.35(typescript@6.0.3))
+      '@vueuse/integrations': 13.9.0(axios@1.13.6)(focus-trap@7.8.0)(fuse.js@7.4.1)(qrcode@1.5.4)(vue@3.5.35(typescript@6.0.3))
       cookie: 1.1.1
       focus-trap: 7.8.0
       fuse.js: 7.4.1
@@ -15263,11 +15260,11 @@ snapshots:
       - typescript
       - universal-cookie
 
-  '@scalar/api-reference@1.58.0(axios@1.13.6(debug@4.4.3))(qrcode@1.5.4)(tailwindcss@4.3.0)(typescript@6.0.3)(zod@4.4.3)':
+  '@scalar/api-reference@1.58.0(axios@1.13.6)(qrcode@1.5.4)(tailwindcss@4.3.0)(typescript@6.0.3)(zod@4.4.3)':
     dependencies:
       '@headlessui/vue': 1.7.23(vue@3.5.35(typescript@6.0.3))
-      '@scalar/agent-chat': 0.12.6(axios@1.13.6(debug@4.4.3))(qrcode@1.5.4)(tailwindcss@4.3.0)(typescript@6.0.3)(zod@4.4.3)
-      '@scalar/api-client': 3.9.0(axios@1.13.6(debug@4.4.3))(qrcode@1.5.4)(tailwindcss@4.3.0)(typescript@6.0.3)
+      '@scalar/agent-chat': 0.12.6(axios@1.13.6)(qrcode@1.5.4)(tailwindcss@4.3.0)(typescript@6.0.3)(zod@4.4.3)
+      '@scalar/api-client': 3.9.0(axios@1.13.6)(qrcode@1.5.4)(tailwindcss@4.3.0)(typescript@6.0.3)
       '@scalar/code-highlight': 0.3.4
       '@scalar/components': 0.26.1(tailwindcss@4.3.0)(typescript@6.0.3)
       '@scalar/helpers': 0.8.1
@@ -15910,7 +15907,7 @@ snapshots:
 
   '@testing-library/dom@10.4.1':
     dependencies:
-      '@babel/code-frame': 7.29.0
+      '@babel/code-frame': 7.29.7
       '@babel/runtime': 7.29.2
       '@types/aria-query': 5.0.4
       aria-query: 5.3.0
@@ -16704,7 +16701,7 @@ snapshots:
       '@vueuse/shared': 13.9.0(vue@3.5.35(typescript@6.0.3))
       vue: 3.5.35(typescript@6.0.3)
 
-  '@vueuse/integrations@13.9.0(axios@1.13.6(debug@4.4.3))(focus-trap@7.8.0)(fuse.js@7.4.1)(qrcode@1.5.4)(vue@3.5.35(typescript@6.0.3))':
+  '@vueuse/integrations@13.9.0(axios@1.13.6)(focus-trap@7.8.0)(fuse.js@7.4.1)(qrcode@1.5.4)(vue@3.5.35(typescript@6.0.3))':
     dependencies:
       '@vueuse/core': 13.9.0(vue@3.5.35(typescript@6.0.3))
       '@vueuse/shared': 13.9.0(vue@3.5.35(typescript@6.0.3))
@@ -18671,7 +18668,7 @@ snapshots:
       jszip: 3.10.1
       readable-stream: 3.6.2
       saxes: 5.0.1
-      tmp: 0.2.5
+      tmp: 0.2.7
       unzipper: 0.10.14
       uuid: 11.1.1
 
@@ -23010,8 +23007,6 @@ snapshots:
     dependencies:
       rimraf: 2.7.1
 
-  tmp@0.2.5: {}
-
   tmp@0.2.7: {}
 
   to-buffer@1.2.2:
@@ -23480,7 +23475,7 @@ snapshots:
     dependencies:
       ts-essentials: 10.2.0(typescript@6.0.3)
       typescript: 6.0.3
-      vitest: 4.1.7(@opentelemetry/api@1.9.1)(@types/node@24.12.4)(@vitest/coverage-v8@4.1.7)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.14.6(@types/node@24.12.4)(typescript@6.0.3))(vite@8.0.14(@types/node@24.12.4)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.22.3)(yaml@2.9.0))
+      vitest: 4.1.7(@opentelemetry/api@1.9.1)(@types/node@24.12.4)(@vitest/coverage-v8@4.1.7)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.14.6(@types/node@24.12.4)(typescript@6.0.3))(vite@8.0.14(@types/node@24.12.4)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.48.0)(tsx@4.22.3)(yaml@2.9.0))
 
   vitest@4.1.7(@opentelemetry/api@1.9.1)(@types/node@24.12.4)(@vitest/coverage-v8@4.1.7)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.14.6(@types/node@24.12.4)(typescript@6.0.3))(vite@8.0.14(@types/node@24.12.4)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.22.3)(yaml@2.9.0)):
     dependencies:

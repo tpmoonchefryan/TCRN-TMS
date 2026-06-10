@@ -134,6 +134,7 @@ describe('TokenService', () => {
       );
 
       expect(result.token).toMatch(/^rt_/);
+      expect(result.token).not.toContain('.');
       expect(result.expiresAt).toBeInstanceOf(Date);
       expect(mockPrisma.$executeRawUnsafe).toHaveBeenCalled();
     });
@@ -146,6 +147,44 @@ describe('TokenService', () => {
       // The token should be different from what's stored (hashed)
       const insertCall = mockPrisma.$executeRawUnsafe.mock.calls[0];
       expect(insertCall[0]).toContain('token_hash');
+    });
+  });
+
+  describe('verifyRefreshToken', () => {
+    it('verifies opaque refresh tokens only inside the trusted tenant schema', async () => {
+      const expiresAt = new Date(Date.now() + 60_000);
+      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([
+        {
+          id: 'token-123',
+          user_id: 'user-123',
+          expires_at: expiresAt,
+          revoked_at: null,
+        },
+      ]);
+
+      const result = await service.verifyRefreshToken('rt_opaque_refresh_token', 'tenant_test');
+
+      expect(result).toEqual({
+        userId: 'user-123',
+        tokenId: 'token-123',
+        schema: 'tenant_test',
+      });
+      expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalledWith(
+        expect.stringContaining('FROM "tenant_test".refresh_token'),
+        expect.any(String)
+      );
+    });
+
+    it.each([
+      ['legacy same-tenant prefix', 'rt_dGVuYW50X3Rlc3Q=.aaaaaaaa'],
+      ['cross-tenant prefix', 'rt_dGVuYW50X290aGVy.aaaaaaaa'],
+      ['quote-control prefix', `rt_${Buffer.from('tenant_bad"schema').toString('base64')}.aaaaaaaa`],
+      ['malformed prefix', 'rt_%%%not-base64%%%.aaaaaaaa'],
+    ])('rejects %s before any schema SQL', async (_label, token) => {
+      const result = await service.verifyRefreshToken(token, 'tenant_test');
+
+      expect(result).toBeNull();
+      expect(mockPrisma.$queryRawUnsafe).not.toHaveBeenCalled();
     });
   });
 

@@ -111,24 +111,34 @@ describe('reportJobProcessor', () => {
       updateProgress: vi.fn(),
     } as unknown as Job<ReportJobData, ReportJobResult>;
 
-    mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([{ count: 1n }]).mockResolvedValueOnce([
-      {
-        customer_nickname: 'Customer A',
-        profile_type: 'individual',
-        platform_name: createLocalizedText({ en: 'YouTube' }),
-        membership_class_name: createLocalizedText({ en: 'Gold' }),
-        membership_type_name: createLocalizedText({ en: 'Member' }),
-        membership_level_name: createLocalizedText({ en: 'Level 1' }),
-        valid_from: new Date('2026-03-26T00:00:00.000Z'),
-        valid_to: new Date('2026-03-27T00:00:00.000Z'),
-        auto_renew: true,
-        is_expired: false,
-        customer_status_name: createLocalizedText({ en: 'Active' }),
-        tags: ['vip'],
-        source: 'manual',
-        created_at: new Date('2026-03-26T00:00:00.000Z'),
-      },
-    ]);
+    mockPrisma.$queryRawUnsafe.mockImplementation(async (query: string) => {
+      if (query.includes('FROM public.tenant')) {
+        return [{ id: 'tenant-1', schemaName: 'tenant_test', isActive: true }];
+      }
+
+      if (query.includes('COUNT(*)')) {
+        return [{ count: 1n }];
+      }
+
+      return [
+        {
+          customer_nickname: 'Customer A',
+          profile_type: 'individual',
+          platform_name: createLocalizedText({ en: 'YouTube' }),
+          membership_class_name: createLocalizedText({ en: 'Gold' }),
+          membership_type_name: createLocalizedText({ en: 'Member' }),
+          membership_level_name: createLocalizedText({ en: 'Level 1' }),
+          valid_from: new Date('2026-03-26T00:00:00.000Z'),
+          valid_to: new Date('2026-03-27T00:00:00.000Z'),
+          auto_renew: true,
+          is_expired: false,
+          customer_status_name: createLocalizedText({ en: 'Active' }),
+          tags: ['vip'],
+          source: 'manual',
+          created_at: new Date('2026-03-26T00:00:00.000Z'),
+        },
+      ];
+    });
     mockPrisma.$executeRawUnsafe.mockResolvedValue(undefined);
     mockPrisma.$disconnect.mockResolvedValue(undefined);
     mockMinioClient.bucketExists.mockResolvedValue(true);
@@ -143,11 +153,14 @@ describe('reportJobProcessor', () => {
     expect(result.fileName).toMatch(/^MFR_tenant-1_.+\.xlsx$/);
     expect(result.rowCount).toBe(1);
     expect(mockJob.updateProgress).toHaveBeenCalledWith(100);
-    expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalledTimes(2);
+    expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalledTimes(3);
     expect(mockPrisma.$queryRawUnsafe.mock.calls[0]?.[0]).toContain(
+      'FROM public.tenant'
+    );
+    expect(mockPrisma.$queryRawUnsafe.mock.calls[1]?.[0]).toContain(
       'FROM "tenant_test".membership_record'
     );
-    expect(mockPrisma.$queryRawUnsafe.mock.calls[1]?.[0]).toContain('LIMIT 1000');
+    expect(mockPrisma.$queryRawUnsafe.mock.calls[2]?.[0]).toContain('LIMIT 1000');
 
     expect(mockMinioClient.putObject).toHaveBeenCalledWith(
       'temp-reports',
@@ -191,6 +204,45 @@ describe('reportJobProcessor', () => {
       256,
       { 'Content-Type': 'text/csv' }
     );
+  });
+
+  it('neutralizes spreadsheet formula prefixes in report CSV exports', async () => {
+    mockJob.data.format = 'csv';
+    mockPrisma.$queryRawUnsafe.mockImplementation(async (query: string) => {
+      if (query.includes('FROM public.tenant')) {
+        return [{ id: 'tenant-1', schemaName: 'tenant_test', isActive: true }];
+      }
+
+      if (query.includes('COUNT(*)')) {
+        return [{ count: 1n }];
+      }
+
+      return [
+        {
+          customer_nickname: '=Customer',
+          profile_type: 'individual',
+          platform_name: createLocalizedText({ en: '+YouTube' }),
+          membership_class_name: createLocalizedText({ en: '-Gold' }),
+          membership_type_name: createLocalizedText({ en: '@Member' }),
+          membership_level_name: createLocalizedText({ en: '=Level 1' }),
+          valid_from: new Date('2026-03-26T00:00:00.000Z'),
+          valid_to: new Date('2026-03-27T00:00:00.000Z'),
+          auto_renew: true,
+          is_expired: false,
+          customer_status_name: createLocalizedText({ en: '+Active' }),
+          tags: ['@vip'],
+          source: '-manual',
+          created_at: new Date('2026-03-26T00:00:00.000Z'),
+        },
+      ];
+    });
+
+    await reportJobProcessor(mockJob);
+
+    const csvContent = String(mockFs.appendFileSync.mock.calls[0]?.[1]);
+    expect(csvContent).toContain("'=Customer,individual,'+YouTube,,'-Gold");
+    expect(csvContent).toContain("'@Member,'=Level 1");
+    expect(csvContent).toContain("'+Active,'@vip,'-manual");
   });
 
   it('serves canonical Traditional Chinese report labels', async () => {
@@ -251,9 +303,21 @@ describe('reportJobProcessor', () => {
       'PII-inclusive report generation has been retired from TMS. Use TCRN PII Platform report flow instead.'
     );
 
-    expect(mockPrisma.$queryRawUnsafe).not.toHaveBeenCalled();
+    expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalledTimes(1);
     expect(mockPrisma.$executeRawUnsafe).toHaveBeenCalledTimes(1);
     expect(mockPrisma.$executeRawUnsafe.mock.calls[0]?.[0]).toContain('error_message = $3');
+    expect(mockMinioClient.putObject).not.toHaveBeenCalled();
+  });
+
+  it('rejects poisoned tenant schema before tenant SQL or MinIO IO', async () => {
+    mockJob.data.tenantSchemaName = 'tenant_test";DROP';
+
+    await expect(reportJobProcessor(mockJob)).rejects.toThrow(
+      'Worker job tenant schema is invalid'
+    );
+
+    expect(mockPrisma.$queryRawUnsafe).not.toHaveBeenCalled();
+    expect(mockPrisma.$executeRawUnsafe).not.toHaveBeenCalled();
     expect(mockMinioClient.putObject).not.toHaveBeenCalled();
   });
 

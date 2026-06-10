@@ -8,6 +8,8 @@ import { JwtService } from '@nestjs/jwt';
 import { prisma } from '@tcrn/database';
 import { ErrorCodes } from '@tcrn/shared';
 
+import { quoteSqlIdentifier } from '../../common/security/sql-identifier.util';
+
 /**
  * JWT Access Token Payload
  */
@@ -145,10 +147,7 @@ export class TokenService {
 
   /**
    * Generate Refresh Token (opaque, stored in DB)
-   */
-  /**
-   * Generate Refresh Token (opaque, stored in DB)
-   * Format: rt_<base64(schema)>.<random>
+   * Format: rt_<random>. Legacy rt_<base64(schema)>.<random> tokens are intentionally invalid.
    */
   async generateRefreshToken(
     userId: string,
@@ -159,15 +158,10 @@ export class TokenService {
     token: string;
     expiresAt: Date;
   }> {
-    // Generate random token part
     const randomPart = `${randomUUID().replace(/-/g, '')}${randomUUID().replace(/-/g, '')}`;
-
-    // Encode schema in token
-    const schemaPart = Buffer.from(tenantSchema).toString('base64').replace(/=/g, ''); // Simple base64, usually safe for token chars if handled
-    // Actually base64url is better but base64 with stripped = is fine for our usage
-
-    const token = `rt_${schemaPart}.${randomPart}`;
+    const token = `rt_${randomPart}`;
     const tokenHash = createHash('sha256').update(token).digest('hex');
+    const schemaIdentifier = quoteSqlIdentifier(tenantSchema, 'tenant schema');
 
     const expiresAt = new Date();
     expiresAt.setSeconds(expiresAt.getSeconds() + this.refreshTokenTtl);
@@ -175,7 +169,7 @@ export class TokenService {
     // Store in database
     await prisma.$executeRawUnsafe(
       `
-      INSERT INTO "${tenantSchema}".refresh_token 
+      INSERT INTO ${schemaIdentifier}.refresh_token 
         (id, user_id, token_hash, device_info, ip_address, expires_at, created_at)
       VALUES 
         (gen_random_uuid(), $1::uuid, $2, $3, $4::inet, $5, now())
@@ -195,30 +189,17 @@ export class TokenService {
    */
   async verifyRefreshToken(
     token: string,
-    tenantSchema: string // Fallback or override
+    tenantSchema: string
   ): Promise<{
     userId: string;
     tokenId: string;
     schema: string;
   } | null> {
-    // Try to extract schema from token
-    let targetSchema = tenantSchema;
-
-    if (token.startsWith('rt_') && token.includes('.')) {
-      try {
-        const parts = token.split('.');
-        if (parts.length === 2) {
-          const schemaPart = parts[0].substring(3); // remove rt_
-          const decoded = Buffer.from(schemaPart, 'base64').toString('utf-8');
-          if (decoded) {
-            targetSchema = decoded;
-          }
-        }
-      } catch {
-        // Ignore parsing errors, fall back to provided schema
-      }
+    if (this.hasLegacySchemaPrefix(token)) {
+      return null;
     }
 
+    const schemaIdentifier = quoteSqlIdentifier(tenantSchema, 'tenant schema');
     const tokenHash = createHash('sha256').update(token).digest('hex');
 
     const result = await prisma.$queryRawUnsafe<
@@ -231,7 +212,7 @@ export class TokenService {
     >(
       `
       SELECT id, user_id, expires_at, revoked_at
-      FROM "${targetSchema}".refresh_token
+      FROM ${schemaIdentifier}.refresh_token
       WHERE token_hash = $1
     `,
       tokenHash
@@ -256,7 +237,7 @@ export class TokenService {
     return {
       userId: refreshToken.user_id,
       tokenId: refreshToken.id,
-      schema: targetSchema,
+      schema: tenantSchema,
     };
   }
 
@@ -264,9 +245,10 @@ export class TokenService {
    * Revoke Refresh Token
    */
   async revokeRefreshToken(tokenId: string, tenantSchema: string): Promise<void> {
+    const schemaIdentifier = quoteSqlIdentifier(tenantSchema, 'tenant schema');
     await prisma.$executeRawUnsafe(
       `
-      UPDATE "${tenantSchema}".refresh_token
+      UPDATE ${schemaIdentifier}.refresh_token
       SET revoked_at = now()
       WHERE id = $1::uuid
     `,
@@ -278,9 +260,10 @@ export class TokenService {
    * Revoke All Refresh Tokens for User
    */
   async revokeAllUserTokens(userId: string, tenantSchema: string): Promise<number> {
+    const schemaIdentifier = quoteSqlIdentifier(tenantSchema, 'tenant schema');
     const result = (await prisma.$executeRawUnsafe(
       `
-      UPDATE "${tenantSchema}".refresh_token
+      UPDATE ${schemaIdentifier}.refresh_token
       SET revoked_at = now()
       WHERE user_id = $1::uuid AND revoked_at IS NULL
     `,
@@ -288,6 +271,10 @@ export class TokenService {
     )) as number;
 
     return result;
+  }
+
+  private hasLegacySchemaPrefix(token: string): boolean {
+    return token.startsWith('rt_') && token.includes('.');
   }
 
   /**

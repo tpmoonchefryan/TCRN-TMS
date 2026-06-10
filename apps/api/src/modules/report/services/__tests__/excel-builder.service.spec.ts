@@ -85,6 +85,39 @@ describe('ExcelBuilderService', () => {
     });
   });
 
+  describe('buildCsvRow', () => {
+    it('neutralizes spreadsheet formula prefixes in CSV report rows', () => {
+      const data: MfrRowData = {
+        nickname: '=Nick',
+        realName: '+Real',
+        platform: '-Platform',
+        platformUid: '@uid',
+        platformNickname: '\tHandle',
+        membershipClass: '\rClass',
+        membershipType: 'Monthly',
+        membershipLevel: 'Gold',
+        validFrom: new Date('2024-01-01'),
+        validTo: null,
+        autoRenew: false,
+        status: '=Active',
+        phone: '+1234567890',
+        email: '@example.com',
+      };
+
+      const result = service.buildCsvRow(data);
+
+      expect(result).toContain("'=Nick");
+      expect(result).toContain("'+Real");
+      expect(result).toContain("'-Platform");
+      expect(result).toContain("'@uid");
+      expect(result).toContain("'\tHandle");
+      expect(result).toContain('"\'\rClass"');
+      expect(result).toContain("'=Active");
+      expect(result).toContain("'+1234567890");
+      expect(result).toContain("'@example.com");
+    });
+  });
+
   describe('column definitions', () => {
     it('should export MFR_COLUMNS', async () => {
       const { MFR_COLUMNS } = await import('../excel-builder.service');

@@ -38,20 +38,55 @@ spec:
         app.kubernetes.io/part-of: tcrn-tms
     spec:
       terminationGracePeriodSeconds: 30
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: nats
-          image: nats:2-alpine
+          image: nats:2.11.6-alpine@sha256:7dec3f8f1ff181975dbdfc0d903d2a9724659648294dbc2ebb2fa3a294d573a6
           imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          command:
+            - /bin/sh
+            - -ec
           args:
-            - --jetstream
-            - --store_dir=/data
-            - -m
-            - '8222'
+            - |
+              umask 077
+              cat > /tmp/nats/nats.conf <<'NATS_CONFIG'
+              port: 4222
+              jetstream {
+                store_dir: "/data"
+              }
+              authorization {
+                user: $NATS_USER
+                password: $NATS_PASSWORD
+              }
+              NATS_CONFIG
+              exec nats-server -c /tmp/nats/nats.conf
           ports:
             - name: client
               containerPort: 4222
-            - name: monitor
-              containerPort: 8222
+          env:
+            - name: NATS_USER
+              valueFrom:
+                secretKeyRef:
+                  name: tcrn-runtime-env
+                  key: NATS_USER
+            - name: NATS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: tcrn-runtime-env
+                  key: NATS_PASSWORD
           resources:
             requests:
               cpu: 50m
@@ -72,10 +107,14 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /data
+            - name: tmp
+              mountPath: /tmp/nats
       volumes:
         - name: data
           persistentVolumeClaim:
             claimName: tcrn-nats-data
+        - name: tmp
+          emptyDir: {}
 ---
 apiVersion: v1
 kind: Service
@@ -92,7 +131,30 @@ spec:
     - name: client
       port: 4222
       targetPort: 4222
-    - name: monitor
-      port: 8222
-      targetPort: 8222
   type: ClusterIP
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: tcrn-nats-ingress
+  namespace: tcrn
+  labels:
+    app.kubernetes.io/name: tcrn-nats
+    app.kubernetes.io/part-of: tcrn-tms
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: tcrn-nats
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: tcrn-api
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: tcrn-worker
+      ports:
+        - protocol: TCP
+          port: 4222

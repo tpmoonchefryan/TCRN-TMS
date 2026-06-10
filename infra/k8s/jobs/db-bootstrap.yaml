@@ -21,11 +21,25 @@ spec:
         app.kubernetes.io/part-of: tcrn-tms
     spec:
       restartPolicy: Never
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
       # registry-secret-placeholder
       containers:
         - name: db-bootstrap
           image: ghcr.io/tpmoonchefryan/tcrn-tms/api:replace-me
           imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
           command:
             - /bin/sh
             - -ec
@@ -37,6 +51,14 @@ spec:
           env:
             - name: NODE_ENV
               value: production
+            - name: NPM_CONFIG_CACHE
+              value: /tmp/npm-cache
           envFrom:
             - secretRef:
                 name: tcrn-runtime-env
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}

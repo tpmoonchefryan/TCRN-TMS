@@ -134,6 +134,62 @@ describe('PermissionGuard', () => {
     );
   });
 
+  it('uses X-Talent-Id as the export collection permission scope before tenant fallback', async () => {
+    const talentId = '11111111-1111-4111-8111-111111111111';
+    const request = {
+      user: {
+        id: 'user-1',
+        tenantSchema: 'tenant_test',
+      },
+      path: '/api/v1/exports',
+      headers: {
+        'x-talent-id': talentId,
+      },
+      params: {},
+      query: {},
+    };
+
+    await expect(guard.canActivate(createContext(request))).resolves.toBe(true);
+
+    expect(mockPermissionService.refreshAndCheckPermission).toHaveBeenCalledWith(
+      'tenant_test',
+      'user-1',
+      'customer.profile',
+      'read',
+      'talent',
+      talentId
+    );
+  });
+
+  it('denies export collection access when the requested talent grant is unrelated', async () => {
+    mockPermissionService.refreshAndCheckPermission.mockResolvedValueOnce(false);
+
+    const request = {
+      user: {
+        id: 'user-1',
+        tenantSchema: 'tenant_test',
+      },
+      path: '/api/v1/exports',
+      headers: {
+        'x-talent-id': '22222222-2222-4222-8222-222222222222',
+      },
+      params: {},
+      query: {},
+    };
+
+    await expect(guard.canActivate(createContext(request))).rejects.toBeInstanceOf(
+      ForbiddenException
+    );
+    expect(mockPermissionService.refreshAndCheckPermission).toHaveBeenCalledWith(
+      'tenant_test',
+      'user-1',
+      'customer.profile',
+      'read',
+      'talent',
+      '22222222-2222-4222-8222-222222222222'
+    );
+  });
+
   it('falls back to tenant scope when no scope carrier is present', async () => {
     const request = {
       user: {

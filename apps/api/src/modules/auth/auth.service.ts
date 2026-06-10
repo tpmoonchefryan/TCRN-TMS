@@ -1,11 +1,19 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
-import { ForbiddenException, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  Logger,
+  Optional,
+  UnauthorizedException,
+} from '@nestjs/common';
 
 import { prisma } from '@tcrn/database';
 import { ErrorCodes } from '@tcrn/shared';
 
+import { quoteSqlIdentifier } from '../../common/security/sql-identifier.util';
 import { PermissionSnapshotService } from '../permission/permission-snapshot.service';
 import { TenantService } from '../tenant';
+import { AuthFailureLimiterService } from './auth-failure-limiter.service';
 import { PasswordService } from './password.service';
 import { SessionService } from './session.service';
 import { AccessTokenPayload, TokenService } from './token.service';
@@ -92,8 +100,23 @@ export class AuthService {
     private readonly tokenService: TokenService,
     private readonly sessionService: SessionService,
     private readonly tenantService: TenantService,
-    private readonly permissionSnapshotService: PermissionSnapshotService
+    private readonly permissionSnapshotService: PermissionSnapshotService,
+    @Optional() private readonly authFailureLimiter?: AuthFailureLimiterService
   ) {}
+
+  private async recordLoginFailure(ipAddress: string): Promise<void> {
+    await this.authFailureLimiter?.recordFailure(ipAddress);
+  }
+
+  private invalidCredentialsException(): UnauthorizedException {
+    return (
+      this.authFailureLimiter?.normalizeFailure() ??
+      new UnauthorizedException({
+        code: ErrorCodes.AUTH_INVALID_CREDENTIALS,
+        message: 'Invalid username or password',
+      })
+    );
+  }
 
   /**
    * Login with tenant, username/email and password
@@ -106,17 +129,18 @@ export class AuthService {
     userAgent?: string,
     _rememberMe?: boolean
   ): Promise<LoginResult> {
+    await this.authFailureLimiter?.assertCanAttempt(ipAddress);
+
     // First, find the tenant by code
     const tenant = await this.tenantService.getTenantByCode(tenantCode);
 
     if (!tenant) {
-      throw new UnauthorizedException({
-        code: ErrorCodes.AUTH_INVALID_CREDENTIALS,
-        message: 'Invalid tenant',
-      });
+      await this.recordLoginFailure(ipAddress);
+      throw this.invalidCredentialsException();
     }
 
     if (!tenant.isActive) {
+      await this.recordLoginFailure(ipAddress);
       throw new UnauthorizedException({
         code: ErrorCodes.AUTH_ACCOUNT_DISABLED,
         message: 'Tenant is disabled',
@@ -150,6 +174,7 @@ export class AuthService {
     }
 
     if (!user) {
+      await this.recordLoginFailure(ipAddress);
       throw new UnauthorizedException({
         code: ErrorCodes.AUTH_INVALID_CREDENTIALS,
         message: 'Invalid username or password',
@@ -160,6 +185,7 @@ export class AuthService {
 
     // Check if account is active
     if (!user.is_active) {
+      await this.recordLoginFailure(ipAddress);
       await this.sessionService.logSecurityEvent(
         tenantSchema,
         'LOGIN_FAILED_DISABLED',
@@ -177,6 +203,7 @@ export class AuthService {
     // Check if account is locked
     const lockStatus = await this.sessionService.isUserLocked(user.id, tenantSchema);
     if (lockStatus.isLocked) {
+      await this.recordLoginFailure(ipAddress);
       await this.sessionService.logSecurityEvent(
         tenantSchema,
         'LOGIN_FAILED_LOCKED',
@@ -211,11 +238,14 @@ export class AuthService {
         userAgent
       );
 
+      await this.recordLoginFailure(ipAddress);
       throw new UnauthorizedException({
         code: ErrorCodes.AUTH_INVALID_CREDENTIALS,
         message: 'Invalid username or password',
       });
     }
+
+    await this.authFailureLimiter?.clearFailures(ipAddress);
 
     // Check if password needs reset
     if (user.force_reset || this.passwordService.isPasswordExpired(user.password_changed_at)) {
@@ -732,6 +762,14 @@ export class AuthService {
     tokenType: string;
     expiresIn: number;
   }> {
+    const tenant = await this.tenantService.getTenantBySchemaName(tenantSchema);
+    if (!tenant || !tenant.isActive) {
+      throw new UnauthorizedException({
+        code: ErrorCodes.TENANT_DISABLED,
+        message: 'Tenant is disabled',
+      });
+    }
+
     // Verify refresh token
     const result = await this.tokenService.verifyRefreshToken(refreshToken, tenantSchema);
     if (!result) {
@@ -741,8 +779,8 @@ export class AuthService {
       });
     }
 
-    // Use the schema extracted from token if available, otherwise use passed schema
-    const targetSchema = result.schema || tenantSchema;
+    const targetSchema = tenant.schemaName;
+    const schemaIdentifier = quoteSqlIdentifier(targetSchema, 'tenant schema');
 
     // Get user info
     const users = await prisma.$queryRawUnsafe<
@@ -755,7 +793,7 @@ export class AuthService {
     >(
       `
       SELECT id, username, email, is_active
-      FROM "${targetSchema}".system_user
+      FROM ${schemaIdentifier}.system_user
       WHERE id = $1::uuid
     `,
       result.userId
@@ -765,15 +803,6 @@ export class AuthService {
       throw new UnauthorizedException({
         code: ErrorCodes.AUTH_ACCOUNT_DISABLED,
         message: 'Account is disabled',
-      });
-    }
-
-    // Get tenant info
-    const tenant = await this.tenantService.getTenantBySchemaName(targetSchema);
-    if (!tenant || !tenant.isActive) {
-      throw new UnauthorizedException({
-        code: ErrorCodes.TENANT_DISABLED,
-        message: 'Tenant is disabled',
       });
     }
 

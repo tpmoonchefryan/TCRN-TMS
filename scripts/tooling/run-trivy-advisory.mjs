@@ -51,6 +51,7 @@ if (result.error) {
 }
 
 const summary = {
+  blockingHighCritical: 0,
   vulnerabilities: {},
   misconfigurations: {},
   targets: 0,
@@ -65,10 +66,16 @@ if (existsSync(trivyPath)) {
       for (const vulnerability of item.Vulnerabilities ?? []) {
         const severity = vulnerability.Severity ?? 'UNKNOWN';
         summary.vulnerabilities[severity] = (summary.vulnerabilities[severity] ?? 0) + 1;
+        if (severity === 'HIGH' || severity === 'CRITICAL') {
+          summary.blockingHighCritical += 1;
+        }
       }
       for (const misconfiguration of item.Misconfigurations ?? []) {
         const severity = misconfiguration.Severity ?? 'UNKNOWN';
         summary.misconfigurations[severity] = (summary.misconfigurations[severity] ?? 0) + 1;
+        if (severity === 'HIGH' || severity === 'CRITICAL') {
+          summary.blockingHighCritical += 1;
+        }
       }
     }
   } catch {
@@ -96,8 +103,18 @@ if (result.status !== 0) {
   process.exit(requireTool ? result.status : 0);
 }
 
+if (requireTool && summary.blockingHighCritical > 0) {
+  console.warn(
+    `[tooling:trivy] REQUIRED_FINDINGS blocking_high_critical=${summary.blockingHighCritical} ` +
+      `targets=${summary.targets} vulnerabilities=${JSON.stringify(summary.vulnerabilities)} ` +
+      `misconfigurations=${JSON.stringify(summary.misconfigurations)} ` +
+      (keepTrivy ? `report=${trivyPath}` : 'report=cleaned')
+  );
+  process.exit(1);
+}
+
 console.log(
-  `[tooling:trivy] OK targets=${summary.targets} ` +
+  `[tooling:trivy] OK targets=${summary.targets} blocking_high_critical=${summary.blockingHighCritical} ` +
     `vulnerabilities=${JSON.stringify(summary.vulnerabilities)} ` +
     `misconfigurations=${JSON.stringify(summary.misconfigurations)} ` +
     (keepTrivy ? `report=${trivyPath}` : 'report=cleaned')

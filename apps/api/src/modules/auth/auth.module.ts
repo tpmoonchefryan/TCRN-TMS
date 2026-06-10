@@ -8,6 +8,7 @@ import { EmailModule } from '../email';
 import { LogModule } from '../log';
 import { MinioModule } from '../minio/minio.module';
 import { AuthController, UserController } from './auth.controller';
+import { AuthFailureLimiterService } from './auth-failure-limiter.service';
 import { AuthService } from './auth.service';
 import { PasswordService } from './password.service';
 import { SessionService } from './session.service';
@@ -42,6 +43,7 @@ import { TotpService } from './totp.service';
     SessionService,
     SsoService,
     AuthRateLimiterGuard,
+    AuthFailureLimiterService,
   ],
   exports: [
     AuthService,
@@ -50,6 +52,7 @@ import { TotpService } from './totp.service';
     TokenService,
     SsoService,
     AuthRateLimiterGuard,
+    AuthFailureLimiterService,
   ],
 })
 export class AuthModule {}

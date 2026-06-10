@@ -1118,8 +1118,13 @@ Refresh tokens are single-use and rotate on each refresh.`,
       });
     }
 
-    // Get tenant context from cookie or header
-    const tenantSchema = req.tenantContext?.schemaName || 'tenant_template';
+    const tenantSchema = req.tenantContext?.schemaName;
+    if (!tenantSchema) {
+      throw new UnauthorizedException({
+        code: ErrorCodes.AUTH_REFRESH_TOKEN_INVALID,
+        message: 'Refresh token tenant context is required',
+      });
+    }
 
     const result = await this.authService.refreshAccessToken(refreshToken, tenantSchema);
 

@@ -7,6 +7,10 @@ import {
   PERSONAL_INFO_FIELDS,
 } from '@tcrn/shared';
 
+const REDACTED_SECRET_VALUE = '[redacted]';
+const SECRET_FIELD_PATTERN =
+  /(password|passwd|pwd|token|access[_-]?token|refresh[_-]?token|api[_-]?key|apikey|client[_-]?secret|clientsecret|secret|private[_-]?key|privatekey|authorization|cookie|session)/i;
+
 /**
  * Log Masking Service
  * Applies data masking to log entries to protect PII
@@ -65,8 +69,12 @@ export class LogMaskingService {
     for (const [key, value] of Object.entries(obj)) {
       const fieldConfig = PERSONAL_INFO_FIELDS.find((f) => f.field === key);
 
-      if (fieldConfig) {
+      if (SECRET_FIELD_PATTERN.test(key)) {
+        result[key] = REDACTED_SECRET_VALUE;
+      } else if (fieldConfig) {
         result[key] = this.maskingService.maskValue(value, fieldConfig.type);
+      } else if (Array.isArray(value)) {
+        result[key] = value.map((item) => this.deepMaskValue(item));
       } else if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
         result[key] = this.deepMaskObject(value as Record<string, unknown>);
       } else {
@@ -75,6 +83,18 @@ export class LogMaskingService {
     }
 
     return result;
+  }
+
+  private deepMaskValue(value: unknown): unknown {
+    if (Array.isArray(value)) {
+      return value.map((item) => this.deepMaskValue(item));
+    }
+
+    if (typeof value === 'object' && value !== null) {
+      return this.deepMaskObject(value as Record<string, unknown>);
+    }
+
+    return value;
   }
 
   /**

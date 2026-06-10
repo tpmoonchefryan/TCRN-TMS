@@ -27,6 +27,47 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  security-required:
+    name: Security tooling required
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      TCRN_TOOLING_REQUIRE: '1'
+      TCRN_TOOLING_INSTALL_REQUIRE: '1'
+      TCRN_GENERATE_SBOM: '1'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          persist-credentials: false
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@d15e628ca66d93ee5f352c71671a7bc6a97af5c9
+        with:
+          version: 11.3.0
+
+      - name: Setup Node
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
+        with:
+          node-version: '24'
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install required security binaries
+        run: |
+          set -euo pipefail
+          TOOLING_BIN="${RUNNER_TEMP}/tcrn-tooling-bin"
+          mkdir -p "${TOOLING_BIN}"
+          echo "${TOOLING_BIN}" >> "${GITHUB_PATH}"
+          echo "TRIVY_CACHE_DIR=${RUNNER_TEMP}/trivy-cache" >> "${GITHUB_ENV}"
+          node scripts/tooling/install-advisory-binaries.mjs "${TOOLING_BIN}"
+
+      - name: Required security checks
+        run: pnpm security:check
+
   advisory:
     name: Advisory tooling
     runs-on: ubuntu-latest

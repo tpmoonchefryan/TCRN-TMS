@@ -1,7 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 import { z } from 'zod';
 
-import { SUPPORTED_UI_LOCALES } from '@tcrn/shared';
+import { SUPPORTED_UI_LOCALES, escapeCsvCell } from '@tcrn/shared';
 
 import { type CompanyImportRow, type IndividualImportRow } from '../dto/import.dto';
 
@@ -249,8 +249,8 @@ export const generateImportErrorsCsv = (errors: ImportErrorCsvRow[]): string => 
     [
       error.rowNumber.toString(),
       error.errorCode,
-      `"${error.errorMessage.replace(/"/g, '""')}"`,
-      `"${error.originalData.replace(/"/g, '""')}"`,
+      escapeCsvCell(error.errorMessage),
+      escapeCsvCell(error.originalData),
     ].join(',')
   );
 

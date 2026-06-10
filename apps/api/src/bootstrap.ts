@@ -48,6 +48,26 @@ import { TenantModule } from './modules/tenant';
 
 const logger = new Logger('Bootstrap');
 
+export const STRICT_API_CSP_DIRECTIVES = {
+  defaultSrc: ["'none'"],
+  baseUri: ["'none'"],
+  formAction: ["'none'"],
+  frameAncestors: ["'none'"],
+  imgSrc: ["'self'"],
+  connectSrc: ["'self'"],
+} as const;
+
+export const SWAGGER_CSP_DIRECTIVES = {
+  defaultSrc: ["'self'"],
+  baseUri: ["'self'"],
+  formAction: ["'self'"],
+  frameAncestors: ["'none'"],
+  styleSrc: ["'self'", "'unsafe-inline'"],
+  scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+  imgSrc: ["'self'", 'data:', 'https:'],
+  connectSrc: ["'self'"],
+} as const;
+
 function cloneSerializableSwaggerValue<T>(value: T, stack = new WeakSet<object>()): T {
   if (!value || typeof value !== 'object') {
     return value;
@@ -95,16 +115,11 @@ export async function bootstrap(): Promise<void> {
 
   app.use(createTraceIdMiddleware());
 
-  // Security middleware - configured to allow Swagger UI
+  // Security middleware - strict by default. Swagger UI gets a path-scoped relaxed CSP below.
   app.use(
     helmet({
       contentSecurityPolicy: {
-        directives: {
-          defaultSrc: ["'self'"],
-          styleSrc: ["'self'", "'unsafe-inline'"],
-          scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
-          imgSrc: ["'self'", 'data:', 'https:'],
-        },
+        directives: STRICT_API_CSP_DIRECTIVES,
       },
     })
   );
@@ -171,6 +186,15 @@ export async function bootstrap(): Promise<void> {
   const enableSwagger = swaggerExposurePolicy.enabled;
 
   if (enableSwagger) {
+    app.use(
+      '/api/docs',
+      helmet({
+        contentSecurityPolicy: {
+          directives: SWAGGER_CSP_DIRECTIVES,
+        },
+      })
+    );
+
     if (swaggerExposurePolicy.authRequirement === 'basic_auth_required') {
       const basicAuth = (await import('express-basic-auth')).default;
       const authMiddleware = basicAuth({

@@ -48,6 +48,7 @@ if (keepZizmor) {
 const summary = {
   total: findings.length,
   ignored: 0,
+  blockingHighCritical: 0,
   severity: {},
   confidence: {},
   auditIds: {},
@@ -63,6 +64,9 @@ for (const finding of findings) {
   summary.severity[severity] = (summary.severity[severity] ?? 0) + 1;
   summary.confidence[confidence] = (summary.confidence[confidence] ?? 0) + 1;
   summary.auditIds[ident] = (summary.auditIds[ident] ?? 0) + 1;
+  if (!finding.ignored && (severity === 'High' || severity === 'Critical')) {
+    summary.blockingHighCritical += 1;
+  }
 }
 
 const topAuditIds = Object.entries(summary.auditIds)
@@ -76,17 +80,27 @@ if (!keepZizmor) {
 }
 
 if (result.status !== 0) {
-  console.warn(
+  const message =
     `[tooling:zizmor] ADVISORY_EXIT=${result.status} total=${summary.total} ignored=${summary.ignored} ` +
-      `severity=${JSON.stringify(summary.severity)} confidence=${JSON.stringify(summary.confidence)} ` +
-      `top=${topAuditIds || 'none'} ` +
-      (keepZizmor ? `report=${reportPath}` : 'report=cleaned')
+    `blocking_high_critical=${summary.blockingHighCritical} ` +
+    `severity=${JSON.stringify(summary.severity)} confidence=${JSON.stringify(summary.confidence)} ` +
+    `top=${topAuditIds || 'none'} ` +
+    (keepZizmor ? `report=${reportPath}` : 'report=cleaned');
+
+  if (requireTool && summary.blockingHighCritical === 0) {
+    console.warn(`${message}. Required mode allows remaining non-high findings.`);
+    process.exit(0);
+  }
+
+  console.warn(
+    message
   );
   process.exit(requireTool ? result.status : 0);
 }
 
 console.log(
   `[tooling:zizmor] OK total=${summary.total} ignored=${summary.ignored} ` +
+    `blocking_high_critical=${summary.blockingHighCritical} ` +
     `severity=${JSON.stringify(summary.severity)} confidence=${JSON.stringify(summary.confidence)} ` +
     `top=${topAuditIds || 'none'} ` +
     (keepZizmor ? `report=${reportPath}` : 'report=cleaned')

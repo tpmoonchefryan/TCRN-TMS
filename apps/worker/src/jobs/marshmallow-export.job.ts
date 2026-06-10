@@ -9,8 +9,14 @@ import ExcelJS from 'exceljs';
 import * as Minio from 'minio';
 
 import { PrismaClient } from '@tcrn/database';
+import { escapeCsvCell } from '@tcrn/shared';
 
 import { reportLogger as logger } from '../logger';
+import {
+  assertSafeTenantSchema,
+  assertWorkerTenantMetadata,
+  buildWorkerObjectPath,
+} from './worker-security';
 
 const TEMP_REPORTS_BUCKET = 'temp-reports';
 const CURRENT_MARSHMALLOW_EXPORT_TABLE = 'marshmallow_export_job';
@@ -81,9 +87,11 @@ export const marshmallowExportJobProcessor: Processor<
   MarshmallowExportJobData,
   MarshmallowExportJobResult
 > = async (job: Job<MarshmallowExportJobData, MarshmallowExportJobResult>) => {
-  const { jobId, talentId, tenantSchema, format, filters } = job.data;
+  const { jobId, talentId, tenantSchema: queuedTenantSchema, format, filters } = job.data;
+  let tenantSchema = assertSafeTenantSchema(queuedTenantSchema);
   const startTime = Date.now();
   let localFilePath: string | null = null;
+  let tenantSchemaValidated = false;
 
   logger.info(`Processing marshmallow export job ${jobId} for talent ${talentId}`);
   logger.info(`Filters: ${JSON.stringify(filters)}`);
@@ -91,6 +99,9 @@ export const marshmallowExportJobProcessor: Processor<
   const prisma = new PrismaClient();
 
   try {
+    tenantSchema = await assertWorkerTenantMetadata(prisma, { tenantSchema });
+    tenantSchemaValidated = true;
+
     // 1. Update job status to processing
     await updateJobStatus(prisma, tenantSchema, jobId, 'running');
 
@@ -191,20 +202,20 @@ export const marshmallowExportJobProcessor: Processor<
         'ID,Content,Sender Name,Anonymous,Status,Reply,Created At,Moderated At,Reactions\n';
       const csvRows = messages
         .map((msg) => {
-          const escapedContent = `"${msg.content.replace(/"/g, '""')}"`;
-          const escapedReply = msg.replyContent ? `"${msg.replyContent.replace(/"/g, '""')}"` : '';
           const reactions = msg.reactionCounts ? JSON.stringify(msg.reactionCounts) : '';
           return [
             msg.id,
-            escapedContent,
+            msg.content,
             msg.isAnonymous ? '' : msg.senderName || '',
             msg.isAnonymous ? 'Yes' : 'No',
             msg.status,
-            escapedReply,
+            msg.replyContent ?? '',
             msg.createdAt.toISOString(),
             msg.moderatedAt?.toISOString() ?? '',
-            `"${reactions}"`,
-          ].join(',');
+            reactions,
+          ]
+            .map((value) => escapeCsvCell(value))
+            .join(',');
         })
         .join('\n');
 
@@ -263,7 +274,7 @@ export const marshmallowExportJobProcessor: Processor<
     const stats = fs.statSync(filePath);
 
     // 7. Upload to MinIO
-    const objectPath = `${tenantSchema}/${jobId}/${fileName}`;
+    const objectPath = buildWorkerObjectPath(tenantSchema, jobId, fileName);
     const minioClient = createMinioClient();
     logger.info(`File generated: ${filePath} (${stats.size} bytes)`);
     logger.info(`MinIO path: ${objectPath}`);
@@ -298,8 +309,9 @@ export const marshmallowExportJobProcessor: Processor<
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     logger.error(`Marshmallow export job ${jobId} failed: ${errorMessage}`);
 
-    // Update job status to failed
-    await updateJobFailed(prisma, tenantSchema, jobId, errorMessage);
+    if (tenantSchemaValidated) {
+      await updateJobFailed(prisma, tenantSchema, jobId, errorMessage);
+    }
 
     throw error;
   } finally {

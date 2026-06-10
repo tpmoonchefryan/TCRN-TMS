@@ -10,6 +10,7 @@ import * as Minio from 'minio';
 
 import { PrismaClient } from '@tcrn/database';
 import {
+  escapeCsvCell,
   pickLocalizedText,
   normalizeSupportedUiLocale,
   type LocalizedText,
@@ -17,6 +18,11 @@ import {
 } from '@tcrn/shared';
 
 import { reportLogger as logger } from '../logger';
+import {
+  assertSafeTenantSchema,
+  assertWorkerTenantMetadata,
+  buildWorkerObjectPath,
+} from './worker-security';
 
 /**
  * MinIO client configuration from environment
@@ -140,10 +146,7 @@ function getContentType(format: ReportFormat): string {
 }
 
 function escapeCsvField(field: string): string {
-  if (field.includes(',') || field.includes('"') || field.includes('\n') || field.includes('\r')) {
-    return `"${field.replace(/"/g, '""')}"`;
-  }
-  return field;
+  return escapeCsvCell(field);
 }
 
 function buildCsvRow(headers: ReportHeader[], row: MfrRow): string {
@@ -303,13 +306,14 @@ export const reportJobProcessor: Processor<ReportJobData, ReportJobResult> = asy
     jobId,
     reportType,
     tenantId,
-    tenantSchemaName,
+    tenantSchemaName: queuedTenantSchemaName,
     userId: _userId,
     talentId,
     profileStoreId: _profileStoreId,
     filters,
     options,
   } = job.data;
+  let tenantSchemaName = assertSafeTenantSchema(queuedTenantSchemaName);
   const startTime = Date.now();
   const format = job.data.format ?? 'xlsx';
 
@@ -318,8 +322,15 @@ export const reportJobProcessor: Processor<ReportJobData, ReportJobResult> = asy
 
   const prisma = new PrismaClient();
   let tempFilePath: string | null = null;
+  let tenantSchemaValidated = false;
 
   try {
+    tenantSchemaName = await assertWorkerTenantMetadata(prisma, {
+      tenantId,
+      tenantSchema: tenantSchemaName,
+    });
+    tenantSchemaValidated = true;
+
     if (options?.includePii) {
       throw new Error(
         'PII-inclusive report generation has been retired from TMS. Use TCRN PII Platform report flow instead.'
@@ -443,7 +454,7 @@ export const reportJobProcessor: Processor<ReportJobData, ReportJobResult> = asy
 
     // 9. Upload to MinIO
     const minioClient = createMinioClient();
-    const objectPath = `${tenantSchemaName}/${jobId}/${fileName}`;
+    const objectPath = buildWorkerObjectPath(tenantSchemaName, jobId, fileName);
 
     logger.info(`Uploading to MinIO bucket: ${TEMP_REPORTS_BUCKET}, path: ${objectPath}`);
 
@@ -483,10 +494,11 @@ export const reportJobProcessor: Processor<ReportJobData, ReportJobResult> = asy
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     logger.error(`Report job ${jobId} failed: ${errorMessage}`);
 
-    // Update job status to failed
-    await updateJobStatus(prisma, tenantSchemaName, jobId, 'failed', {
-      errorMessage: errorMessage,
-    });
+    if (tenantSchemaValidated) {
+      await updateJobStatus(prisma, tenantSchemaName, jobId, 'failed', {
+        errorMessage: errorMessage,
+      });
+    }
 
     throw error;
   } finally {

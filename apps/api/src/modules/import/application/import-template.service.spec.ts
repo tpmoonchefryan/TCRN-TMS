@@ -105,4 +105,18 @@ describe('ImportTemplateApplicationService', () => {
     expect(csv).toContain('VALIDATION_FAILED');
     expect(csv).toContain('nickname is required');
   });
+
+  it('neutralizes spreadsheet formula prefixes in error CSV downloads', () => {
+    const csv = service.generateErrorsCsv([
+      {
+        rowNumber: 4,
+        errorCode: 'VALIDATION_FAILED',
+        errorMessage: '=cmd',
+        originalData: '+SUM(1,2)',
+      },
+    ]);
+
+    expect(csv).toContain(",'=cmd,");
+    expect(csv).toContain("\"'+SUM(1,2)\"");
+  });
 });

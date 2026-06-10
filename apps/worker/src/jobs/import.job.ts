@@ -14,6 +14,11 @@ import { PrismaClient } from '@tcrn/database';
 import { SUPPORTED_UI_LOCALES, isSupportedUiLocale } from '@tcrn/shared';
 
 import { importLogger as logger } from '../logger';
+import {
+  assertSafeTenantSchema,
+  assertWorkerObjectPath,
+  assertWorkerTenantMetadata,
+} from './worker-security';
 
 const IMPORTS_BUCKET = 'imports';
 
@@ -179,7 +184,7 @@ export const importJobProcessor: Processor<ImportJobData, ImportJobResult> = asy
   const {
     jobId,
     tenantId,
-    tenantSchemaName,
+    tenantSchemaName: queuedTenantSchemaName,
     talentId,
     profileStoreId,
     userId,
@@ -190,8 +195,10 @@ export const importJobProcessor: Processor<ImportJobData, ImportJobResult> = asy
     defaultProfileType,
     options,
   } = job.data;
+  let tenantSchemaName = assertSafeTenantSchema(queuedTenantSchemaName);
   const startTime = Date.now();
   const tempFilePath = path.join(os.tmpdir(), `import_${jobId}.csv`);
+  let tenantSchemaValidated = false;
 
   logger.info(`Processing import job ${jobId} for tenant ${tenantId}, talent ${talentId}`);
   logger.info(`File: ${filePath}, Type: ${jobType}`);
@@ -208,6 +215,17 @@ export const importJobProcessor: Processor<ImportJobData, ImportJobResult> = asy
   };
 
   try {
+    tenantSchemaName = await assertWorkerTenantMetadata(prisma, {
+      tenantId,
+      tenantSchema: tenantSchemaName,
+    });
+    assertWorkerObjectPath(filePath, {
+      tenantSchema: tenantSchemaName,
+      jobId,
+      allowTenantRootInput: true,
+    });
+    tenantSchemaValidated = true;
+
     // 1. Update job status to processing
     await updateJobStatus(prisma, tenantSchemaName, jobId, 'running');
 
@@ -371,8 +389,9 @@ export const importJobProcessor: Processor<ImportJobData, ImportJobResult> = asy
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     logger.error(`Import job ${jobId} failed: ${errorMessage}`);
 
-    // Update job status to failed
-    await updateJobStatus(prisma, tenantSchemaName, jobId, 'failed', result, errorMessage);
+    if (tenantSchemaValidated) {
+      await updateJobStatus(prisma, tenantSchemaName, jobId, 'failed', result, errorMessage);
+    }
 
     throw error;
   } finally {

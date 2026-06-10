@@ -1,5 +1,6 @@
-import { ForbiddenException, NotFoundException } from '@nestjs/common';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { of, throwError } from 'rxjs';
 
 import { createLocalizedText } from '@tcrn/shared';
 
@@ -26,6 +27,7 @@ describe('PublicMarshmallowService', () => {
   let mockProfanityFilter: Pick<ProfanityFilterService, 'filter'>;
   let mockTechEventLog: Pick<TechEventLogService, 'log'>;
   let mockTrustScoreService: Pick<TrustScoreService, 'recordContentResult'>;
+  let mockHttpService: { get: ReturnType<typeof vi.fn> };
   let mockPrisma: {
     $queryRawUnsafe: ReturnType<typeof vi.fn>;
     $executeRawUnsafe: ReturnType<typeof vi.fn>;
@@ -79,6 +81,9 @@ describe('PublicMarshmallowService', () => {
     mockTrustScoreService = {
       recordContentResult: vi.fn().mockResolvedValue(undefined),
     };
+    mockHttpService = {
+      get: vi.fn(),
+    };
 
     service = new PublicMarshmallowService(
       mockDatabaseService as DatabaseService,
@@ -88,8 +93,12 @@ describe('PublicMarshmallowService', () => {
       {} as MarshmallowReactionService,
       mockTechEventLog as TechEventLogService,
       mockTrustScoreService as TrustScoreService,
-      { get: vi.fn() } as any
+      mockHttpService as any
     );
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 
   function mockPublicSubmitLookup(configOverrides: Record<string, unknown> = {}) {
@@ -219,6 +228,112 @@ describe('PublicMarshmallowService', () => {
       message: 'Question received.',
     });
     expect(mockCaptchaService.verifyTurnstile).not.toHaveBeenCalled();
+  });
+
+  it('rejects direct selected image URLs that were not issued by the trusted resolver', async () => {
+    mockPublicSubmitLookup();
+
+    await expect(
+      service.submitMessage(
+        'demo',
+        {
+          content: 'Hello',
+          isAnonymous: true,
+          fingerprint: 'fp-test',
+          selectedImageUrls: ['http://127.0.0.1/private.png'],
+        },
+        { ip: '127.0.0.1', userAgent: 'Mozilla/5.0 Chrome/120.0' }
+      )
+    ).rejects.toBeInstanceOf(BadRequestException);
+
+    expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalledTimes(3);
+  });
+
+  it('accepts resolver-issued HTTPS Bilibili image URLs for selected images', async () => {
+    mockPublicSubmitLookup();
+    const imageUrl = 'https://i0.hdslb.com/bfs/new_dyn/trusted.png';
+
+    await expect(
+      service.submitMessage(
+        'demo',
+        {
+          content: 'Hello',
+          isAnonymous: true,
+          fingerprint: 'fp-test',
+          selectedImageUrls: [imageUrl],
+        },
+        { ip: '127.0.0.1', userAgent: 'Mozilla/5.0 Chrome/120.0' }
+      )
+    ).resolves.toMatchObject({ id: 'message-1' });
+
+    const insertCall =
+      mockPrisma.$queryRawUnsafe.mock.calls[mockPrisma.$queryRawUnsafe.mock.calls.length - 1];
+    expect(insertCall?.[11]).toBe(imageUrl);
+    expect(insertCall?.[12]).toEqual([imageUrl]);
+  });
+
+  it('uses timeout, redirect, and response-size caps for Bilibili API previews', async () => {
+    mockHttpService.get.mockReturnValue(
+      of({
+        data: {
+          code: 0,
+          data: {
+            item: {
+              modules: [
+                {
+                  module_dynamic: {
+                    major: {
+                      opus: {
+                        pics: [{ url: 'http://i0.hdslb.com/bfs/new_dyn/preview.png' }],
+                      },
+                    },
+                  },
+                },
+              ],
+            },
+          },
+        },
+      })
+    );
+
+    await expect(service.resolveBilibiliImages('https://www.bilibili.com/opus/12345')).resolves.toEqual([
+      'https://i0.hdslb.com/bfs/new_dyn/preview.png',
+    ]);
+    expect(mockHttpService.get).toHaveBeenCalledWith(
+      'https://api.bilibili.com/x/polymer/web-dynamic/v1/detail?id=12345',
+      expect.objectContaining({
+        maxBodyLength: 524288,
+        maxContentLength: 524288,
+        maxRedirects: 0,
+        timeout: 5000,
+      })
+    );
+  });
+
+  it('rejects non-Bilibili preview inputs and caps oversized fallback responses', async () => {
+    await expect(service.resolveBilibiliImages('https://example.com/opus/12345')).resolves.toEqual(
+      []
+    );
+    expect(mockHttpService.get).not.toHaveBeenCalled();
+
+    mockHttpService.get.mockReturnValueOnce(throwError(() => new Error('api failed')));
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      headers: new Headers({ 'content-length': '999999' }),
+      body: null,
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(service.resolveBilibiliImages('https://www.bilibili.com/opus/12345')).resolves.toEqual(
+      []
+    );
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://www.bilibili.com/opus/12345',
+      expect.objectContaining({
+        redirect: 'error',
+        signal: expect.any(AbortSignal),
+      })
+    );
   });
 
   it('fails closed server-side when CAPTCHA is required and provider config is incomplete', async () => {

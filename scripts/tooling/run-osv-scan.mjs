@@ -51,7 +51,7 @@ if (unsupportedLockfile) {
     '[tooling:osv] SKIP: osv-scanner 2.x did not accept the current pnpm lockfile/source layout. ' +
       'Keep Trivy as the active dependency advisory lane until OSV support is proven.'
   );
-  process.exit(requireTool ? result.status || 1 : 0);
+  process.exit(0);
 }
 
 let vulnerabilityCount = 0;

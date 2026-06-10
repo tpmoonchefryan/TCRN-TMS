@@ -301,6 +301,15 @@ describe('LoginForm', () => {
     expect(screen.getByLabelText('Password')).toHaveAttribute('name', 'password');
     expect(screen.getByLabelText('Password')).toHaveAttribute('autocomplete', 'current-password');
 
+    const form = screen.getByLabelText('Password').closest('form');
+    expect(form).toHaveAttribute('method', 'post');
+    expect(form).toHaveAttribute('action', '/api/v1/auth/login');
+    const fallbackAction = new URL(
+      form?.getAttribute('action') ?? '',
+      'https://app.example.test'
+    );
+    expect(fallbackAction.search).toBe('');
+
     fillCredentials();
     fireEvent.click(screen.getByRole('button', { name: 'Sign in' }));
 
