@@ -1,7 +1,7 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 import { describe, expect, it, vi } from 'vitest';
 
-import { createTestTenantFixture, generateSchemaName } from './test-utils';
+import { createTestTenantFixture, createTestUserInTenant, generateSchemaName } from './test-utils';
 
 describe('createTestTenantFixture', () => {
   it('rolls back tenant metadata when fixture bootstrap fails after schema creation', async () => {
@@ -246,5 +246,36 @@ describe('generateSchemaName', () => {
     const schemaName = generateSchemaName(`TEST_${'X'.repeat(100)}`);
 
     expect(schemaName.length).toBeLessThanOrEqual(63);
+  });
+});
+
+describe('createTestUserInTenant', () => {
+  it('maps legacy admin compatibility roles to the canonical initial admin role', async () => {
+    const execute = vi.fn().mockResolvedValue(undefined);
+    const query = vi.fn().mockResolvedValue([{ id: 'role-initial-admin' }]);
+
+    const user = await createTestUserInTenant(
+      {
+        $executeRawUnsafe: execute,
+        $queryRawUnsafe: query,
+      },
+      {
+        tenant: {
+          id: 'tenant-123',
+          code: 'TEST_FIXTURE',
+          name: 'Test Fixture',
+          schemaName: 'tenant_test_fixture',
+          tier: 'standard',
+          isActive: true,
+        },
+        schemaName: 'tenant_test_fixture',
+        cleanup: async () => undefined,
+      },
+      'legacy_admin_user',
+      ['ADMIN']
+    );
+
+    expect(query).toHaveBeenCalledWith(expect.any(String), 'INITIAL_ADMIN');
+    expect(user.roles).toEqual(['ADMIN']);
   });
 });

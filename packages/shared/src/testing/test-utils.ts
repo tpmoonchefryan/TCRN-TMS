@@ -1,6 +1,12 @@
 // © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
 import { createLocalizedText, type LocalizedText } from '../constants/locale';
-import { RBAC_POLICY_DEFINITIONS, RBAC_RESOURCES, RBAC_ROLE_TEMPLATES } from '../rbac/catalog';
+import {
+  INITIAL_ADMIN_ROLE_CODE,
+  RBAC_POLICY_DEFINITIONS,
+  RBAC_RESOURCES,
+  RBAC_ROLE_TEMPLATES,
+  isLegacyAdminCompatibilityRoleCode,
+} from '../rbac/catalog';
 
 const TENANT_FIXTURE_SEED_TABLES = [
   'resource',
@@ -845,6 +851,9 @@ export async function createTestUserInTenant(
 
   // Assign roles
   for (const roleCode of roles) {
+    const lookupRoleCode = isLegacyAdminCompatibilityRoleCode(roleCode)
+      ? INITIAL_ADMIN_ROLE_CODE
+      : roleCode;
     const roleIds = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
       `
       SELECT id
@@ -852,11 +861,11 @@ export async function createTestUserInTenant(
       WHERE code = $1 AND is_active = true
       LIMIT 1
     `,
-      roleCode
+      lookupRoleCode
     );
 
     if (!roleIds.length) {
-      throw new Error(`Role not found in ${tenantFixture.schemaName}: ${roleCode}`);
+      throw new Error(`Role not found in ${tenantFixture.schemaName}: ${lookupRoleCode}`);
     }
 
     await prisma.$executeRawUnsafe(

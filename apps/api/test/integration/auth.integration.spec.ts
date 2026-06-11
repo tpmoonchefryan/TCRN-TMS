@@ -143,6 +143,7 @@ describeFn('Auth Integration Tests', () => {
     it('should refresh token successfully', async () => {
       const response = await request(app.getHttpServer())
         .post('/api/v1/auth/refresh')
+        .set('X-Tenant-ID', tenantFixture.tenant.code)
         .set('Cookie', refreshToken)
         .expect(200);
 

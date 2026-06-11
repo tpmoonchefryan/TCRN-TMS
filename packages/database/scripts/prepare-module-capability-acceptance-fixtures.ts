@@ -141,6 +141,7 @@ async function upsertFixtureTenant(input: {
     await prisma.$executeRawUnsafe(
       `
         INSERT INTO public.tenant_capability_assignment (
+          id,
           tenant_id,
           capability_code,
           enabled,
@@ -149,7 +150,7 @@ async function upsertFixtureTenant(input: {
           updated_at,
           note
         )
-        VALUES ($1::uuid, $2, $3, 'seed', now(), now(), 'Phase 1 disposable fixture')
+        VALUES (gen_random_uuid(), $1::uuid, $2, $3, 'seed', now(), now(), 'Phase 1 disposable fixture')
         ON CONFLICT (tenant_id, capability_code) DO UPDATE SET
           enabled = EXCLUDED.enabled,
           source = EXCLUDED.source,

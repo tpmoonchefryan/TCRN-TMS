@@ -62,6 +62,7 @@ export async function syncSeedTenantCapabilities(
       await tx.$executeRawUnsafe(
         `
           INSERT INTO public.tenant_capability_assignment (
+            id,
             tenant_id,
             capability_code,
             enabled,
@@ -70,7 +71,7 @@ export async function syncSeedTenantCapabilities(
             updated_at,
             note
           )
-          VALUES ($1::uuid, $2, $3, $4, now(), now(), $5)
+          VALUES (gen_random_uuid(), $1::uuid, $2, $3, $4, now(), now(), $5)
           ON CONFLICT (tenant_id, capability_code) DO UPDATE SET
             enabled = CASE
               WHEN tenant_capability_assignment.source IN ('seed', 'migration', 'system')
