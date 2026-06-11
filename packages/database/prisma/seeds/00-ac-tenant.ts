@@ -6,6 +6,11 @@ import {
   INITIAL_ADMIN_ROLE_CODE,
   LEGACY_ADMIN_COMPATIBILITY_ROLE_CODES,
 } from '../../../shared/src/rbac/catalog';
+import {
+  alignTenantTemplateConstraintNames,
+  alignTenantTemplateIndexNames,
+  copyTenantTemplateForeignKeys,
+} from '../../src/platform/tenancy/template-bootstrap';
 import { syncSeedTenantCapabilities } from './_module-capabilities';
 
 export interface AcTenantResult {
@@ -33,14 +38,13 @@ async function ensureTenantSchema(prisma: PrismaClient, schemaName: string): Pro
     `SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_schema = $1 AND table_name = 'system_user') as exists`,
     schemaName
   );
+  const tables = await prisma.$queryRawUnsafe<Array<{ tablename: string }>>(
+    `SELECT tablename FROM pg_tables WHERE schemaname = 'tenant_template' ORDER BY tablename`
+  );
+  const tableNames = tables.map(({ tablename }) => tablename);
 
   if (!tableExists[0]?.exists) {
     console.log(`    → Copying tables from tenant_template to ${schemaName}...`);
-    
-    // Get all tables from tenant_template
-    const tables = await prisma.$queryRawUnsafe<Array<{ tablename: string }>>(
-      `SELECT tablename FROM pg_tables WHERE schemaname = 'tenant_template' ORDER BY tablename`
-    );
 
     for (const { tablename } of tables) {
       try {
@@ -54,6 +58,10 @@ async function ensureTenantSchema(prisma: PrismaClient, schemaName: string): Pro
     }
     console.log(`    ✓ Created ${tables.length} tables in ${schemaName}`);
   }
+
+  await copyTenantTemplateForeignKeys(prisma, schemaName, tableNames);
+  await alignTenantTemplateConstraintNames(prisma, schemaName, tableNames);
+  await alignTenantTemplateIndexNames(prisma, schemaName, tableNames);
 }
 
 export async function seedAcTenant(prisma: PrismaClient): Promise<AcTenantResult> {
