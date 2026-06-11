@@ -586,6 +586,25 @@ describe('SsoService', () => {
     expect(mockPrisma.$queryRawUnsafe).not.toHaveBeenCalled();
   });
 
+  it('rejects raw managed-provider client secrets before storing configuration', async () => {
+    tenantService.getTenantById.mockResolvedValueOnce({ ...tenant, tier: 'ac' });
+    mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([]);
+
+    await expect(
+      service.upsertManagedProvider(tenant.id, linkedUser.id, {
+        code: 'ac-sso',
+        displayName: { en: 'AC SSO' },
+        providerType: 'oidc',
+        ownerScope: 'ac_platform',
+        clientSecretRef: 'raw-secret-value',
+        isEnabled: true,
+      })
+    ).rejects.toThrow(BadRequestException);
+
+    expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalledTimes(1);
+    expect(mockPrisma.$executeRawUnsafe).not.toHaveBeenCalled();
+  });
+
   it('lets AC operators upsert managed provider metadata without raw secrets', async () => {
     tenantService.getTenantById.mockResolvedValueOnce({ ...tenant, tier: 'ac' });
     mockPrisma.$queryRawUnsafe

@@ -270,6 +270,54 @@ describe('AuthController SSO route-level contract', () => {
     ).rejects.toBe(rejection);
   });
 
+  it('returns SSO TOTP and password-reset envelopes without issuing refresh cookies', async () => {
+    ssoService.exchangeResult
+      .mockResolvedValueOnce({
+        type: 'totp_required',
+        sessionToken: 'sso-pre-session-totp',
+        expiresIn: 300,
+      })
+      .mockResolvedValueOnce({
+        type: 'password_reset_required',
+        sessionToken: 'sso-pre-session-reset',
+        expiresIn: 300,
+        reason: 'forced_reset',
+      });
+    const totpRes = { cookie: vi.fn() };
+    const resetRes = { cookie: vi.fn() };
+
+    const totpResponse = await controller.exchangeSsoResult(
+      { result: 'ssox_totp' },
+      buildRequest() as never,
+      totpRes as never
+    );
+    const resetResponse = await controller.exchangeSsoResult(
+      { result: 'ssox_reset' },
+      buildRequest() as never,
+      resetRes as never
+    );
+
+    expect(totpResponse).toEqual({
+      success: true,
+      data: {
+        totpRequired: true,
+        sessionToken: 'sso-pre-session-totp',
+        expiresIn: 300,
+      },
+    });
+    expect(resetResponse).toEqual({
+      success: true,
+      data: {
+        passwordResetRequired: true,
+        sessionToken: 'sso-pre-session-reset',
+        expiresIn: 300,
+        reason: 'forced_reset',
+      },
+    });
+    expect(totpRes.cookie).not.toHaveBeenCalled();
+    expect(resetRes.cookie).not.toHaveBeenCalled();
+  });
+
   it('scopes account-link routes to the authenticated current user only', async () => {
     ssoService.listAccountLinks.mockResolvedValueOnce([]);
     ssoService.listAccountLinkProviders.mockResolvedValueOnce([{ code: 'mock-sso' }]);
@@ -322,6 +370,26 @@ describe('AuthController SSO route-level contract', () => {
       'tenant_uat',
       currentUser.id,
       'link-1',
+      expect.objectContaining({ requestId: 'req-sso-controller' })
+    );
+  });
+
+  it('propagates wrong-link revoke denial while preserving current-user scope', async () => {
+    const rejection = new BadRequestException('SSO account link not found');
+    ssoService.revokeAccountLink.mockRejectedValueOnce(rejection);
+
+    await expect(
+      controller.revokeSsoAccountLink(
+        currentUser as never,
+        'foreign-link',
+        buildRequest() as never
+      )
+    ).rejects.toBe(rejection);
+
+    expect(ssoService.revokeAccountLink).toHaveBeenCalledWith(
+      'tenant_uat',
+      currentUser.id,
+      'foreign-link',
       expect.objectContaining({ requestId: 'req-sso-controller' })
     );
   });
