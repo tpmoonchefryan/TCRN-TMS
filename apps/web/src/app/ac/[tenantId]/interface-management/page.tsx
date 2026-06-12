@@ -1,4 +1,4 @@
-import { InterfaceManagementScreen } from '@/domains/interface-management/screens/InterfaceManagementScreen';
+import { AcBusinessRouteUnavailableScreen } from '@/domains/integration-management/screens/AcBusinessRouteUnavailableScreen';
 
 type AcRoutePageProps = {
   params: Promise<{ tenantId: string }>;
@@ -7,5 +7,5 @@ type AcRoutePageProps = {
 export default async function AcInterfaceManagementPage(props: AcRoutePageProps) {
   const { tenantId } = await props.params;
 
-  return <InterfaceManagementScreen tenantId={tenantId} workspaceKind="ac" />;
+  return <AcBusinessRouteUnavailableScreen surface="interfaces" tenantId={tenantId} />;
 }

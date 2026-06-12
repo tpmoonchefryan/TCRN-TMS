@@ -5,7 +5,6 @@ import {
   BookText,
   Boxes,
   Building2,
-  Cable,
   FileJson,
   Flag,
   KeyRound,
@@ -13,15 +12,14 @@ import {
   PlugZap,
   ShieldCheck,
   Users,
-  Webhook,
 } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 import {
-  buildAcRoleManagementPath,
   buildAcProfilePath,
   buildAcProfileSecurityPath,
+  buildAcRoleManagementPath,
   buildAcWorkspacePath,
   buildTenantWorkspacePath,
   isAcTenantTier,
@@ -354,20 +352,6 @@ export function AcShell({
       href: buildAcRoleManagementPath(tenantId),
       isActive: pathname.includes('/user-management/roles'),
       icon: <ShieldCheck className="h-4 w-4" />,
-    },
-    {
-      key: 'interface-management',
-      label: integrationLabels.interfaceManagement,
-      href: `/ac/${tenantId}/interface-management`,
-      isActive: pathname.includes('/interface-management'),
-      icon: <Cable className="h-4 w-4" />,
-    },
-    {
-      key: 'webhook-management',
-      label: integrationLabels.webhookManagement,
-      href: `/ac/${tenantId}/webhook-management`,
-      isActive: pathname.includes('/webhook-management'),
-      icon: <Webhook className="h-4 w-4" />,
     },
     {
       key: 'api-clients',

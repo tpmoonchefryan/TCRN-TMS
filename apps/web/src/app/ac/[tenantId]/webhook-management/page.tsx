@@ -1,4 +1,4 @@
-import { WebhookManagementScreen } from '@/domains/webhook-management/screens/WebhookManagementScreen';
+import { AcBusinessRouteUnavailableScreen } from '@/domains/integration-management/screens/AcBusinessRouteUnavailableScreen';
 
 type AcRoutePageProps = {
   params: Promise<{ tenantId: string }>;
@@ -7,5 +7,5 @@ type AcRoutePageProps = {
 export default async function AcWebhookManagementPage(props: AcRoutePageProps) {
   const { tenantId } = await props.params;
 
-  return <WebhookManagementScreen tenantId={tenantId} workspaceKind="ac" />;
+  return <AcBusinessRouteUnavailableScreen surface="webhooks" tenantId={tenantId} />;
 }
