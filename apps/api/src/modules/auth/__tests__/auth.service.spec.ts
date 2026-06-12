@@ -453,6 +453,23 @@ describe('AuthService', () => {
   });
 
   describe('verifyTotp', () => {
+    it('rejects an invalid TOTP session token before reading tenant data', async () => {
+      (mockTokenService.verifyTotpSessionToken as ReturnType<typeof vi.fn>).mockImplementationOnce(
+        () => {
+          throw new Error('expired');
+        }
+      );
+
+      await expect(
+        service.verifyTotp('expired-session-token', '123456', '127.0.0.1')
+      ).rejects.toThrow(UnauthorizedException);
+
+      expect(mockPrisma.$queryRawUnsafe).not.toHaveBeenCalled();
+      expect(mockTotpService.verify).not.toHaveBeenCalled();
+      expect(mockTokenService.generateAccessToken).not.toHaveBeenCalled();
+      expect(mockTokenService.generateRefreshToken).not.toHaveBeenCalled();
+    });
+
     it('casts the session subject to uuid when loading the TOTP user record', async () => {
       const userId = '550e8400-e29b-41d4-a716-446655440000';
 
@@ -482,9 +499,61 @@ describe('AuthService', () => {
         userId
       );
     });
+
+    it('rejects a wrong TOTP code without issuing tokens and records a redacted failure event', async () => {
+      const userId = '550e8400-e29b-41d4-a716-446655440000';
+
+      (mockTokenService.verifyTotpSessionToken as ReturnType<typeof vi.fn>).mockReturnValue({
+        sub: userId,
+        tid: mockTenant.id,
+        tsc: mockTenant.schemaName,
+      });
+      (mockTotpService.verify as ReturnType<typeof vi.fn>).mockReturnValueOnce(false);
+      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([
+        {
+          ...mockUser,
+          id: userId,
+          totp_secret: 'secret',
+          is_totp_enabled: true,
+        },
+      ]);
+
+      await expect(
+        service.verifyTotp('session-token', '000000', '127.0.0.1', 'Vitest')
+      ).rejects.toThrow(UnauthorizedException);
+
+      expect(mockSessionService.logSecurityEvent).toHaveBeenCalledWith(
+        mockTenant.schemaName,
+        'TOTP_VERIFICATION_FAILED',
+        userId,
+        {},
+        '127.0.0.1',
+        'Vitest'
+      );
+      expect(mockTokenService.generateAccessToken).not.toHaveBeenCalled();
+      expect(mockTokenService.generateRefreshToken).not.toHaveBeenCalled();
+    });
   });
 
   describe('verifyRecoveryCode', () => {
+    it('rejects an invalid recovery-code session token before reading recovery codes', async () => {
+      (mockTokenService.verifyTotpSessionToken as ReturnType<typeof vi.fn>).mockImplementationOnce(
+        () => {
+          throw new Error('expired');
+        }
+      );
+
+      await expect(
+        service.verifyRecoveryCode('expired-session-token', 'RECOVERY-123', '127.0.0.1')
+      ).rejects.toThrow(UnauthorizedException);
+
+      expect(mockPrisma.$queryRawUnsafe).not.toHaveBeenCalled();
+      expect(mockPrisma.$executeRawUnsafe).not.toHaveBeenCalled();
+      expect(mockTotpService.verifyRecoveryCode).not.toHaveBeenCalled();
+      expect(mockTokenService.generateAccessToken).not.toHaveBeenCalled();
+      expect(mockTokenService.generateRefreshToken).not.toHaveBeenCalled();
+    });
+
     it('casts recovery-code lookups and user reads to uuid when completing recovery login', async () => {
       const userId = '550e8400-e29b-41d4-a716-446655440000';
 
@@ -533,6 +602,48 @@ describe('AuthService', () => {
         expect.stringContaining('WHERE id = $1::uuid'),
         userId
       );
+      expect(mockSessionService.logSecurityEvent).toHaveBeenCalledWith(
+        mockTenant.schemaName,
+        'RECOVERY_CODE_USED',
+        userId,
+        { remaining: 7 },
+        '127.0.0.1',
+        undefined
+      );
+    });
+
+    it('rejects a reused or wrong recovery code without marking any code used', async () => {
+      const userId = '550e8400-e29b-41d4-a716-446655440000';
+
+      (mockTokenService.verifyTotpSessionToken as ReturnType<typeof vi.fn>).mockReturnValue({
+        sub: userId,
+        tid: mockTenant.id,
+        tsc: mockTenant.schemaName,
+      });
+      (mockTotpService.verifyRecoveryCode as ReturnType<typeof vi.fn>).mockReturnValue(false);
+      mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([
+        {
+          id: 'recovery-1',
+          code_hash: 'hash-1',
+          is_used: false,
+        },
+      ]);
+
+      await expect(
+        service.verifyRecoveryCode('session-token', 'USED-OR-WRONG', '127.0.0.1', 'Vitest')
+      ).rejects.toThrow(UnauthorizedException);
+
+      expect(mockSessionService.logSecurityEvent).toHaveBeenCalledWith(
+        mockTenant.schemaName,
+        'RECOVERY_CODE_INVALID',
+        userId,
+        {},
+        '127.0.0.1',
+        'Vitest'
+      );
+      expect(mockPrisma.$executeRawUnsafe).not.toHaveBeenCalled();
+      expect(mockTokenService.generateAccessToken).not.toHaveBeenCalled();
+      expect(mockTokenService.generateRefreshToken).not.toHaveBeenCalled();
     });
   });
 

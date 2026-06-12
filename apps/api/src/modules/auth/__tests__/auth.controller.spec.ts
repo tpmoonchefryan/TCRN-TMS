@@ -296,6 +296,171 @@ describe('UserController auth/session queries', () => {
     );
   });
 
+  it('rejects TOTP enable when the verification code is wrong without storing recovery codes', async () => {
+    mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([
+      {
+        totp_secret: 'SECRET',
+        is_totp_enabled: false,
+      },
+    ]);
+    mockTotpService.verify.mockReturnValueOnce(false);
+
+    await expect(
+      controller.enableTotp(
+        currentUser as never,
+        { code: '000000' } as never,
+        {
+          ip: '127.0.0.1',
+          socket: { remoteAddress: '127.0.0.1' },
+          get: vi.fn().mockReturnValue('Vitest'),
+        } as never
+      )
+    ).rejects.toThrow('Invalid TOTP code');
+
+    expect(mockPrisma.$executeRawUnsafe).not.toHaveBeenCalled();
+    expect(mockTotpService.generateRecoveryCodes).not.toHaveBeenCalled();
+    expect(mockTotpService.hashRecoveryCode).not.toHaveBeenCalled();
+  });
+
+  it('disables TOTP for the current user and deletes stored recovery-code hashes', async () => {
+    mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([
+      {
+        password_hash: 'hashed-password',
+        is_totp_enabled: true,
+      },
+    ]);
+    mockPasswordService.verify.mockResolvedValueOnce(true);
+    mockPrisma.$executeRawUnsafe.mockResolvedValue(1);
+    mockSessionService.logSecurityEvent.mockResolvedValueOnce(undefined);
+
+    const result = await controller.disableTotp(
+      currentUser as never,
+      { password: 'ValidPass123!' } as never,
+      {
+        ip: '127.0.0.1',
+        socket: { remoteAddress: '127.0.0.1' },
+        get: vi.fn().mockReturnValue('Vitest'),
+      } as never
+    );
+
+    expect(mockPasswordService.verify).toHaveBeenCalledWith('ValidPass123!', 'hashed-password');
+    expect(mockPrisma.$executeRawUnsafe).toHaveBeenNthCalledWith(
+      1,
+      expect.stringContaining('is_totp_enabled = false'),
+      currentUser.id
+    );
+    expect(mockPrisma.$executeRawUnsafe).toHaveBeenNthCalledWith(
+      2,
+      expect.stringContaining('DELETE FROM "tenant_test".recovery_code WHERE user_id = $1::uuid'),
+      currentUser.id
+    );
+    expect(mockSessionService.logSecurityEvent).toHaveBeenCalledWith(
+      currentUser.tenantSchema,
+      'TOTP_DISABLED',
+      currentUser.id,
+      {},
+      '127.0.0.1',
+      'Vitest'
+    );
+    expect(result).toEqual({
+      success: true,
+      data: expect.objectContaining({ enabled: false }),
+    });
+  });
+
+  it('rejects TOTP disable on wrong password without clearing secrets or recovery codes', async () => {
+    mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([
+      {
+        password_hash: 'hashed-password',
+        is_totp_enabled: true,
+      },
+    ]);
+    mockPasswordService.verify.mockResolvedValueOnce(false);
+
+    await expect(
+      controller.disableTotp(
+        currentUser as never,
+        { password: 'WrongPass123!' } as never,
+        {
+          ip: '127.0.0.1',
+          socket: { remoteAddress: '127.0.0.1' },
+          get: vi.fn().mockReturnValue('Vitest'),
+        } as never
+      )
+    ).rejects.toThrow('Password is incorrect');
+
+    expect(mockPrisma.$executeRawUnsafe).not.toHaveBeenCalled();
+    expect(mockSessionService.logSecurityEvent).not.toHaveBeenCalled();
+  });
+
+  it('regenerates recovery codes by deleting old hashes and storing only new hashes', async () => {
+    mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([
+      {
+        password_hash: 'hashed-password',
+        is_totp_enabled: true,
+      },
+    ]);
+    mockPasswordService.verify.mockResolvedValueOnce(true);
+    mockTotpService.generateRecoveryCodes.mockReturnValueOnce([
+      'ABCD-1234-WXYZ',
+      'WXYZ-9876-ABCD',
+    ]);
+    mockTotpService.hashRecoveryCode
+      .mockReturnValueOnce('hash-one')
+      .mockReturnValueOnce('hash-two');
+    mockPrisma.$executeRawUnsafe.mockResolvedValue(1);
+    mockSessionService.logSecurityEvent.mockResolvedValueOnce(undefined);
+
+    const result = await controller.regenerateRecoveryCodes(
+      currentUser as never,
+      { password: 'ValidPass123!' } as never,
+      {
+        ip: '127.0.0.1',
+        socket: { remoteAddress: '127.0.0.1' },
+        get: vi.fn().mockReturnValue('Vitest'),
+      } as never
+    );
+
+    expect(mockPrisma.$executeRawUnsafe).toHaveBeenNthCalledWith(
+      1,
+      expect.stringContaining('DELETE FROM "tenant_test".recovery_code WHERE user_id = $1::uuid'),
+      currentUser.id
+    );
+    expect(mockPrisma.$executeRawUnsafe).toHaveBeenNthCalledWith(
+      2,
+      expect.stringContaining('VALUES (gen_random_uuid(), $1::uuid, $2, false, now())'),
+      currentUser.id,
+      'hash-one'
+    );
+    expect(mockPrisma.$executeRawUnsafe).toHaveBeenNthCalledWith(
+      3,
+      expect.stringContaining('VALUES (gen_random_uuid(), $1::uuid, $2, false, now())'),
+      currentUser.id,
+      'hash-two'
+    );
+    expect(mockPrisma.$executeRawUnsafe).not.toHaveBeenCalledWith(
+      expect.any(String),
+      currentUser.id,
+      'ABCD-1234-WXYZ'
+    );
+    expect(mockSessionService.logSecurityEvent).toHaveBeenCalledWith(
+      currentUser.tenantSchema,
+      'RECOVERY_CODES_REGENERATED',
+      currentUser.id,
+      {},
+      '127.0.0.1',
+      'Vitest'
+    );
+    expect(result).toEqual({
+      success: true,
+      data: {
+        recoveryCodes: ['ABCD-1234-WXYZ', 'WXYZ-9876-ABCD'],
+        warning:
+          'All previous recovery codes have been invalidated. Save these new codes in a safe place.',
+      },
+    });
+  });
+
   it('passes the current refresh-token id into the sessions query when the cookie belongs to the authenticated user', async () => {
     const sessions = [{ id: 'session-1', isCurrent: true }];
 
