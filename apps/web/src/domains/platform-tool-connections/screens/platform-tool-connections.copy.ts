@@ -1,5 +1,3 @@
-import type { SupportedUiLocale } from '@tcrn/shared';
-
 import { useUiLocale } from '@/platform/runtime/locale/locale-provider';
 import { pickLocaleText } from '@/platform/runtime/locale/locale-text';
 
@@ -154,6 +152,14 @@ export function usePlatformToolConnectionsCopy() {
         ko: '링크 사용 불가',
         fr: 'Lien indisponible',
       }),
+      openBlockedReason: text({
+        en: 'Open is disabled until the connection is enabled and a backend-approved deep link is available.',
+        zh_HANS: '仅当连接已启用且后端批准深链时，打开操作才可用。',
+        zh_HANT: '只有連線已啟用且後端核准深層連結時，開啟操作才可用。',
+        ja: '接続が有効で、バックエンド承認済みの深リンクがある場合のみ開けます。',
+        ko: '연결이 활성화되고 백엔드 승인 딥링크가 있을 때만 열 수 있습니다.',
+        fr: 'L’ouverture reste désactivée tant que la connexion n’est pas activée et qu’un lien profond approuvé par le backend n’existe pas.',
+      }),
     },
     fields: {
       endpointUrl: text({ en: 'Endpoint URL', zh_HANS: '端点 URL', zh_HANT: '端點 URL', ja: 'エンドポイント URL', ko: '엔드포인트 URL', fr: 'URL endpoint' }),
@@ -171,6 +177,56 @@ export function usePlatformToolConnectionsCopy() {
       error: text({ en: 'Platform tools could not load', zh_HANS: '平台工具加载失败', zh_HANT: '平台工具載入失敗', ja: '読み込み失敗', ko: '로드 실패', fr: 'Chargement impossible' }),
       saved: text({ en: 'Connection saved', zh_HANS: '连接已保存', zh_HANT: '連線已儲存', ja: '接続を保存しました', ko: '연결 저장됨', fr: 'Connexion enregistrée' }),
       denied: text({ en: 'Deep link denied', zh_HANS: '深链已拒绝', zh_HANT: '深層連結已拒絕', ja: '深リンクは拒否されました', ko: '딥링크 거부됨', fr: 'Lien profond refusé' }),
+    },
+    readinessReasons: {
+      notConfigured: text({
+        en: 'Not configured: no enabled connection metadata exists for this AC environment.',
+        zh_HANS: '未配置：此 AC 环境没有已启用的连接元数据。',
+        zh_HANT: '未設定：此 AC 環境沒有已啟用的連線中繼資料。',
+        ja: '未設定: この AC 環境には有効な接続メタデータがありません。',
+        ko: '미구성: 이 AC 환경에는 활성화된 연결 메타데이터가 없습니다.',
+        fr: 'Non configuré : aucune métadonnée de connexion activée n’existe pour cet environnement AC.',
+      }),
+      healthUnknown: text({
+        en: 'Health unknown: no successful health proof has been recorded.',
+        zh_HANS: '健康状态未知：尚未记录成功的健康检查证明。',
+        zh_HANT: '健康狀態未知：尚未記錄成功的健康檢查證明。',
+        ja: 'ヘルス不明: 成功したヘルス証跡はまだ記録されていません。',
+        ko: '상태 알 수 없음: 성공한 상태 점검 증거가 아직 기록되지 않았습니다.',
+        fr: 'Santé inconnue : aucune preuve de santé réussie n’a été enregistrée.',
+      }),
+      ssoBlocked: text({
+        en: 'SSO blocked: human-console access remains fail-closed until real SSO readiness is proven.',
+        zh_HANS: 'SSO 已阻止：在证明真实 SSO 就绪前，人工控制台访问保持失败关闭。',
+        zh_HANT: 'SSO 已阻擋：在證明真實 SSO 就緒前，人員主控台存取保持失敗關閉。',
+        ja: 'SSO ブロック: 実際の SSO 準備状況が証明されるまで、人向けコンソールアクセスは fail-closed です。',
+        ko: 'SSO 차단: 실제 SSO 준비가 증명될 때까지 콘솔 접근은 fail-closed 상태입니다.',
+        fr: 'SSO bloqué : l’accès console humain reste fail-closed tant que la préparation SSO réelle n’est pas prouvée.',
+      }),
+      ssoNotApplicable: text({
+        en: 'SSO not applicable for this tool state.',
+        zh_HANS: '此工具状态不适用 SSO。',
+        zh_HANT: '此工具狀態不適用 SSO。',
+        ja: 'このツール状態では SSO は対象外です。',
+        ko: '이 도구 상태에는 SSO가 적용되지 않습니다.',
+        fr: 'SSO non applicable pour cet état d’outil.',
+      }),
+      localStubbed: text({
+        en: 'Local-dev stub only: useful for AC readiness proof, not production tool availability.',
+        zh_HANS: '仅本地开发 stub：可用于 AC 就绪证明，不代表生产工具可用。',
+        zh_HANT: '僅本機開發 stub：可用於 AC 就緒證明，不代表生產工具可用。',
+        ja: 'ローカル開発 stub のみ: AC 準備状況の証明用であり、本番ツール可用性ではありません。',
+        ko: '로컬 개발 stub 전용: AC 준비 상태 증명용이며 프로덕션 도구 가용성이 아닙니다.',
+        fr: 'Stub local-dev seulement : utile pour la preuve AC, pas pour la disponibilité production.',
+      }),
+      ready: text({
+        en: 'Ready only reflects backend readiness metadata for this connection.',
+        zh_HANS: 'Ready 仅表示此连接的后端就绪元数据。',
+        zh_HANT: 'Ready 僅表示此連線的後端就緒中繼資料。',
+        ja: 'Ready はこの接続のバックエンド準備メタデータのみを示します。',
+        ko: 'Ready는 이 연결의 백엔드 준비 메타데이터만 의미합니다.',
+        fr: 'Ready reflète uniquement les métadonnées de préparation backend de cette connexion.',
+      }),
     },
     eventBackbone: {
       title: text({ en: 'Event backbone readiness', zh_HANS: '事件骨干就绪状态', zh_HANT: '事件骨幹就緒狀態', ja: 'イベント基盤の準備状態', ko: '이벤트 백본 준비 상태', fr: 'Préparation backbone événementiel' }),

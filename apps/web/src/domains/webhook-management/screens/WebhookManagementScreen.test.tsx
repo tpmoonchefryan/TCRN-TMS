@@ -1,9 +1,9 @@
+import { SUPPORTED_UI_LOCALES, type SupportedUiLocale } from '@tcrn/shared';
 import { render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { SUPPORTED_UI_LOCALES, type SupportedUiLocale } from '@tcrn/shared';
-
 import { WebhookManagementScreen } from '@/domains/webhook-management/screens/WebhookManagementScreen';
+import { ApiRequestError } from '@/platform/http/api';
 
 const mockRequest = vi.fn();
 const mockReplace = vi.fn();
@@ -49,6 +49,7 @@ describe('WebhookManagementScreen', () => {
   beforeEach(() => {
     searchQuery = '';
     pathname = '/tenant/tenant-1/webhook-management';
+    localeState.locale = 'en';
     mockRequest.mockReset();
     mockReplace.mockReset();
   });
@@ -96,6 +97,44 @@ describe('WebhookManagementScreen', () => {
         '/api/v1/configuration-entity/consumer?includeInactive=true&page=1&pageSize=100'
       );
       expect(mockRequest).not.toHaveBeenCalledWith('/api/v1/email/config');
+    });
+  });
+
+  it('explains the AC control-plane webhook boundary instead of raw guard text', async () => {
+    localeState.locale = 'zh_HANS';
+    pathname = '/ac/ac-tenant/webhook-management';
+
+    mockRequest.mockImplementation(async (path: string) => {
+      if (path === '/api/v1/integration/webhooks') {
+        throw new ApiRequestError(
+          'Module is not enabled for this tenant.',
+          'TENANT_CAPABILITY_DISABLED',
+          403
+        );
+      }
+
+      if (
+        path === '/api/v1/integration/webhooks/events' ||
+        path === '/api/v1/integration/webhook-definitions'
+      ) {
+        return [];
+      }
+
+      throw new Error(`Unexpected request: ${path}`);
+    });
+
+    render(<WebhookManagementScreen tenantId="ac-tenant" workspaceKind="ac" />);
+
+    expect(await screen.findByText('当前范围无法使用 Webhook')).toBeInTheDocument();
+    expect(screen.getByText(/AC 是平台管理租户/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/此 AC 页面仅用于汇总\/就绪说明，不承载 Webhook 记录或投递器就绪状态/)
+    ).toBeInTheDocument();
+    expect(screen.queryByText('Module is not enabled for this tenant.')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /新建 Webhook/ })).toBeDisabled();
+
+    await waitFor(() => {
+      expect(mockRequest).not.toHaveBeenCalledWith('/api/v1/integration/adapter-definitions');
     });
   });
 });

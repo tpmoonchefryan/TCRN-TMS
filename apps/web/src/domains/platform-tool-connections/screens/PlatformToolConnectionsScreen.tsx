@@ -4,8 +4,8 @@ import { DatabaseZap, ExternalLink, Network, RefreshCw, Save, Search, Settings, 
 import { useEffect, useMemo, useState } from 'react';
 
 import {
-  readEventBackboneSummary,
   type EventBackboneSummary,
+  readEventBackboneSummary,
 } from '@/domains/event-backbone/api/event-backbone.api';
 import type {
   PlatformToolConnectionBundle,
@@ -130,6 +130,41 @@ function buildFormState(item: PlatformToolConnectionBundle): FormState {
     secretRef:
       item.configValues.find((config) => config.configKey === 'client_secret')?.secretRef ?? '',
   };
+}
+
+function getReadinessReasons(
+  item: PlatformToolConnectionBundle,
+  copy: ReturnType<typeof usePlatformToolConnectionsCopy>
+) {
+  const reasons: string[] = [];
+
+  if (item.connection.readinessState === 'ready') {
+    reasons.push(copy.readinessReasons.ready);
+  }
+
+  if (item.connection.readinessState === 'not_configured' || !item.connection.enabled) {
+    reasons.push(copy.readinessReasons.notConfigured);
+  }
+
+  if (item.connection.localDevMode === 'stubbed' || item.connection.deploymentMode === 'stubbed') {
+    reasons.push(copy.readinessReasons.localStubbed);
+  }
+
+  if (item.connection.healthStatus === 'unknown') {
+    reasons.push(copy.readinessReasons.healthUnknown);
+  }
+
+  if (item.ssoReadiness.status === 'blocked' || item.connection.ssoReadinessState === 'blocked') {
+    reasons.push(copy.readinessReasons.ssoBlocked);
+  } else if (item.ssoReadiness.status === 'not_applicable') {
+    reasons.push(copy.readinessReasons.ssoNotApplicable);
+  }
+
+  return [...new Set(reasons)];
+}
+
+function canOpenTool(item: PlatformToolConnectionBundle) {
+  return item.connection.enabled && item.definition.deepLink;
 }
 
 function normalizeInitialFamily(value?: PlatformToolFamily | 'all' | 'observability') {
@@ -372,14 +407,33 @@ export function PlatformToolConnectionsScreen({
       <button
         type="button"
         className="inline-flex h-11 w-11 items-center justify-center rounded-md border border-slate-200 text-slate-600 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-50 sm:h-9 sm:w-9"
-        aria-label={`${item.connection.enabled ? copy.actions.open : copy.actions.disabledOpen}: ${item.definition.label}`}
-        disabled={!item.connection.enabled || !item.definition.deepLink}
+        aria-label={`${canOpenTool(item) ? copy.actions.open : copy.actions.disabledOpen}: ${item.definition.label}`}
+        disabled={!canOpenTool(item)}
         onClick={() => void handleOpen(item)}
       >
         <ExternalLink className="h-4 w-4" aria-hidden="true" />
       </button>
     </div>
   );
+
+  const renderReadinessReasons = (item: PlatformToolConnectionBundle) => {
+    const reasons = getReadinessReasons(item, copy);
+
+    if (reasons.length === 0) {
+      return null;
+    }
+
+    return (
+      <ul className="mt-2 space-y-1 text-xs leading-5 text-slate-600">
+        {reasons.map((reason) => (
+          <li key={reason}>{reason}</li>
+        ))}
+        {!canOpenTool(item) && (
+          <li>{copy.actions.openBlockedReason}</li>
+        )}
+      </ul>
+    );
+  };
 
   const tableRows = items.map((item) => (
     <tr key={item.definition.code} data-tool-code={item.definition.code}>
@@ -394,6 +448,7 @@ export function PlatformToolConnectionsScreen({
       </td>
       <td className="px-4 py-3 align-top">
         <StatusBadge value={item.connection.readinessState} />
+        {renderReadinessReasons(item)}
       </td>
       <td className="px-4 py-3 align-top">
         <StatusBadge value={item.connection.healthStatus} />
@@ -708,6 +763,7 @@ export function PlatformToolConnectionsScreen({
                         <dd className="min-w-0"><StatusBadge value={item.ssoReadiness.status} /></dd>
                       </div>
                     </dl>
+                    {renderReadinessReasons(item)}
                   </article>
                 ))
               : null}
@@ -785,6 +841,7 @@ export function PlatformToolConnectionsScreen({
             <div className="rounded-md border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
               {selectedBoundary}
             </div>
+            {renderReadinessReasons(selected)}
             {isConfigOpen && formState ? (
               <div className="space-y-4 border-t border-slate-200 pt-5">
                 <div className="grid gap-4 md:grid-cols-2">

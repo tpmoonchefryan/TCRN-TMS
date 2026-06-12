@@ -1,6 +1,14 @@
 'use client';
 
 import {
+  ADAPTER_CONFIG_KEYS,
+  type IntegrationAdapterDefinition,
+  type IntegrationWebhookDefinition,
+  type LocalizedText,
+  type PartialLocalizedText,
+  type SupportedUiLocale,
+} from '@tcrn/shared';
+import {
   Cable,
   ChevronRight,
   Circle,
@@ -18,21 +26,12 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 
 import {
-  ADAPTER_CONFIG_KEYS,
-  type IntegrationAdapterDefinition,
-  type IntegrationWebhookDefinition,
-  type LocalizedText,
-  type PartialLocalizedText,
-  type SupportedUiLocale,
-} from '@tcrn/shared';
-
-import {
   createConsumer,
   createEmailTemplate,
   createScopedAdapter,
   createTenantAdapter,
-  createWebhookTestDelivery,
   createWebhook,
+  createWebhookTestDelivery,
   deactivateConsumer,
   deactivateEmailTemplate,
   deactivateTenantAdapter,
@@ -74,10 +73,10 @@ import {
   readEmailConfig,
   readTenantAdapter,
   readWebhook,
+  replayWebhookDeliveryAttempt,
   revealTenantAdapterConfig,
   revokeConsumerKey,
   rotateConsumerKey,
-  replayWebhookDeliveryAttempt,
   saveEmailConfig,
   sendEmailTest,
   testEmailConnection,
@@ -4201,6 +4200,26 @@ export function IntegrationManagementScreen({
               ko: `API 클라이언트는 계정 센터에서 관리됩니다. ${selectedIntegrationScope.label}은 해당 계약을 상속하므로 여기서는 어댑터만 편집할 수 있습니다.`,
               fr: `Les clients API restent gérés dans l’Account Center. ${selectedIntegrationScope.label} hérite de ce contrat, donc seuls les adaptateurs sont modifiables ici.`,
             });
+  const acControlPlaneAdapterUnavailableDescription = text({
+    en: 'AC is a platform-management tenant. Business adapter records live in an enabled tenant or approved UAT fixture; this AC page is summary/readiness only and hosts no adapter records.',
+    zh_HANS:
+      'AC 是平台管理租户。业务适配器记录位于已启用的租户或已批准的 UAT fixture 中；此 AC 页面仅用于汇总/就绪说明，不承载适配器记录。',
+    zh_HANT:
+      'AC 是平台管理租戶。業務適配器記錄位於已啟用的租戶或已核准的 UAT fixture 中；此 AC 頁面僅用於摘要/就緒說明，不承載適配器記錄。',
+    ja: 'AC はプラットフォーム管理テナントです。業務アダプターレコードは有効なテナントまたは承認済み UAT fixture に置かれ、この AC ページは概要/準備状況のみを示し、アダプターレコードは保持しません。',
+    ko: 'AC는 플랫폼 관리 테넌트입니다. 비즈니스 어댑터 레코드는 활성화된 테넌트 또는 승인된 UAT fixture에 있으며, 이 AC 페이지는 요약/준비 상태 전용이고 어댑터 레코드를 호스팅하지 않습니다.',
+    fr: 'AC est un tenant de gestion plateforme. Les adaptateurs métier vivent dans un tenant activé ou un fixture UAT approuvé ; cette page AC reste un résumé de préparation et n’héberge aucun adaptateur.',
+  });
+  const acControlPlaneWebhookUnavailableDescription = text({
+    en: 'AC is a platform-management tenant. Business webhook endpoints live in an enabled tenant or approved UAT fixture; this AC page is summary/readiness only and hosts no webhook records or dispatcher readiness.',
+    zh_HANS:
+      'AC 是平台管理租户。业务 Webhook 端点位于已启用的租户或已批准的 UAT fixture 中；此 AC 页面仅用于汇总/就绪说明，不承载 Webhook 记录或投递器就绪状态。',
+    zh_HANT:
+      'AC 是平台管理租戶。業務 Webhook 端點位於已啟用的租戶或已核准的 UAT fixture 中；此 AC 頁面僅用於摘要/就緒說明，不承載 Webhook 記錄或投遞器就緒狀態。',
+    ja: 'AC はプラットフォーム管理テナントです。業務 Webhook エンドポイントは有効なテナントまたは承認済み UAT fixture に置かれ、この AC ページは概要/準備状況のみを示し、Webhook レコードやディスパッチャー準備状況は保持しません。',
+    ko: 'AC는 플랫폼 관리 테넌트입니다. 비즈니스 웹훅 엔드포인트는 활성화된 테넌트 또는 승인된 UAT fixture에 있으며, 이 AC 페이지는 요약/준비 상태 전용이고 웹훅 레코드나 디스패처 준비 상태를 호스팅하지 않습니다.',
+    fr: 'AC est un tenant de gestion plateforme. Les endpoints webhook métier vivent dans un tenant activé ou un fixture UAT approuvé ; cette page AC reste un résumé de préparation et n’héberge aucun webhook ni préparation dispatcher.',
+  });
   const adapterConfigureItems = [
     { id: 'basics', label: text('Basics', '基础信息', '基本情報') },
     { id: 'secrets', label: text('Secrets', '密钥', 'シークレット') },
@@ -4658,7 +4677,11 @@ export function IntegrationManagementScreen({
                                 fr: 'Actualiser',
                               })}
                             </SecondaryButton>
-                            <SecondaryButton tone="primary" onClick={startAdapterCreateFlow}>
+                            <SecondaryButton
+                              tone="primary"
+                              disabled={Boolean(adaptersPanel.unavailableReason)}
+                              onClick={startAdapterCreateFlow}
+                            >
                               <Plus className="h-4 w-4" />
                               {text({
                                 en: 'New adapter',
@@ -4680,7 +4703,11 @@ export function IntegrationManagementScreen({
                               '当前范围无法使用适配器',
                               'この範囲ではアダプターを利用できません'
                             )}
-                            description={adaptersPanel.unavailableReason}
+                            description={
+                              isAcWorkspace
+                                ? acControlPlaneAdapterUnavailableDescription
+                                : adaptersPanel.unavailableReason
+                            }
                           />
                         ) : adaptersPanel.error ? (
                           <StateView
@@ -5908,6 +5935,7 @@ export function IntegrationManagementScreen({
                             </SecondaryButton>
                             <SecondaryButton
                               tone="primary"
+                              disabled={Boolean(webhooksPanel.unavailableReason)}
                               onClick={() =>
                                 requestDiscardDirtyEditor(() => {
                                   setWebhookCreateMode(true);
@@ -5936,7 +5964,11 @@ export function IntegrationManagementScreen({
                               '当前范围无法使用 Webhook',
                               'この範囲では Webhook を利用できません'
                             )}
-                            description={webhooksPanel.unavailableReason}
+                            description={
+                              isAcWorkspace
+                                ? acControlPlaneWebhookUnavailableDescription
+                                : webhooksPanel.unavailableReason
+                            }
                           />
                         ) : webhooksPanel.error ? (
                           <StateView
