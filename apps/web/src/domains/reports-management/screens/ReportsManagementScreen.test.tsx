@@ -157,7 +157,11 @@ describe('ReportsManagementScreen', () => {
 
     expect(await screen.findByRole('heading', { name: '报表管理' })).toBeInTheDocument();
 
-    fireEvent.click(screen.getAllByRole('button', { name: '起草报表' })[0]);
+    const [draftReportButton] = await screen.findAllByRole('button', { name: '起草报表' });
+    await waitFor(() => {
+      expect(draftReportButton).toBeEnabled();
+    });
+    fireEvent.click(draftReportButton);
 
     expect(await screen.findByRole('button', { name: '关闭 MFR 任务抽屉' })).toBeInTheDocument();
   });
