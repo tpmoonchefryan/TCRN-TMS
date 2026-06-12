@@ -10,7 +10,8 @@
     "dev": {
       "dependsOn": ["^build"],
       "cache": false,
-      "persistent": true
+      "persistent": true,
+      "env": ["TMS_ALLOWED_DEV_ORIGINS"]
     },
     "lint": {
       "dependsOn": ["^build"],

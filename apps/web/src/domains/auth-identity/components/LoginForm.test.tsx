@@ -303,7 +303,7 @@ describe('LoginForm', () => {
 
     const form = screen.getByLabelText('Password').closest('form');
     expect(form).toHaveAttribute('method', 'post');
-    expect(form).toHaveAttribute('action', '/api/v1/auth/login');
+    expect(form).toHaveAttribute('action', '/login');
     const fallbackAction = new URL(
       form?.getAttribute('action') ?? '',
       'https://app.example.test'
@@ -330,7 +330,7 @@ describe('LoginForm', () => {
     expect(confirmInput).toHaveAttribute('autocomplete', 'new-password');
   });
 
-  it('keeps credential fields out of the native fallback URL', () => {
+  it('keeps credential fields out of the native fallback URL and away from the auth API', () => {
     window.history.pushState({}, '', '/login?next=%2Ftenant%2Ftenant-1%2Fprofile');
     const { container } = render(<LoginForm />);
     const form = container.querySelector('form');
@@ -338,7 +338,7 @@ describe('LoginForm', () => {
 
     expect(form).toBeInstanceOf(HTMLFormElement);
     expect(form).toHaveAttribute('method', 'post');
-    expect(form).toHaveAttribute('action', '/api/v1/auth/login');
+    expect(form).toHaveAttribute('action', '/login');
 
     fireEvent.change(screen.getByLabelText('Tenant code'), {
       target: { value: 'moon' },
@@ -356,8 +356,9 @@ describe('LoginForm', () => {
     expect(window.location.href).not.toContain('password');
 
     const fallbackAction = new URL((form as HTMLFormElement).action);
-    expect(fallbackAction.pathname).toBe('/api/v1/auth/login');
+    expect(fallbackAction.pathname).toBe('/login');
     expect(fallbackAction.search).toBe('');
+    expect(fallbackAction.pathname).not.toBe('/api/v1/auth/login');
     expect(fallbackAction.href).not.toContain(testPassword);
     expect(fallbackAction.href).not.toContain('alice%40example.com');
     expect(fallbackAction.href).not.toContain('tenantCode');

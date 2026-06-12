@@ -542,7 +542,7 @@ export function LoginForm() {
           </div>
 
           <form
-            action="/api/v1/auth/login"
+            action="/login"
             method="post"
             className="mt-8 space-y-5"
             onSubmit={handlePrimarySubmit}

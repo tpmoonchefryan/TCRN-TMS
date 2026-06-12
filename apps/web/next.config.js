@@ -7,9 +7,15 @@ function normalizeDevOrigin(value) {
   }
 
   try {
-    return new URL(trimmed).host;
+    return new URL(trimmed).hostname.toLowerCase();
   } catch {
-    return trimmed;
+    const host = trimmed
+      .replace(/^[a-zA-Z][a-zA-Z\d+.-]*:\/\//, '')
+      .split(/[/?#]/, 1)[0]
+      .replace(/:\d+$/, '')
+      .toLowerCase();
+
+    return host || null;
   }
 }
 
@@ -39,4 +45,6 @@ const nextConfig = {
 };
 
 module.exports = nextConfig;
-module.exports.readAllowedDevOrigins = readAllowedDevOrigins;
+if (process.env.NODE_ENV === 'test') {
+  module.exports.readAllowedDevOrigins = readAllowedDevOrigins;
+}

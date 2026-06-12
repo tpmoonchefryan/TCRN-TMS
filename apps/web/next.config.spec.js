@@ -15,13 +15,19 @@ describe('next dev origin configuration', () => {
   it('allows LAN testing only through exact env-provided origins', () => {
     expect(
       nextConfig.readAllowedDevOrigins(
-        'http://192.168.51.105:3000,https://devbox.example.test,localhost'
+        'http://192.168.51.105:3000,https://devbox.example.test:8443/_next/webpack-hmr,localhost,192.168.51.249:3000'
       )
     ).toEqual([
       '127.0.0.1',
       'localhost',
-      '192.168.51.105:3000',
+      '192.168.51.105',
       'devbox.example.test',
+      '192.168.51.249',
     ]);
+  });
+
+  it('exposes test helpers only in the test runtime', () => {
+    expect(process.env.NODE_ENV).toBe('test');
+    expect(nextConfig.readAllowedDevOrigins).toBeTypeOf('function');
   });
 });
