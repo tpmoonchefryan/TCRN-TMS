@@ -1,5 +1,5 @@
 #!/bin/bash
-# © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+# SPDX-License-Identifier: Apache-2.0
 # 升级已弃用依赖脚本
 
 set -e

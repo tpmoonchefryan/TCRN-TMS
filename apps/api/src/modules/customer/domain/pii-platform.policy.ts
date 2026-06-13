@@ -1,4 +1,4 @@
-// © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+// SPDX-License-Identifier: Apache-2.0
 import type { RequestContext } from '@tcrn/shared';
 
 import type { EffectiveAdapterResolutionResult } from '../../integration/domain/adapter-resolution.policy';

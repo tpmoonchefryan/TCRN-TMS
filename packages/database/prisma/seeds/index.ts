@@ -1,4 +1,4 @@
-// © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+// SPDX-License-Identifier: Apache-2.0
 // Main seed orchestrator
 
 import { PrismaClient } from '../../src/platform/prisma/client';

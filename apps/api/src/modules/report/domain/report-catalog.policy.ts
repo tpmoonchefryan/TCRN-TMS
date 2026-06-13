@@ -1,4 +1,4 @@
-// © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+// SPDX-License-Identifier: Apache-2.0
 import { REPORT_CATALOG, type ReportCatalogItem, type ReportType } from '@tcrn/shared';
 
 export const listReportCatalogItems = (): ReportCatalogItem[] => REPORT_CATALOG;

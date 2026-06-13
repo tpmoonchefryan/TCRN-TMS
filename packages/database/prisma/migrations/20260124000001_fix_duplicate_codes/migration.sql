@@ -1,4 +1,4 @@
--- © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+-- SPDX-License-Identifier: Apache-2.0
 -- Migration: Fix duplicate codes in configuration entities
 -- This migration removes duplicate records (keeping oldest) and adds unique constraints on code
 -- IMPORTANT: Delete in correct order to respect foreign key constraints

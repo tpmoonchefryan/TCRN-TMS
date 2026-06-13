@@ -1,4 +1,4 @@
-// © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+// SPDX-License-Identifier: Apache-2.0
 // Blocklist seed data - with inheritance control fields
 // Sources:
 // - English: LDNOOBW (CC-BY-4.0) https://github.com/LDNOOBW/List-of-Dirty-Naughty-Obscene-and-Otherwise-Bad-Words

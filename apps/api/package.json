@@ -2,7 +2,7 @@
   "name": "@tcrn/api",
   "version": "0.1.0",
   "private": true,
-  "license": "PolyForm-Noncommercial-1.0.0",
+  "license": "Apache-2.0",
   "scripts": {
     "build": "nest build",
     "dev": "nest start --watch",
@@ -48,7 +48,6 @@
     "class-validator": "0.15.1",
     "cookie-parser": "1.4.7",
     "date-fns": "4.3.0",
-    "exceljs": "4.4.0",
     "express": "5.2.1",
     "express-basic-auth": "^1.2.1",
     "helmet": "8.2.0",

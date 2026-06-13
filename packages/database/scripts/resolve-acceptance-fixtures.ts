@@ -1,4 +1,4 @@
-// © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+// SPDX-License-Identifier: Apache-2.0
 //
 // Resolve the current local DB ids for the canonical WS6 UAT private surfaces.
 // This avoids baking transient UUIDs into acceptance ledgers or browser notes.

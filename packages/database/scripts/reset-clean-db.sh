@@ -1,5 +1,5 @@
 #!/bin/bash
-# © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+# SPDX-License-Identifier: Apache-2.0
 # Clean Database Reset Script
 # This script resets the database to a clean state with only AC tenant and system data.
 

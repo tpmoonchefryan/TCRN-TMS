@@ -1,4 +1,4 @@
-// © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+// SPDX-License-Identifier: Apache-2.0
 // Public Presence system Artist Stage and asset seeds.
 
 import { createHash, randomUUID } from 'node:crypto';

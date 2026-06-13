@@ -1,4 +1,4 @@
--- © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+-- SPDX-License-Identifier: Apache-2.0
 -- Migration: make six-locale JSONB LocalizedText the single translated content shape.
 
 CREATE OR REPLACE FUNCTION public.tcrn_localized_text_from_legacy(

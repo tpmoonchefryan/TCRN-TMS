@@ -1,5 +1,5 @@
 #!/bin/bash
-# © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+# SPDX-License-Identifier: Apache-2.0
 # Create or update a GHCR pull secret for K3s workloads when private images are used.
 
 set -euo pipefail

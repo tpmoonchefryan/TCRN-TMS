@@ -1,4 +1,4 @@
--- © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+-- SPDX-License-Identifier: Apache-2.0
 -- Migration: Add pii_proxy_url to profile_store and make pii_service_config_id optional
 
 -- Add pii_proxy_url column to profile_store

@@ -1,4 +1,4 @@
-// © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+// SPDX-License-Identifier: Apache-2.0
 // Read-only audit for legacy RBAC resources that still exist in tenant schemas.
 
 import path from 'node:path';

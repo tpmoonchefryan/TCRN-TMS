@@ -1,4 +1,4 @@
-// © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+// SPDX-License-Identifier: Apache-2.0
 // UAT Customer Profiles - Creates customer profiles with platform identities
 
 import { PrismaClient } from '../../src/platform/prisma/client';

@@ -1,5 +1,5 @@
 #!/bin/bash
-# © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+# SPDX-License-Identifier: Apache-2.0
 # Database initialization and health check script for TCRN TMS
 set -e
 

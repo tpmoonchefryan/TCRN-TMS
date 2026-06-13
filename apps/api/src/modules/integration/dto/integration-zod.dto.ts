@@ -1,4 +1,4 @@
-// © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+// SPDX-License-Identifier: Apache-2.0
 // Integration Module Zod DTOs - Using createZodDto for Swagger integration
 import { createZodDto } from 'nestjs-zod';
 

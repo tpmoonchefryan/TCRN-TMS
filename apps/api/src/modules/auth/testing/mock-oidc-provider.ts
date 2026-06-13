@@ -1,4 +1,4 @@
-// © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+// SPDX-License-Identifier: Apache-2.0
 // Test-only mock IdP material for Phase 3 SSO protocol/authority acceptance.
 
 export const phase3MockOidcProvider = {

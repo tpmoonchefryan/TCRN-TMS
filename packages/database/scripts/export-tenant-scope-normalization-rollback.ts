@@ -1,4 +1,4 @@
-// © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+// SPDX-License-Identifier: Apache-2.0
 // Read-only rollback exporter for tenant-scope normalization candidates.
 //
 // This script generates SQL that can restore the exact pre-normalization

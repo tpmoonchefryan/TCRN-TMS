@@ -11,7 +11,7 @@
 </p>
 
 <p align="center">
-  <img alt="License" src="https://img.shields.io/badge/license-PolyForm%20NC-blue">
+  <img alt="License" src="https://img.shields.io/badge/license-Apache--2.0-blue">
   <img alt="Node" src="https://img.shields.io/badge/node-24-green">
   <img alt="TypeScript" src="https://img.shields.io/badge/typescript-6.0-blue">
   <img alt="PRs Welcome" src="https://img.shields.io/badge/PRs-welcome-brightgreen">
@@ -886,9 +886,9 @@ TOTP セットアップ、無効化、リカバリーコード処理、テナン
 
 ## 📄 ライセンス
 
-このプロジェクトは**PolyForm Noncommercial License 1.0.0**の下でライセンスされています。
+このリポジトリのコードは **Apache License 2.0** の下でライセンスされています。[LICENSE](./LICENSE) と [NOTICE](./NOTICE) を参照してください。
 
-商用利用には別途ライセンス契約が必要です。エンタープライズライセンスまたはSaaSサービス購入については、ryan.lan_home@outlook.comまでお問い合わせください。
+Apache-2.0 は本リポジトリ内のコードに適用されます。TCRN の名称、ロゴ、商標、ホステッドサービスの同一性、または公式サービスのブランドを使用する権利は、プロジェクトを説明するための合理的かつ慣習的な参照を除き、付与されません。[TRADEMARKS.md](./TRADEMARKS.md) を参照してください。
 
 ---
 

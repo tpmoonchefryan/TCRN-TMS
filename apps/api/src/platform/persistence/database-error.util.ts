@@ -1,4 +1,4 @@
-// © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+// SPDX-License-Identifier: Apache-2.0
 
 const POSTGRES_UNDEFINED_TABLE = '42P01';
 const PRISMA_TABLE_NOT_FOUND = 'P2021';

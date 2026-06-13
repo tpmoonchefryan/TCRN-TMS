@@ -1,4 +1,4 @@
-// © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+// SPDX-License-Identifier: Apache-2.0
 // Zod Validation Pipe for NestJS
 // Validates request bodies against Zod schemas
 import { ArgumentMetadata, BadRequestException, Injectable, PipeTransform } from '@nestjs/common';

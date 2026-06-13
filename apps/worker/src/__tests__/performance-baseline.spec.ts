@@ -1,4 +1,4 @@
-// © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+// SPDX-License-Identifier: Apache-2.0
 // Worker Performance Baseline Tests (PRD P-29)
 // Measures and validates CPU/memory usage for worker jobs
 import { performance } from 'perf_hooks';

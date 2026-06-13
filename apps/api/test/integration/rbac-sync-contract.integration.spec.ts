@@ -1,4 +1,4 @@
-// © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+// SPDX-License-Identifier: Apache-2.0
 // Regression proof for repairing drifted RBAC rows in an existing tenant schema
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 

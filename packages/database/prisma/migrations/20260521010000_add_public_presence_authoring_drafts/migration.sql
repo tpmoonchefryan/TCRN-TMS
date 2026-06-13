@@ -1,4 +1,4 @@
--- © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+-- SPDX-License-Identifier: Apache-2.0
 -- Migration: durable template/component authoring drafts for Public Presence IDE
 
 CREATE TABLE IF NOT EXISTS tenant_template.public_presence_authoring_draft (

@@ -1,4 +1,4 @@
--- © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+-- SPDX-License-Identifier: Apache-2.0
 -- D-026 follow-up: seed tenant artist stages, backfill existing talents, and
 -- promote talent.artist_stage_id to a required invariant across tenant schemas.
 

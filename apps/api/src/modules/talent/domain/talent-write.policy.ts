@@ -1,4 +1,4 @@
-// © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+// SPDX-License-Identifier: Apache-2.0
 import type { LocalizedText, PartialLocalizedText } from '@tcrn/shared';
 
 import { stringifyLocalizedText } from '../../../platform/persistence/localized-text.persistence';

@@ -1,5 +1,5 @@
 #!/bin/bash
-# © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+# SPDX-License-Identifier: Apache-2.0
 # 迁移屏蔽词数据到现有租户 schema
 # Usage: ./scripts/migrate-blocklist-data.sh [postgres_container_name] [db_name] [db_user] [db_password]
 

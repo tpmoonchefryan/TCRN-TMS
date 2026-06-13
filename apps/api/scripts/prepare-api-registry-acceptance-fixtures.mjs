@@ -1,4 +1,4 @@
-// © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+// SPDX-License-Identifier: Apache-2.0
 import { parseArgs, writeJson } from './api-registry-script-utils.mjs';
 
 const command = process.argv[2] && !process.argv[2].startsWith('--') ? process.argv[2] : 'readback';

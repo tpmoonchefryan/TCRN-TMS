@@ -1,4 +1,4 @@
--- © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+-- SPDX-License-Identifier: Apache-2.0
 -- Migration: Add PasswordResetRequest table for forgot password workflow
 
 CREATE TABLE IF NOT EXISTS tenant_template.password_reset_request (

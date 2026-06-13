@@ -1,4 +1,4 @@
-// © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+// SPDX-License-Identifier: Apache-2.0
 // Report Module Performance Test
 import { check, sleep, group } from 'k6';
 import http from 'k6/http';

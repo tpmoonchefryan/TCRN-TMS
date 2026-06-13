@@ -1,4 +1,4 @@
-// © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+// SPDX-License-Identifier: Apache-2.0
 // Guarded prune planner for legacy RBAC resources.
 //
 // Default mode is dry-run only. Apply mode is intentionally strict:

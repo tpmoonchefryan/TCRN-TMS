@@ -1,5 +1,5 @@
 #!/bin/bash
-# © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+# SPDX-License-Identifier: Apache-2.0
 # Export current Caddy-managed TLS material from the legacy Docker volume for K3s ingress reuse.
 
 set -euo pipefail

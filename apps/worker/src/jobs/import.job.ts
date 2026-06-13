@@ -1,4 +1,4 @@
-// © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+// SPDX-License-Identifier: Apache-2.0
 // Import Job Processor (PRD §11.7)
 import * as fs from 'fs';
 import * as os from 'os';

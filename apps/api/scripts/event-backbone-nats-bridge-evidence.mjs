@@ -1,4 +1,4 @@
-// © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+// SPDX-License-Identifier: Apache-2.0
 import { EVENT_BACKBONE_ADAPTER_CATALOG, EVENT_BACKBONE_BRIDGE_MODES } from '@tcrn/shared';
 
 import { parseArgs, readJson, runRg, sourceSignals, writeJson } from './event-backbone-script-utils.mjs';

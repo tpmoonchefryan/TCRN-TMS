@@ -1,5 +1,5 @@
 #!/bin/bash
-# © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+# SPDX-License-Identifier: Apache-2.0
 # 迁移脚本：为现有 talent 和 marshmallow_config 补充默认值
 # 注意：RBAC 契约不再由本脚本维护，请改用 `pnpm --filter @tcrn/database db:sync-rbac`
 # Usage: ./scripts/migrate-tenant-defaults.sh [postgres_container_name] [db_name] [db_user] [db_password]

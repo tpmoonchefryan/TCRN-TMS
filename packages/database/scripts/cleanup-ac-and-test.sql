@@ -1,4 +1,4 @@
--- © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+-- SPDX-License-Identifier: Apache-2.0
 -- Cleanup script for AC tenant restructure and TEST_TENANT removal
 -- WARNING: This script contains destructive operations. Run with caution.
 

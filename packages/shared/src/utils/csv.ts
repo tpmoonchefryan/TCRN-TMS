@@ -1,4 +1,4 @@
-// © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+// SPDX-License-Identifier: Apache-2.0
 
 const CSV_FORMULA_PREFIX_PATTERN = /^[=+\-@\t\r]/;
 const CSV_QUOTE_PATTERN = /[",\n\r]/;

@@ -1,4 +1,4 @@
-// © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+// SPDX-License-Identifier: Apache-2.0
 // sort-imports-ignore
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';

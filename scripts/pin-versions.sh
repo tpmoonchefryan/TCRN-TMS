@@ -1,5 +1,5 @@
 #!/bin/bash
-# © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+# SPDX-License-Identifier: Apache-2.0
 # 固化所有 package.json 中的依赖版本（移除 ^ 和 ~ 前缀）
 
 set -e

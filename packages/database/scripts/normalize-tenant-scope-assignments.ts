@@ -1,4 +1,4 @@
-// © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+// SPDX-License-Identifier: Apache-2.0
 // Guarded normalizer for tenant-scope user_role residue.
 //
 // Default mode is dry-run only. Apply mode is intentionally strict:

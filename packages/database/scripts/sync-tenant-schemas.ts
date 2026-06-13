@@ -1,4 +1,4 @@
-// © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+// SPDX-License-Identifier: Apache-2.0
 // Script to synchronize all tenant schemas with tenant_template
 // This ensures all tenant schemas have the same columns as tenant_template
 

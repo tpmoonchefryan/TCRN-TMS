@@ -1,4 +1,4 @@
--- © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+-- SPDX-License-Identifier: Apache-2.0
 -- 迁移屏蔽词数据到现有租户 schema
 -- 使用方法: 
 --   docker exec -e PGPASSWORD=your_password tcrn-postgres psql -U tcrn -d tcrn_tms -f /path/to/migrate-blocklist-data.sql

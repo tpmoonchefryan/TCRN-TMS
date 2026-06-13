@@ -265,8 +265,8 @@
       "email": "support@tcrn.dev"
     },
     "license": {
-      "name": "PolyForm Noncommercial",
-      "url": "https://polyformproject.org/licenses/noncommercial/1.0.0/"
+      "name": "Apache License 2.0",
+      "url": "https://www.apache.org/licenses/LICENSE-2.0"
     }
   },
   "tags": [

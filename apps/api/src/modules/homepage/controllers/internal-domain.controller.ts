@@ -1,4 +1,4 @@
-// © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+// SPDX-License-Identifier: Apache-2.0
 // Internal controller for Caddy on-demand TLS domain verification
 import { Controller, Get, HttpCode, HttpStatus, Query } from '@nestjs/common';
 import { ApiExcludeController } from '@nestjs/swagger';

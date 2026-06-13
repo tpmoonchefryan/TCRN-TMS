@@ -1,4 +1,4 @@
-// © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+// SPDX-License-Identifier: Apache-2.0
 // Disabled retirement executor for tenant-local historical roles.
 //
 // Role rows are retained for audit history. This command preserves the

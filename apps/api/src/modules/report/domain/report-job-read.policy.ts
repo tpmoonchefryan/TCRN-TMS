@@ -1,4 +1,4 @@
-// © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+// SPDX-License-Identifier: Apache-2.0
 import { type ReportJobListItem, type ReportJobResponse, ReportJobStatus } from '../dto/report.dto';
 
 type RawNumericValue = bigint | number | null;

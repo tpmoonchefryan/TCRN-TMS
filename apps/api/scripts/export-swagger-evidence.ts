@@ -1,4 +1,4 @@
-// © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+// SPDX-License-Identifier: Apache-2.0
 // Generates Phase 3 SSO Swagger evidence from the Nest OpenAPI document.
 
 import { mkdirSync, writeFileSync } from 'node:fs';

@@ -1,4 +1,4 @@
-// © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+// SPDX-License-Identifier: Apache-2.0
 import { WEBHOOK_DELIVERY_ADAPTER_CATALOG } from '@tcrn/shared';
 
 import {

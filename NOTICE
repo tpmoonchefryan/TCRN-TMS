@@ -1,0 +1,13 @@
+TCRN TMS
+Copyright 2026 月球厨师莱恩 (TPMOONCHEFRYAN)
+
+This product includes software developed for the TCRN TMS project.
+
+The code in this repository is licensed under the Apache License, Version 2.0.
+Third-party dependencies remain under their respective licenses. Release
+candidates should retain dependency-license audit and SBOM evidence alongside
+this NOTICE. Current migration-candidate dependency evidence is recorded in
+THIRD_PARTY_LICENSE_AUDIT.md.
+
+TCRN names, logos, marks, hosted service identity, and official-service
+branding are not licensed by Apache-2.0. See TRADEMARKS.md.

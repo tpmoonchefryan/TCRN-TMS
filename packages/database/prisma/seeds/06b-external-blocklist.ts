@@ -1,4 +1,4 @@
-// © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+// SPDX-License-Identifier: Apache-2.0
 // External Blocklist seed data - URL/Domain filtering for Marshmallow
 
 import { PrismaClient } from '../../src/platform/prisma/client';

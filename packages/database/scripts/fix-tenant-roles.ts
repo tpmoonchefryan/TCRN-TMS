@@ -1,4 +1,4 @@
-// © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+// SPDX-License-Identifier: Apache-2.0
 // Deprecated legacy maintenance entry point.
 //
 // This script predates the shared RBAC catalog and is intentionally blocked.

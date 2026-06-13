@@ -1,4 +1,4 @@
-// © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+// SPDX-License-Identifier: Apache-2.0
 // UAT Homepage Configuration - Creates homepage configs and versions for testing
 
 import { PrismaClient } from '../../src/platform/prisma/client';

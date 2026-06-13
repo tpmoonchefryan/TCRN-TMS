@@ -2,7 +2,7 @@
   "name": "@tcrn/eslint-config",
   "version": "0.1.0",
   "private": true,
-  "license": "PolyForm-Noncommercial-1.0.0",
+  "license": "Apache-2.0",
   "main": "index.js",
   "files": [
     "*.js"

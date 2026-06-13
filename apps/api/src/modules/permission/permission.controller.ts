@@ -1,4 +1,4 @@
-// © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+// SPDX-License-Identifier: Apache-2.0
 import { BadRequestException, Body, Controller, Get, Post, Query, Req } from '@nestjs/common';
 import {
   ApiBearerAuth,

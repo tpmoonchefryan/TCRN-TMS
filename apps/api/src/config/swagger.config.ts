@@ -1,4 +1,4 @@
-// © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+// SPDX-License-Identifier: Apache-2.0
 /**
  * Swagger Configuration
  * Centralized configuration for OpenAPI documentation
@@ -102,10 +102,7 @@ export function buildSwaggerConfig(
     .setDescription(description)
     .setVersion(version)
     .setContact('TCRN Team', 'https://github.com/tpmoonchefryan/TCRN-TMS', 'support@tcrn.dev')
-    .setLicense(
-      'PolyForm Noncommercial',
-      'https://polyformproject.org/licenses/noncommercial/1.0.0/'
-    )
+    .setLicense('Apache License 2.0', 'https://www.apache.org/licenses/LICENSE-2.0')
     .addBearerAuth(
       {
         type: 'http',

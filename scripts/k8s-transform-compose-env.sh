@@ -1,5 +1,5 @@
 #!/bin/bash
-# © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+# SPDX-License-Identifier: Apache-2.0
 # Transform a Compose-oriented production env file into the first-cut K3s runtime env contract.
 
 set -euo pipefail

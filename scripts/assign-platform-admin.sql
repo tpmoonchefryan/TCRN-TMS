@@ -1,4 +1,4 @@
--- © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+-- SPDX-License-Identifier: Apache-2.0
 -- 为指定租户的指定用户赋予 PLATFORM_ADMIN 角色
 -- 
 -- 使用方法：

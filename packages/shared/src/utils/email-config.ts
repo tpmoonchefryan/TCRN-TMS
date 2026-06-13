@@ -1,4 +1,4 @@
-// © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+// SPDX-License-Identifier: Apache-2.0
 import type { EmailProvider } from '../schemas/email';
 
 export const EMAIL_CONFIG_KEY = 'email.config';

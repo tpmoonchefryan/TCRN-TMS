@@ -11,7 +11,7 @@
 </p>
 
 <p align="center">
-  <img alt="License" src="https://img.shields.io/badge/license-PolyForm%20NC-blue">
+  <img alt="License" src="https://img.shields.io/badge/license-Apache--2.0-blue">
   <img alt="Node" src="https://img.shields.io/badge/node-24-green">
   <img alt="TypeScript" src="https://img.shields.io/badge/typescript-6.0-blue">
   <img alt="PRs Welcome" src="https://img.shields.io/badge/PRs-welcome-brightgreen">
@@ -886,9 +886,9 @@ TOTP 设置、停用、恢复码处理和租户强制策略仍是 `OKL-G19-ACCOU
 
 ## 📄 许可证
 
-本项目采用 **PolyForm Noncommercial License 1.0.0** 许可证。
+本项目代码采用 **Apache License 2.0** 许可证。请参见 [LICENSE](./LICENSE) 与 [NOTICE](./NOTICE)。
 
-商业使用需要单独的许可协议。如需企业授权/SaaS 服务购买，请联系 ryan.lan_home@outlook.com。
+Apache-2.0 仅覆盖本仓库中的代码，不授予 TCRN 名称、Logo、商标、托管服务身份或官方服务品牌的使用权；为描述本项目而进行的合理、惯常引用除外。请参见 [TRADEMARKS.md](./TRADEMARKS.md)。
 
 ---
 

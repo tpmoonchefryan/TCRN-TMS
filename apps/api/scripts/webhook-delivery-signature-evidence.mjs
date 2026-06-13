@@ -1,4 +1,4 @@
-// © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+// SPDX-License-Identifier: Apache-2.0
 import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
 
 import { parseArgs, sourceSignals, writeJson } from './webhook-delivery-script-utils.mjs';

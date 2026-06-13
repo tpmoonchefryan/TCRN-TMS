@@ -11,7 +11,7 @@
 </p>
 
 <p align="center">
-  <img alt="License" src="https://img.shields.io/badge/license-PolyForm%20NC-blue">
+  <img alt="License" src="https://img.shields.io/badge/license-Apache--2.0-blue">
   <img alt="Node" src="https://img.shields.io/badge/node-24-green">
   <img alt="TypeScript" src="https://img.shields.io/badge/typescript-6.0-blue">
   <img alt="PRs Welcome" src="https://img.shields.io/badge/PRs-welcome-brightgreen">
@@ -888,9 +888,9 @@ All responses include:
 
 ## 📄 License
 
-This project is licensed under the **PolyForm Noncommercial License 1.0.0**.
+This project is licensed under the **Apache License 2.0**. See [LICENSE](./LICENSE) and [NOTICE](./NOTICE).
 
-Commercial use requires a separate license agreement. For enterprise licensing or SaaS service purchase, please contact ryan.lan_home@outlook.com.
+Apache-2.0 covers the code in this repository. It does not grant rights to use TCRN names, logos, marks, hosted service identity, or official-service branding except for reasonable and customary references to describe this project. See [TRADEMARKS.md](./TRADEMARKS.md).
 
 ---
 

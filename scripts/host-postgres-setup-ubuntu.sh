@@ -1,5 +1,5 @@
 #!/bin/bash
-# © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+# SPDX-License-Identifier: Apache-2.0
 # Prepare host-native PostgreSQL for the first-cut same-host K3s deployment on Ubuntu.
 #
 # Safe default:

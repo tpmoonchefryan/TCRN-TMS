@@ -1,4 +1,4 @@
-// © 2026 月球厨师莱恩 (TPMOONCHEFRYAN) – PolyForm Noncommercial License
+// SPDX-License-Identifier: Apache-2.0
 // OpenTelemetry initialization for TCRN TMS (PRD P-32)
 import { Logger } from '@nestjs/common';
 import type { InstrumentationConfigMap } from '@opentelemetry/auto-instrumentations-node';
