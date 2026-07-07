@@ -22,7 +22,7 @@ import { bootstrapTestApp } from '../../src/testing/bootstrap-test-app';
 
 const evidenceDir =
   process.env.P4_EVIDENCE_DIR ||
-  '/Users/ryanlan/Code/TCRN Platform/vault/initiatives/projects/TCRN-TMS/active/public-presence-studio/evidence/2026-05-27-goals-phase-0-12-execution/phase-4-external-tool-connection-framework';
+  path.resolve('tmp/evidence/phase-4-external-tool-connection-framework');
 const acSchema = 'tenant_ac';
 const acToolCodes = ['grafana', 'opa', 'flagsmith', 'nats-jetstream'] as const;
 const requestIdPrefix = 'p4-http-platform-tools';

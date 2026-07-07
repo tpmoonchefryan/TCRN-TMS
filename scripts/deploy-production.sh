@@ -28,9 +28,9 @@ ROLLOUT_MIGRATIONS="${ROLLOUT_MIGRATIONS:-}"
 ROLLOUT_MIGRATIONS="$(normalize_rollout_migrations "$ROLLOUT_MIGRATIONS")"
 
 # Configuration
-DEPLOY_USER="ubuntu"
-DEPLOY_HOST="43.153.195.213"
-DEPLOY_PATH="/home/ubuntu/tcrn-tms"
+: "${DEPLOY_USER:?Set DEPLOY_USER to the SSH user for the deployment target}"
+: "${DEPLOY_HOST:?Set DEPLOY_HOST to the deployment host or DNS name}"
+DEPLOY_PATH="${DEPLOY_PATH:-/home/${DEPLOY_USER}/tcrn-tms}"
 GITHUB_REPO="https://github.com/tpmoonchefryan/TCRN-TMS.git"
 
 echo "=============================================="
@@ -40,7 +40,7 @@ echo "=============================================="
 
 # Function to run commands on remote server
 run_remote() {
-    ssh ${DEPLOY_USER}@${DEPLOY_HOST} "$1"
+    ssh "${DEPLOY_USER}@${DEPLOY_HOST}" "$1"
 }
 
 # Step 1: Check prerequisites on remote server

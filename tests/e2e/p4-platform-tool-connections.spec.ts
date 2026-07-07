@@ -5,7 +5,7 @@ import { expect, test, type Page, type Route } from '@playwright/test';
 
 const evidenceDir =
   process.env.P4_EVIDENCE_DIR ||
-  '/Users/ryanlan/Code/TCRN Platform/vault/initiatives/projects/TCRN-TMS/active/public-presence-studio/evidence/2026-05-27-goals-phase-0-12-execution/phase-4-external-tool-connection-framework';
+  path.resolve('tmp/evidence/phase-4-external-tool-connection-framework');
 
 const sessionStorageKey = 'tcrn.web.session';
 const localeStorageKey = 'tcrn.web.locale.override';

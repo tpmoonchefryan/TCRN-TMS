@@ -24,7 +24,7 @@ import { bootstrapTestApp } from '../../src/testing/bootstrap-test-app';
 
 const evidenceDir =
   process.env.P5_EVIDENCE_DIR ||
-  '/Users/ryanlan/Code/TCRN Platform/vault/initiatives/projects/TCRN-TMS/active/public-presence-studio/evidence/2026-05-28-goals-phase-0-12-execution/phase-5-observability-adapter-foundation';
+  path.resolve('tmp/evidence/phase-5-observability-adapter-foundation');
 const acSchema = 'tenant_ac';
 const requestIdPrefix = 'p5-http-observability';
 const passwordHash =

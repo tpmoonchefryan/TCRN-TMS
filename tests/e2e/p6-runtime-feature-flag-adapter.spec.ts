@@ -5,7 +5,7 @@ import { expect, test, type Page, type Route } from '@playwright/test';
 
 const evidenceDir =
   process.env.P6_EVIDENCE_DIR ||
-  '/Users/ryanlan/Code/TCRN Platform/vault/initiatives/projects/TCRN-TMS/active/public-presence-studio/evidence/2026-05-28-goals-phase-0-12-execution/phase-6-runtime-feature-flag-adapter';
+  path.resolve('tmp/evidence/phase-6-runtime-feature-flag-adapter');
 
 const sessionStorageKey = 'tcrn.web.session';
 const localeStorageKey = 'tcrn.web.locale.override';
