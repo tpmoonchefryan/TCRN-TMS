@@ -10,13 +10,13 @@ codegraph 的 `nodes.kind='route'` 在本仓返回 **436** 条,其中只有 **39
 
 ## 438 减到 398:逐条实况
 
-| 文件 | 条数 | 实况 | 判定 |
-|---|---|---|---|
-| `*.controller.ts`(60 个文件) | **398** | 真实 `@Get/@Post/...` 装饰器 | **采用** |
-| `apps/api/scripts/export-swagger-evidence.mjs` | 30 | 数组 `requiredSourceSnippets` 的字符串元素,内容形如 `"@Get('definitions')"` —— 是检查器要比对的**断言文本**,不是路由定义 | 排除 |
-| `apps/api/scripts/write-webhook-delivery-inventory-baseline.mjs` | 3 | 同上模式 | 排除 |
-| `apps/api/src/config/swagger-runtime-flag-family.contract.spec.ts` | 3 | 测试文件内的字符串 | 排除 |
-| `apps/api/src/bootstrap.ts` | 2 | `app.use('/api/docs', …)` —— 真实的 Express 中间件挂载,但不是 API handler | 排除 |
+| 文件                                                               | 条数    | 实况                                                                                                                     | 判定     |
+| ------------------------------------------------------------------ | ------- | ------------------------------------------------------------------------------------------------------------------------ | -------- |
+| `*.controller.ts`(60 个文件)                                       | **398** | 真实 `@Get/@Post/...` 装饰器                                                                                             | **采用** |
+| `apps/api/scripts/export-swagger-evidence.mjs`                     | 30      | 数组 `requiredSourceSnippets` 的字符串元素,内容形如 `"@Get('definitions')"` —— 是检查器要比对的**断言文本**,不是路由定义 | 排除     |
+| `apps/api/scripts/write-webhook-delivery-inventory-baseline.mjs`   | 3       | 同上模式                                                                                                                 | 排除     |
+| `apps/api/src/config/swagger-runtime-flag-family.contract.spec.ts` | 3       | 测试文件内的字符串                                                                                                       | 排除     |
+| `apps/api/src/bootstrap.ts`                                        | 2       | `app.use('/api/docs', …)` —— 真实的 Express 中间件挂载,但不是 API handler                                                | 排除     |
 
 合计 436 = 398 + 30 + 3 + 3 + 2。
 

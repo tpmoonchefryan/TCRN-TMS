@@ -20,12 +20,12 @@
 
 ## 权威层级声明
 
-| 断言族 | 层级 | 本文件的置信上限 |
-|---|---|---|
-| catalog 资源与动作集合 | `source`(TS 常量) | `probable` |
-| handler 静态权限引用 | `api-contract`(controller 装饰器) | `proven` |
-| authority snapshot 权限 | `api-contract`(签入契约工件) | `proven` |
-| 运行期确实返回 403 | `runtime` | 仅 §403 表内 11 个端点,其余**未测** |
+| 断言族                  | 层级                              | 本文件的置信上限                    |
+| ----------------------- | --------------------------------- | ----------------------------------- |
+| catalog 资源与动作集合  | `source`(TS 常量)                 | `probable`                          |
+| handler 静态权限引用    | `api-contract`(controller 装饰器) | `proven`                            |
+| authority snapshot 权限 | `api-contract`(签入契约工件)      | `proven`                            |
+| 运行期确实返回 403      | `runtime`                         | 仅 §403 表内 11 个端点,其余**未测** |
 
 **静态存在装饰器不构成运行期强制的证明。** 本文件不为任何未列入 §403 表的端点声称运行期强制。
 
@@ -39,15 +39,15 @@
 
 **后果:任意持有效 JWT 的租户用户可创建、改名、移动、停用、恢复分级目录。**
 
-| fact id | 方法 | 路径 | 位置 |
-|---|---|---|---|
-| `TMS-F-API-148` | `GET` | `/subsidiaries` | `subsidiary.controller.ts:528` |
-| `TMS-F-API-321` | `POST` | `/subsidiaries` | `subsidiary.controller.ts:588` |
-| `TMS-F-API-149` | `GET` | `/subsidiaries/{subsidiaryId}` | `subsidiary.controller.ts:643` |
-| `TMS-F-API-220` | `PATCH` | `/subsidiaries/{subsidiaryId}` | `subsidiary.controller.ts:704` |
-| `TMS-F-API-326` | `POST` | `/subsidiaries/{subsidiaryId}/move` | `subsidiary.controller.ts:757` |
-| `TMS-F-API-322` | `POST` | `/subsidiaries/{subsidiaryId}/deactivate` | `subsidiary.controller.ts:802` |
-| `TMS-F-API-327` | `POST` | `/subsidiaries/{subsidiaryId}/reactivate` | `subsidiary.controller.ts:857` |
+| fact id         | 方法    | 路径                                      | 位置                           |
+| --------------- | ------- | ----------------------------------------- | ------------------------------ |
+| `TMS-F-API-148` | `GET`   | `/subsidiaries`                           | `subsidiary.controller.ts:528` |
+| `TMS-F-API-321` | `POST`  | `/subsidiaries`                           | `subsidiary.controller.ts:588` |
+| `TMS-F-API-149` | `GET`   | `/subsidiaries/{subsidiaryId}`            | `subsidiary.controller.ts:643` |
+| `TMS-F-API-220` | `PATCH` | `/subsidiaries/{subsidiaryId}`            | `subsidiary.controller.ts:704` |
+| `TMS-F-API-326` | `POST`  | `/subsidiaries/{subsidiaryId}/move`       | `subsidiary.controller.ts:757` |
+| `TMS-F-API-322` | `POST`  | `/subsidiaries/{subsidiaryId}/deactivate` | `subsidiary.controller.ts:802` |
+| `TMS-F-API-327` | `POST`  | `/subsidiaries/{subsidiaryId}/reactivate` | `subsidiary.controller.ts:857` |
 
 catalog 早已为 `subsidiary` 备好 `read` / `write` / `delete` / `admin` 四个动作(`catalog.ts:311-326`),**四个全部未被任何 handler 引用**。定义与强制之间的落差在此处最大。
 
@@ -59,18 +59,18 @@ catalog 早已为 `subsidiary` 备好 `read` / `write` / `delete` / `admin` 四�
 
 ### 各源计数
 
-| 源 | 单位 | 计数 |
-|---|---|---|
-| `packages/shared/src/rbac/catalog.ts` | 资源 | **46** |
-| 同上 | module | **12** |
-| 同上 | (资源,动作)对 `RBAC_POLICY_DEFINITIONS` | **140** |
-| 同上 | 角色模板 `RBAC_ROLE_TEMPLATES` | **1**(仅 `INITIAL_ADMIN`) |
-| `docs/facts/api-handlers.json` | 带权限的 handler | **302** |
-| 同上 | 权限引用条数 | **302**(每条 handler 恰 1 条) |
-| 同上 | 涉及资源(去重) | **40** |
-| 同上 | 原始(资源:动作)对 | **95** |
-| `_rbac-contract.ts` | 每 schema upsert 行 | **327** = 46 + 140 + 1 + 140 |
-| `api-registry.authority.json` | operation | **396** |
+| 源                                    | 单位                                    | 计数                          |
+| ------------------------------------- | --------------------------------------- | ----------------------------- |
+| `packages/shared/src/rbac/catalog.ts` | 资源                                    | **46**                        |
+| 同上                                  | module                                  | **12**                        |
+| 同上                                  | (资源,动作)对 `RBAC_POLICY_DEFINITIONS` | **140**                       |
+| 同上                                  | 角色模板 `RBAC_ROLE_TEMPLATES`          | **1**(仅 `INITIAL_ADMIN`)     |
+| `docs/facts/api-handlers.json`        | 带权限的 handler                        | **302**                       |
+| 同上                                  | 权限引用条数                            | **302**(每条 handler 恰 1 条) |
+| 同上                                  | 涉及资源(去重)                          | **40**                        |
+| 同上                                  | 原始(资源:动作)对                       | **95**                        |
+| `_rbac-contract.ts`                   | 每 schema upsert 行                     | **327** = 46 + 140 + 1 + 140  |
+| `api-registry.authority.json`         | operation                               | **396**                       |
 
 ### 分母互钉状态:仍未定钉
 
@@ -84,14 +84,14 @@ RBAC 资源 46 的第二提取器可用运行期求值 `packages/shared/dist/ind
 
 **catalog 有定义、无任何静态 handler 引用的资源:6 个**
 
-| 资源码 | 位置 | 判定 |
-|---|---|---|
-| `config.dictionary` | `catalog.ts:483` | 经 `CONFIG_ENTITY_RESOURCE_MAP` 动态到达,非孤儿 |
-| `config.customer_status` | `catalog.ts:499` | 同上 |
-| `config.platform_registry` | `catalog.ts:531` | 同上 |
-| `public_presence.audit` | `catalog.ts:676` | 全仓零引用,**孤儿** |
-| `public_presence.ai_patch` | `catalog.ts:692` | 全仓零引用,**孤儿** |
-| `subsidiary` | `catalog.ts:311` | 零引用 **且**对应 7 条 handler 零授权 —— 孤儿 + 真缺陷 |
+| 资源码                     | 位置             | 判定                                                   |
+| -------------------------- | ---------------- | ------------------------------------------------------ |
+| `config.dictionary`        | `catalog.ts:483` | 经 `CONFIG_ENTITY_RESOURCE_MAP` 动态到达,非孤儿        |
+| `config.customer_status`   | `catalog.ts:499` | 同上                                                   |
+| `config.platform_registry` | `catalog.ts:531` | 同上                                                   |
+| `public_presence.audit`    | `catalog.ts:676` | 全仓零引用,**孤儿**                                    |
+| `public_presence.ai_patch` | `catalog.ts:692` | 全仓零引用,**孤儿**                                    |
+| `subsidiary`               | `catalog.ts:311` | 零引用 **且**对应 7 条 handler 零授权 —— 孤儿 + 真缺陷 |
 
 **`admin` 动作在 API 面上基本是死的**:46 个资源里 38 个声明了 `admin`,全仓只有 4 条 handler 用到(`integration.adapter`、`integration.consumer`、`platform.runtime_flag`、`report.mfr`)。140 条 policy 对中 56 条无静态引用,其中 34 条是 `:admin`。
 
@@ -101,16 +101,16 @@ RBAC 资源 46 的第二提取器可用运行期求值 `packages/shared/dist/ind
 
 `JwtAuthGuard`、`TenantContextGuard`、`PermissionGuard` 均为全局 `APP_GUARD`(`app.module.ts:155-166`),故这 62 条**都要求有效 JWT**(仅 `@Public()` 绕过),但**都不经 RBAC**。
 
-| 类 | 名称 | 条数 | 替代控制 | 判定 |
-|---|---|---|---|---|
-| A | 自助身份端点(`/users/me`、`/auth` 会话) | 20 | `@CurrentUser()` 自身作用域 | 正常 |
-| B | 包装/动态权限装饰器(提取器盲点) | 11 | 装饰器确实存在,只是提取器看不见 | **事实基线缺陷** |
-| C | AC 租户层级门(非 RBAC) | 10 | `ensureAcTenant` / `checkAcTenantAccess` | 待裁 |
-| D | 系统字典读,无任何门 | 3 | 无 | 待裁 |
-| E | 自省/自身有效权限端点 | 6 | 返回值以 `user.id` 为界 | 正常 |
-| F | 组织树读(懒加载不做可见性过滤) | 4 | 仅全量读传 `userId` | 待裁 |
-| G | **分级目录 CRUD,零授权** | **7** | **无** | **真缺陷** |
-| H | 根信息端点 | 1 | JWT | 正常 |
+| 类  | 名称                                    | 条数  | 替代控制                                 | 判定             |
+| --- | --------------------------------------- | ----- | ---------------------------------------- | ---------------- |
+| A   | 自助身份端点(`/users/me`、`/auth` 会话) | 20    | `@CurrentUser()` 自身作用域              | 正常             |
+| B   | 包装/动态权限装饰器(提取器盲点)         | 11    | 装饰器确实存在,只是提取器看不见          | **事实基线缺陷** |
+| C   | AC 租户层级门(非 RBAC)                  | 10    | `ensureAcTenant` / `checkAcTenantAccess` | 待裁             |
+| D   | 系统字典读,无任何门                     | 3     | 无                                       | 待裁             |
+| E   | 自省/自身有效权限端点                   | 6     | 返回值以 `user.id` 为界                  | 正常             |
+| F   | 组织树读(懒加载不做可见性过滤)          | 4     | 仅全量读传 `userId`                      | 待裁             |
+| G   | **分级目录 CRUD,零授权**                | **7** | **无**                                   | **真缺陷**       |
+| H   | 根信息端点                              | 1     | JWT                                      | 正常             |
 
 ### B 类:一处事实基线自身的缺陷
 
@@ -139,12 +139,12 @@ RBAC 资源 46 的第二提取器可用运行期求值 `packages/shared/dist/ind
 
 现存负证覆盖 **11 个端点**,分布:
 
-| 文件 | 端点数 | 进 CI |
-|---|---|---|
-| `apps/api/test/integration/rbac-contract.integration.spec.ts` | 5 | ✗ |
-| `apps/api/test/integration/observability-adapters.integration.spec.ts` | 4 | ✗ |
-| `apps/api/test/integration/platform-tools.integration.spec.ts` | 1 | ✗ |
-| `apps/api/src/modules/builder-registry/builder-registry.http.spec.ts` | 1 | ✓(身份为桩) |
+| 文件                                                                   | 端点数 | 进 CI       |
+| ---------------------------------------------------------------------- | ------ | ----------- |
+| `apps/api/test/integration/rbac-contract.integration.spec.ts`          | 5      | ✗           |
+| `apps/api/test/integration/observability-adapters.integration.spec.ts` | 4      | ✗           |
+| `apps/api/test/integration/platform-tools.integration.spec.ts`         | 1      | ✗           |
+| `apps/api/src/modules/builder-registry/builder-registry.http.spec.ts`  | 1      | ✓(身份为桩) |
 
 前 5 条还断言 `error.code === PERM_ACCESS_DENIED` 与具体 `resource:action`,不只是状态码。
 
@@ -163,13 +163,13 @@ RBAC 资源 46 的第二提取器可用运行期求值 `packages/shared/dist/ind
 
 ## STORY-013 漂移门现状
 
-| 门 | 能跑 | 实测 | 检查什么 |
-|---|---|---|---|
-| `require-permissions.contract.spec.ts` | ✓ 无 DB,进 CI | **绿** | catalog ↔ controller 装饰器 |
-| `role-capability-packs.spec.ts` | ✓ 无 DB,进 CI | **绿** | catalog ↔ 能力包 |
-| `packages/database/scripts/__tests__/seed-ac-rbac-contract.spec.ts` | ✗ **孤儿** | 从未运行 | seed 顺序 |
-| `sync-rbac-contract.ts` | ✗ 需 DB | 未测 | catalog → 活库(**修复器,不是门**) |
-| `audit-permission-snapshots.ts` | ✗ 需 DB+Redis | 未测 | 活库 → Redis 快照(唯一针对快照漂移的工具) |
+| 门                                                                  | 能跑          | 实测     | 检查什么                                  |
+| ------------------------------------------------------------------- | ------------- | -------- | ----------------------------------------- |
+| `require-permissions.contract.spec.ts`                              | ✓ 无 DB,进 CI | **绿**   | catalog ↔ controller 装饰器               |
+| `role-capability-packs.spec.ts`                                     | ✓ 无 DB,进 CI | **绿**   | catalog ↔ 能力包                          |
+| `packages/database/scripts/__tests__/seed-ac-rbac-contract.spec.ts` | ✗ **孤儿**    | 从未运行 | seed 顺序                                 |
+| `sync-rbac-contract.ts`                                             | ✗ 需 DB       | 未测     | catalog → 活库(**修复器,不是门**)         |
+| `audit-permission-snapshots.ts`                                     | ✗ 需 DB+Redis | 未测     | 活库 → Redis 快照(唯一针对快照漂移的工具) |
 
 ### 三条结论
 

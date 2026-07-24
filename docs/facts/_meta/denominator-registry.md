@@ -10,12 +10,12 @@
 
 ## 已定钉分母
 
-| 分母 | 计数 | 内容 sha256 | 提取器 A | 提取器 B | 互钉结果 |
-|---|---|---|---|---|---|
-| API handler | **398** | `77e420714dbb881e…` | `apps/api/scripts/write-api-registry-controller-inventory.mjs` 工件 | codegraph `nodes.kind='route'` ∩ `*.controller.ts` | **逐条零分歧** |
-| 前端页面路由 | **66** | `72d57e3a0c0dc3dd…` | `find apps/web/src/app -name page.tsx` | 待接第二源 | 单源 · **未定钉** |
-| Prisma model | **88** | `18f070ff04d4a4ed…` | `schema.prisma` 的 `^model` | 生成 client + 迁移 SQL 重放 + 引擎渲染 DDL(**三个**) | **逐条零分歧 · 已定钉** |
-| RBAC 资源 | **46** | `690da6e4ed6bf3c5…` | `catalog.ts` 的 `resource(` 调用 | 待接第二源(装饰器/seed) | 单源 · **未定钉** |
+| 分母         | 计数    | 内容 sha256         | 提取器 A                                                            | 提取器 B                                             | 互钉结果                |
+| ------------ | ------- | ------------------- | ------------------------------------------------------------------- | ---------------------------------------------------- | ----------------------- |
+| API handler  | **398** | `77e420714dbb881e…` | `apps/api/scripts/write-api-registry-controller-inventory.mjs` 工件 | codegraph `nodes.kind='route'` ∩ `*.controller.ts`   | **逐条零分歧**          |
+| 前端页面路由 | **66**  | `72d57e3a0c0dc3dd…` | `find apps/web/src/app -name page.tsx`                              | 待接第二源                                           | 单源 · **未定钉**       |
+| Prisma model | **88**  | `18f070ff04d4a4ed…` | `schema.prisma` 的 `^model`                                         | 生成 client + 迁移 SQL 重放 + 引擎渲染 DDL(**三个**) | **逐条零分歧 · 已定钉** |
+| RBAC 资源    | **46**  | `690da6e4ed6bf3c5…` | `catalog.ts` 的 `resource(` 调用                                    | 待接第二源(装饰器/seed)                              | 单源 · **未定钉**       |
 
 **API handler(398)与 Prisma model(88)已满足 GATE-001**,可用于覆盖率声称。前端页面路由(66)与 RBAC 资源(46)仍是单源,不得支撑任何覆盖率声称。
 
@@ -27,12 +27,12 @@
 
 **codegraph 原始 `route` 节点总数 436 —— 废止。** 实测构成:
 
-| 来源 | 条数 |
-|---|---|
-| `*.controller.ts`(真 API 面) | **398** |
-| `apps/api/scripts/` 内字符串字面量 | 33 |
-| spec 测试文件 | 3 |
-| `bootstrap.ts` | 2 |
+| 来源                               | 条数    |
+| ---------------------------------- | ------- |
+| `*.controller.ts`(真 API 面)       | **398** |
+| `apps/api/scripts/` 内字符串字面量 | 33      |
+| spec 测试文件                      | 3       |
+| `bootstrap.ts`                     | 2       |
 
 以 436 为分母会把脚本、测试与引导路由计入产品 API 面,覆盖率自第一天起为假。
 
