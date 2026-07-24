@@ -53,7 +53,9 @@ function parseArgs(argv: string[]): CliOptions {
     apiBaseUrl: 'http://localhost:4000',
     webBaseUrl: 'http://localhost:3000',
     evidenceDir:
-      'vault/initiatives/projects/TCRN-TMS/active/public-presence-studio/evidence/2026-05-27-goals-phase-0-12-execution/phase-1-module-capability-registry',
+      // 原默认值指向平台 vault 下的证据目录,该 vault 已于 2026-07-20 归档移出本仓,
+      // 路径长期悬空(TCRN-TMS-STORY-025)。改为仓内路径,并由调用方以 --evidence-dir 覆盖。
+      '.tmp/module-capability-browser-proof',
     targetTenantCode: 'TEST_P1_CAP_HTTP_STD_CONFLICT',
   };
 
