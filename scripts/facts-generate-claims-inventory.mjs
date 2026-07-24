@@ -115,6 +115,8 @@ for (const [f, arr] of Object.entries(byFile).sort((a, b) => b[1].length - a[1].
 L.push("");
 L.push("## 全量清册");
 L.push("");
+L.push("<!-- facts:links:ignore-start —— 以下是逐字引文,其中的相对路径以原文件为基准,不是本文件的引用 -->");
+L.push("");
 for (const f of Object.keys(byFile).sort()) {
   L.push("### `" + f + "`");
   L.push("");
@@ -124,6 +126,9 @@ for (const f of Object.keys(byFile).sort()) {
     L.push("| `" + x.id + "` | " + x.line + " | `" + x.klass + "` | " + x.text.replace(/\|/g, "\\|").slice(0, 150) + " |");
   L.push("");
 }
+
+L.push("<!-- facts:links:ignore-end -->");
+L.push("");
 
 const md = L.join("\n");
 
