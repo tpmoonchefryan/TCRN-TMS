@@ -20,8 +20,21 @@
 | 2 | 改名一个 RBAC 资源码 | RBAC 资源 | `catalog.ts` 的 `resource(` 扫描 | 46 | **46**(内容哈希变) | RED 已证 |
 | 3 | 注入一个新 `@Get` 路由 | API handler | `write-api-registry-controller-inventory.mjs` | 398 | **399** | RED 已证 |
 | 3' | 同上,同一变异 | API handler | codegraph 索引快照 | 398 | **398** | **假绿** |
+| 4 | 手改生成产物中的一个数字 | 派生再生成一致性 | `scripts/facts-generate-api.mjs --check` | 退出 0 | **退出 1 并指名漂移文件** | RED 已证 |
 
-三次变异后仓均已还原,`git status` 干净。
+四次变异后仓均已还原,`git status` 干净。
+
+### 变异 4 的第一次尝试是一次自捕的假阴性(务必保留)
+
+第一次红证尝试用 `perl -pi -e 's/398 条 handler/397 条 handler/'` 施加变异,随后 `--check` **返回绿、退出 0**。
+
+看上去像门失灵,实际是**变异从未生效**:产物里的原文是 `**398** 条 handler`,数字两侧有 markdown 加粗标记,正则匹配不到。门当时是对的 —— 文件确实没被改过。
+
+改用先算哈希、断言字节确已改变、再跑门的做法后,门立刻见红。
+
+> **一个没有先证明自己生效的变异,证明不了门的任何事** —— 它给出的绿和门坏掉给出的绿完全无法区分。
+>
+> 这正是 `scripts/facts-mutation-red-proof.mjs` 里那句 `if (mutated === original) throw new Error("变异未改变字节 — 变异本身无效")` 存在的理由。本次是在**没走那个脚本**的临时手测里栽的 —— 纪律写进脚本还不够,手测也必须遵守。
 
 ## 两个必须写进门的教训
 
