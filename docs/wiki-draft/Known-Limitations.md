@@ -2,6 +2,10 @@
 
 Validation baseline: 2026-06-10 G19 clean-docs staging.
 
+> **证据基线已移除(`TCRN-TMS-STORY-024`)。** 下表每个 `OKL-*` 条目的定义与缓解措施仍在本文件内,但它们援引的证明切片存放于一个已于 2026-07-20 归档移出本仓的 vault。因此每条记录的是**「某事尚未被证明」这一主张本身**,而验证该主张所需的证据已不可达 —— 按 [事实基线的可判伪性要求](../facts/README.md#可判伪性),这 11 条一律为 `unverified`:既不可据以声称限制仍然成立,也不可据以宣称限制已解除。逐条重新取证是 11 个独立工作项,尚未排期。
+>
+> 另须分清:这些条目描述的是**文档发布策略**(某流程是否可写进指南),**不是系统能力**。例如 `OKL-G19-PUBLIC-WRITE-001` 说公开 Marshmallow 写入「缺证明」,而这些写入端点在系统中确实存在且标记为 public(实测 8 条 `POST /public/marshmallow/**`)。把它读成「功能不可用」是误读。
+
 This page keeps limitation visibility high so guide and wiki wording does not overclaim current product behavior.
 
 ## How To Use This Page
