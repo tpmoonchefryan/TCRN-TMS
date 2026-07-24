@@ -6,7 +6,7 @@
 
 ## 范围
 
-`docs/user-guide/` 与 `docs/wiki-draft/` 共 **24 个文件、969 行**,抽出 **163 条**候选声称(markdown 列表项)。
+`docs/user-guide/` 与 `docs/wiki-draft/` 共 **24 个文件、975 行**,抽出 **163 条**候选声称(markdown 列表项)。
 
 每条声称获得一个稳定 id `TMS-C-NNN`,供三批审计(`TCRN-TMS-STORY-021`~`023`)逐条判定引用。
 
@@ -118,9 +118,9 @@
 
 | id | 行 | 类别 | 声称 |
 |---|---|---|---|
-| `TMS-C-029` | 38 | `proof-status` | Adapter creation and configuration need disposable integration fixture and cleanup proof. |
-| `TMS-C-030` | 39 | `api-contract` | Webhook/API secret display, rotation, revoke, and deletion need redacted proof. |
-| `TMS-C-031` | 40 | `ui-surface` | Keep secrets, auth headers, cookies, session ids, payload details, and customer-sensitive data out of screenshots and support tickets. |
+| `TMS-C-029` | 40 | `proof-status` | Adapter creation and configuration need disposable integration fixture and cleanup proof. |
+| `TMS-C-030` | 41 | `api-contract` | Webhook/API secret display, rotation, revoke, and deletion need redacted proof. |
+| `TMS-C-031` | 42 | `ui-surface` | Keep secrets, auth headers, cookies, session ids, payload details, and customer-sensitive data out of screenshots and support tickets. |
 
 ### `docs/user-guide/operations/README.md`
 
@@ -284,15 +284,15 @@
 
 | id | 行 | 类别 | 声称 |
 |---|---|---|---|
-| `TMS-C-135` | 11 | `prose` | the feature is visible but not proven as a complete customer workflow; |
-| `TMS-C-136` | 12 | `proof-status` | the feature is intentionally excluded from clean docs until a security, permission, accessibility, or runtime proof exists; |
-| `TMS-C-137` | 13 | `prose` | the owner has accepted a known limitation and the guide must describe the impact honestly. |
-| `TMS-C-138` | 37 | `permission` | RBAC, Initial Admin, hidden-403, and user-management represented slices: G04, G05, and G07 proof. |
-| `TMS-C-139` | 38 | `prose` | AC tenant, AC integrations, and AC operations represented slices: G06, G08, and G09 proof. |
-| `TMS-C-140` | 39 | `prose` | Tenant root/settings/integration/organization represented slices: G10, G11, and G12 proof. |
-| `TMS-C-141` | 40 | `prose` | Talent Workspace represented slices: G13 proof. |
-| `TMS-C-142` | 41 | `prose` | Public Presence authoring/preview/public-output represented slices: G14 and G15 proof. |
-| `TMS-C-143` | 42 | `ui-surface` | Public Marshmallow route/form/language/focus represented read-only slices: G16 proof. |
+| `TMS-C-135` | 15 | `prose` | the feature is visible but not proven as a complete customer workflow; |
+| `TMS-C-136` | 16 | `proof-status` | the feature is intentionally excluded from clean docs until a security, permission, accessibility, or runtime proof exists; |
+| `TMS-C-137` | 17 | `prose` | the owner has accepted a known limitation and the guide must describe the impact honestly. |
+| `TMS-C-138` | 41 | `permission` | RBAC, Initial Admin, hidden-403, and user-management represented slices: G04, G05, and G07 proof. |
+| `TMS-C-139` | 42 | `prose` | AC tenant, AC integrations, and AC operations represented slices: G06, G08, and G09 proof. |
+| `TMS-C-140` | 43 | `prose` | Tenant root/settings/integration/organization represented slices: G10, G11, and G12 proof. |
+| `TMS-C-141` | 44 | `prose` | Talent Workspace represented slices: G13 proof. |
+| `TMS-C-142` | 45 | `prose` | Public Presence authoring/preview/public-output represented slices: G14 and G15 proof. |
+| `TMS-C-143` | 46 | `ui-surface` | Public Marshmallow route/form/language/focus represented read-only slices: G16 proof. |
 
 ### `docs/wiki-draft/Public-Presence.md`
 

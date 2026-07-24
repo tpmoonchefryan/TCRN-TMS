@@ -196,7 +196,9 @@
 
 ### 退役套件:净效果可测,理由未记录
 
-commit `3630a0a3`(`chore: align runtime and browser validation baseline`)删掉该目录下 **71 个文件**,含 `private/private-shell-visual-qa.spec.ts`(**3,681 行**)、`auth/login-ui-qa.spec.ts`、`global.setup.ts` 等,并把根 `test:e2e` 改钉到 `tests/e2e/*`。目录内无 README,commit message 未给理由。
+commit `3630a0a3`(`chore: align runtime and browser validation baseline`)删掉该目录下 **71 个文件**,并把根 `test:e2e` 改钉到 `tests/e2e/*`。目录内无 README,commit message 未给理由。
+
+被删文件中最吃重的三个(**这些路径已不存在于工作树,只能在该 commit 之前的历史里读到**):~~`private/private-shell-visual-qa.spec.ts`~~(**3,681 行**)、~~`auth/login-ui-qa.spec.ts`~~、~~`global.setup.ts`~~。
 
 > **被删的 3,681 行 `private-shell-visual-qa.spec.ts` 覆盖的正是 `PrivateShell.tsx` —— 承载全部租户侧门逻辑的那个文件。门还在,证明门的浏览器证据没了。**
 
