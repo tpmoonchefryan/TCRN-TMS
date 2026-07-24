@@ -50,7 +50,11 @@ decided_by: <minutes id,仅当经 conference 裁定>
 `statement` 必须能被**一次具体观测**推翻。
 
 - 不合格:「系统支持多租户」——无法指出什么观测能推翻它。
-- 合格:「租户隔离由 `tenantId` 字段在 Prisma 层承载,88 个 model 中 N 个带该字段」——数一遍即可证伪。
+- 合格:「88 个 Prisma model 中 11 个带 `tenantId` 字段」——数一遍即可证伪。
+
+> **本节示例本身被证伪过一次,记录在此。** 初版写的是「租户隔离由 `tenantId` 字段在 Prisma 层承载,88 个 model 中 N 个带该字段」。它形式上可判伪(能数),**但它的前提是错的**:TMS 的租户隔离由 **schema-per-tenant** 承载,不是 `tenantId` 列 —— 70 个 `tenant_template` model 中只有 2 个带 `tenantId`,其余 68 个**没有任何租户列**(详见 [`data-model.md`](data-model.md))。
+>
+> 教训:**可判伪 ≠ 正确。** 一条断言可以完美地可数、可测、可证伪,同时把因果关系说反。可判伪性保证的是「错了能被发现」,不是「它是对的」——这正是本目录要逐条验证而不是逐条相信的理由。
 
 ### 证据非空
 

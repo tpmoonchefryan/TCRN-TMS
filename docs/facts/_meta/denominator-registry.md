@@ -14,10 +14,14 @@
 |---|---|---|---|---|---|
 | API handler | **398** | `77e420714dbb881e…` | `apps/api/scripts/write-api-registry-controller-inventory.mjs` 工件 | codegraph `nodes.kind='route'` ∩ `*.controller.ts` | **逐条零分歧** |
 | 前端页面路由 | **66** | `72d57e3a0c0dc3dd…` | `find apps/web/src/app -name page.tsx` | 待接第二源 | 单源 · **未定钉** |
-| Prisma model | **88** | `18f070ff04d4a4ed…` | `schema.prisma` 的 `^model` | 待接第二源(migrations) | 单源 · **未定钉** |
+| Prisma model | **88** | `18f070ff04d4a4ed…` | `schema.prisma` 的 `^model` | 生成 client + 迁移 SQL 重放 + 引擎渲染 DDL(**三个**) | **逐条零分歧 · 已定钉** |
 | RBAC 资源 | **46** | `690da6e4ed6bf3c5…` | `catalog.ts` 的 `resource(` 调用 | 待接第二源(装饰器/seed) | 单源 · **未定钉** |
 
-只有 API handler 分母当前**已满足 GATE-001**。其余三个已登记但仍是单源,须在对应 Epic 内补第二提取器方可用于任何覆盖率声称。
+**API handler(398)与 Prisma model(88)已满足 GATE-001**,可用于覆盖率声称。前端页面路由(66)与 RBAC 资源(46)仍是单源,不得支撑任何覆盖率声称。
+
+> RBAC 资源曾试过以运行期求值 `packages/shared/dist/index.js` 作第二源,逐条零分歧 —— 但 `dist` 是 `catalog.ts` 的编译产物,**同源**,只能抓构建漂移、抓不到 catalog 本身错了。真正独立的第二源是活库 `resource` 表,需 DB,未测。故该行保持未定钉。
+
+> **已定钉 ≠ 门已接线。** Prisma model 的四个提取器是一次性脚本、尚未入仓,CI 不会重跑。「88 是对的」已证,「88 会一直是对的」未证。
 
 ## 已废止的分母
 
