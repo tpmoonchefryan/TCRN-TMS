@@ -6,12 +6,15 @@ Use this order when assembling prompt context for Homepage AI authoring tasks.
 
 Inject or summarize these first:
 
-1. `vault/initiatives/projects/TCRN-TMS/active/public-presence-studio/20-spec.md`
-2. `vault/initiatives/projects/TCRN-TMS/active/public-presence-studio/40-decisions.md`
-3. `vault/initiatives/projects/TCRN-TMS/active/public-presence-studio/50-implementation-plan.md`
-4. `vault/initiatives/projects/TCRN-TMS/active/public-presence-studio/70-verification.md`
-5. `vault/knowledge/projects/TCRN-TMS/ui-ux/uiux-specification-granularity-standard.md`
-6. `vault/knowledge/projects/TCRN-TMS/workflow/plan-materialization-granularity.md`
+1. `docs/facts/README.md` — the fact-record format and the authority order.
+2. `docs/facts/api-handlers.md` — the 398 API handlers, generated and cross-pinned.
+3. `docs/facts/api-metadata-gaps.md` — where API contract metadata is known to be missing.
+
+> **The original six sources are gone and were not replaced in kind.** This list used to name four Public Presence Studio planning documents (`20-spec.md`, `40-decisions.md`, `50-implementation-plan.md`, `70-verification.md`) and two durable standards, all under a platform `vault/` that was archived out of this repository on 2026-07-20. Those files do not exist anywhere in this repository or the platform root.
+>
+> What was lost is **intent** — the spec, the decisions, and the granularity standards. What replaces it is **fact**: what the system currently is, with evidence. An assistant working from this manifest therefore has no authoritative statement of what Public Presence Studio was *meant* to be, and must not infer one from the facts. When a task needs the original intent, say so and stop; do not reconstruct it.
+>
+> Recorded under `TCRN-TMS-INIT-001` (`TCRN-TMS-STORY-025`).
 
 ## 2. Shared AI Governance
 
