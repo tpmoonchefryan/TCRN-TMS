@@ -18,20 +18,20 @@ TMS 的**事实基线**:一组可判伪、带可复现证据绑定的断言,描�
 
 两个来源冲突时,**高层级胜**,不由执行者私下仲裁:
 
-| 层级 | 来源 | 可支撑的最高置信度 |
-|---|---|---|
-| `runtime` | 实际运行观测(实调、DOM 测量、e2e) | `proven` |
-| `schema` | Prisma schema 与迁移 | `proven` |
-| `api-contract` | OpenAPI 基线、controller 装饰器 | `proven` |
-| `source` | 其余源码 | `probable` |
-| `doc` | 现有文档 | **`unverified` 封顶** |
+| 层级           | 来源                              | 可支撑的最高置信度    |
+| -------------- | --------------------------------- | --------------------- |
+| `runtime`      | 实际运行观测(实调、DOM 测量、e2e) | `proven`              |
+| `schema`       | Prisma schema 与迁移              | `proven`              |
+| `api-contract` | OpenAPI 基线、controller 装饰器   | `proven`              |
+| `source`       | 其余源码                          | `probable`            |
+| `doc`          | 现有文档                          | **`unverified` 封顶** |
 
 `doc` 层级证据**不能单独支撑 `proven`**。这条把 TMS README 已有的口头声明(「以源码实现和当前 UI 证据为准」)落成机制。
 
 ## 一条 fact 的格式
 
 ```yaml
-id: TMS-F-<域>-<序号>          # 稳定标识,永不复用
+id: TMS-F-<域>-<序号> # 稳定标识,永不复用
 statement: <单句可判伪断言>
 domain: <所属域>
 authority_tier: runtime | schema | api-contract | source | doc
@@ -77,11 +77,22 @@ decided_by: <minutes id,仅当经 conference 裁定>
 - RBAC 资源改名后**计数不变**(46→46),只比计数的门会放行 → 故要求比对内容哈希。
 - 注入真实路由后 **codegraph 陈旧索引看不见**(仍报 398),而解析源码的提取器检出 399 → 故要求双源互钉。
 
+## 交接
+
+前端重建 Initiative 的唯一入口是 [`REBUILD-HANDOFF.md`](REBUILD-HANDOFF.md) —— 准入判据、六条必知事实、缺口登记册与使用规矩都在那里。
+
 ## 目录结构
 
 ```
 docs/facts/
 ├── README.md                        ← 本文件(规范)
+├── REBUILD-HANDOFF.md               ← 前端重建交接包(准入判据 + 缺口登记册)
+├── api-handlers.md / .json          ← 398 条 handler 事实(生成物)
+├── api-openapi-reconciliation.md    ← 与 OpenAPI 基线对账
+├── api-metadata-gaps.md             ← API 元数据缺口单
+├── permissions.md                   ← 权限矩阵事实
+├── data-model.md                    ← 88 个 model 与迁移事实
+├── frontend-routes.md               ← 66 条路由与 28 域事实
 └── _meta/
     ├── evidence-script-grading.md   ← 106 个证据脚本的可运行性分级
     ├── denominator-registry.md      ← 分母登记表(含已废止的 436)
@@ -93,8 +104,8 @@ docs/facts/
 
 ## 三层落点
 
-| 层 | 放什么 | 不放什么 |
-|---|---|---|
-| `docs/facts/`(本目录) | fact 正文,随代码同 PR 变更 | 过程、裁定 |
-| 治理链 | 裁定、验收、状态变迁 | fact 正文 |
-| 知识卡 | 跨 Initiative 会被再检索的结论,限个位数 | fact 正文、单次结论 |
+| 层                    | 放什么                                  | 不放什么            |
+| --------------------- | --------------------------------------- | ------------------- |
+| `docs/facts/`(本目录) | fact 正文,随代码同 PR 变更              | 过程、裁定          |
+| 治理链                | 裁定、验收、状态变迁                    | fact 正文           |
+| 知识卡                | 跨 Initiative 会被再检索的结论,限个位数 | fact 正文、单次结论 |

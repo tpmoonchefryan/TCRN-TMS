@@ -28,3 +28,12 @@ packages/database/prisma/migrations
 # High-risk database operations are outside this proof-repair thread.
 packages/database/prisma/seeds
 packages/database/scripts
+
+# 事实基线的生成产物(TCRN-TMS-INIT-001)。
+# 这些文件的字节由 TCRN-TMS-GATE-002(派生再生成确定性门)钉住:
+# `pnpm facts:check` 要求它们与生成器重新生成的内容逐字节一致。
+# 让 prettier 改写它们会使该门永远见红,且改的是生成器管不到的那一侧。
+# 要改格式,改生成器。
+docs/facts/api-handlers.md
+docs/facts/api-handlers.json
+docs/facts/_meta/doc-claims-inventory.md

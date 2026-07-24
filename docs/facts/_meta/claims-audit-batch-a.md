@@ -18,18 +18,18 @@
 
 原文:「The AC admin console currently exposes route families for:」
 
-| # | 声称 | 路由 | 导航 | 渲染 | 判定 |
-|---|---|---|---|---|---|
-| 1 | Tenant management | `/ac/[tenantId]/tenants` | ✓ | 有内容 | **证实** |
-| 2 | User management | `/ac/[tenantId]/user-management` | ✓ | 有内容 | **证实** |
-| 3 | **Interface and webhook management** | 两条路由存在 | **✗ 不在导航** | **均渲染 `AcBusinessRouteUnavailableScreen`** | **证伪** |
-| 4 | API client management | `/ac/[tenantId]/api-clients` | ✓ | 有内容 | **证实** |
-| 5 | API registry and gateway readiness | `/api-registry` + `/api-gateway-readiness` | ✓ 两者 | 有内容 | **证实** |
-| 6 | Builder registry | `/ac/[tenantId]/builder-registry` | ✓ | 有内容 | **证实** |
-| 7 | Platform tool connections | `/ac/[tenantId]/platform-tools` | ✓ | 有内容 | **证实** |
-| 8 | Runtime flags | `/ac/[tenantId]/runtime-flags` | ✓ | 有内容 | **证实** |
-| 9 | Observability | `/ac/[tenantId]/observability` | ✓ | 有内容 | **证实** |
-| 10 | System dictionary | `/ac/[tenantId]/system-dictionary` | ✓ | 有内容 | **证实** |
+| #   | 声称                                 | 路由                                       | 导航           | 渲染                                          | 判定     |
+| --- | ------------------------------------ | ------------------------------------------ | -------------- | --------------------------------------------- | -------- |
+| 1   | Tenant management                    | `/ac/[tenantId]/tenants`                   | ✓              | 有内容                                        | **证实** |
+| 2   | User management                      | `/ac/[tenantId]/user-management`           | ✓              | 有内容                                        | **证实** |
+| 3   | **Interface and webhook management** | 两条路由存在                               | **✗ 不在导航** | **均渲染 `AcBusinessRouteUnavailableScreen`** | **证伪** |
+| 4   | API client management                | `/ac/[tenantId]/api-clients`               | ✓              | 有内容                                        | **证实** |
+| 5   | API registry and gateway readiness   | `/api-registry` + `/api-gateway-readiness` | ✓ 两者         | 有内容                                        | **证实** |
+| 6   | Builder registry                     | `/ac/[tenantId]/builder-registry`          | ✓              | 有内容                                        | **证实** |
+| 7   | Platform tool connections            | `/ac/[tenantId]/platform-tools`            | ✓              | 有内容                                        | **证实** |
+| 8   | Runtime flags                        | `/ac/[tenantId]/runtime-flags`             | ✓              | 有内容                                        | **证实** |
+| 9   | Observability                        | `/ac/[tenantId]/observability`             | ✓              | 有内容                                        | **证实** |
+| 10  | System dictionary                    | `/ac/[tenantId]/system-dictionary`         | ✓              | 有内容                                        | **证实** |
 
 **9 证实 / 1 证伪。**
 
@@ -60,11 +60,11 @@
 
 ## 判定汇总
 
-| 类别 | 数量 |
-|---|---|
-| 证实 | 9 |
-| 证伪 | 1 |
-| 审计新发现的缺陷 | 2 |
+| 类别             | 数量 |
+| ---------------- | ---- |
+| 证实             | 9    |
+| 证伪             | 1    |
+| 审计新发现的缺陷 | 2    |
 
 ## 未测边界
 

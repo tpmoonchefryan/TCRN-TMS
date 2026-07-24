@@ -14,13 +14,13 @@
 
 ## 已完成的红证
 
-| # | 变异 | 目标分母 | 提取器 | 变异前 | 变异后 | 判定 |
-|---|---|---|---|---|---|---|
-| 1 | 删除一个 Prisma model | model | `schema.prisma` 的 `^model` 扫描 | 88 | **87** | RED 已证 |
-| 2 | 改名一个 RBAC 资源码 | RBAC 资源 | `catalog.ts` 的 `resource(` 扫描 | 46 | **46**(内容哈希变) | RED 已证 |
-| 3 | 注入一个新 `@Get` 路由 | API handler | `write-api-registry-controller-inventory.mjs` | 398 | **399** | RED 已证 |
-| 3' | 同上,同一变异 | API handler | codegraph 索引快照 | 398 | **398** | **假绿** |
-| 4 | 手改生成产物中的一个数字 | 派生再生成一致性 | `scripts/facts-generate-api.mjs --check` | 退出 0 | **退出 1 并指名漂移文件** | RED 已证 |
+| #   | 变异                     | 目标分母         | 提取器                                        | 变异前 | 变异后                    | 判定     |
+| --- | ------------------------ | ---------------- | --------------------------------------------- | ------ | ------------------------- | -------- |
+| 1   | 删除一个 Prisma model    | model            | `schema.prisma` 的 `^model` 扫描              | 88     | **87**                    | RED 已证 |
+| 2   | 改名一个 RBAC 资源码     | RBAC 资源        | `catalog.ts` 的 `resource(` 扫描              | 46     | **46**(内容哈希变)        | RED 已证 |
+| 3   | 注入一个新 `@Get` 路由   | API handler      | `write-api-registry-controller-inventory.mjs` | 398    | **399**                   | RED 已证 |
+| 3'  | 同上,同一变异            | API handler      | codegraph 索引快照                            | 398    | **398**                   | **假绿** |
+| 4   | 手改生成产物中的一个数字 | 派生再生成一致性 | `scripts/facts-generate-api.mjs --check`      | 退出 0 | **退出 1 并指名漂移文件** | RED 已证 |
 
 四次变异后仓均已还原,`git status` 干净。
 

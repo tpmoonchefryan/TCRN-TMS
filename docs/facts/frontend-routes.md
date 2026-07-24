@@ -18,53 +18,53 @@
 
 ### 提取约定
 
-| 约定 | 本仓实况 |
-|---|---|
-| 动态段 `[param]` 进 URL | 归一化为 `{param}`(与 API 事实对齐) |
-| catch-all `[...path]` | 仅 1 条(`/p/[...path]`) |
-| 路由组 `(group)` 不进 URL | **本仓 0 个**(规则已实现以防未来引入) |
-| `layout.tsx` 不是路由 | 3 个:root、`ac/[tenantId]`、`tenant/[tenantId]` |
-| `route.ts` / `not-found.tsx` / `error.tsx` | **0 个** |
-| `middleware.ts` | **`apps/web` 内不存在** —— 这一条对权限门是决定性的 |
+| 约定                                       | 本仓实况                                            |
+| ------------------------------------------ | --------------------------------------------------- |
+| 动态段 `[param]` 进 URL                    | 归一化为 `{param}`(与 API 事实对齐)                 |
+| catch-all `[...path]`                      | 仅 1 条(`/p/[...path]`)                             |
+| 路由组 `(group)` 不进 URL                  | **本仓 0 个**(规则已实现以防未来引入)               |
+| `layout.tsx` 不是路由                      | 3 个:root、`ac/[tenantId]`、`tenant/[tenantId]`     |
+| `route.ts` / `not-found.tsx` / `error.tsx` | **0 个**                                            |
+| `middleware.ts`                            | **`apps/web` 内不存在** —— 这一条对权限门是决定性的 |
 
 ### 双源互钉与红证
 
-| 提取器 | 计数 | 内容 sha256(前 16) | 差异 |
-|---|---|---|---|
-| A:文件系统 `find` | 66 | `72d57e3a0c0dc3dd` | — |
-| B:git 索引 `git ls-files` | 66 | `72d57e3a0c0dc3dd` | **逐行零差异** |
+| 提取器                    | 计数 | 内容 sha256(前 16) | 差异           |
+| ------------------------- | ---- | ------------------ | -------------- |
+| A:文件系统 `find`         | 66   | `72d57e3a0c0dc3dd` | —              |
+| B:git 索引 `git ls-files` | 66   | `72d57e3a0c0dc3dd` | **逐行零差异** |
 
 红证两次(在仓外副本上,working tree 未触碰):
 
-| 变异 | 计数 | 哈希 | 判定 |
-|---|---|---|---|
-| 删一个 `page.tsx` | **65** | 变 | RED |
+| 变异                                     | 计数   | 哈希            | 判定                |
+| ---------------------------------------- | ------ | --------------- | ------------------- |
+| 删一个 `page.tsx`                        | **65** | 变              | RED                 |
 | 目录改名 `security` → `security-RENAMED` | **66** | **`deac9c89…`** | **RED(仅哈希检出)** |
 
 第二次又是「计数纹丝不动、只有内容哈希暴露」—— 该教训的第七个独立实例。
 
 ### 分母仍不满足 GATE-001
 
-| 条件 | 状态 |
-|---|---|
-| 已登记 | **满足** |
+| 条件                   | 状态                                                                                                                                                                                   |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 已登记                 | **满足**                                                                                                                                                                               |
 | 两个独立提取器逐条互钉 | **形式满足、实质存疑** —— `find` 与 `git ls-files` **共享同一语义前提**(「路由 == 一个 `page.tsx`」)。若前提本身错了,两源会一起错。真正独立的第三源是 Next 构建产物的路由清单,**未测** |
-| 提取器已见红 | **满足(带限定)** —— 红证取自仓外副本,不是真实工作树上的门 |
+| 提取器已见红           | **满足(带限定)** —— 红证取自仓外副本,不是真实工作树上的门                                                                                                                              |
 
 **故登记表中「单源 · 未定钉」保留。本文件不作任何前端覆盖率百分比声称**;文中的 `10/66`、`56 条未触达` 是对已实测集合的直接计数。
 
 ### 分区计数
 
-| 分区 | 条数 | shell |
-|---|---|---|
-| `/ac/**` | **24** | `AcShell` |
-| `/tenant/**` | **29** | `PrivateShell` |
-| `/studio/**` | **4** | **无 shell** |
-| `/homepage-editor/**` | 2 | 无(两条都是 `redirect()`) |
-| `/login`、`/login/sso/callback` | 2 | 无 |
-| 公开消费页 | 4 | 无 |
-| 根 `/` | 1 | 无(`redirect('/login')`) |
-| **合计** | **66** | |
+| 分区                            | 条数   | shell                     |
+| ------------------------------- | ------ | ------------------------- |
+| `/ac/**`                        | **24** | `AcShell`                 |
+| `/tenant/**`                    | **29** | `PrivateShell`            |
+| `/studio/**`                    | **4**  | **无 shell**              |
+| `/homepage-editor/**`           | 2      | 无(两条都是 `redirect()`) |
+| `/login`、`/login/sso/callback` | 2      | 无                        |
+| 公开消费页                      | 4      | 无                        |
+| 根 `/`                          | 1      | 无(`redirect('/login')`)  |
+| **合计**                        | **66** |                           |
 
 ## 二、域与后端映射(STORY-017)
 
@@ -74,21 +74,21 @@
 
 三个「域」是门面,全部转发到同一个 **9,546 行**的 `IntegrationManagementScreen`,靠 `surface` 属性分叉服务 5 条路由:
 
-| 门面域 | 实况 |
-|---|---|
-| `api-client-management` | screen 13 行转发器,`copy.ts` 与 `api.ts` **各只有 1 行 `export *`** |
-| `webhook-management` | screen 19 行转发器,同构 |
+| 门面域                             | 实况                                                                     |
+| ---------------------------------- | ------------------------------------------------------------------------ |
+| `api-client-management`            | screen 13 行转发器,`copy.ts` 与 `api.ts` **各只有 1 行 `export *`**      |
+| `webhook-management`               | screen 19 行转发器,同构                                                  |
 | `interface-management` 的主 screen | 19 行转发器(该域真正的代码是另一个屏 `InterfaceAddAdapterScreen`,657 行) |
 
 > **对重建的含义:** 它们不是三个域,是一个域的三个入口。
 
 ### 3 个域不服务任何路由
 
-| 域 | 行数 | 实况 |
-|---|---|---|
+| 域                    | 行数  | 实况                                                                                           |
+| --------------------- | ----- | ---------------------------------------------------------------------------------------------- |
 | `homepage-management` | 2,557 | `HomepageManagementScreen`(894 行)**零生产导入方** —— 路由不可达的死代码,只有 526 行自测在测它 |
-| `public-presence` | 826 | 纯组件库 + 仓内**唯一**的 `.stories.tsx` |
-| `event-backbone` | 63 | 只有 45 行 api,无屏无页面 |
+| `public-presence`     | 826   | 纯组件库 + 仓内**唯一**的 `.stories.tsx`                                                       |
+| `event-backbone`      | 63    | 只有 45 行 api,无屏无页面                                                                      |
 
 ### 规模极不均
 
@@ -114,15 +114,15 @@
 
 所有门都是**客户端 React 组件**,挂在两个 `layout.tsx` 上。
 
-| 门 | 类型 | 实现 | 覆盖 |
-|---|---|---|---|
-| 会话门 | 认证 | `PrivateShell.tsx:227-250`、`AcShell.tsx:257-285` | 53 条 |
-| 租户 tier 门 | 授权(粗) | `AcShell.tsx:319`(`!isAcTenantTier` → denied) | `/ac/**` 24 条 |
-| 反向 tier 门 | 授权(粗) | `PrivateShell.tsx:217-219` | `/tenant/**` 29 条 |
-| 模块能力门 | 授权(**能力码,非权限码**) | `PrivateShell.tsx:308-319`、`:357-368`;判定表 `module-capability-routing.ts:12-41` | 7 条 |
-| 艺人生命周期门 | 业务状态 | `TalentBusinessAccessGate.tsx:195-200` | 8 条 |
-| **RBAC 前置门** | **授权(权限码)** | `CustomerCreateScreen.tsx:230` + `:617-620` | **1 条** |
-| 后端 403 事后态 | 授权(被动) | `ApiRegistryScreen.tsx:123` 等 | 3 条 |
+| 门              | 类型                      | 实现                                                                               | 覆盖               |
+| --------------- | ------------------------- | ---------------------------------------------------------------------------------- | ------------------ |
+| 会话门          | 认证                      | `PrivateShell.tsx:227-250`、`AcShell.tsx:257-285`                                  | 53 条              |
+| 租户 tier 门    | 授权(粗)                  | `AcShell.tsx:319`(`!isAcTenantTier` → denied)                                      | `/ac/**` 24 条     |
+| 反向 tier 门    | 授权(粗)                  | `PrivateShell.tsx:217-219`                                                         | `/tenant/**` 29 条 |
+| 模块能力门      | 授权(**能力码,非权限码**) | `PrivateShell.tsx:308-319`、`:357-368`;判定表 `module-capability-routing.ts:12-41` | 7 条               |
+| 艺人生命周期门  | 业务状态                  | `TalentBusinessAccessGate.tsx:195-200`                                             | 8 条               |
+| **RBAC 前置门** | **授权(权限码)**          | `CustomerCreateScreen.tsx:230` + `:617-620`                                        | **1 条**           |
+| 后端 403 事后态 | 授权(被动)                | `ApiRegistryScreen.tsx:123` 等                                                     | 3 条               |
 
 **AC 侧没有任何能力门**(`AcShell.tsx` 内 `isSessionCapabilityEnabled` 出现 0 次)。
 
@@ -142,19 +142,19 @@
 
 无门的 11 条里 9 条属设计上公开(登录页、4 条公开消费页、redirect 页)。**两条是实质缺口**:
 
-| 路由 | 实况 |
-|---|---|
+| 路由                                                            | 实况                                                                                                                                                                                 |
+| --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `/studio/public-presence/{tenantId}/assets/component/{assetId}` | `PublicPresenceAuthoringIdeScreen` 用 `useSession().request` 发认证请求,但**页面本身不检查会话、不重定向登录、不检查 tier、不检查能力**。未登录访问会渲染出 IDE 外壳然后收到后端 401 |
-| `/studio/public-presence/{tenantId}/assets/template/{assetId}` | 同上 |
+| `/studio/public-presence/{tenantId}/assets/template/{assetId}`  | 同上                                                                                                                                                                                 |
 
 **另一处结构性绕过**:`/tenant/{t}/talent/{id}/homepage/editor` `redirect()` 到 `/studio/...`,而 `resolveTalentWorkspaceRoute` 的正则钉死 `^/tenant/`(`workspace-paths.ts:298`),`/studio` 下又无 layout —— **`public_presence.homepage` 能力门在跳转后不再生效**。
 
 ### 不可用态屏:全仓只有两条
 
-| 路由 | 组件 |
-|---|---|
+| 路由                                  | 组件                                                    |
+| ------------------------------------- | ------------------------------------------------------- |
 | `/ac/{tenantId}/interface-management` | `AcBusinessRouteUnavailableScreen surface="interfaces"` |
-| `/ac/{tenantId}/webhook-management` | `AcBusinessRouteUnavailableScreen surface="webhooks"` |
+| `/ac/{tenantId}/webhook-management`   | `AcBusinessRouteUnavailableScreen surface="webhooks"`   |
 
 实测 `AcBusinessRouteUnavailableScreen` 恰被 2 个 `page.tsx` 引用,**无第三条**。其余含「不可用」字样的位置全部是加载失败/空数据错误态,或条件性拒绝态(能力未开通、艺人未发布),不是路由级不可用。
 
@@ -162,24 +162,24 @@
 
 去前缀后:**共有 14 条、AC 独有 10 条、tenant 独有 15 条。** 14 条共有里行为不同的有 4 条:
 
-| 相对路径 | AC 侧 | tenant 侧 |
-|---|---|---|
-| `/interface-management` | **不可用屏** | 真界面 |
-| `/webhook-management` | **不可用屏** | 真界面 |
-| `(index)` | → `/tenants` | → `/organization-structure` |
-| `/integration-management` | redirect **跳进不可用屏** | redirect 跳进真界面 |
+| 相对路径                  | AC 侧                     | tenant 侧                   |
+| ------------------------- | ------------------------- | --------------------------- |
+| `/interface-management`   | **不可用屏**              | 真界面                      |
+| `/webhook-management`     | **不可用屏**              | 真界面                      |
+| `(index)`                 | → `/tenants`              | → `/organization-structure` |
+| `/integration-management` | redirect **跳进不可用屏** | redirect 跳进真界面         |
 
 **一处不对称**:`/ac/{t}/interface-management` 是不可用屏,但其子路由 `/ac/{t}/interface-management/adapters/new` **渲染真实的 `InterfaceAddAdapterScreen`**。父路由说「AC 不提供业务适配器」,子路由却给了新建表单。**该子路由能否真的建出适配器,须 runtime 级证据,未测。**
 
 ## 四、运行期证据现状(STORY-019)
 
-| 项 | 数量 |
-|---|---|
-| 在跑的 e2e spec | **3**(共 11 个 test) |
-| UI evidence spec | 1(27 行,只跑 axe) |
-| `.stories.tsx` | **1** |
-| 退役 spec | 9(`retired-browser-tests/`,不被任何 package script 引用) |
-| `apps/web` 单元测试文件 | 91 |
+| 项                      | 数量                                                     |
+| ----------------------- | -------------------------------------------------------- |
+| 在跑的 e2e spec         | **3**(共 11 个 test)                                     |
+| UI evidence spec        | 1(27 行,只跑 axe)                                        |
+| `.stories.tsx`          | **1**                                                    |
+| 退役 spec               | 9(`retired-browser-tests/`,不被任何 package script 引用) |
+| `apps/web` 单元测试文件 | 91                                                       |
 
 ### 触达 10 / 66 条路由
 

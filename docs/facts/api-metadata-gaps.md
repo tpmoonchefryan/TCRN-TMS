@@ -6,29 +6,29 @@
 
 ## 缺口总览
 
-| 缺口 | 数量 | 占 398 | 判定 |
-|---|---|---|---|
-| 缺 `@ApiOperation` | 10 | 2.5% | 模块级约定缺失 |
-| 缺 `@ApiResponse` | 139 | 34.9% | 全仓性约定缺失 |
-| 两者皆缺 | 8 | 2.0% | —— |
-| 不在任何 OpenAPI 文档 | 2 | 0.5% | 一条正确排除、一条隐式排除 |
+| 缺口                  | 数量 | 占 398 | 判定                       |
+| --------------------- | ---- | ------ | -------------------------- |
+| 缺 `@ApiOperation`    | 10   | 2.5%   | 模块级约定缺失             |
+| 缺 `@ApiResponse`     | 139  | 34.9%  | 全仓性约定缺失             |
+| 两者皆缺              | 8    | 2.0%   | ——                         |
+| 不在任何 OpenAPI 文档 | 2    | 0.5%   | 一条正确排除、一条隐式排除 |
 
 ## 缺 `@ApiOperation` 的 10 条:集中在一个模块
 
 10 条中 **9 条**来自 `apps/api/src/modules/homepage/controllers/`:
 
-| fact | 端点 | 位置 |
-|---|---|---|
-| `TMS-F-API-082` | `GET /internal/domain-check` | `internal-domain.controller.ts:26` |
-| `TMS-F-API-128` | `GET /public/homepage/{path}` | `public-homepage.controller.ts:173` |
-| `TMS-F-API-130` | `GET /public/homepage/{tenantCode}/{talentCode}` | `public-homepage.controller.ts:139` |
+| fact            | 端点                                               | 位置                                |
+| --------------- | -------------------------------------------------- | ----------------------------------- |
+| `TMS-F-API-082` | `GET /internal/domain-check`                       | `internal-domain.controller.ts:26`  |
+| `TMS-F-API-128` | `GET /public/homepage/{path}`                      | `public-homepage.controller.ts:173` |
+| `TMS-F-API-130` | `GET /public/homepage/{tenantCode}/{talentCode}`   | `public-homepage.controller.ts:139` |
 | `TMS-F-API-373` | `POST /talents/{talentId}/public-presence/publish` | `public-presence.controller.ts:263` |
-| `TMS-F-API-374` | `POST …/publish/cancel` | `public-presence.controller.ts:306` |
-| `TMS-F-API-375` | `POST …/publish/schedule` | `public-presence.controller.ts:285` |
-| `TMS-F-API-376` | `POST …/review/approve` | `public-presence.controller.ts:241` |
-| `TMS-F-API-377` | `POST …/review/request-changes` | `public-presence.controller.ts:220` |
-| `TMS-F-API-378` | `POST …/review/submit` | `public-presence.controller.ts:198` |
-| `TMS-F-API-379` | `POST …/public-presence/rollback-draft` | `public-presence.controller.ts:328` |
+| `TMS-F-API-374` | `POST …/publish/cancel`                            | `public-presence.controller.ts:306` |
+| `TMS-F-API-375` | `POST …/publish/schedule`                          | `public-presence.controller.ts:285` |
+| `TMS-F-API-376` | `POST …/review/approve`                            | `public-presence.controller.ts:241` |
+| `TMS-F-API-377` | `POST …/review/request-changes`                    | `public-presence.controller.ts:220` |
+| `TMS-F-API-378` | `POST …/review/submit`                             | `public-presence.controller.ts:198` |
+| `TMS-F-API-379` | `POST …/public-presence/rollback-draft`            | `public-presence.controller.ts:328` |
 
 **判定:模块级约定缺失,不是零散疏漏。** 缺口 100% 落在 homepage 模块的三个 controller 内,其余 57 个 controller 零缺口。补齐应按模块一次做完,而非逐条。
 

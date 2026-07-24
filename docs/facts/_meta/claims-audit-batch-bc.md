@@ -10,21 +10,21 @@
 
 这不是疏漏后的解释,是**范围的诚实划界**:一份声称审计如果宣称覆盖了它没读过的行,就是本 Initiative 一直在抓的那种假绿。
 
-## 批 B:`integrations/README.md` 的整表缺陷
+## 批 B:整合指南的整表缺陷
 
-`docs/user-guide/integrations/README.md` 的「Integration Families」表列出 8 个族,每个给一句「Current Guide Position」。
+[`../../user-guide/integrations/README.md`](../../user-guide/integrations/README.md) 的「Integration Families」表列出 8 个族,每个给一句「Current Guide Position」。
 
 **该表没有 scope 列,而表中每一行的真假都取决于 scope。**
 
-| 族 | AC 侧 | tenant 侧 | 表里的说法 |
-|---|---|---|---|
-| Interface management | **不可用屏** | 有真界面 | “Visible management surface” —— 只对 tenant 为真 |
-| Webhook management | **不可用屏** | 有真界面 | “Visible management surface” —— 只对 tenant 为真 |
-| API clients | 有界面 | **无路由** | “Visible management surface” —— 只对 AC 为真 |
-| API registry | 有界面 | **无路由** | “Visible registry surface” —— 只对 AC 为真 |
-| API gateway readiness | 有界面 | **无路由** | “Visible readiness surface” —— 只对 AC 为真 |
-| Builder registry | 有界面 | **无路由** | “Visible registry surface” —— 只对 AC 为真 |
-| Platform tool connections | 有界面 | **无路由** | “Visible operations surface” —— 只对 AC 为真 |
+| 族                        | AC 侧        | tenant 侧  | 表里的说法                                       |
+| ------------------------- | ------------ | ---------- | ------------------------------------------------ |
+| Interface management      | **不可用屏** | 有真界面   | “Visible management surface” —— 只对 tenant 为真 |
+| Webhook management        | **不可用屏** | 有真界面   | “Visible management surface” —— 只对 tenant 为真 |
+| API clients               | 有界面       | **无路由** | “Visible management surface” —— 只对 AC 为真     |
+| API registry              | 有界面       | **无路由** | “Visible registry surface” —— 只对 AC 为真       |
+| API gateway readiness     | 有界面       | **无路由** | “Visible readiness surface” —— 只对 AC 为真      |
+| Builder registry          | 有界面       | **无路由** | “Visible registry surface” —— 只对 AC 为真       |
+| Platform tool connections | 有界面       | **无路由** | “Visible operations surface” —— 只对 AC 为真     |
 
 **判定:整表结构性缺陷,不是某一行写错。** 表的 schema 缺了决定真假的那一维 —— 8 行里 7 行各自只在一个工作区成立,读者无从得知是哪一个。
 
@@ -69,13 +69,13 @@
 
 ## 判定汇总
 
-| 项 | 结果 |
-|---|---|
-| 批 B 整表缺陷 | **1 处结构性缺陷**(8 行中 7 行 scope 依赖,表无 scope 列) |
-| `OKL-*` 真实 ID | 11 个 |
-| 裁决 | 一律 `unverified`,保留原文,顶部标注证据基线已移除 |
-| 抽验发现 | 1 条(`PUBLIC-WRITE-001` 描述的是发布策略而非系统能力,易被读错) |
-| **未逐条判定的声称** | **163 条中的多数,尤其 71 条 `prose` 类** |
+| 项                   | 结果                                                           |
+| -------------------- | -------------------------------------------------------------- |
+| 批 B 整表缺陷        | **1 处结构性缺陷**(8 行中 7 行 scope 依赖,表无 scope 列)       |
+| `OKL-*` 真实 ID      | 11 个                                                          |
+| 裁决                 | 一律 `unverified`,保留原文,顶部标注证据基线已移除              |
+| 抽验发现             | 1 条(`PUBLIC-WRITE-001` 描述的是发布策略而非系统能力,易被读错) |
+| **未逐条判定的声称** | **163 条中的多数,尤其 71 条 `prose` 类**                       |
 
 ## 未测边界
 
