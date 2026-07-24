@@ -49,7 +49,14 @@ const facts = inv.handlers
     excluded: Boolean(h.excluded),
     hasApiOperation: Boolean(h.hasApiOperation),
     hasApiResponse: Boolean(h.hasApiResponse),
-    requiredPermissions: [...(h.requiredPermissions || [])].sort(),
+    // 权限条目是 {resource, action} 对象。归一为 "resource:action" 字符串后再排序:
+    // 对象数组既排不出稳定序(sort 比较的是 "[object Object]"),渲染进 markdown 也是 [object Object]。
+    requiredPermissions: [...(h.requiredPermissions || [])]
+      .map((p) => (typeof p === "string" ? p : `${p.resource}:${p.action}`))
+      .sort(),
+    // 提取器对包装装饰器(@RequireConfigEntityPermission 等)是盲的,这里原样保留它的兜底标志,
+    // 使「静态提取器看不见的受控 handler」在事实里可被识别,而不是静默变成「无权限」。
+    dynamicPermissionResolver: Boolean(h.dynamicPermissionResolver),
   }))
   // 固定排序:method + path + file + line,保证同输入必同输出
   .sort(

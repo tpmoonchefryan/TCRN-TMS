@@ -24,7 +24,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": false,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-002",
@@ -40,11 +41,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "security.blocklist",
-          "action": "delete"
-        }
-      ]
+        "security.blocklist:delete"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-003",
@@ -60,11 +59,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "tenant.manage",
-          "action": "delete"
-        }
-      ]
+        "tenant.manage:delete"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-004",
@@ -80,11 +77,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "email.template",
-          "action": "delete"
-        }
-      ]
+        "email.template:delete"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-005",
@@ -100,11 +95,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "customer.export",
-          "action": "delete"
-        }
-      ]
+        "customer.export:delete"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-006",
@@ -120,11 +113,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "security.external_blocklist",
-          "action": "delete"
-        }
-      ]
+        "security.external_blocklist:delete"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-007",
@@ -140,11 +131,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "integration.webhook",
-          "action": "delete"
-        }
-      ]
+        "integration.webhook:delete"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-008",
@@ -160,11 +149,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "security.ip_rules",
-          "action": "delete"
-        }
-      ]
+        "security.ip_rules:delete"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-009",
@@ -180,11 +167,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "report.mfr",
-          "action": "admin"
-        }
-      ]
+        "report.mfr:admin"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-010",
@@ -200,11 +185,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "role",
-          "action": "delete"
-        }
-      ]
+        "role:delete"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-011",
@@ -219,7 +202,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": true,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-012",
@@ -235,11 +219,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "role",
-          "action": "delete"
-        }
-      ]
+        "role:delete"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-013",
@@ -255,11 +237,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "talent",
-          "action": "delete"
-        }
-      ]
+        "talent:delete"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-014",
@@ -275,11 +255,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "customer.profile",
-          "action": "update"
-        }
-      ]
+        "customer.profile:update"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-015",
@@ -295,11 +273,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "customer.import",
-          "action": "delete"
-        }
-      ]
+        "customer.import:delete"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-016",
@@ -315,11 +291,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "system_user",
-          "action": "delete"
-        }
-      ]
+        "system_user:delete"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-017",
@@ -334,7 +308,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": false,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-018",
@@ -349,7 +324,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": false,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-019",
@@ -364,7 +340,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": true,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-020",
@@ -380,11 +357,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "platform.api_gateway",
-          "action": "read"
-        }
-      ]
+        "platform.api_gateway:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-021",
@@ -400,11 +375,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "platform.api_gateway",
-          "action": "read"
-        }
-      ]
+        "platform.api_gateway:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-022",
@@ -420,11 +393,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "platform.api_gateway",
-          "action": "read"
-        }
-      ]
+        "platform.api_gateway:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-023",
@@ -440,11 +411,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "platform.api_gateway",
-          "action": "read"
-        }
-      ]
+        "platform.api_gateway:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-024",
@@ -460,11 +429,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "platform.api_registry",
-          "action": "read"
-        }
-      ]
+        "platform.api_registry:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-025",
@@ -480,11 +447,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "platform.api_registry",
-          "action": "read"
-        }
-      ]
+        "platform.api_registry:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-026",
@@ -500,11 +465,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "platform.api_registry",
-          "action": "read"
-        }
-      ]
+        "platform.api_registry:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-027",
@@ -520,11 +483,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "platform.api_registry",
-          "action": "read"
-        }
-      ]
+        "platform.api_registry:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-028",
@@ -540,11 +501,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "platform.api_registry",
-          "action": "read"
-        }
-      ]
+        "platform.api_registry:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-029",
@@ -559,7 +518,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": false,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-030",
@@ -574,7 +534,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": false,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-031",
@@ -589,7 +550,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": false,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-032",
@@ -605,11 +567,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "tenant.manage",
-          "action": "read"
-        }
-      ]
+        "tenant.manage:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-033",
@@ -624,7 +584,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": false,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-034",
@@ -640,11 +601,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "tenant.manage",
-          "action": "read"
-        }
-      ]
+        "tenant.manage:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-035",
@@ -659,7 +618,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": false,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-036",
@@ -675,11 +635,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "security.blocklist",
-          "action": "read"
-        }
-      ]
+        "security.blocklist:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-037",
@@ -695,11 +653,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "security.blocklist",
-          "action": "read"
-        }
-      ]
+        "security.blocklist:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-038",
@@ -715,11 +671,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "platform.builder_registry",
-          "action": "read"
-        }
-      ]
+        "platform.builder_registry:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-039",
@@ -735,11 +689,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "platform.builder_registry",
-          "action": "read"
-        }
-      ]
+        "platform.builder_registry:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-040",
@@ -755,11 +707,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "platform.builder_registry",
-          "action": "read"
-        }
-      ]
+        "platform.builder_registry:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-041",
@@ -775,11 +725,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "platform.builder_registry",
-          "action": "read"
-        }
-      ]
+        "platform.builder_registry:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-042",
@@ -795,11 +743,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "platform.builder_registry",
-          "action": "read"
-        }
-      ]
+        "platform.builder_registry:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-043",
@@ -815,11 +761,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "compliance.report",
-          "action": "read"
-        }
-      ]
+        "compliance.report:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-044",
@@ -834,7 +778,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": false,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-045",
@@ -849,7 +794,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": false,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-046",
@@ -865,11 +811,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "security.blocklist",
-          "action": "read"
-        }
-      ]
+        "security.blocklist:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-047",
@@ -885,11 +829,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "config.membership",
-          "action": "read"
-        }
-      ]
+        "config.membership:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-048",
@@ -905,11 +847,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "config.membership",
-          "action": "read"
-        }
-      ]
+        "config.membership:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-049",
@@ -925,11 +865,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "config.membership",
-          "action": "read"
-        }
-      ]
+        "config.membership:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-050",
@@ -945,11 +883,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "tenant.manage",
-          "action": "read"
-        }
-      ]
+        "tenant.manage:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-051",
@@ -965,11 +901,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "tenant.manage",
-          "action": "read"
-        }
-      ]
+        "tenant.manage:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-052",
@@ -985,11 +919,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "email.template",
-          "action": "read"
-        }
-      ]
+        "email.template:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-053",
@@ -1005,11 +937,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "email.template",
-          "action": "read"
-        }
-      ]
+        "email.template:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-054",
@@ -1024,7 +954,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": true,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-055",
@@ -1040,11 +971,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "settings",
-          "action": "read"
-        }
-      ]
+        "settings:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-056",
@@ -1060,11 +989,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "tenant.manage",
-          "action": "read"
-        }
-      ]
+        "tenant.manage:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-057",
@@ -1080,11 +1007,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "platform.event_backbone",
-          "action": "read"
-        }
-      ]
+        "platform.event_backbone:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-058",
@@ -1100,11 +1025,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "platform.event_backbone",
-          "action": "read"
-        }
-      ]
+        "platform.event_backbone:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-059",
@@ -1120,11 +1043,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "platform.event_backbone",
-          "action": "read"
-        }
-      ]
+        "platform.event_backbone:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-060",
@@ -1140,11 +1061,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "platform.event_backbone",
-          "action": "read"
-        }
-      ]
+        "platform.event_backbone:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-061",
@@ -1160,11 +1079,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "platform.event_backbone",
-          "action": "read"
-        }
-      ]
+        "platform.event_backbone:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-062",
@@ -1180,11 +1097,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "customer.export",
-          "action": "read"
-        }
-      ]
+        "customer.export:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-063",
@@ -1200,11 +1115,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "customer.export",
-          "action": "read"
-        }
-      ]
+        "customer.export:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-064",
@@ -1220,11 +1133,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "customer.export",
-          "action": "read"
-        }
-      ]
+        "customer.export:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-065",
@@ -1240,11 +1151,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "security.external_blocklist",
-          "action": "read"
-        }
-      ]
+        "security.external_blocklist:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-066",
@@ -1260,11 +1169,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "security.external_blocklist",
-          "action": "read"
-        }
-      ]
+        "security.external_blocklist:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-067",
@@ -1280,11 +1187,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "security.external_blocklist",
-          "action": "read"
-        }
-      ]
+        "security.external_blocklist:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-068",
@@ -1300,11 +1205,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "security.external_blocklist",
-          "action": "read"
-        }
-      ]
+        "security.external_blocklist:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-069",
@@ -1319,7 +1222,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": true,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-070",
@@ -1334,7 +1238,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": true,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-071",
@@ -1349,7 +1254,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": true,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-072",
@@ -1365,11 +1271,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "integration.adapter",
-          "action": "read"
-        }
-      ]
+        "integration.adapter:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-073",
@@ -1385,11 +1289,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "integration.adapter",
-          "action": "read"
-        }
-      ]
+        "integration.adapter:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-074",
@@ -1405,11 +1307,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "integration.adapter",
-          "action": "read"
-        }
-      ]
+        "integration.adapter:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-075",
@@ -1425,11 +1325,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "integration.adapter",
-          "action": "read"
-        }
-      ]
+        "integration.adapter:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-076",
@@ -1445,11 +1343,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "integration.webhook",
-          "action": "read"
-        }
-      ]
+        "integration.webhook:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-077",
@@ -1465,11 +1361,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "integration.webhook",
-          "action": "read"
-        }
-      ]
+        "integration.webhook:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-078",
@@ -1485,11 +1379,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "integration.webhook",
-          "action": "read"
-        }
-      ]
+        "integration.webhook:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-079",
@@ -1505,11 +1397,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "integration.webhook",
-          "action": "read"
-        }
-      ]
+        "integration.webhook:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-080",
@@ -1525,11 +1415,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "integration.webhook",
-          "action": "read"
-        }
-      ]
+        "integration.webhook:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-081",
@@ -1545,11 +1433,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "integration.webhook",
-          "action": "read"
-        }
-      ]
+        "integration.webhook:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-082",
@@ -1564,7 +1450,8 @@
       "excluded": true,
       "hasApiOperation": false,
       "hasApiResponse": false,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-083",
@@ -1580,11 +1467,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "security.ip_rules",
-          "action": "read"
-        }
-      ]
+        "security.ip_rules:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-084",
@@ -1600,11 +1485,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "log.change_log",
-          "action": "read"
-        }
-      ]
+        "log.change_log:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-085",
@@ -1620,11 +1503,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "log.change_log",
-          "action": "read"
-        }
-      ]
+        "log.change_log:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-086",
@@ -1640,11 +1521,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "log.change_log",
-          "action": "read"
-        }
-      ]
+        "log.change_log:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-087",
@@ -1660,11 +1539,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "log.tech_log",
-          "action": "read"
-        }
-      ]
+        "log.tech_log:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-088",
@@ -1680,11 +1557,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "log.tech_log",
-          "action": "read"
-        }
-      ]
+        "log.tech_log:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-089",
@@ -1700,11 +1575,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "log.integration_log",
-          "action": "read"
-        }
-      ]
+        "log.integration_log:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-090",
@@ -1720,11 +1593,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "log.integration_log",
-          "action": "read"
-        }
-      ]
+        "log.integration_log:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-091",
@@ -1740,11 +1611,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "log.integration_log",
-          "action": "read"
-        }
-      ]
+        "log.integration_log:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-092",
@@ -1760,11 +1629,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "log.search",
-          "action": "read"
-        }
-      ]
+        "log.search:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-093",
@@ -1780,11 +1647,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "log.change_log",
-          "action": "read"
-        }
-      ]
+        "log.change_log:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-094",
@@ -1800,11 +1665,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "log.tech_log",
-          "action": "read"
-        }
-      ]
+        "log.tech_log:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-095",
@@ -1820,11 +1683,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "log.integration_log",
-          "action": "read"
-        }
-      ]
+        "log.integration_log:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-096",
@@ -1839,7 +1700,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": true,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-097",
@@ -1855,11 +1717,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "tenant.manage",
-          "action": "read"
-        }
-      ]
+        "tenant.manage:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-098",
@@ -1875,11 +1735,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "platform.tool_connection",
-          "action": "execute"
-        }
-      ]
+        "platform.tool_connection:execute"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-099",
@@ -1895,11 +1753,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "platform.tool_connection",
-          "action": "read"
-        }
-      ]
+        "platform.tool_connection:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-100",
@@ -1915,11 +1771,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "platform.tool_connection",
-          "action": "read"
-        }
-      ]
+        "platform.tool_connection:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-101",
@@ -1935,11 +1789,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "platform.tool_connection",
-          "action": "read"
-        }
-      ]
+        "platform.tool_connection:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-102",
@@ -1954,7 +1806,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": true,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-103",
@@ -1970,11 +1823,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "settings",
-          "action": "read"
-        }
-      ]
+        "settings:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-104",
@@ -1990,11 +1841,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "settings",
-          "action": "read"
-        }
-      ]
+        "settings:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-105",
@@ -2010,11 +1859,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "config.platform_settings",
-          "action": "read"
-        }
-      ]
+        "config.platform_settings:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-106",
@@ -2029,7 +1876,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": true,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-107",
@@ -2044,7 +1892,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": true,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-108",
@@ -2059,7 +1908,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": true,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-109",
@@ -2074,7 +1924,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": false,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-110",
@@ -2089,7 +1940,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": false,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-111",
@@ -2105,11 +1957,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "config.pii_service",
-          "action": "read"
-        }
-      ]
+        "config.pii_service:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-112",
@@ -2125,11 +1975,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "config.pii_service",
-          "action": "read"
-        }
-      ]
+        "config.pii_service:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-113",
@@ -2145,11 +1993,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "platform.tool_connection",
-          "action": "read"
-        }
-      ]
+        "platform.tool_connection:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-114",
@@ -2165,11 +2011,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "platform.tool_connection",
-          "action": "read"
-        }
-      ]
+        "platform.tool_connection:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-115",
@@ -2185,11 +2029,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "platform.tool_connection",
-          "action": "execute"
-        }
-      ]
+        "platform.tool_connection:execute"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-116",
@@ -2205,11 +2047,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "platform.tool_connection",
-          "action": "read"
-        }
-      ]
+        "platform.tool_connection:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-117",
@@ -2225,11 +2065,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "platform.tool_connection",
-          "action": "read"
-        }
-      ]
+        "platform.tool_connection:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-118",
@@ -2244,7 +2082,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": true,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-119",
@@ -2259,7 +2098,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": true,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-120",
@@ -2275,11 +2115,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "config.profile_store",
-          "action": "read"
-        }
-      ]
+        "config.profile_store:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-121",
@@ -2295,11 +2133,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "config.profile_store",
-          "action": "read"
-        }
-      ]
+        "config.profile_store:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-122",
@@ -2315,11 +2151,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "public_presence.document",
-          "action": "read"
-        }
-      ]
+        "public_presence.document:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-123",
@@ -2335,11 +2169,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "public_presence.document",
-          "action": "read"
-        }
-      ]
+        "public_presence.document:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-124",
@@ -2355,11 +2187,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "public_presence.document",
-          "action": "read"
-        }
-      ]
+        "public_presence.document:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-125",
@@ -2374,7 +2204,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": false,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-126",
@@ -2389,7 +2220,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": true,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-127",
@@ -2404,7 +2236,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": false,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-128",
@@ -2419,7 +2252,8 @@
       "excluded": false,
       "hasApiOperation": false,
       "hasApiResponse": true,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-129",
@@ -2434,7 +2268,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": true,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-130",
@@ -2449,7 +2284,8 @@
       "excluded": false,
       "hasApiOperation": false,
       "hasApiResponse": true,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-131",
@@ -2464,7 +2300,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": true,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-132",
@@ -2479,7 +2316,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": true,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-133",
@@ -2494,7 +2332,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": true,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-134",
@@ -2509,7 +2348,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": true,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-135",
@@ -2525,11 +2365,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "security.ip_rules",
-          "action": "read"
-        }
-      ]
+        "security.ip_rules:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-136",
@@ -2545,11 +2383,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "report.mfr",
-          "action": "read"
-        }
-      ]
+        "report.mfr:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-137",
@@ -2565,11 +2401,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "report.mfr",
-          "action": "read"
-        }
-      ]
+        "report.mfr:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-138",
@@ -2585,11 +2419,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "report.mfr",
-          "action": "read"
-        }
-      ]
+        "report.mfr:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-139",
@@ -2605,11 +2437,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "report.mfr",
-          "action": "read"
-        }
-      ]
+        "report.mfr:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-140",
@@ -2625,11 +2455,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "report.mfr",
-          "action": "export"
-        }
-      ]
+        "report.mfr:export"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-141",
@@ -2645,11 +2473,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "role",
-          "action": "read"
-        }
-      ]
+        "role:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-142",
@@ -2665,11 +2491,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "role",
-          "action": "read"
-        }
-      ]
+        "role:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-143",
@@ -2685,11 +2509,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "platform.runtime_flag",
-          "action": "read"
-        }
-      ]
+        "platform.runtime_flag:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-144",
@@ -2705,11 +2527,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "platform.runtime_flag",
-          "action": "read"
-        }
-      ]
+        "platform.runtime_flag:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-145",
@@ -2725,11 +2545,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "platform.runtime_flag",
-          "action": "read"
-        }
-      ]
+        "platform.runtime_flag:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-146",
@@ -2745,11 +2563,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "platform.runtime_flag",
-          "action": "read"
-        }
-      ]
+        "platform.runtime_flag:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-147",
@@ -2765,11 +2581,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "platform.runtime_flag",
-          "action": "read"
-        }
-      ]
+        "platform.runtime_flag:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-148",
@@ -2784,7 +2598,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": true,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-149",
@@ -2799,7 +2614,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": true,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-150",
@@ -2815,11 +2631,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "integration.adapter",
-          "action": "read"
-        }
-      ]
+        "integration.adapter:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-151",
@@ -2835,11 +2649,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "integration.adapter",
-          "action": "read"
-        }
-      ]
+        "integration.adapter:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-152",
@@ -2855,11 +2667,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "settings",
-          "action": "read"
-        }
-      ]
+        "settings:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-153",
@@ -2875,11 +2685,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "settings",
-          "action": "read"
-        }
-      ]
+        "settings:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-154",
@@ -2894,7 +2702,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": true,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-155",
@@ -2909,7 +2718,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": true,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-156",
@@ -2924,7 +2734,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": true,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-157",
@@ -2940,11 +2751,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "role",
-          "action": "read"
-        }
-      ]
+        "role:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-158",
@@ -2960,11 +2769,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "role",
-          "action": "read"
-        }
-      ]
+        "role:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-159",
@@ -2980,11 +2787,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "system_user",
-          "action": "read"
-        }
-      ]
+        "system_user:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-160",
@@ -3000,11 +2805,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "system_user",
-          "action": "read"
-        }
-      ]
+        "system_user:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-161",
@@ -3020,11 +2823,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "system_user",
-          "action": "read"
-        }
-      ]
+        "system_user:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-162",
@@ -3040,11 +2841,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "talent",
-          "action": "read"
-        }
-      ]
+        "talent:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-163",
@@ -3060,11 +2859,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "talent",
-          "action": "read"
-        }
-      ]
+        "talent:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-164",
@@ -3080,11 +2877,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "talent",
-          "action": "read"
-        }
-      ]
+        "talent:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-165",
@@ -3100,11 +2895,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "customer.profile",
-          "action": "read"
-        }
-      ]
+        "customer.profile:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-166",
@@ -3120,11 +2913,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "customer.profile",
-          "action": "read"
-        }
-      ]
+        "customer.profile:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-167",
@@ -3140,11 +2931,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "customer.profile",
-          "action": "read"
-        }
-      ]
+        "customer.profile:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-168",
@@ -3160,11 +2949,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "customer.membership",
-          "action": "read"
-        }
-      ]
+        "customer.membership:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-169",
@@ -3180,11 +2967,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "customer.profile",
-          "action": "read"
-        }
-      ]
+        "customer.profile:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-170",
@@ -3200,11 +2985,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "customer.profile",
-          "action": "read"
-        }
-      ]
+        "customer.profile:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-171",
@@ -3220,11 +3003,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "talent.homepage",
-          "action": "read"
-        }
-      ]
+        "talent.homepage:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-172",
@@ -3240,11 +3021,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "talent.homepage",
-          "action": "read"
-        }
-      ]
+        "talent.homepage:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-173",
@@ -3260,11 +3039,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "talent.homepage",
-          "action": "read"
-        }
-      ]
+        "talent.homepage:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-174",
@@ -3280,11 +3057,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "customer.import",
-          "action": "read"
-        }
-      ]
+        "customer.import:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-175",
@@ -3300,11 +3075,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "customer.import",
-          "action": "read"
-        }
-      ]
+        "customer.import:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-176",
@@ -3320,11 +3093,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "customer.import",
-          "action": "read"
-        }
-      ]
+        "customer.import:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-177",
@@ -3340,11 +3111,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "customer.import",
-          "action": "read"
-        }
-      ]
+        "customer.import:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-178",
@@ -3360,11 +3129,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "customer.import",
-          "action": "read"
-        }
-      ]
+        "customer.import:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-179",
@@ -3380,11 +3147,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "integration.adapter",
-          "action": "read"
-        }
-      ]
+        "integration.adapter:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-180",
@@ -3400,11 +3165,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "integration.adapter",
-          "action": "read"
-        }
-      ]
+        "integration.adapter:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-181",
@@ -3420,11 +3183,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "talent.marshmallow",
-          "action": "read"
-        }
-      ]
+        "talent.marshmallow:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-182",
@@ -3440,11 +3201,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "talent.marshmallow",
-          "action": "read"
-        }
-      ]
+        "talent.marshmallow:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-183",
@@ -3460,11 +3219,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "talent.marshmallow",
-          "action": "read"
-        }
-      ]
+        "talent.marshmallow:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-184",
@@ -3480,11 +3237,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "talent.marshmallow",
-          "action": "read"
-        }
-      ]
+        "talent.marshmallow:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-185",
@@ -3500,11 +3255,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "public_presence.document",
-          "action": "read"
-        }
-      ]
+        "public_presence.document:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-186",
@@ -3520,11 +3273,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "public_presence.document",
-          "action": "read"
-        }
-      ]
+        "public_presence.document:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-187",
@@ -3540,11 +3291,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "talent",
-          "action": "read"
-        }
-      ]
+        "talent:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-188",
@@ -3560,11 +3309,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "settings",
-          "action": "read"
-        }
-      ]
+        "settings:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-189",
@@ -3580,11 +3327,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "settings",
-          "action": "read"
-        }
-      ]
+        "settings:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-190",
@@ -3600,11 +3345,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "talent",
-          "action": "read"
-        }
-      ]
+        "talent:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-191",
@@ -3620,11 +3363,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "tenant.manage",
-          "action": "read"
-        }
-      ]
+        "tenant.manage:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-192",
@@ -3640,11 +3381,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "tenant.manage",
-          "action": "read"
-        }
-      ]
+        "tenant.manage:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-193",
@@ -3660,11 +3399,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "tenant.manage",
-          "action": "read"
-        }
-      ]
+        "tenant.manage:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-194",
@@ -3680,11 +3417,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "system_user",
-          "action": "read"
-        }
-      ]
+        "system_user:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-195",
@@ -3699,7 +3434,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": true,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-196",
@@ -3714,7 +3450,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": false,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-197",
@@ -3729,7 +3466,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": true,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-198",
@@ -3745,11 +3483,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "tenant.manage",
-          "action": "update"
-        }
-      ]
+        "tenant.manage:update"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-199",
@@ -3765,11 +3501,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "tenant.manage",
-          "action": "update"
-        }
-      ]
+        "tenant.manage:update"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-200",
@@ -3785,11 +3519,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "security.blocklist",
-          "action": "write"
-        }
-      ]
+        "security.blocklist:write"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-201",
@@ -3804,7 +3536,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": false,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-202",
@@ -3820,11 +3553,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "email.template",
-          "action": "update"
-        }
-      ]
+        "email.template:update"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-203",
@@ -3839,7 +3570,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": true,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-204",
@@ -3855,11 +3587,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "settings",
-          "action": "update"
-        }
-      ]
+        "settings:update"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-205",
@@ -3875,11 +3605,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "tenant.manage",
-          "action": "update"
-        }
-      ]
+        "tenant.manage:update"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-206",
@@ -3895,11 +3623,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "security.external_blocklist",
-          "action": "update"
-        }
-      ]
+        "security.external_blocklist:update"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-207",
@@ -3915,11 +3641,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "integration.adapter",
-          "action": "write"
-        }
-      ]
+        "integration.adapter:write"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-208",
@@ -3935,11 +3659,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "integration.adapter",
-          "action": "write"
-        }
-      ]
+        "integration.adapter:write"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-209",
@@ -3955,11 +3677,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "integration.webhook",
-          "action": "write"
-        }
-      ]
+        "integration.webhook:write"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-210",
@@ -3975,11 +3695,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "settings",
-          "action": "update"
-        }
-      ]
+        "settings:update"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-211",
@@ -3995,11 +3713,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "settings",
-          "action": "update"
-        }
-      ]
+        "settings:update"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-212",
@@ -4015,11 +3731,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "config.platform_settings",
-          "action": "update"
-        }
-      ]
+        "config.platform_settings:update"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-213",
@@ -4035,11 +3749,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "config.pii_service",
-          "action": "update"
-        }
-      ]
+        "config.pii_service:update"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-214",
@@ -4055,11 +3767,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "platform.tool_connection",
-          "action": "write"
-        }
-      ]
+        "platform.tool_connection:write"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-215",
@@ -4074,7 +3784,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": true,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-216",
@@ -4090,11 +3801,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "config.profile_store",
-          "action": "update"
-        }
-      ]
+        "config.profile_store:update"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-217",
@@ -4110,11 +3819,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "role",
-          "action": "update"
-        }
-      ]
+        "role:update"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-218",
@@ -4130,11 +3837,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "role",
-          "action": "update"
-        }
-      ]
+        "role:update"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-219",
@@ -4150,11 +3855,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "platform.runtime_flag",
-          "action": "admin"
-        }
-      ]
+        "platform.runtime_flag:admin"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-220",
@@ -4169,7 +3872,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": true,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-221",
@@ -4185,11 +3889,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "settings",
-          "action": "update"
-        }
-      ]
+        "settings:update"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-222",
@@ -4205,11 +3907,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "settings",
-          "action": "update"
-        }
-      ]
+        "settings:update"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-223",
@@ -4224,7 +3924,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": true,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-224",
@@ -4239,7 +3940,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": true,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-225",
@@ -4255,11 +3957,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "role",
-          "action": "update"
-        }
-      ]
+        "role:update"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-226",
@@ -4275,11 +3975,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "system_user",
-          "action": "update"
-        }
-      ]
+        "system_user:update"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-227",
@@ -4295,11 +3993,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "talent",
-          "action": "update"
-        }
-      ]
+        "talent:update"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-228",
@@ -4315,11 +4011,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "talent",
-          "action": "update"
-        }
-      ]
+        "talent:update"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-229",
@@ -4335,11 +4029,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "talent",
-          "action": "update"
-        }
-      ]
+        "talent:update"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-230",
@@ -4355,11 +4047,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "talent",
-          "action": "update"
-        }
-      ]
+        "talent:update"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-231",
@@ -4375,11 +4065,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "customer.membership",
-          "action": "update"
-        }
-      ]
+        "customer.membership:update"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-232",
@@ -4395,11 +4083,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "customer.profile",
-          "action": "update"
-        }
-      ]
+        "customer.profile:update"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-233",
@@ -4415,11 +4101,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "customer.profile",
-          "action": "update"
-        }
-      ]
+        "customer.profile:update"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-234",
@@ -4435,11 +4119,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "customer.profile",
-          "action": "update"
-        }
-      ]
+        "customer.profile:update"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-235",
@@ -4455,11 +4137,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "customer.pii",
-          "action": "update"
-        }
-      ]
+        "customer.pii:update"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-236",
@@ -4475,11 +4155,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "talent.homepage",
-          "action": "update"
-        }
-      ]
+        "talent.homepage:update"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-237",
@@ -4495,11 +4173,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "talent.homepage",
-          "action": "update"
-        }
-      ]
+        "talent.homepage:update"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-238",
@@ -4515,11 +4191,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "talent.marshmallow",
-          "action": "update"
-        }
-      ]
+        "talent.marshmallow:update"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-239",
@@ -4535,11 +4209,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "talent.marshmallow",
-          "action": "update"
-        }
-      ]
+        "talent.marshmallow:update"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-240",
@@ -4555,11 +4227,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "public_presence.document",
-          "action": "write"
-        }
-      ]
+        "public_presence.document:write"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-241",
@@ -4575,11 +4245,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "settings",
-          "action": "update"
-        }
-      ]
+        "settings:update"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-242",
@@ -4595,11 +4263,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "settings",
-          "action": "update"
-        }
-      ]
+        "settings:update"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-243",
@@ -4615,11 +4281,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "talent",
-          "action": "update"
-        }
-      ]
+        "talent:update"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-244",
@@ -4635,11 +4299,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "tenant.manage",
-          "action": "update"
-        }
-      ]
+        "tenant.manage:update"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-245",
@@ -4655,11 +4317,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "system_user",
-          "action": "update"
-        }
-      ]
+        "system_user:update"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-246",
@@ -4674,7 +4334,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": true,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-247",
@@ -4689,7 +4350,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": false,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-248",
@@ -4704,7 +4366,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": true,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-249",
@@ -4719,7 +4382,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": true,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-250",
@@ -4734,7 +4398,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": false,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-251",
@@ -4749,7 +4414,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": false,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-252",
@@ -4764,7 +4430,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": false,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-253",
@@ -4779,7 +4446,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": true,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-254",
@@ -4794,7 +4462,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": false,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-255",
@@ -4809,7 +4478,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": false,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-256",
@@ -4824,7 +4494,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": false,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-257",
@@ -4839,7 +4510,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": false,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-258",
@@ -4854,7 +4526,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": false,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-259",
@@ -4869,7 +4542,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": false,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-260",
@@ -4885,11 +4559,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "security.blocklist",
-          "action": "write"
-        }
-      ]
+        "security.blocklist:write"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-261",
@@ -4905,11 +4577,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "security.blocklist",
-          "action": "write"
-        }
-      ]
+        "security.blocklist:write"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-262",
@@ -4925,11 +4595,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "security.blocklist",
-          "action": "write"
-        }
-      ]
+        "security.blocklist:write"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-263",
@@ -4945,11 +4613,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "security.blocklist",
-          "action": "read"
-        }
-      ]
+        "security.blocklist:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-264",
@@ -4964,7 +4630,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": false,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-265",
@@ -4979,7 +4646,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": false,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-266",
@@ -4994,7 +4662,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": false,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-267",
@@ -5009,7 +4678,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": false,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-268",
@@ -5024,7 +4694,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": false,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-269",
@@ -5040,11 +4711,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "security.blocklist",
-          "action": "read"
-        }
-      ]
+        "security.blocklist:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-270",
@@ -5060,11 +4729,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "integration.consumer",
-          "action": "admin"
-        }
-      ]
+        "integration.consumer:admin"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-271",
@@ -5080,11 +4747,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "integration.consumer",
-          "action": "admin"
-        }
-      ]
+        "integration.consumer:admin"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-272",
@@ -5100,11 +4765,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "integration.consumer",
-          "action": "admin"
-        }
-      ]
+        "integration.consumer:admin"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-273",
@@ -5120,11 +4783,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "tenant.manage",
-          "action": "create"
-        }
-      ]
+        "tenant.manage:create"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-274",
@@ -5140,11 +4801,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "email.template",
-          "action": "create"
-        }
-      ]
+        "email.template:create"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-275",
@@ -5160,11 +4819,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "email.template",
-          "action": "read"
-        }
-      ]
+        "email.template:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-276",
@@ -5180,11 +4837,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "email.template",
-          "action": "update"
-        }
-      ]
+        "email.template:update"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-277",
@@ -5199,7 +4854,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": true,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-278",
@@ -5214,7 +4870,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": true,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-279",
@@ -5230,11 +4887,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "platform.event_backbone",
-          "action": "execute"
-        }
-      ]
+        "platform.event_backbone:execute"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-280",
@@ -5250,11 +4905,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "customer.export",
-          "action": "create"
-        }
-      ]
+        "customer.export:create"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-281",
@@ -5270,11 +4923,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "security.external_blocklist",
-          "action": "create"
-        }
-      ]
+        "security.external_blocklist:create"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-282",
@@ -5290,11 +4941,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "security.external_blocklist",
-          "action": "update"
-        }
-      ]
+        "security.external_blocklist:update"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-283",
@@ -5310,11 +4959,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "security.external_blocklist",
-          "action": "update"
-        }
-      ]
+        "security.external_blocklist:update"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-284",
@@ -5330,11 +4977,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "security.external_blocklist",
-          "action": "update"
-        }
-      ]
+        "security.external_blocklist:update"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-285",
@@ -5350,11 +4995,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "integration.adapter",
-          "action": "write"
-        }
-      ]
+        "integration.adapter:write"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-286",
@@ -5370,11 +5013,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "integration.adapter",
-          "action": "admin"
-        }
-      ]
+        "integration.adapter:admin"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-287",
@@ -5390,11 +5031,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "integration.adapter",
-          "action": "write"
-        }
-      ]
+        "integration.adapter:write"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-288",
@@ -5410,11 +5049,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "integration.adapter",
-          "action": "write"
-        }
-      ]
+        "integration.adapter:write"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-289",
@@ -5430,11 +5067,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "integration.consumer",
-          "action": "admin"
-        }
-      ]
+        "integration.consumer:admin"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-290",
@@ -5450,11 +5085,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "integration.webhook",
-          "action": "write"
-        }
-      ]
+        "integration.webhook:write"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-291",
@@ -5470,11 +5103,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "integration.webhook",
-          "action": "write"
-        }
-      ]
+        "integration.webhook:write"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-292",
@@ -5490,11 +5121,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "integration.webhook",
-          "action": "write"
-        }
-      ]
+        "integration.webhook:write"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-293",
@@ -5510,11 +5139,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "integration.webhook",
-          "action": "write"
-        }
-      ]
+        "integration.webhook:write"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-294",
@@ -5530,11 +5157,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "integration.webhook",
-          "action": "write"
-        }
-      ]
+        "integration.webhook:write"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-295",
@@ -5550,11 +5175,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "security.ip_rules",
-          "action": "write"
-        }
-      ]
+        "security.ip_rules:write"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-296",
@@ -5570,11 +5193,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "security.ip_rules",
-          "action": "read"
-        }
-      ]
+        "security.ip_rules:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-297",
@@ -5589,7 +5210,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": false,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-298",
@@ -5605,11 +5227,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "config.pii_service",
-          "action": "create"
-        }
-      ]
+        "config.pii_service:create"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-299",
@@ -5625,11 +5245,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "config.pii_service",
-          "action": "read"
-        }
-      ]
+        "config.pii_service:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-300",
@@ -5645,11 +5263,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "platform.tool_connection",
-          "action": "execute"
-        }
-      ]
+        "platform.tool_connection:execute"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-301",
@@ -5665,11 +5281,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "config.profile_store",
-          "action": "create"
-        }
-      ]
+        "config.profile_store:create"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-302",
@@ -5685,11 +5299,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "public_presence.document",
-          "action": "write"
-        }
-      ]
+        "public_presence.document:write"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-303",
@@ -5705,11 +5317,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "public_presence.validation",
-          "action": "write"
-        }
-      ]
+        "public_presence.validation:write"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-304",
@@ -5725,11 +5335,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "public_presence.document",
-          "action": "write"
-        }
-      ]
+        "public_presence.document:write"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-305",
@@ -5744,7 +5352,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": true,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-306",
@@ -5759,7 +5368,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": true,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-307",
@@ -5774,7 +5384,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": true,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-308",
@@ -5789,7 +5400,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": true,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-309",
@@ -5804,7 +5416,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": true,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-310",
@@ -5819,7 +5432,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": true,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-311",
@@ -5834,7 +5448,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": true,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-312",
@@ -5849,7 +5464,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": true,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-313",
@@ -5865,11 +5481,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "report.mfr",
-          "action": "export"
-        }
-      ]
+        "report.mfr:export"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-314",
@@ -5885,11 +5499,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "report.mfr",
-          "action": "read"
-        }
-      ]
+        "report.mfr:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-315",
@@ -5905,11 +5517,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "role",
-          "action": "create"
-        }
-      ]
+        "role:create"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-316",
@@ -5925,11 +5535,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "role",
-          "action": "update"
-        }
-      ]
+        "role:update"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-317",
@@ -5945,11 +5553,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "role",
-          "action": "update"
-        }
-      ]
+        "role:update"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-318",
@@ -5965,11 +5571,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "platform.runtime_flag",
-          "action": "execute"
-        }
-      ]
+        "platform.runtime_flag:execute"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-319",
@@ -5985,11 +5589,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "platform.runtime_flag",
-          "action": "admin"
-        }
-      ]
+        "platform.runtime_flag:admin"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-320",
@@ -6004,7 +5606,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": true,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-321",
@@ -6019,7 +5622,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": true,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-322",
@@ -6034,7 +5638,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": true,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-323",
@@ -6050,11 +5655,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "integration.adapter",
-          "action": "write"
-        }
-      ]
+        "integration.adapter:write"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-324",
@@ -6070,11 +5673,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "integration.adapter",
-          "action": "write"
-        }
-      ]
+        "integration.adapter:write"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-325",
@@ -6090,11 +5691,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "integration.adapter",
-          "action": "write"
-        }
-      ]
+        "integration.adapter:write"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-326",
@@ -6109,7 +5708,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": true,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-327",
@@ -6124,7 +5724,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": true,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-328",
@@ -6139,7 +5740,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": true,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-329",
@@ -6154,7 +5756,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": true,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-330",
@@ -6169,7 +5772,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": true,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-331",
@@ -6185,11 +5789,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "role",
-          "action": "create"
-        }
-      ]
+        "role:create"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-332",
@@ -6205,11 +5807,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "system_user",
-          "action": "create"
-        }
-      ]
+        "system_user:create"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-333",
@@ -6225,11 +5825,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "system_user",
-          "action": "update"
-        }
-      ]
+        "system_user:update"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-334",
@@ -6245,11 +5843,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "system_user",
-          "action": "update"
-        }
-      ]
+        "system_user:update"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-335",
@@ -6265,11 +5861,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "system_user",
-          "action": "update"
-        }
-      ]
+        "system_user:update"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-336",
@@ -6285,11 +5879,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "system_user",
-          "action": "update"
-        }
-      ]
+        "system_user:update"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-337",
@@ -6305,11 +5897,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "system_user",
-          "action": "update"
-        }
-      ]
+        "system_user:update"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-338",
@@ -6325,11 +5915,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "talent",
-          "action": "create"
-        }
-      ]
+        "talent:create"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-339",
@@ -6345,11 +5933,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "talent",
-          "action": "update"
-        }
-      ]
+        "talent:update"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-340",
@@ -6365,11 +5951,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "talent",
-          "action": "update"
-        }
-      ]
+        "talent:update"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-341",
@@ -6385,11 +5969,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "customer.profile",
-          "action": "update"
-        }
-      ]
+        "customer.profile:update"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-342",
@@ -6405,11 +5987,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "customer.profile",
-          "action": "update"
-        }
-      ]
+        "customer.profile:update"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-343",
@@ -6425,11 +6005,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "customer.membership",
-          "action": "create"
-        }
-      ]
+        "customer.membership:create"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-344",
@@ -6445,11 +6023,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "customer.profile",
-          "action": "update"
-        }
-      ]
+        "customer.profile:update"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-345",
@@ -6465,11 +6041,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "customer.profile",
-          "action": "update"
-        }
-      ]
+        "customer.profile:update"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-346",
@@ -6485,11 +6059,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "customer.profile",
-          "action": "update"
-        }
-      ]
+        "customer.profile:update"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-347",
@@ -6505,11 +6077,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "customer.profile",
-          "action": "create"
-        }
-      ]
+        "customer.profile:create"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-348",
@@ -6525,11 +6095,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "customer.pii",
-          "action": "read"
-        }
-      ]
+        "customer.pii:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-349",
@@ -6545,11 +6113,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "customer.profile",
-          "action": "create"
-        }
-      ]
+        "customer.profile:create"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-350",
@@ -6565,11 +6131,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "customer.pii",
-          "action": "read"
-        }
-      ]
+        "customer.pii:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-351",
@@ -6585,11 +6149,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "talent",
-          "action": "update"
-        }
-      ]
+        "talent:update"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-352",
@@ -6605,11 +6167,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "talent.homepage",
-          "action": "update"
-        }
-      ]
+        "talent.homepage:update"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-353",
@@ -6625,11 +6185,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "talent.homepage",
-          "action": "update"
-        }
-      ]
+        "talent.homepage:update"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-354",
@@ -6645,11 +6203,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "talent.homepage",
-          "action": "update"
-        }
-      ]
+        "talent.homepage:update"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-355",
@@ -6665,11 +6221,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "talent.homepage",
-          "action": "update"
-        }
-      ]
+        "talent.homepage:update"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-356",
@@ -6685,11 +6239,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "customer.import",
-          "action": "create"
-        }
-      ]
+        "customer.import:create"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-357",
@@ -6705,11 +6257,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "customer.import",
-          "action": "create"
-        }
-      ]
+        "customer.import:create"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-358",
@@ -6725,11 +6275,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "integration.adapter",
-          "action": "write"
-        }
-      ]
+        "integration.adapter:write"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-359",
@@ -6745,11 +6293,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "integration.adapter",
-          "action": "write"
-        }
-      ]
+        "integration.adapter:write"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-360",
@@ -6765,11 +6311,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "integration.adapter",
-          "action": "write"
-        }
-      ]
+        "integration.adapter:write"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-361",
@@ -6785,11 +6329,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "talent.marshmallow",
-          "action": "update"
-        }
-      ]
+        "talent.marshmallow:update"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-362",
@@ -6805,11 +6347,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "talent.marshmallow",
-          "action": "update"
-        }
-      ]
+        "talent.marshmallow:update"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-363",
@@ -6825,11 +6365,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "talent.marshmallow",
-          "action": "update"
-        }
-      ]
+        "talent.marshmallow:update"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-364",
@@ -6845,11 +6383,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "talent.marshmallow",
-          "action": "export"
-        }
-      ]
+        "talent.marshmallow:export"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-365",
@@ -6865,11 +6401,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "talent.marshmallow",
-          "action": "update"
-        }
-      ]
+        "talent.marshmallow:update"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-366",
@@ -6885,11 +6419,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "talent.marshmallow",
-          "action": "update"
-        }
-      ]
+        "talent.marshmallow:update"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-367",
@@ -6905,11 +6437,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "talent.marshmallow",
-          "action": "update"
-        }
-      ]
+        "talent.marshmallow:update"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-368",
@@ -6925,11 +6455,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "talent.marshmallow",
-          "action": "update"
-        }
-      ]
+        "talent.marshmallow:update"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-369",
@@ -6945,11 +6473,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "talent.marshmallow",
-          "action": "update"
-        }
-      ]
+        "talent.marshmallow:update"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-370",
@@ -6965,11 +6491,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "talent.marshmallow",
-          "action": "read"
-        }
-      ]
+        "talent.marshmallow:read"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-371",
@@ -6985,11 +6509,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "talent",
-          "action": "update"
-        }
-      ]
+        "talent:update"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-372",
@@ -7005,11 +6527,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "public_presence.document",
-          "action": "write"
-        }
-      ]
+        "public_presence.document:write"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-373",
@@ -7025,11 +6545,9 @@
       "hasApiOperation": false,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "public_presence.publish",
-          "action": "execute"
-        }
-      ]
+        "public_presence.publish:execute"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-374",
@@ -7045,11 +6563,9 @@
       "hasApiOperation": false,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "public_presence.publish",
-          "action": "write"
-        }
-      ]
+        "public_presence.publish:write"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-375",
@@ -7065,11 +6581,9 @@
       "hasApiOperation": false,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "public_presence.publish",
-          "action": "write"
-        }
-      ]
+        "public_presence.publish:write"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-376",
@@ -7085,11 +6599,9 @@
       "hasApiOperation": false,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "public_presence.review",
-          "action": "execute"
-        }
-      ]
+        "public_presence.review:execute"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-377",
@@ -7105,11 +6617,9 @@
       "hasApiOperation": false,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "public_presence.review",
-          "action": "write"
-        }
-      ]
+        "public_presence.review:write"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-378",
@@ -7125,11 +6635,9 @@
       "hasApiOperation": false,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "public_presence.review",
-          "action": "write"
-        }
-      ]
+        "public_presence.review:write"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-379",
@@ -7145,11 +6653,9 @@
       "hasApiOperation": false,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "public_presence.rollback",
-          "action": "write"
-        }
-      ]
+        "public_presence.rollback:write"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-380",
@@ -7165,11 +6671,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "talent",
-          "action": "update"
-        }
-      ]
+        "talent:update"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-381",
@@ -7185,11 +6689,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "talent",
-          "action": "update"
-        }
-      ]
+        "talent:update"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-382",
@@ -7205,11 +6707,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "talent",
-          "action": "update"
-        }
-      ]
+        "talent:update"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-383",
@@ -7225,11 +6725,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "talent",
-          "action": "create"
-        }
-      ]
+        "talent:create"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-384",
@@ -7245,11 +6743,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "talent",
-          "action": "update"
-        }
-      ]
+        "talent:update"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-385",
@@ -7265,11 +6761,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "tenant.manage",
-          "action": "create"
-        }
-      ]
+        "tenant.manage:create"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-386",
@@ -7285,11 +6779,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "tenant.manage",
-          "action": "update"
-        }
-      ]
+        "tenant.manage:update"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-387",
@@ -7305,11 +6797,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "tenant.manage",
-          "action": "update"
-        }
-      ]
+        "tenant.manage:update"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-388",
@@ -7325,11 +6815,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "system_user",
-          "action": "create"
-        }
-      ]
+        "system_user:create"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-389",
@@ -7344,7 +6832,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": false,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-390",
@@ -7359,7 +6848,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": false,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-391",
@@ -7374,7 +6864,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": false,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-392",
@@ -7389,7 +6880,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": true,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-393",
@@ -7404,7 +6896,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": false,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-394",
@@ -7419,7 +6912,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": false,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-395",
@@ -7434,7 +6928,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": false,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-396",
@@ -7449,7 +6944,8 @@
       "excluded": false,
       "hasApiOperation": true,
       "hasApiResponse": true,
-      "requiredPermissions": []
+      "requiredPermissions": [],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-397",
@@ -7465,11 +6961,9 @@
       "hasApiOperation": true,
       "hasApiResponse": false,
       "requiredPermissions": [
-        {
-          "resource": "public_presence.document",
-          "action": "write"
-        }
-      ]
+        "public_presence.document:write"
+      ],
+      "dynamicPermissionResolver": false
     },
     {
       "id": "TMS-F-API-398",
@@ -7485,11 +6979,9 @@
       "hasApiOperation": true,
       "hasApiResponse": true,
       "requiredPermissions": [
-        {
-          "resource": "tenant.manage",
-          "action": "write"
-        }
-      ]
+        "tenant.manage:write"
+      ],
+      "dynamicPermissionResolver": false
     }
   ]
 }
