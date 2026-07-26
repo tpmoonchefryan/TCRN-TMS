@@ -51,7 +51,7 @@
 - 解析源码的提取器(inventory 脚本):**398 → 399,检出。**
 - codegraph 索引快照:**398 → 398,完全看不见**,且查询注入的路由名返回 0 条。
 
-codegraph 的 `.codegraph/codegraph.db` 是一个**快照**,不重新索引就不反映源码变化。把它当作门的证据源而不先 `sync`,门会在源码已漂移的情况下继续绿。
+codegraph 的 SQLite 索引(默认文件名 `codegraph.db`)是一个**快照**,不重新索引就不反映源码变化。把它当作门的证据源而不先 `sync`,门会在源码已漂移的情况下继续绿。
 
 > 任何以 codegraph 为源的分母,使用前必须先 `pnpm exec codegraph sync`,且该 sync 必须是门自身流程的一部分,不能靠人记得跑。
 
