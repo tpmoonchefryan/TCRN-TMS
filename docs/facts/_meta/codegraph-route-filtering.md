@@ -36,7 +36,7 @@ where kind = 'route'
 
 ### 一、必须先 sync
 
-`.codegraph/codegraph.db` 是快照,不重新索引就不反映源码变化。已实测(见 [`red-proof.md`](red-proof.md)):向控制器注入一个真实新路由后,codegraph 仍报 398,查询注入的路由名返回 0 条 —— 而解析源码的提取器报 399。
+codegraph 的 SQLite 索引(默认文件名 `codegraph.db`)是快照,不重新索引就不反映源码变化。已实测(见 [`red-proof.md`](red-proof.md)):向控制器注入一个真实新路由后,codegraph 仍报 398,查询注入的路由名返回 0 条 —— 而解析源码的提取器报 399。
 
 **任何以 codegraph 为源的门,`sync` 必须是门自身流程的一部分**,不能依赖人记得跑。
 
