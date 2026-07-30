@@ -60,8 +60,8 @@ that is now a fact to check rather than assume:
 
 <!-- TOPOLOGY-CLAIMS:BEGIN -->
 
-| 分区 | home | 真值地址 | 复核命令 |
-| --- | --- | --- | --- |
+| 分区       | home    | 真值地址                             | 复核命令                                                                                                              |
+| ---------- | ------- | ------------------------------------ | --------------------------------------------------------------------------------------------------------------------- |
 | `TCRN-TMS` | `local` | `.tcrn-workspace/TCRN-TMS/workspace` | `node ~/.tcrn-workflow/tcrn-workflow/scripts/tcrn-workflow.mjs status --workspace .tcrn-workspace/TCRN-TMS/workspace` |
 
 <!-- TOPOLOGY-CLAIMS:END -->
