@@ -51,6 +51,29 @@ pnpm/npm shim chain lets the real binary reparent to init and survive. A daemon 
 registers itself (codegraph writes `.codegraph/daemon.pid`) is not a leak — the test is
 whether anything owns the record of it.
 
+## Where this repository's governance chain lives
+
+**The platform's four governed partitions are no longer all on one machine** (since
+2026-07-29). This repository's partition is one of the three still hosted locally, so the
+ordinary local engine invocation applies here and no remote ceremony is involved — but
+that is now a fact to check rather than assume:
+
+<!-- TOPOLOGY-CLAIMS:BEGIN -->
+
+| 分区 | home | 真值地址 | 复核命令 |
+| --- | --- | --- | --- |
+| `TCRN-TMS` | `local` | `.tcrn-workspace/TCRN-TMS/workspace` | `node ~/.tcrn-workflow/tcrn-workflow/scripts/tcrn-workflow.mjs status --workspace .tcrn-workspace/TCRN-TMS/workspace` |
+
+<!-- TOPOLOGY-CLAIMS:END -->
+
+Addresses are relative to the platform root. **Do not copy a recipe from `TCRN-AOS`** — its
+chain moved to another host and its ceremony wrapper exists for that reason, so applying it
+here drives the wrong machine. If a future ruling relocates this partition too, this block
+is one of the places a machine predicate requires to be updated in the same change
+(`pnpm --dir TCRN-AOS doc-topology:proof`). The full four-partition picture, the ceremony
+path, the backup direction and the "only the engine may write a control tree — SSH is not an
+exemption" rule are in the platform root's `CLAUDE.md`, section 三.
+
 ## Platform conventions
 
 This repository lives inside the TCRN Platform working tree. Cross-repo conventions —
