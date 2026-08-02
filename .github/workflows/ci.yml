@@ -31,6 +31,13 @@ jobs:
       - name: Run linting
         run: pnpm lint
 
+      # 事实基线门(TCRN-TMS-INIT-001):
+      # ① 派生事实的再生成确定性——产物与重新生成的内容必须字节一致;
+      # ② 仓内相对路径存在性——悬空引用见红。
+      # 两者均已做变异红证,记录在 docs/facts/_meta/red-proof.md。
+      - name: Facts baseline gates
+        run: pnpm facts:check
+
   type-check:
     runs-on: ubuntu-latest
     env:

@@ -107,7 +107,11 @@ jobs:
         continue-on-error: true
         run: pnpm tooling:local-advisory
 
-      - name: OpenAPI advisory
+      # 注意:这一步是「重复的非阻断副本」,只为在 advisory 作业里留一份可读日志。
+      # 真正阻断 PR 的是 security-required 作业:它以 TCRN_TOOLING_REQUIRE=1 运行
+      # pnpm security:check,其中已含 pnpm tooling:openapi:diff,漂移会使该作业失败。
+      # 不要因为看到这里的 continue-on-error 就以为 OpenAPI 漂移不设门。
+      - name: OpenAPI advisory (non-blocking duplicate; the blocking copy is in security-required)
         continue-on-error: true
         run: pnpm tooling:openapi:diff
 

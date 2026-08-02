@@ -6,12 +6,15 @@ This pack defines how AI should assist Public Presence homepage authoring. It is
 
 Read these before using the pack for implementation or product decisions:
 
-- `vault/initiatives/projects/TCRN-TMS/active/public-presence-studio/20-spec.md`
-- `vault/initiatives/projects/TCRN-TMS/active/public-presence-studio/40-decisions.md`
-- `vault/initiatives/projects/TCRN-TMS/active/public-presence-studio/50-implementation-plan.md`
-- `vault/initiatives/projects/TCRN-TMS/active/public-presence-studio/70-verification.md`
-- `vault/knowledge/projects/TCRN-TMS/ui-ux/uiux-specification-granularity-standard.md`
-- `vault/knowledge/projects/TCRN-TMS/workflow/plan-materialization-granularity.md`
+- [`docs/facts/README.md`](../../../docs/facts/README.md) — fact-record format and the authority order that governs every claim below.
+- [`docs/facts/api-handlers.md`](../../../docs/facts/api-handlers.md) — the API surface this module talks to.
+- [`docs/facts/api-metadata-gaps.md`](../../../docs/facts/api-metadata-gaps.md) — known contract-metadata gaps, several of which fall in this module.
+
+> **Six references were removed here, not relocated.** This list previously named four Public Presence Studio planning documents and two durable standards under a platform `vault/` archived out of this repository on 2026-07-20. They no longer exist in this repository or the platform root.
+>
+> The replacements above are **facts** (what the system is, with evidence), not **specs** (what it was meant to be). The specs are gone. Do not treat a fact as if it were a requirement, and do not reconstruct the lost intent from the code — when a decision needs the original rationale, escalate instead of inferring.
+>
+> Recorded under `TCRN-TMS-INIT-001` (`TCRN-TMS-STORY-025`).
 
 ## Pack Files
 

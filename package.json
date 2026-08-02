@@ -75,7 +75,9 @@
     "db:seed": "pnpm --filter @tcrn/database db:seed",
     "db:reset": "pnpm --filter @tcrn/database db:reset",
     "clean": "turbo clean && rm -rf node_modules",
-    "prepare": "husky"
+    "prepare": "husky",
+    "facts:links": "node scripts/facts-check-repo-links.mjs",
+    "facts:check": "node scripts/facts-generate-api.mjs --check && node scripts/facts-generate-claims-inventory.mjs --check && node scripts/facts-check-repo-links.mjs"
   },
   "devDependencies": {
     "@axe-core/playwright": "4.11.3",

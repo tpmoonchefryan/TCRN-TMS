@@ -1,0 +1,24 @@
+[
+  {
+    "name": "删除一个 Prisma model",
+    "file": "packages/database/prisma/schema.prisma",
+    "denominator": "models",
+    "note": "schema 少一个 model 时 model 分母须变",
+    "before": "88 @ 18f070ff04d4",
+    "after": "87 @ 02bcd87a6587",
+    "sawRed": true,
+    "restoredClean": true,
+    "verdict": "RED-PROVEN"
+  },
+  {
+    "name": "删除一个 RBAC resource",
+    "file": "packages/shared/src/rbac/catalog.ts",
+    "denominator": "rbac",
+    "note": "catalog 资源码改名时 RBAC 分母须变",
+    "before": "46 @ 690da6e4ed6b",
+    "after": "46 @ 9b6dd930e54a",
+    "sawRed": true,
+    "restoredClean": true,
+    "verdict": "RED-PROVEN"
+  }
+]
