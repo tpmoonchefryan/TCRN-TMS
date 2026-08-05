@@ -67,7 +67,7 @@ VM engine over SSH — never by invoking a local engine directly:
 
 <!-- TOPOLOGY-CLAIMS:END -->
 
-Addresses are absolute VM paths. This block is machine-checked (`pnpm --dir TCRN-AOS doc-topology:proof`).
+Addresses are absolute VM paths. This block is machine-checked (`pnpm --dir TCRN-AOS doc-topology:proof`, run from the **platform root**).
 The full five-partition picture, the ceremony path, the fallback shadow chains, and the
 "only the engine may write a control tree" rule are in the platform root's `CLAUDE.md`.
 
