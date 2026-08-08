@@ -53,22 +53,20 @@ whether anything owns the record of it.
 
 ## Where this repository's governance chain lives
 
-**This repository's chain now lives on the AOS host (the VM), not locally** (relocated
-2026-08-03, TCRN-CROSS-INIT-017). The local copy under `.tcrn-workspace/TCRN-TMS/`
-is a read-only archive. Write to the chain through the AOS ceremony
-(`TCRN-AOS/deploy/aos-local-client/ceremony.mjs --partition TCRN-TMS`), which drives the
-VM engine over SSH — never by invoking a local engine directly:
+**This repository's chain is local again** (INIT-020 S199, 2026-08-08). The VM copy under
+`/srv/tcrn/governance/tcrn-workspace/TCRN-TMS/workspace` is a vacated archive. Use the
+local installed engine for ordinary reads and writes:
 
 <!-- TOPOLOGY-CLAIMS:BEGIN -->
 
 | 分区       | home    | 真值地址                                                    | 复核命令                                                                                                                              |
 | ---------- | ------- | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| `TCRN-TMS` | `vm`    | `/srv/tcrn/governance/tcrn-workspace/TCRN-TMS/workspace`    | `读走 MCP 只读面: tcrn_remote_read_status(partition=TCRN-TMS) · 真值地址 /srv/tcrn/governance/tcrn-workspace/TCRN-TMS/workspace` |
+| `TCRN-TMS` | `local` | `.tcrn-workspace/TCRN-TMS/workspace` | `本机引擎只读: status --workspace .tcrn-workspace/TCRN-TMS/workspace · 真值地址 .tcrn-workspace/TCRN-TMS/workspace` |
 
 <!-- TOPOLOGY-CLAIMS:END -->
 
-Addresses are absolute VM paths. This block is machine-checked (`pnpm --dir TCRN-AOS doc-topology:proof`, run from the **platform root**).
-The full five-partition picture, the ceremony path, the fallback shadow chains, and the
+Addresses are local paths relative to the platform root. This block is machine-checked (`pnpm --dir TCRN-AOS doc-topology:proof`, run from the **platform root**).
+The full five-partition picture, the local engine path, the fallback shadow chains, and the
 "only the engine may write a control tree" rule are in the platform root's `CLAUDE.md`.
 
 ## Platform conventions
