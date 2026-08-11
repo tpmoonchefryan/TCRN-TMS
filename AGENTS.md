@@ -61,7 +61,7 @@ local installed engine for ordinary reads and writes:
 
 | 分区       | home    | 真值地址                                                    | 复核命令                                                                                                                              |
 | ---------- | ------- | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| `TCRN-TMS` | `local` | `.tcrn-workspace/TCRN-TMS/workspace` | `本机引擎只读: status --workspace .tcrn-workspace/TCRN-TMS/workspace · 真值地址 .tcrn-workspace/TCRN-TMS/workspace` |
+| `TCRN-TMS` | `local` | `../.tcrn-workspace/TCRN-TMS/workspace` | `本机引擎只读: status --workspace ../.tcrn-workspace/TCRN-TMS/workspace · 真值地址 ../.tcrn-workspace/TCRN-TMS/workspace` |
 
 <!-- TOPOLOGY-CLAIMS:END -->
 
