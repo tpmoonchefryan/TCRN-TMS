@@ -27,6 +27,7 @@ import { IsBoolean, IsInt, IsObject, IsOptional, IsString, Matches, Min } from '
 import { ErrorCodes, type LocalizedText, type PartialLocalizedText } from '@tcrn/shared';
 
 import { AuthenticatedUser, CurrentUser } from '../../common/decorators/current-user.decorator';
+import { RequirePermissions } from '../../common/decorators';
 import { paginated, success } from '../../common/response.util';
 import { SubsidiaryService } from './subsidiary.service';
 
@@ -526,6 +527,7 @@ export class SubsidiaryController {
    * List subsidiaries
    */
   @Get()
+  @RequirePermissions({ resource: 'subsidiary', action: 'read' })
   @ApiOperation({ summary: 'List subsidiaries' })
   @ApiResponse({
     status: 200,
@@ -586,6 +588,7 @@ export class SubsidiaryController {
    * Create subsidiary
    */
   @Post()
+  @RequirePermissions({ resource: 'subsidiary', action: 'write' })
   @ApiOperation({ summary: 'Create subsidiary' })
   @ApiResponse({
     status: 201,
@@ -641,6 +644,7 @@ export class SubsidiaryController {
    * Get subsidiary details
    */
   @Get(':subsidiaryId')
+  @RequirePermissions({ resource: 'subsidiary', action: 'read' })
   @ApiOperation({ summary: 'Get subsidiary details' })
   @ApiParam({
     name: 'subsidiaryId',
@@ -702,6 +706,7 @@ export class SubsidiaryController {
    * Update subsidiary
    */
   @Patch(':subsidiaryId')
+  @RequirePermissions({ resource: 'subsidiary', action: 'write' })
   @ApiOperation({ summary: 'Update subsidiary' })
   @ApiParam({
     name: 'subsidiaryId',
@@ -755,6 +760,7 @@ export class SubsidiaryController {
    * Retained only to fail closed; structural move is supported only by direct database intervention
    */
   @Post(':subsidiaryId/move')
+  @RequirePermissions({ resource: 'subsidiary', action: 'write' })
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Move subsidiary (retired; direct database intervention only)' })
   @ApiParam({
@@ -800,6 +806,7 @@ export class SubsidiaryController {
    * Deactivate subsidiary
    */
   @Post(':subsidiaryId/deactivate')
+  @RequirePermissions({ resource: 'subsidiary', action: 'write' })
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Deactivate subsidiary' })
   @ApiParam({
@@ -855,6 +862,7 @@ export class SubsidiaryController {
    * Reactivate subsidiary
    */
   @Post(':subsidiaryId/reactivate')
+  @RequirePermissions({ resource: 'subsidiary', action: 'write' })
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Reactivate subsidiary' })
   @ApiParam({
