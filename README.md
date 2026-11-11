@@ -537,7 +537,7 @@ Do not follow the older in-cluster PostgreSQL / HPA / multi-replica assumptions 
 Use these files instead:
 
 - `infra/k8s/README.md`
-- `.context/plans/2026-04-11-single-node-k3s-fresh-redeploy-cutover-checklist.md`
+- ~~`.context/plans/2026-04-11-single-node-k3s-fresh-redeploy-cutover-checklist.md`~~ — 该文件所在的 `.context/` 目录已不在本仓,指针悬空。移除于 `TCRN-TMS-STORY-026`,内容未找回。
 
 Current operator entrypoints for the first cut:
 

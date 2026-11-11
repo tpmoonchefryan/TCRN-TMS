@@ -4,16 +4,18 @@ Integration surfaces cover interfaces, adapters, webhooks, API clients, registri
 
 ## Integration Families
 
-| Family | Current Guide Position |
-| --- | --- |
-| Interface management | Visible management surface for accepted G08/G11 proof slices |
-| Webhook management | Visible management surface; mutation proof depends on focused validation |
-| API clients | Visible management surface; credential mutation needs focused proof |
-| API registry | Visible registry surface for accepted proof slices |
-| API gateway readiness | Visible readiness surface |
-| Builder registry | Visible registry surface for accepted proof slices |
-| Platform tool connections | Visible operations surface; avoid overclaiming mutation readiness |
-| Adapters | Adapter creation is not accepted as a usable guide procedure yet |
+Every row below is scope-dependent: a surface that exists in the tenant workspace may be absent or closed in the AC console, and vice versa. The **Where** column is therefore load-bearing — a position stated without it is not checkable. (Verified against routes under `TCRN-TMS-STORY-022`.)
+
+| Family | Where | Current Guide Position |
+| --- | --- | --- |
+| Interface management | **Tenant only** — the AC route renders an unavailable screen | Visible management surface for accepted G08/G11 proof slices |
+| Webhook management | **Tenant only** — the AC route renders an unavailable screen | Visible management surface; mutation proof depends on focused validation |
+| API clients | **AC only** — no tenant route exists | Visible management surface; credential mutation needs focused proof |
+| API registry | **AC only** — no tenant route exists | Visible registry surface for accepted proof slices |
+| API gateway readiness | **AC only** — no tenant route exists | Visible readiness surface |
+| Builder registry | **AC only** — no tenant route exists | Visible registry surface for accepted proof slices |
+| Platform tool connections | **AC only** — no tenant route exists | Visible operations surface; avoid overclaiming mutation readiness |
+| Adapters | Both workspaces have an `adapters/new` route | Adapter creation is not accepted as a usable guide procedure yet |
 
 ## Using Integration Pages
 

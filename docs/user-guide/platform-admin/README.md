@@ -8,7 +8,6 @@ The AC admin console currently exposes route families for:
 
 - Tenant management.
 - User management.
-- Interface and webhook management.
 - API client management.
 - API registry and gateway readiness.
 - Builder registry.
@@ -17,7 +16,13 @@ The AC admin console currently exposes route families for:
 - Observability.
 - System dictionary.
 
+These nine match the AC navigation destinations exactly (`apps/web/src/platform/routing/AcShell.tsx`), plus role management reached from within user management.
+
+**Interface management and webhook management are not exposed in AC.** Both AC routes render an unavailable screen and neither appears in AC navigation. Use the tenant workspace for those two surfaces — the tenant-side routes of the same names are live. (Verified under `TCRN-TMS-STORY-021`; the AC routes were closed in `e04063b5`.)
+
 Use the visible AC navigation to enter these areas. If a direct URL is rejected, re-enter from the visible navigation and confirm the tenant tier and role before escalating.
+
+Two AC routes exist without a navigation entry and are therefore reachable only by typing the URL: `integration-management` (live, and referenced under Current Limitations below) and `interface-management/adapters/new` (live, even though its parent route is closed). Neither is a supported entry point; both are recorded as open defects under `TCRN-TMS-STORY-021`.
 
 ## Best Practice
 
